@@ -2851,7 +2851,7 @@ async def _interest(ctx):
             name_list.append("**"+user.name+"**")
             maybe_list.append(user.mention)
     if ctx_maybecount > 0:
-        if now.time() >= datetime.time(5,00).replace(tzinfo=tzlocal) and now.time() <= datetime.time(21,00).replace(tzinfo=tzlocal):
+        if now.time().replace(tzinfo=tzlocal) >= datetime.time(5,00).replace(tzinfo=tzlocal) and now.time().replace(tzinfo=tzlocal) <= datetime.time(21,00).replace(tzinfo=tzlocal):
             maybe_exstr = _(" including {trainer_list} and the people with them! Let them know if there is a group forming").format(trainer_list=", ".join(maybe_list))
         else:
             maybe_exstr = _(" including {trainer_list} and the people with them! Let them know if there is a group forming").format(trainer_list=", ".join(name_list))
@@ -2882,7 +2882,7 @@ async def _otw(ctx):
             name_list.append("**"+user.name+"**")
             otw_list.append(user.mention)
     if ctx_omwcount > 0:
-        if now.time() >= datetime.time(5,00).replace(tzinfo=tzlocal) and now.time() <= datetime.time(21,00).replace(tzinfo=tzlocal):
+        if now.time().replace(tzinfo=tzlocal) >= datetime.time(5,00).replace(tzinfo=tzlocal) and now.time().replace(tzinfo=tzlocal) <= datetime.time(21,00).replace(tzinfo=tzlocal):
             otw_exstr = _(" including {trainer_list} and the people with them! Be considerate and wait for them if possible").format(trainer_list=", ".join(otw_list))
         else:
             otw_exstr = _(" including {trainer_list} and the people with them! Be considerate and wait for them if possible").format(trainer_list=", ".join(name_list))
@@ -2912,7 +2912,7 @@ async def _waiting(ctx):
             name_list.append("**"+user.name+"**")
             waiting_list.append(user.mention)
     if ctx_waitingcount > 0:
-        if now.time() >= datetime.time(5,00).replace(tzinfo=tzlocal) and now.time() <= datetime.time(21,00).replace(tzinfo=tzlocal):
+        if now.time().replace(tzinfo=tzlocal) >= datetime.time(5,00).replace(tzinfo=tzlocal) and now.time().replace(tzinfo=tzlocal) <= datetime.time(21,00).replace(tzinfo=tzlocal):
             waiting_exstr = _(" including {trainer_list} and the people with them! Be considerate and let them know if and when you'll be there").format(trainer_list=", ".join(waiting_list))
         else:
             waiting_exstr = _(" including {trainer_list} and the people with them! Be considerate and let them know if and when you'll be there").format(trainer_list=", ".join(name_list))
