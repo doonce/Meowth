@@ -610,7 +610,7 @@ The trainer_dict contains "trainer" elements, which have the following fields:
 'count'  : the number of trainers in the party
 """
 
-team_msg = " or ".join(["`!team {0}`".format(team) for team in config['team_dict'].keys()])
+team_msg = " or ".join(["**!team {0}**".format(team) for team in config['team_dict'].keys()])
 
 @Meowth.event
 async def on_ready():
@@ -1512,6 +1512,7 @@ async def _wild(message, huntr):
         wild_embed.set_thumbnail(url=wild_img_url)
         await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: {location_details}").format(pokemon=wild.mention, member=message.author.mention, location_details=wild_details),embed=wild_embed)
 
+
 @Meowth.command(pass_context=True)
 @checks.cityeggchannel()
 @checks.raidset()
@@ -1867,8 +1868,9 @@ async def _cancel(message):
 async def on_message(message):
     if str(message.author) == "GymHuntrBot#7279":
         if message.embeds:
-            if len(message.embeds[0]['title'].split(" ")) == 5:
+            if len(message.embeds[0]['title'].split(" ")) == 5 and config['auto-raid']:
                 ghduplicate = False
+                ghraidlevel = message.embeds[0]['title'].split(" ")[1]
                 ghgps = message.embeds[0]['url'].split("#")[1]
                 ghdesc = message.embeds[0]['description'].splitlines()
                 ghgym = ghdesc[0][2:-3]
@@ -1887,10 +1889,24 @@ async def on_message(message):
                             break
                     except KeyError:
                         pass
-                if ghduplicate == False:
+                if ghduplicate == False and int(ghraidlevel) in config['raidlevels']:
                     await _raid(message, huntr)
+                elif ghduplicate is False and int(ghraidlevel) not in config['raidlevels']:
+                    raid = discord.utils.get(message.server.roles, name = ghpokeid.lower())
+                    if raid is None:
+                        raid = await Meowth.create_role(server = message.server, name = ghpokeid.lower(), hoist = False, mentionable = True)
+                    raid_embed = discord.Embed(colour=message.server.me.colour, url=message.embeds[0]['url'], title=message.embeds[0]['title'])
+                    raid_number = pkmn_info['pokemon_list'].index(ghpokeid.lower()) + 1
+                    raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png".format(str(raid_number).zfill(3))
+                    raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details=ghgym),inline=True)
+                    raid_embed.add_field(name="**Remaining:**", value=_("{minutes} mins").format(minutes=ghminute),inline=True)
+                    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=ghpokeid.capitalize(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),inline=True))
+                    raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(message.server, get_weaknesses(ghpokeid.lower()))),inline=True)
+                    raid_embed.set_thumbnail(url=raid_img_url)
+                    raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.name), icon_url=message.author.avatar_url)
+                    await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}").format(pokemon=raid.mention, member=message.author.mention, location_details=ghgym),embed=raid_embed)
                 return
-            elif len(message.embeds[0]['title'].split(" ")) == 6:
+            elif len(message.embeds[0]['title'].split(" ")) == 6 and config['auto-egg']:
                 ghduplicate = False
                 ghgps = message.embeds[0]['url'].split("#")[1]
                 ghegglevel = message.embeds[0]['title'].split(" ")[1]
@@ -1908,12 +1924,19 @@ async def on_message(message):
                             break
                     except KeyError:
                         pass
-                if ghduplicate == False:
+                if ghduplicate == False and int(ghegglevel) in config['egglevels']:
                     await _raidegg(message, huntr)
+                elif ghduplicate is False and int(ghegglevel) not in config['egglevels']:
+                    raid_embed = discord.Embed(colour=message.server.me.colour, url=message.embeds[0]['url'], title=message.embeds[0]['title'])
+                    raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details=ghgym),inline=True)
+                    raid_embed.add_field(name="**Starting in:**", value=_("{minutes} mins").format(minutes=ghminute),inline=True)
+                    raid_embed.set_thumbnail(url=_("https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}.png".format(str(ghegglevel))))
+                    raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.name), icon_url=message.author.avatar_url)
+                    await Meowth.send_message(message.channel, embed=raid_embed)
                 return
             return
         return
-    if str(message.author) == "HuntrBot#1845":
+    if str(message.author) == "HuntrBot#1845" and config['auto-wild']:
         if message.embeds:
             hlocation = message.embeds[0]['url'].split("#")[1]
             hpokeid = message.embeds[0]['title'].split(" ")[2]
