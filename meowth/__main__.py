@@ -1009,6 +1009,12 @@ async def _save():
 
 @Meowth.command(pass_context=True)
 @checks.is_owner()
+async def raid_json_reload(ctx):
+    with open(os.path.join('data', 'raid_info.json'), "r") as fd:
+        raid_info = json.load(fd)
+
+@Meowth.command(pass_context=True)
+@checks.is_owner()
 async def exit(ctx):
     """Exit after saving.
 
@@ -1689,7 +1695,8 @@ async def print_raid_timer(channel):
     return timerstr
 
 
-@Meowth.group(pass_context=True, invoke_without_command=True)
+
+@Meowth.command(pass_context=True)
 @checks.raidchannel()
 async def timerset(ctx,timer):
     """Set the remaining duration on a raid.
@@ -1700,13 +1707,7 @@ async def timerset(ctx,timer):
     message = ctx.message
     channel = message.channel
     server = message.server
-    if ctx.invoked_subcommand is None and checks.check_raidactive(ctx):
-        try:
-            if checks.check_exraidchannel(ctx):
-                await Meowth.send_message(channel, _("Timerset isn't supported for exraids. Did you mean **!timerset ex**?"))
-                return
-        except KeyError:
-            pass
+    if checks.check_raidactive(ctx) and not checks.check_exraidchannel(ctx):
         if server_dict[server]['raidchannel_dict'][channel]['type'] == 'egg':
             raidtype = "Raid Egg"
             maxtime = 60
@@ -1732,33 +1733,24 @@ async def timerset(ctx,timer):
             return
         await _timerset(channel, raidexp)
 
-@timerset.command(pass_context=True)
-@checks.exraidchannel()
-async def ex(ctx):
-    message = ctx.message
-    channel = message.channel
-    server = message.server
-    tzlocal = tz.tzoffset(None, server_dict[server]['offset']*3600)
-    if checks.check_eggchannel(ctx) or len(raid_info['raid_eggs']['EX']['pokemon']) == 1:
-        now = datetime.datetime.now().replace(tzinfo=tzlocal)
-        timer_split = message.clean_content.lower().split()
-        del timer_split[0]
-        del timer_split[0]
-        try:
-            end = datetime.datetime.strptime(" ".join(timer_split)+" "+str(now.year), '%B %d %I:%M %p %Y').replace(tzinfo=tzlocal)
-        except ValueError:
-            await Meowth.send_message(channel, _("Meowth! Your timer wasn't formatted correctly, the correct format for the current time is: **{}**. Change your **!timerset ex** to match this format and try again.").format(now.strftime('%B %d %I:%M %p')))
-        diff = end - now
-        if server_dict[channel.server]['raidchannel_dict'][channel]['type'] == "exraid":
-            total = (diff.total_seconds() / 60) + 45
-        else:
+    if checks.check_exraidchannel(ctx):
+        if checks.check_eggchannel(ctx):
+            tzlocal = tz.tzoffset(None, server_dict[server]['offset']*3600)
+            now = datetime.datetime.now()
+            timer_split = message.clean_content.lower().split()
+            del timer_split[0]
+            try:
+                end = datetime.datetime.strptime(" ".join(timer_split)+" "+str(now.year), '%m/%d %I:%M %p %Y').replace(tzinfo=tzlocal)
+            except ValueError:
+                await Meowth.send_message(channel, _("Meowth! Your timer wasn't formatted correctly. Change your **!timerset** to match the format on your EX Raid invite and try again."))
+            diff = end - now
             total = (diff.total_seconds() / 60)
-        if now <= end:
-            await _timerset(channel, total)
-        elif now >= end:
-            await Meowth.send_message(channel, _("Meowth! Please enter a time in the future."))
-    else:
-        await Meowth.send_message(channel, _("Meowth! Timerset isn't supported for exraids after they have hatched."))
+            if now <= end:
+                await _timerset(channel, total)
+            elif now > end:
+                await Meowth.send_message(channel, _("Meowth! Please enter a time in the future."))
+        else:
+            await Meowth.send_message(channel, _("Meowth! Timerset isn't supported for exraids after they have hatched."))
 
 
 def _timercheck(time, maxtime):
@@ -2311,7 +2303,7 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
         if len(raid_info['raid_eggs']['EX']['pokemon']) > 1:
             raidexp = eggdetails['exp'] + 45 * 60
         else:
-            raidexp = time.time() + 24 * 60 * 60 * 10
+            raidexp = time.time() + 24 * 60 * 60 * 14
         hatchtype = "exraid"
         raidreportcontent = _("Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. Use the **!invite** command to gain access and coordinate in {raid_channel}").format(pokemon=entered_raid.capitalize(), location_details=egg_address, raid_channel=raid_channel.mention)
         raidmsg = _("""Meowth! {pokemon} EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here!
