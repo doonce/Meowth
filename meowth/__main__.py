@@ -1750,7 +1750,7 @@ async def timerset(ctx,timer):
         await _timerset(channel, raidexp)
 
     if checks.check_exraidchannel(ctx):
-        if checks.check_eggchannel(ctx):
+        if checks.check_eggchannel(ctx) or len(raid_info['raid_eggs']['EX']['pokemon']) == 1:
             tzlocal = tz.tzoffset(None, server_dict[server]['offset']*3600)
             now = datetime.datetime.now().replace(tzinfo=tzlocal)
             timer_split = message.clean_content.lower().split()
@@ -3046,6 +3046,7 @@ async def _invite(ctx):
             await Meowth.send_message(ctx.message.channel, "Meowth! Your attachment was not a supported image format!")
     else:
         await Meowth.send_message(ctx.message.channel, "Meowth! Please upload your screenshot directly to Discord!")
+
 
 try:
     event_loop.run_until_complete(Meowth.start(config['bot_token']))
