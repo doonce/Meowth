@@ -1744,7 +1744,10 @@ async def timerset(ctx,timer):
             except ValueError:
                 await Meowth.send_message(channel, _("Meowth! Your timer wasn't formatted correctly. Change your **!timerset** to match the format on your EX Raid invite and try again."))
             diff = end - now
-            total = (diff.total_seconds() / 60)
+            if server_dict[channel.server]['raidchannel_dict'][channel]['type'] == "exraid":
+                total = (diff.total_seconds() / 60) + 45
+            else:
+                total = (diff.total_seconds() / 60)
             if now <= end:
                 await _timerset(channel, total)
             elif now > end:
