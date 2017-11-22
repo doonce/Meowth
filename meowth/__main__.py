@@ -1478,7 +1478,7 @@ async def _wild(message, huntr):
         huntrexp = huntr.split("|")[1]
     del wild_split[0]
     if len(wild_split) <= 1:
-        await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**"))
+        await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**"))
         return
     else:
         content = " ".join(wild_split)
