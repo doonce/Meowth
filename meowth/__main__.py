@@ -1943,7 +1943,7 @@ async def on_message(message):
                     raid_embed.add_field(name="**Starting in:**", value=_("{minutes} mins").format(minutes=ghminute),inline=True)
                     raid_embed.set_thumbnail(url=_("https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}.png".format(str(ghegglevel))))
                     raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
-                    await Meowth.send_message(message.channel, embed=raid_embed)
+                    await Meowth.send_message(message.channel, content = _("Meowth! Level {level} raid egg reported by {member}! Details: {location_details}.").format(level=ghegglevel, member=message.author.mention, location_details=ghgym),embed=raid_embed)
                 return
             return
         return
