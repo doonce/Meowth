@@ -626,9 +626,9 @@ async def on_ready():
         users += len(server.members)
         try:
             if server not in server_dict:
-                server_dict[server] = {'want_channel_list': [], 'offset': 0, 'welcome': False, 'welcomechan': '', 'wantset': False, 'raidset': False, 'wildset': False, 'team': False, 'want': False, 'other': False, 'done': False, 'raidchannel_dict' : {}}
+                server_dict[server] = {'want_channel_list': [], 'offset': 0, 'welcome': False, 'welcomechan': '', 'wantset': False, 'raidset': False, 'wildset': False, 'team': False, 'want': False, 'other': False, 'done': False, 'raidchannel_dict' : {}, 'autoraid': True, 'autoegg': True, 'autowild': True, 'raidlvls': [1,2,3,4,5], 'egglvls': [1,2,3,4,5]}
         except KeyError:
-            server_dict[server] = {'want_channel_list': [], 'offset': 0, 'welcome': False, 'welcomechan': '', 'wantset': False, 'raidset': False, 'wildset': False, 'team': False, 'want': False, 'other': False, 'done': False, 'raidchannel_dict' : {}}
+            server_dict[server] = {'want_channel_list': [], 'offset': 0, 'welcome': False, 'welcomechan': '', 'wantset': False, 'raidset': False, 'wildset': False, 'team': False, 'want': False, 'other': False, 'done': False, 'raidchannel_dict' : {}, 'autoraid': True, 'autoegg': True, 'autowild': True, 'raidlvls': [1,2,3,4,5], 'egglvls': [1,2,3,4,5]}
 
         owners.append(server.owner)
 
@@ -641,7 +641,7 @@ async def on_ready():
 @Meowth.event
 async def on_server_join(server):
     owner = server.owner
-    server_dict[server] = {'want_channel_list': [], 'offset': 0, 'welcome': False, 'welcomechan': '', 'wantset': False, 'raidset': False, 'wildset': False, 'team': False, 'want': False, 'other': False, 'done': False, 'raidchannel_dict' : {}}
+    server_dict[server] = {'want_channel_list': [], 'offset': 0, 'welcome': False, 'welcomechan': '', 'wantset': False, 'raidset': False, 'wildset': False, 'team': False, 'want': False, 'other': False, 'done': False, 'raidchannel_dict' : {}, 'autoraid': True, 'autoegg': True, 'autowild': True, 'raidlvls': [1,2,3,4,5], 'egglvls': [1,2,3,4,5]}
     await Meowth.send_message(owner, _("Meowth! I'm Meowth, a Discord helper bot for Pokemon Go communities, and someone has invited me to your server! Type **!help** to see a list of things I can do, and type **!configure** in any channel of your server to begin!"))
 
 @Meowth.event
@@ -660,7 +660,7 @@ async def on_server_remove(server):
 async def configure(ctx):
     server = ctx.message.server
     owner = ctx.message.author
-    server_dict_check = {'want_channel_list': [], 'offset': 0, 'welcome': False, 'welcomechan': '', 'wantset': False, 'raidset': False, 'wildset': False, 'team': False, 'want': False, 'other': False, 'done': False, 'raidchannel_dict' : {}}
+    server_dict_check = {'want_channel_list': [], 'offset': 0, 'welcome': False, 'welcomechan': '', 'wantset': False, 'raidset': False, 'wildset': False, 'team': False, 'want': False, 'other': False, 'done': False, 'raidchannel_dict' : {}, 'autoraid': True, 'autoegg': True, 'autowild': True, 'raidlvls': [1,2,3,4,5], 'egglvls': [1,2,3,4,5]}
     server_dict_temp = copy.deepcopy(server_dict[server])
     firstconfig = False
     configcancel = False
@@ -669,8 +669,8 @@ async def configure(ctx):
     configmessage = "Meowth! That's Right! Welcome to the configuration for Meowth the Pokemon Go Helper Bot! I will be guiding you through some setup steps to get me setup on your server.\n\n**Role Setup**\nBefore you begin the configuration, please make sure my role is moved to the top end of the server role hierarchy. It can be under admins and mods, but must be above team ands general roles. [Here is an example](http://i.imgur.com/c5eaX1u.png)"
     if firstconfig == False:
         if server_dict_temp['other'] == True:
-            configreplylist = ['all','team','welcome','main','regions','raid','wild','want','timezone','allmain']
-            configmessage += """\n\n**Welcome Back**\nThis isn't your first time configurating. You can either reconfigure everything by replying with **all** or reply with one of the following to configure that specific setting:\n\n**all** - To redo configuration\n**team** - For Team Assignment configuration\n**welcome** - For Welcome Message configuration\n**main** - For main command configuration\n**raid** - for raid command configuration\n**wild** - for wild command configuration\n**regions** - For configuration of reporting channels or map links\n**want** - for want/unwant command configuration and channel\n**timezone** - For timezone configuration\n**allmain** - For main, regions, raid, wild, want, timezone configuration"""
+            configreplylist = ['all','team','welcome','main','regions','raid','wild','want','timezone','allmain','huntr']
+            configmessage += """\n\n**Welcome Back**\nThis isn't your first time configurating. You can either reconfigure everything by replying with **all** or reply with one of the following to configure that specific setting:\n\n**all** - To redo configuration\n**team** - For Team Assignment configuration\n**welcome** - For Welcome Message configuration\n**main** - For main command configuration\n**raid** - for raid command configuration\n**wild** - for wild command configuration\n**regions** - For configuration of reporting channels or map links\n**want** - for want/unwant command configuration and channel\n**timezone** - For timezone configuration\n**allmain** - For main, regions, raid, wild, want, timezone configuration\n**huntr** - For huntr integration configuration"""
             configmessage += "\n\nReply with **cancel** at any time throughout the questions to cancel the configure process."
             await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=configmessage).set_author(name=_("Meowth Configuration - {0}").format(server), icon_url=Meowth.user.avatar_url))
         else:
@@ -954,6 +954,118 @@ async def configure(ctx):
                     break
         server_dict_temp['offset'] = offset
         await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description="Timezone set"))
+    #configure huntr-raid
+    if configcancel == False and server_dict_temp['other'] is True and server_dict_temp['raidset'] is True and (firstconfig == True or configgoto == "all" or configgoto == "huntr"):
+        await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Do you want automatic **!raid** reports using @GymHuntrBot enabled?\n\nAny raid that @GymHuntrBot posts in a channel that Meowth also has access to will be converted to a **!raid** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:").set_author(name="Automatic Raid Reports", icon_url=Meowth.user.avatar_url))
+        while True:
+            wildconfigset = await Meowth.wait_for_message(author=owner, check=lambda message: message.server is None)
+            if wildconfigset.content.lower() == "y":
+                server_dict_temp['autoraid']=True
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description="Automatic Raid Reports enabled"))
+                break
+            elif wildconfigset.content.lower() == "n":
+                server_dict_temp['autoraid']=False
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.red(), description="Automatic Raid Reports disabled"))
+                break
+            elif wildconfigset.content.lower() == "cancel":
+                configcancel = True
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.red(), description="**CONFIG CANCELLED!**\n\nNo changes have been made."))
+                return
+            else:
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
+                continue
+    #configure huntr-raid-levels
+    if configcancel == False and server_dict_temp['other'] is True and server_dict_temp['raidset'] is True and (firstconfig == True or configgoto == "all" or configgoto == "huntr"):
+        await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create automatic raid channels for, separated by a comma. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name="Automatic Raid Report Levels", icon_url=Meowth.user.avatar_url))
+        raidlevel_list = []
+        server_dict_temp['raidlvls'] = []
+        while True:
+            raidlevels = await Meowth.wait_for_message(author = owner, check=lambda message: message.server is None)
+            if raidlevels.content.lower() == "cancel":
+                configcancel = True
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.red(), description="**CONFIG CANCELLED!**\n\nNo changes have been made."))
+                return
+            elif raidlevels.content.lower() == "n":
+                server_dict_temp['autoraid']=False
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.red(), description="Automatic Raid Reports disabled"))
+                break
+            else:
+                raidlevel_list = raidlevels.content.lower().split(',')
+                for level in raidlevel_list:
+                    if level.isdigit() and int(level) <=5 and int(level) >0:
+                        server_dict_temp['raidlvls'].append(int(level))
+                if len(server_dict_temp['raidlvls']) > 0:
+                    await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description=_("Automatic Raid Channel Levels set to: {levels}").format(levels=",".join(str(x) for x in server_dict_temp['raidlvls']))))
+                    break
+                else:
+                    await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Or **N** to turn off automatic raids."))
+                    continue
+    #configure huntr-raidegg
+    if configcancel == False and server_dict_temp['other'] is True and server_dict_temp['raidset'] is True and (firstconfig == True or configgoto == "all" or configgoto == "huntr"):
+        await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Do you want automatic **!raidegg** reports using @GymHuntrBot enabled?\n\nAny egg that @GymHuntrBot posts in a channel that Meowth also has access to will be converted to a **!raidegg** report.\n\nRespond with: **N** to disable, or **Y** to enable:").set_author(name="Automatic Egg Reports", icon_url=Meowth.user.avatar_url))
+        while True:
+            wildconfigset = await Meowth.wait_for_message(author=owner, check=lambda message: message.server is None)
+            if wildconfigset.content.lower() == "y":
+                server_dict_temp['autoegg']=True
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description="Automatic Egg Reports enabled"))
+                break
+            elif wildconfigset.content.lower() == "n":
+                server_dict_temp['autoegg']=False
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.red(), description="Automatic Egg Reports disabled"))
+                break
+            elif wildconfigset.content.lower() == "cancel":
+                configcancel = True
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.red(), description="**CONFIG CANCELLED!**\n\nNo changes have been made."))
+                return
+            else:
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
+                continue
+    #configure huntr-egg-levels
+    if configcancel == False and server_dict_temp['other'] is True and server_dict_temp['raidset'] is True and (firstconfig == True or configgoto == "all" or configgoto == "huntr"):
+        await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create automatic egg channels for, separated by a comma. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized egg report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name="Automatic Egg Report Levels", icon_url=Meowth.user.avatar_url))
+        egglevel_list = []
+        server_dict_temp['egglvls'] = []
+        while True:
+            egglevels = await Meowth.wait_for_message(author = owner, check=lambda message: message.server is None)
+            if egglevels.content.lower() == "cancel":
+                configcancel = True
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.red(), description="**CONFIG CANCELLED!**\n\nNo changes have been made."))
+                return
+            elif egglevels.content.lower() == "n":
+                server_dict_temp['autoegg']=False
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.red(), description="Automatic Egg Reports disabled"))
+                break
+            else:
+                egglevel_list = egglevels.content.lower().split(',')
+                for level in egglevel_list:
+                    if level.isdigit() and int(level) <=5 and int(level) >0:
+                        server_dict_temp['egglvls'].append(int(level))
+                if len(server_dict_temp['egglvls']) > 0:
+                    await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description=_("Automatic Egg Channel Levels set to: {levels}").format(levels=",".join(str(x) for x in server_dict_temp['egglvls']))))
+                    break
+                else:
+                    await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Or **N** to turn off automatic eggs."))
+                    continue
+    #configure huntr-wild
+    if configcancel == False and server_dict_temp['other'] is True and server_dict_temp['wildset'] is True and (firstconfig == True or configgoto == "all" or configgoto == "huntr"):
+        await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Do you want automatic **!wild** reports using @HuntrBot enabled?\n\nAnything that @HuntrBot posts in a channel that Meowth also has access to will be converted to a **!wild** report.\n\nRespond with: **N** to disable, or **Y** to enable:").set_author(name="Automatic Wild Reports", icon_url=Meowth.user.avatar_url))
+        while True:
+            wildconfigset = await Meowth.wait_for_message(author=owner, check=lambda message: message.server is None)
+            if wildconfigset.content.lower() == "y":
+                server_dict_temp['autowild']=True
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description="Automatic Wild Reports enabled"))
+                break
+            elif wildconfigset.content.lower() == "n":
+                server_dict_temp['autowild']=False
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.red(), description="Automatic Wild Reports disabled"))
+                break
+            elif wildconfigset.content.lower() == "cancel":
+                configcancel = True
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.red(), description="**CONFIG CANCELLED!**\n\nNo changes have been made."))
+                return
+            else:
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
+                continue
     server_dict_temp['done']=True
     if configcancel == False:
         server_dict[server] = server_dict_temp
@@ -1009,9 +1121,8 @@ async def _save():
 
 @Meowth.command(pass_context=True)
 @checks.is_owner()
-async def raid_json_reload(ctx):
-    with open(os.path.join('data', 'raid_info.json'), "r") as fd:
-        raid_info = json.load(fd)
+async def reload_json(ctx):
+    load_config()
 
 @Meowth.command(pass_context=True)
 @checks.is_owner()
@@ -1879,7 +1990,7 @@ async def _cancel(message):
 async def on_message(message):
     if str(message.author) == "GymHuntrBot#7279":
         if message.embeds:
-            if len(message.embeds[0]['title'].split(" ")) == 5 and config['auto-raid']:
+            if len(message.embeds[0]['title'].split(" ")) == 5 and server_dict[message.server]['autoraid']:
                 ghduplicate = False
                 ghraidlevel = message.embeds[0]['title'].split(" ")[1]
                 ghgps = message.embeds[0]['url'].split("#")[1]
@@ -1900,9 +2011,9 @@ async def on_message(message):
                             break
                     except KeyError:
                         pass
-                if ghduplicate == False and int(ghraidlevel) in config['raidlevels']:
+                if ghduplicate == False and int(ghraidlevel) in server_dict[message.server]['raidlvls']:
                     await _raid(message, huntr)
-                elif ghduplicate is False and int(ghraidlevel) not in config['raidlevels']:
+                elif ghduplicate is False and int(ghraidlevel) not in server_dict[message.server]['raidlvls']:
                     raid = discord.utils.get(message.server.roles, name = ghpokeid.lower())
                     if raid is None:
                         raid = await Meowth.create_role(server = message.server, name = ghpokeid.lower(), hoist = False, mentionable = True)
@@ -1917,7 +2028,7 @@ async def on_message(message):
                     raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
                     await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}").format(pokemon=raid.mention, member=message.author.mention, location_details=ghgym),embed=raid_embed)
                 return
-            elif len(message.embeds[0]['title'].split(" ")) == 6 and config['auto-egg']:
+            elif len(message.embeds[0]['title'].split(" ")) == 6 and server_dict[message.server]['autoegg']:
                 ghduplicate = False
                 ghgps = message.embeds[0]['url'].split("#")[1]
                 ghegglevel = message.embeds[0]['title'].split(" ")[1]
@@ -1935,9 +2046,9 @@ async def on_message(message):
                             break
                     except KeyError:
                         pass
-                if ghduplicate == False and int(ghegglevel) in config['egglevels']:
+                if ghduplicate == False and int(ghegglevel) in server_dict[message.server]['egglvls']:
                     await _raidegg(message, huntr)
-                elif ghduplicate is False and int(ghegglevel) not in config['egglevels']:
+                elif ghduplicate is False and int(ghegglevel) not in server_dict[message.server]['egglvls']:
                     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the coming raid!"),url=_("https://www.google.com/maps/dir/Current+Location/{0}").format(ghgps),colour=message.server.me.colour)
                     raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details=ghgym),inline=True)
                     raid_embed.add_field(name="**Starting in:**", value=_("{minutes} mins").format(minutes=ghminute),inline=True)
@@ -1947,7 +2058,7 @@ async def on_message(message):
                 return
             return
         return
-    if str(message.author) == "HuntrBot#1845" and config['auto-wild']:
+    if str(message.author) == "HuntrBot#1845" and server_dict[message.server]['autowild']:
         if message.embeds:
             hlocation = message.embeds[0]['url'].split("#")[1]
             hpokeid = message.embeds[0]['title'].split(" ")[2]

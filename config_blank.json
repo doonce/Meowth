@@ -52,15 +52,7 @@
     "dark"     : ":dark:",
     "steel"    : ":steel:",
     "fairy"    : ":fairy:"
-},
-
-"//": "Huntr integration",
-"//": "Enter the levels that you want Meowth to create raid channels for.",
-"auto-raid" : "True",
-"raidlevels" : [1,2,3,4,5],
-"auto-egg" : "True",
-"egglevels" : [1,2,3,4,5],
-"auto-wild" : "True"
+}
 
 
 }
