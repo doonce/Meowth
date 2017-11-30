@@ -118,7 +118,7 @@ def custom_error_handling(bot,logger):
                 msg += ": "
             counter = 0
             for c in want_channels:
-                channel = discord.utils.get(server.channels,id=c.id)
+                channel = discord.utils.get(server.channels,id=c)
                 if counter > 0:
                     msg += "\n"
                 msg += channel.mention
