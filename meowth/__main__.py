@@ -2377,6 +2377,20 @@ When this egg raid expires, there will be 15 minutes to update it into an open r
 async def _eggassume(args, raid_channel):
     eggdetails = server_dict[raid_channel.server]['raidchannel_dict'][raid_channel]
     egglevel = eggdetails['egglevel']
+    manual_timer = eggdetails['manual_timer']
+    trainer_dict = eggdetails['trainer_dict']
+    reportcity = eggdetails['reportcity']
+    reportcitychannel = discord.utils.get(raid_channel.server.channels, name=reportcity)
+    egg_address = eggdetails['address']
+    egg_report = eggdetails['raidreport']
+    raid_message = eggdetails['raidmessage']
+    try:
+        raid_messageauthor = raid_message.mentions[0]
+    except IndexError:
+        raid_messageauthor = "<@"+raid_message.raw_mentions[0]+">"
+        logger.info("Hatching Mention Failed - Trying alternative method: channel: {} (id: {}) - server: {} | Attempted mention: {}...".format(raid_channel.name,raid_channel.id,raid_channel.server.name,raid_message.content[:125]))
+    gymhuntrgps = eggdetails['gymhuntrgps']
+
     if config['allow_assume'][egglevel] == "False":
         await Meowth.send_message(raid_channel, _("Meowth! **!raid assume** is not allowed in this level egg."))
         return
@@ -2397,10 +2411,32 @@ async def _eggassume(args, raid_channel):
             await Meowth.send_message(raid_channel, _("Meowth! The Pokemon {pokemon} does not hatch from level {level} raid eggs!").format(pokemon=entered_raid.capitalize(), level=egglevel))
             return
     eggdetails['pokemon'] = entered_raid
+    oldembed = raid_message.embeds[0]
+    raid_gmaps_link = oldembed['url']
     raidrole = discord.utils.get(raid_channel.server.roles, name = entered_raid)
     if raidrole is None:
         raidrole = await Meowth.create_role(server = raid_channel.server, name = entered_raid, hoist = False, mentionable = True)
         await asyncio.sleep(0.5)
+    raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
+    raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png".format(str(raid_number).zfill(3))
+    raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the coming raid!"),url=raid_gmaps_link,colour=raid_channel.server.me.colour)
+    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_raid.capitalize(),pokemonnumber=str(raid_number),type="".join(get_type(raid_channel.server, raid_number)),inline=True))
+    raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(raid_channel.server, get_weaknesses(entered_raid))),inline=True)
+    if gymhuntrgps:
+        raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
+    raid_embed.set_footer(text=_("Reported by @{author}").format(author=raid_messageauthor.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=raid_messageauthor, format="jpg", size=32)))
+    raid_embed.set_thumbnail(url=oldembed['thumbnail']['url'])
+
+    try:
+        raid_message = await Meowth.edit_message(raid_message, new_content=raid_message.content, embed=raid_embed)
+    except discord.errors.NotFound:
+        pass
+    try:
+        egg_report = await Meowth.edit_message(egg_report, new_content=egg_report.content, embed=raid_embed)
+    except discord.errors.NotFound:
+        pass
+
+
     await Meowth.send_message(raid_channel, _("Meowth! This egg will be assumed to be {pokemon} when it hatches!").format(pokemon=raidrole.mention))
     server_dict[raid_channel.server]['raidchannel_dict'][raid_channel] = eggdetails
     return
