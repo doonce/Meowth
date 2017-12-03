@@ -31,5 +31,10 @@
             "egg_img": "EX.png",
             "pokemon": [150]
         }
+    },
+    "settings": {
+        "hatchtime": 60,
+        "raidtime": 45,
+        "EXdays": 14
     }
 }
