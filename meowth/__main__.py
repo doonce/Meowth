@@ -1870,14 +1870,16 @@ async def timerset(ctx,timer):
             timer_split = message.clean_content.lower().split()
             del timer_split[0]
             try:
-                end = datetime.datetime.strptime(" ".join(timer_split)+" "+str(now.year), '%B %d %I:%M %p %Y').replace(tzinfo=tzlocal)
+                start = datetime.datetime.strptime(" ".join(timer_split)+" "+str(now.year), '%B %d %I:%M %p %Y').replace(tzinfo=tzlocal)
             except ValueError:
                 await Meowth.send_message(channel, _("Meowth! Your timer wasn't formatted correctly. Change your **!timerset** to match the format on your EX Raid invite and try again."))
-            diff = end - now
+            diff = start - now
             total = (diff.total_seconds() / 60)
-            if now <= end:
+            end = start + datetime.timedelta(minutes=45)
+            if now <= start:
                 await _timerset(channel, total)
-            elif now > end:
+                await Meowth.edit_channel(channel, topic=_("Hatches on {hatch_day} at {hatch_time} ({hatch_time24}) | Ends on {end_day} at {end_time} ({end_time24})").format(hatch_day=start.strftime("%B %d"),hatch_time=start.strftime("%I:%M %p"),hatch_time24=start.strftime("%H:%M"),end_day=end.strftime("%B %d"),end_time=end.strftime("%I:%M %p"),end_time24=end.strftime("%H:%M")))
+            elif now > start:
                 await Meowth.send_message(channel, _("Meowth! Please enter a time in the future."))
         else:
             await Meowth.send_message(channel, _("Meowth! Timerset isn't supported for exraids after they have hatched."))
