@@ -2561,7 +2561,7 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
         raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
     raid_embed.set_footer(text=_("Reported by @{author}").format(author=raid_messageauthor.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=raid_messageauthor, format="jpg", size=32)))
     raid_embed.set_thumbnail(url=raid_img_url)
-    await Meowth.edit_channel(raid_channel, name=raid_channel_name)
+    await Meowth.edit_channel(raid_channel, name=raid_channel_name, topic=raid_channel.topic.split(" | ")[1])
     try:
         raid_message = await Meowth.edit_message(raid_message, new_content=raidmsg, embed=raid_embed)
     except discord.errors.NotFound:
