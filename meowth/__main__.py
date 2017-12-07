@@ -2072,7 +2072,10 @@ async def on_message(message):
                     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(message.server, get_weaknesses(ghpokeid.lower()))),inline=True)
                     raid_embed.set_thumbnail(url=raid_img_url)
                     raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
-                    await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}").format(pokemon=raid.mention, member=message.author.mention, location_details=ghgym),embed=raid_embed)
+                    raidreport = await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}").format(pokemon=raid.mention, member=message.author.mention, location_details=ghgym),embed=raid_embed)
+                    await asyncio.sleep(int(ghminute)*60)
+                    expiremsg = _("**This {pokemon} raid has expired!**").format(pokemon=ghpokeid)
+                    await Meowth.edit_message(raidreport, embed=discord.Embed(description=expiremsg,colour=message.server.me.colour))
                 return
             elif len(message.embeds[0]['title'].split(" ")) == 6 and server_dict[message.server]['autoegg']:
                 ghduplicate = False
@@ -2100,7 +2103,10 @@ async def on_message(message):
                     raid_embed.add_field(name="**Starting in:**", value=_("{minutes} mins").format(minutes=ghminute),inline=True)
                     raid_embed.set_thumbnail(url=_("https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}.png".format(str(ghegglevel))))
                     raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
-                    await Meowth.send_message(message.channel, content = _("Meowth! Level {level} raid egg reported by {member}! Details: {location_details}.").format(level=ghegglevel, member=message.author.mention, location_details=ghgym),embed=raid_embed)
+                    raidreport = await Meowth.send_message(message.channel, content = _("Meowth! Level {level} raid egg reported by {member}! Details: {location_details}.").format(level=ghegglevel, member=message.author.mention, location_details=ghgym),embed=raid_embed)
+                    await asyncio.sleep(int(ghminute)*60)
+                    expiremsg = _("**This level {level} raid egg has hatched!**").format(level=ghegglevel)
+                    await Meowth.edit_message(raidreport, embed=discord.Embed(description=expiremsg,colour=message.server.me.colour))
                 return
             return
         return
