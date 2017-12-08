@@ -1624,28 +1624,22 @@ async def _wild(message, huntr):
     if len(wild_split) <= 1:
         await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**"))
         return
-    else:
-        content = " ".join(wild_split)
-        entered_wild = content.split(' ',1)[0]
-        entered_wild = get_name(entered_wild).lower() if entered_wild.isdigit() else entered_wild
-        spellone = spellcheck(entered_wild).split('"')[3]
-        wild_details = content.split(' ',1)[1]
-        if entered_wild not in pkmn_info['pokemon_list']:
-            entered_wild2 = ' '.join([content.split(' ',2)[0],content.split(' ',2)[1]])
-            if entered_wild2 in pkmn_info['pokemon_list']:
-                entered_wild = entered_wild2
-                try:
-                    wild_details = content.split(' ',2)[2]
-                except IndexError:
-                    await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**"))
-                    return
-            else:
-                spelltwo = spellcheck(entered_wild2).split('"')[3]
-
-        if not huntr:
-            wild_gmaps_link = create_gmaps_query(wild_details, message.channel)
+    content = " ".join(wild_split)
+    entered_wild = content.split(' ',1)[0]
+    entered_wild = get_name(entered_wild).lower() if entered_wild.isdigit() else entered_wild
+    spellone = spellcheck(entered_wild).split('"')[3]
+    wild_details = content.split(' ',1)[1]
+    if entered_wild not in pkmn_info['pokemon_list']:
+        entered_wild2 = ' '.join([content.split(' ',2)[0],content.split(' ',2)[1]])
+        if entered_wild2 in pkmn_info['pokemon_list']:
+            entered_wild = entered_wild2
+            try:
+                wild_details = content.split(' ',2)[2]
+            except IndexError:
+                await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**"))
+                return
         else:
-            wild_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(wild_details)
+            spelltwo = spellcheck(entered_wild2).split('"')[3]
 
     rgx = r"[^a-zA-Z0-9]"
     pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_wild)), None)
@@ -1662,17 +1656,26 @@ async def _wild(message, huntr):
     wild_number = pkmn_info['pokemon_list'].index(entered_wild) + 1
     wild_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png".format(str(wild_number).zfill(3))
     if not huntr:
+        wild_gmaps_link = create_gmaps_query(wild_details, message.channel)
         wild_embed = discord.Embed(title=_("Meowth! Click here for my directions to the wild {pokemon}!").format(pokemon=entered_wild.capitalize()),description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name),url=wild_gmaps_link,colour=message.server.me.colour)
         wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.capitalize(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
     else:
+        wild_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(wild_details)
         wild_embed = discord.Embed(title=_("Meowth! Click here for exact directions to the wild {pokemon}!").format(pokemon=entered_wild.capitalize()),url=wild_gmaps_link,colour=message.server.me.colour)
         wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.capitalize(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
         wild_embed.add_field(name="**Despawns in:**", value=_("{huntrexp}").format(huntrexp=huntrexp),inline=True)
         wild_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://pokehuntr.com/#{huntrurl}).").format(huntrurl=wild_details), inline=False)
     wild_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
     wild_embed.set_thumbnail(url=wild_img_url)
-    await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: {location_details}").format(pokemon=wild.mention, member=message.author.mention, location_details=wild_details),embed=wild_embed)
-
+    wildreportmsg = await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: {location_details}").format(pokemon=wild.mention, member=message.author.mention, location_details=wild_details),embed=wild_embed)
+    if huntr:
+        expiremsg = _("**This {pokemon} has despawned!**").format(pokemon=entered_wild.capitalize())
+        despawn = (int(huntrexp.split(" ")[0])*60) + int(huntrexp.split(" ")[2])
+        await asyncio.sleep(despawn)
+        try:
+            await Meowth.edit_message(wildreportmsg, embed=discord.Embed(description=expiremsg,colour=message.server.me.colour))
+        except discord.errors.NotFound:
+            pass
 
 @Meowth.command(pass_context=True)
 @checks.cityeggchannel()
@@ -2075,7 +2078,10 @@ async def on_message(message):
                     raidreport = await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}").format(pokemon=raid.mention, member=message.author.mention, location_details=ghgym),embed=raid_embed)
                     await asyncio.sleep(int(ghminute)*60)
                     expiremsg = _("**This {pokemon} raid has expired!**").format(pokemon=ghpokeid)
-                    await Meowth.edit_message(raidreport, embed=discord.Embed(description=expiremsg,colour=message.server.me.colour))
+                    try:
+                        await Meowth.edit_message(raidreport, embed=discord.Embed(description=expiremsg,colour=message.server.me.colour))
+                    except discord.errors.NotFound:
+                        pass
                 return
             elif len(message.embeds[0]['title'].split(" ")) == 6 and server_dict[message.server]['autoegg']:
                 ghduplicate = False
@@ -2106,7 +2112,10 @@ async def on_message(message):
                     raidreport = await Meowth.send_message(message.channel, content = _("Meowth! Level {level} raid egg reported by {member}! Details: {location_details}.").format(level=ghegglevel, member=message.author.mention, location_details=ghgym),embed=raid_embed)
                     await asyncio.sleep(int(ghminute)*60)
                     expiremsg = _("**This level {level} raid egg has hatched!**").format(level=ghegglevel)
-                    await Meowth.edit_message(raidreport, embed=discord.Embed(description=expiremsg,colour=message.server.me.colour))
+                    try:
+                        await Meowth.edit_message(raidreport, embed=discord.Embed(description=expiremsg,colour=message.server.me.colour))
+                    except discord.errors.NotFound:
+                        pass
                 return
             return
         return
