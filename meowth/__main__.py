@@ -1697,6 +1697,8 @@ async def _raid(message, huntr):
     if message.channel.name not in server_dict[message.server]['city_channels'].keys():
         if message.channel in server_dict[message.channel.server]['raidchannel_dict'] and server_dict[message.channel.server]['raidchannel_dict'][message.channel]['type'] == 'egg':
             fromegg = True
+            eggdetails = server_dict[message.server]['raidchannel_dict'][message.channel]
+            egglevel = eggdetails['egglevel']
         else:
             await Meowth.send_message(message.channel, _("Meowth! Please restrict raid reports to a city channel!"))
             return
@@ -1709,6 +1711,9 @@ async def _raid(message, huntr):
     del raid_split[0]
     if fromegg is True:
         if raid_split[0] == 'assume':
+            if config['allow_assume'][egglevel] == "False":
+                await Meowth.send_message(raid_channel, _("Meowth! **!raid assume** is not allowed in this level egg."))
+                return
             if server_dict[message.channel.server]['raidchannel_dict'][message.channel]['active'] == False:
                 await _eggtoraid(raid_split[1].lower(), message.channel)
                 return
@@ -1906,9 +1911,11 @@ async def timerset(ctx,timer):
             timer_split = message.clean_content.lower().split()
             del timer_split[0]
             try:
-                start = datetime.datetime.strptime(" ".join(timer_split)+" "+str(now.year), '%B %d %I:%M %p %Y').replace(tzinfo=datetime.timezone.utc)
+                start = datetime.datetime.strptime(" ".join(timer_split)+" "+str(now.year), '%m/%d %I:%M %p %Y').replace(tzinfo=datetime.timezone.utc)
+                if start.month < now.month:
+                    start = start.replace(year=now.year+1)
             except ValueError:
-                await Meowth.send_message(channel, _("Meowth! Your timer wasn't formatted correctly. Change your **!timerset** to match the format on your EX Raid invite and try again."))
+                await Meowth.send_message(channel, _("Meowth! Your timer wasn't formatted correctly. Change your **!timerset** to match this format: **MM/DD HH:MM AM/PM**"))
             diff = start - now
             total = (diff.total_seconds() / 60)
             end = start + datetime.timedelta(minutes=raid_info["raid_eggs"]["EX"]['raidtime'])
@@ -2239,6 +2246,9 @@ async def _exraid(ctx):
     raid_channel_overwrites = channel.overwrites
     meowth_overwrite = (Meowth.user, discord.PermissionOverwrite(send_messages = True))
     for overwrite in raid_channel_overwrites:
+        if isinstance(overwrite[0], discord.Role):
+            if overwrite[0].permissions.manage_server:
+                continue
         overwrite[1].send_messages = False
     raid_channel = await Meowth.create_channel(message.server, raid_channel_name, *raid_channel_overwrites, meowth_overwrite)
     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}?cache=no".format(str(egg_img))
@@ -2290,7 +2300,7 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
     if len(raid_info['raid_eggs']['EX']['pokemon']) == 1:
         await _eggassume("assume "+ get_name(raid_info['raid_eggs']['EX']['pokemon'][0]), raid_channel)
     now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=server_dict[raid_channel.server]['offset'])
-    await Meowth.send_message(raid_channel, content = _("Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <date and time>** so others can check it with **!timer**. **<date and time>** should look like this **{format}**, but set it to the date and time your invitation has.").format(member=message.author.mention, format=now.strftime('%B %d %I:%M %p')))
+    await Meowth.send_message(raid_channel, content = _("Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <date and time>** so others can check it with **!timer**. **<date and time>** should look like this **{format}**, but set it to the date and time your invitation has.").format(member=message.author.mention, format=now.strftime('%m/%d %I:%M %p')))
     event_loop.create_task(expiry_check(raid_channel))
 
 @Meowth.command(pass_context=True)
@@ -2451,9 +2461,6 @@ async def _eggassume(args, raid_channel):
         logger.info("Hatching Mention Failed - Trying alternative method: channel: {} (id: {}) - server: {} | Attempted mention: {}...".format(raid_channel.name,raid_channel.id,raid_channel.server.name,raid_message.content[:125]))
     gymhuntrgps = eggdetails['gymhuntrgps']
 
-    if config['allow_assume'][egglevel] == "False":
-        await Meowth.send_message(raid_channel, _("Meowth! **!raid assume** is not allowed in this level egg."))
-        return
     entered_raid = re.sub("[\@]", "", args.lstrip("assume").lstrip(" ").lower())
     entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid
     rgx = r"[^a-zA-Z0-9]"
