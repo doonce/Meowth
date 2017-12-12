@@ -327,7 +327,7 @@ async def expire_channel(channel):
     # else deleted the actual channel at some point.
 
     channel_exists = Meowth.get_channel(channel.id)
-    if channel_exists is None:
+    if channel_exists is None and Meowth.is_logged_in and not Meowth.is_closed:
         try:
             del server_dict[channel.server]['raidchannel_dict'][channel]
         except KeyError:
@@ -379,7 +379,7 @@ To reactivate the channel, use **!timerset** to set the timer again."""))
         # Also, if the channel got reactivated, don't do anything either.
 
         try:
-            if server_dict[channel.server]['raidchannel_dict'][channel]['active'] == False:
+            if server_dict[channel.server]['raidchannel_dict'][channel]['active'] == False and Meowth.is_logged_in and not Meowth.is_closed:
                 if dupechannel:
                     reportmsg = server_dict[channel.server]['raidchannel_dict'][channel]['raidreport']
                     try:
@@ -417,7 +417,7 @@ To reactivate the channel, use **!timerset** to set the timer again."""))
 
 
 async def channel_cleanup(loop=True):
-    while True:
+    while Meowth.is_logged_in and not Meowth.is_closed:
         global active_raids
         serverdict_chtemp = copy.deepcopy(server_dict)
         logger.info("Channel_Cleanup ------ BEGIN ------")
@@ -564,7 +564,7 @@ async def channel_cleanup(loop=True):
         continue
 
 async def server_cleanup(loop=True):
-    while True:
+    while Meowth.is_logged_in and not Meowth.is_closed:
         serverdict_srvtemp = copy.deepcopy(server_dict)
         logger.info("Server_Cleanup ------ BEGIN ------")
 
@@ -1839,7 +1839,7 @@ This channel will be deleted five minutes after the timer expires.""").format(po
 
 # Print raid timer
 async def print_raid_timer(channel):
-    now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=server_dict[channel.server]['offset'])
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[channel.server]['offset'])
     end = now + datetime.timedelta(seconds=server_dict[channel.server]['raidchannel_dict'][channel]['exp']-time.time())
     timerstr = ""
     if server_dict[channel.server]['raidchannel_dict'][channel]['type'] == 'egg':
@@ -1907,18 +1907,17 @@ async def timerset(ctx,timer):
 
     if checks.check_exraidchannel(ctx):
         if checks.check_eggchannel(ctx):
-            now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=server_dict[channel.server]['offset'])
+            now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[channel.server]['offset'])
             timer_split = message.clean_content.lower().split()
             del timer_split[0]
             try:
-                start = datetime.datetime.strptime(" ".join(timer_split)+" "+str(now.year), '%m/%d %I:%M %p %Y').replace(tzinfo=datetime.timezone.utc)
+                start = datetime.datetime.strptime(" ".join(timer_split)+" "+str(now.year), '%m/%d %I:%M %p %Y')
                 if start.month < now.month:
                     start = start.replace(year=now.year+1)
             except ValueError:
                 await Meowth.send_message(channel, _("Meowth! Your timer wasn't formatted correctly. Change your **!timerset** to match this format: **MM/DD HH:MM AM/PM**"))
             diff = start - now
             total = (diff.total_seconds() / 60)
-            end = start + datetime.timedelta(minutes=raid_info["raid_eggs"]["EX"]['raidtime'])
             if now <= start:
                 await _timerset(channel, total)
             elif now > start:
@@ -1931,7 +1930,7 @@ def _timercheck(time, maxtime):
 
 async def _timerset(raidchannel, exptime):
     server = raidchannel.server
-    now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=server_dict[server]['offset'])
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[server]['offset'])
     end = now + datetime.timedelta(minutes=exptime)
     # Update timestamp
     server_dict[server]['raidchannel_dict'][raidchannel]['exp'] = time.time() + (exptime * 60)
@@ -2299,7 +2298,7 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
 
     if len(raid_info['raid_eggs']['EX']['pokemon']) == 1:
         await _eggassume("assume "+ get_name(raid_info['raid_eggs']['EX']['pokemon'][0]), raid_channel)
-    now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=server_dict[raid_channel.server]['offset'])
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[raid_channel.server]['offset'])
     await Meowth.send_message(raid_channel, content = _("Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <date and time>** so others can check it with **!timer**. **<date and time>** should look like this **{format}**, but set it to the date and time your invitation has.").format(member=message.author.mention, format=now.strftime('%m/%d %I:%M %p')))
     event_loop.create_task(expiry_check(raid_channel))
 
@@ -2523,7 +2522,7 @@ async def _eggtoraid(entered_raid, raid_channel):
         raid_messageauthor = "<@"+raid_message.raw_mentions[0]+">"
         logger.info("Hatching Mention Failed - Trying alternative method: channel: {} (id: {}) - server: {} | Attempted mention: {}...".format(raid_channel.name,raid_channel.id,raid_channel.server.name,raid_message.content[:125]))
     gymhuntrgps = eggdetails['gymhuntrgps']
-    now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=server_dict[raid_channel.server]['offset'])
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[raid_channel.server]['offset'])
     end = now + datetime.timedelta(minutes=raid_info["raid_eggs"][egglevel]['raidtime'])
     raidexp = eggdetails['exp'] + 60 * raid_info['raid_eggs'][egglevel]['raidtime']
 
@@ -2801,7 +2800,7 @@ async def list(ctx):
                     activeraidnum += 1
 
             def list_output(r):
-                now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=server_dict[server]['offset'])
+                now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[server]['offset'])
                 end = now + datetime.timedelta(seconds=rc_d[r]['exp']-time.time())
                 output = ""
                 ctx_waitingcount = 0
@@ -2903,6 +2902,16 @@ async def here(ctx):
     Usage: !list here
     Works only in raid channels."""
     listmsg = await _waiting(ctx)
+    await Meowth.send_message(ctx.message.channel, listmsg)
+
+@list.command(pass_context=True)
+@checks.activeraidchannel()
+async def teams(ctx):
+    """List the number and users who are present at a raid.
+
+    Usage: !list here
+    Works only in raid channels."""
+    listmsg = await _teamlist(ctx)
     await Meowth.send_message(ctx.message.channel, listmsg)
 
 @Meowth.command(pass_context=True)
@@ -3087,9 +3096,82 @@ async def new(ctx):
         await Meowth.send_message(message.channel, content = _("Meowth! Someone has suggested a different location for the raid! Trainers {trainer_list}: make sure you are headed to the right place!").format(trainer_list=", ".join(otw_list)), embed = newembed)
         return
 
+async def _teamlist(ctx):
+    redlist = []
+    redmaybe = 0
+    redcoming = 0
+    redwaiting = 0
+    bluelist = []
+    bluemaybe = 0
+    bluecoming = 0
+    bluewaiting = 0
+    yellowlist = []
+    yellowmaybe = 0
+    yellowcoming = 0
+    yellowwaiting = 0
+    othermaybe = 0
+    othercoming = 0
+    otherwaiting = 0
+    teamliststr = ""
+    trainer_dict = copy.deepcopy(server_dict[ctx.message.server]['raidchannel_dict'][ctx.message.channel]['trainer_dict'])
+    for trainer in trainer_dict.keys():
+        if trainer_dict[trainer]['status'] =='maybe' or trainer_dict[trainer]['status'] =='omw' or trainer_dict[trainer]['status'] =='waiting':
+            user = ctx.message.server.get_member(trainer)
+            for role in user.roles:
+                if role.name == "mystic":
+                    bluelist.append(user.id)
+                elif role.name == "valor":
+                    redlist.append(user.id)
+                elif role.name =="instinct":
+                    yellowlist.append(user.id)
+        for trainer in redlist:
+            if trainer_dict[trainer]['status'] == "waiting":
+                redwaiting += 1
+                otherwaiting += trainer_dict[trainer]['count']-1
+            elif trainer_dict[trainer]['status'] == "omw":
+                redcoming += 1
+                othercoming += trainer_dict[trainer]['count']-1
+            elif trainer_dict[trainer]['status'] == "maybe":
+                redmaybe += 1
+                othermaybe += trainer_dict[trainer]['count']-1
+        for trainer in bluelist:
+            if trainer_dict[trainer]['status'] == "waiting":
+                bluewaiting += 1
+                otherwaiting += trainer_dict[trainer]['count']-1
+            elif trainer_dict[trainer]['status'] == "omw":
+                bluecoming += 1
+                othercoming += trainer_dict[trainer]['count']-1
+            elif trainer_dict[trainer]['status'] == "maybe":
+                bluemaybe += 1
+                othermaybe += trainer_dict[trainer]['count']-1
+        for trainer in yellowlist:
+            if trainer_dict[trainer]['status'] == "waiting":
+                yellowwaiting += 1
+                otherwaiting += trainer_dict[trainer]['count']-1
+            elif trainer_dict[trainer]['status'] == "omw":
+                yellowcoming += 1
+                othercoming += trainer_dict[trainer]['count']-1
+            elif trainer_dict[trainer]['status'] == "maybe":
+                yellowmaybe += 1
+                othermaybe += trainer_dict[trainer]['count']-1
+    if len(redlist) > 0:
+        teamliststr += _("{red_emoji} **{red_number} total,** {redmaybe} interested, {redcoming} coming, {redwaiting} waiting {red_emoji}\n").format(red_number=len(redlist), red_emoji=parse_emoji(ctx.message.server, config['team_dict']['valor']), redmaybe=redmaybe, redcoming=redcoming, redwaiting=redwaiting)
+    if len(bluelist) > 0:
+        teamliststr += _("{blue_emoji} **{blue_number} total,** {bluemaybe} interested, {bluecoming} coming, {bluewaiting} waiting {blue_emoji}\n").format(blue_number=len(bluelist), blue_emoji=parse_emoji(ctx.message.server, config['team_dict']['mystic']), bluemaybe=bluemaybe, bluecoming=bluecoming, bluewaiting=bluewaiting)
+    if len(yellowlist) > 0:
+        teamliststr += _("{yellow_emoji} **{yellow_number} total,** {yellowmaybe} interested, {yellowcoming} coming, {yellowwaiting} waiting {yellow_emoji}\n").format(yellow_number=len(yellowlist), yellow_emoji=parse_emoji(ctx.message.server, config['team_dict']['instinct']), yellowmaybe=yellowmaybe, yellowcoming=yellowcoming, yellowwaiting=yellowwaiting)
+    if (othermaybe+othercoming+otherwaiting) > 0:
+        teamliststr += _("{grey_emoji} **{grey_number} unknown,** {greymaybe} interested, {greycoming} coming, {greywaiting} waiting {grey_emoji}\n").format(grey_number=othermaybe+othercoming+otherwaiting, grey_emoji=parse_emoji(ctx.message.server, config['type_id_dict']['normal']), greymaybe=othermaybe, greycoming=othercoming, greywaiting=otherwaiting)
+    if (len(redlist)+len(bluelist)+len(yellowlist)) > 0:
+        listmsg = _("Meowth! Team numbers for the raid:\n{}").format(teamliststr)
+    else:
+        listmsg = _("Meowth! I couldn't find any trainer with a team!")
+
+    return listmsg
+
 async def _interest(ctx):
     ctx_maybecount = 0
-    now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=server_dict[ctx.message.channel.server]['offset'])
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[ctx.message.channel.server]['offset'])
     # Grab all trainers who are maybe and sum
     # up their counts
     trainer_dict = copy.deepcopy(server_dict[ctx.message.server]['raidchannel_dict'][ctx.message.channel]['trainer_dict'])
@@ -3119,7 +3201,7 @@ async def _interest(ctx):
 async def _otw(ctx):
 
     ctx_omwcount = 0
-    now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=server_dict[ctx.message.channel.server]['offset'])
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[ctx.message.channel.server]['offset'])
     # Grab all trainers who are :omw: and sum
     # up their counts
     trainer_dict = copy.deepcopy(server_dict[ctx.message.server]['raidchannel_dict'][ctx.message.channel]['trainer_dict'])
@@ -3148,7 +3230,7 @@ async def _otw(ctx):
 async def _waiting(ctx):
 
     ctx_waitingcount = 0
-    now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=server_dict[ctx.message.channel.server]['offset'])
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[ctx.message.channel.server]['offset'])
     # Grab all trainers who are :here: and sum
     # up their counts
     trainer_dict = copy.deepcopy(server_dict[ctx.message.server]['raidchannel_dict'][ctx.message.channel]['trainer_dict'])
