@@ -303,7 +303,7 @@ async def expiry_check(channel):
                                         active_raids.remove(channel)
                                     except ValueError:
                                         logger.info("Expire_Channel - Channel Removal From Active Raid Failed - Not in List - "+channel.name)
-                                    await _eggtoraid(pokemon.lower(), channel)
+                                    await _eggtoraid(pokemon.lower(), channel, huntr=False)
                                     break
                             event_loop.create_task(expire_channel(channel))
                             try:
@@ -1707,9 +1707,11 @@ async def _raid(message, huntr):
     if not huntr:
         raid_split = message.clean_content.lower().split()
         gymhuntrgps = False
+        gymhuntrmoves = False
     else:
         raid_split = huntr.split("|")[0].lower().split()
         gymhuntrgps = huntr.split("|")[1]
+        gymhuntrmoves = huntr.split("|")[2]
     del raid_split[0]
     if fromegg is True:
         eggdetails = server_dict[message.server.id]['raidchannel_dict'][message.channel.id]
@@ -1719,14 +1721,14 @@ async def _raid(message, huntr):
                 await Meowth.send_message(message.channel, _("Meowth! **!raid assume** is not allowed in this level egg."))
                 return
             if server_dict[message.channel.server.id]['raidchannel_dict'][message.channel.id]['active'] == False:
-                await _eggtoraid(raid_split[1].lower(), message.channel)
+                await _eggtoraid(raid_split[1].lower(), message.channel, huntr=False)
                 return
             else:
                 await _eggassume(" ".join(raid_split), message.channel)
                 return
         else:
             if server_dict[message.channel.server.id]['raidchannel_dict'][message.channel.id]['active'] == False:
-                await _eggtoraid(" ".join(raid_split).lower(), message.channel)
+                await _eggtoraid(" ".join(raid_split).lower(), message.channel, huntr=False)
                 return
             else:
                 await Meowth.send_message(message.channel, _("Meowth! Please wait until the egg has hatched before changing it to an open raid!"))
@@ -1756,7 +1758,7 @@ async def _raid(message, huntr):
     else:
         raidexp = False
 
-    if raidexp is not False:
+    if raidexp and not huntr:
         if _timercheck(raidexp, raid_info["raid_eggs"][get_level(entered_raid)]['raidtime']):
             await Meowth.send_message(message.channel, _("Meowth...that's too long. Level {raidlevel} raids currently last no more than {raidtime} minutes...").format(raidlevel=get_level(entered_raid), raidtime=raid_info["raid_eggs"][get_level(entered_raid)]['raidtime']))
             return
@@ -1794,7 +1796,7 @@ async def _raid(message, huntr):
     raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_raid.capitalize(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),inline=True))
     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(message.server, get_weaknesses(entered_raid))),inline=True)
     if huntr:
-        raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
+        raid_embed.add_field(name=gymhuntrmoves, value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
     raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
     raid_embed.set_thumbnail(url=raid_img_url)
     raidreport = await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}").format(pokemon=entered_raid.capitalize(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention),embed=raid_embed)
@@ -2057,18 +2059,22 @@ async def on_message(message):
                 ghdesc = message.embeds[0]['description'].splitlines()
                 ghgym = ghdesc[0][2:-3]
                 ghpokeid = ghdesc[1]
+                ghmoves = "\u200b"
+                if len(ghdesc[2].split()) > 3:
+                    ghmoves = ghdesc[2].split("**Moves:** ")[1]
                 ghtime = ghdesc[3].split(" ")
                 ghhour = ghtime[2]
-                ghminute = ghtime[4].zfill(2)
-                huntr = "!raid {0} {1} {2}:{3}|{4}".format(ghpokeid, ghgym, ghhour, ghminute, ghgps)
+                ghminute = int(ghtime[4].zfill(2))+2
+                huntr = "!raid {0} {1} {2}:{3}|{4}|{5}".format(ghpokeid, ghgym, ghhour, ghminute, ghgps, ghmoves)
                 await Meowth.delete_message(message)
                 for channelid in server_dict[message.server.id]['raidchannel_dict']:
                     try:
                         if server_dict[message.server.id]['raidchannel_dict'][channelid]['gymhuntrgps'] == ghgps:
                             ghduplicate = True
+                            channel = Meowth.get_channel(channelid)
                             if server_dict[message.server.id]['raidchannel_dict'][channelid]['type'] == 'egg':
-                                channel = Meowth.get_channel(channelid)
-                                await _eggtoraid(ghpokeid.lower(), channel)
+                                await _eggtoraid(ghpokeid.lower(), channel, huntr)
+                            await Meowth.send_message(channel, _("This {pokemon}'s moves are: **{moves}**").format(pokemon=ghpokeid, moves=ghmoves))
                             break
                     except KeyError:
                         pass
@@ -2081,10 +2087,10 @@ async def on_message(message):
                     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the raid!"),url=_("https://www.google.com/maps/dir/Current+Location/{0}").format(ghgps),colour=message.server.me.colour)
                     raid_number = pkmn_info['pokemon_list'].index(ghpokeid.lower()) + 1
                     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png".format(str(raid_number).zfill(3))
+                    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}\n{moves}").format(pokemon=ghpokeid.capitalize(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),moves=ghmoves),inline=True)
+                    raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(message.server, get_weaknesses(ghpokeid.lower()))),inline=True)
                     raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details=ghgym),inline=True)
                     raid_embed.add_field(name="**Remaining:**", value=_("{minutes} mins").format(minutes=ghminute),inline=True)
-                    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=ghpokeid.capitalize(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),inline=True))
-                    raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(message.server, get_weaknesses(ghpokeid.lower()))),inline=True)
                     raid_embed.set_thumbnail(url=raid_img_url)
                     raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
                     raidreport = await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}").format(pokemon=raid.mention, member=message.author.mention, location_details=ghgym),embed=raid_embed)
@@ -2103,7 +2109,7 @@ async def on_message(message):
                 ghgym = ghdesc[0][2:-3]
                 ghtime = ghdesc[1].split(" ")
                 ghhour = ghtime[2]
-                ghminute = ghtime[4].zfill(2)
+                ghminute = int(ghtime[4].zfill(2))+2
                 huntr = "!raidegg {0} {1} {2}:{3}|{4}".format(ghegglevel, ghgym, ghhour, ghminute, ghgps)
                 await Meowth.delete_message(message)
                 for channelid in server_dict[message.server.id]['raidchannel_dict']:
@@ -2373,7 +2379,7 @@ async def _raidegg(message, huntr):
     else:
         raidexp = False
 
-    if raidexp is not False:
+    if raidexp and not huntr:
         if _timercheck(raidexp, raid_info["raid_eggs"][str(egg_level)]['hatchtime']):
             await Meowth.send_message(message.channel, _("Meowth...that's too long. Level {raidlevel} Raid Eggs currently last no more than {hatchtime} minutes...").format(raidlevel=egg_level,hatchtime=raid_info["raid_eggs"][str(egg_level)]['hatchtime']))
             return
@@ -2522,7 +2528,7 @@ async def _eggassume(args, raid_channel):
     server_dict[raid_channel.server.id]['raidchannel_dict'][raid_channel.id] = eggdetails
     return
 
-async def _eggtoraid(entered_raid, raid_channel):
+async def _eggtoraid(entered_raid, raid_channel, huntr):
     eggdetails = server_dict[raid_channel.server.id]['raidchannel_dict'][raid_channel.id]
     egglevel = eggdetails['egglevel']
     reportcitychannel = Meowth.get_channel(eggdetails['reportcity'])
@@ -2606,7 +2612,10 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
     raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_raid.capitalize(),pokemonnumber=str(raid_number),type="".join(get_type(raid_channel.server, raid_number)),inline=True))
     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(raid_channel.server, get_weaknesses(entered_raid))),inline=True)
     if gymhuntrgps:
-        raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
+        gymhuntrmoves = "\u200b"
+        if huntr:
+            gymhuntrmoves = huntr.split("|")[2]
+        raid_embed.add_field(name=gymhuntrmoves, value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
     raid_embed.set_footer(text=_("Reported by @{author}").format(author=raid_messageauthor.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=raid_messageauthor, format="jpg", size=32)))
     raid_embed.set_thumbnail(url=raid_img_url)
     await Meowth.edit_channel(raid_channel, name=raid_channel_name, topic=end.strftime("Ends on %B %d at %I:%M %p (%H:%M)"))
