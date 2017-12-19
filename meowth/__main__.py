@@ -2064,7 +2064,7 @@ async def on_message(message):
                     ghmoves = ghdesc[2].split("**Moves:** ")[1]
                 ghtime = ghdesc[3].split(" ")
                 ghhour = ghtime[2]
-                ghminute = int(ghtime[4].zfill(2))+2
+                ghminute = int(ghtime[4].zfill(2))
                 huntr = "!raid {0} {1} {2}:{3}|{4}|{5}".format(ghpokeid, ghgym, ghhour, ghminute, ghgps, ghmoves)
                 await Meowth.delete_message(message)
                 for channelid in server_dict[message.server.id]['raidchannel_dict']:
@@ -2109,7 +2109,7 @@ async def on_message(message):
                 ghgym = ghdesc[0][2:-3]
                 ghtime = ghdesc[1].split(" ")
                 ghhour = ghtime[2]
-                ghminute = int(ghtime[4].zfill(2))+2
+                ghminute = int(ghtime[4].zfill(2))
                 huntr = "!raidegg {0} {1} {2}:{3}|{4}".format(ghegglevel, ghgym, ghhour, ghminute, ghgps)
                 await Meowth.delete_message(message)
                 for channelid in server_dict[message.server.id]['raidchannel_dict']:
