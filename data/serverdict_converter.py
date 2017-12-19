@@ -22,10 +22,9 @@ for server in server_dict_old:
 		server_dict_new[server.id]['want_channel_list'].append(channel.id)
 
 	for channel in server_dict_old[server]['raidchannel_dict']:
-		reportcity = discord.utils.get(server.channels, name=server_dict_old[server]['raidchannel_dict'][channel]['reportcity'])
 		server_dict_new[server.id]['raidchannel_dict'][channel.id] = {
 			'address': server_dict_old[server]['raidchannel_dict'][channel]['address'],
-			'reportcity': reportcity.id,
+			'reportcity': server_dict_old[server]['raidchannel_dict'][channel]['reportcity'],
 			'trainer_dict' : server_dict_old[server]['raidchannel_dict'][channel]['trainer_dict'],
 			'exp': server_dict_old[server]['raidchannel_dict'][channel]['exp'],
 			'manual_timer' : server_dict_old[server]['raidchannel_dict'][channel]['manual_timer'],
