@@ -41,7 +41,7 @@ def _get_prefix(bot,message):
     server = message.server
     try:
         set_prefix = bot.server_dict[server.id]["prefix"]
-    except KeyError:
+    except (KeyError, AttributeError):
         set_prefix = None
     default_prefix = bot.config["default_prefix"]
     return set_prefix or default_prefix
@@ -236,9 +236,6 @@ def parse_emoji(server, emoji_string):
         emoji = discord.utils.get(server.emojis, name=emoji_string.strip(':'))
         if emoji:
             emoji_string = "<:{0}:{1}>".format(emoji.name, emoji.id)
-        else:
-            emoji_string = "{0}".format(emoji_string.strip(':').capitalize())
-
     return emoji_string
 
 def print_emoji_name(server, emoji_string):
@@ -1491,7 +1488,7 @@ async def team(ctx):
     else:
         try:
             await Meowth.add_roles(ctx.message.author, role)
-            await Meowth.send_message(ctx.message.channel, _("Meowth! Added {member} to Team {team_name}! {team_emoji}").format(member=ctx.message.author.mention, team_name=role.name.capitalize(), team_emoji=config['team_dict'][entered_team]))
+            await Meowth.send_message(ctx.message.channel, _("Meowth! Added {member} to Team {team_name}! {team_emoji}").format(member=ctx.message.author.mention, team_name=role.name.capitalize(), team_emoji=parse_emoji(ctx.message.server, config['team_dict'][entered_team])))
         except discord.Forbidden:
             await Meowth.send_message(ctx.message.channel, _("Meowth! I can't add roles!"))
 
@@ -1515,6 +1512,7 @@ async def want(ctx):
     want_split = message.clean_content.lower().split()
     del want_split[0]
     entered_want = " ".join(want_split)
+    entered_want = get_name(entered_want).lower() if entered_want.isdigit() else entered_want
     rgx = r"[^a-zA-Z0-9]"
     pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_want)), None)
     if pkmn_match:
@@ -1556,6 +1554,7 @@ async def unwant(ctx):
         unwant_split = message.clean_content.lower().split()
         del unwant_split[0]
         entered_unwant = " ".join(unwant_split)
+        entered_unwant = get_name(entered_unwant).lower() if entered_unwant.isdigit() else entered_unwant
         rgx = r"[^a-zA-Z0-9]"
         pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_unwant)), None)
         if pkmn_match:
@@ -2758,12 +2757,47 @@ async def cancel(ctx):
 
 @Meowth.command(pass_context=True)
 @checks.activeraidchannel()
+async def starttime(ctx):
+    """Set a time for a group to start a raid
+
+    Usage: !starttime [HH:MM AM/PM]
+    Works only in raid channels. Sends a message and sets a group start time that
+    can be seen using !starttime (without a time). One start time is allowed at
+    a time and is visibile in !list output. Cleared with !starting."""
+    message = ctx.message
+    server = message.server
+    channel = message.channel
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[server.id]['offset'])
+    start_split = message.clean_content.lower().split()
+    del start_split[0]
+    if len(start_split) > 0:
+        try:
+            start = datetime.datetime.strptime(" ".join(start_split)+" "+str(now.month)+str(now.day)+str(now.year), '%I:%M %p %m%d%Y')
+        except ValueError:
+            await Meowth.send_message(channel, _("Meowth! Your start time wasn't formatted correctly. Change your **!starttime** to match this format: **HH:MM AM/PM**"))
+        if now <= start:
+            server_dict[server.id]['raidchannel_dict'][channel.id]['starttime'] = start
+            await Meowth.send_message(channel, _("Meowth! The current start time has been set to: **{starttime}**").format(starttime=start.strftime("%I:%M %p")))
+        elif now > start:
+            await Meowth.send_message(channel, _("Meowth! Please enter a time in the future."))
+    else:
+        try:
+            starttime = server_dict[server.id]['raidchannel_dict'][channel.id]['starttime']
+            if starttime < now:
+                del server_dict[server.id]['raidchannel_dict'][channel.id]['starttime']
+                await Meowth.send_message(channel, _("Meowth! No start time has been set, set one with **!starttime HH:MM AM/PM**!"))
+                return
+            await Meowth.send_message(channel, _("Meowth! The current start time is: **{starttime}**").format(starttime=starttime.strftime("%I:%M %p")))
+        except KeyError:
+            await Meowth.send_message(channel, _("Meowth! No start time has been set, set one with **!starttime HH:MM AM/PM**!"))
+
+@Meowth.command(pass_context=True)
+@checks.activeraidchannel()
 async def starting(ctx):
     """Signal that a raid is starting.
 
     Usage: !starting
     Works only in raid channels. Sends a message and clears the waiting list. Users who are waiting
-
     for a second group must reannounce with the :here: emoji or !here."""
 
     ctx_startinglist = []
@@ -2777,13 +2811,21 @@ async def starting(ctx):
             user = await Meowth.get_user_info(trainer)
             ctx_startinglist.append(user.mention)
             id_startinglist.append(user.id)
+
     # Go back and delete the trainers from the waiting list
     for trainer in id_startinglist:
         del trainer_dict[trainer]
     server_dict[ctx.message.server.id]['raidchannel_dict'][ctx.message.channel.id]['trainer_dict'] = trainer_dict
-
-
-    starting_str = _("Meowth! The group that was waiting is starting the raid! Trainers {trainer_list}, please respond with {here_emoji} or **!here** if you are waiting for another group!").format(trainer_list=", ".join(ctx_startinglist), here_emoji=parse_emoji(ctx.message.server, config['here_id']))
+    try:
+        starttime = server_dict[ctx.message.server.id]['raidchannel_dict'][ctx.message.channel.id]['starttime']
+        timestr = " to start at **{}** ".format(starttime.strftime("%I:%M %p"))
+        del server_dict[ctx.message.server.id]['raidchannel_dict'][ctx.message.channel.id]['starttime']
+    except KeyError:
+        starttime = False
+        timestr = " "
+    starting_str = _("Meowth! The group that was waiting{timestr}is starting the raid! Trainers {trainer_list}, please respond with {here_emoji} or **!here** if you are waiting for another group!").format(timestr=timestr,trainer_list=", ".join(ctx_startinglist), here_emoji=parse_emoji(ctx.message.server, config['here_id']))
+    if starttime:
+        starting_str += "\n\nThe start time has also been cleared, new groups can set a new start time wtih **!starttime**."
     if len(ctx_startinglist) == 0:
         starting_str = _("Meowth! How can you start when there's no one waiting at this raid!?")
     await Meowth.send_message(ctx.message.channel, starting_str)
@@ -2802,6 +2844,7 @@ async def list(ctx):
         listmsg = ""
         server = ctx.message.server
         channel = ctx.message.channel
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[server.id]['offset'])
         if checks.check_citychannel(ctx):
             activeraidnum = 0
             cty = channel.name
@@ -2827,9 +2870,9 @@ async def list(ctx):
 
             def list_output(r):
                 rchan = Meowth.get_channel(r)
-                now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[server.id]['offset'])
                 end = now + datetime.timedelta(seconds=rc_d[r]['exp']-time.time())
                 output = ""
+                start_str = ""
                 ctx_waitingcount = 0
                 ctx_omwcount = 0
                 ctx_maybecount = 0
@@ -2844,6 +2887,13 @@ async def list(ctx):
                     assumed_str = " (assumed)"
                 else:
                     assumed_str = ""
+                try:
+                    starttime = rc_d[r]['starttime']
+                    if starttime > now:
+                        start_str = " Next group: **{}**".format(starttime.strftime("%I:%M %p"))
+                except KeyError:
+                    starttime = False
+                    pass
                 if rc_d[r]['egglevel'].isdigit() and int(rc_d[r]['egglevel']) > 0:
                     expirytext = " - Hatches: {expiry}{is_assumed}".format(expiry=end.strftime("%I:%M %p (%H:%M)"), is_assumed=assumed_str)
                 elif rc_d[r]['egglevel'] == "EX" or rc_d[r]['type'] == "exraid":
@@ -2851,7 +2901,7 @@ async def list(ctx):
                 else:
                     expirytext = " - Expiry: {expiry}{is_assumed}".format(expiry=end.strftime("%I:%M %p (%H:%M)"), is_assumed=assumed_str)
                 output += (_("    {raidchannel}{expiry_text}\n").format(raidchannel=rchan.mention, expiry_text=expirytext))
-                output += (_("    {interestcount} interested, {comingcount} coming, {herecount} here.\n").format(raidchannel=rchan.mention, interestcount=ctx_maybecount, comingcount=ctx_omwcount, herecount=ctx_waitingcount))
+                output += (_("    {interestcount} interested, {comingcount} coming, {herecount} here.{start_str}\n").format(raidchannel=rchan.mention, interestcount=ctx_maybecount, comingcount=ctx_omwcount, herecount=ctx_waitingcount, start_str=start_str))
                 return output
 
             if activeraidnum:
@@ -2883,16 +2933,25 @@ async def list(ctx):
 
         if checks.check_raidchannel(ctx):
             if checks.check_raidactive(ctx):
+                starttime = False
+                try:
+                    starttime = server_dict[server.id]['raidchannel_dict'][channel.id]['starttime']
+                except KeyError:
+                    pass
                 rc_d = server_dict[server.id]['raidchannel_dict'][channel.id]
                 if rc_d['type'] == 'egg' and rc_d['pokemon'] == '':
                     listmsg += await _interest(ctx)
                     listmsg += "\n"
                     listmsg += await print_raid_timer(channel)
+                    if starttime and starttime > now:
+                        listmsg += "\nMeowth! The next group will be starting at {}".format(starttime.strftime("%I:%M %p"))
                 else:
                     listmsg += await _interest(ctx)
                     listmsg += "\n" + await _otw(ctx)
                     listmsg += "\n" + await _waiting(ctx)
                     listmsg += "\n" + await print_raid_timer(channel)
+                    if starttime and starttime > now:
+                        listmsg += "\nMeowth! The next group will be starting at **{}**".format(starttime.strftime("%I:%M %p"))
                 await Meowth.send_message(channel, listmsg)
                 return
 
@@ -3187,6 +3246,7 @@ async def _teamlist(ctx):
         elif trainer_dict[trainer]['status'] == "maybe":
             yellowmaybe += 1
             othermaybe += trainer_dict[trainer]['count']-1
+
     if len(redlist) > 0:
         teamliststr += _("{red_emoji} **{red_number} total,** {redmaybe} interested, {redcoming} coming, {redwaiting} waiting {red_emoji}\n").format(red_number=len(redlist), red_emoji=parse_emoji(ctx.message.server, config['team_dict']['valor']), redmaybe=redmaybe, redcoming=redcoming, redwaiting=redwaiting)
     if len(bluelist) > 0:
@@ -3195,6 +3255,8 @@ async def _teamlist(ctx):
         teamliststr += _("{yellow_emoji} **{yellow_number} total,** {yellowmaybe} interested, {yellowcoming} coming, {yellowwaiting} waiting {yellow_emoji}\n").format(yellow_number=len(yellowlist), yellow_emoji=parse_emoji(ctx.message.server, config['team_dict']['instinct']), yellowmaybe=yellowmaybe, yellowcoming=yellowcoming, yellowwaiting=yellowwaiting)
     if (othermaybe+othercoming+otherwaiting) > 0:
         teamliststr += _("{grey_emoji} **{grey_number} unknown,** {greymaybe} interested, {greycoming} coming, {greywaiting} waiting {grey_emoji}\n").format(grey_number=othermaybe+othercoming+otherwaiting, grey_emoji=parse_emoji(ctx.message.server, config['type_id_dict']['normal']), greymaybe=othermaybe, greycoming=othercoming, greywaiting=otherwaiting)
+
+
     if (len(redlist)+len(bluelist)+len(yellowlist)) > 0:
         listmsg = _("Meowth! Team numbers for the raid:\n{}").format(teamliststr)
     else:
