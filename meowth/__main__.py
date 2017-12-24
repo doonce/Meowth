@@ -1620,9 +1620,11 @@ async def _wild(message, huntr):
     if not huntr:
         wild_split = message.clean_content.lower().split()
         huntrexp = ""
+        huntrweather = "\u200b"
     else:
         wild_split = huntr.split("|")[0].lower().split()
         huntrexp = huntr.split("|")[1]
+        huntrweather = "Weather: "+huntr.split("|")[2]
     del wild_split[0]
     if len(wild_split) <= 1:
         await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**"))
@@ -1667,7 +1669,7 @@ async def _wild(message, huntr):
         wild_embed = discord.Embed(title=_("Meowth! Click here for exact directions to the wild {pokemon}!").format(pokemon=entered_wild.capitalize()),url=wild_gmaps_link,colour=message.server.me.colour)
         wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.capitalize(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
         wild_embed.add_field(name="**Despawns in:**", value=_("{huntrexp}").format(huntrexp=huntrexp),inline=True)
-        wild_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://pokehuntr.com/#{huntrurl}).").format(huntrurl=wild_details), inline=False)
+        wild_embed.add_field(name=huntrweather, value=_("Perform a scan to help find more by clicking [here](https://pokehuntr.com/#{huntrurl}).").format(huntrurl=wild_details), inline=False)
     wild_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
     wild_embed.set_thumbnail(url=wild_img_url)
     wildreportmsg = await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: {location_details}").format(pokemon=wild.mention, member=message.author.mention, location_details=wild_details),embed=wild_embed)
@@ -1807,11 +1809,12 @@ To update your status, choose from the following commands: **!maybe**, **!coming
 Example: `!coming 5`
 
 To see the list of trainers who have given their status:
-**!list interested**, **!list coming**, **!list here** or use just **!list** to see all lists.
+**!list interested**, **!list coming**, **!list here** or use just **!list** to see all lists. Use **!list teams** to see team distribution.
 
 Sometimes I'm not great at directions, but I'll correct my directions if anybody sends me a maps link or uses **!location new <address>**. You can see the location of a raid by using **!location**
 
 You can set the time remaining with **!timerset <minutes>** and access this with **!timer**.
+You can set the start time with **!starttime [HH:MM AM/PM]** and access this with **!starttime**.
 
 Message **!starting** when the raid is beginning to clear the raid's 'here' list.
 
@@ -2140,8 +2143,10 @@ async def on_message(message):
         if message.embeds:
             hlocation = message.embeds[0]['url'].split("#")[1]
             hpokeid = message.embeds[0]['title'].split(" ")[2]
-            hexpire = message.embeds[0]['description'].split(": ")[1][:-1]
-            huntr = "!wild {0} {1}|{2}".format(hpokeid, hlocation, hexpire)
+            hdesc = message.embeds[0]['description'].splitlines()
+            hexpire = hdesc[2].split(": ")[1][:-1]
+            hweather = hdesc[3].split(": ")[1][1:-1]
+            huntr = "!wild {0} {1}|{2}|{3}".format(hpokeid, hlocation, hexpire, hweather)
             await Meowth.delete_message(message)
             await _wild(message, huntr)
             return
@@ -2287,18 +2292,15 @@ async def _exraid(ctx):
 
     raidmsg = _("""Meowth! EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here after using **!invite** to gain access!
 
-To update your status, choose from the following commands:
-**!interested, !coming, !here, !cancel**
-If you are bringing more than one trainer/account, add the number of accounts total on your first status update.
+To update your status, choose from the following commands: **!maybe**, **!coming**, **!here**, **!cancel**. If you are bringing more than one trainer/account, add in the number of accounts total on your first status update.
 Example: `!coming 5`
 
 To see the list of trainers who have given their status:
-**!list interested, !list coming, !list here**
-Alternatively **!list** by itself will show all of the above.
+**!list interested**, **!list coming**, **!list here** or use just **!list** to see all lists. Use **!list teams** to see team distribution.
 
-**!location** will show the current raid location.
-**!location new <address>** will let you correct the raid address.
-Sending a Google Maps link will also update the raid location.
+Sometimes I'm not great at directions, but I'll correct my directions if anybody sends me a maps link or uses **!location new <address>**. You can see the location of a raid by using **!location**
+
+You can set the start time with **!starttime [HH:MM AM/PM]** and access this with **!starttime**.
 
 Message **!starting** when the raid is beginning to clear the raid's 'here' list.""").format(member=message.author.mention, citychannel=channel.mention, location_details=raid_details)
     raidmessage = await Meowth.send_message(raid_channel, content = raidmsg, embed=raid_embed)
@@ -2428,11 +2430,12 @@ async def _raidegg(message, huntr):
 Message **!maybe** if you're interested in attending. If you are bringing more than one trainer/account, add in the number at the end of the command.
 Example: `!maybe 5`
 
-Use **!list interested** to see the list of trainers who are interested.
+Use **!list interested** to see the list of trainers who are interested or use just **!list** to see all lists. Use **!list teams** to see team distribution.
 
 Sometimes I'm not great at directions, but I'll correct my directions if anybody sends me a maps link or uses **!location new <address>**. You can see the location of a raid by using **!location**
 
 You can set the time until hatch with **!timerset <minutes>** and access this with **!timer**.
+You can set the start time with **!starttime [HH:MM AM/PM]** and access this with **!starttime**.
 
 Message **!raid <pokemon>** to update this channel into an open raid.
 Message **!raid assume <pokemon>** to have the channel auto-update into an open raid.
@@ -2556,11 +2559,12 @@ To update your status, choose from the following commands: **!maybe**, **!coming
 Example: `!coming 5`
 
 To see the list of trainers who have given their status:
-**!list interested**, **!list coming**, **!list here** or use just **!list** to see all lists.
+**!list interested**, **!list coming**, **!list here** or use just **!list** to see all lists. Use **!list teams** to see team distribution.
 
 Sometimes I'm not great at directions, but I'll correct my directions if anybody sends me a maps link or uses **!location new <address>**. You can see the location of a raid by using **!location**
 
 You can set the time remaining with **!timerset <minutes>** and access this with **!timer**.
+You can set the start time with **!starttime [HH:MM AM/PM]** and access this with **!starttime**.
 
 Message **!starting** when the raid is beginning to clear the raid's 'here' list.""").format(member= raid_messageauthor.mention, citychannel=reportcitychannel.mention, pokemon=entered_raid.capitalize(), location_details=egg_address)
     elif egglevel == "EX":
@@ -2568,18 +2572,15 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
         raidreportcontent = _("Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. Use the **!invite** command to gain access and coordinate in {raid_channel}").format(pokemon=entered_raid.capitalize(), location_details=egg_address, raid_channel=raid_channel.mention)
         raidmsg = _("""Meowth! {pokemon} EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here after using **!invite** to gain access!
 
-To update your status, choose from the following commands:
-**!interested, !coming, !here, !cancel**
-If you are bringing more than one trainer/account, add the number of accounts total on your first status update.
+To update your status, choose from the following commands: **!maybe**, **!coming**, **!here**, **!cancel**. If you are bringing more than one trainer/account, add in the number of accounts total on your first status update.
 Example: `!coming 5`
 
 To see the list of trainers who have given their status:
-**!list interested, !list coming, !list here**
-Alternatively **!list** by itself will show all of the above.
+**!list interested**, **!list coming**, **!list here** or use just **!list** to see all lists. Use **!list teams** to see team distribution.
 
-**!location** will show the current raid location.
-**!location new <address>** will let you correct the raid address.
-Sending a Google Maps link will also update the raid location.
+Sometimes I'm not great at directions, but I'll correct my directions if anybody sends me a maps link or uses **!location new <address>**. You can see the location of a raid by using **!location**
+
+You can set the start time with **!starttime [HH:MM AM/PM]** and access this with **!starttime**.
 
 Message **!starting** when the raid is beginning to clear the raid's 'here' list.""").format(pokemon=entered_raid.capitalize(), member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, location_details=egg_address)
     entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid
@@ -2773,13 +2774,15 @@ async def starttime(ctx):
     rc_d = server_dict[server.id]['raidchannel_dict'][channel.id]
     if rc_d['type'] == "egg" and rc_d['egglevel'].isdigit():
         egglevel = rc_d['egglevel']
-        maxtime = ((rc_d['exp'] - time.time())/60) + raid_info['raid_eggs'][egglevel]['raidtime']
+        mintime = (rc_d['exp'] - time.time())/60
+        maxtime = mintime + raid_info['raid_eggs'][egglevel]['raidtime']
     elif rc_d['type'] == "raid":
         egglevel = get_level(rc_d['pokemon'])
         maxtime = (rc_d['exp'] - time.time())/60
     elif rc_d['type'] == "exraid" or rc_d['egglevel'] == "EX":
         egglevel = "EX"
-        maxtime = (rc_d['exp'] - time.time())/60
+        mintime = (rc_d['exp'] - time.time())/60
+        maxtime = mintime  + raid_info['raid_eggs'][egglevel]['raidtime']
     del start_split[0]
     if len(start_split) > 0:
         try:
@@ -2789,8 +2792,8 @@ async def starttime(ctx):
         try:
             start = datetime.datetime.strptime(" ".join(start_split)+" "+str(now.month)+str(now.day)+str(now.year), '%I:%M %p %m%d%Y')
             if egglevel == "EX":
-                endtime = datetime.datetime.fromtimestamp(rc_d['exp'])
-                start = start + datetime.timedelta(days=(endtime - start).days)
+                hatch = datetime.datetime.utcfromtimestamp(rc_d['exp']) + datetime.timedelta(hours=server_dict[server.id]['offset'])
+                start = start.replace(year=hatch.year, month=hatch.month, day=hatch.day)
         except ValueError:
             await Meowth.send_message(channel, _("Meowth! Your start time wasn't formatted correctly. Change your **!starttime** to match this format: **HH:MM AM/PM**"))
             return
@@ -2798,6 +2801,9 @@ async def starttime(ctx):
         total = (diff.total_seconds() / 60)
         if total > maxtime:
             await Meowth.send_message(channel, _("Meowth! The raid will be over before that...."))
+            return
+        if total < mintime:
+            await Meowth.send_message(channel, "Meowth! The egg will not hatch by then!")
             return
         if now > start:
             await Meowth.send_message(channel, _("Meowth! Please enter a time in the future."))
