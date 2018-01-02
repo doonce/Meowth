@@ -2192,7 +2192,7 @@ async def on_message(message):
             return
         return
     if message.server is not None:
-        raid_status = server_dict[message.server.id]['raidchannel_dict'].get(message.channel,None)
+        raid_status = server_dict[message.server.id]['raidchannel_dict'].get(message.channel.id,None)
         if raid_status is not None:
             if server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['active']:
                 trainer_dict = server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['trainer_dict']
