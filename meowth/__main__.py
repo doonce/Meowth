@@ -359,7 +359,7 @@ If this was in error, reset the raid with **!timerset**"""))
                 trainer_dict = copy.deepcopy(server_dict[channel.server.id]['raidchannel_dict'][channel.id]['trainer_dict'])
                 for trainer in trainer_dict.keys():
                     if trainer_dict[trainer]['status']=='maybe':
-                        user = await Meowth.get_user_info(trainer)
+                        user = channel.server.get_member(trainer)
                         maybe_list.append(user.mention)
                 await Meowth.send_message(channel, _("""**This egg has hatched!**\n\n...or the time has just expired. Trainers {trainer_list}: Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**. This channel will be deactivated until I get an update and I'll delete it in 15 minutes if I don't hear anything.""").format(trainer_list=", ".join(maybe_list)))
             delete_time = server_dict[server.id]['raidchannel_dict'][channel.id]['exp'] + (15 * 60) - time.time()
@@ -2257,13 +2257,16 @@ async def on_message(message):
                     trainer_dict = copy.deepcopy(server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['trainer_dict'])
                     for trainer in trainer_dict.keys():
                         if trainer_dict[trainer]['status']=='omw':
-                            user = await Meowth.get_user_info(trainer)
+                            user = message.server.get_member(trainer)
                             otw_list.append(user.mention)
                     await Meowth.send_message(message.channel, content = _("Meowth! Someone has suggested a different location for the raid! Trainers {trainer_list}: make sure you are headed to the right place!").format(trainer_list=", ".join(otw_list)), embed = newembed)
                     return
 
-    messagelist = message.content.split(" ")
-    message.content = messagelist.pop(0).lower() + " " + " ".join(messagelist)
+    if message.content.startswith(_get_prefix(Meowth, message)):
+        messagelist = message.content.split(" ")
+        firstsplit = re.split("\n|\r", messagelist.pop(0))
+        command = firstsplit.pop(0).lower()
+        message.content = command + "\n" + "\n".join(firstsplit) + " " + " ".join(messagelist)
     await Meowth.process_commands(message)
 
 @Meowth.command(pass_context=True)
@@ -2317,7 +2320,7 @@ async def _exraid(ctx):
                 continue
         overwrite[1].send_messages = False
     raid_channel = await Meowth.create_channel(message.server, raid_channel_name, *raid_channel_overwrites, meowth_overwrite)
-    raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}?cache=no".format(str(egg_img))
+    raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}?cache=0".format(str(egg_img))
     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the coming raid!"),url=raid_gmaps_link,colour=message.server.me.colour)
     if len(egg_info['pokemon']) > 1:
         raid_embed.add_field(name="**Possible Bosses:**", value=_("{bosslist1}").format(bosslist1="\n".join(boss_list[::2])), inline=True)
@@ -2693,7 +2696,7 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
     trainer_dict = copy.deepcopy(server_dict[raid_channel.server.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'])
     for trainer in trainer_dict.keys():
         if trainer_dict[trainer]['status'] =='maybe' or trainer_dict[trainer]['status'] =='omw' or trainer_dict[trainer]['status'] =='waiting':
-            user = await Meowth.get_user_info(trainer)
+            user = raid_channel.server.get_member(trainer)
             trainer_list.append(user.mention)
     await Meowth.send_message(raid_channel, content = _("Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!\nIf you couldn't before, you're now able to update your status with **!coming** or **!here**. If you've changed your plans, use **!cancel**.").format(trainer_list=", ".join(trainer_list), pokemon=raid.mention), embed = raid_embed)
     event_loop.create_task(expiry_check(raid_channel))
@@ -2959,7 +2962,7 @@ async def starting(ctx):
     for trainer in trainer_dict:
         if trainer_dict[trainer]['status'] == "waiting":
             trainer_dict[trainer]['status'] =  "lobby"
-            user = await Meowth.get_user_info(trainer)
+            user = ctx.message.server.get_member(trainer)
             ctx_startinglist.append(user.mention)
             id_startinglist.append(trainer)
 
@@ -3371,7 +3374,7 @@ async def new(ctx):
         trainer_dict = copy.deepcopy(server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['trainer_dict'])
         for trainer in trainer_dict.keys():
             if trainer_dict[trainer]['status']=='omw':
-                user = await Meowth.get_user_info(trainer)
+                user = message.server.get_member(trainer)
                 otw_list.append(user.mention)
         await Meowth.send_message(message.channel, content = _("Meowth! Someone has suggested a different location for the raid! Trainers {trainer_list}: make sure you are headed to the right place!").format(trainer_list=", ".join(otw_list)), embed = newembed)
         return
@@ -3469,7 +3472,7 @@ async def _interest(ctx):
     name_list = []
     for trainer in trainer_dict.keys():
         if trainer_dict[trainer]['status']=='maybe':
-            user = await Meowth.get_user_info(trainer)
+            user = ctx.message.server.get_member(trainer)
             name_list.append("**"+user.name+"**")
             maybe_list.append(user.mention)
     if ctx_maybecount > 0:
@@ -3499,7 +3502,7 @@ async def _otw(ctx):
     name_list = []
     for trainer in trainer_dict.keys():
         if trainer_dict[trainer]['status']=='omw':
-            user = await Meowth.get_user_info(trainer)
+            user = ctx.message.server.get_member(trainer)
             name_list.append("**"+user.name+"**")
             otw_list.append(user.mention)
     if ctx_omwcount > 0:
@@ -3528,7 +3531,7 @@ async def _waiting(ctx):
     name_list = []
     for trainer in trainer_dict.keys():
         if trainer_dict[trainer]['status']=='waiting':
-            user = await Meowth.get_user_info(trainer)
+            user = ctx.message.server.get_member(trainer)
             name_list.append("**"+user.name+"**")
             waiting_list.append(user.mention)
     if ctx_waitingcount > 0:
@@ -3557,7 +3560,7 @@ async def _lobbylist(ctx):
     name_list = []
     for trainer in trainer_dict.keys():
         if trainer_dict[trainer]['status']=='lobby':
-            user = await Meowth.get_user_info(trainer)
+            user = ctx.message.server.get_member(trainer)
             name_list.append("**"+user.name+"**")
             lobby_list.append(user.mention)
     if ctx_lobbycount > 0:
@@ -3767,7 +3770,7 @@ async def backout(ctx):
         lobby_list = []
         for trainer in trainer_dict:
             if trainer_dict[trainer]['status'] == "lobby":
-                user = await Meowth.get_user_info(trainer)
+                user = server.get_member(trainer)
                 lobby_list.append(user.mention)
                 trainer_dict[trainer]['status'] = "waiting"
         if not lobby_list:
@@ -3787,7 +3790,7 @@ async def backout(ctx):
         trainer_list = []
         for trainer in trainer_dict:
             if trainer_dict[trainer]['status'] == "lobby":
-                user = await Meowth.get_user_info(trainer)
+                user = server.get_member(trainer)
                 lobby_list.append(user.mention)
                 trainer_list.append(trainer)
         if not lobby_list:
