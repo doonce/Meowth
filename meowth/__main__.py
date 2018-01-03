@@ -1626,11 +1626,11 @@ async def wild(ctx):
 
 async def _wild(message, huntr):
     if not huntr:
-        wild_split = message.clean_content.lower().split()
+        wild_split = message.clean_content.split()
         huntrexp = ""
         huntrweather = "\u200b"
     else:
-        wild_split = huntr.split("|")[0].lower().split()
+        wild_split = huntr.split("|")[0].split()
         huntrexp = huntr.split("|")[1]
         huntrweather = "Weather: "+huntr.split("|")[2]
     del wild_split[0]
@@ -1639,11 +1639,11 @@ async def _wild(message, huntr):
         return
     content = " ".join(wild_split)
     entered_wild = content.split(' ',1)[0]
-    entered_wild = get_name(entered_wild).lower() if entered_wild.isdigit() else entered_wild
+    entered_wild = get_name(entered_wild).lower() if entered_wild.isdigit() else entered_wild.lower()
     spellone = spellcheck(entered_wild).split('"')[3]
     wild_details = content.split(' ',1)[1]
     if entered_wild not in pkmn_info['pokemon_list']:
-        entered_wild2 = ' '.join([content.split(' ',2)[0],content.split(' ',2)[1]])
+        entered_wild2 = ' '.join([content.split(' ',2)[0],content.split(' ',2)[1]]).lower()
         if entered_wild2 in pkmn_info['pokemon_list']:
             entered_wild = entered_wild2
             try:
@@ -1669,7 +1669,10 @@ async def _wild(message, huntr):
     wild_number = pkmn_info['pokemon_list'].index(entered_wild) + 1
     wild_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=0".format(str(wild_number).zfill(3))
     if not huntr:
-        wild_gmaps_link = create_gmaps_query(wild_details, message.channel)
+        if "/maps" in wild_details:
+            wild_gmaps_link = wild_details
+        else:
+            wild_gmaps_link = create_gmaps_query(wild_details, message.channel)
         wild_embed = discord.Embed(title=_("Meowth! Click here for my directions to the wild {pokemon}!").format(pokemon=entered_wild.capitalize()),description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name),url=wild_gmaps_link,colour=message.server.me.colour)
         wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.capitalize(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
     else:
@@ -1716,24 +1719,24 @@ async def _raid(message, huntr):
             await Meowth.send_message(message.channel, _("Meowth! Please restrict raid reports to a city channel!"))
             return
     if not huntr:
-        raid_split = message.clean_content.lower().split()
+        raid_split = message.clean_content.split()
         gymhuntrgps = False
         gymhuntrmoves = False
     else:
-        raid_split = huntr.split("|")[0].lower().split()
+        raid_split = huntr.split("|")[0].split()
         gymhuntrgps = huntr.split("|")[1]
         gymhuntrmoves = huntr.split("|")[2]
     del raid_split[0]
     if len(raid_split) == 0:
         await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**"))
         return
-    if raid_split[0] == "egg":
+    if raid_split[0].lower() == "egg":
         await _raidegg(message, huntr=False)
         return
     if fromegg is True:
         eggdetails = server_dict[message.server.id]['raidchannel_dict'][message.channel.id]
         egglevel = eggdetails['egglevel']
-        if raid_split[0] == 'assume':
+        if raid_split[0].lower() == 'assume':
             if config['allow_assume'][egglevel] == "False":
                 await Meowth.send_message(message.channel, _("Meowth! **!raid assume** is not allowed in this level egg."))
                 return
@@ -1751,7 +1754,7 @@ async def _raid(message, huntr):
                 await Meowth.send_message(message.channel, _("Meowth! Please wait until the egg has hatched before changing it to an open raid!"))
                 return
     entered_raid = re.sub("[\@]", "", raid_split[0].lower())
-    entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid
+    entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid.lower()
     del raid_split[0]
 
     if raid_split[-1].isdigit():
@@ -2289,10 +2292,10 @@ async def _exraid(ctx):
     message = ctx.message
     channel = message.channel
     fromegg = False
-    exraid_split = message.clean_content.lower().split()
+    exraid_split = message.clean_content.split()
     del exraid_split[0]
     rgx = r"[^a-zA-Z0-9]"
-    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", exraid_split[0])), None)
+    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", exraid_split[0].lower())), None)
     if pkmn_match:
         del exraid_split[0]
     if len(exraid_split) <= 0:
@@ -2390,13 +2393,13 @@ async def raidegg(ctx):
 
 async def _raidegg(message, huntr):
     if not huntr:
-        raidegg_split = message.clean_content.lower().split()
+        raidegg_split = message.clean_content.split()
         gymhuntrgps = False
     else:
-        raidegg_split = huntr.split("|")[0].lower().split()
+        raidegg_split = huntr.split("|")[0].split()
         gymhuntrgps = huntr.split("|")[1]
     del raidegg_split[0]
-    if raidegg_split[0] == "egg":
+    if raidegg_split[0].lower() == "egg":
         del raidegg_split[0]
     if len(raidegg_split) <= 1:
         await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!raidegg <level> <location>**"))
@@ -2531,8 +2534,8 @@ async def _eggassume(args, raid_channel):
         logger.info("Hatching Mention Failed - Trying alternative method: channel: {} (id: {}) - server: {} | Attempted mention: {}...".format(raid_channel.name,raid_channel.id,raid_channel.server.name,raid_message.content[:125]))
     gymhuntrgps = eggdetails['gymhuntrgps']
 
-    entered_raid = re.sub("[\@]", "", args.lstrip("assume").lstrip(" ").lower())
-    entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid
+    entered_raid = re.sub("[\@]", "", args.lower().lstrip("assume").lstrip(" "))
+    entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid.lower()
     rgx = r"[^a-zA-Z0-9]"
     pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_raid)), None)
     if pkmn_match:
@@ -2634,7 +2637,7 @@ Sometimes I'm not great at directions, but I'll correct my directions if anybody
 You can set the start time with **!starttime [HH:MM AM/PM]** and access this with **!starttime**.
 
 Message **!starting** when the raid is beginning to clear the raid's 'here' list.""").format(pokemon=entered_raid.capitalize(), member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, location_details=egg_address)
-    entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid
+    entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid.lower()
     rgx = r"[^a-zA-Z0-9]"
     pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_raid)), None)
     if pkmn_match:
@@ -2860,17 +2863,14 @@ async def starttime(ctx):
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[server.id]['offset'])
     start_split = message.clean_content.lower().split()
     rc_d = server_dict[server.id]['raidchannel_dict'][channel.id]
-    if rc_d['type'] == "egg" and rc_d['egglevel'].isdigit():
+    if rc_d['type'] == "egg":
         egglevel = rc_d['egglevel']
         mintime = (rc_d['exp'] - time.time())/60
         maxtime = mintime + raid_info['raid_eggs'][egglevel]['raidtime']
-    elif rc_d['type'] == "raid":
+    elif rc_d['type'] == "raid" or rc_d['type'] ==  'exraid':
         egglevel = get_level(rc_d['pokemon'])
+        mintime = 0
         maxtime = (rc_d['exp'] - time.time())/60
-    elif rc_d['type'] == "exraid" or rc_d['egglevel'] == "EX":
-        egglevel = "EX"
-        mintime = (rc_d['exp'] - time.time())/60
-        maxtime = mintime  + raid_info['raid_eggs'][egglevel]['raidtime']
     del start_split[0]
     if len(start_split) > 0:
         try:
@@ -2880,31 +2880,28 @@ async def starttime(ctx):
         if "am" in " ".join(start_split).lower() or "pm" in " ".join(start_split).lower():
             try:
                 start = datetime.datetime.strptime(" ".join(start_split)+" "+str(now.month)+str(now.day)+str(now.year), '%I:%M %p %m%d%Y')
-                if egglevel == "EX":
-                    hatch = datetime.datetime.utcfromtimestamp(rc_d['exp']) + datetime.timedelta(hours=server_dict[server.id]['offset'])
-                    start = start.replace(year=hatch.year, month=hatch.month, day=hatch.day)
             except ValueError:
-                await Meowth.send_message(channel, _("Meowth! Your start time wasn't formatted correctly. Change your **!starttime** to match this format: **HH:MM AM/PM**"))
+                await Meowth.send_message(channel, _("Meowth! Your start time wasn't formatted correctly. Change your **!starttime** to match this format: **HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!)"))
                 return
         else:
             try:
                 start = datetime.datetime.strptime(" ".join(start_split)+" "+str(now.month)+str(now.day)+str(now.year), '%H:%M %m%d%Y')
-                if egglevel == "EX":
-                    hatch = datetime.datetime.utcfromtimestamp(rc_d['exp']) + datetime.timedelta(hours=server_dict[server.id]['offset'])
-                    start = start.replace(year=hatch.year, month=hatch.month, day=hatch.day)
             except ValueError:
-                await Meowth.send_message(channel, _("Meowth! Your start time wasn't formatted correctly. Change your **!starttime** to match this format: **HH:MM AM/PM**"))
+                await Meowth.send_message(channel, _("Meowth! Your start time wasn't formatted correctly. Change your **!starttime** to match this format: **HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!)"))
                 return
+        if egglevel == "EX":
+            hatch = datetime.datetime.utcfromtimestamp(rc_d['exp']) + datetime.timedelta(hours=server_dict[server.id]['offset'])
+            start = start.replace(year=hatch.year, month=hatch.month, day=hatch.day)
         diff = start - now
         total = (diff.total_seconds() / 60)
         if total > maxtime:
             await Meowth.send_message(channel, _("Meowth! The raid will be over before that...."))
             return
-        if total < mintime:
-            await Meowth.send_message(channel, "Meowth! The egg will not hatch by then!")
-            return
         if now > start:
             await Meowth.send_message(channel, _("Meowth! Please enter a time in the future."))
+            return
+        if total < mintime:
+            await Meowth.send_message(channel, "Meowth! The egg will not hatch by then!")
             return
         if alreadyset:
             rusure = await Meowth.send_message(channel,_("Meowth! There is already a start time of **{start}** set! Do you want to change it?").format(start=alreadyset.strftime("%I:%M %p (%H:%M)")))
