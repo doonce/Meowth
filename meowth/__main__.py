@@ -1682,13 +1682,15 @@ async def _wild(message, huntr):
     wild_embed.set_thumbnail(url=wild_img_url)
     wildreportmsg = await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: {location_details}").format(pokemon=wild.mention, member=message.author.mention, location_details=wild_details),embed=wild_embed)
     if huntr:
-        expiremsg = _("**This {pokemon} has despawned!**").format(pokemon=entered_wild.capitalize())
         despawn = (int(huntrexp.split(" ")[0])*60) + int(huntrexp.split(" ")[2])
-        await asyncio.sleep(despawn)
-        try:
-            await Meowth.edit_message(wildreportmsg, embed=discord.Embed(description=expiremsg,colour=message.server.me.colour))
-        except discord.errors.NotFound:
-            pass
+    else:
+        despawn = 3600
+    expiremsg = _("**This {pokemon} has despawned!**").format(pokemon=entered_wild.capitalize())
+    await asyncio.sleep(despawn)
+    try:
+        await Meowth.edit_message(wildreportmsg, embed=discord.Embed(description=expiremsg,colour=message.server.me.colour))
+    except discord.errors.NotFound:
+        pass
 
 @Meowth.command(pass_context=True)
 @checks.cityeggchannel()
