@@ -254,6 +254,18 @@ def print_emoji_name(server, emoji_string):
 # Given an arbitrary string, create a Google Maps
 # query using the configured hints
 def create_gmaps_query(details, channel):
+    if "/maps" in details:
+        mapsindex = details.find("/maps")
+        newlocindex = details.rfind("http", 0, mapsindex)
+        if newlocindex == -1:
+            return
+        newlocend = details.find(" ", newlocindex)
+        if newlocend == -1:
+            newloc = details[newlocindex:]
+            return newloc
+        else:
+            newloc = details[newlocindex:newlocend+1]
+            return newloc
     details_list = details.split()
     loc_list = server_dict[channel.server.id]['city_channels'][channel.name].split()
     return "https://www.google.com/maps/search/?api=1&query={0}+{1}".format('+'.join(details_list),'+'.join(loc_list))
@@ -1669,10 +1681,7 @@ async def _wild(message, huntr):
     wild_number = pkmn_info['pokemon_list'].index(entered_wild) + 1
     wild_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=0".format(str(wild_number).zfill(3))
     if not huntr:
-        if "/maps" in wild_details:
-            wild_gmaps_link = wild_details
-        else:
-            wild_gmaps_link = create_gmaps_query(wild_details, message.channel)
+        wild_gmaps_link = create_gmaps_query(wild_details, message.channel)
         wild_embed = discord.Embed(title=_("Meowth! Click here for my directions to the wild {pokemon}!").format(pokemon=entered_wild.capitalize()),description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name),url=wild_gmaps_link,colour=message.server.me.colour)
         wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.capitalize(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
     else:
@@ -2230,15 +2239,7 @@ async def on_message(message):
                     await _here(message, emoji_count)
                     return
                 if "/maps" in message.content:
-                    mapsindex = message.content.find("/maps")
-                    newlocindex = message.content.rfind("http", 0, mapsindex)
-                    if newlocindex == -1:
-                        return
-                    newlocend = message.content.find(" ", newlocindex)
-                    if newlocend == -1:
-                        newloc = message.content[newlocindex:]
-                    else:
-                        newloc = message.content[newlocindex:newlocend+1]
+                    newloc = create_gmaps_query(message.content, message.channel)
                     oldraidmsg = await Meowth.get_message(message.channel, server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['raidmessage'])
                     report_channel = Meowth.get_channel(server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['reportcity'])
                     oldreportmsg = await Meowth.get_message(report_channel, server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['raidreport'])
@@ -2294,6 +2295,9 @@ async def _exraid(ctx):
     fromegg = False
     exraid_split = message.clean_content.split()
     del exraid_split[0]
+    if len(exraid_split) <= 0:
+        await Meowth.send_message(channel, _("Meowth! Give more details when reporting! Usage: **!exraid <location>**"))
+        return
     rgx = r"[^a-zA-Z0-9]"
     pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", exraid_split[0].lower())), None)
     if pkmn_match:
@@ -2303,12 +2307,7 @@ async def _exraid(ctx):
         return
     raid_details = " ".join(exraid_split)
     raid_details = raid_details.strip()
-    if raid_details == '':
-        await Meowth.send_message(channel, _("Meowth! Give more details when reporting! Usage: **!exraid <location>**"))
-        return
-
     raid_gmaps_link = create_gmaps_query(raid_details, message.channel)
-
     egg_info = raid_info['raid_eggs']['EX']
     egg_img = egg_info['egg_img']
     boss_list = []
@@ -2319,12 +2318,13 @@ async def _exraid(ctx):
     raid_channel_name = "ex-raid-egg-" + sanitize_channel_name(raid_details)
     raid_channel_overwrites = channel.overwrites
     meowth_overwrite = (Meowth.user, discord.PermissionOverwrite(send_messages = True))
+    everyone_overwrite = (channel.server.default_role, discord.PermissionOverwrite(send_messages = False))
     for overwrite in raid_channel_overwrites:
         if isinstance(overwrite[0], discord.Role):
             if overwrite[0].permissions.manage_server:
                 continue
         overwrite[1].send_messages = False
-    raid_channel = await Meowth.create_channel(message.server, raid_channel_name, *raid_channel_overwrites, meowth_overwrite)
+    raid_channel = await Meowth.create_channel(message.server, raid_channel_name, *raid_channel_overwrites, everyone_overwrite, meowth_overwrite)
     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}?cache=0".format(str(egg_img))
     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the coming raid!"),url=raid_gmaps_link,colour=message.server.me.colour)
     if len(egg_info['pokemon']) > 1:
@@ -3338,19 +3338,7 @@ async def new(ctx):
         report_city = report_channel.name
 
         details = " ".join(location_split)
-        if "/maps" in message.content:
-            mapsindex = message.content.find("/maps")
-            newlocindex = message.content.rfind("http", 0, mapsindex)
-            if newlocindex == -1:
-                return
-            newlocend = message.content.find(" ", newlocindex)
-            if newlocend == -1:
-                newloc = message.content[newlocindex:]
-            else:
-                newloc = message.content[newlocindex:newlocend+1]
-        else:
-            newloc = create_gmaps_query(details, report_channel)
-
+        newloc = create_gmaps_query(details, report_channel)
         oldraidmsg = await Meowth.get_message(message.channel, server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['raidmessage'])
         oldreportmsg = await Meowth.get_message(report_channel, server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['raidreport'])
         oldembed = oldraidmsg.embeds[0]
