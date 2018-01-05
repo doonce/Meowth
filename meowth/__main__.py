@@ -21,6 +21,7 @@ from PIL import ImageFilter
 from PIL import ImageEnhance
 import pytesseract
 import requests
+import urllib
 from io import BytesIO
 import checks
 import hastebin
@@ -1414,12 +1415,9 @@ async def cmd_uptime(ctx):
 @Meowth.command(pass_context=True)
 async def about(ctx):
     """Shows info about Meowth"""
-    author_repo = "https://github.com/FoglyOgly"
-    author_name = "FoglyOgly"
     huntr_repo = "https://github.com/doonce/Meowth"
     huntr_name = "BrenenP"
-    bot_repo = author_repo + "/Meowth"
-    server_url = "https://discord.gg/hhVjAN8"
+    server_url = "https://discord.gg/Qwb8xev"
     owner = Meowth.owner
     channel = ctx.message.channel
     uptime_str = await _uptime(Meowth)
@@ -1427,10 +1425,9 @@ async def about(ctx):
 
     about = (
         "I'm Meowth! A Pokemon Go helper bot for Discord!\n\n"
-        "I'm made by [{author_name}]({author_repo}) and improvements have been contributed by many other people also.\n\n"
         "Huntr integration was implemented by [{huntr_name}]({huntr_repo}).\n\n"
         "[Join our server]({server_invite}) if you have any questions or feedback.\n\n"
-        "".format(author_name=author_name,author_repo=author_repo,huntr_name=huntr_name,huntr_repo=huntr_repo,server_invite=server_url))
+        "".format(huntr_name=huntr_name,huntr_repo=huntr_repo,server_invite=server_url))
 
     member_count = 0
     server_count = 0
@@ -1444,7 +1441,6 @@ async def about(ctx):
     embed.add_field(name="Servers", value=server_count)
     embed.add_field(name="Members", value=member_count)
     embed.add_field(name="Uptime", value=uptime_str)
-    embed.set_footer(text="For support, contact us on our Discord server. Invite Code: hhVjAN8")
 
     try:
         await Meowth.send_message(channel,embed=embed)
@@ -2111,7 +2107,9 @@ async def on_message(message):
             if len(message.embeds[0]['title'].split(" ")) == 5 and server_dict[message.server.id]['autoraid']:
                 ghduplicate = False
                 ghraidlevel = message.embeds[0]['title'].split(" ")[1]
-                ghgps = message.embeds[0]['url'].split("#")[1]
+                req = urllib.request.Request(message.embeds[0]['url'], headers={'User-Agent' : "Magic Browser"})
+                con = urllib.request.urlopen(req)
+                ghgps = con.geturl().split("#")[1]
                 ghdesc = message.embeds[0]['description'].splitlines()
                 ghgym = ghdesc[0][2:-3]
                 ghpokeid = ghdesc[1]
@@ -2159,7 +2157,9 @@ async def on_message(message):
                 return
             elif len(message.embeds[0]['title'].split(" ")) == 6 and server_dict[message.server.id]['autoegg']:
                 ghduplicate = False
-                ghgps = message.embeds[0]['url'].split("#")[1]
+                req = urllib.request.Request(message.embeds[0]['url'], headers={'User-Agent' : "Magic Browser"})
+                con = urllib.request.urlopen(req)
+                ghgps = con.geturl().split("#")[1]
                 ghegglevel = message.embeds[0]['title'].split(" ")[1]
                 ghdesc = message.embeds[0]['description'].splitlines()
                 ghgym = ghdesc[0][2:-3]
@@ -2195,7 +2195,9 @@ async def on_message(message):
         return
     if str(message.author) == "HuntrBot#1845" and server_dict[message.server.id]['autowild']:
         if message.embeds:
-            hlocation = message.embeds[0]['url'].split("#")[1]
+            req = urllib.request.Request(message.embeds[0]['url'], headers={'User-Agent' : "Magic Browser"})
+            con = urllib.request.urlopen(req)
+            hlocation = con.geturl().split("#")[1]
             hpokeid = message.embeds[0]['title'].split(" ")[2]
             hdesc = message.embeds[0]['description'].splitlines()
             hexpire = hdesc[2].split(": ")[1][:-1]

@@ -3,27 +3,16 @@ A Discord helper bot for Pokemon Go communities.
 
 Meowth is a Discord bot written in Python 3.5 using version 0.16.12 of the discord.py library.
 
+This Huntr integrating fork is based on the original Meowth, but is not affiliated or supported by the official development team. Please to not ask for support of this ToS-violating version in the official support channels as it will not be welcomed.
+
 ## Meowth 2.0 is here!
 
-Meowth is now able to handle being on multiple servers of any size in any part of the world and can be invited to your server without having to install Python or run anything on a local machine yourself. The configuration process is now handled completely on Discord via DM with the server owner. First, a list of current features:
+A list of current features:
 
 1. User-driven (not automated) wild spawn and raid reporting.
 2. Role management for each Pokemon species (Discord limits a server to 250 roles, however) that allows each user to opt-in only for the Pokemon they want. These roles are mentioned when spawns or raids are reported.
 3. Raid reporting: Report either !raidegg, !raid or !exraid on the server to have meowth create channels to organise in. Certain commands can be used within raid channels, such as updating your stauts with !interested, !coming and !here. Users can easily determine the status of involved members with the !list command. Meowth also queries Google Maps to get a guess of the raid location (no access to the game means no list of gyms), or you can paste a maps link in the channel after creation to update it to exact coordinates.
 4. Optional team management and new member welcome functions.
-
-## Directions for inviting a remotely hosted Meowth to your server (without Huntr integration):
-Note: You must have manage_server permissions to invite.
-1. Use [THIS LINK](https://discordapp.com/oauth2/authorize?client_id=346759953006198784&scope=bot&permissions=268822608) to invite Meowth.   
-2. Select your server.
-3. In your server, type !configure.
-4. Meowth will DM you to setup your server. Be sure to read the prompts properly.
-5. That's it! Enjoy!
-
-
-You can join the Meowth server here for updates, setup help, feature requests, or just to test out the bot before you add it. https://discord.gg/hhVjAN8
-
-If you want to tinker with Meowth yourself, you can still download this repo, make whatever changes you want (or keep everything if you want) and run Meowth locally. The configure process is the same except you'll have to use your own bot token.
 
 ## Directions for installing and running the bot on your server (with Huntr Integration):
 
@@ -54,7 +43,7 @@ Get the installer [HERE](https://github.com/tesseract-ocr/tesseract/wiki/Downloa
 
 7. Create a bot user for your app and reveal the bot token to copy it.
 
-8. Copy config_blank.json and rename to config.json. 
+8. Copy config_blank.json and rename to config.json.
 
 9. Open config.json in a text editor (a good one to use is Notepad++) and paste the bot token into the value for "bot_token", replacing the "yourtoken" string.
 
