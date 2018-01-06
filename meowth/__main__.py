@@ -2591,8 +2591,11 @@ async def _eggtoraid(entered_raid, raid_channel, huntr):
     manual_timer = eggdetails['manual_timer']
     trainer_dict = eggdetails['trainer_dict']
     egg_address = eggdetails['address']
-    egg_report = await Meowth.get_message(reportcitychannel, eggdetails['raidreport'])
     raid_message = await Meowth.get_message(raid_channel, eggdetails['raidmessage'])
+    try:
+        egg_report = await Meowth.get_message(reportcitychannel, eggdetails['raidreport'])
+    except (discord.errors.NotFound, discord.errors.HTTPException):
+        egg_report = None
     try:
         starttime = eggdetails['starttime']
     except KeyError:
@@ -3754,12 +3757,17 @@ async def recover(ctx):
             await Meowth.send_message(channel, "Meowth! I couldn't recognize this as a raid channel!")
             return
         reportchannel = None
+        raidmessage = None
+        gymhuntrgps = None
         rsvpidlist = []
         rsvpmentions = []
         async for message in Meowth.logs_from(channel, limit=500):
             if message.author.id == server.me.id:
                 if "Coordinate here" in message.content:
                     reportchannel = message.raw_channel_mentions[0]
+                    raidmessage = message.id
+                    if message.raw_mentions[0] == "329412230481444886":
+                        gymhuntrgps = message.embeds[0]['url'].split("Location/")[1]
                 if "is interested" in message.content or "on the way" in message.content or "at the raid" in message.content:
                     if message.raw_mentions[0] not in rsvpidlist:
                         rsvpidlist.append(message.raw_mentions[0])
@@ -3772,12 +3780,13 @@ async def recover(ctx):
             'exp': exp,
             'manual_timer': manual_timer,
             'active': True,
-            'raidmessage': None,
+            'raidmessage': raidmessage,
             'raidreport': None,
             'address': raid_details,
             'type': raidtype,
             'pokemon' : pokemon,
-            'egglevel': egglevel
+            'egglevel': egglevel,
+            'gymhuntrgps': gymhuntrgps
             }
         recovermsg = _("Meowth! This channel has been recovered! However, I can't remember if anyone RSVPed to this raid. Trainers {} could you help me remember your status? ").format(", ".join(rsvpmentions))
         if not manual_timer:
