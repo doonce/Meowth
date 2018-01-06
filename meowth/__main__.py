@@ -22,6 +22,7 @@ from PIL import ImageEnhance
 import pytesseract
 import requests
 import urllib
+import textwrap
 from io import BytesIO
 import checks
 import hastebin
@@ -1020,7 +1021,7 @@ async def configure(ctx):
                 continue
     #configure huntr-raid-levels
     if configcancel == False and server_dict_temp['other'] is True and server_dict_temp['raidset'] is True and (firstconfig == True or configgoto == "all" or configgoto == "huntr"):
-        await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create automatic raid channels for, separated by a comma. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name="Automatic Raid Report Levels", icon_url=Meowth.user.avatar_url))
+        await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create automatic raid channels for, separated by a comma. Or '0' to restyle all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name="Automatic Raid Report Levels", icon_url=Meowth.user.avatar_url))
         raidlevel_list = []
         server_dict_temp['raidlvls'] = []
         while True:
@@ -1036,13 +1037,13 @@ async def configure(ctx):
             else:
                 raidlevel_list = raidlevels.content.lower().split(',')
                 for level in raidlevel_list:
-                    if level.isdigit() and int(level) <=5 and int(level) >0:
+                    if level.isdigit() and int(level) <=5:
                         server_dict_temp['raidlvls'].append(int(level))
                 if len(server_dict_temp['raidlvls']) > 0:
                     await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description=_("Automatic Raid Channel Levels set to: {levels}").format(levels=",".join(str(x) for x in server_dict_temp['raidlvls']))))
                     break
                 else:
-                    await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Or **N** to turn off automatic raids."))
+                    await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic raids."))
                     continue
     #configure huntr-raidegg
     if configcancel == False and server_dict_temp['other'] is True and server_dict_temp['raidset'] is True and (firstconfig == True or configgoto == "all" or configgoto == "huntr"):
@@ -1066,7 +1067,7 @@ async def configure(ctx):
                 continue
     #configure huntr-egg-levels
     if configcancel == False and server_dict_temp['other'] is True and server_dict_temp['raidset'] is True and (firstconfig == True or configgoto == "all" or configgoto == "huntr"):
-        await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create automatic egg channels for, separated by a comma. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized egg report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name="Automatic Egg Report Levels", icon_url=Meowth.user.avatar_url))
+        await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create automatic egg channels for, separated by a comma. Or '0' to restyle all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized egg report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name="Automatic Egg Report Levels", icon_url=Meowth.user.avatar_url))
         egglevel_list = []
         server_dict_temp['egglvls'] = []
         while True:
@@ -1082,13 +1083,13 @@ async def configure(ctx):
             else:
                 egglevel_list = egglevels.content.lower().split(',')
                 for level in egglevel_list:
-                    if level.isdigit() and int(level) <=5 and int(level) >0:
+                    if level.isdigit() and int(level) <=5:
                         server_dict_temp['egglvls'].append(int(level))
                 if len(server_dict_temp['egglvls']) > 0:
                     await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description=_("Automatic Egg Channel Levels set to: {levels}").format(levels=",".join(str(x) for x in server_dict_temp['egglvls']))))
                     break
                 else:
-                    await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Or **N** to turn off automatic eggs."))
+                    await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic eggs."))
                     continue
     #configure huntr-wild
     if configcancel == False and server_dict_temp['other'] is True and server_dict_temp['wildset'] is True and (firstconfig == True or configgoto == "all" or configgoto == "huntr"):
@@ -2004,18 +2005,18 @@ async def timer(ctx):
 Behind-the-scenes functions for raid management.
 Triggerable through commands or through emoji
 """
-async def _maybe(message, count):
-    trainer_dict = server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['trainer_dict']
+async def _maybe(channel, author, count):
+    trainer_dict = server_dict[channel.server.id]['raidchannel_dict'][channel.id]['trainer_dict']
     if count == 1:
-        await Meowth.send_message(message.channel, _("Meowth! {member} is interested!").format(member=message.author.mention))
+        await Meowth.send_message(channel, _("Meowth! {member} is interested!").format(member=author.mention))
     else:
-        await Meowth.send_message(message.channel, _("Meowth! {member} is interested with a total of {trainer_count} trainers!").format(member=message.author.mention, trainer_count=count))
+        await Meowth.send_message(message.channel, _("Meowth! {member} is interested with a total of {trainer_count} trainers!").format(member=author.mention, trainer_count=count))
     # Add trainer name to trainer list
-    if message.author.id not in server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['trainer_dict']:
-        trainer_dict[message.author.id] = {}
-    trainer_dict[message.author.id]['status'] = "maybe"
-    trainer_dict[message.author.id]['count'] = count
-    server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['trainer_dict'] = trainer_dict
+    if author.id not in server_dict[channel.server.id]['raidchannel_dict'][channel.id]['trainer_dict']:
+        trainer_dict[author.id] = {}
+    trainer_dict[author.id]['status'] = "maybe"
+    trainer_dict[author.id]['count'] = count
+    server_dict[server.id]['raidchannel_dict'][channel.id]['trainer_dict'] = trainer_dict
 
 async def _coming(message, count):
     trainer_dict = server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['trainer_dict']
@@ -2143,7 +2144,7 @@ async def on_message(message):
                     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=0".format(str(raid_number).zfill(3))
                     raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}\n{moves}").format(pokemon=ghpokeid.capitalize(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),moves=ghmoves),inline=True)
                     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(message.server, get_weaknesses(ghpokeid.lower()))),inline=True)
-                    raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details=ghgym),inline=True)
+                    raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details="\n".join(textwrap.wrap(ghgym, width=30))),inline=True)
                     raid_embed.add_field(name="**Remaining:**", value=_("{minutes} mins").format(minutes=ghminute),inline=True)
                     raid_embed.set_thumbnail(url=raid_img_url)
                     raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
@@ -2179,7 +2180,7 @@ async def on_message(message):
                     await _raidegg(message, huntr)
                 elif ghduplicate is False and int(ghegglevel) not in server_dict[message.server.id]['egglvls']:
                     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the coming raid!"),url=_("https://www.google.com/maps/dir/Current+Location/{0}").format(ghgps),colour=message.server.me.colour)
-                    raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details=ghgym),inline=True)
+                    raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details="\n".join(textwrap.wrap(ghgym,width=30))),inline=True)
                     raid_embed.add_field(name="**Starting in:**", value=_("{minutes} mins").format(minutes=ghminute),inline=True)
                     raid_embed.set_thumbnail(url=_("https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}.png?cache=0".format(str(ghegglevel))))
                     raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
@@ -2730,7 +2731,7 @@ async def interested(ctx, *, count: str = None):
         else:
             count = 1
 
-    await _maybe(ctx.message, count)
+    await _maybe(ctx.message.channel, ctx.message.author, count)
 
 
 @Meowth.command(pass_context=True,aliases=["c"])
@@ -3669,6 +3670,7 @@ async def _invite(ctx):
                         exraid_channel = exraid_dict[str(int(reply.content))]
                         await Meowth.edit_channel_permissions(exraid_channel, ctx.message.author, overwrite)
                         await Meowth.send_message(ctx.message.channel, "Meowth! Alright {0}, you can now send messages in {1}! Make sure you let the trainers in there know if you can make it to the EX Raid!".format(ctx.message.author.mention, exraid_channel.mention))
+                        await _maybe(exraid_channel,ctx.message.author,1)
                     else:
                         await Meowth.send_message(ctx.message.channel, "Meowth! I couldn't understand your reply! Try the **!invite** command again!")
                 else:
