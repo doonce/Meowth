@@ -2219,7 +2219,7 @@ async def on_message(message):
             req = urllib.request.Request(message.embeds[0]['url'], headers={'User-Agent' : "Magic Browser"})
             con = urllib.request.urlopen(req)
             try:
-                ghlocation = con.geturl().split("#")[1]
+                hlocation = con.geturl().split("#")[1]
                 con.close()
             except IndexError:
                 source = str(con.read().decode("utf8").replace("\n","").replace(" ",""))
@@ -2227,7 +2227,7 @@ async def on_message(message):
                 newsourceindex = source.rfind("http", 0, sourceindex)
                 newsourceend = source.find('"', newsourceindex)
                 newsource = source[newsourceindex:newsourceend]
-                ghlocation = newsource.split("#")[1]
+                hlocation = newsource.split("#")[1]
                 con.close()
             hpokeid = message.embeds[0]['title'].split(" ")[2]
             hdesc = message.embeds[0]['description'].splitlines()
