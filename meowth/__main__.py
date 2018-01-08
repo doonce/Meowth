@@ -2108,19 +2108,22 @@ async def on_message(message):
             if len(message.embeds[0]['title'].split(" ")) == 5 and server_dict[message.server.id]['autoraid']:
                 ghduplicate = False
                 ghraidlevel = message.embeds[0]['title'].split(" ")[1]
-                req = urllib.request.Request(message.embeds[0]['url'], headers={'User-Agent' : "Magic Browser"})
-                con = urllib.request.urlopen(req)
                 try:
-                    ghgps = con.geturl().split("#")[1]
-                    con.close()
+                    ghgps = message.embeds[0]['url'].split("#")[1]
                 except IndexError:
-                    source = str(con.read().decode("utf8").replace("\n","").replace(" ",""))
-                    sourceindex = source.find("gymhuntr.com/#")
-                    newsourceindex = source.rfind("http", 0, sourceindex)
-                    newsourceend = source.find('"', newsourceindex)
-                    newsource = source[newsourceindex:newsourceend]
-                    ghgps = newsource.split("#")[1]
-                    con.close()
+                    req = urllib.request.Request(message.embeds[0]['url'], headers={'User-Agent' : "Magic Browser"})
+                    con = urllib.request.urlopen(req)
+                    try:
+                        ghgps = con.geturl().split("#")[1]
+                        con.close()
+                    except IndexError:
+                        source = str(con.read().decode("utf8").replace("\n","").replace(" ",""))
+                        sourceindex = source.find("gymhuntr.com/#")
+                        newsourceindex = source.rfind("http", 0, sourceindex)
+                        newsourceend = source.find('"', newsourceindex)
+                        newsource = source[newsourceindex:newsourceend]
+                        ghgps = newsource.split("#")[1]
+                        con.close()
                 ghdesc = message.embeds[0]['description'].splitlines()
                 ghgym = ghdesc[0][2:-3]
                 ghpokeid = ghdesc[1]
@@ -2168,19 +2171,22 @@ async def on_message(message):
                 return
             elif len(message.embeds[0]['title'].split(" ")) == 6 and server_dict[message.server.id]['autoegg']:
                 ghduplicate = False
-                req = urllib.request.Request(message.embeds[0]['url'], headers={'User-Agent' : "Magic Browser"})
-                con = urllib.request.urlopen(req)
                 try:
-                    ghgps = con.geturl().split("#")[1]
-                    con.close()
+                    ghgps = message.embeds[0]['url'].split("#")[1]
                 except IndexError:
-                    source = str(con.read().decode("utf8").replace("\n","").replace(" ",""))
-                    sourceindex = source.find("gymhuntr.com/#")
-                    newsourceindex = source.rfind("http", 0, sourceindex)
-                    newsourceend = source.find('"', newsourceindex)
-                    newsource = source[newsourceindex:newsourceend]
-                    ghgps = newsource.split("#")[1]
-                    con.close()
+                    req = urllib.request.Request(message.embeds[0]['url'], headers={'User-Agent' : "Magic Browser"})
+                    con = urllib.request.urlopen(req)
+                    try:
+                        ghgps = con.geturl().split("#")[1]
+                        con.close()
+                    except IndexError:
+                        source = str(con.read().decode("utf8").replace("\n","").replace(" ",""))
+                        sourceindex = source.find("gymhuntr.com/#")
+                        newsourceindex = source.rfind("http", 0, sourceindex)
+                        newsourceend = source.find('"', newsourceindex)
+                        newsource = source[newsourceindex:newsourceend]
+                        ghgps = newsource.split("#")[1]
+                        con.close()
                 ghegglevel = message.embeds[0]['title'].split(" ")[1]
                 ghdesc = message.embeds[0]['description'].splitlines()
                 ghgym = ghdesc[0][2:-3]
@@ -2216,19 +2222,22 @@ async def on_message(message):
         return
     if str(message.author) == "HuntrBot#1845" and server_dict[message.server.id]['autowild']:
         if message.embeds:
-            req = urllib.request.Request(message.embeds[0]['url'], headers={'User-Agent' : "Magic Browser"})
-            con = urllib.request.urlopen(req)
             try:
-                hlocation = con.geturl().split("#")[1]
-                con.close()
+                hlocation = message.embeds[0]['url'].split("#")[1]
             except IndexError:
-                source = str(con.read().decode("utf8").replace("\n","").replace(" ",""))
-                sourceindex = source.find("gymhuntr.com/#")
-                newsourceindex = source.rfind("http", 0, sourceindex)
-                newsourceend = source.find('"', newsourceindex)
-                newsource = source[newsourceindex:newsourceend]
-                hlocation = newsource.split("#")[1]
-                con.close()
+                req = urllib.request.Request(message.embeds[0]['url'], headers={'User-Agent' : "Magic Browser"})
+                con = urllib.request.urlopen(req)
+                try:
+                    hlocation = con.geturl().split("#")[1]
+                    con.close()
+                except IndexError:
+                    source = str(con.read().decode("utf8").replace("\n","").replace(" ",""))
+                    sourceindex = source.find("gymhuntr.com/#")
+                    newsourceindex = source.rfind("http", 0, sourceindex)
+                    newsourceend = source.find('"', newsourceindex)
+                    newsource = source[newsourceindex:newsourceend]
+                    hlocation = newsource.split("#")[1]
+                    con.close()
             hpokeid = message.embeds[0]['title'].split(" ")[2]
             hdesc = message.embeds[0]['description'].splitlines()
             hexpire = hdesc[2].split(": ")[1][:-1]
