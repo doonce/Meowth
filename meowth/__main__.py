@@ -2016,7 +2016,7 @@ async def _maybe(channel, author, count):
         trainer_dict[author.id] = {}
     trainer_dict[author.id]['status'] = "maybe"
     trainer_dict[author.id]['count'] = count
-    server_dict[server.id]['raidchannel_dict'][channel.id]['trainer_dict'] = trainer_dict
+    server_dict[channel.server.id]['raidchannel_dict'][channel.id]['trainer_dict'] = trainer_dict
 
 async def _coming(message, count):
     trainer_dict = server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['trainer_dict']
