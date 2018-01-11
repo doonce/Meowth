@@ -2664,8 +2664,8 @@ async def _eggtoraid(entered_raid, raid_channel, huntr):
         logger.info("Hatching Mention Failed - Trying alternative method: channel: {} (id: {}) - server: {} | Attempted mention: {}...".format(raid_channel.name,raid_channel.id,raid_channel.server.name,raid_message.content[:125]))
     gymhuntrgps = eggdetails['gymhuntrgps']
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[raid_channel.server.id]['offset'])
-    end = now + datetime.timedelta(minutes=raid_info["raid_eggs"][egglevel]['raidtime'])
     raidexp = eggdetails['exp'] + 60 * raid_info['raid_eggs'][egglevel]['raidtime']
+    end = datetime.datetime.utcfromtimestamp(raidexp) + datetime.timedelta(hours=server_dict[raid_channel.server.id]['offset'])
 
     if egglevel.isdigit():
         hatchtype = "raid"
@@ -2943,13 +2943,13 @@ async def starttime(ctx):
             alreadyset = False
         if "am" in " ".join(start_split).lower() or "pm" in " ".join(start_split).lower():
             try:
-                start = datetime.datetime.strptime(" ".join(start_split)+" "+str(now.month)+str(now.day)+str(now.year), '%I:%M %p %m%d%Y')
+                start = datetime.datetime.strptime(" ".join(start_split), '%I:%M %p').replace(year=now.year, month=now.month, day=now.day)
             except ValueError:
                 await Meowth.send_message(channel, _("Meowth! Your start time wasn't formatted correctly. Change your **!starttime** to match this format: **HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!)"))
                 return
         else:
             try:
-                start = datetime.datetime.strptime(" ".join(start_split)+" "+str(now.month)+str(now.day)+str(now.year), '%H:%M %m%d%Y')
+                start = datetime.datetime.strptime(" ".join(start_split), '%H:%M').replace(year=now.year, month=now.month, day=now.day)
             except ValueError:
                 await Meowth.send_message(channel, _("Meowth! Your start time wasn't formatted correctly. Change your **!starttime** to match this format: **HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!)"))
                 return
@@ -3758,7 +3758,7 @@ async def recover(ctx):
                 pokemon = get_name(raid_info['raid_eggs'][egglevel]['pokemon'][0])
         elif name.split('-')[0] in get_raidlist():
             raidtype = 'raid'
-            egglevel = 0
+            egglevel = '0'
             chsplit = name.split('-')
             pokemon = chsplit[0]
             del chsplit[0]
