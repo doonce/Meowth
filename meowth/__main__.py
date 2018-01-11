@@ -2158,7 +2158,6 @@ async def on_message(message):
                             raidmsg = await Meowth.get_message(channel, server_dict[message.server.id]['raidchannel_dict'][channelid]['raidmessage'])
                             if raidmsg.embeds[0]['fields'][2]['name'] != ghmoves:
                                 await Meowth.send_message(channel, _("This {pokemon}'s moves are: **{moves}**").format(pokemon=ghpokeid, moves=ghmoves))
-                            break
                     except KeyError:
                         pass
                 if ghduplicate == False and int(ghraidlevel) in server_dict[message.server.id]['raidlvls']:
@@ -3282,10 +3281,12 @@ async def duplicate(ctx):
     rc_d = server_dict[server.id]['raidchannel_dict'][channel.id]
     t_dict =rc_d['trainer_dict']
     can_manage = channel.permissions_for(author).manage_channels
-
+    reporters = []
     if can_manage:
         dupecount = 2
         rc_d['duplicate'] = dupecount
+        if author.mention not in reporters:
+            reporters.append(author.mention)
     else:
         if author.id in t_dict:
             try:
@@ -3296,13 +3297,16 @@ async def duplicate(ctx):
                     return
                 else:
                     t_dict[author.id]['dupereporter'] = True
+                    reporters.append(author.mention)
             except KeyError:
                 t_dict[author.id]['dupereporter'] = True
+                reporters.append(author.mention)
         else:
             t_dict[author.id] = {
                 'status' : '',
                 'dupereporter' : True
                 }
+            reporters.append(author.mention)
         try:
             dupecount = rc_d['duplicate']
         except KeyError:
@@ -3339,6 +3343,49 @@ async def duplicate(ctx):
                 await Meowth.delete_message(rusure)
                 await Meowth.send_message(channel,"Duplicate Confirmed")
                 logger.info("Duplicate Report - Channel Expired - "+channel.name+" - Last Report by "+author.name)
+                if server_dict[server.id]['raidchannel_dict'][channel.id]['gymhuntrgps']:
+                    askdupe = await Meowth.send_message(channel, _("Hey {reporters}, this is a GymHuntrBot channel that has some additional features. If you send me a channel mention (#channel) of the other channel I can move those features to it.").format(reporters=", ".join(reporters)))
+                    while True:
+                        def checkmsg(msg):
+                            if msg.author is not server.me:
+                                return True
+                            else:
+                                return False
+                        getdupe = await Meowth.wait_for_message(channel=channel,check=checkmsg,timeout=240)
+                        if getdupe and getdupe.raw_channel_mentions:
+                            dupechannel = getdupe.raw_channel_mentions[0]
+                        elif getdupe and getdupe.content.lower() == "cancel":
+                            break
+                        elif getdupe and not getdupe.raw_channel_mentions:
+                            await Meowth.send_message(channel, "You didn't send me a channel mention, just type # to see a list of channels and select the duplicate channel. You can cancel with 'cancel' or I'll cancel in four minutes.")
+                            continue
+                        elif not getdupe:
+                            await Meowth.send_message(channel, "I didn't get a message so I'll expire the channel.")
+                            break
+                        if dupechannel == channel.id:
+                            await Meowth.send_message(channel, "That's this channel! Try again. You can cancel with 'cancel' or I'll cancel in four minutes.")
+                            continue
+                        if not server_dict[server.id]['raidchannel_dict'][dupechannel]['gymhuntrgps']:
+                            server_dict[server.id]['raidchannel_dict'][dupechannel]['gymhuntrgps'] = server_dict[server.id]['raidchannel_dict'][channel.id]['gymhuntrgps']
+                            getdupechannel = Meowth.get_channel(dupechannel)
+                            oldraidmsg = await Meowth.get_message(getdupechannel, server_dict[server.id]['raidchannel_dict'][dupechannel]['raidmessage'])
+                            duperaidmsg = await Meowth.get_message(channel, server_dict[server.id]['raidchannel_dict'][channel.id]['raidmessage'])
+                            oldembed = oldraidmsg.embeds[0]
+                            dupeembed = duperaidmsg.embeds[0]
+                            newembed = discord.Embed(title=oldembed['title'],url=dupeembed['url'],colour=server.me.colour)
+                            newembed.add_field(name=oldembed['fields'][0]['name'],value=oldembed['fields'][0]['value'],inline=True)
+                            newembed.add_field(name=oldembed['fields'][1]['name'],value=oldembed['fields'][1]['value'],inline=True)
+                            newembed.set_footer(text=oldembed['footer']['text'], icon_url=oldembed['footer']['icon_url'])
+                            newembed.set_thumbnail(url=oldembed['thumbnail']['url'])
+                            try:
+                                newraidmsg = await Meowth.edit_message(oldraidmsg, new_content=oldraidmsg.content, embed=newembed)
+                            except:
+                                pass
+                            await Meowth.send_message(channel, "Settings moved!")
+                            break
+                        else:
+                            await Meowth.send_message(channel, "The channel you mentioned is already a GymHuntrBot channel. Try again. You can cancel with 'cancel' or I'll cancel in four minutes.")
+                            continue
                 await expire_channel(channel)
                 return
         else:
