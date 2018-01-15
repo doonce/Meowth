@@ -1998,19 +1998,20 @@ async def _wild(message, huntr):
         wild_gmaps_link = create_gmaps_query(wild_details, message.channel)
         wild_embed = discord.Embed(title=_("Meowth! Click here for my directions to the wild {pokemon}!").format(pokemon=entered_wild.title()),description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name),url=wild_gmaps_link,colour=message.server.me.colour)
         wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.title(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
+        wild_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
+        wild_embed.set_thumbnail(url=wild_img_url)
+        despawn = 3600
+        wildreportmsg = await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: {location_details}").format(pokemon=wild.mention, member=message.author.mention, location_details=wild_details),embed=wild_embed)
     else:
         wild_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(wild_details)
         wild_embed = discord.Embed(title=_("Meowth! Click here for exact directions to the wild {pokemon}!").format(pokemon=entered_wild.title()),url=wild_gmaps_link,colour=message.server.me.colour)
         wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.title(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
         wild_embed.add_field(name="**Despawns in:**", value=_("{huntrexp}").format(huntrexp=huntrexp),inline=True)
         wild_embed.add_field(name=huntrweather, value=_("Perform a scan to help find more by clicking [here](https://pokehuntr.com/#{huntrurl}).").format(huntrurl=wild_details), inline=False)
-    wild_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
-    wild_embed.set_thumbnail(url=wild_img_url)
-    wildreportmsg = await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: {location_details}").format(pokemon=wild.mention, member=message.author.mention, location_details=wild_details),embed=wild_embed)
-    if huntr:
+        wild_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
+        wild_embed.set_thumbnail(url=wild_img_url)
         despawn = (int(huntrexp.split(" ")[0])*60) + int(huntrexp.split(" ")[2])
-    else:
-        despawn = 3600
+        wildreportmsg = await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: <https://pokehuntr.com/#{location_details}>").format(pokemon=wild.mention, member=message.author.mention, location_details=wild_details, gps=wild_details),embed=wild_embed)
     expiremsg = _("**This {pokemon} has despawned!**").format(pokemon=entered_wild.title())
     await asyncio.sleep(despawn)
     try:
