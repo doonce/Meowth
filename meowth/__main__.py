@@ -3273,9 +3273,8 @@ async def duplicate(ctx):
                             continue
                         if not server_dict[server.id]['raidchannel_dict'][dupechannel]['gymhuntrgps']:
                             server_dict[server.id]['raidchannel_dict'][dupechannel]['gymhuntrgps'] = server_dict[server.id]['raidchannel_dict'][channel.id]['gymhuntrgps']
-                            print(server_dict[server.id]['raidchannel_dict'][channel.id]['gymhuntrgps'])
+                            server_dict[server.id]['raidchannel_dict'][dupechannel]['exp'] = server_dict[server.id]['raidchannel_dict'][channel.id]['exp']
                             server_dict[server.id]['raidchannel_dict'][channel.id]['gymhuntrgps'] = False
-                            print(server_dict[server.id]['raidchannel_dict'][channel.id]['gymhuntrgps'])
                             getdupechannel = Meowth.get_channel(dupechannel)
                             oldraidmsg = await Meowth.get_message(getdupechannel, server_dict[server.id]['raidchannel_dict'][dupechannel]['raidmessage'])
                             duperaidmsg = await Meowth.get_message(channel, server_dict[server.id]['raidchannel_dict'][channel.id]['raidmessage'])
