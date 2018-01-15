@@ -137,7 +137,7 @@ def get_type(server, pkmn_number):
 
 def get_name(pkmn_number):
     pkmn_number = int(pkmn_number)-1
-    name = pkmn_info['pokemon_list'][pkmn_number].capitalize()
+    name = pkmn_info['pokemon_list'][pkmn_number].title()
     return name
 
 def get_number(pkm_name):
@@ -382,7 +382,7 @@ If this was in error, reset the raid with **!timerset**"""))
                 await Meowth.send_message(channel, _("""This channel timer has expired! The channel has been deactivated and will be deleted in 5 minutes.
 To reactivate the channel, use **!timerset** to set the timer again."""))
             delete_time = server_dict[server.id]['raidchannel_dict'][channel.id]['exp'] + (5 * 60) - time.time()
-            expiremsg = _("**This {pokemon} raid has expired!**").format(pokemon=server_dict[channel.server.id]['raidchannel_dict'][channel.id]['pokemon'].capitalize())
+            expiremsg = _("**This {pokemon} raid has expired!**").format(pokemon=server_dict[channel.server.id]['raidchannel_dict'][channel.id]['pokemon'].title())
         await asyncio.sleep(delete_time)
         # If the channel has already been deleted from the dict, someone
         # else got to it before us, so don't do anything.
@@ -817,7 +817,7 @@ async def _on_huntr(message):
                     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the raid!"),url=_("https://www.google.com/maps/dir/Current+Location/{0}").format(ghgps),colour=message.server.me.colour)
                     raid_number = pkmn_info['pokemon_list'].index(ghpokeid.lower()) + 1
                     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=0".format(str(raid_number).zfill(3))
-                    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}\n{moves}").format(pokemon=ghpokeid.capitalize(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),moves=ghmoves),inline=True)
+                    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}\n{moves}").format(pokemon=ghpokeid.title(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),moves=ghmoves),inline=True)
                     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(message.server, get_weaknesses(ghpokeid.lower()))),inline=True)
                     raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details="\n".join(textwrap.wrap(ghgym, width=30))),inline=True)
                     raid_embed.add_field(name="**Remaining:**", value=_("{minutes} mins").format(minutes=ghminute),inline=True)
@@ -1784,8 +1784,8 @@ async def want(ctx):
                 pokemon = get_name(pokemon).lower()
             want_list.append(pokemon)
     elif len(want_split) > 1:
-        await Meowth.send_message(channel, "Meowth! If you are trying to add multiple Pokemon to your want list, please separate them with commas! Pokemon with multiple words in their name confuse me, you can add these using their pokedex number.")
-        return
+        pokemon = "".join(want_split)
+        want_list.append(pokemon)
     else:
         want_list.append(want_split[0])
     for want in want_list:
@@ -1808,11 +1808,11 @@ async def want(ctx):
         # If user is already wanting the Pokemon,
         # print a less noisy message
         if role in ctx.message.author.roles:
-            already_want_list.append(entered_want.capitalize())
+            already_want_list.append(entered_want.title())
             already_want_count += 1
         else:
             role_list.append(role)
-            added_list.append(entered_want.capitalize())
+            added_list.append(entered_want.title())
             added_count += 1
     await Meowth.add_roles(ctx.message.author, *role_list)
     if len(want_list) == 1 and (len(added_list) == 1 or len(spellcheck_dict) == 1 or len(already_want_list) == 1):
@@ -1830,7 +1830,7 @@ async def want(ctx):
             await Meowth.send_message(channel, msg)
             return
         elif len(already_want_list) == 1:
-            await Meowth.send_message(channel, content="Meowth! {member}, I already know you want {pokemon}!".format(member=ctx.message.author.mention, pokemon=already_want_list[0].capitalize()))
+            await Meowth.send_message(channel, content="Meowth! {member}, I already know you want {pokemon}!".format(member=ctx.message.author.mention, pokemon=already_want_list[0].title()))
             return
     else:
         confirmation_msg = "Meowth! {member}, out of your total {count} items:".format(member=ctx.message.author.mention,count=added_count + already_want_count + len(spellcheck_dict))
@@ -2008,7 +2008,7 @@ async def _wild(message, huntr):
         despawn = (int(huntrexp.split(" ")[0])*60) + int(huntrexp.split(" ")[2])
     else:
         despawn = 3600
-    expiremsg = _("**This {pokemon} has despawned!**").format(pokemon=entered_wild.capitalize())
+    expiremsg = _("**This {pokemon} has despawned!**").format(pokemon=entered_wild.title())
     await asyncio.sleep(despawn)
     try:
         await Meowth.edit_message(wildreportmsg, embed=discord.Embed(description=expiremsg,colour=message.server.me.colour))
@@ -2113,7 +2113,7 @@ async def _raid(message, huntr):
 
     raid_match = True if entered_raid in get_raidlist() else False
     if not raid_match:
-        await Meowth.send_message(message.channel, _("Meowth! The Pokemon {pokemon} does not appear in raids!").format(pokemon=entered_raid.capitalize()))
+        await Meowth.send_message(message.channel, _("Meowth! The Pokemon {pokemon} does not appear in raids!").format(pokemon=entered_raid.title()))
         return
     raid_details = " ".join(raid_split)
     raid_details = raid_details.strip()
@@ -2134,13 +2134,13 @@ async def _raid(message, huntr):
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=0".format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the raid!"),url=raid_gmaps_link,colour=message.server.me.colour)
-    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_raid.capitalize(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),inline=True))
+    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_raid.title(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),inline=True))
     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(message.server, get_weaknesses(entered_raid))),inline=True)
     if huntr:
         raid_embed.add_field(name=gymhuntrmoves, value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
     raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
     raid_embed.set_thumbnail(url=raid_img_url)
-    raidreport = await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}").format(pokemon=entered_raid.capitalize(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention),embed=raid_embed)
+    raidreport = await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}").format(pokemon=entered_raid.title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention),embed=raid_embed)
     await asyncio.sleep(1) #Wait for the channel to be created.
 
     raidmsg = _("""Meowth! {pokemon} raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here!
@@ -2360,11 +2360,11 @@ async def _eggassume(args, raid_channel):
         return
     raid_match = True if entered_raid in get_raidlist() else False
     if not raid_match:
-        await Meowth.send_message(raid_channel, _("Meowth! The Pokemon {pokemon} does not appear in raids!").format(pokemon=entered_raid.capitalize()))
+        await Meowth.send_message(raid_channel, _("Meowth! The Pokemon {pokemon} does not appear in raids!").format(pokemon=entered_raid.title()))
         return
     else:
         if get_number(entered_raid) not in raid_info['raid_eggs'][egglevel]['pokemon']:
-            await Meowth.send_message(raid_channel, _("Meowth! The Pokemon {pokemon} does not hatch from level {level} raid eggs!").format(pokemon=entered_raid.capitalize(), level=egglevel))
+            await Meowth.send_message(raid_channel, _("Meowth! The Pokemon {pokemon} does not hatch from level {level} raid eggs!").format(pokemon=entered_raid.title(), level=egglevel))
             return
     eggdetails['pokemon'] = entered_raid
     oldembed = raid_message.embeds[0]
@@ -2376,7 +2376,7 @@ async def _eggassume(args, raid_channel):
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=0".format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the coming raid!"),url=raid_gmaps_link,colour=raid_channel.server.me.colour)
-    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_raid.capitalize(),pokemonnumber=str(raid_number),type="".join(get_type(raid_channel.server, raid_number)),inline=True))
+    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_raid.title(),pokemonnumber=str(raid_number),type="".join(get_type(raid_channel.server, raid_number)),inline=True))
     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(raid_channel.server, get_weaknesses(entered_raid))),inline=True)
     if gymhuntrgps:
         raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
@@ -2426,7 +2426,7 @@ async def _eggtoraid(entered_raid, raid_channel, huntr):
 
     if egglevel.isdigit():
         hatchtype = "raid"
-        raidreportcontent = _("Meowth! The egg has hatched into a {pokemon} raid! Details: {location_details}. Coordinate in {raid_channel}").format(pokemon=entered_raid.capitalize(), location_details=egg_address, raid_channel=raid_channel.mention)
+        raidreportcontent = _("Meowth! The egg has hatched into a {pokemon} raid! Details: {location_details}. Coordinate in {raid_channel}").format(pokemon=entered_raid.title(), location_details=egg_address, raid_channel=raid_channel.mention)
         raidmsg = _("""Meowth! The egg reported by {member} in {citychannel} hatched into a {pokemon} raid! Details: {location_details}. Coordinate here!
 
 To update your status, choose from the following commands: **!maybe**, **!coming**, **!here**, **!cancel**. If you are bringing more than one trainer/account, add in the number of accounts total on your first status update.
@@ -2440,10 +2440,10 @@ Sometimes I'm not great at directions, but I'll correct my directions if anybody
 You can set the time remaining with **!timerset <minutes>** and access this with **!timer**.
 You can set the start time with **!starttime [HH:MM AM/PM]** and access this with **!starttime**.
 
-Message **!starting** when the raid is beginning to clear the raid's 'here' list.""").format(member= raid_messageauthor.mention, citychannel=reportcitychannel.mention, pokemon=entered_raid.capitalize(), location_details=egg_address)
+Message **!starting** when the raid is beginning to clear the raid's 'here' list.""").format(member= raid_messageauthor.mention, citychannel=reportcitychannel.mention, pokemon=entered_raid.title(), location_details=egg_address)
     elif egglevel == "EX":
         hatchtype = "exraid"
-        raidreportcontent = _("Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. Use the **!invite** command to gain access and coordinate in {raid_channel}").format(pokemon=entered_raid.capitalize(), location_details=egg_address, raid_channel=raid_channel.mention)
+        raidreportcontent = _("Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. Use the **!invite** command to gain access and coordinate in {raid_channel}").format(pokemon=entered_raid.title(), location_details=egg_address, raid_channel=raid_channel.mention)
         raidmsg = _("""Meowth! {pokemon} EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here after using **!invite** to gain access!
 
 To update your status, choose from the following commands: **!maybe**, **!coming**, **!here**, **!cancel**. If you are bringing more than one trainer/account, add in the number of accounts total on your first status update.
@@ -2456,7 +2456,7 @@ Sometimes I'm not great at directions, but I'll correct my directions if anybody
 
 You can set the start time with **!starttime [HH:MM AM/PM]** and access this with **!starttime**.
 
-Message **!starting** when the raid is beginning to clear the raid's 'here' list.""").format(pokemon=entered_raid.capitalize(), member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, location_details=egg_address)
+Message **!starting** when the raid is beginning to clear the raid's 'here' list.""").format(pokemon=entered_raid.title(), member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, location_details=egg_address)
     entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid.lower()
     rgx = r"[^a-zA-Z0-9]"
     pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_raid)), None)
@@ -2470,11 +2470,11 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
         return
     raid_match = True if entered_raid in get_raidlist() else False
     if not raid_match:
-        await Meowth.send_message(raid_channel, _("Meowth! The Pokemon {pokemon} does not appear in raids!").format(pokemon=entered_raid.capitalize()))
+        await Meowth.send_message(raid_channel, _("Meowth! The Pokemon {pokemon} does not appear in raids!").format(pokemon=entered_raid.title()))
         return
     else:
         if get_number(entered_raid) not in raid_info['raid_eggs'][egglevel]['pokemon']:
-            await Meowth.send_message(raid_channel, _("Meowth! The Pokemon {pokemon} does not hatch from level {level} raid eggs!").format(pokemon=entered_raid.capitalize(), level=egglevel))
+            await Meowth.send_message(raid_channel, _("Meowth! The Pokemon {pokemon} does not hatch from level {level} raid eggs!").format(pokemon=entered_raid.title(), level=egglevel))
             return
     raid_channel_name = entered_raid + "-" + sanitize_channel_name(egg_address)
     oldembed = raid_message.embeds[0]
@@ -2486,7 +2486,7 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=0".format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the raid!"),url=raid_gmaps_link,colour=raid_channel.server.me.colour)
-    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_raid.capitalize(),pokemonnumber=str(raid_number),type="".join(get_type(raid_channel.server, raid_number)),inline=True))
+    raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_raid.title(),pokemonnumber=str(raid_number),type="".join(get_type(raid_channel.server, raid_number)),inline=True))
     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(raid_channel.server, get_weaknesses(entered_raid))),inline=True)
     if gymhuntrgps:
         gymhuntrmoves = "\u200b"
@@ -3989,11 +3989,11 @@ async def _teamlist(ctx):
         if trainer_dict[trainer]['status'] =='maybe' or trainer_dict[trainer]['status'] =='omw' or trainer_dict[trainer]['status'] =='waiting':
             user = ctx.message.server.get_member(trainer)
             for role in user.roles:
-                if role.name == "mystic":
+                if role.name.lower() == "mystic":
                     bluelist.append(user.id)
-                elif role.name == "valor":
+                elif role.name.lower() == "valor":
                     redlist.append(user.id)
-                elif role.name =="instinct":
+                elif role.name.lower == "instinct":
                     yellowlist.append(user.id)
     for trainer in redlist:
         if trainer_dict[trainer]['status'] == "waiting":
