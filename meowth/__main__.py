@@ -284,7 +284,7 @@ def spellcheck(word):
     # If we have a spellcheck suggestion
     if suggestion != word:
         result = pkmn_info['pokemon_list'][suggestion]
-        return _("Sorry, I don't know of any \"{entered_word}\". Did you mean \"{corrected_word}\"?").format(entered_word=word, corrected_word=result.title())
+        return result
     else:
         return _("Sorry! I haven't heard of a \"{entered_word}\" Pokemon.").format(entered_word=word)
 
@@ -1770,12 +1770,22 @@ async def want(ctx):
     channel = message.channel
     want_split = message.clean_content.lower().split()
     want_list = []
+    added_count = 0
+    spellcheck_dict = {}
+    spellcheck_list = []
+    already_want_count = 0
+    already_want_list = []
+    added_list = []
+    role_list = []
     del want_split[0]
     if "," in "".join(want_split):
         for pokemon in "".join(want_split).split(","):
             if pokemon.isdigit():
                 pokemon = get_name(pokemon).lower()
             want_list.append(pokemon)
+    elif len(want_split) > 1:
+        await Meowth.send_message(channel, "Meowth! If you are trying to add multiple Pokemon to your want list, please separate them with commas! Pokemon with multiple words in their name confuse me, you can add these using their pokedex number.")
+        return
     else:
         want_list.append(want_split[0])
     for want in want_list:
@@ -1786,8 +1796,9 @@ async def want(ctx):
         if pkmn_match:
             entered_want = pkmn_match
         else:
-            await Meowth.send_message(message.channel, spellcheck(entered_want))
-            return
+            spellcheck_list.append(entered_want)
+            spellcheck_dict[entered_want] = spellcheck(entered_want) if spellcheck(entered_want) != entered_want else None
+            continue
         role = discord.utils.get(server.roles, name=entered_want)
         # Create role if it doesn't exist yet
         if role is None:
@@ -1797,11 +1808,44 @@ async def want(ctx):
         # If user is already wanting the Pokemon,
         # print a less noisy message
         if role in ctx.message.author.roles:
-            await Meowth.add_reaction(message, '✅')
+            already_want_list.append(entered_want.capitalize())
+            already_want_count += 1
         else:
-            await Meowth.add_roles(message.author, role)
-            want_number = pkmn_info['pokemon_list'].index(entered_want) + 1
-            await Meowth.add_reaction(message, '✅')
+            role_list.append(role)
+            added_list.append(entered_want.capitalize())
+            added_count += 1
+    await Meowth.add_roles(ctx.message.author, *role_list)
+    if len(want_list) == 1 and (len(added_list) == 1 or len(spellcheck_dict) == 1 or len(already_want_list) == 1):
+        if len(added_list) == 1:
+            want_number = pkmn_info['pokemon_list'].index(added_list[0].lower()) + 1
+            want_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=0".format(str(want_number).zfill(3)) #This part embeds the sprite
+            want_embed = discord.Embed(colour=server.me.colour)
+            want_embed.set_thumbnail(url=want_img_url)
+            await Meowth.send_message(channel, content=_("Meowth! Got it! {member} wants {pokemon}").format(member=ctx.message.author.mention, pokemon=added_list[0].title()),embed=want_embed)
+            return
+        elif len(spellcheck_dict) == 1:
+            msg = "Meowth! **{word}** isn't a Pokemon!".format(word=spellcheck_list[0].title())
+            if spellcheck_list[0] != spellcheck(spellcheck_list[0]):
+                msg += " Did you mean **{correction}**?".format(correction=spellcheck(spellcheck_list[0]).title())
+            await Meowth.send_message(channel, msg)
+            return
+        elif len(already_want_list) == 1:
+            await Meowth.send_message(channel, content="Meowth! {member}, I already know you want {pokemon}!".format(member=ctx.message.author.mention, pokemon=already_want_list[0].capitalize()))
+            return
+    else:
+        confirmation_msg = "Meowth! {member}, out of your total {count} items:".format(member=ctx.message.author.mention,count=added_count + already_want_count + len(spellcheck_dict))
+        if added_count > 0:
+            confirmation_msg += "\n**{added_count} Added:** \n\t{added_list}".format(added_count=added_count, added_list=", ".join(added_list))
+        if already_want_count > 0:
+            confirmation_msg += "\n**{already_want_count} Already Following:** \n\t{already_want_list}".format(already_want_count=already_want_count, already_want_list=", ".join(already_want_list))
+        if spellcheck_dict:
+            spellcheckmsg = ""
+            for word in spellcheck_dict:
+                spellcheckmsg += "\n\t{word}".format(word=word.title())
+                if spellcheck_dict[word]:
+                    spellcheckmsg += ": *({correction}?)*".format(correction=spellcheck_dict[word].title())
+            confirmation_msg += "\n**{count} Not Valid:**".format(count=len(spellcheck_dict)) + spellcheckmsg
+        await Meowth.send_message(channel, content=confirmation_msg)
 
 @Meowth.group(pass_context=True)
 @checks.wantset()
@@ -1837,7 +1881,10 @@ async def unwant(ctx):
             if pkmn_match:
                 entered_unwant = pkmn_match
             else:
-                await Meowth.send_message(message.channel, spellcheck(entered_unwant))
+                msg = "Meowth! **{word}** isn't a Pokemon!".format(word=entered_unwant.title())
+                if spellcheck(entered_unwant) != entered_unwant:
+                    msg += " Did you mean **{correction}**?".format(correction=spellcheck(entered_unwant).title())
+                await Meowth.send_message(message.channel, msg)
                 return
             # If user is not already wanting the Pokemon,
             # print a less noisy message
@@ -1910,14 +1957,17 @@ async def _wild(message, huntr):
     if len(wild_split) <= 1:
         await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**"))
         return
+    rgx = r"[^a-zA-Z0-9]"
     content = " ".join(wild_split)
     entered_wild = content.split(' ',1)[0]
     entered_wild = get_name(entered_wild).lower() if entered_wild.isdigit() else entered_wild.lower()
-    spellone = spellcheck(entered_wild).split('"')[3]
+    spellone = spellcheck(entered_wild)
     wild_details = content.split(' ',1)[1]
-    if entered_wild not in pkmn_info['pokemon_list']:
+    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_wild)), None)
+    if not pkmn_match:
         entered_wild2 = ' '.join([content.split(' ',2)[0],content.split(' ',2)[1]]).lower()
-        if entered_wild2 in pkmn_info['pokemon_list']:
+        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_wild2)), None)
+        if pkmn_match:
             entered_wild = entered_wild2
             try:
                 wild_details = content.split(' ',2)[2]
@@ -1925,14 +1975,14 @@ async def _wild(message, huntr):
                 await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**"))
                 return
         else:
-            spelltwo = spellcheck(entered_wild2).split('"')[3]
-
-    rgx = r"[^a-zA-Z0-9]"
-    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_wild)), None)
+            spelltwo = spellcheck(entered_wild2)
     if pkmn_match:
         entered_wild = pkmn_match
     else:
-        await Meowth.send_message(message.channel, spellcheck(entered_wild))
+        msg = "Meowth! **{word}** isn't a Pokemon!".format(word=entered_wild.title())
+        if spellcheck(entered_wild) != entered_wild:
+            msg += " Did you mean **{correction}**?".format(correction=spellcheck(entered_wild).title())
+        await Meowth.send_message(message.channel, msg)
         return
 
     wild = discord.utils.get(message.server.roles, name = entered_wild)
@@ -1943,12 +1993,12 @@ async def _wild(message, huntr):
     wild_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=0".format(str(wild_number).zfill(3))
     if not huntr:
         wild_gmaps_link = create_gmaps_query(wild_details, message.channel)
-        wild_embed = discord.Embed(title=_("Meowth! Click here for my directions to the wild {pokemon}!").format(pokemon=entered_wild.capitalize()),description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name),url=wild_gmaps_link,colour=message.server.me.colour)
-        wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.capitalize(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
+        wild_embed = discord.Embed(title=_("Meowth! Click here for my directions to the wild {pokemon}!").format(pokemon=entered_wild.title()),description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name),url=wild_gmaps_link,colour=message.server.me.colour)
+        wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.title(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
     else:
         wild_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(wild_details)
-        wild_embed = discord.Embed(title=_("Meowth! Click here for exact directions to the wild {pokemon}!").format(pokemon=entered_wild.capitalize()),url=wild_gmaps_link,colour=message.server.me.colour)
-        wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.capitalize(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
+        wild_embed = discord.Embed(title=_("Meowth! Click here for exact directions to the wild {pokemon}!").format(pokemon=entered_wild.title()),url=wild_gmaps_link,colour=message.server.me.colour)
+        wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.title(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
         wild_embed.add_field(name="**Despawns in:**", value=_("{huntrexp}").format(huntrexp=huntrexp),inline=True)
         wild_embed.add_field(name=huntrweather, value=_("Perform a scan to help find more by clicking [here](https://pokehuntr.com/#{huntrurl}).").format(huntrurl=wild_details), inline=False)
     wild_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
@@ -2055,7 +2105,10 @@ async def _raid(message, huntr):
     if pkmn_match:
         entered_raid = pkmn_match
     else:
-        await Meowth.send_message(message.channel, spellcheck(entered_raid))
+        msg = "Meowth! **{word}** isn't a Pokemon!".format(word=entered_raid.title())
+        if spellcheck(entered_raid) != entered_raid:
+            msg += " Did you mean **{correction}**?".format(correction=spellcheck(entered_raid).title())
+        await Meowth.send_message(message.channel, msg)
         return
 
     raid_match = True if entered_raid in get_raidlist() else False
@@ -2300,7 +2353,10 @@ async def _eggassume(args, raid_channel):
     if pkmn_match:
         entered_raid = pkmn_match
     else:
-        await Meowth.send_message(raid_channel, spellcheck(entered_raid))
+        msg = "Meowth! **{word}** isn't a Pokemon!".format(word=entered_raid.title())
+        if spellcheck(entered_raid) != entered_raid:
+            msg += " Did you mean **{correction}**?".format(correction=spellcheck(entered_raid).title())
+        await Meowth.send_message(raid_channel, msg)
         return
     raid_match = True if entered_raid in get_raidlist() else False
     if not raid_match:
@@ -2407,7 +2463,10 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
     if pkmn_match:
         entered_raid = pkmn_match
     else:
-        await Meowth.send_message(raid_channel, spellcheck(entered_raid))
+        msg = "Meowth! **{word}** isn't a Pokemon!".format(word=entered_raid.title())
+        if spellcheck(entered_raid) != entered_raid:
+            msg += " Did you mean **{correction}**?".format(correction=spellcheck(entered_raid).title())
+        await Meowth.send_message(raid_channel, msg)
         return
     raid_match = True if entered_raid in get_raidlist() else False
     if not raid_match:
