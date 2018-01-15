@@ -1817,11 +1817,14 @@ async def want(ctx):
     await Meowth.add_roles(ctx.message.author, *role_list)
     if len(want_list) == 1 and (len(added_list) == 1 or len(spellcheck_dict) == 1 or len(already_want_list) == 1):
         if len(added_list) == 1:
-            want_number = pkmn_info['pokemon_list'].index(added_list[0].lower()) + 1
-            want_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=0".format(str(want_number).zfill(3)) #This part embeds the sprite
-            want_embed = discord.Embed(colour=server.me.colour)
-            want_embed.set_thumbnail(url=want_img_url)
-            await Meowth.send_message(channel, content=_("Meowth! Got it! {member} wants {pokemon}").format(member=ctx.message.author.mention, pokemon=added_list[0].title()),embed=want_embed)
+            #If you want Images
+            #want_number = pkmn_info['pokemon_list'].index(added_list[0].lower()) + 1
+            #want_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=0".format(str(want_number).zfill(3)) #This part embeds the sprite
+            #want_embed = discord.Embed(colour=server.me.colour)
+            #want_embed.set_thumbnail(url=want_img_url)
+            #await Meowth.send_message(channel, content=_("Meowth! Got it! {member} wants {pokemon}").format(member=ctx.message.author.mention, pokemon=added_list[0].title()),embed=want_embed)
+            #If you want reaction
+            await Meowth.add_reaction(ctx.message, '✅')
             return
         elif len(spellcheck_dict) == 1:
             msg = "Meowth! **{word}** isn't a Pokemon!".format(word=spellcheck_list[0].title())
