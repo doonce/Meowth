@@ -3284,6 +3284,7 @@ async def duplicate(ctx):
                             newembed = discord.Embed(title=oldembed['title'],url=dupeembed['url'],colour=server.me.colour)
                             newembed.add_field(name=oldembed['fields'][0]['name'],value=oldembed['fields'][0]['value'],inline=True)
                             newembed.add_field(name=oldembed['fields'][1]['name'],value=oldembed['fields'][1]['value'],inline=True)
+                            newembed.add_field(name=dupeembed['fields'][2]['name'],value=dupeembed['fields'][2]['value'],inline=True)
                             newembed.set_footer(text=oldembed['footer']['text'], icon_url=oldembed['footer']['icon_url'])
                             newembed.set_thumbnail(url=oldembed['thumbnail']['url'])
                             try:
