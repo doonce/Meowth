@@ -4001,7 +4001,7 @@ async def _teamlist(ctx):
                     redlist.append(user.id)
                 elif role.name =="instinct":
                     yellowlist.append(user.id)
-                else:
+                elif user.id not in bluelist and user.id not in redlist and user.id not in yellowlist and user.id not in otherlist:
                     otherlist.append(user.id)
     for trainer in redlist:
         if trainer_dict[trainer]['status'] == "waiting":
