@@ -1135,6 +1135,25 @@ async def announce(ctx,*,announce=None):
 
 @Meowth.command(pass_context=True)
 @commands.has_permissions(manage_server=True)
+async def addparty(ctx):
+    allblue = 0
+    allred = 0
+    allyellow = 0
+    for channelid in server_dict[ctx.message.server.id]['raidchannel_dict']:
+        for trainer in server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict']:
+            user = ctx.message.server.get_member(trainer)
+            for role in user.roles:
+                if role.name == "mystic":
+                    allblue = server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['count']
+                elif role.name == "valor":
+                    allred = server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['count']
+                elif role.name =="instinct":
+                    allyellow = server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['count']
+            server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'] = [allblue, allred, allyellow]
+            print(server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'])
+
+@Meowth.command(pass_context=True)
+@commands.has_permissions(manage_server=True)
 async def configure(ctx):
     """Meowth Configuration
 
