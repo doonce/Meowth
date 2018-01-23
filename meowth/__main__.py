@@ -1616,6 +1616,38 @@ async def clearstatus(ctx):
     except KeyError:
         pass
 
+@Meowth.command(pass_context=True)
+@commands.has_permissions(manage_server=True)
+@checks.raidchannel()
+async def setstatus(ctx, user, status):
+    """Clears raid channel status lists.
+
+    Usage: !setstatus [user] [status]
+    Only usable by admins."""
+    user = re.sub(r'\W+', '', user)
+    user = ctx.message.server.get_member(user)
+    count = server_dict[ctx.message.server.id]['raidchannel_dict'][ctx.message.channel.id]['trainer_dict'][user.id]['count']
+    allblue = 0
+    allred = 0
+    allyellow = 0
+    for role in user.roles:
+        if role.name == "mystic":
+            allblue = count
+        elif role.name == "valor":
+            allred = count
+        elif role.name =="instinct":
+            allyellow = count
+    party = [allblue, allred, allyellow]
+    try:
+        if status == "maybe":
+            await _maybe(ctx.message.channel, user, count, party)
+        elif status == "omw":
+            await _coming(ctx.message, count, party)
+        elif status == "waiting":
+            await _here(ctx.message, count, party)
+    except KeyError:
+        pass
+
 """
 Miscellaneous
 """
@@ -3433,6 +3465,9 @@ async def interested(ctx, count=None, *,party=None):
 
 async def _maybe(channel, author, count, party):
     trainer_dict = server_dict[channel.server.id]['raidchannel_dict'][channel.id]['trainer_dict']
+    allblue = 0
+    allred = 0
+    allyellow = 0
     if count == 1:
         await Meowth.send_message(channel, _("Meowth! {member} is interested!").format(member=author.mention))
     else:
@@ -3440,6 +3475,15 @@ async def _maybe(channel, author, count, party):
     # Add trainer name to trainer list
     if author.id not in server_dict[channel.server.id]['raidchannel_dict'][channel.id]['trainer_dict']:
         trainer_dict[author.id] = {}
+    if not party:
+        for role in author.roles:
+            if role.name == "mystic":
+                allblue = count
+            elif role.name == "valor":
+                allred = count
+            elif role.name =="instinct":
+                allyellow = count
+        party = [allblue, allred, allyellow]
     trainer_dict[author.id]['status'] = "maybe"
     trainer_dict[author.id]['count'] = count
     trainer_dict[author.id]['party'] = party
