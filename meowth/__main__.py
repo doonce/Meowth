@@ -3627,7 +3627,10 @@ async def _party_status(ctx, total, teamcounts):
         if team_total > total:
             return await Meowth.send_message(channel,
                 "Team counts are higher than the total. "
-                "Double check your counts and try again.")
+                "Double check your counts and try again. You might need to "
+                "update your total. I currently have {total} total and "
+                "you entered {team_total} in your party.").format(total=total,
+                team_total=team_total)
         if total > team_total:
             if team_aliases[my_team][1]:
                 return await Meowth.send_message(
@@ -3975,7 +3978,7 @@ async def list(ctx):
                     listmsg += "\n" + bulletpoint
                     listmsg += await print_raid_timer(channel)
                     if starttime and starttime > now:
-                        listmsg += "\nMeowth! The next group will be starting at {}".format(starttime.strftime("%I:%M %p (%H:%M)"))
+                        listmsg += "\nThe next group will be starting at **{}**".format(starttime.strftime("%I:%M %p (%H:%M)"))
                 else:
                     listmsg += "\n" + bulletpoint + await _interest(ctx)
                     listmsg += "\n" + bulletpoint + await _otw(ctx)
@@ -3989,7 +3992,7 @@ async def list(ctx):
 
 @list.command(pass_context=True)
 @checks.activeraidchannel()
-async def interested(ctx):
+async def interested(ctx, tag=False):
     """Lists the number and users who are interested in the raid.
 
     Usage: !list interested
@@ -3998,7 +4001,7 @@ async def interested(ctx):
     listmsg += await _interest(ctx)
     await Meowth.send_message(ctx.message.channel, listmsg)
 
-async def _interest(ctx):
+async def _interest(ctx, tag=False):
     ctx_maybecount = 0
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[ctx.message.channel.server.id]['offset'])
     # Grab all trainers who are maybe and sum
@@ -4019,7 +4022,7 @@ async def _interest(ctx):
             name_list.append("**"+user.name+"**")
             maybe_list.append(user.mention)
     if ctx_maybecount > 0:
-        if now.time() >= datetime.time(5,0) and now.time() <= datetime.time(21,0):
+        if now.time() >= datetime.time(5,0) and now.time() <= datetime.time(21,0) and tag == True:
             maybe_exstr = _(" including {trainer_list} and the people with them! Let them know if there is a group forming").format(trainer_list=", ".join(maybe_list))
         else:
             maybe_exstr = _(" including {trainer_list} and the people with them! Let them know if there is a group forming").format(trainer_list=", ".join(name_list))
@@ -4029,7 +4032,7 @@ async def _interest(ctx):
 
 @list.command(pass_context=True)
 @checks.activeraidchannel()
-async def coming(ctx):
+async def coming(ctx, tag=False):
     """Lists the number and users who are coming to a raid.
 
     Usage: !list coming
@@ -4038,7 +4041,7 @@ async def coming(ctx):
     listmsg += await _otw(ctx)
     await Meowth.send_message(ctx.message.channel, listmsg)
 
-async def _otw(ctx):
+async def _otw(ctx, tag=False):
 
     ctx_omwcount = 0
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[ctx.message.channel.server.id]['offset'])
@@ -4060,7 +4063,7 @@ async def _otw(ctx):
             name_list.append("**"+user.name+"**")
             otw_list.append(user.mention)
     if ctx_omwcount > 0:
-        if now.time() >= datetime.time(5,0) and now.time() <= datetime.time(21,0):
+        if now.time() >= datetime.time(5,0) and now.time() <= datetime.time(21,0) and tag == True:
             otw_exstr = _(" including {trainer_list} and the people with them! Be considerate and wait for them if possible").format(trainer_list=", ".join(otw_list))
         else:
             otw_exstr = _(" including {trainer_list} and the people with them! Be considerate and wait for them if possible").format(trainer_list=", ".join(name_list))
@@ -4069,7 +4072,7 @@ async def _otw(ctx):
 
 @list.command(pass_context=True)
 @checks.activeraidchannel()
-async def here(ctx):
+async def here(ctx, tag=False):
     """List the number and users who are present at a raid.
 
     Usage: !list here
@@ -4078,7 +4081,7 @@ async def here(ctx):
     listmsg += await _waiting(ctx)
     await Meowth.send_message(ctx.message.channel, listmsg)
 
-async def _waiting(ctx):
+async def _waiting(ctx, tag=False):
 
     ctx_waitingcount = 0
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[ctx.message.channel.server.id]['offset'])
@@ -4100,7 +4103,7 @@ async def _waiting(ctx):
             name_list.append("**"+user.name+"**")
             waiting_list.append(user.mention)
     if ctx_waitingcount > 0:
-        if now.time() >= datetime.time(5,0) and now.time() <= datetime.time(21,0):
+        if now.time() >= datetime.time(5,0) and now.time() <= datetime.time(21,0) and tag == True:
             waiting_exstr = _(" including {trainer_list} and the people with them! Be considerate and let them know if and when you'll be there").format(trainer_list=", ".join(waiting_list))
         else:
             waiting_exstr = _(" including {trainer_list} and the people with them! Be considerate and let them know if and when you'll be there").format(trainer_list=", ".join(name_list))
@@ -4109,7 +4112,7 @@ async def _waiting(ctx):
 
 @list.command(pass_context=True)
 @checks.activeraidchannel()
-async def lobby(ctx):
+async def lobby(ctx, tag=False):
     """List the number and users who are in the raid lobby.
 
     Usage: !list lobby
@@ -4118,7 +4121,8 @@ async def lobby(ctx):
     listmsg += await _lobbylist(ctx)
     await Meowth.send_message(ctx.message.channel, listmsg)
 
-async def _lobbylist(ctx):
+async def _lobbylist(ctx, tag=False):
+
     ctx_lobbycount = 0
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[ctx.message.channel.server.id]['offset'])
     # Grab all trainers who are :omw: and sum
@@ -4139,7 +4143,7 @@ async def _lobbylist(ctx):
             name_list.append("**"+user.name+"**")
             lobby_list.append(user.mention)
     if ctx_lobbycount > 0:
-        if now.time() >= datetime.time(5,0) and now.time() <= datetime.time(21,0):
+        if now.time() >= datetime.time(5,0) and now.time() <= datetime.time(21,0) and tag == True:
             lobby_exstr = _(" including {trainer_list} and the people with them! Use **!lobby** if you are joining them or **!backout** to request a backout").format(trainer_list=", ".join(lobby_list))
         else:
             lobby_exstr = _(" including {trainer_list} and the people with them! Use **!lobby** if you are joining them or **!backout** to request a backout").format(trainer_list=", ".join(name_list))
@@ -4210,6 +4214,42 @@ async def _teamlist(ctx):
     else:
         listmsg = _(" Nobody has updated their status!")
     return listmsg
+
+@list.command(pass_context=True)
+@checks.activeraidchannel()
+async def tags(ctx):
+    """List the teams for the users that have RSVP'd to a raid.
+
+    Usage: !list teams
+    Works only in raid channels."""
+    if checks.check_raidchannel(ctx):
+        if checks.check_raidactive(ctx):
+            listmsg = "**Meowth!** "
+            server = ctx.message.server
+            channel = ctx.message.channel
+            bulletpoint = parse_emoji(ctx.message.server, ":small_blue_diamond:")
+            starttime = False
+            try:
+                starttime = server_dict[server.id]['raidchannel_dict'][channel.id]['starttime']
+            except KeyError:
+                pass
+            rc_d = server_dict[server.id]['raidchannel_dict'][channel.id]
+            if rc_d['type'] == 'egg' and rc_d['pokemon'] == '':
+                listmsg += "\n" + bulletpoint + await _interest(ctx, tag=True)
+                listmsg += "\n" + bulletpoint
+                listmsg += await print_raid_timer(channel)
+                if starttime and starttime > now:
+                    listmsg += "\nThe next group will be starting at **{}**".format(starttime.strftime("%I:%M %p (%H:%M)"))
+            else:
+                listmsg += "\n" + bulletpoint + await _interest(ctx,tag=True)
+                listmsg += "\n" + bulletpoint + await _otw(ctx,tag=True)
+                listmsg += "\n" + bulletpoint + await _waiting(ctx,tag=True)
+                listmsg += "\n" + bulletpoint + await _lobbylist(ctx,tag=True)
+                listmsg += "\n" + bulletpoint + await print_raid_timer(channel)
+                if starttime and starttime > now:
+                    listmsg += "\nThe next group will be starting at **{}**".format(starttime.strftime("%I:%M %p (%H:%M)"))
+            await Meowth.send_message(channel, listmsg)
+            return
 
 # @list.command(pass_context=True)
 # @checks.activeraidchannel()
