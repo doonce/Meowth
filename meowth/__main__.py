@@ -1142,15 +1142,20 @@ async def addparty(ctx):
     for channelid in server_dict[ctx.message.server.id]['raidchannel_dict']:
         for trainer in server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict']:
             user = ctx.message.server.get_member(trainer)
+            count = int(server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['count'])
             for role in user.roles:
                 if role.name == "mystic":
-                    allblue = server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['count']
+                    server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'] = [count,0,0]
+                    continue
                 elif role.name == "valor":
-                    allred = server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['count']
+                    server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'] = [0,count,0]
+                    continue
                 elif role.name =="instinct":
-                    allyellow = server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['count']
-            server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'] = [allblue, allred, allyellow]
-            print(server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'])
+                    server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'] = [0,0,count]
+                    continue
+                else:
+                    server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'] = [0,0,0]
+                    continue
 
 @Meowth.command(pass_context=True)
 @commands.has_permissions(manage_server=True)
@@ -4197,6 +4202,7 @@ async def _teamlist(ctx):
     bluecount = 0
     redcount = 0
     yellowcount = 0
+    total = 0
     redmaybe = 0
     redcoming = 0
     redwaiting = 0
@@ -4212,24 +4218,24 @@ async def _teamlist(ctx):
     teamliststr = ""
     trainer_dict = copy.deepcopy(server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['trainer_dict'])
     for trainer in trainer_dict.keys():
-        bluecount += trainer_dict[trainer]['party'][0]
-        redcount += trainer_dict[trainer]['party'][1]
-        yellowcount += trainer_dict[trainer]['party'][2]
-        total = bluecount+redcount+yellowcount
+        bluecount += int(trainer_dict[trainer]['party'][0])
+        redcount += int(trainer_dict[trainer]['party'][1])
+        yellowcount += int(trainer_dict[trainer]['party'][2])
+        total = int(trainer_dict[trainer]['party'][0]) + int(trainer_dict[trainer]['party'][1]) + int(trainer_dict[trainer]['party'][2])
         if trainer_dict[trainer]['status'] == "waiting":
-            bluewaiting += bluecount
-            redwaiting += redcount
-            yellowwaiting += yellowcount
+            bluewaiting += int(trainer_dict[trainer]['party'][0])
+            redwaiting += int(trainer_dict[trainer]['party'][1])
+            yellowwaiting += int(trainer_dict[trainer]['party'][2])
             otherwaiting += trainer_dict[trainer]['count']-total
         elif trainer_dict[trainer]['status'] == "omw":
-            bluecoming += redcount
-            redcoming += redcount
-            yellowcoming += yellowcount
+            bluecoming += int(trainer_dict[trainer]['party'][0])
+            redcoming += int(trainer_dict[trainer]['party'][1])
+            yellowcoming += int(trainer_dict[trainer]['party'][2])
             othercoming += trainer_dict[trainer]['count']-total
         elif trainer_dict[trainer]['status'] == "maybe":
-            bluemaybe += redcount
-            redmaybe += redcount
-            yellowmaybe += yellowcount
+            bluemaybe += int(trainer_dict[trainer]['party'][0])
+            redmaybe += int(trainer_dict[trainer]['party'][1])
+            yellowmaybe += int(trainer_dict[trainer]['party'][2])
             othermaybe += trainer_dict[trainer]['count']-total
     if bluecount > 0:
         teamliststr += _("{blue_emoji} **{blue_number} total,** {bluemaybe} interested, {bluecoming} coming, {bluewaiting} waiting {blue_emoji}\n").format(blue_number=bluecount, blue_emoji=parse_emoji(ctx.message.server, config['team_dict']['mystic']), bluemaybe=bluemaybe, bluecoming=bluecoming, bluewaiting=bluewaiting)
