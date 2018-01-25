@@ -811,7 +811,14 @@ async def _on_huntr(message):
                 elif ghduplicate is False and int(ghraidlevel) not in server_dict[message.server.id]['raidlvls']:
                     raid = discord.utils.get(message.server.roles, name = ghpokeid.lower().strip())
                     if raid is None:
-                        raid = await Meowth.create_role(server = message.server, name = ghpokeid.lower().strip(), hoist = False, mentionable = True)
+                        try:
+                            raid = await Meowth.create_role(server = message.server, name = ghpokeid.lower().strip(), hoist = False, mentionable = True)
+                            raid = raid.mention
+                        except discord.errors.HTTPException:
+                            await Meowth.send_message(message.channel, "Maximum guild roles reached.")
+                            raid = ghpokeid.title()
+                    else:
+                        raid = raid.mention
                     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the raid!"),url=_("https://www.google.com/maps/dir/Current+Location/{0}").format(ghgps),colour=message.server.me.colour)
                     raid_number = pkmn_info['pokemon_list'].index(ghpokeid.lower().strip()) + 1
                     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=2".format(str(raid_number).zfill(3))
@@ -824,7 +831,7 @@ async def _on_huntr(message):
                         raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
                     else:
                         raid_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=message.author.default_avatar_url)
-                    raidreport = await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}").format(pokemon=raid.mention, member=message.author.mention, location_details=ghgym),embed=raid_embed)
+                    raidreport = await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}").format(pokemon=raid, member=message.author.mention, location_details=ghgym),embed=raid_embed)
                     await asyncio.sleep(int(ghminute)*60)
                     expiremsg = _("**This {pokemon} raid has expired!**").format(pokemon=ghpokeid)
                     try:
@@ -1226,7 +1233,10 @@ async def configure(ctx):
                 for team in config['team_dict'].keys():
                     temp_role = discord.utils.get(server.roles, name=team)
                     if temp_role == None:
-                        await Meowth.create_role(server = server, name = team, hoist = False, mentionable = True)
+                        try:
+                            await Meowth.create_role(server = server, name = team, hoist = False, mentionable = True)
+                        except discord.errors.HTTPException:
+                            pass
                 await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description="Team Assignments enabled!"))
                 break
             elif teamreply.content.lower() == "n":
@@ -1732,7 +1742,10 @@ async def team(ctx):
     for team in config['team_dict'].keys():
         temp_role = discord.utils.get(server.roles, name=team)
         if not temp_role:
-            temp_role = await Meowth.create_role(server, name=team)
+            try:
+                temp_role = await Meowth.create_role(server, name=team)
+            except discord.errors.HTTPException:
+                pass
         if temp_role.position > position:
             high_roles.append(temp_role.name)
 
@@ -1851,7 +1864,11 @@ async def want(ctx):
         role = discord.utils.get(server.roles, name=entered_want)
         # Create role if it doesn't exist yet
         if role is None:
-            role = await Meowth.create_role(server = server, name = entered_want, hoist = False, mentionable = True)
+            try:
+                role = await Meowth.create_role(server = server, name = entered_want, hoist = False, mentionable = True)
+            except discord.errors.HTTPException:
+                await Meowth.send_message(message.channel, "Maximum guild roles reached. Pokemon not added.")
+                return
             await asyncio.sleep(0.5)
 
         # If user is already wanting the Pokemon,
@@ -2038,9 +2055,17 @@ async def _wild(message, huntr):
         return
 
     wild = discord.utils.get(message.server.roles, name = entered_wild)
+
     if wild is None:
-        wild = await Meowth.create_role(server = message.server, name = entered_wild, hoist = False, mentionable = True)
+        try:
+            wild = await Meowth.create_role(server = message.server, name = entered_wild, hoist = False, mentionable = True)
+            wild = wild.mention
+        except discord.errors.HTTPException:
+            await Meowth.send_message(message.channel, "Maximum guild roles reached.")
+            wild = entered_wild.title()
         await asyncio.sleep(0.5)
+    else:
+        wild = wild.mention
     wild_number = pkmn_info['pokemon_list'].index(entered_wild) + 1
     wild_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=2".format(str(wild_number).zfill(3))
     if not huntr:
@@ -2053,7 +2078,7 @@ async def _wild(message, huntr):
             wild_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=message.author.default_avatar_url)
         wild_embed.set_thumbnail(url=wild_img_url)
         despawn = 3600
-        wildreportmsg = await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: {location_details}").format(pokemon=wild.mention, member=message.author.mention, location_details=wild_details),embed=wild_embed)
+        wildreportmsg = await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: {location_details}").format(pokemon=wild, member=message.author.mention, location_details=wild_details),embed=wild_embed)
     else:
         wild_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(wild_details)
         wild_embed = discord.Embed(title=_("Meowth! Click here for exact directions to the wild {pokemon}!").format(pokemon=entered_wild.title()),url=wild_gmaps_link,colour=message.server.me.colour)
@@ -2063,7 +2088,7 @@ async def _wild(message, huntr):
         wild_embed.set_footer(text=_("Reported by @{author}").format(author=message.author.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
         wild_embed.set_thumbnail(url=wild_img_url)
         despawn = (int(huntrexp.split(" ")[0])*60) + int(huntrexp.split(" ")[2])
-        wildreportmsg = await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: <https://pokehuntr.com/#{location_details}>").format(pokemon=wild.mention, member=message.author.mention, location_details=wild_details, gps=wild_details),embed=wild_embed)
+        wildreportmsg = await Meowth.send_message(message.channel, content=_("Meowth! Wild {pokemon} reported by {member}! Details: <https://pokehuntr.com/#{location_details}>").format(pokemon=wild, member=message.author.mention, location_details=wild_details, gps=wild_details),embed=wild_embed)
     expiremsg = _("**This {pokemon} has despawned!**").format(pokemon=entered_wild.title())
     await asyncio.sleep(despawn)
     try:
@@ -2185,8 +2210,15 @@ async def _raid(message, huntr):
     raid_channel = await Meowth.create_channel(message.server, raid_channel_name, *message.channel.overwrites)
     raid = discord.utils.get(message.server.roles, name = entered_raid)
     if raid is None:
-        raid = await Meowth.create_role(server = message.server, name = entered_raid, hoist = False, mentionable = True)
+        try:
+            raid = await Meowth.create_role(server = message.server, name = entered_raid, hoist = False, mentionable = True)
+            raid = raid.mention
+        except discord.errors.HTTPException:
+            await Meowth.send_message(message.channel, "Maximum guild roles reached.")
+            raid = entered_raid.title()
         await asyncio.sleep(0.5)
+    else:
+        raid = raid.mention
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=2".format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the raid!"),url=raid_gmaps_link,colour=message.server.me.colour)
@@ -2217,7 +2249,7 @@ You can set the start time with **!starttime [HH:MM AM/PM]** and access this wit
 
 Message **!starting** when the raid is beginning to clear the raid's 'here' list.
 
-This channel will be deleted five minutes after the timer expires.""").format(pokemon=raid.mention, member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
+This channel will be deleted five minutes after the timer expires.""").format(pokemon=raid, member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
     raidmessage = await Meowth.send_message(raid_channel, content = raidmsg, embed=raid_embed)
     await Meowth.pin_message(raidmessage)
 
@@ -2436,8 +2468,15 @@ async def _eggassume(args, raid_channel):
     raid_gmaps_link = oldembed['url']
     raidrole = discord.utils.get(raid_channel.server.roles, name = entered_raid)
     if raidrole is None:
-        raidrole = await Meowth.create_role(server = raid_channel.server, name = entered_raid, hoist = False, mentionable = True)
+        try:
+            raidrole = await Meowth.create_role(server = raid_channel.server, name = entered_raid, hoist = False, mentionable = True)
+            raidrole = raidrole.mention
+        except discord.errors.HTTPException:
+            await Meowth.send_message(raid_channel, "Maximum guild roles reached.")
+            raidrole = entered_raid.title()
         await asyncio.sleep(0.5)
+    else:
+        raidrole = raidrole.mention
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=2".format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the coming raid!"),url=raid_gmaps_link,colour=raid_channel.server.me.colour)
@@ -2464,7 +2503,7 @@ async def _eggassume(args, raid_channel):
         egg_report = getegg_report.id
     except discord.errors.NotFound:
         egg_report = None
-    await Meowth.send_message(raid_channel, _("Meowth! This egg will be assumed to be {pokemon} when it hatches!").format(pokemon=raidrole.mention))
+    await Meowth.send_message(raid_channel, _("Meowth! This egg will be assumed to be {pokemon} when it hatches!").format(pokemon=raidrole))
     server_dict[raid_channel.server.id]['raidchannel_dict'][raid_channel.id] = eggdetails
     return
 
@@ -2552,8 +2591,15 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
     raid_gmaps_link = oldembed['url']
     raid = discord.utils.get(raid_channel.server.roles, name = entered_raid)
     if raid is None:
-        raid = await Meowth.create_role(server = raid_channel.server, name = entered_raid, hoist = False, mentionable = True)
+        try:
+            raid = await Meowth.create_role(server = raid_channel.server, name = entered_raid, hoist = False, mentionable = True)
+            raid = raid.mention
+        except discord.errors.HTTPException:
+            await Meowth.send_message(raid_channel, "Maximum guild roles reached.")
+            raid = entered_raid.title()
         await asyncio.sleep(0.5)
+    else:
+        raid = raid.mention
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=2".format(str(raid_number).zfill(3))
     oldembed = raid_message.embeds[0]
@@ -2577,7 +2623,7 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
         if trainer_dict[trainer]['status'] =='maybe' or trainer_dict[trainer]['status'] =='omw' or trainer_dict[trainer]['status'] =='waiting':
             user = raid_channel.server.get_member(trainer)
             trainer_list.append(user.mention)
-    await Meowth.send_message(raid_channel, content = _("Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!\nIf you couldn't before, you're now able to update your status with **!coming** or **!here**. If you've changed your plans, use **!cancel**.").format(trainer_list=", ".join(trainer_list), pokemon=raid.mention), embed = raid_embed)
+    await Meowth.send_message(raid_channel, content = _("Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!\nIf you couldn't before, you're now able to update your status with **!coming** or **!here**. If you've changed your plans, use **!cancel**.").format(trainer_list=", ".join(trainer_list), pokemon=raid), embed = raid_embed)
     for field in oldembed['fields']:
         if "team" in field['name'].lower() or "status" in field['name'].lower():
             raid_embed.add_field(name=field['name'], value=field['value'], inline=field['inline'])
@@ -4092,9 +4138,10 @@ async def _interest(ctx, tag=False):
     # Grab all trainers who are maybe and sum
     # up their counts
     trainer_dict = copy.deepcopy(server_dict[ctx.message.server.id]['raidchannel_dict'][ctx.message.channel.id]['trainer_dict'])
-    for trainer in trainer_dict.values():
-        if trainer['status'] == "maybe":
-            ctx_maybecount += trainer['count']
+    for trainer in trainer_dict:
+        memberexists = ctx.message.server.get_member(trainer)
+        if trainer_dict[trainer]['status'] == "maybe" and memberexists:
+            ctx_maybecount += trainer_dict[trainer]['count']
 
     # If at least 1 person is interested,
     # add an extra message indicating who it is.
@@ -4102,7 +4149,8 @@ async def _interest(ctx, tag=False):
     maybe_list = []
     name_list = []
     for trainer in trainer_dict.keys():
-        if trainer_dict[trainer]['status']=='maybe':
+        memberexists = ctx.message.server.get_member(trainer)
+        if trainer_dict[trainer]['status']=='maybe' and memberexists:
             user = ctx.message.server.get_member(trainer)
             name_list.append("**"+user.name+"**")
             maybe_list.append(user.mention)
@@ -4133,9 +4181,10 @@ async def _otw(ctx, tag=False):
     # Grab all trainers who are :omw: and sum
     # up their counts
     trainer_dict = copy.deepcopy(server_dict[ctx.message.server.id]['raidchannel_dict'][ctx.message.channel.id]['trainer_dict'])
-    for trainer in trainer_dict.values():
-        if trainer['status'] == "omw":
-            ctx_omwcount += trainer['count']
+    for trainer in trainer_dict:
+        memberexists = ctx.message.server.get_member(trainer)
+        if trainer_dict[trainer]['status'] == "omw" and memberexists:
+            ctx_omwcount += trainer_dict[trainer]['count']
 
     # If at least 1 person is on the way,
     # add an extra message indicating who it is.
@@ -4143,7 +4192,8 @@ async def _otw(ctx, tag=False):
     otw_list = []
     name_list = []
     for trainer in trainer_dict.keys():
-        if trainer_dict[trainer]['status']=='omw':
+        memberexists = ctx.message.server.get_member(trainer)
+        if trainer_dict[trainer]['status']=='omw' and memberexists:
             user = ctx.message.server.get_member(trainer)
             name_list.append("**"+user.name+"**")
             otw_list.append(user.mention)
@@ -4173,9 +4223,10 @@ async def _waiting(ctx, tag=False):
     # Grab all trainers who are :here: and sum
     # up their counts
     trainer_dict = copy.deepcopy(server_dict[ctx.message.server.id]['raidchannel_dict'][ctx.message.channel.id]['trainer_dict'])
-    for trainer in trainer_dict.values():
-        if trainer['status'] == "waiting":
-            ctx_waitingcount += trainer['count']
+    for trainer in trainer_dict:
+        memberexists = ctx.message.server.get_member(trainer)
+        if trainer_dict[trainer]['status'] == "waiting" and memberexists:
+            ctx_waitingcount += trainer_dict[trainer]['count']
 
     # If at least 1 person is waiting,
     # add an extra message indicating who it is.
@@ -4183,7 +4234,8 @@ async def _waiting(ctx, tag=False):
     waiting_list = []
     name_list = []
     for trainer in trainer_dict.keys():
-        if trainer_dict[trainer]['status']=='waiting':
+        memberexists = ctx.message.server.get_member(trainer)
+        if trainer_dict[trainer]['status']=='waiting' and memberexists:
             user = ctx.message.server.get_member(trainer)
             name_list.append("**"+user.name+"**")
             waiting_list.append(user.mention)
@@ -4213,9 +4265,10 @@ async def _lobbylist(ctx, tag=False):
     # Grab all trainers who are :omw: and sum
     # up their counts
     trainer_dict = copy.deepcopy(server_dict[ctx.message.server.id]['raidchannel_dict'][ctx.message.channel.id]['trainer_dict'])
-    for trainer in trainer_dict.values():
-        if trainer['status'] == "lobby":
-            ctx_lobbycount += trainer['count']
+    for trainer in trainer_dict:
+        memberexists = ctx.message.server.get_member(trainer)
+        if trainer_dict[trainer]['status'] == "lobby" and memberexists:
+            ctx_lobbycount += trainer_dict[trainer]['count']
 
     # If at least 1 person is on the way,
     # add an extra message indicating who it is.
@@ -4223,7 +4276,8 @@ async def _lobbylist(ctx, tag=False):
     lobby_list = []
     name_list = []
     for trainer in trainer_dict.keys():
-        if trainer_dict[trainer]['status']=='lobby':
+        memberexists = ctx.message.server.get_member(trainer)
+        if trainer_dict[trainer]['status']=='lobby' and memberexists:
             user = ctx.message.server.get_member(trainer)
             name_list.append("**"+user.name+"**")
             lobby_list.append(user.mention)
