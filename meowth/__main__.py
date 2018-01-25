@@ -2445,6 +2445,9 @@ async def _eggassume(args, raid_channel):
     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(raid_channel.server, get_weaknesses(entered_raid))),inline=True)
     if gymhuntrgps:
         raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
+    for field in oldembed['fields']:
+        if "team" in field['name'].lower() or "status" in field['name'].lower():
+            raid_embed.add_field(name=field['name'], value=field['value'], inline=field['inline'])
     if raid_messageauthor.avatar:
         raid_embed.set_footer(text=_("Reported by @{author}").format(author=raid_messageauthor.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=raid_messageauthor, format="jpg", size=32)))
     else:
@@ -2553,6 +2556,7 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
         await asyncio.sleep(0.5)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=2".format(str(raid_number).zfill(3))
+    oldembed = raid_message.embeds[0]
     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the raid!"),url=raid_gmaps_link,colour=raid_channel.server.me.colour)
     raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_raid.title(),pokemonnumber=str(raid_number),type="".join(get_type(raid_channel.server, raid_number)),inline=True))
     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(raid_channel.server, get_weaknesses(entered_raid))),inline=True)
@@ -2561,6 +2565,9 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
         if huntr:
             gymhuntrmoves = huntr.split("|")[2]
         raid_embed.add_field(name=gymhuntrmoves, value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
+    for field in oldembed['fields']:
+        if "team" in field['name'].lower() or "status" in field['name'].lower():
+            raid_embed.add_field(name=field['name'], value=field['value'], inline=field['inline'])
     if raid_messageauthor.avatar:
         raid_embed.set_footer(text=_("Reported by @{author}").format(author=raid_messageauthor.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=raid_messageauthor, format="jpg", size=32)))
     else:
