@@ -2017,10 +2017,12 @@ async def _wild(message, huntr):
         wild_split = message.clean_content.split()
         huntrexp = ""
         huntrweather = "\u200b"
+        huntrexpstamp = ""
     else:
         wild_split = huntr.split("|")[0].split()
         huntrexp = huntr.split("|")[1]
         huntrweather = "Weather: "+huntr.split("|")[2]
+        huntrexpstamp = (message.timestamp + datetime.timedelta(hours=server_dict[message.channel.server.id]['offset'],minutes=int(huntrexp.split()[0]))).strftime("%I:%M %p")
     del wild_split[0]
     if len(wild_split) <= 1:
         await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**"))
@@ -2082,7 +2084,7 @@ async def _wild(message, huntr):
         wild_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(wild_details)
         wild_embed = discord.Embed(title=_("Meowth! Click here for exact directions to the wild {pokemon}!").format(pokemon=entered_wild.title()),url=wild_gmaps_link,colour=message.server.me.colour)
         wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.title(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
-        wild_embed.add_field(name="**Despawns in:**", value=_("{huntrexp}").format(huntrexp=huntrexp),inline=True)
+        wild_embed.add_field(name="**Despawns in:**", value=_("{huntrexp} ({huntrexpstamp})").format(huntrexp=huntrexp,huntrexpstamp=huntrexpstamp),inline=True)
         wild_embed.add_field(name=huntrweather, value=_("Perform a scan to help find more by clicking [here](https://pokehuntr.com/#{huntrurl}).").format(huntrurl=wild_details), inline=False)
         wild_embed.set_footer(text=_("Reported by @{author} - {timestamp}").format(author=message.author.display_name, timestamp=timestamp), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
         wild_embed.set_thumbnail(url=wild_img_url)
@@ -2428,7 +2430,6 @@ When this egg raid expires, there will be 15 minutes to update it into an open r
         if len(raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
             await _eggassume("assume "+ get_name(raid_info['raid_eggs'][egg_level]['pokemon'][0]), raid_channel)
         event_loop.create_task(expiry_check(raid_channel))
-
 
 async def _eggassume(args, raid_channel):
     eggdetails = server_dict[raid_channel.server.id]['raidchannel_dict'][raid_channel.id]
