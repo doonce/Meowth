@@ -2565,15 +2565,22 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
         if huntr:
             gymhuntrmoves = huntr.split("|")[2]
         raid_embed.add_field(name=gymhuntrmoves, value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
-    for field in oldembed['fields']:
-        if "team" in field['name'].lower() or "status" in field['name'].lower():
-            raid_embed.add_field(name=field['name'], value=field['value'], inline=field['inline'])
     if raid_messageauthor.avatar:
         raid_embed.set_footer(text=_("Reported by @{author}").format(author=raid_messageauthor.display_name), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=raid_messageauthor, format="jpg", size=32)))
     else:
         raid_embed.set_footer(text=_("Reported by @{author}").format(author=raid_messageauthor.display_name), icon_url=raid_messageauthor.default_avatar_url)
     raid_embed.set_thumbnail(url=raid_img_url)
     await Meowth.edit_channel(raid_channel, name=raid_channel_name, topic=end.strftime("Ends on %B %d at %I:%M %p (%H:%M)"))
+    trainer_list = []
+    trainer_dict = copy.deepcopy(server_dict[raid_channel.server.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'])
+    for trainer in trainer_dict.keys():
+        if trainer_dict[trainer]['status'] =='maybe' or trainer_dict[trainer]['status'] =='omw' or trainer_dict[trainer]['status'] =='waiting':
+            user = raid_channel.server.get_member(trainer)
+            trainer_list.append(user.mention)
+    await Meowth.send_message(raid_channel, content = _("Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!\nIf you couldn't before, you're now able to update your status with **!coming** or **!here**. If you've changed your plans, use **!cancel**.").format(trainer_list=", ".join(trainer_list), pokemon=raid.mention), embed = raid_embed)
+    for field in oldembed['fields']:
+        if "team" in field['name'].lower() or "status" in field['name'].lower():
+            raid_embed.add_field(name=field['name'], value=field['value'], inline=field['inline'])
     try:
         getraid_message = await Meowth.edit_message(raid_message, new_content=raidmsg, embed=raid_embed)
         raid_message = getraid_message.id
@@ -2600,13 +2607,6 @@ Message **!starting** when the raid is beginning to clear the raid's 'here' list
     }
     if starttime:
         server_dict[raid_channel.server.id]['raidchannel_dict'][raid_channel.id]['starttime'] = starttime
-    trainer_list = []
-    trainer_dict = copy.deepcopy(server_dict[raid_channel.server.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'])
-    for trainer in trainer_dict.keys():
-        if trainer_dict[trainer]['status'] =='maybe' or trainer_dict[trainer]['status'] =='omw' or trainer_dict[trainer]['status'] =='waiting':
-            user = raid_channel.server.get_member(trainer)
-            trainer_list.append(user.mention)
-    await Meowth.send_message(raid_channel, content = _("Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!\nIf you couldn't before, you're now able to update your status with **!coming** or **!here**. If you've changed your plans, use **!cancel**.").format(trainer_list=", ".join(trainer_list), pokemon=raid.mention), embed = raid_embed)
     event_loop.create_task(expiry_check(raid_channel))
 
 @Meowth.command(pass_context=True)
