@@ -3085,9 +3085,20 @@ async def new(ctx):
         oldembed = oldraidmsg.embeds[0]
         newembed = discord.Embed(title=oldembed['title'],url=newloc,colour=message.server.me.colour)
         for field in oldembed['fields']:
-            newembed.add_field(name=field['name'], value=field['value'], inline=field['inline'])
+            if "team" not in field['name'].lower() and "status" not in field['name'].lower():
+                newembed.add_field(name=field['name'], value=field['value'], inline=field['inline'])
         newembed.set_footer(text=oldembed['footer']['text'], icon_url=oldembed['footer']['icon_url'])
         newembed.set_thumbnail(url=oldembed['thumbnail']['url'])
+        otw_list = []
+        trainer_dict = copy.deepcopy(server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['trainer_dict'])
+        for trainer in trainer_dict.keys():
+            if trainer_dict[trainer]['status']=='omw':
+                user = message.server.get_member(trainer)
+                otw_list.append(user.mention)
+        await Meowth.send_message(message.channel, content = _("Meowth! Someone has suggested a different location for the raid! Trainers {trainer_list}: make sure you are headed to the right place!").format(trainer_list=", ".join(otw_list)), embed = newembed)
+        for field in oldembed['fields']:
+            if "team" in field['name'].lower() or "status" in field['name'].lower():
+                newembed.add_field(name=field['name'], value=field['value'], inline=field['inline'])
         try:
             newraidmsg = await Meowth.edit_message(oldraidmsg, new_content=oldraidmsg.content, embed=newembed)
         except:
@@ -3098,13 +3109,6 @@ async def new(ctx):
             pass
         server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['raidmessage'] = newraidmsg.id
         server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['raidreport'] = newreportmsg.id
-        otw_list = []
-        trainer_dict = copy.deepcopy(server_dict[message.server.id]['raidchannel_dict'][message.channel.id]['trainer_dict'])
-        for trainer in trainer_dict.keys():
-            if trainer_dict[trainer]['status']=='omw':
-                user = message.server.get_member(trainer)
-                otw_list.append(user.mention)
-        await Meowth.send_message(message.channel, content = _("Meowth! Someone has suggested a different location for the raid! Trainers {trainer_list}: make sure you are headed to the right place!").format(trainer_list=", ".join(otw_list)), embed = newembed)
         return
 
 @Meowth.command(pass_context=True)
