@@ -793,7 +793,9 @@ async def _on_huntr(message):
                 ghtime = ghdesc[3].split(" ")
                 ghhour = ghtime[2]
                 ghminute = int(ghtime[4].zfill(2))
+                ghsec = int(ghtime[6].zfill(2))
                 huntr = "!raid {0} {1} {2}:{3}|{4}|{5}".format(ghpokeid, ghgym, ghhour, ghminute, ghgps, ghmoves)
+                ghtimestamp = (message.timestamp + datetime.timedelta(hours=server_dict[message.channel.server.id]['offset'],minutes=int(ghminute),seconds=int(ghsec))).strftime("%I:%M %p")
                 await Meowth.delete_message(message)
                 for channelid in server_dict[message.server.id]['raidchannel_dict']:
                     try:
@@ -826,7 +828,7 @@ async def _on_huntr(message):
                     raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}\n{moves}").format(pokemon=ghpokeid.title(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),moves=ghmoves),inline=True)
                     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(message.server, get_weaknesses(ghpokeid.lower().strip()))),inline=True)
                     raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details="\n".join(textwrap.wrap(ghgym, width=30))),inline=True)
-                    raid_embed.add_field(name="**Remaining:**", value=_("{minutes} mins").format(minutes=ghminute),inline=True)
+                    raid_embed.add_field(name="**Expires in:**", value=_("{minutes} mins ({ghtimestamp})").format(minutes=ghminute,ghtimestamp=ghtimestamp),inline=True)
                     raid_embed.set_thumbnail(url=raid_img_url)
                     raid_embed.set_footer(text=_("Reported by @{author} - {timestamp}").format(author=message.author.display_name, timestamp=timestamp), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
                     raidreport = await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}").format(pokemon=raid, member=message.author.mention, location_details=ghgym),embed=raid_embed)
@@ -861,7 +863,9 @@ async def _on_huntr(message):
                 ghtime = ghdesc[1].split(" ")
                 ghhour = ghtime[2]
                 ghminute = int(ghtime[4].zfill(2))
+                ghsec = int(ghtime[4].zfill(2))
                 huntr = "!raidegg {0} {1} {2}:{3}|{4}".format(ghegglevel, ghgym, ghhour, ghminute, ghgps)
+                ghtimestamp = (message.timestamp + datetime.timedelta(hours=server_dict[message.channel.server.id]['offset'],minutes=int(ghminute),seconds=int(ghsec))).strftime("%I:%M %p")
                 await Meowth.delete_message(message)
                 for channelid in server_dict[message.server.id]['raidchannel_dict']:
                     try:
@@ -875,7 +879,7 @@ async def _on_huntr(message):
                 elif ghduplicate is False and int(ghegglevel) not in server_dict[message.server.id]['egglvls']:
                     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the coming raid!"),url=_("https://www.google.com/maps/dir/Current+Location/{0}").format(ghgps),colour=message.server.me.colour)
                     raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details="\n".join(textwrap.wrap(ghgym,width=30))),inline=True)
-                    raid_embed.add_field(name="**Starting in:**", value=_("{minutes} mins").format(minutes=ghminute),inline=True)
+                    raid_embed.add_field(name="**Starting in:**", value=_("{minutes} mins ({ghtimestamp})").format(minutes=ghminute,ghtimestamp=ghtimestamp),inline=True)
                     raid_embed.set_thumbnail(url=_("https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}.png?cache=2".format(str(ghegglevel))))
                     raid_embed.set_footer(text=_("Reported by @{author} - {timestamp}").format(author=message.author.display_name, timestamp=timestamp), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
                     raidreport = await Meowth.send_message(message.channel, content = _("Meowth! Level {level} raid egg reported by {member}! Details: {location_details}.").format(level=ghegglevel, member=message.author.mention, location_details=ghgym),embed=raid_embed)
@@ -2022,7 +2026,7 @@ async def _wild(message, huntr):
         wild_split = huntr.split("|")[0].split()
         huntrexp = huntr.split("|")[1]
         huntrweather = "Weather: "+huntr.split("|")[2]
-        huntrexpstamp = (message.timestamp + datetime.timedelta(hours=server_dict[message.channel.server.id]['offset'],minutes=int(huntrexp.split()[0]))).strftime("%I:%M %p")
+        huntrexpstamp = (message.timestamp + datetime.timedelta(hours=server_dict[message.channel.server.id]['offset'],minutes=int(huntrexp.split()[0]),seconds=int(huntrexp.split()[2]))).strftime("%I:%M %p")
     del wild_split[0]
     if len(wild_split) <= 1:
         await Meowth.send_message(message.channel, _("Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**"))
@@ -2084,7 +2088,7 @@ async def _wild(message, huntr):
         wild_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(wild_details)
         wild_embed = discord.Embed(title=_("Meowth! Click here for exact directions to the wild {pokemon}!").format(pokemon=entered_wild.title()),url=wild_gmaps_link,colour=message.server.me.colour)
         wild_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}").format(pokemon=entered_wild.title(),pokemonnumber=str(wild_number),type="".join(get_type(message.server, wild_number)),inline=True))
-        wild_embed.add_field(name="**Despawns in:**", value=_("{huntrexp} ({huntrexpstamp})").format(huntrexp=huntrexp,huntrexpstamp=huntrexpstamp),inline=True)
+        wild_embed.add_field(name="**Despawns in:**", value=_("{huntrexp} mins ({huntrexpstamp})").format(huntrexp=huntrexp.split()[0],huntrexpstamp=huntrexpstamp),inline=True)
         wild_embed.add_field(name=huntrweather, value=_("Perform a scan to help find more by clicking [here](https://pokehuntr.com/#{huntrurl}).").format(huntrurl=wild_details), inline=False)
         wild_embed.set_footer(text=_("Reported by @{author} - {timestamp}").format(author=message.author.display_name, timestamp=timestamp), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
         wild_embed.set_thumbnail(url=wild_img_url)
