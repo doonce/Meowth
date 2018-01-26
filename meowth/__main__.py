@@ -820,6 +820,7 @@ async def _on_huntr(message):
                         except discord.errors.HTTPException:
                             await Meowth.send_message(message.channel, "Maximum guild roles reached.")
                             raid = ghpokeid.title()
+                        await asyncio.sleep(0.5)
                     else:
                         raid = raid.mention
                     raid_embed = discord.Embed(title=_("Meowth! Click here for directions to the raid!"),url=_("https://www.google.com/maps/dir/Current+Location/{0}").format(ghgps),colour=message.server.me.colour)
@@ -828,7 +829,7 @@ async def _on_huntr(message):
                     raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}\n{moves}").format(pokemon=ghpokeid.title(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),moves=ghmoves),inline=True)
                     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(message.server, get_weaknesses(ghpokeid.lower().strip()))),inline=True)
                     raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details="\n".join(textwrap.wrap(ghgym, width=30))),inline=True)
-                    raid_embed.add_field(name="**Expires in:**", value=_("{minutes} min ({ghtimestamp})").format(minutes=ghminute,ghtimestamp=ghtimestamp),inline=True)
+                    raid_embed.add_field(name="**Expires in:**", value=_("{minutes} mins ({ghtimestamp})").format(minutes=ghminute,ghtimestamp=ghtimestamp),inline=True)
                     raid_embed.set_thumbnail(url=raid_img_url)
                     raid_embed.set_footer(text=_("Reported by @{author} - {timestamp}").format(author=message.author.display_name, timestamp=timestamp), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
                     raidreport = await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}").format(pokemon=raid, member=message.author.mention, location_details=ghgym),embed=raid_embed)
@@ -2449,7 +2450,7 @@ async def _eggassume(args, raid_channel):
         logger.info("Hatching Mention Failed - Trying alternative method: channel: {} (id: {}) - server: {} | Attempted mention: {}...".format(raid_channel.name,raid_channel.id,raid_channel.server.name,raid_message.content[:125]))
     gymhuntrgps = eggdetails['gymhuntrgps']
 
-    entered_raid = re.sub("[\@]", "", args.lower().lstrip("assume").lstrip(" "))
+    entered_raid = re.sub("[\@]", "", args.lower().lstrip("assume").strip())
     entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid.lower()
     rgx = r"[^a-zA-Z0-9]"
     pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_raid)), None)
