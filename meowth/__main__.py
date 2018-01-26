@@ -828,7 +828,7 @@ async def _on_huntr(message):
                     raid_embed.add_field(name="**Details:**", value=_("{pokemon} ({pokemonnumber}) {type}\n{moves}").format(pokemon=ghpokeid.title(),pokemonnumber=str(raid_number),type="".join(get_type(message.server, raid_number)),moves=ghmoves),inline=True)
                     raid_embed.add_field(name="**Weaknesses:**", value=_("{weakness_list}").format(weakness_list=weakness_to_str(message.server, get_weaknesses(ghpokeid.lower().strip()))),inline=True)
                     raid_embed.add_field(name="**Location:**", value=_("{raid_details}").format(raid_details="\n".join(textwrap.wrap(ghgym, width=30))),inline=True)
-                    raid_embed.add_field(name="**Expires in:**", value=_("{minutes} mins ({ghtimestamp})").format(minutes=ghminute,ghtimestamp=ghtimestamp),inline=True)
+                    raid_embed.add_field(name="**Expires in:**", value=_("{minutes} min ({ghtimestamp})").format(minutes=ghminute,ghtimestamp=ghtimestamp),inline=True)
                     raid_embed.set_thumbnail(url=raid_img_url)
                     raid_embed.set_footer(text=_("Reported by @{author} - {timestamp}").format(author=message.author.display_name, timestamp=timestamp), icon_url=_("https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}".format(user=message.author, format="jpg", size=32)))
                     raidreport = await Meowth.send_message(message.channel, content = _("Meowth! {pokemon} raid reported by {member}! Details: {location_details}").format(pokemon=raid, member=message.author.mention, location_details=ghgym),embed=raid_embed)
