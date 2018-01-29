@@ -26,7 +26,7 @@
 "//": "Define your server's emoji strings here.",
 
 "//": "Emoji for team assignments",
-"team_dict": {"mystic": ":mystic:", "valor": ":valor:", "instinct": ":instinct:"},
+"team_dict": {"mystic": ":mystic:", "valor": ":valor:", "instinct": ":instinct:", "harmony": ":harmony:"},
 
 "//": "Emoji for raid organization",
 "omw_id": ":omw:",
@@ -53,5 +53,6 @@
     "steel"    : ":steel:",
     "fairy"    : ":fairy:"
 }
+
 
 }
