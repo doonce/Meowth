@@ -372,11 +372,15 @@ If this was in error, reset the raid with **!timerset**"""))
                     if trainer_dict[trainer]['status']=='maybe':
                         user = channel.server.get_member(trainer)
                         maybe_list.append(user.mention)
-                await Meowth.send_message(channel, _("""**This egg has hatched!**\n\n...or the time has just expired. Trainers {trainer_list}: Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**. This channel will be deactivated until I get an update and I'll delete it in 15 minutes if I don't hear anything.""").format(trainer_list=", ".join(maybe_list)))
-            delete_time = server_dict[server.id]['raidchannel_dict'][channel.id]['exp'] + (15 * 60) - time.time()
+                new_name = "hatched-" + channel.name
+                await Meowth.edit_channel(channel,name=new_name)
+                await Meowth.send_message(channel, _("""**This egg has hatched!**\n\n...or the time has just expired. Trainers {trainer_list}: Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**. This channel will be deactivated until I get an update and I'll delete it in 45 minutes if I don't hear anything.""").format(trainer_list=", ".join(maybe_list)))
+            delete_time = server_dict[server.id]['raidchannel_dict'][channel.id]['exp'] + (45 * 60) - time.time()
             expiremsg = _("**This level {level} raid egg has expired!**").format(level=server_dict[channel.server.id]['raidchannel_dict'][channel.id]['egglevel'])
         else:
             if not alreadyexpired:
+                new_name = "expired-" + channel.name
+                await Meowth.edit_channel(channel,name=new_name)
                 await Meowth.send_message(channel, _("""This channel timer has expired! The channel has been deactivated and will be deleted in 5 minutes.
 To reactivate the channel, use **!timerset** to set the timer again."""))
             delete_time = server_dict[server.id]['raidchannel_dict'][channel.id]['exp'] + (5 * 60) - time.time()
@@ -1148,30 +1152,6 @@ async def announce(ctx,*,announce=None):
 
 @Meowth.command(pass_context=True)
 @commands.has_permissions(manage_server=True)
-async def addparty(ctx):
-    allblue = 0
-    allred = 0
-    allyellow = 0
-    for channelid in server_dict[ctx.message.server.id]['raidchannel_dict']:
-        for trainer in server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict']:
-            user = ctx.message.server.get_member(trainer)
-            count = int(server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['count'])
-            for role in user.roles:
-                if role.name == "mystic":
-                    server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'] = [count,0,0]
-                    continue
-                elif role.name == "valor":
-                    server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'] = [0,count,0]
-                    continue
-                elif role.name =="instinct":
-                    server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'] = [0,0,count]
-                    continue
-                else:
-                    server_dict[ctx.message.server.id]['raidchannel_dict'][channelid]['trainer_dict'][trainer]['party'] = [0,0,0]
-                    continue
-
-@Meowth.command(pass_context=True)
-@commands.has_permissions(manage_server=True)
 async def configure(ctx):
     """Meowth Configuration
 
@@ -1783,6 +1763,7 @@ async def team(ctx):
         # If the role isn't valid, something is misconfigured, so fire a warning.
         else:
             await Meowth.send_message(ctx.message.channel,_("Meowth! {team_role} is not configured as a role on this server. Please contact an admin for assistance.").format(team_role=team))
+            return
     # Check if team is one of the three defined in the team_dict
 
     if entered_team not in config['team_dict'].keys():
@@ -3470,7 +3451,8 @@ async def interested(ctx, *, teamcounts: str = None):
             bluecount = str(trainer_dict[ctx.message.author.id]['party'][0])+"m "
             redcount = str(trainer_dict[ctx.message.author.id]['party'][1])+"v "
             yellowcount = str(trainer_dict[ctx.message.author.id]['party'][2])+"i "
-            teamcounts = str(trainer_dict[ctx.message.author.id]['count']) +" "+ bluecount + redcount + yellowcount
+            unknowncount = str(trainer_dict[ctx.message.author.id]['party'][3])+"u "
+            teamcounts = str(trainer_dict[ctx.message.author.id]['count']) +" "+ bluecount + redcount + yellowcount + unknowncount
         else:
             teamcounts = "1"
     if teamcounts.split()[0].isdigit():
@@ -3540,7 +3522,8 @@ async def coming(ctx, *, teamcounts: str = None):
             bluecount = str(trainer_dict[ctx.message.author.id]['party'][0])+"m "
             redcount = str(trainer_dict[ctx.message.author.id]['party'][1])+"v "
             yellowcount = str(trainer_dict[ctx.message.author.id]['party'][2])+"i "
-            teamcounts = str(trainer_dict[ctx.message.author.id]['count']) +" "+ bluecount + redcount + yellowcount
+            unknowncount = str(trainer_dict[ctx.message.author.id]['party'][3])+"u "
+            teamcounts = str(trainer_dict[ctx.message.author.id]['count']) +" "+ bluecount + redcount + yellowcount + unknowncount
         else:
             teamcounts = "1"
     if teamcounts.split()[0].isdigit():
@@ -3611,7 +3594,8 @@ async def here(ctx, *, teamcounts: str = None):
             bluecount = str(trainer_dict[ctx.message.author.id]['party'][0])+"m "
             redcount = str(trainer_dict[ctx.message.author.id]['party'][1])+"v "
             yellowcount = str(trainer_dict[ctx.message.author.id]['party'][2])+"i "
-            teamcounts = str(trainer_dict[ctx.message.author.id]['count']) +" "+ bluecount + redcount + yellowcount
+            unknowncount = str(trainer_dict[ctx.message.author.id]['party'][3])+"u "
+            teamcounts = str(trainer_dict[ctx.message.author.id]['count']) +" "+ bluecount + redcount + yellowcount + unknowncount
         else:
             teamcounts = "1"
     if teamcounts.split()[0].isdigit():
@@ -3672,12 +3656,15 @@ async def _party_status(ctx, total, teamcounts):
             my_team = "valor"
         elif role.name =="instinct":
             my_team = "instinct"
+    if my_team != "mystic" and my_team != "valor" and my_team != "instinct":
+        my_team = "unknown"
     teamcounts = teamcounts.split()
     if total and teamcounts[0].isdigit():
         del teamcounts[0]
     mystic = ['mystic', 0]
     instinct = ['instinct', 0]
     valor = ['valor', 0]
+    unknown = ['unknown', 0]
     team_aliases = {
         'mystic':mystic,
         'blue':mystic,
@@ -3690,7 +3677,12 @@ async def _party_status(ctx, total, teamcounts):
         'valor':valor,
         'red':valor,
         'v':valor,
-        'r':valor
+        'r':valor,
+        'unknown':unknown,
+        'grey':unknown,
+        'gray':unknown,
+        'u':unknown,
+        'g':unknown
     }
     regx = re.compile("([a-zA-Z]+)([0-9]+)|([0-9]+)([a-zA-Z]+)")
     for count in teamcounts:
@@ -3717,24 +3709,24 @@ async def _party_status(ctx, total, teamcounts):
                             continue
             return await Meowth.send_message(
                 channel, "Invalid format, please check and try again.")
-    team_total = mystic[1] + instinct[1] + valor[1]
+    team_total = mystic[1] + instinct[1] + valor[1] + unknown[1]
     if total:
         if int(team_total) > int(total):
             return await Meowth.send_message(channel,
-                "Team counts are higher than the total. "
-                "Double check your counts and try again. You might need to "
-                "update your total. I currently have **"+str(total)+"** total "
-                "and you entered **"+str(team_total)+"** in your party.")
+                "Team counts are higher than the total, "
+                "double check your counts and try again. "
+                "You entered **"+str(total)+"** total "
+                "and **"+str(team_total)+"** in your party.")
         if int(total) > int(team_total) and my_team:
             if team_aliases[my_team][1]:
                 return await Meowth.send_message(channel,
-                    "Your team counts don't match the total amount. "
-                    "Double check your counts and try again. You might need to "
-                    "update your total. I currently have **"+str(total)+"** total "
-                    "and you entered **"+str(team_total)+"** in your party.")
+                    "Your team counts don't match the total amount, "
+                    "double check your counts and try again. "
+                    "You entered **"+str(total)+"** total "
+                    "and **"+str(team_total)+"** in your party.")
             team_aliases[my_team][1] = total - team_total
 
-    partylist = [mystic[1], valor[1], instinct[1]]
+    partylist = [mystic[1], valor[1], instinct[1], unknown[1]]
     result = [total,partylist]
     return result
 
@@ -3752,7 +3744,7 @@ async def _edit_party(channel, author):
         channelblue += int(trainer_dict[trainer]['party'][0])
         channelred += int(trainer_dict[trainer]['party'][1])
         channelyellow += int(trainer_dict[trainer]['party'][2])
-        channelunknown += int(trainer_dict[trainer]['count']) - int(trainer_dict[trainer]['party'][0]) - int(trainer_dict[trainer]['party'][1]) - int(trainer_dict[trainer]['party'][2])
+        channelunknown += int(trainer_dict[trainer]['party'][3])
         if trainer_dict[trainer]['status'] == "maybe":
             channelmaybe += int(trainer_dict[trainer]['count'])
         elif trainer_dict[trainer]['status'] == "omw":
@@ -3770,7 +3762,7 @@ async def _edit_party(channel, author):
             newembed.add_field(name=field['name'], value=field['value'], inline=field['inline'])
     if channeltotal > 0:
         newembed.add_field(name="**Status List**", value=_("Maybe: **{channelmaybe}** | Coming: **{channelcoming}** | Here: **{channelhere}**").format(channelmaybe=channelmaybe,channelcoming=channelcoming,channelhere=channelhere),inline=True)
-        newembed.add_field(name="**Team List**", value=_("{blue_emoji}: **{channelblue}** | {red_emoji}: **{channelred}** | {yellow_emoji}: **{channelyellow}** | {grey_emoji}: **{channelunknown}**").format(blue_emoji=parse_emoji(channel.server, config['team_dict']['mystic']),channelblue=channelblue,red_emoji=parse_emoji(channel.server, config['team_dict']['valor']),channelred=channelred,yellow_emoji=parse_emoji(channel.server, config['team_dict']['instinct']),channelyellow=channelyellow,grey_emoji=parse_emoji(channel.server, config['team_dict']['harmony']),channelunknown=channelunknown),inline=True)
+        newembed.add_field(name="**Team List**", value=_("{blue_emoji}: **{channelblue}** | {red_emoji}: **{channelred}** | {yellow_emoji}: **{channelyellow}** | ❔: **{channelunknown}**").format(blue_emoji=parse_emoji(channel.server, config['team_dict']['mystic']),channelblue=channelblue,red_emoji=parse_emoji(channel.server, config['team_dict']['valor']),channelred=channelred,yellow_emoji=parse_emoji(channel.server, config['team_dict']['instinct']),channelyellow=channelyellow,channelunknown=channelunknown),inline=True)
     newembed.set_footer(text=reportembed['footer']['text'], icon_url=reportembed['footer']['icon_url'])
     newembed.set_thumbnail(url=reportembed['thumbnail']['url'])
     try:
@@ -3872,10 +3864,9 @@ async def _cancel(channel, author):
         else:
             await Meowth.send_message(channel, "Meowth! {member} and their total of {trainer_count} trainers have backed out of the lobby!".format(member=author.mention, trainer_count=t_dict['count']))
     t_dict['status'] = None
-    t_dict['count'] = 0
-    t_dict['party'] = [0,0,0]
-    await _edit_party(channel, author)
+    t_dict['party'] = [0,0,0,0]
     t_dict['count'] = 1
+    await _edit_party(channel, author)
 
 @Meowth.command(pass_context=True)
 @checks.activeraidchannel()
@@ -4314,7 +4305,7 @@ async def _teamlist(ctx):
     bluecount = 0
     redcount = 0
     yellowcount = 0
-    total = 0
+    othercount = 0
     redmaybe = 0
     redcoming = 0
     redwaiting = 0
@@ -4333,23 +4324,22 @@ async def _teamlist(ctx):
         bluecount += int(trainer_dict[trainer]['party'][0])
         redcount += int(trainer_dict[trainer]['party'][1])
         yellowcount += int(trainer_dict[trainer]['party'][2])
-        total = int(trainer_dict[trainer]['party'][0]) + int(trainer_dict[trainer]['party'][1]) + int(trainer_dict[trainer]['party'][2])
+        othercount += int(trainer_dict[trainer]['party'][3])
         if trainer_dict[trainer]['status'] == "waiting":
             bluewaiting += int(trainer_dict[trainer]['party'][0])
             redwaiting += int(trainer_dict[trainer]['party'][1])
             yellowwaiting += int(trainer_dict[trainer]['party'][2])
-            otherwaiting += trainer_dict[trainer]['count']-total
+            otherwaiting += int(trainer_dict[trainer]['party'][3])
         elif trainer_dict[trainer]['status'] == "omw":
             bluecoming += int(trainer_dict[trainer]['party'][0])
             redcoming += int(trainer_dict[trainer]['party'][1])
             yellowcoming += int(trainer_dict[trainer]['party'][2])
-            othercoming += trainer_dict[trainer]['count']-total
+            othercoming += int(trainer_dict[trainer]['party'][3])
         elif trainer_dict[trainer]['status'] == "maybe":
             bluemaybe += int(trainer_dict[trainer]['party'][0])
             redmaybe += int(trainer_dict[trainer]['party'][1])
             yellowmaybe += int(trainer_dict[trainer]['party'][2])
-            othermaybe += trainer_dict[trainer]['count']-total
-    othercount = othermaybe+othercoming+otherwaiting
+            othermaybe += int(trainer_dict[trainer]['party'][3])
     if bluecount > 0:
         teamliststr += _("{blue_emoji} **{blue_number} total,** {bluemaybe} interested, {bluecoming} coming, {bluewaiting} waiting {blue_emoji}\n").format(blue_number=bluecount, blue_emoji=parse_emoji(ctx.message.server, config['team_dict']['mystic']), bluemaybe=bluemaybe, bluecoming=bluecoming, bluewaiting=bluewaiting)
     if redcount > 0:
@@ -4357,7 +4347,7 @@ async def _teamlist(ctx):
     if yellowcount > 0:
         teamliststr += _("{yellow_emoji} **{yellow_number} total,** {yellowmaybe} interested, {yellowcoming} coming, {yellowwaiting} waiting {yellow_emoji}\n").format(yellow_number=yellowcount, yellow_emoji=parse_emoji(ctx.message.server, config['team_dict']['instinct']), yellowmaybe=yellowmaybe, yellowcoming=yellowcoming, yellowwaiting=yellowwaiting)
     if othercount > 0:
-        teamliststr += _("{grey_emoji} **{grey_number} other,** {greymaybe} interested, {greycoming} coming, {greywaiting} waiting {grey_emoji}").format(grey_emoji = parse_emoji(ctx.message.server, config['team_dict']['harmony']),grey_number=othercount, greymaybe=othermaybe, greycoming=othercoming, greywaiting=otherwaiting)
+        teamliststr += _("❔ **{grey_number} total,** {greymaybe} interested, {greycoming} coming, {greywaiting} waiting ❔").format(grey_number=othercount, greymaybe=othermaybe, greycoming=othercoming, greywaiting=otherwaiting)
     if (bluecount+redcount+yellowcount+othercount) > 0:
         listmsg = _(" Team numbers for the raid:\n{}").format(teamliststr)
     else:
