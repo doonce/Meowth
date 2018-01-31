@@ -1628,12 +1628,17 @@ async def setstatus(ctx, user, status, count=None):
             count = server_dict[ctx.message.server.id]['raidchannel_dict'][ctx.message.channel.id]['trainer_dict'][user.id]['count']
         except KeyError:
             count = 1
+    if not party:
+        try:
+            party = server_dict[ctx.message.server.id]['raidchannel_dict'][ctx.message.channel.id]['trainer_dict'][user.id]['party']
+        except KeyError:
+            party = [0,0,0,count]
     if status == "maybe" or status == "interested" or status == "i":
-        await _maybe(ctx.message.channel, user, count, party=None)
+        await _maybe(ctx.message.channel, user, count, party)
     elif status == "omw" or status == "coming" or status == "c":
-        await _coming(ctx.message.channel, user, count, party=None)
+        await _coming(ctx.message.channel, user, count, party)
     elif status == "waiting" or status == "here" or status == "h":
-        await _here(ctx.message.channel, user, count, party=None)
+        await _here(ctx.message.channel, user, count, party)
     elif status == "cancel":
         await _cancel(ctx.message.channel, user)
 
@@ -3651,7 +3656,6 @@ async def _here(channel, author, count, party):
 async def _party_status(ctx, total, teamcounts):
     channel = ctx.message.channel
     author = ctx.message.author
-    my_team = None
     for role in ctx.message.author.roles:
         if role.name == "mystic":
             my_team = "mystic"
@@ -3720,14 +3724,10 @@ async def _party_status(ctx, total, teamcounts):
                 "double check your counts and try again. "
                 "You entered **"+str(total)+"** total "
                 "and **"+str(team_total)+"** in your party.")
-        if int(total) > int(team_total) and my_team:
-            if team_aliases[my_team][1]:
-                return await Meowth.send_message(channel,
-                    "Your team counts don't match the total amount, "
-                    "double check your counts and try again. "
-                    "You entered **"+str(total)+"** total "
-                    "and **"+str(team_total)+"** in your party.")
-            team_aliases[my_team][1] = total - team_total
+        if int(total) > int(team_total) and teamcounts:
+            unknown[1] += total-team_total
+        elif int(total) > int(team_total) and not teamcounts:
+            team_aliase[my_team][1] = total - team_total
 
     partylist = [mystic[1], valor[1], instinct[1], unknown[1]]
     result = [total,partylist]
@@ -3995,15 +3995,12 @@ List
 """
 
 @Meowth.group(pass_context=True,aliases=["lists"])
-@checks.cityraidchannel()
-@checks.raidset()
 async def list(ctx):
     """Lists all raid info for the current channel.
 
     Usage: !list
     Works only in raid or city channels. Calls the interested, waiting, and here lists. Also prints
     the raid timer. In city channels, lists all active raids."""
-
     if ctx.invoked_subcommand is None:
         listmsg = "**Meowth!** "
         server = ctx.message.server
@@ -4013,7 +4010,6 @@ async def list(ctx):
             activeraidnum = 0
             cty = channel.name
             rc_d = server_dict[server.id]['raidchannel_dict']
-
             raid_dict = {}
             egg_dict = {}
             exraid_list = []
@@ -4098,7 +4094,7 @@ async def list(ctx):
                 await Meowth.send_message(channel, listmsg)
                 return
 
-        if checks.check_raidchannel(ctx):
+        elif checks.check_raidchannel(ctx):
             if checks.check_raidactive(ctx):
                 bulletpoint = parse_emoji(ctx.message.server, ":small_blue_diamond:")
                 starttime = False
@@ -4123,6 +4119,9 @@ async def list(ctx):
                         listmsg += "\nThe next group will be starting at **{}**".format(starttime.strftime("%I:%M %p (%H:%M)"))
                 await Meowth.send_message(channel, listmsg)
                 return
+        else:
+            raise checks.errors.CityRaidChannelCheckFail()
+
 
 @list.command(pass_context=True)
 @checks.activeraidchannel()
@@ -4392,6 +4391,27 @@ async def tags(ctx):
                     listmsg += "\nThe next group will be starting at **{}**".format(starttime.strftime("%I:%M %p (%H:%M)"))
             await Meowth.send_message(channel, listmsg)
             return
+
+@list.command(pass_context=True)
+@checks.wantset()
+@checks.nonraidchannel()
+@checks.wantchannel()
+async def wants(ctx):
+    """List the wants for the user
+
+    Usage: !list wants
+    Works only in raid channels."""
+    listmsg = "**Meowth!**"
+    listmsg += await _wantlist(ctx)
+    await Meowth.send_message(ctx.message.channel, listmsg)
+
+async def _wantlist(ctx):
+    wantlist = []
+    for role in ctx.message.author.roles:
+        if role.name in pkmn_info['pokemon_list']:
+            wantlist.append(role.name.title())
+    await Meowth.send_message(ctx.message.channel, _("Your current !want list is: ```{wantlist}```").format(wantlist=", ".join(wantlist)))
+    return listmsg
 
 # @list.command(pass_context=True)
 # @checks.activeraidchannel()
