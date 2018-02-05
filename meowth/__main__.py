@@ -294,6 +294,7 @@ async def expiry_check(channel):
     logger.info("Expiry_Check - "+channel.name)
     server = channel.server
     global active_raids
+    channel = Meowth.get_channel(channel.id)
     if channel not in active_raids:
         active_raids.append(channel)
         logger.info("Expire_Channel - Channel Added To Watchlist - "+channel.name)
@@ -335,6 +336,7 @@ async def expire_channel(channel):
     # else deleted the actual channel at some point.
 
     channel_exists = Meowth.get_channel(channel.id)
+    channel = channel_exists
     if channel_exists is None and Meowth.is_logged_in and not Meowth.is_closed:
         try:
             del server_dict[channel.server.id]['raidchannel_dict'][channel.id]
@@ -672,53 +674,25 @@ async def on_member_join(member):
     # Build welcome message
     if server_dict[server.id]['welcomemsg'] == "default":
         admin_message = _(" If you have any questions just ask an admin.")
-        welcomemessage = _("Meowth! Welcome to {server_name}, {new_member_name}! ")
+        welcomemessage = _("Meowth! Welcome to {server}, {user}! ")
         if server_dict[server.id]['team'] == True:
             welcomemessage += _("Set your team by typing {team_command}.").format(team_command=team_msg)
         welcomemessage += admin_message
     else:
-        welcomesplit = []
-        msgsplit = re.split("\n|\r| ",server_dict[server.id]['welcomemsg'])
-        for word in msgsplit:
-            if "{#" in word:
-                channel = discord.utils.get(member.server.channels, name=word.split('{#', 1)[1].split('}')[0])
-                if channel:
-                    mention = word.split('{#')[0]+channel.mention+word.split('}')[1]+" "
-                    welcomesplit.append(mention)
-            elif "{@" in word:
-                user = discord.utils.get(member.server.members, name=word.split('{@', 1)[1].split('}')[0])
-                if user:
-                    mention = word.split('{@')[0]+user.mention+word.split('}')[1]+" "
-                    welcomesplit.append(mention)
-            elif "{&" in word:
-                role = discord.utils.get(member.server.roles, name=word.split('{&', 1)[1].split('}')[0])
-                if role:
-                    mention = word.split('{&')[0]+role.mention+word.split('}')[1]+" "
-                    welcomesplit.append(mention)
-            elif "{user}" in word:
-                mention = word.split('{')[0]+member.mention+word.split('}')[1]+" "
-                welcomesplit.append(mention)
-            elif "{server}" in word:
-                mention = word.split('{')[0]+member.server.name+word.split('}')[1]+" "
-                welcomesplit.append(mention)
-            elif word == "":
-                welcomesplit.append("\n")
-            else:
-                welcomesplit.append(word+" ")
-        welcomemessage = "".join(welcomesplit)
+        welcomemessage = server_dict[server.id]['welcomemsg']
 
     if server_dict[server.id]['welcomechan'] == "dm":
-        if welcomemessage.startswith("<") and welcomemessage.endswith("> "):
-            await Meowth.send_message(member, embed=discord.Embed(colour=server.me.colour, description=welcomemessage[1:-2]))
+        if welcomemessage.startswith("[") and welcomemessage.endswith("] "):
+            await Meowth.send_message(member, embed=discord.Embed(colour=server.me.colour, description=welcomemessage[1:-2].format(server=server.name, user=member.mention)))
         else:
-            await Meowth.send_message(member, welcomemessage.format(server_name=server.name, new_member_name=member.mention))
+            await Meowth.send_message(member, welcomemessage.format(server=server.name, user=member.mention))
     else:
         default = discord.utils.get(server.channels, name = server_dict[server.id]['welcomechan'])
         if default:
-            if welcomemessage.startswith("<") and welcomemessage.endswith("> "):
-                await Meowth.send_message(default, embed=discord.Embed(colour=server.me.colour, description=welcomemessage[1:-2]))
+            if welcomemessage.startswith("[") and welcomemessage.endswith("] "):
+                await Meowth.send_message(default, embed=discord.Embed(colour=server.me.colour, description=welcomemessage[1:-2].format(server=server.name, user=member.mention)))
             else:
-                await Meowth.send_message(default, welcomemessage.format(server_name=server.name, new_member_name=member.mention))
+                await Meowth.send_message(default, welcomemessage.format(server=server.name, user=member.mention))
 
 @Meowth.event
 async def on_message(message):
@@ -1285,7 +1259,7 @@ async def configure(ctx):
             if welcomereply.content.lower() == "y":
                 server_dict_temp['welcome'] = True
                 await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description="Welcome Message enabled!"))
-                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Would you like a custom welcome message? You can reply with **N** to use the default message above or enter your own below.\n\nI can read all [discord formatting](https://support.discordapp.com/hc/en-us/articles/210298617-Markdown-Text-101-Chat-Formatting-Bold-Italic-Underline-) and I have the following variables:\n\n**{@member}** - Replace member with a username to mention that user\n**{#channel}** - Replace channel with a channel to mention\n**{&role}** - Replace role with a role to mention (case sensitive)\n**{user}** - Will mention the new user\n**{server}** - Will print your server's name\nSurround your message with <> to send it as an embed.").set_author(name="Welcome Message", icon_url=Meowth.user.avatar_url))
+                await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Would you like a custom welcome message? You can reply with **N** to use the default message above or enter your own below.\n\nI can read all [discord formatting](https://support.discordapp.com/hc/en-us/articles/210298617-Markdown-Text-101-Chat-Formatting-Bold-Italic-Underline-) and I have the following variables:\n\n**{@member}** - Replace member with a username to mention that user\n**{#channel}** - Replace channel with a channel to mention\n**{&role}** - Replace role with a role to mention (case sensitive)\n**{user}** - Will mention the new user\n**{server}** - Will print your server's name\nSurround your message with [] to send it as an embed.").set_author(name="Welcome Message", icon_url=Meowth.user.avatar_url))
                 while True:
                     welcomemsgreply = await Meowth.wait_for_message(author = owner, check=lambda message: message.server is None)
                     if welcomemsgreply.content.lower() == "n":
@@ -1300,8 +1274,47 @@ async def configure(ctx):
                         await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please shorten your message to less than 500 characters."))
                         continue
                     else:
-                        server_dict_temp['welcomemsg'] = welcomemsgreply.content
-                        await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description="Welcome Channel set to:\n\n{}".format(server_dict_temp['welcomemsg'])))
+                        welcomesplit = []
+                        found_none = False
+                        msgsplit = re.split("\n|\r| ",welcomemsgreply.content)
+                        for word in msgsplit:
+                            if "{#" in word:
+                                channel = discord.utils.get(server.channels, name=word.split('{#', 1)[1].split('}')[0])
+                                if channel:
+                                    mention = word.split('{#')[0]+channel.mention+word.split('}')[1]+" "
+                                    welcomesplit.append(mention)
+                                else:
+                                    found_none = "#{channel} isn't in your server. Please double check your channel name and resend your response.".format(channel=word.split('{#', 1)[1].split('}')[0])
+                                    break
+                            elif "{@" in word:
+                                user = discord.utils.get(server.members, name=word.split('{@', 1)[1].split('}')[0])
+                                if user:
+                                    mention = word.split('{@')[0]+user.mention+word.split('}')[1]+" "
+                                    welcomesplit.append(mention)
+                                else:
+                                    found_none = "@{member} isn't in your server. Please double check your member name and resend your response.".format(member=word.split('{@', 1)[1].split('}')[0])
+                                    break
+                            elif "{&" in word:
+                                role = discord.utils.get(server.roles, name=word.split('{&', 1)[1].split('}')[0])
+                                if role:
+                                    mention = word.split('{&')[0]+role.mention+word.split('}')[1]+" "
+                                    welcomesplit.append(mention)
+                                else:
+                                    found_none = "@{role} isn't in your server. Please double check your role name and resend your response.".format(role=word.split('{&', 1)[1].split('}')[0])
+                                    break
+                            elif "{server}" in word:
+                                mention = word.split('{')[0]+server.name+word.split('}')[1]+" "
+                                welcomesplit.append(mention)
+                            elif word == "":
+                                welcomesplit.append("\n")
+                            else:
+                                welcomesplit.append(word+" ")
+                        if found_none:
+                            await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=found_none))
+                            continue
+                        welcomemessage = "".join(welcomesplit)
+                        server_dict_temp['welcomemsg'] = welcomemessage
+                        await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.green(), description="Welcome Message set to:\n\n{}".format(server_dict_temp['welcomemsg'])))
                         break
                     break
                 await Meowth.send_message(owner, embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Which channel in your server would you like me to post the Welcome Messages? You can also choose to have them sent to the new member via Direct Message (DM) instead.\n\nRespond with: **channel-name** of a channel in your server or **DM** to Direct Message:").set_author(name="Welcome Message Channel", icon_url=Meowth.user.avatar_url))
