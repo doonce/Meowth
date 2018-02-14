@@ -1726,6 +1726,59 @@ async def reload_json(ctx):
     await Meowth.add_reaction(ctx.message, '☑')
 
 @Meowth.command(pass_context=True)
+@checks.is_owner()
+async def raid_json(ctx, level=None,*,newlist=None):
+    """Edits or displays raid_info.json
+
+    Usage: !raid_json [level] [list]"""
+    msg = ""
+    if not level and not newlist:
+        for level in raid_info['raid_eggs']:
+            msg += "\n**Level {level} raid list:** `{raidlist}` \n".format(level=level,raidlist=raid_info['raid_eggs'][level]['pokemon'])
+            for pkmn in raid_info['raid_eggs'][level]['pokemon']:
+                msg += "{name} ({number})".format(name=get_name(pkmn),number=pkmn)
+                msg += " "
+            msg += "\n"
+        return await Meowth.send_message(ctx.message.channel, msg)
+    elif level.isdigit() and not newlist:
+        msg += "**Level {level} raid list:** `{raidlist}` \n".format(level=level,raidlist=raid_info['raid_eggs'][level]['pokemon'])
+        for pkmn in raid_info['raid_eggs'][level]['pokemon']:
+            msg += "{name} ({number})".format(name=get_name(pkmn),number=pkmn)
+            msg += " "
+        msg += "\n"
+        return await Meowth.send_message(ctx.message.channel, msg)
+    elif level.isdigit() and newlist:
+        newlist = newlist.strip("[]").replace(" ","").split(",")
+        intlist = [int(x) for x in newlist]
+        msg += "I will replace this:\n"
+        msg += "**Level {level} raid list:** `{raidlist}` \n".format(level=level,raidlist=raid_info['raid_eggs'][level]['pokemon'])
+        for pkmn in raid_info['raid_eggs'][level]['pokemon']:
+            msg += "{name} ({number})".format(name=get_name(pkmn),number=pkmn)
+            msg += " "
+        msg += "\n\nWith this:\n"
+        msg += "**Level {level} raid list:** `{raidlist}` \n".format(level=level,raidlist="["+", ".join(newlist)+"]")
+        for pkmn in newlist:
+            msg += "{name} ({number})".format(name=get_name(pkmn),number=pkmn)
+            msg += " "
+        msg += "\n\nContinue?"
+        question = await Meowth.send_message(ctx.message.channel, msg)
+        res = await ask(question, ctx.message.channel, ctx.message.author.id)
+        if res == "❎":
+            return
+        elif res == "✅":
+            with open(os.path.join('data', 'raid_info.json'), "r") as fd:
+                data = json.load(fd)
+            tmp = data['raid_eggs'][level]['pokemon']
+            data['raid_eggs'][level]['pokemon'] = intlist
+            with open(os.path.join('data', 'raid_info.json'), "w") as fd:
+                json.dump(data, fd, indent=2, separators=(', ', ': '))
+            load_config()
+            await Meowth.clear_reactions(question)
+            await Meowth.add_reaction(question, '☑')
+        else:
+            return
+
+@Meowth.command(pass_context=True)
 @commands.has_permissions(manage_server=True)
 @checks.raidchannel()
 async def clearstatus(ctx):
@@ -1755,6 +1808,25 @@ async def setstatus(ctx, member: discord.Member, status,*, status_counts: str = 
     ctx.message.author = member
     ctx.message.content = "{}{} {}".format(ctx.prefix, status, status_counts)
     await ctx.bot.process_commands(ctx.message)
+
+@Meowth.command(pass_context=True)
+@commands.has_permissions(manage_channels=True)
+@checks.raidchannel()
+async def changeraid(ctx, newraid):
+    """Changes raid boss.
+
+    Usage: !changeraid <new pokemon>
+    Only usable by admins."""
+    message = ctx.message
+    server = message.server
+    channel = message.channel
+    if not channel or channel.id not in server_dict[server.id]['raidchannel_dict']:
+        await Meowth.send_message(channel, "The channel you entered is not a raid channel.")
+        return
+    if server_dict[server.id]['raidchannel_dict'][channel.id]['type'] != 'raid':
+        await Meowth.send_message(channel, "You can only change an active raid.")
+        return
+    await _eggtoraid(newraid, channel, author=message.author, huntr=None)
 
 """
 Miscellaneous
@@ -2185,7 +2257,6 @@ async def _wild(message, huntr):
     else:
         msg = "Meowth! **{word}** isn't a Pokemon!".format(word=entered_wild.title())
         if spellcheck(entered_wild) and spellcheck(entered_wild) != entered_wild:
-            print(spellcheck(entered_wild))
             msg += " Did you mean **{correction}**?".format(correction=spellcheck(entered_wild).title())
             question = await Meowth.send_message(message.channel, msg)
             res = await ask(question, message.channel, message.author.id)
@@ -2681,34 +2752,6 @@ async def _eggassume(args, raid_channel, author=None):
     return
 
 async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
-    eggdetails = server_dict[raid_channel.server.id]['raidchannel_dict'][raid_channel.id]
-    egglevel = eggdetails['egglevel']
-    try:
-        reportcitychannel = Meowth.get_channel(eggdetails['reportcity'])
-        reportcity = reportcitychannel.name
-    except (discord.errors.NotFound, AttributeError):
-        reportcity = None
-    manual_timer = eggdetails['manual_timer']
-    trainer_dict = eggdetails['trainer_dict']
-    egg_address = eggdetails['address']
-    raid_message = await Meowth.get_message(raid_channel, eggdetails['raidmessage'])
-    try:
-        egg_report = await Meowth.get_message(reportcitychannel, eggdetails['raidreport'])
-    except (discord.errors.NotFound, discord.errors.HTTPException):
-        egg_report = None
-    try:
-        starttime = eggdetails['starttime']
-    except KeyError:
-        starttime = None
-    try:
-        raid_messageauthor = raid_message.mentions[0]
-    except IndexError:
-        raid_messageauthor = "<@"+raid_message.raw_mentions[0]+">"
-        logger.info("Hatching Mention Failed - Trying alternative method: channel: {} (id: {}) - server: {} | Attempted mention: {}...".format(raid_channel.name,raid_channel.id,raid_channel.server.name,raid_message.content[:125]))
-    gymhuntrgps = eggdetails['gymhuntrgps']
-    now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[raid_channel.server.id]['offset'])
-    raidexp = eggdetails['exp'] + 60 * raid_info['raid_eggs'][egglevel]['raidtime']
-    end = datetime.datetime.utcfromtimestamp(raidexp) + datetime.timedelta(hours=server_dict[raid_channel.server.id]['offset'])
     entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid.lower()
     rgx = r"[^a-zA-Z0-9]"
     pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_raid)), None)
@@ -2733,6 +2776,39 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         else:
             question = await Meowth.send_message(raid_channel, msg)
             return
+    eggdetails = server_dict[raid_channel.server.id]['raidchannel_dict'][raid_channel.id]
+    egglevel = eggdetails['egglevel']
+    if int(egglevel) == 0:
+        egglevel = get_level(entered_raid)
+    try:
+        reportcitychannel = Meowth.get_channel(eggdetails['reportcity'])
+        reportcity = reportcitychannel.name
+    except (discord.errors.NotFound, AttributeError):
+        reportcity = None
+    manual_timer = eggdetails['manual_timer']
+    trainer_dict = eggdetails['trainer_dict']
+    egg_address = eggdetails['address']
+    raid_message = await Meowth.get_message(raid_channel, eggdetails['raidmessage'])
+    try:
+        egg_report = await Meowth.get_message(reportcitychannel, eggdetails['raidreport'])
+    except (discord.errors.NotFound, discord.errors.HTTPException):
+        egg_report = None
+    try:
+        starttime = eggdetails['starttime']
+    except KeyError:
+        starttime = None
+    try:
+        raid_messageauthor = raid_message.mentions[0]
+    except IndexError:
+        raid_messageauthor = "<@"+raid_message.raw_mentions[0]+">"
+        logger.info("Hatching Mention Failed - Trying alternative method: channel: {} (id: {}) - server: {} | Attempted mention: {}...".format(raid_channel.name,raid_channel.id,raid_channel.server.name,raid_message.content[:125]))
+    gymhuntrgps = eggdetails['gymhuntrgps']
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=server_dict[raid_channel.server.id]['offset'])
+    if int(eggdetails['egglevel']) > 0:
+        raidexp = eggdetails['exp'] + 60 * raid_info['raid_eggs'][egglevel]['raidtime']
+    else:
+        raidexp = eggdetails['exp']
+    end = datetime.datetime.utcfromtimestamp(raidexp) + datetime.timedelta(hours=server_dict[raid_channel.server.id]['offset'])
     if egglevel.isdigit():
         hatchtype = "raid"
         raidreportcontent = _("Meowth! The egg has hatched into a {pokemon} raid! Details: {location_details}. Coordinate in {raid_channel}").format(pokemon=entered_raid.title(), location_details=egg_address, raid_channel=raid_channel.mention)
