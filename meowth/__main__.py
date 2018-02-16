@@ -358,18 +358,31 @@ async def ask(message, destination, user_id, *, react_list=['✅', '❎']):
     except asyncio.TimeoutError:
         return
 
+async def letter_case(iterable, find, *, limits=None):
+    servercase_list = []
+    lowercase_list = []
+    for item in iterable:
+        if not item.name:
+            continue
+        elif item.name and (not limits or item.name.lower() in limits):
+            servercase_list.append(item.name)
+            lowercase_list.append(item.name.lower())
+    if find.lower() in lowercase_list:
+        index = lowercase_list.index(find.lower())
+        return servercase_list[index]
+    else:
+        return None
+
 def get_category(channel, level):
     guild = channel.guild
     catsort = guild_dict[guild.id].get('categories', None)
-    if catsort == None:
-        return None
-    elif catsort == "same":
+    if catsort == "same":
         return channel.category
     elif catsort == "region":
-        category = discord.utils.get(guild.categories,name=guild_dict[guild.id]['category_dict'][channel.name])
+        category = discord.utils.get(guild.categories,id=guild_dict[guild.id]['category_dict'][channel.name])
         return category
     elif catsort == "level":
-        category = discord.utils.get(guild.categories,name=guild_dict[guild.id]['category_dict'][level])
+        category = discord.utils.get(guild.categories,id=guild_dict[guild.id]['category_dict'][level])
         return category
     else:
         return None
@@ -1214,7 +1227,7 @@ async def announce(ctx, *, announce=None):
     author = message.author
     if announce == None:
         announcewait = await channel.send("I'll wait for your announcement!")
-        announcemsg = await Meowth.wait_for('message', timeout=180)
+        announcemsg = await Meowth.wait_for('message', timeout=180, check=(lambda reply: reply.author == message.author))
         await announcewait.delete()
         if announcemsg != None:
             announce = announcemsg.content
@@ -1250,11 +1263,13 @@ async def announce(ctx, *, announce=None):
             confirmation = await channel.send(_('Announcement Sent.'))
         elif res == '❔':
             channelwait = await channel.send('What channel would you like me to send it to?')
-            channelmsg = await Meowth.wait_for('message', timeout=60)
-            try:
-                sendchannel = await commands.Converter.convert(ctx, str(channelmsg.content).strip())
-            except commands.BadArgument:
-                sendchannel = None
+            channelmsg = await Meowth.wait_for('message', timeout=60, check=(lambda reply: reply.author == message.author))
+            if channelmsg.content.isdigit():
+                sendchannel = Meowth.get_channel(int(channelmsg.content))
+            elif channelmsg.raw_channel_mentions:
+                sendchannel = Meowth.get_channel(channelmsg.raw_channel_mentions[0])
+            else:
+                sendchannel = discord.utils.get(guild.channels, name=channelmsg.content)
             if (channelmsg != None) and (sendchannel != None):
                 announcement = await sendchannel.send(embed=embeddraft)
                 confirmation = await channel.send(_('Announcement Sent.'))
@@ -1296,6 +1311,13 @@ async def announce(ctx, *, announce=None):
         await confirmation.delete()
     await asyncio.sleep(30)
     await message.delete()
+
+@Meowth.command()
+@commands.has_permissions(manage_guild=True)
+async def testing(ctx):
+    entered_item = ctx.message.content.split()[1]
+    await letter_case(ctx.message.guild.roles, entered_item, limits=["mystic","valor","instinct"])
+
 
 @Meowth.command()
 @commands.has_permissions(manage_guild=True)
@@ -1596,6 +1618,7 @@ async def configure(ctx):
                 else:
                     await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: {invalid_channels}\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(diff))))
                     continue
+    # configure main-regions
     if (configcancel == False) and (guild_dict_temp['other'] == True) and ((guild_dict_temp['wildset'] == True) or (guild_dict_temp['raidset'] == True)) and ((firstconfig == True) or (configgoto == 'all') or (configgoto == 'regions') or (configgoto == 'allmain')):
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='For each report, I generate Google Maps links to give people directions to raids and spawns! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list:').set_author(name='Report Locations', icon_url=Meowth.user.avatar_url))
         while True:
@@ -1616,7 +1639,7 @@ async def configure(ctx):
         await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description='Report Locations are set'))
         guild_catlist = []
         for cat in guild.categories:
-            guild_catlist.append(cat.name)
+            guild_catlist.append(cat.id)
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="How would you like me to categorize the raid channels I create? Your options are **none** if you don't want them categorized, **same** if you want them in the same category as the reporting channel, **region** if you want them categorized by region, or **level** if you want them categorized by level."))
         while True:
             category_dict = {}
@@ -1641,6 +1664,18 @@ async def configure(ctx):
                         await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
                         return
                     regioncat_list = regioncats.content.split(', ')
+                    regioncat_fixed = []
+                    for item in regioncat_list:
+                        if item.isdigit():
+                            category = discord.utils.get(guild.channels, id=item)
+                            if category:
+                                regioncat_fixed.append(category.id)
+                        else:
+                            name = await letter_case(guild.categories, item.lower())
+                            category = discord.utils.get(guild.channels, name=name)
+                            if category:
+                                regioncat_fixed.append(category.id)
+                    regioncat_list = regioncat_fixed
                     if len(regioncat_list) == len(citychannel_list):
                         catdiff = set(regioncat_list) - set(guild_catlist)
                         if (not catdiff):
@@ -1664,6 +1699,18 @@ async def configure(ctx):
                         await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
                         return
                     levelcat_list = levelcats.content.split(', ')
+                    levelcat_fixed = []
+                    for item in levelcat_list:
+                        if item.isdigit():
+                            category = discord.utils.get(guild.channels, id=item)
+                            if category:
+                                levelcat_fixed.append(category.id)
+                        else:
+                            name = await letter_case(guild.categories, item.lower())
+                            category = discord.utils.get(guild.channels, name=name)
+                            if category:
+                                levelcat_fixed.append(category.id)
+                    regioncat_list = levelcat_fixed
                     if len(levelcat_list) == 6:
                         catdiff = set(levelcat_list) - set(guild_catlist)
                         if not catdiff:
@@ -2098,7 +2145,6 @@ async def team(ctx):
     lowercase_roles = [element.lower() for element in guild_roles]
     for team in config['team_dict'].keys():
         if team.lower() not in lowercase_roles:
-
             try:
                 temp_role = await guild.create_role(name=team.lower(), hoist=False, mentionable=True)
                 guild_roles.append(team.lower())
@@ -2597,7 +2643,7 @@ async def _raid(message, huntr=False):
         return
     if not huntr:
         raid_gmaps_link = create_gmaps_query(raid_details, message.channel)
-        raid_channel_name = entered_raid + "-" + sanitize_channel_name(raid_details)
+        raid_channel_name = (entered_raid + '-') + sanitize_channel_name(raid_details)
     else:
         raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(huntr.split("|")[1])
         raid_channel_name = entered_raid + "-" + sanitize_channel_name(raid_details) + "-bot"
@@ -3352,7 +3398,7 @@ async def starttime(ctx):
         if now > start:
             await channel.send(_('Meowth! Please enter a time in the future.'))
             return
-        if total < mintime:
+        if int(total) < int(mintime):
             await channel.send('Meowth! The egg will not hatch by then!')
             return
         if alreadyset:
@@ -4327,6 +4373,8 @@ async def list(ctx):
             exraid_list = []
             for r in rc_d:
                 reportcity = Meowth.get_channel(rc_d[r]['reportcity'])
+                if not reportcity:
+                    continue
                 if (reportcity.name == cty) and rc_d[r]['active'] and discord.utils.get(guild.channels, id=r):
                     exp = rc_d[r]['exp']
                     type = rc_d[r]['type']
