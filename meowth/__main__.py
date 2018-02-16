@@ -1710,7 +1710,7 @@ async def configure(ctx):
                             category = discord.utils.get(guild.channels, name=name)
                             if category:
                                 levelcat_fixed.append(category.id)
-                    regioncat_list = levelcat_fixed
+                    levelcat_list = levelcat_fixed
                     if len(levelcat_list) == 6:
                         catdiff = set(levelcat_list) - set(guild_catlist)
                         if not catdiff:
