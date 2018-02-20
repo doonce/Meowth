@@ -1314,13 +1314,6 @@ async def announce(ctx, *, announce=None):
 
 @Meowth.command()
 @commands.has_permissions(manage_guild=True)
-async def testing(ctx):
-    entered_item = ctx.message.content.split()[1]
-    await letter_case(ctx.message.guild.roles, entered_item, limits=["mystic","valor","instinct"])
-
-
-@Meowth.command()
-@commands.has_permissions(manage_guild=True)
 async def configure(ctx):
     'Meowth Configuration\n\n    Usage: !configure\n    Meowth will DM you instructions on how to configure Meowth for your server.\n    If it is not your first time configuring, you can choose a section to jump to.'
     guild = ctx.message.guild
@@ -2422,11 +2415,21 @@ async def unwant(ctx):
             if pkmn_match:
                 entered_unwant = pkmn_match
             else:
-                msg = "Meowth! {word} isn't a Pokemon!".format(word=entered_unwant)
-                if spellcheck(entered_unwant) != entered_unwant:
-                    msg += ' Did you mean {correction}?'.format(correction=spellcheck(entered_unwant))
-                await message.channel.send(msg)
-                return
+                msg = "Meowth! **{word}** isn't a Pokemon!".format(word=entered_unwant.title())
+                if spellcheck(entered_unwant) and (spellcheck(entered_unwant) != entered_unwant):
+                    msg += ' Did you mean **{correction}**?'.format(correction=spellcheck(entered_unwant).title())
+                    question = await message.channel.send(msg)
+                    res = await ask(question, message.channel, message.author.id)
+                    await question.delete()
+                    if res == '❎':
+                        return
+                    elif res == '✅':
+                        entered_unwant = spellcheck(entered_unwant)
+                    else:
+                        return
+                else:
+                    question = await message.channel.send(msg)
+                    return
             # If user is not already wanting the Pokemon,
             # print a less noisy message
             role = discord.utils.get(guild.roles, name=entered_unwant)
@@ -2687,7 +2690,7 @@ async def _raid(message, huntr=False):
     elif get_level(entered_raid) == "EX":
         await message.channel.send("Meowth! The Pokemon {pokemon} only appears in EX Raids! Use **!exraid** to report one!".format(pokemon=entered_raid.capitalize()))
         return
-    if raidexp and not huntr:
+    if raidexp is not False and not huntr:
         if _timercheck(raidexp, raid_info['raid_eggs'][get_level(entered_raid)]['raidtime']):
             await message.channel.send(_("Meowth...that's too long. Level {raidlevel} raids currently last no more than {raidtime} minutes...").format(raidlevel=get_level(entered_raid), raidtime=raid_info['raid_eggs'][get_level(entered_raid)]['raidtime']))
             return
@@ -2748,7 +2751,7 @@ async def _raid(message, huntr=False):
         'egglevel': '0',
         'gymhuntrgps' : gymhuntrgps
     }
-    if raidexp:
+    if raidexp is not False:
         await _timerset(raid_channel, raidexp)
     else:
         await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left on the raid using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
@@ -2809,7 +2812,7 @@ async def _raidegg(message, huntr=False):
         del raidegg_split[(- 1)]
     else:
         raidexp = False
-    if raidexp and not huntr:
+    if raidexp is not False and not huntr:
         if _timercheck(raidexp, raid_info['raid_eggs'][str(egg_level)]['hatchtime']):
             await message.channel.send(_("Meowth...that's too long. Level {raidlevel} Raid Eggs currently last no more than {hatchtime} minutes...").format(raidlevel=egg_level, hatchtime=raid_info['raid_eggs'][str(egg_level)]['hatchtime']))
             return
@@ -2873,7 +2876,7 @@ async def _raidegg(message, huntr=False):
             'egglevel': egg_level,
             'gymhuntrgps' : gymhuntrgps
         }
-        if raidexp:
+        if raidexp is not False:
             await _timerset(raid_channel, raidexp)
         else:
             await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
@@ -2995,7 +2998,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
             return
     eggdetails = guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]
     egglevel = eggdetails['egglevel']
-    if int(egglevel) == 0:
+    if egglevel == "0":
         egglevel = get_level(entered_raid)
     try:
         reportcitychannel = Meowth.get_channel(eggdetails['reportcity'])
