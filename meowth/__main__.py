@@ -3080,6 +3080,17 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     trainer_list = []
     trainer_dict = copy.deepcopy(guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'])
     for trainer in trainer_dict.keys():
+        try:
+            user = raid_channel.guild.get_member(trainer)
+        except (discord.errors.NotFound, AttributeError):
+            continue
+        if (trainer_dict[trainer].get('interest',None)) and (entered_raid not in trainer_dict[trainer]['interest']):
+            guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'][trainer]['status'] = None
+            guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'][trainer]['party'] = [0, 0, 0, 0]
+            guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'][trainer]['count'] = 1
+    await asyncio.sleep(1)
+    trainer_dict = copy.deepcopy(guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'])
+    for trainer in trainer_dict.keys():
         if (trainer_dict[trainer]['status'] == 'maybe') or (trainer_dict[trainer]['status'] == 'omw') or (trainer_dict[trainer]['status'] == 'waiting'):
             try:
                 user = raid_channel.guild.get_member(trainer)
@@ -3116,6 +3127,8 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     }
     if starttime:
         guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['starttime'] = starttime
+    if author:
+        await _edit_party(raid_channel, author)
     event_loop.create_task(expiry_check(raid_channel))
 
 @Meowth.command()
@@ -3712,6 +3725,7 @@ async def recover(ctx):
             'type': raidtype,
             'pokemon': pokemon,
             'egglevel': egglevel,
+            'gymhuntrgps': None
         }
         recovermsg = _("Meowth! This channel has been recovered! However, there may be some inaccuracies in what I remembered! Here's what I have:")
         bulletpoint = parse_emoji(ctx.guild, ':small_blue_diamond:')
@@ -3881,21 +3895,29 @@ async def interested(ctx, *, teamcounts: str=None):
             teamcounts = ((((str(trainer_dict[ctx.author.id]['count']) + ' ') + bluecount) + redcount) + yellowcount) + unknowncount
         else:
             teamcounts = '1'
-    if teamcounts.split()[0].isdigit():
+    rgx = '[^a-zA-Z0-9]'
+    entered_interest = []
+    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts)), None)
+    if pkmn_match:
+        for word in re.split(' |,', teamcounts):
+            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][get_level(word.lower())]['pokemon']:
+                entered_interest.append(word.lower())
+                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
+    if teamcounts and teamcounts.split()[0].isdigit():
         total = int(teamcounts.split()[0])
     elif ctx.author.id in trainer_dict:
         total = trainer_dict[ctx.author.id]['count']
     elif teamcounts:
-        total = str(sum([int(s) for s in teamcounts if s.isdigit()]))
+        total = sum([int(s) for s in teamcounts if s.isdigit()])
     else:
         total = 1
     result = await _party_status(ctx, total, teamcounts)
     if isinstance(result, __builtins__.list):
         count = result[0]
         partylist = result[1]
-        await _maybe(ctx.channel, ctx.author, count, partylist)
+        await _maybe(ctx.channel, ctx.author, count, partylist, entered_interest)
 
-async def _maybe(channel, author, count, party):
+async def _maybe(channel, author, count, party, entered_interest=None):
     trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict']
     allblue = 0
     allred = 0
@@ -3924,6 +3946,8 @@ async def _maybe(channel, author, count, party):
 
         }
     trainer_dict[author.id]['status'] = 'maybe'
+    if entered_interest:
+        trainer_dict[author.id]['interest'] = entered_interest
     trainer_dict[author.id]['count'] = count
     trainer_dict[author.id]['party'] = party
     await _edit_party(channel, author)
@@ -4106,6 +4130,8 @@ async def _party_status(ctx, total, teamcounts):
             break
     else:
         my_team = 'unknown'
+    if not teamcounts:
+        teamcounts = "1"
     teamcounts = teamcounts.split()
     if total and teamcounts[0].isdigit():
         del teamcounts[0]
@@ -4168,7 +4194,7 @@ async def _party_status(ctx, total, teamcounts):
     result = [total, partylist]
     return result
 
-async def _edit_party(channel, author):
+async def _edit_party(channel, author=None):
     channelblue = 0
     channelred = 0
     channelyellow = 0
@@ -4199,7 +4225,7 @@ async def _edit_party(channel, author):
         raidmsg = await channel.get_message(guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['raidmessage'])
     except:
         async for message in channel.history(limit=500, reverse=True):
-            if message.author.id == guild.me.id:
+            if author and message.author.id == guild.me.id:
                 if 'Coordinate here' in message.content:
                     reportchannel = message.raw_channel_mentions[0]
                     raidmsg = message
