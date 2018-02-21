@@ -3988,7 +3988,7 @@ async def coming(ctx, *, teamcounts: str=None):
     elif ctx.author.id in trainer_dict:
         total = trainer_dict[ctx.author.id]['count']
     elif teamcounts:
-        total = str(sum([int(s) for s in teamcounts if s.isdigit()]))
+        total = sum([int(s) for s in teamcounts if s.isdigit()])
     else:
         total = 1
     result = await _party_status(ctx, total, teamcounts)
@@ -4066,7 +4066,7 @@ async def here(ctx, *, teamcounts: str=None):
     elif ctx.author.id in trainer_dict:
         total = trainer_dict[ctx.author.id]['count']
     elif teamcounts:
-        total = str(sum([int(s) for s in teamcounts if s.isdigit()]))
+        total = sum([int(s) for s in teamcounts if s.isdigit()])
     else:
         total = 1
     result = await _party_status(ctx, total, teamcounts)
