@@ -1080,7 +1080,7 @@ async def on_huntr(message):
             hpokeid = message.embeds[0].title.split(' ')[2]
             hdesc = message.embeds[0].description.splitlines()
             hexpire = hdesc[2].split(': ')[1][:(- 1)]
-            hweather = hdesc[3].split(': ')[1][1:(- 1)]
+            hweather = hdesc[3].split(': ')[1][1:(- 1)] if len(hdesc) > 3 else None
             huntr = '!wild {0} {1}|{2}|{3}'.format(hpokeid, hlocation, hexpire, hweather)
             await message.delete()
             await _wild(message, huntr)
