@@ -3896,12 +3896,12 @@ async def interested(ctx, *, teamcounts: str=None):
             teamcounts = '1'
     rgx = '[^a-zA-Z0-9]'
     entered_interest = []
-    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts)), None)
+    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match:
         for word in re.split(' |,', teamcounts.lower()):
             if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][get_level(word.lower())]['pokemon']:
                 entered_interest.append(word.lower())
-                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
+                teamcounts = teamcounts.lower().replace(word,"").replace(",","").strip()
     if teamcounts and teamcounts.split()[0].isdigit():
         total = int(teamcounts.split()[0])
     elif ctx.author.id in trainer_dict:
@@ -3971,12 +3971,12 @@ async def coming(ctx, *, teamcounts: str=None):
     pkmn_match = None
     entered_interest = []
     if teamcounts:
-        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts)), None)
+        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match:
         for word in re.split(' |,', teamcounts.lower()):
             if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][get_level(word.lower())]['pokemon']:
                 entered_interest.append(word.lower())
-                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
+                teamcounts = teamcounts.lower().replace(word,"").replace(",","").strip()
     else:
         try:
             if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
@@ -4065,12 +4065,12 @@ async def here(ctx, *, teamcounts: str=None):
     pkmn_match = None
     entered_interest = []
     if teamcounts:
-        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts)), None)
+        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match:
         for word in re.split(' |,', teamcounts.lower()):
             if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][get_level(word.lower())]['pokemon']:
                 entered_interest.append(word.lower())
-                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
+                teamcounts = teamcounts.lower().replace(word,"").replace(",","").strip()
     else:
         try:
             if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
