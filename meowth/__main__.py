@@ -2101,6 +2101,16 @@ async def setstatus(ctx, member: discord.Member, status,*, status_counts: str = 
     ctx.message.content = "{}{} {}".format(ctx.prefix, status, status_counts)
     await ctx.bot.process_commands(ctx.message)
 
+@Meowth.command()
+@commands.has_permissions(manage_guild=True)
+async def cleanroles(ctx):
+    cleancount = 0
+    for role in ctx.guild.roles:
+        if role.members == [] and role.name in pkmn_info['pokemon_list']:
+            await role.delete()
+            cleancount += 1
+    await ctx.message.channel.send("Removed {cleancount} empty roles".format(cleancount=cleancount))
+
 """
 Miscellaneous
 """
@@ -2755,8 +2765,9 @@ async def _raid(message, huntr=False):
     else:
         await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left on the raid using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
     if huntr:
-        await raid_channel.send("This raid was reported by GymHuntrBot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
+        await raid_channel.send("This raid was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
     event_loop.create_task(expiry_check(raid_channel))
+    return raid_channel
 
 @Meowth.command()
 @checks.citychannel()
@@ -2880,10 +2891,11 @@ async def _raidegg(message, huntr=False):
         else:
             await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
         if huntr:
-            await raid_channel.send("This egg was reported by GymHuntrBot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
+            await raid_channel.send("This egg was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
         if len(raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
             await _eggassume('assume ' + get_name(raid_info['raid_eggs'][egg_level]['pokemon'][0]), raid_channel)
         event_loop.create_task(expiry_check(raid_channel))
+        return raid_channel
 
 async def _eggassume(args, raid_channel, author=None):
     eggdetails = guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]
@@ -2892,11 +2904,6 @@ async def _eggassume(args, raid_channel, author=None):
     manual_timer = eggdetails['manual_timer']
     egg_report = await report_channel.get_message(eggdetails['raidreport'])
     raid_message = await raid_channel.get_message(eggdetails['raidmessage'])
-    try:
-        raid_messageauthor = raid_message.mentions[0]
-    except IndexError:
-        raid_messageauthor = ('<@' + raid_message.raw_mentions[0]) + '>'
-        logger.info('Hatching Mention Failed - Trying alternative method: channel: {} (id: {}) - server: {} | Attempted mention: {}...'.format(raid_channel.name, raid_channel.id, raid_channel.guild.name, raid_message.content[:125]))
     gymhuntrgps = eggdetails['gymhuntrgps']
     entered_raid = re.sub('[\\@]', '', args.lower().lstrip('assume').lstrip(' '))
     entered_raid = get_name(entered_raid).lower() if entered_raid.isdigit() else entered_raid
@@ -3029,7 +3036,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         raid_messageauthor = ('<@' + raid_message.raw_mentions[0]) + '>'
         logger.info('Hatching Mention Failed - Trying alternative method: channel: {} (id: {}) - server: {} | Attempted mention: {}...'.format(raid_channel.name, raid_channel.id, raid_channel.guild.name, raid_message.content[:125]))
     gymhuntrgps = eggdetails['gymhuntrgps']
-    if egglevel.isdigit() and int(egglevel) > 0:
+    if (egglevel.isdigit() and int(egglevel) > 0) or egglevel == 'EX':
         raidexp = eggdetails['exp'] + 60 * raid_info['raid_eggs'][egglevel]['raidtime']
     else:
         raidexp = eggdetails['exp']
@@ -3087,6 +3094,8 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
             guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'][trainer]['status'] = None
             guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'][trainer]['party'] = [0, 0, 0, 0]
             guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'][trainer]['count'] = 1
+        else:
+            guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'][trainer]['interest'] = []
     await asyncio.sleep(1)
     trainer_dict = copy.deepcopy(guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'])
     for trainer in trainer_dict.keys():
@@ -3885,6 +3894,8 @@ async def interested(ctx, *, teamcounts: str=None):
 
     Party is also optional. Format is #m #v #i to tell your party's teams."""
     trainer_dict = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']
+    entered_interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
+    egglevel = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egglevel']
     if (not teamcounts):
         if ctx.author.id in trainer_dict:
             bluecount = str(trainer_dict[ctx.author.id]['party'][0]) + 'm '
@@ -3895,13 +3906,13 @@ async def interested(ctx, *, teamcounts: str=None):
         else:
             teamcounts = '1'
     rgx = '[^a-zA-Z0-9]'
-    entered_interest = []
     pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
-    if pkmn_match:
+    if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
+        entered_interest = []
         for word in re.split(' |,', teamcounts.lower()):
-            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][get_level(word.lower())]['pokemon']:
+            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
                 entered_interest.append(word.lower())
-                teamcounts = teamcounts.lower().replace(word,"").replace(",","").strip()
+                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
     if teamcounts and teamcounts.split()[0].isdigit():
         total = int(teamcounts.split()[0])
     elif ctx.author.id in trainer_dict:
@@ -3968,15 +3979,16 @@ async def coming(ctx, *, teamcounts: str=None):
     trainer_dict = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']
     rgx = '[^a-zA-Z0-9]'
     entered_interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
+    egglevel = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egglevel']
     pkmn_match = None
-    entered_interest = []
     if teamcounts:
         pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
-    if pkmn_match:
+    if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
+        entered_interest = []
         for word in re.split(' |,', teamcounts.lower()):
-            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][get_level(word.lower())]['pokemon']:
+            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
                 entered_interest.append(word.lower())
-                teamcounts = teamcounts.lower().replace(word,"").replace(",","").strip()
+                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
     else:
         try:
             if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
@@ -4062,15 +4074,16 @@ async def here(ctx, *, teamcounts: str=None):
     trainer_dict = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']
     rgx = '[^a-zA-Z0-9]'
     entered_interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
+    egglevel = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egglevel']
     pkmn_match = None
-    entered_interest = []
     if teamcounts:
         pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
-    if pkmn_match:
+    if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
+        entered_interest = []
         for word in re.split(' |,', teamcounts.lower()):
-            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][get_level(word.lower())]['pokemon']:
+            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
                 entered_interest.append(word.lower())
-                teamcounts = teamcounts.lower().replace(word,"").replace(",","").strip()
+                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
     else:
         try:
             if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
@@ -4366,6 +4379,7 @@ async def _cancel(channel, author):
             await channel.send('Meowth! {member} and their total of {trainer_count} trainers have backed out of the lobby!'.format(member=author.mention, trainer_count=t_dict['count']))
     t_dict['status'] = None
     t_dict['party'] = [0, 0, 0, 0]
+    t_dict['interest'] = []
     t_dict['count'] = 1
     await _edit_party(channel, author)
 
@@ -4597,20 +4611,19 @@ async def list(ctx):
                 except KeyError:
                     pass
                 rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
-                if (rc_d['type'] == 'egg') and (rc_d['pokemon'] == ''):
+                if " 0 interested!" not in await _interest(ctx):
                     listmsg += ('\n' + bulletpoint) + (await _interest(ctx))
-                    listmsg += '\n' + bulletpoint
-                    listmsg += await print_raid_timer(channel)
-                    if starttime and (starttime > now):
-                        listmsg += '\nThe next group will be starting at **{}**'.format(starttime.strftime('%I:%M %p (%H:%M)'))
-                else:
-                    listmsg += ('\n' + bulletpoint) + (await _interest(ctx))
+                if " 0 on the way!" not in await _otw(ctx):
                     listmsg += ('\n' + bulletpoint) + (await _otw(ctx))
+                if " 0 waiting at the raid!" not in await _waiting(ctx):
                     listmsg += ('\n' + bulletpoint) + (await _waiting(ctx))
+                if " 0 in the lobby!" not in await _lobbylist(ctx):
                     listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx))
-                    listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
-                    if starttime and (starttime > now):
-                        listmsg += '\nThe next group will be starting at **{}**'.format(starttime.strftime('%I:%M %p (%H:%M)'))
+                if (len(listmsg.splitlines()) <= 1):
+                    listmsg +=  ('\n' + bulletpoint) + (" Nobody has updated their status yet!")
+                listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
+                if starttime and (starttime > now):
+                    listmsg += '\nThe next group will be starting at **{}**'.format(starttime.strftime('%I:%M %p (%H:%M)'))
                 await channel.send(listmsg)
                 return
         else:
@@ -4642,8 +4655,12 @@ async def _interest(ctx, tag=False):
         memberexists = ctx.guild.get_member(trainer)
         if (trainer_dict[trainer]['status'] == 'maybe') and memberexists:
             user = ctx.guild.get_member(trainer)
-            name_list.append(('**' + user.name) + '**')
-            maybe_list.append(user.mention)
+            if (trainer_dict[trainer].get('interest',None)):
+                name_list.append(('**' + user.name + '** ({})').format(", ".join(x.title() for x in trainer_dict[trainer]['interest'])))
+                maybe_list.append((user.mention +" ({})").format(", ".join(x.title() for x in trainer_dict[trainer]['interest'])))
+            else:
+                name_list.append('**' + user.name + '**')
+                maybe_list.append(user.mention)
     if ctx_maybecount > 0:
         if (now.time() >= datetime.time(5, 0)) and (now.time() <= datetime.time(21, 0)) and (tag == True):
             maybe_exstr = _(' including {trainer_list} and the people with them! Let them know if there is a group forming').format(trainer_list=', '.join(maybe_list))
@@ -4678,8 +4695,12 @@ async def _otw(ctx, tag=False):
         memberexists = ctx.guild.get_member(trainer)
         if (trainer_dict[trainer]['status'] == 'omw') and memberexists:
             user = ctx.guild.get_member(trainer)
-            name_list.append(('**' + user.name) + '**')
-            otw_list.append(user.mention)
+            if (trainer_dict[trainer].get('interest',None)):
+                name_list.append(('**' + user.name + '** ({})').format(", ".join(x.title() for x in trainer_dict[trainer]['interest'])))
+                otw_list.append((user.mention +" ({})").format(", ".join(x.title() for x in trainer_dict[trainer]['interest'])))
+            else:
+                name_list.append(('**' + user.name) + '**')
+                otw_list.append(user.mention)
     if ctx_omwcount > 0:
         if (now.time() >= datetime.time(5, 0)) and (now.time() <= datetime.time(21, 0)) and (tag == True):
             otw_exstr = _(' including {trainer_list} and the people with them! Be considerate and wait for them if possible').format(trainer_list=', '.join(otw_list))
@@ -4714,8 +4735,12 @@ async def _waiting(ctx, tag=False):
         memberexists = ctx.guild.get_member(trainer)
         if (trainer_dict[trainer]['status'] == 'waiting') and memberexists:
             user = ctx.guild.get_member(trainer)
-            name_list.append(('**' + user.name) + '**')
-            waiting_list.append(user.mention)
+            if (trainer_dict[trainer].get('interest',None)):
+                name_list.append(('**' + user.name + '** ({})').format(", ".join(x.title() for x in trainer_dict[trainer]['interest'])))
+                waiting_list.append((user.mention +" ({})").format(", ".join(x.title() for x in trainer_dict[trainer]['interest'])))
+            else:
+                name_list.append(('**' + user.name) + '**')
+                waiting_list.append(user.mention)
     if ctx_waitingcount > 0:
         if (now.time() >= datetime.time(5, 0)) and (now.time() <= datetime.time(21, 0)) and (tag == True):
             waiting_exstr = _(" including {trainer_list} and the people with them! Be considerate and let them know if and when you'll be there").format(trainer_list=', '.join(waiting_list))
@@ -4841,20 +4866,19 @@ async def tags(ctx):
             except KeyError:
                 pass
             rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
-            if (rc_d['type'] == 'egg') and (rc_d['pokemon'] == ''):
+            if " 0 interested!" not in await _interest(ctx):
                 listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag=True))
-                listmsg += '\n' + bulletpoint
-                listmsg += await print_raid_timer(channel)
-                if starttime and (starttime > now):
-                    listmsg += '\nThe next group will be starting at **{}**'.format(starttime.strftime('%I:%M %p (%H:%M)'))
-            else:
-                listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag=True))
+            if " 0 on the way!" not in await _otw(ctx):
                 listmsg += ('\n' + bulletpoint) + (await _otw(ctx, tag=True))
+            if " 0 waiting at the raid!" not in await _waiting(ctx):
                 listmsg += ('\n' + bulletpoint) + (await _waiting(ctx, tag=True))
+            if " 0 in the lobby!" not in await _lobbylist(ctx):
                 listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx, tag=True))
-                listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
-                if starttime and (starttime > now):
-                    listmsg += '\nThe next group will be starting at **{}**'.format(starttime.strftime('%I:%M %p (%H:%M)'))
+            if (len(listmsg.splitlines()) <= 1):
+                listmsg +=  ('\n' + bulletpoint) + (" Nobody has updated their status yet!")
+            listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
+            if starttime and (starttime > now):
+                listmsg += '\nThe next group will be starting at **{}**'.format(starttime.strftime('%I:%M %p (%H:%M)'))
             await channel.send(listmsg)
             return
 
