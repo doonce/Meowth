@@ -329,7 +329,7 @@ def do_template(message, author, guild):
                 not_found.append(full_match)
             return member.mention if member else full_match
         elif match_type == '#':
-            channel = discord.utils.get(guild.channels, name=match)
+            channel = discord.utils.get(guild.text_channels, name=match)
             if match.isdigit() and (not channel):
                 channel = guild.get_channel(match)
             if (not channel):
@@ -512,7 +512,6 @@ async def expire_channel(channel):
         else:
             if (not alreadyexpired):
                 new_name = 'expired-' + channel.name
-                print('debug 0')
                 await channel.edit(name=new_name)
                 await channel.send(_('This channel timer has expired! The channel has been deactivated and will be deleted in 5 minutes.\nTo reactivate the channel, use **!timerset** to set the timer again.'))
             delete_time = (guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] + (5 * 60)) - time.time()
@@ -598,8 +597,8 @@ async def channel_cleanup(loop=True):
                     # if the channel save data shows it's not an active raid
                     if guilddict_chtemp[guildid]['raidchannel_dict'][channelid]['active'] == False:
                         if guilddict_chtemp[guildid]['raidchannel_dict'][channelid]['type'] == 'egg':
-                            # and if it has been expired for longer than 15 minutes already
-                            if guilddict_chtemp[guildid]['raidchannel_dict'][channelid]['exp'] < (time.time() - (15 * 60)):
+                            # and if it has been expired for longer than 45 minutes already
+                            if guilddict_chtemp[guildid]['raidchannel_dict'][channelid]['exp'] < (time.time() - (45 * 60)):
                                 # list the channel to be removed from save data
                                 dict_channel_delete.append(channelid)
                                 # and list the channel to be deleted in discord
@@ -841,7 +840,7 @@ async def on_member_join(member):
         else:
             await member.send(welcomemessage.format(server=guild.name, user=member.mention))
     else:
-        default = discord.utils.get(guild.channels, name=guild_dict[guild.id]['welcomechan'])
+        default = discord.utils.get(guild.text_channels, name=guild_dict[guild.id]['welcomechan'])
         if default:
             if welcomemessage.startswith("[") and welcomemessage.endswith("]"):
                 await default.send(embed=discord.Embed(colour=guild.me.colour, description=welcomemessage[1:-1].format(server=guild.name, user=member.mention)))
@@ -1269,7 +1268,7 @@ async def announce(ctx, *, announce=None):
             elif channelmsg.raw_channel_mentions:
                 sendchannel = Meowth.get_channel(channelmsg.raw_channel_mentions[0])
             else:
-                sendchannel = discord.utils.get(guild.channels, name=channelmsg.content)
+                sendchannel = discord.utils.get(guild.text_channels, name=channelmsg.content)
             if (channelmsg != None) and (sendchannel != None):
                 announcement = await sendchannel.send(embed=embeddraft)
                 confirmation = await channel.send(_('Announcement Sent.'))
@@ -1496,7 +1495,7 @@ async def configure(ctx):
                         return
                     else:
                         guild_channel_list = []
-                        for channel in guild.channels:
+                        for channel in guild.text_channels:
                             guild_channel_list.append(channel.name)
                         diff = set([welcomechannelreply.content.lower().strip()]) - set(guild_channel_list)
                         if (not diff):
@@ -1602,22 +1601,22 @@ async def configure(ctx):
             else:
                 citychannel_list = citychannels.content.lower().split(', ')
                 guild_channel_list = []
-                for channel in guild.channels:
+                for channel in guild.text_channels:
                     guild_channel_list.append(channel.id)
                 citychannel_ids = []
                 citychannel_names = []
                 citychannel_errors = []
                 for item in citychannel_list:
                     if item.isdigit():
-                        channel = discord.utils.get(guild.channels, id=item)
+                        channel = discord.utils.get(guild.text_channels, id=item)
                         if channel:
                             citychannel_ids.append(channel.id)
                             citychannel_names.append(channel.name)
                         else:
                             citychannel_errors.append(item)
                     else:
-                        name = await letter_case(guild.channels, item.lower())
-                        channel = discord.utils.get(guild.channels, name=name)
+                        name = await letter_case(guild.text_channels, item.lower())
+                        channel = discord.utils.get(guild.text_channels, name=name)
                         if channel:
                             citychannel_ids.append(channel.id)
                             citychannel_names.append(channel.name)
@@ -1780,7 +1779,7 @@ async def configure(ctx):
             else:
                 want_list = wantchs.content.lower().split(', ')
                 guild_channel_list = []
-                for channel in guild.channels:
+                for channel in guild.text_channels:
                     guild_channel_list.append(channel.name)
                 diff = set(want_list) - set(guild_channel_list)
                 if (not diff):
@@ -1789,7 +1788,7 @@ async def configure(ctx):
                     while True:
                         try:
                             for want_channel_name in want_list:
-                                want_channel = discord.utils.get(guild.channels, name=want_channel_name)
+                                want_channel = discord.utils.get(guild.text_channels, name=want_channel_name)
                                 if want_channel == None:
                                     want_channel = await guild.create_text_channel(want_channel_name)
                                 if want_channel.id not in guild_dict_temp['want_channel_list']:
@@ -3260,7 +3259,7 @@ async def _invite(ctx):
     exraidcount = 0
     rc_dict = bot.guild_dict[guild.id]['raidchannel_dict']
     for channelid in rc_dict:
-        if (not discord.utils.get(guild.channels, id=channelid)):
+        if (not discord.utils.get(guild.text_channels, id=channelid)):
             continue
         if (rc_dict[channelid]['egglevel'] == 'EX') or (rc_dict[channelid]['type'] == 'exraid'):
             exraid_channel = bot.get_channel(channelid)
@@ -3899,7 +3898,7 @@ async def interested(ctx, *, teamcounts: str=None):
     entered_interest = []
     pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts)), None)
     if pkmn_match:
-        for word in re.split(' |,', teamcounts):
+        for word in re.split(' |,', teamcounts.lower()):
             if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][get_level(word.lower())]['pokemon']:
                 entered_interest.append(word.lower())
                 teamcounts = teamcounts.replace(word,"").replace(",","").strip()
@@ -3966,13 +3965,26 @@ async def coming(ctx, *, teamcounts: str=None):
     and will assume you are a group with that many people.
 
     Party is also optional. Format is #m #v #i to tell your party's teams."""
-    try:
-        if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
-            if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon'] == '':
-                await ctx.channel.send(_("Meowth! Please wait until the raid egg has hatched before announcing you're coming or present."))
-                return
-    except:
-        pass
+    trainer_dict = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']
+    rgx = '[^a-zA-Z0-9]'
+    entered_interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
+    pkmn_match = None
+    entered_interest = []
+    if teamcounts:
+        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts)), None)
+    if pkmn_match:
+        for word in re.split(' |,', teamcounts.lower()):
+            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][get_level(word.lower())]['pokemon']:
+                entered_interest.append(word.lower())
+                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
+    else:
+        try:
+            if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
+                if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon'] == '' and not entered_interest:
+                    await ctx.channel.send(_("Meowth! Specify which of the possible bosses you are interested in! Otherwise, please wait until the raid egg has hatched before announcing you're coming or present."))
+                    return
+        except:
+            pass
     trainer_dict = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']
     if (not teamcounts):
         if ctx.author.id in trainer_dict:
@@ -3983,7 +3995,8 @@ async def coming(ctx, *, teamcounts: str=None):
             teamcounts = ((((str(trainer_dict[ctx.author.id]['count']) + ' ') + bluecount) + redcount) + yellowcount) + unknowncount
         else:
             teamcounts = '1'
-    if teamcounts.split()[0].isdigit():
+
+    if teamcounts and teamcounts.split()[0].isdigit():
         total = int(teamcounts.split()[0])
     elif ctx.author.id in trainer_dict:
         total = trainer_dict[ctx.author.id]['count']
@@ -3995,9 +4008,9 @@ async def coming(ctx, *, teamcounts: str=None):
     if isinstance(result, __builtins__.list):
         count = result[0]
         partylist = result[1]
-        await _coming(ctx.channel, ctx.author, count, partylist)
+        await _coming(ctx.channel, ctx.author, count, partylist, entered_interest)
 
-async def _coming(channel, author, count, party):
+async def _coming(channel, author, count, party, entered_interest=None):
     allblue = 0
     allred = 0
     allyellow = 0
@@ -4028,6 +4041,8 @@ async def _coming(channel, author, count, party):
     trainer_dict[author.id]['status'] = 'omw'
     trainer_dict[author.id]['count'] = count
     trainer_dict[author.id]['party'] = party
+    if entered_interest:
+        trainer_dict[author.id]['interest'] = entered_interest
     await _edit_party(channel, author)
     guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'] = trainer_dict
 
@@ -4044,14 +4059,27 @@ async def here(ctx, *, teamcounts: str=None):
     and will assume you are a group with that many people.
 
     Party is also optional. Format is #m #v #i to tell your party's teams."""
-    try:
-        if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
-            if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon'] == '':
-                await ctx.channel.send(_("Meowth! Please wait until the raid egg has hatched before announcing you're coming or present."))
-                return
-    except:
-        pass
     trainer_dict = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']
+    rgx = '[^a-zA-Z0-9]'
+    entered_interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
+    pkmn_match = None
+    entered_interest = []
+    if teamcounts:
+        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts)), None)
+    if pkmn_match:
+        for word in re.split(' |,', teamcounts.lower()):
+            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][get_level(word.lower())]['pokemon']:
+                entered_interest.append(word.lower())
+                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
+    else:
+        try:
+            if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
+                if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon'] == '' and not entered_interest:
+                    await ctx.channel.send(_("Meowth! Specify which of the possible bosses you are interested in! Otherwise, please wait until the raid egg has hatched before announcing you're coming or present."))
+                    return
+        except:
+            pass
+
     if (not teamcounts):
         if ctx.author.id in trainer_dict:
             bluecount = str(trainer_dict[ctx.author.id]['party'][0]) + 'm '
@@ -4061,7 +4089,7 @@ async def here(ctx, *, teamcounts: str=None):
             teamcounts = ((((str(trainer_dict[ctx.author.id]['count']) + ' ') + bluecount) + redcount) + yellowcount) + unknowncount
         else:
             teamcounts = '1'
-    if teamcounts.split()[0].isdigit():
+    if teamcounts and teamcounts.split()[0].isdigit():
         total = int(teamcounts.split()[0])
     elif ctx.author.id in trainer_dict:
         total = trainer_dict[ctx.author.id]['count']
@@ -4073,9 +4101,9 @@ async def here(ctx, *, teamcounts: str=None):
     if isinstance(result, __builtins__.list):
         count = result[0]
         partylist = result[1]
-        await _here(ctx.channel, ctx.author, count, partylist)
+        await _here(ctx.channel, ctx.author, count, partylist, entered_interest)
 
-async def _here(channel, author, count, party):
+async def _here(channel, author, count, party, entered_interest=None):
     lobbymsg = ''
     allblue = 0
     allred = 0
@@ -4112,6 +4140,8 @@ async def _here(channel, author, count, party):
     trainer_dict[author.id]['status'] = 'waiting'
     trainer_dict[author.id]['count'] = count
     trainer_dict[author.id]['party'] = party
+    if entered_interest:
+        trainer_dict[author.id]['interest'] = entered_interest
     await _edit_party(channel, author)
     guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'] = trainer_dict
 
@@ -4486,7 +4516,7 @@ async def list(ctx):
                 reportcity = Meowth.get_channel(rc_d[r]['reportcity'])
                 if not reportcity:
                     continue
-                if (reportcity.name == cty) and rc_d[r]['active'] and discord.utils.get(guild.channels, id=r):
+                if (reportcity.name == cty) and rc_d[r]['active'] and discord.utils.get(guild.text_channels, id=r):
                     exp = rc_d[r]['exp']
                     type = rc_d[r]['type']
                     level = rc_d[r]['egglevel']
