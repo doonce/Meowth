@@ -56,7 +56,18 @@ Get the installer [HERE](https://github.com/tesseract-ocr/tesseract/wiki/Downloa
 
 13. Select the server you want to add Meowth to and complete the prompts. If you get to an empty screen and didn't get to see the Google new reCaptcha tickbox, disable your adblocker.
 
-14. Run the launcher from the command prompt or terminal window:
+14. Update your discord.py file to latest version using:
+
+Linux:
+```bash
+python3 -m pip install -U git+https://github.com/Rapptz/discord.py@rewrite
+```
+Windows:
+```bash
+py -m pip install -U git+https://github.com/Rapptz/discord.py@rewrite
+```
+
+15. Run the launcher from the command prompt or terminal window:
 
 Linux:
 ```bash
@@ -69,9 +80,9 @@ py launcher.py -s
 
 If successful, it should show "Meowth! That's right!".
 
-15. The bot should have sent you DM in Discord. Add the team roles: mystic, instinct and valor. Ensure they're below the bot role in the server role hierarchy.
+16. The bot should have sent you DM in Discord. Add the team roles: mystic, instinct and valor. Ensure they're below the bot role in the server role hierarchy.
 
-16. Simply type !configure in your server to start the configuration process.
+17. Simply type !configure in your server to start the configuration process.
 
 ### Launcher Reference:
 Arguments:
