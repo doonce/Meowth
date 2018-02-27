@@ -3901,15 +3901,16 @@ async def counters(ctx, *, entered_pkmn = None):
         if not weather:
             weather = "NO_WEATHER"
         else:
-            weather_list = ['none', 'extreme', 'clear', 'rainy',
+            weather_list = ['none', 'extreme', 'clear', 'sunny', 'rainy',
                             'partlycloudy', 'cloudy', 'windy', 'snow', 'fog']
+            match_list = ['NO_WEATHER','NO_WEATHER','CLEAR','CLEAR','RAINY',
+                            'PARTLY_CLOUDY','OVERCAST','WINDY','SNOW','FOG']
             if not weather.lower() in weather_list:
                 msg = "Please pick a valid weather option."
                 await ctx.embed(msg, msg_type='error')
                 return
-            if weather.lower() == 'partlycloudy':
-                weather = 'PARTLY_CLOUDY'
-            weather = weather.upper()
+            index = weather_list.index(weather)
+            weather = match_list[index]
         url = "https://fight.pokebattler.com/raids/defenders/"
         url += "{pkmn}/levels/RAID_LEVEL_{level}/".format(pkmn=pkmn.upper(),level=level)
         url += "attackers/levels/30/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE?sort=OVERALL&"
@@ -3952,7 +3953,7 @@ async def counters(ctx, *, entered_pkmn = None):
 @checks.activeraidchannel()
 async def weather(ctx, *, weather):
     "Sets the weather for the raid. \nUsage: !weather <weather> \nOnly usable in raid channels. \n Acceptable options: none, extreme, clear, rainy, partlycloudy, cloudy, windy, snow, fog"
-    weather_list = ['none', 'extreme', 'clear', 'rainy',
+    weather_list = ['none', 'extreme', 'clear', 'sunny', 'rainy',
                     'partlycloudy', 'cloudy', 'windy', 'snow', 'fog']
     if weather.lower() not in weather_list:
         return await ctx.channel.send("Meowth! Enter one of the following weather conditions: {}".format(", ".join(weather_list)))
