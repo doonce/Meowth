@@ -3897,6 +3897,7 @@ async def counters(ctx, *, entered_pkmn = None):
     weather = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('weather', None)
     if pkmn:
         img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=2'.format(str(get_number(pkmn)).zfill(3))
+        level = get_level(pkmn) if get_level(pkmn).isdigit() else "5"
         if not weather:
             weather = "NO_WEATHER"
         else:
@@ -3910,7 +3911,7 @@ async def counters(ctx, *, entered_pkmn = None):
                 weather = 'PARTLY_CLOUDY'
             weather = weather.upper()
         url = "https://fight.pokebattler.com/raids/defenders/"
-        url += "{pkmn}/levels/RAID_LEVEL_{level}/".format(pkmn=pkmn.upper(),level=get_level(pkmn))
+        url += "{pkmn}/levels/RAID_LEVEL_{level}/".format(pkmn=pkmn.upper(),level=level)
         url += "attackers/levels/30/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE?sort=OVERALL&"
         url += "weatherCondition={weather}&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE".format(weather=weather)
         async with ctx.typing():
