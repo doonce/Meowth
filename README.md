@@ -56,7 +56,7 @@ Get the installer [HERE](https://github.com/tesseract-ocr/tesseract/wiki/Downloa
 
 13. Select the server you want to add Meowth to and complete the prompts. If you get to an empty screen and didn't get to see the Google new reCaptcha tickbox, disable your adblocker.
 
-14. Update your discord.py file to latest version using:
+14. Make sure you have git installed and update your discord.py file to latest version using:
 
 Linux:
 ```bash
@@ -172,4 +172,4 @@ Meowth relies completely on users for reports. Meowth was designed as an alterna
 
 ## Known issues:
 
-Compatibility with Python 3.6 on Mac OS X requires running "Install Certificates.command" in the Python 3.6 folder. Incompatible with discord.py 1.0
+Compatibility with Python 3.6 on Mac OS X requires running "Install Certificates.command" in the Python 3.6 folder.
