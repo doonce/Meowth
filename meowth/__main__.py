@@ -273,7 +273,7 @@ def create_gmaps_query(details, channel):
     details_list = details.split()
     #look for lat/long coordinates in the location details. If provided,
     #then channel location hints are not needed in the  maps query
-    if re.match (r'^\s*-?\d{1,2}\.?\d*,\s+-?\d{1,3}\.?\d*\s*$', details): #regex looks for lat/long in the format similar to 42.434546, -83.985195.
+    if re.match (r'^\s*-?\d{1,2}\.?\d*,\s*-?\d{1,3}\.?\d*\s*$', details): #regex looks for lat/long in the format similar to 42.434546, -83.985195.
         return "https://www.google.com/maps/search/?api=1&query={0}".format('+'.join(details_list))
     loc_list = guild_dict[channel.guild.id]['city_channels'][channel.id].split(
     )
@@ -3893,7 +3893,7 @@ async def counters(ctx, *, entered_pkmn = None):
     guild = channel.guild
     pkmn = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('pokemon', None)
     if not pkmn:
-        pkmn = entered_pkmn.lower() if entered_pkmn in get_raidlist() else None
+        pkmn = entered_pkmn.lower() if entered_pkmn.lower() in get_raidlist() else None
     weather = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('weather', None)
     if pkmn:
         img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=2'.format(str(get_number(pkmn)).zfill(3))
@@ -3913,7 +3913,7 @@ async def counters(ctx, *, entered_pkmn = None):
             weather = match_list[index]
         url = "https://fight.pokebattler.com/raids/defenders/"
         url += "{pkmn}/levels/RAID_LEVEL_{level}/".format(pkmn=pkmn.upper(),level=level)
-        url += "attackers/levels/30/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE?sort=OVERALL&"
+        url += "attackers/levels/30/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=OVERALL&"
         url += "weatherCondition={weather}&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE".format(weather=weather)
         async with ctx.typing():
             async with aiohttp.ClientSession() as sess:
@@ -3989,13 +3989,22 @@ async def interested(ctx, *, teamcounts: str=None):
         else:
             teamcounts = '1'
     rgx = '[^a-zA-Z0-9]'
-    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
+    if teamcounts:
+        if "all" in teamcounts.lower():
+            teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([get_name(s) for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
+            teamcounts = teamcounts.lower().replace("all","").strip()
+        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
         entered_interest = []
         for word in re.split(' |,', teamcounts.lower()):
-            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
-                entered_interest.append(word.lower())
-                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
+            if word.lower() in pkmn_info['pokemon_list']:
+                if get_number(word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
+                    if word.lower() not in entered_interest:
+                        entered_interest.append(word.lower())
+                else:
+                    await ctx.message.channel.send("{word} doesn't appear in level {egglevel} raids! Please try again.".format(word=word.title(),egglevel=egglevel))
+                    return
+                teamcounts = teamcounts.lower().replace(word.lower(),"").replace(",","").strip()
     if teamcounts and teamcounts.split()[0].isdigit():
         total = int(teamcounts.split()[0])
     elif ctx.author.id in trainer_dict:
@@ -4065,13 +4074,21 @@ async def coming(ctx, *, teamcounts: str=None):
     egglevel = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egglevel']
     pkmn_match = None
     if teamcounts:
+        if "all" in teamcounts.lower():
+            teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([get_name(s) for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
+            teamcounts = teamcounts.lower().replace("all","").strip()
         pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
         entered_interest = []
         for word in re.split(' |,', teamcounts.lower()):
-            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
-                entered_interest.append(word.lower())
-                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
+            if word.lower() in pkmn_info['pokemon_list']:
+                if get_number(word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
+                    if word.lower() not in entered_interest:
+                        entered_interest.append(word.lower())
+                else:
+                    await ctx.message.channel.send("{word} doesn't appear in level {egglevel} raids! Please try again.".format(word=word.title(),egglevel=egglevel))
+                    return
+                teamcounts = teamcounts.lower().replace(word.lower(),"").replace(",","").strip()
     else:
         try:
             if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
@@ -4160,13 +4177,21 @@ async def here(ctx, *, teamcounts: str=None):
     egglevel = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egglevel']
     pkmn_match = None
     if teamcounts:
+        if "all" in teamcounts.lower():
+            teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([get_name(s) for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
+            teamcounts = teamcounts.lower().replace("all","").strip()
         pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
         entered_interest = []
         for word in re.split(' |,', teamcounts.lower()):
-            if word.lower() in pkmn_info['pokemon_list'] and get_number(word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
-                entered_interest.append(word.lower())
-                teamcounts = teamcounts.replace(word,"").replace(",","").strip()
+            if word.lower() in pkmn_info['pokemon_list']:
+                if get_number(word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
+                    if word.lower() not in entered_interest:
+                        entered_interest.append(word.lower())
+                else:
+                    await ctx.message.channel.send("{word} doesn't appear in level {egglevel} raids! Please try again.".format(word=word.title(),egglevel=egglevel))
+                    return
+                teamcounts = teamcounts.lower().replace(word.lower(),"").replace(",","").strip()
     else:
         try:
             if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
@@ -4892,7 +4917,10 @@ async def _bosslist(ctx):
     for boss in boss_list:
         if boss_dict[boss]['total'] > 0:
             bossliststr += '{type}{name}: **{total} total,** {interested} interested, {coming} coming, {waiting} waiting{type}\n'.format(type=boss_dict[boss]['type'],name=boss.capitalize(), total=boss_dict[boss]['total'], interested=boss_dict[boss]['maybe'], coming=boss_dict[boss]['omw'], waiting=boss_dict[boss]['waiting'])
-    listmsg = ' Boss numbers for the raid:\n{}'.format(bossliststr)
+    if bossliststr:
+        listmsg = ' Boss numbers for the raid:\n{}'.format(bossliststr)
+    else:
+        listmsg = _(' Nobody has told me what boss they want!')
     return listmsg
 
 @list.command()
