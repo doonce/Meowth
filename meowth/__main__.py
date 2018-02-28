@@ -4950,6 +4950,7 @@ async def _teamlist(ctx):
                 if trainer_dict[trainer]['status'] == status:
                     team_dict[team][status] += int(trainer_dict[trainer]['party'][index])
             index += 1
+        index = 0
     for team in team_list[:-1]:
         if team_dict[team]['total'] > 0:
             teamliststr += '{emoji} **{total} total,** {interested} interested, {coming} coming, {waiting} waiting {emoji}\n'.format(emoji=parse_emoji(ctx.guild, config['team_dict'][team]), total=team_dict[team]['total'], interested=team_dict[team]['maybe'], coming=team_dict[team]['omw'], waiting=team_dict[team]['waiting'])
