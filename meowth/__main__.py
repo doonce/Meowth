@@ -484,11 +484,9 @@ async def expire_channel(channel):
         else:
             guild_dict[guild.id]['raidchannel_dict'][channel.id]['active'] = False
         logger.info('Expire_Channel - Channel Expired - ' + channel.name)
-        try:
-            testvar = guild_dict[guild.id]['raidchannel_dict'][channel.id]['duplicate']
-        except KeyError:
-            guild_dict[guild.id]['raidchannel_dict'][channel.id]['duplicate'] = 0
-        if guild_dict[guild.id]['raidchannel_dict'][channel.id]['duplicate'] >= 3:
+        dupecount = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('duplicate',0)
+        archive = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive',False)
+        if dupecount >= 3:
             if guild_dict[guild.id]['raidchannel_dict'][channel.id]['gymhuntrgps'] is not False:
                 gymhuntrexp = guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp']
                 gymhuntrdupe = True
@@ -544,20 +542,19 @@ async def expire_channel(channel):
                     await reportmsg.edit(embed=discord.Embed(description=expiremsg, colour=channel.guild.me.colour))
                 except:
                     pass
-            try:
-                if gymhuntrdupe == False:
-                    del guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]
-            except KeyError:
-                pass
                 # channel doesn't exist anymore in serverdict
             channel_exists = Meowth.get_channel(channel.id)
             if channel_exists == None:
                 return
-            elif gymhuntrdupe == False:
+            elif gymhuntrdupe == False and archive == False:
+                try:
+                    del guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]
+                except KeyError:
+                    pass
                 await channel_exists.delete()
                 logger.info(
                     'Expire_Channel - Channel Deleted - ' + channel.name)
-            elif gymhuntrdupe == True:
+            elif gymhuntrdupe == True and archive == False:
                 for overwrite in channel.overwrites:
                     await channel.set_permissions(channel.guild.default_role, overwrite=discord.PermissionOverwrite(read_messages=False))
                     if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
@@ -565,7 +562,24 @@ async def expire_channel(channel):
                 await channel.send('-----------------------------------------------\n**The channel has been removed from view for everybody but Meowth and server owner to protect from future GymHuntr duplicates. It will be removed on its own, please do not remove it. Just ignore what happens in this channel.**\n-----------------------------------------------')
                 deltime = ((gymhuntrexp - time.time()) / 60) + 10
                 await _timerset(channel, deltime)
-
+            elif archive == True:
+                for overwrite in channel.overwrites:
+                    if isinstance(overwrite[0], discord.Role):
+                        if overwrite[0].permissions.manage_guild or overwrite[0].permissions.manage_channels:
+                            await channel.set_permissions(overwrite[0], read_messages=True)
+                            continue
+                    elif isinstance(overwrite[0], discord.Member):
+                        if channel.permissions_for(overwrite[0]).manage_guild or channel.permissions_for(overwrite[0]).manage_channels:
+                            await channel.set_permissions(overwrite[0], read_messages=True)
+                            continue
+                    if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
+                        await channel.set_permissions(overwrite[0], read_messages=False)
+                new_name = _('archived-')
+                new_name += channel.name
+                await channel.edit(name=new_name)
+                await channel.send('-----------------------------------------------\n**The channel has been marked for archiving and has been removed from view for everybody but Meowth and those with Manage Channel permissions. You will need to delete this channel manually.**\n-----------------------------------------------')
+                guild_dict[guild.id]['raidchannel_dict'][channel.id]['active'] = True
+                guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] = time.time() + time.time()
 
 async def channel_cleanup(loop=True):
     while (not Meowth.is_closed()):
@@ -973,7 +987,6 @@ async def on_huntr(message):
                                 await _eggtoraid(ghpokeid.lower().strip(), channel, author=message.author, huntr=huntr)
                             raidmsg = await channel.get_message(guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
                             if raidmsg.embeds[0].fields[2].name != ghmoves:
-                                #raidmsg.embeds[0].set_field_at(2, name=ghmoves, value=raidmsg.embeds[0].fields[2].value, inline=True)
                                 await channel.send(_("This {pokemon}'s moves are: **{moves}**").format(pokemon=ghpokeid, moves=ghmoves))
                     except KeyError:
                         pass
@@ -1079,9 +1092,20 @@ async def on_huntr(message):
                     con.close()
             hpokeid = message.embeds[0].title.split(' ')[2]
             hdesc = message.embeds[0].description.splitlines()
-            hexpire = hdesc[2].split(': ')[1][:(- 1)]
-            hweather = hdesc[3].split(': ')[1][1:(- 1)] if len(hdesc) > 3 else None
-            huntr = '!wild {0} {1}|{2}|{3}'.format(hpokeid, hlocation, hexpire, hweather)
+            hexpire = None
+            hweather = None
+            hiv = None
+            for line in hdesc:
+                if "remaining:" in line.lower():
+                    hexpire = line.split(': ')[1][:(- 1)]
+                if "weather:" in line.lower():
+                    hweather = line.split(': ')[1][1:(- 1)]
+                if "iv:" in line.lower():
+                    hiv = line.split(': ')[1][2:(-2)]
+            hextra = "Weather: {hweather}".format(hweather=hweather)
+            if hiv:
+                hextra += " / IV: {hiv}".format(hiv=hiv)
+            huntr = '!wild {0} {1}|{2}|{3}'.format(hpokeid, hlocation, hexpire, hextra)
             await message.delete()
             await _wild(message, huntr)
             return
@@ -2031,7 +2055,7 @@ async def changeraid(ctx, newraid):
     if (not channel) or (channel.id not in guild_dict[guild.id]['raidchannel_dict']):
         await channel.send(_('The channel you entered is not a raid channel.'))
         return
-    if newraid.isdigit() and (guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg'):
+    if newraid.isdigit():
         raid_channel_name = _('level-{egg_level}-egg-').format(egg_level=newraid)
         raid_channel_name += sanitize_channel_name(guild_dict[guild.id]['raidchannel_dict'][channel.id]['address'])
         guild_dict[guild.id]['raidchannel_dict'][channel.id]['egglevel'] = newraid
@@ -2124,6 +2148,15 @@ async def cleanroles(ctx):
             cleancount += 1
     await ctx.message.channel.send(_("Removed {cleancount} empty roles").format(cleancount=cleancount))
 
+@Meowth.command()
+@commands.has_permissions(manage_messages=True)
+@checks.raidchannel()
+async def archive(ctx):
+    message = ctx.message
+    guild = message.guild
+    channel = message.channel
+    guild_dict[guild.id]['raidchannel_dict'][channel.id]['archive'] = True
+    await ctx.message.add_reaction('☑')
 
 """
 Miscellaneous
@@ -2520,7 +2553,7 @@ async def _wild(message, huntr=False):
     else:
         wild_split = huntr.split('|')[0].split()
         huntrexp = huntr.split('|')[1]
-        huntrweather = 'Weather: ' + huntr.split('|')[2]
+        huntrweather = huntr.split('|')[2]
         huntrexpstamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'], minutes=int(huntrexp.split()[0]), seconds=int(huntrexp.split()[2]))).strftime('%I:%M %p')
     del wild_split[0]
     if len(wild_split) <= 1:
@@ -2851,6 +2884,8 @@ async def _raidegg(message, huntr=False):
             boss_list.append((((p_name + ' (') + str(p)) + ') ') + ''.join(p_type))
         raid_channel_name = _('level-{egg_level}-egg-').format(egg_level=egg_level)
         raid_channel_name += sanitize_channel_name(raid_details)
+        if huntr:
+            raid_channel_name += _('-bot')
         raid_channel_category = get_category(message.channel, egg_level)
         raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
         raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/eggs/{}?cache=2'.format(str(egg_img))
@@ -3026,10 +3061,9 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
             egg_report = await reportcitychannel.get_message(eggdetails['raidreport'])
         except (discord.errors.NotFound, discord.errors.HTTPException):
             egg_report = None
-    try:
-        starttime = eggdetails['starttime']
-    except KeyError:
-        starttime = None
+    starttime = eggdetails.get('starttime',None)
+    duplicate = eggdetails.get('duplicate',0)
+    archive = eggdetails.get('archive',False)
     if not author:
         try:
             raid_messageauthor = raid_message.mentions[0]
@@ -3132,8 +3166,9 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         'egglevel': '0',
         'gymhuntrgps' : gymhuntrgps
     }
-    if starttime:
-        guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['starttime'] = starttime
+    guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['starttime'] = starttime
+    guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['duplicate'] = duplicate
+    guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
     if author:
         await _edit_party(raid_channel, author)
     event_loop.create_task(expiry_check(raid_channel))
@@ -3457,10 +3492,7 @@ async def starttime(ctx):
         maxtime = (rc_d['exp'] - time.time()) / 60
     del start_split[0]
     if len(start_split) > 0:
-        try:
-            alreadyset = rc_d['starttime']
-        except KeyError:
-            alreadyset = False
+        alreadyset = rc_d.get('starttime',False)
         if ('am' in ' '.join(start_split).lower()) or ('pm' in ' '.join(start_split).lower()):
             try:
                 start = datetime.datetime.strptime(' '.join(start_split), '%I:%M %p').replace(year=now.year, month=now.month, day=now.day)
@@ -3508,14 +3540,13 @@ async def starttime(ctx):
             await channel.send(_('Meowth! The current start time has been set to: **{starttime}**').format(starttime=start.strftime(_('%I:%M %p (%H:%M)'))))
             return
     else:
-        try:
-            starttime = rc_d['starttime']
-            if starttime < now:
-                del rc_d['starttime']
-                await channel.send(_('Meowth! No start time has been set, set one with **!starttime HH:MM AM/PM**! (You can also omit AM/PM and use 24-hour time!)'))
-                return
+        starttime = rc_d.get('starttime',None)
+        if starttime and starttime < now:
+            rc_d['starttime'] = None
+            starttime = None
+        if starttime:
             await channel.send(_('Meowth! The current start time is: **{starttime}**').format(starttime=starttime.strftime(_('%I:%M %p (%H:%M)'))))
-        except KeyError:
+        elif not starttime:
             await channel.send(_('Meowth! No start time has been set, set one with **!starttime HH:MM AM/PM**! (You can also omit AM/PM and use 24-hour time!)'))
 
 @Meowth.group()
@@ -4588,12 +4619,11 @@ async def starting(ctx):
         starting_str = _("Meowth! How can you start when there's no one waiting at this raid!?")
         await ctx.channel.send(starting_str)
         return
-    try:
-        starttime = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['starttime']
+    starttime = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('starttime',None)
+    if starttime:
         timestr = _(' to start at **{}** ').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
-        del guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['starttime']
-    except KeyError:
-        starttime = False
+        guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['starttime'] = None
+    else:
         timestr = ' '
     starting_str = _('Meowth! The group that was waiting{timestr}is starting the raid! Trainers {trainer_list}, if you are not in this group and are waiting for the next group, please respond with {here_emoji} or **!here**. If you need to ask those that just started to back out of their lobby, use **!backout**').format(timestr=timestr, trainer_list=', '.join(ctx_startinglist), here_emoji=parse_emoji(ctx.guild, config['here_id']))
     guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby'] = time.time() + 120
@@ -4747,13 +4777,11 @@ async def list(ctx):
                     assumed_str = _(' (assumed)')
                 else:
                     assumed_str = ''
-                try:
-                    starttime = rc_d[r]['starttime']
-                    if starttime > now:
-                        start_str = _(' Next group: **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
-                except KeyError:
+                starttime = rc_d[r].get('starttime',None)
+                if starttime and starttime > now:
+                    start_str = _(' Next group: **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
+                elif not starttime:
                     starttime = False
-                    pass
                 if rc_d[r]['egglevel'].isdigit() and (int(rc_d[r]['egglevel']) > 0):
                     expirytext = _(' - Hatches: {expiry}{is_assumed}').format(expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
                 elif (rc_d[r]['egglevel'] == 'EX') or (rc_d[r]['type'] == 'exraid'):
@@ -4788,11 +4816,7 @@ async def list(ctx):
         if checks.check_raidchannel(ctx):
             if checks.check_raidactive(ctx):
                 bulletpoint = parse_emoji(ctx.guild, ':small_blue_diamond:')
-                starttime = False
-                try:
-                    starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id]['starttime']
-                except KeyError:
-                    pass
+                starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
                 rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
                 if " 0 interested!" not in await _interest(ctx):
                     listmsg += ('\n' + bulletpoint) + (await _interest(ctx))
@@ -5053,11 +5077,7 @@ async def tags(ctx):
             guild = ctx.guild
             channel = ctx.channel
             bulletpoint = parse_emoji(ctx.guild, ':small_blue_diamond:')
-            starttime = False
-            try:
-                starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id]['starttime']
-            except KeyError:
-                pass
+            starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
             rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
             if " 0 interested!" not in await _interest(ctx):
                 listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag=True))
