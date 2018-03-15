@@ -1022,6 +1022,11 @@ async def on_huntr(message):
                     reaction, user = await Meowth.wait_for('reaction_add', timeout=timeout, check=check)
                 except asyncio.TimeoutError:
                     await raidreport.clear_reactions()
+                    expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=ghpokeid)
+                    try:
+                        await raidreport.edit(content=raidreport.content.splitlines()[0],embed=discord.Embed(description=expiremsg, colour=message.guild.me.colour))
+                    except discord.errors.NotFound:
+                        pass
                     return
                 if reaction:
                     reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])
@@ -1030,12 +1035,6 @@ async def on_huntr(message):
                     huntr = '!raid {0} {1} {2}|{3}|{4}'.format(ghpokeid, ghgym, time, huntrgps, ghmoves)
                     raid_channel = await _raid(message, huntr)
                     await raidreport.delete()
-                await asyncio.sleep(timeout)
-                expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=ghpokeid)
-                try:
-                    await raidreport.edit(embed=discord.Embed(description=expiremsg, colour=message.guild.me.colour))
-                except discord.errors.NotFound:
-                    pass
             return
         elif (len(message.embeds[0].title.split(' ')) == 6) and guild_dict[message.guild.id]['autoegg']:
             ghduplicate = False
@@ -1074,6 +1073,11 @@ async def on_huntr(message):
                     reaction, user = await Meowth.wait_for('reaction_add', timeout=timeout, check=check)
                 except asyncio.TimeoutError:
                     await raidreport.clear_reactions()
+                    expiremsg = _('**This level {level} raid egg has hatched!**').format(level=ghegglevel)
+                    try:
+                        await raidreport.edit(content=raidreport.content.splitlines()[0],embed=discord.Embed(description=expiremsg, colour=message.guild.me.colour))
+                    except discord.errors.NotFound:
+                        pass
                     return
                 if reaction:
                     reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])
@@ -1082,12 +1086,6 @@ async def on_huntr(message):
                     huntr = '!raidegg {0} {1} {2}|{3}'.format(ghegglevel, ghgym, time, huntrgps)
                     raid_channel = await _raidegg(message, huntr)
                     await raidreport.delete()
-                await asyncio.sleep(int(ghminute) * 60)
-                expiremsg = _('**This level {level} raid egg has hatched!**').format(level=ghegglevel)
-                try:
-                    await raidreport.edit(embed=discord.Embed(description=expiremsg, colour=message.guild.me.colour))
-                except discord.errors.NotFound:
-                    pass
             return
         return
     if message.author.id == 295116861920772098 and message.embeds and guild_dict[message.guild.id]['autowild']:
