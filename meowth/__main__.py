@@ -947,7 +947,7 @@ async def on_message(message):
 async def on_huntr(message):
     timestamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])).strftime('%I:%M %p')
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])
-    if message.author.id == 329412230481444886 or message.author.id == 295116861920772098 and message.embeds:
+    if message.embeds and (message.author.id == 329412230481444886 or message.author.id == 295116861920772098):
         try:
             huntrgps = message.embeds[0].url.split('#')[1]
         except IndexError:
