@@ -1012,7 +1012,7 @@ async def on_huntr(message):
                 raid_embed.add_field(name='**Expires in:**', value=_('{minutes} mins ({ghtimestamp})').format(minutes=ghminute, ghtimestamp=ghtimestamp), inline=True)
                 raid_embed.set_thumbnail(url=raid_img_url)
                 raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=_('https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}'.format(user=message.author, format='jpg', size=32)))
-                raidreport = await message.channel.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}.\n\nReact if you want to make a channel for this raid!').format(pokemon=raid, member=message.author.mention, location_details=ghgym), embed=raid_embed)
+                raidreport = await message.channel.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(pokemon=raid, member=message.author.mention, location_details=ghgym), embed=raid_embed)
                 timeout = (int(ghminute) * 60)
                 await asyncio.sleep(0.25)
                 await raidreport.add_reaction('✅')
@@ -1024,7 +1024,7 @@ async def on_huntr(message):
                     await raidreport.clear_reactions()
                     expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=ghpokeid)
                     try:
-                        await raidreport.edit(content=raidreport.content.splitlines()[0],embed=discord.Embed(description=expiremsg, colour=message.guild.me.colour))
+                        await raidreport.edit(content=raidreport.content.split(" React")[0],embed=discord.Embed(description=expiremsg, colour=message.guild.me.colour))
                     except discord.errors.NotFound:
                         pass
                     return
@@ -1063,7 +1063,7 @@ async def on_huntr(message):
                 raid_embed.add_field(name='**Starting in:**', value=_('{minutes} mins ({ghtimestamp})').format(minutes=ghminute, ghtimestamp=ghtimestamp), inline=True)
                 raid_embed.set_thumbnail(url=_('https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}.png?cache=2'.format(str(ghegglevel))))
                 raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=_('https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}'.format(user=message.author, format='jpg', size=32)))
-                raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}.\n\nReact if you want to make a channel for this raid!').format(level=ghegglevel, member=message.author.mention, location_details=ghgym), embed=raid_embed)
+                raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=ghegglevel, member=message.author.mention, location_details=ghgym), embed=raid_embed)
                 timeout = (int(ghminute) * 60)
                 await asyncio.sleep(0.25)
                 await raidreport.add_reaction('✅')
@@ -1075,7 +1075,7 @@ async def on_huntr(message):
                     await raidreport.clear_reactions()
                     expiremsg = _('**This level {level} raid egg has hatched!**').format(level=ghegglevel)
                     try:
-                        await raidreport.edit(content=raidreport.content.splitlines()[0],embed=discord.Embed(description=expiremsg, colour=message.guild.me.colour))
+                        await raidreport.edit(content=raidreport.content.split(" React")[0],embed=discord.Embed(description=expiremsg, colour=message.guild.me.colour))
                     except discord.errors.NotFound:
                         pass
                     return
@@ -1787,7 +1787,7 @@ async def configure(ctx):
                 citychannel_errors = []
                 for item in citychannel_list:
                     if item.isdigit():
-                        channel = discord.utils.get(guild.text_channels, id=int(item))
+                        channel = discord.utils.get(guild.text_channels, id=item)
                         if channel:
                             citychannel_ids.append(channel.id)
                             citychannel_names.append(channel.name)
@@ -4775,7 +4775,7 @@ async def _cancel(channel, author):
 
 @Meowth.command()
 @checks.activeraidchannel()
-async def starting(ctx):
+async def starting(ctx, team: str = ''):
     """Signal that a raid is starting.
 
     Usage: !starting
@@ -4783,11 +4783,17 @@ async def starting(ctx):
     for a second group must reannounce with the :here: emoji or !here."""
     ctx_startinglist = []
     id_startinglist = []
+    team_list = []
     trainer_dict = copy.deepcopy(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'])
     for trainer in trainer_dict:
-        if trainer_dict[trainer]['status'] == 'waiting':
+        user = ctx.guild.get_member(trainer)
+        if team:
+            for role in ctx.author.roles:
+                if role.name.lower() == team:
+                    team_list.append(user.id)
+                    break
+        if trainer_dict[trainer]['status'] == 'waiting' and (user.id in team_list or not team):
             trainer_dict[trainer]['status'] = 'lobby'
-            user = ctx.guild.get_member(trainer)
             ctx_startinglist.append(user.mention)
             id_startinglist.append(trainer)
     guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'] = trainer_dict
@@ -5127,19 +5133,17 @@ async def _interest(ctx, tag=False, team=False):
     name_list = []
     team_list = []
     for trainer in trainer_dict.keys():
-        memberexists = ctx.guild.get_member(trainer)
+        user = ctx.guild.get_member(trainer)
         if team:
             for role in ctx.author.roles:
                 if role.name.lower() == team:
-                    team_list.append(memberexists.id)
+                    team_list.append(user.id)
                     break
-        if (trainer_dict[trainer]['status'] == 'maybe') and memberexists and team == False:
-            user = ctx.guild.get_member(trainer)
+        if (trainer_dict[trainer]['status'] == 'maybe') and user and team == False:
             ctx_maybecount += trainer_dict[trainer]['count']
             name_list.append(('**' + user.name) + '**')
             maybe_list.append(user.mention)
-        elif (trainer_dict[trainer]['status'] == 'maybe') and memberexists and team:
-            user = ctx.guild.get_member(trainer)
+        elif (trainer_dict[trainer]['status'] == 'maybe') and user and team:
             if user.id in team_list:
                 ctx_maybecount += trainer_dict[trainer]['count']
                 name_list.append(('**' + user.name) + '**')
@@ -5172,19 +5176,17 @@ async def _otw(ctx, tag=False, team=False):
     name_list = []
     team_list = []
     for trainer in trainer_dict.keys():
-        memberexists = ctx.guild.get_member(trainer)
+        user = ctx.guild.get_member(trainer)
         if team:
             for role in ctx.author.roles:
                 if role.name.lower() == team:
                     team_list.append(memberexists.id)
                     break
-        if (trainer_dict[trainer]['status'] == 'omw') and memberexists and team == False:
-            user = ctx.guild.get_member(trainer)
+        if (trainer_dict[trainer]['status'] == 'omw') and user and team == False:
             ctx_omwcount += trainer_dict[trainer]['count']
             name_list.append(('**' + user.name) + '**')
             otw_list.append(user.mention)
-        elif (trainer_dict[trainer]['status'] == 'omw') and memberexists and team:
-            user = ctx.guild.get_member(trainer)
+        elif (trainer_dict[trainer]['status'] == 'omw') and user and team:
             if user.id in team_list:
                 ctx_omwcount += trainer_dict[trainer]['count']
                 name_list.append(('**' + user.name) + '**')
@@ -5217,19 +5219,17 @@ async def _waiting(ctx, tag=False, team=False):
     name_list = []
     team_list = []
     for trainer in trainer_dict.keys():
-        memberexists = ctx.guild.get_member(trainer)
+        user = ctx.guild.get_member(trainer)
         if team:
             for role in ctx.author.roles:
                 if role.name.lower() == team:
-                    team_list.append(memberexists.id)
+                    team_list.append(user.id)
                     break
-        if (trainer_dict[trainer]['status'] == 'omw') and memberexists and team == False:
-            user = ctx.guild.get_member(trainer)
+        if (trainer_dict[trainer]['status'] == 'waiting') and user and team == False:
             ctx_waitingcount += trainer_dict[trainer]['count']
             name_list.append(('**' + user.name) + '**')
             waiting_list.append(user.mention)
-        elif (trainer_dict[trainer]['status'] == 'omw') and memberexists and team:
-            user = ctx.guild.get_member(trainer)
+        elif (trainer_dict[trainer]['status'] == 'waiting') and user and team:
             if user.id in team_list:
                 ctx_waitingcount += trainer_dict[trainer]['count']
                 name_list.append(('**' + user.name) + '**')
@@ -5262,19 +5262,17 @@ async def _lobbylist(ctx, tag=False, team=False):
     name_list = []
     team_list = []
     for trainer in trainer_dict.keys():
-        memberexists = ctx.guild.get_member(trainer)
+        user = ctx.guild.get_member(trainer)
         if team:
             for role in ctx.author.roles:
                 if role.name.lower() == team:
                     team_list.append(memberexists.id)
                     break
-        if (trainer_dict[trainer]['status'] == 'omw') and memberexists and team == False:
-            user = ctx.guild.get_member(trainer)
+        if (trainer_dict[trainer]['status'] == 'lobby') and user and team == False:
             ctx_lobbycount += trainer_dict[trainer]['count']
             name_list.append(('**' + user.name) + '**')
             lobby_list.append(user.mention)
-        elif (trainer_dict[trainer]['status'] == 'omw') and memberexists and team:
-            user = ctx.guild.get_member(trainer)
+        elif (trainer_dict[trainer]['status'] == 'lobby') and user and team:
             if user.id in team_list:
                 ctx_lobbycount += trainer_dict[trainer]['count']
                 name_list.append(('**' + user.name) + '**')
