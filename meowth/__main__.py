@@ -1172,6 +1172,7 @@ async def on_pokealarm(message):
         if guild_dict[message.guild.id].get('alarmaction',None) == 'react':
             if reporttype == "egg":
                 pamsg = await message.channel.send(("If you want me to report this level {level} egg, just react!").format(level=level),embed=embed)
+                expiremsg = _('**This level {level} raid egg has hatched!**').format(level=level)
             elif reporttype == "raid":
                 raidrole = discord.utils.get(message.channel.guild.roles, name=pokeid)
                 if raidrole == None:
@@ -1179,6 +1180,7 @@ async def on_pokealarm(message):
                 else:
                     raidrole = raidrole.mention
                 pamsg = await message.channel.send(("If you want me to report this {pokeid} raid, just react!").format(pokeid=pokeid),embed=embed)
+                expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=pokeid)
             await asyncio.sleep(0.25)
             await pamsg.add_reaction('✅')
             def check(reaction, user):
@@ -1186,7 +1188,11 @@ async def on_pokealarm(message):
             try:
                 reaction, user = await Meowth.wait_for('reaction_add', timeout=timeout, check=check)
             except asyncio.TimeoutError:
-                await pamsg.delete()
+                await pamsg.clear_reactions()
+                try:
+                    await pamsg.edit(content=expiremsg,embed=None)
+                except discord.errors.NotFound:
+                    pass
                 return
             if reaction:
                 reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])
