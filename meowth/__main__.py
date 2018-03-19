@@ -572,6 +572,7 @@ async def expire_channel(channel):
                             break
                     await channel.set_permissions(guild.default_role, read_messages=False)
                     new_name = _('archived-')
+                    new_name += channel.name
                     category = guild_dict[channel.guild.id].get('archive', {}).get('category', 'same')
                     if category == 'same':
                         newcat = channel.category
