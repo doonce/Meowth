@@ -564,6 +564,17 @@ async def expire_channel(channel):
                     deltime = ((gymhuntrexp - time.time()) / 60) + 10
                     await _timerset(channel, deltime)
                 elif archive == True:
+                    for overwrite in channel.overwrites:
+                        if isinstance(overwrite[0], discord.Role):
+                            if overwrite[0].permissions.manage_guild or overwrite[0].permissions.manage_channels:
+                                await channel.set_permissions(overwrite[0], read_messages=True)
+                                continue
+                        elif isinstance(overwrite[0], discord.Member):
+                            if channel.permissions_for(overwrite[0]).manage_guild or channel.permissions_for(overwrite[0]).manage_channels:
+                                await channel.set_permissions(overwrite[0], read_messages=True)
+                                continue
+                        if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
+                            await channel.set_permissions(overwrite[0], read_messages=False)
                     for role in guild.role_hierarchy:
                         if role.permissions.manage_guild or role.permissions.manage_channels:
                             await channel.set_permissions(role, read_messages=True)
@@ -4734,7 +4745,7 @@ async def _edit_party(channel, author=None):
         raidmsg = await channel.get_message(guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['raidmessage'])
     except:
         async for message in channel.history(limit=500, reverse=True):
-            if author and message.author.id == guild.me.id:
+            if author and message.author.id == channel.me.id:
                 c = _('Coordinate here')
                 if c in message.content:
                     reportchannel = message.raw_channel_mentions[0]
@@ -5119,7 +5130,7 @@ async def mystic(ctx, tag=False):
             listmsg = _('**Meowth!** ')
             guild = ctx.guild
             channel = ctx.channel
-            bulletpoint = parse_emoji(ctx.guild, ':mystic:')
+            bulletpoint = parse_emoji(ctx.guild, config['team_dict']['mystic'])
             starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
             rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
             if " 0 interested!" not in await _interest(ctx):
@@ -5150,7 +5161,7 @@ async def valor(ctx, tag=False):
             listmsg = _('**Meowth!** ')
             guild = ctx.guild
             channel = ctx.channel
-            bulletpoint = parse_emoji(ctx.guild, ':valor:')
+            bulletpoint = parse_emoji(ctx.guild, config['team_dict']['valor'])
             starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
             rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
             if " 0 interested!" not in await _interest(ctx):
@@ -5181,7 +5192,7 @@ async def instinct(ctx, tag=False):
             listmsg = _('**Meowth!** ')
             guild = ctx.guild
             channel = ctx.channel
-            bulletpoint = parse_emoji(ctx.guild, ':instinct:')
+            bulletpoint = parse_emoji(ctx.guild, config['team_dict']['instinct'])
             starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
             rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
             if " 0 interested!" not in await _interest(ctx):
@@ -5227,12 +5238,12 @@ async def _interest(ctx, tag=False, team=False):
         if team:
             for role in user.roles:
                 if role.name.lower() == team:
-                    name_list.append(('**' + user.name) + '**')
+                    name_list.append(('**' + user.display_name) + '**')
                     maybe_list.append(user.mention)
                     break
         if (trainer_dict[trainer]['status'] == 'maybe') and user and team == False:
             ctx_maybecount += trainer_dict[trainer]['count']
-            name_list.append(('**' + user.name) + '**')
+            name_list.append(('**' + user.display_name) + '**')
             maybe_list.append(user.mention)
         elif (trainer_dict[trainer]['status'] == 'maybe') and user and team:
             ctx_maybecount += trainer_dict[trainer]['party'][team_index]
@@ -5271,12 +5282,12 @@ async def _otw(ctx, tag=False, team=False):
         if team:
             for role in user.roles:
                 if role.name.lower() == team:
-                    name_list.append(('**' + user.name) + '**')
+                    name_list.append(('**' + user.display_name) + '**')
                     otw_list.append(user.mention)
                     break
         if (trainer_dict[trainer]['status'] == 'omw') and user and team == False:
             ctx_omwcount += trainer_dict[trainer]['count']
-            name_list.append(('**' + user.name) + '**')
+            name_list.append(('**' + user.display_name) + '**')
             otw_list.append(user.mention)
         elif (trainer_dict[trainer]['status'] == 'omw') and user and team:
             ctx_omwcount += trainer_dict[trainer]['party'][team_index]
@@ -5315,12 +5326,12 @@ async def _waiting(ctx, tag=False, team=False):
         if team:
             for role in user.roles:
                 if role.name.lower() == team:
-                    name_list.append(('**' + user.name) + '**')
+                    name_list.append(('**' + user.display_name) + '**')
                     waiting_list.append(user.mention)
                     break
         if (trainer_dict[trainer]['status'] == 'waiting') and user and team == False:
             ctx_waitingcount += trainer_dict[trainer]['count']
-            name_list.append(('**' + user.name) + '**')
+            name_list.append(('**' + user.display_name) + '**')
             waiting_list.append(user.mention)
         elif (trainer_dict[trainer]['status'] == 'waiting') and user and team:
             ctx_waitingcount += trainer_dict[trainer]['party'][team_index]
@@ -5359,12 +5370,12 @@ async def _lobbylist(ctx, tag=False, team=False):
         if team:
             for role in user.roles:
                 if role.name.lower() == team:
-                    name_list.append(('**' + user.name) + '**')
+                    name_list.append(('**' + user.display_name) + '**')
                     lobby_list.append(user.mention)
                     break
         if (trainer_dict[trainer]['status'] == 'lobby') and user and team == False:
             ctx_lobbycount += trainer_dict[trainer]['count']
-            name_list.append(('**' + user.name) + '**')
+            name_list.append(('**' + user.display_name) + '**')
             lobby_list.append(user.mention)
         elif (trainer_dict[trainer]['status'] == 'lobby') and user and team:
             ctx_lobbycount += trainer_dict[trainer]['party'][team_index]
@@ -5458,7 +5469,7 @@ async def _teamlist(ctx):
         teamliststr += '❔ '
         teamliststr += _('**{grey_number} total,** {greymaybe} interested, {greycoming} coming, {greywaiting} waiting')
         teamliststr += ' ❔'
-        teamliststr.format(grey_number=othercount, greymaybe=othermaybe, greycoming=othercoming, greywaiting=otherwaiting)
+        teamliststr = teamliststr.format(grey_number=team_dict['unknown']['total'], greymaybe=team_dict['unknown']['maybe'], greycoming=team_dict['unknown']['omw'], greywaiting=team_dict['unknown']['waiting'])
     if teamliststr:
         listmsg = _(' Team numbers for the raid:\n{}').format(teamliststr)
     else:
