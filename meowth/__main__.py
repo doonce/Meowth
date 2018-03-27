@@ -371,13 +371,13 @@ def do_template(message, author, guild):
     msg = re.sub(template_pattern, template_replace, message)
     return (msg, not_found)
 
-async def ask(message, destination, user_list, *, react_list=['✅', '❎']):
-    if type(user_list) != __builtins__.list:
+async def ask(message, destination, user_list=None, *, react_list=['✅', '❎']):
+    if user_list and type(user_list) != __builtins__.list:
         user_list = [user_list]
     def check(reaction, user):
         if user_list and type(user_list) is __builtins__.list:
             return (user.id in user_list) and (reaction.message.id == message.id) and (reaction.emoji in react_list)
-        else:
+        elif not user_list:
             return (user.id != message.guild.me.id) and (reaction.message.id == message.id) and (reaction.emoji in react_list)
     for r in react_list:
         await asyncio.sleep(0.25)
@@ -617,12 +617,17 @@ async def expire_channel(channel):
                         newcat = channel.guild.get_channel(category)
                     await channel.edit(name=new_name, category=newcat)
                     await channel.send(_('-----------------------------------------------\n**The channel has been archived and removed from view for everybody but Meowth and those with Manage Channel permissions. Any messages that were deleted after the channel was marked for archival will be posted below. You will need to delete this channel manually.**\n-----------------------------------------------'))
-                    logs = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('logs', [])
-                    if logs:
-                        for message in logs:
-                            embed = discord.Embed(colour=message.author.colour, description=message.content, timestamp=message.created_at)
-                            embed.set_author(name=str(message.author), icon_url = message.author.avatar_url)
-                            await channel.send(embed=embed)
+                    logs = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('logs', {})
+                    while logs:
+                        earliest = min(logs)
+                        embed = discord.Embed(colour=logs[earliest]['color_int'], description=logs[earliest]['content'], timestamp=logs[earliest]['created_at'])
+                        if logs[earliest]['author_nick']:
+                            embed.set_author(name="{name} [{nick}]".format(name=logs[earliest]['author_str'],nick=logs[earliest]['author_nick']), icon_url = logs[earliest]['author_avy'])
+                        else:
+                            embed.set_author(name=logs[earliest]['author_str'], icon_url = logs[earliest]['author_avy'])
+                        await channel.send(embed=embed)
+                        del logs[earliest]
+                        await asyncio.sleep(.25)
                     del guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]
         except:
             pass
@@ -1276,8 +1281,8 @@ async def on_message_delete(message):
     author = message.author
     if channel.id in guild_dict[guild.id]['raidchannel_dict']:
         if guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive', False):
-            logs = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('logs', [])
-            logs.append(message)
+            logs = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('logs', {})
+            logs[message.id] = {'author_id': message.author.id, 'author_str': str(message.author),'author_avy':message.author.avatar_url,'author_nick':message.author.nick,'color_int':message.author.color.value,'content': message.clean_content,'created_at':message.created_at}
             guild_dict[guild.id]['raidchannel_dict'][channel.id]['logs'] = logs
 
 """
@@ -2158,11 +2163,13 @@ async def configure(ctx):
         phrasemsg = await Meowth.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
         if phrasemsg.content.lower() == 'none':
             guild_dict_temp['archive']['list'] = None
-        phrase_list = phrasemsg.content.lower().split(",")
-        for i in range(len(phrase_list)):
-            phrase_list[i] = phrase_list[i].strip()
-        guild_dict_temp['archive']['list'] = phrase_list
-        await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Phrase list set.')))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Phrase list disabled.')))
+        else:
+            phrase_list = phrasemsg.content.lower().split(",")
+            for i in range(len(phrase_list)):
+                phrase_list[i] = phrase_list[i].strip()
+            guild_dict_temp['archive']['list'] = phrase_list
+            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Phrase list set.')))
     #configure huntr-raid
     if (configcancel == False) and (guild_dict_temp['other'] is True) and (guild_dict_temp['raidset'] is True) and ((firstconfig == True) or (configgoto == 'all') or (configgoto == 'scanner')):
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raid** reports using @GymHuntrBot enabled?\n\nAny raid that @GymHuntrBot posts in a channel that Meowth also has access to will be converted to a **!raid** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Raid Reports', icon_url=Meowth.user.avatar_url))
@@ -3044,6 +3051,8 @@ async def _raid(message, huntr=False):
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(message.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(message.guild, get_weaknesses(entered_raid))), inline=True)
+    raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
+    raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
     if huntr:
         raid_embed.add_field(name=gymhuntrmoves, value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
     if message.author.avatar:
@@ -3176,6 +3185,8 @@ async def _raidegg(message, huntr=False):
         else:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist}').format(bosslist=''.join(boss_list)), inline=True)
             raid_embed.add_field(name='\u200b', value='\u200b', inline=True)
+        raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
+        raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
         if huntr:
             raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
         if message.author.avatar:
@@ -3251,6 +3262,8 @@ async def _eggassume(args, raid_channel, author=None):
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(raid_channel.guild, get_weaknesses(entered_raid))), inline=True)
+    raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
+    raid_embed.add_field(name=_('**Expires:**'), value=oldembed.fields[3].value, inline=True)
     if gymhuntrgps:
         raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
     for field in oldembed.fields:
@@ -3352,6 +3365,8 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(raid_channel.guild, get_weaknesses(entered_raid))), inline=True)
+    raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
+    raid_embed.add_field(name=_('**Expires:**'), value=oldembed.fields[3].value, inline=True)
     if gymhuntrgps:
         gymhuntrmoves = "\u200b"
         if huntr:
@@ -3483,6 +3498,8 @@ async def _exraid(ctx):
     else:
         raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist}').format(bosslist=''.join(boss_list)), inline=True)
         raid_embed.add_field(name='\u200b', value='\u200b', inline=True)
+    raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
+    raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
     if message.author.avatar:
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url='https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}'.format(user=message.author, format='jpg', size=32))
     else:
@@ -3706,6 +3723,20 @@ async def _timerset(raidchannel, exptime):
     else:
         topicstr += _('Ends on {end}').format(end=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
     await raidchannel.edit(topic=topicstr)
+    endtime = end.strftime(_('%B %d at %I:%M %p (%H:%M)'))
+    report_channel = Meowth.get_channel(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['reportcity'])
+    raidmsg = await raidchannel.get_message(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['raidmessage'])
+    reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['raidreport'])
+    embed = raidmsg.embeds[0]
+    embed.set_field_at(3, name=_("**Expires**"), value=endtime, inline=True)
+    try:
+        await raidmsg.edit(content=raidmsg.content,embed=embed)
+    except discord.errors.NotFound:
+        pass
+    try:
+        await reportmsg.edit(content=reportmsg.content,embed=embed)
+    except discord.errors.NotFound:
+        pass
     raidchannel = Meowth.get_channel(raidchannel.id)
     event_loop.create_task(expiry_check(raidchannel))
 
@@ -3787,12 +3818,26 @@ async def starttime(ctx):
                 elif res.emoji == '✅':
                     await rusure.delete()
                     if now <= start:
-                        rc_d['starttime'] = start
-                        await channel.send(_('Meowth! The current start time has been set to: **{starttime}**').format(starttime=start.strftime(_('%I:%M %p (%H:%M)'))))
-                        return
-        elif now <= start:
+                        timeset = True
+                else:
+                    return
+        if now <= start or timeset:
             rc_d['starttime'] = start
-            await channel.send(_('Meowth! The current start time has been set to: **{starttime}**').format(starttime=start.strftime(_('%I:%M %p (%H:%M)'))))
+            nextgroup = start.strftime(_('%I:%M %p (%H:%M)'))
+            await channel.send(_('Meowth! The current start time has been set to: **{starttime}**').format(starttime=nextgroup))
+            report_channel = Meowth.get_channel(rc_d['reportcity'])
+            raidmsg = await channel.get_message(rc_d['raidmessage'])
+            reportmsg = await report_channel.get_message(rc_d['raidreport'])
+            embed = raidmsg.embeds[0]
+            embed.set_field_at(2, name=_("**Next Group**"), value=nextgroup, inline=True)
+            try:
+                await raidmsg.edit(content=raidmsg.content,embed=embed)
+            except discord.errors.NotFound:
+                pass
+            try:
+                await reportmsg.edit(content=reportmsg.content,embed=embed)
+            except discord.errors.NotFound:
+                pass
             return
     else:
         starttime = rc_d.get('starttime',None)
@@ -3826,7 +3871,7 @@ async def location(ctx):
             newembed.add_field(name=field.name, value=field.value, inline=field.inline)
         newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         newembed.set_thumbnail(url=oldembed.thumbnail.url)
-        locationmsg = await channel.send(content=_("Meowth! Here's the current location for the raid!\nDetails: {location}\nExpiry: {topic}").format(location=location, topic=await print_raid_timer(channel)), embed=newembed)
+        locationmsg = await channel.send(content=_("Meowth! Here's the current location for the raid!\nDetails: {location}").format(location=location), embed=newembed)
         await asyncio.sleep(60)
         await locationmsg.delete()
 
@@ -4918,6 +4963,19 @@ async def starting(ctx, team: str = ''):
         guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby'] = {"exp":time.time() + 120, "team":team}
         if starttime:
             starting_str += '\n\nThe start time has also been cleared, new groups can set a new start time wtih **!starttime HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!).'
+            report_channel = Meowth.get_channel(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['reportcity'])
+            raidmsg = await ctx.channel.get_message(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['raidmessage'])
+            reportmsg = await report_channel.get_message(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['raidreport'])
+            embed = raidmsg.embeds[0]
+            embed.set_field_at(2, name=_("**Next Group**"), value="Set with **!starttime**", inline=True)
+            try:
+                await raidmsg.edit(content=raidmsg.content,embed=embed)
+            except discord.errors.NotFound:
+                pass
+            try:
+                await reportmsg.edit(content=reportmsg.content,embed=embed)
+            except discord.errors.NotFound:
+                pass
         await ctx.channel.send(starting_str)
         await asyncio.sleep(120)
         if ('lobby' not in guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]) or (time.time() < guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby']['exp']):
