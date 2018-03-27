@@ -3186,7 +3186,7 @@ async def _raidegg(message, huntr=False):
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist}').format(bosslist=''.join(boss_list)), inline=True)
             raid_embed.add_field(name='\u200b', value='\u200b', inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
-        raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
+        raid_embed.add_field(name=_('**Hatches:**'), value=_('Set with **!timerset**'), inline=True)
         if huntr:
             raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
         if message.author.avatar:
@@ -3263,7 +3263,7 @@ async def _eggassume(args, raid_channel, author=None):
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(raid_channel.guild, get_weaknesses(entered_raid))), inline=True)
     raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
-    raid_embed.add_field(name=_('**Expires:**'), value=oldembed.fields[3].value, inline=True)
+    raid_embed.add_field(name=_('**Hatches:**'), value=oldembed.fields[3].value, inline=True)
     if gymhuntrgps:
         raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
     for field in oldembed.fields:
@@ -3366,7 +3366,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(raid_channel.guild, get_weaknesses(entered_raid))), inline=True)
     raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
-    raid_embed.add_field(name=_('**Expires:**'), value=oldembed.fields[3].value, inline=True)
+    raid_embed.add_field(name=_('**Expires:**'), value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
     if gymhuntrgps:
         gymhuntrmoves = "\u200b"
         if huntr:
@@ -3720,15 +3720,16 @@ async def _timerset(raidchannel, exptime):
         end = hatch + datetime.timedelta(minutes=raid_info['raid_eggs'][egglevel]['raidtime'])
         topicstr += _('Hatches on {expiry}').format(expiry=hatch.strftime(_('%B %d at %I:%M %p (%H:%M) | ')))
         topicstr += _('Ends on {end}').format(end=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
+        endtime = hatch.strftime(_('%B %d at %I:%M %p (%H:%M)'))
     else:
         topicstr += _('Ends on {end}').format(end=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
+        endtime = end.strftime(_('%B %d at %I:%M %p (%H:%M)'))
     await raidchannel.edit(topic=topicstr)
-    endtime = end.strftime(_('%B %d at %I:%M %p (%H:%M)'))
     report_channel = Meowth.get_channel(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['reportcity'])
     raidmsg = await raidchannel.get_message(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['raidmessage'])
     reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['raidreport'])
     embed = raidmsg.embeds[0]
-    embed.set_field_at(3, name=_("**Expires**"), value=endtime, inline=True)
+    embed.set_field_at(3, name=embed.fields[3].name, value=endtime, inline=True)
     try:
         await raidmsg.edit(content=raidmsg.content,embed=embed)
     except discord.errors.NotFound:
