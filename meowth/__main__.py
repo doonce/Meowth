@@ -609,26 +609,27 @@ async def expire_channel(channel):
                             break
                     await channel.set_permissions(guild.default_role, read_messages=False)
                     new_name = _('archived-')
-                    new_name += channel.name
-                    category = guild_dict[channel.guild.id].get('archive', {}).get('category', 'same')
-                    if category == 'same':
-                        newcat = channel.category
-                    else:
-                        newcat = channel.guild.get_channel(category)
-                    await channel.edit(name=new_name, category=newcat)
-                    await channel.send(_('-----------------------------------------------\n**The channel has been archived and removed from view for everybody but Meowth and those with Manage Channel permissions. Any messages that were deleted after the channel was marked for archival will be posted below. You will need to delete this channel manually.**\n-----------------------------------------------'))
-                    logs = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('logs', {})
-                    while logs:
-                        earliest = min(logs)
-                        embed = discord.Embed(colour=logs[earliest]['color_int'], description=logs[earliest]['content'], timestamp=logs[earliest]['created_at'])
-                        if logs[earliest]['author_nick']:
-                            embed.set_author(name="{name} [{nick}]".format(name=logs[earliest]['author_str'],nick=logs[earliest]['author_nick']), icon_url = logs[earliest]['author_avy'])
+                    if new_name not in channel.name:
+                        new_name += channel.name
+                        category = guild_dict[channel.guild.id].get('archive', {}).get('category', 'same')
+                        if category == 'same':
+                            newcat = channel.category
                         else:
-                            embed.set_author(name=logs[earliest]['author_str'], icon_url = logs[earliest]['author_avy'])
-                        await channel.send(embed=embed)
-                        del logs[earliest]
-                        await asyncio.sleep(.25)
-                    del guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]
+                            newcat = channel.guild.get_channel(category)
+                        await channel.edit(name=new_name, category=newcat)
+                        await channel.send(_('-----------------------------------------------\n**The channel has been archived and removed from view for everybody but Meowth and those with Manage Channel permissions. Any messages that were deleted after the channel was marked for archival will be posted below. You will need to delete this channel manually.**\n-----------------------------------------------'))
+                        logs = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('logs', {})
+                        while logs:
+                            earliest = min(logs)
+                            embed = discord.Embed(colour=logs[earliest]['color_int'], description=logs[earliest]['content'], timestamp=logs[earliest]['created_at'])
+                            if logs[earliest]['author_nick']:
+                                embed.set_author(name="{name} [{nick}]".format(name=logs[earliest]['author_str'],nick=logs[earliest]['author_nick']), icon_url = logs[earliest]['author_avy'])
+                            else:
+                                embed.set_author(name=logs[earliest]['author_str'], icon_url = logs[earliest]['author_avy'])
+                            await channel.send(embed=embed)
+                            del logs[earliest]
+                            await asyncio.sleep(.25)
+                        del guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]
         except:
             pass
 
@@ -1582,6 +1583,7 @@ async def announce(ctx, *, announce=None):
 @Meowth.command()
 @commands.has_permissions(manage_guild=True)
 async def convert(ctx):
+    guild_dict_convert = copy.deepcopy(guild_dict)
     for guildid in guild_dict_convert.keys():
         for channelid in guild_dict_convert[guildid]['raidchannel_dict'].keys():
             for trainerid in guild_dict_convert[guildid]['raidchannel_dict'][channelid]['trainer_dict'].keys():
@@ -1940,12 +1942,12 @@ async def configure(ctx):
                 continue
         guild_dict_temp['city_channels'] = citychannel_dict
         await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Report Locations are set')))
-        guild = Meowth.get_guild(guild.id)
-        guild_catlist = []
-        for cat in guild.categories:
-            guild_catlist.append(cat.id)
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**region** - If you want them categorized by region\n**level** - If you want them categorized by level.")))
         while True:
+            guild = Meowth.get_guild(guild.id)
+            guild_catlist = []
+            for cat in guild.categories:
+                guild_catlist.append(cat.id)
             category_dict = {}
             categories = await Meowth.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
             if categories.content.lower() == 'cancel':
@@ -1960,6 +1962,10 @@ async def configure(ctx):
                 break
             elif categories.content.lower() == 'region':
                 while True:
+                    guild = Meowth.get_guild(guild.id)
+                    guild_catlist = []
+                    for cat in guild.categories:
+                        guild_catlist.append(cat.id)
                     guild_dict_temp['categories'] = 'region'
                     await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("You have configured the following channels as raid reporting channels: {citychannel_list}\n\nIn the same order as they appear above, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.").format(citychannel_list=citychannels.content.lower())))
                     regioncats = await Meowth.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
@@ -1995,7 +2001,11 @@ async def configure(ctx):
                                 category_dict[citychannel_list[i]] = regioncat_list[i]
                             break
                         else:
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("The category list you provided doesn't match with your server's categories.\n\nThe following aren't in your server: **{invalid_categories}**\n\nPlease double check your category list and resend your response.").format(invalid_categories=', '.join(regioncat_errors))))
+                            msg = _("The category list you provided doesn't match with your server's categories.")
+                            if regioncat_errors:
+                                msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(regioncat_errors))
+                            msg += _("\n\nPlease double check your category list and resend your response. If you just made these categories, try again.")
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=msg))
                             continue
                     else:
                         msg = _("The number of categories I found in your server doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n**Matched Channels:** {channellist}\n**Matched Categories:** {catlist}\n\nPlease double check that your categories match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), catlist=', '.join(regioncat_names) if len(regioncat_list)>0 else "None")
@@ -2007,6 +2017,10 @@ async def configure(ctx):
             elif categories.content.lower() == 'level':
                 guild_dict_temp['categories'] = 'level'
                 while True:
+                    guild = Meowth.get_guild(guild.id)
+                    guild_catlist = []
+                    for cat in guild.categories:
+                        guild_catlist.append(cat.id)
                     await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("Pokemon Go currently has six levels of raids. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5, EX \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.")))
                     levelcats = await Meowth.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                     if levelcats.content.lower() == "cancel":
@@ -2042,7 +2056,11 @@ async def configure(ctx):
                                 category_dict[level_list[i]] = levelcat_list[i]
                             break
                         else:
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("The category list you provided doesn't match with your server's categories.\n\nThe following aren't in your server: **{invalid_categories}**\n\nPlease double check your category list and resend your response.").format(invalid_categories=', '.join(levelcat_errors))))
+                            msg = _("The category list you provided doesn't match with your server's categories.")
+                            if levelcat_errors:
+                                msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(levelcat_errors))
+                            msg += _("\n\nPlease double check your category list and resend your response. If you just made these categories, try again.")
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=msg))
                             continue
                     else:
                         msg = _("The number of categories I found in your server doesn't match the number of raid levels! Make sure you give me exactly six categories, one for each level of raid. You can use the same category for multiple levels if you want, but I need to see six category names.\n\n**Matched Categories:** {catlist}\n\nPlease double check your categories.").format(catlist=', '.join(levelcat_names) if len(levelcat_list)>0 else "None")
@@ -2384,6 +2402,8 @@ async def changeraid(ctx, newraid):
         raid_channel_name += sanitize_channel_name(guild_dict[guild.id]['raidchannel_dict'][channel.id]['address'])
         guild_dict[guild.id]['raidchannel_dict'][channel.id]['egglevel'] = newraid
         guild_dict[guild.id]['raidchannel_dict'][channel.id]['pokemon'] = ''
+        changefrom = guild_dict[guild.id]['raidchannel_dict'][channel.id]['type']
+        guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] = 'egg'
         egg_img = raid_info['raid_eggs'][newraid]['egg_img']
         boss_list = []
         for p in raid_info['raid_eggs'][newraid]['pokemon']:
@@ -2402,6 +2422,8 @@ async def changeraid(ctx, newraid):
         else:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist}').format(bosslist=''.join(boss_list)), inline=True)
             raid_embed.add_field(name='\u200b', value='\u200b', inline=True)
+        raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
+        raid_embed.add_field(name=oldembed.fields[3].name, value=oldembed.fields[3].value, inline=True)
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=raid_img_url)
         for field in oldembed.fields:
@@ -2409,8 +2431,12 @@ async def changeraid(ctx, newraid):
             s = _('status')
             if (t in field.name.lower()) or (s in field.name.lower()):
                 raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
-        raid_message.content = re.sub(_('level\s\d'), _('Level {}').format(newraid), raid_message.content, flags=re.IGNORECASE)
-        report_message.content = re.sub(_('level\s\d'), _('Level {}').format(newraid), report_message.content, flags=re.IGNORECASE)
+        if changefrom == "egg":
+            raid_message.content = re.sub(_('level\s\d'), _('Level {}').format(newraid), raid_message.content, flags=re.IGNORECASE)
+            report_message.content = re.sub(_('level\s\d'), _('Level {}').format(newraid), report_message.content, flags=re.IGNORECASE)
+        else:
+            raid_message.content = re.sub(_('Meowth!\s.*\sraid\sreported'),_('Meowth! Level {} reported').format(newraid), raid_message.content, flags=re.IGNORECASE)
+            report_message.content = re.sub(_('Meowth!\s.*\sraid\sreported'),_('Meowth! Level {}').format(newraid), report_message.content, flags=re.IGNORECASE)
         await raid_message.edit(new_content=raid_message.content, embed=raid_embed, content=raid_message.content)
         try:
             await report_message.edit(new_content=report_message.content, embed=raid_embed, content=report_message.content)
@@ -3332,6 +3358,13 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     else:
         raid_messageauthor = author
     gymhuntrgps = eggdetails['gymhuntrgps']
+    raid_match = True if entered_raid in get_raidlist() else False
+    if (not raid_match):
+        await raid_channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()))
+        return
+    elif get_number(entered_raid) not in raid_info['raid_eggs'][egglevel]['pokemon']:
+        await raid_channel.send(_('Meowth! The Pokemon {pokemon} does not hatch from level {level} raid eggs!').format(pokemon=entered_raid.capitalize(), level=egglevel))
+        return
     if (egglevel.isdigit() and int(egglevel) > 0) or egglevel == 'EX':
         raidexp = eggdetails['exp'] + 60 * raid_info['raid_eggs'][egglevel]['raidtime']
     else:
@@ -3345,13 +3378,6 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         hatchtype = 'exraid'
         raidreportcontent = _('Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. Use the **!invite** command to gain access and coordinate in {raid_channel}').format(pokemon=entered_raid.capitalize(), location_details=egg_address, raid_channel=raid_channel.mention)
         raidmsg = _("Meowth! {pokemon} EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here after using **!invite** to gain access!\n\nTo update your status, choose from the following commands: **!maybe**, **!coming**, **!here**, **!cancel**. If you are bringing more than one trainer/account, add in the number of accounts total on your first status update.\nExample: `!coming 5`\n\nTo see the list of trainers who have given their status:\n**!list interested**, **!list coming**, **!list here** or use just **!list** to see all lists. Use **!list teams** to see team distribution.\n\nSometimes I'm not great at directions, but I'll correct my directions if anybody sends me a maps link or uses **!location new <address>**. You can see the location of a raid by using **!location**\n\nYou can set the time remaining with **!timerset <minutes>** and access this with **!timer**.\nYou can set the start time with **!starttime [HH:MM AM/PM]** (you can also omit AM/PM and use 24-hour time) and access this with **!starttime**.\n\nMessage **!starting** when the raid is beginning to clear the raid's 'here' list.\n\nThis channel will be deleted five minutes after the timer expires.").format(pokemon=entered_raid.capitalize(), member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, location_details=egg_address)
-    raid_match = True if entered_raid in get_raidlist() else False
-    if (not raid_match):
-        await raid_channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()))
-        return
-    elif get_number(entered_raid) not in raid_info['raid_eggs'][egglevel]['pokemon']:
-        await raid_channel.send(_('Meowth! The Pokemon {pokemon} does not hatch from level {level} raid eggs!').format(pokemon=entered_raid.capitalize(), level=egglevel))
-        return
     raid_channel_name = (entered_raid + '-') + sanitize_channel_name(egg_address)
     oldembed = raid_message.embeds[0]
     raid_gmaps_link = oldembed.url
@@ -4665,7 +4691,7 @@ async def _party_status(ctx, total, teamcounts):
         my_team = 'unknown'
     if not teamcounts:
         teamcounts = "1"
-    teamcounts = teamcounts.split()
+    teamcounts = teamcounts.lower().split()
     if total and teamcounts[0].isdigit():
         del teamcounts[0]
     mystic = ['mystic', 0]
