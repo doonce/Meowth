@@ -1362,6 +1362,33 @@ async def _set(ctx):
 
 @_set.command()
 @commands.has_permissions(manage_guild=True)
+async def regional(ctx, regional=None):
+    """Changes server regional pokemon."""
+    if regional == 'reset' and checks.is_owner_check(ctx):
+        guild_dict_copy = copy.deepcopy(guild_dict)
+        for guildid in guild_dict_copy.keys():
+            guild_dict[guildid]['regional'] = None
+        return
+    elif regional == 'clear':
+        regional = None
+        await ctx.message.channel.send(_("Meowth! Regional raid boss cleared!"))
+    elif regional and regional.isdigit() and int(regional) in get_raidlist():
+        regional = int(regional)
+        await ctx.message.channel.send(_("Meowth! Regional raid boss set to **{boss}**!").format(boss=get_name(regional).title()))
+    elif regional and not regional.isdigit() and regional in get_raidlist():
+        await ctx.message.channel.send(_("Meowth! Regional raid boss set to **{boss}**!").format(boss=regional.title()))
+        regional = get_number(regional)
+    else:
+        await ctx.message.channel.send(_("Meowth! That Pokemon doesn't appear in raids!"))
+        return
+    _set_regional(Meowth, ctx.guild, regional)
+
+
+def _set_regional(bot, guild, regional):
+    bot.guild_dict[guild.id]['regional'] = regional
+
+@_set.command()
+@commands.has_permissions(manage_guild=True)
 async def prefix(ctx, prefix=None):
     """Changes server prefix."""
     if prefix == 'clear':
@@ -1901,13 +1928,14 @@ async def configure(ctx):
                 citychannel_errors = []
                 for item in citychannel_list:
                     if item.isdigit():
-                        channel = discord.utils.get(guild.text_channels, id=item)
+                        channel = discord.utils.get(guild.text_channels, id=int(item))
                         if channel:
                             citychannel_ids.append(channel.id)
                             citychannel_names.append(channel.name)
                         else:
                             citychannel_errors.append(item)
                     else:
+                        item = re.sub('[^a-zA-Z0-9-_]+', '', item)
                         name = await letter_case(guild.text_channels, item.lower())
                         channel = discord.utils.get(guild.text_channels, name=name)
                         if channel:
@@ -1942,6 +1970,7 @@ async def configure(ctx):
                 continue
         guild_dict_temp['city_channels'] = citychannel_dict
         await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Report Locations are set')))
+    #configure main-categories
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**region** - If you want them categorized by region\n**level** - If you want them categorized by level.")))
         while True:
             guild = Meowth.get_guild(guild.id)
@@ -1967,7 +1996,7 @@ async def configure(ctx):
                     for cat in guild.categories:
                         guild_catlist.append(cat.id)
                     guild_dict_temp['categories'] = 'region'
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("You have configured the following channels as raid reporting channels: {citychannel_list}\n\nIn the same order as they appear above, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.").format(citychannel_list=citychannels.content.lower())))
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("You have configured the following channels as raid reporting channels: {citychannel_list}\n\nIn the same order as they appear above, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`").format(citychannel_list=citychannels.content.lower())))
                     regioncats = await Meowth.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                     if regioncats.content.lower() == "cancel":
                         configcancel = True
@@ -1986,6 +2015,7 @@ async def configure(ctx):
                             else:
                                 regioncat_errors.append(item)
                         else:
+                            item = re.sub('[^a-zA-Z0-9-_]+', '', item)
                             name = await letter_case(guild.categories, item.lower())
                             category = discord.utils.get(guild.categories, name=name)
                             if category:
@@ -2021,7 +2051,7 @@ async def configure(ctx):
                     guild_catlist = []
                     for cat in guild.categories:
                         guild_catlist.append(cat.id)
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("Pokemon Go currently has six levels of raids. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5, EX \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.")))
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("Pokemon Go currently has six levels of raids. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5, EX \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `level 1-3, level 1-3, level 1-3, level 4, level 5, 1231231241561337813`")))
                     levelcats = await Meowth.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                     if levelcats.content.lower() == "cancel":
                         configcancel = True
@@ -2040,6 +2070,7 @@ async def configure(ctx):
                             else:
                                 levelcat_errors.append(item)
                         else:
+                            item = re.sub('[^a-zA-Z0-9-_]+', '', item)
                             name = await letter_case(guild.categories, item.lower())
                             category = discord.utils.get(guild.categories, name=name)
                             if category:
@@ -2074,6 +2105,7 @@ async def configure(ctx):
             break
         await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Categories are set')))
         guild_dict_temp['category_dict'] = category_dict
+    # configure main-want
     if (configcancel == False) and (guild_dict_temp['other'] == True) and ((firstconfig == True) or (configgoto == 'all') or (configgoto == 'want') or (configgoto == 'allmain')):
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!want** and **!unwant** commands let you add or remove roles for Pokemon that will be mentioned in reports. This let you get notifications on the Pokemon you want to track. I just need to know what channels you want to allow people to manage their pokemon with the **!want** and **!unwant** command. If you pick a channel that doesn't exist, I'll make it for you.\n\nIf you don't want to allow the management of tracked Pokemon roles, then you may want to disable this feature.\n\nRepond with: **N** to disable, or the **channel-name** list to enable, each seperated by a comma and space.")).set_author(name=_('Pokemon Notifications'), icon_url=Meowth.user.avatar_url))
         while True:
@@ -3249,6 +3281,8 @@ async def _raidegg(message, huntr=False):
             await raid_channel.send("This egg was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
         if len(raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
             await _eggassume('assume ' + get_name(raid_info['raid_eggs'][egg_level]['pokemon'][0]), raid_channel)
+        elif egg_level == "5" and guild_dict[raid_channel.guild.id].get('regional',None) in raid_info['raid_eggs']["5"]['pokemon']:
+            await _eggassume('assume ' + get_name(guild_dict[raid_channel.guild.id]['regional']), raid_channel)
         event_loop.create_task(expiry_check(raid_channel))
         return raid_channel
 
