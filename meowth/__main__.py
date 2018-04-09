@@ -1062,7 +1062,7 @@ async def on_huntr(message):
                     roletest = _("{pokemon} - ").format(pokemon=raid.mention)
                 raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=_('https://www.google.com/maps/dir/Current+Location/{0}').format(huntrgps), colour=message.guild.me.colour)
                 raid_number = pkmn_info['pokemon_list'].index(ghpokeid.lower().strip()) + 1
-                raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=2'.format(str(raid_number).zfill(3))
+                raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(raid_number).zfill(3))
                 raid_embed.add_field(name='**Details:**', value=_('{pokemon} ({pokemonnumber}) {type}\n{moves}').format(pokemon=ghpokeid.title(), pokemonnumber=str(raid_number), type=''.join(get_type(message.guild, raid_number)), moves=ghmoves), inline=True)
                 raid_embed.add_field(name='**Weaknesses:**', value=_('{weakness_list}').format(weakness_list=weakness_to_str(message.guild, get_weaknesses(ghpokeid.lower().strip()))), inline=True)
                 raid_embed.add_field(name='**Location:**', value=_('{raid_details}').format(raid_details='\n'.join(textwrap.wrap(ghgym, width=30))), inline=True)
@@ -1118,7 +1118,7 @@ async def on_huntr(message):
                 raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=_('https://www.google.com/maps/dir/Current+Location/{0}').format(huntrgps), colour=message.guild.me.colour)
                 raid_embed.add_field(name='**Location:**', value=_('{raid_details}').format(raid_details='\n'.join(textwrap.wrap(ghgym, width=30))), inline=True)
                 raid_embed.add_field(name='**Starting in:**', value=_('{minutes} mins ({ghtimestamp})').format(minutes=ghminute, ghtimestamp=ghtimestamp), inline=True)
-                raid_embed.set_thumbnail(url=_('https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}.png?cache=2'.format(str(ghegglevel))))
+                raid_embed.set_thumbnail(url=_('https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}.png?cache=4'.format(str(ghegglevel))))
                 raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=_('https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}'.format(user=message.author, format='jpg', size=32)))
                 raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=ghegglevel, member=message.author.mention, location_details=ghgym), embed=raid_embed)
                 timeout = (int(ghminute) * 60)
@@ -2444,7 +2444,7 @@ async def changeraid(ctx, newraid):
             p_name = get_name(p)
             p_type = get_type(message.guild, p)
             boss_list.append((((p_name + ' (') + str(p)) + ') ') + ''.join(p_type))
-        raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}?cache=3'.format(str(egg_img))
+        raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}?cache=4'.format(str(egg_img))
         raid_message = await channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidmessage'])
         report_channel = Meowth.get_channel(raid_message.raw_channel_mentions[0])
         report_message = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
@@ -2626,6 +2626,7 @@ async def team(ctx):
     high_roles = []
     guild_roles = []
     lowercase_roles = []
+    harmony = None
     for role in guild.roles:
         if (role.name.lower() in config['team_dict']) and (role.name not in guild_roles):
             guild_roles.append(role.name)
@@ -2796,7 +2797,7 @@ async def want(ctx):
         if len(added_list) == 1:
             #If you want Images
             #want_number = pkmn_info['pokemon_list'].index(added_list[0].lower()) + 1
-            #want_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=2'.format(str(want_number).zfill(3))
+            #want_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(want_number).zfill(3))
             #want_embed = discord.Embed(colour=guild.me.colour)
             #want_embed.set_thumbnail(url=want_img_url)
             #await channel.send(content=_('Meowth! Got it! {member} wants {pokemon}').format(member=ctx.author.mention, pokemon=added_list[0].capitalize()), embed=want_embed)
@@ -2954,7 +2955,7 @@ async def _wild(message, huntr=False):
     else:
         roletest = _("{pokemon} - ").format(pokemon=wild.mention)
     wild_number = pkmn_info['pokemon_list'].index(entered_wild) + 1
-    wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=3'.format(str(wild_number).zfill(3))
+    wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(wild_number).zfill(3))
     if (not huntr):
         wild_gmaps_link = create_gmaps_query(wild_details, message.channel)
         wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
@@ -3101,7 +3102,7 @@ async def _raid(message, huntr=False):
     else:
         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
-    raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=2'.format(str(raid_number).zfill(3))
+    raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(message.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(message.guild, get_weaknesses(entered_raid))), inline=True)
@@ -3228,7 +3229,7 @@ async def _raidegg(message, huntr=False):
         ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
         ow.send_messages = True
         await raid_channel.set_permissions(raid_channel.guild.default_role, overwrite = ow)
-        raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/eggs/{}?cache=2'.format(str(egg_img))
+        raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/eggs/{}?cache=4'.format(str(egg_img))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
@@ -3304,11 +3305,11 @@ async def _eggassume(args, raid_channel, author=None):
     raid_gmaps_link = oldembed.url
     raidrole = discord.utils.get(raid_channel.guild.roles, name=entered_raid)
     if raidrole == None:
-        raidtest = ""
+        roletest = ""
     else:
         roletest = _("{pokemon} - ").format(pokemon=raidrole.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
-    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=nono'.format(str(raid_number).zfill(3))
+    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(raid_channel.guild, get_weaknesses(entered_raid))), inline=True)
@@ -3410,7 +3411,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     else:
         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
-    raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=2'.format(str(raid_number).zfill(3))
+    raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(raid_channel.guild, get_weaknesses(entered_raid))), inline=True)
@@ -3529,17 +3530,26 @@ async def _exraid(ctx):
     raid_channel_overwrite_list = channel.overwrites
     meowth_overwrite = (Meowth.user, discord.PermissionOverwrite(send_messages=True))
     everyone_overwrite = (channel.guild.default_role, discord.PermissionOverwrite(send_messages=False))
-    for overwrite in raid_channel_overwrite_list:
-        if isinstance(overwrite[0], discord.Role):
-            if overwrite[0].permissions.manage_guild:
-                continue
-        overwrite[1].send_messages = False
     raid_channel_overwrite_list.append(meowth_overwrite)
     raid_channel_overwrite_list.append(everyone_overwrite)
+    for overwrite in raid_channel_overwrite_list:
+        if isinstance(overwrite[0], discord.Role):
+            if overwrite[0].permissions.manage_guild or overwrite[0].permissions.manage_channels or overwrite[0].permissions.manage_messages:
+                continue
+            overwrite[1].send_messages = False
+        elif isinstance(overwrite[0], discord.Member):
+            if overwrite[0].permissions.manage_guild or overwrite[0].permissions.manage_channels or overwrite[0].permissions.manage_messages:
+                continue
+            overwrite[1].send_messages = False
+        if (overwrite[0].name not in channel.guild.me.top_role.name) and (overwrite[0].name not in channel.guild.me.name):
+            overwrite[1].send_messages = False
     raid_channel_overwrites = dict(raid_channel_overwrite_list)
     raid_channel_category = get_category(message.channel,"EX")
     raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=raid_channel_overwrites,category=raid_channel_category)
-    raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/eggs/{}?cache=2'.format(str(egg_img))
+    for role in channel.guild.role_hierarchy:
+        if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
+            await raid_channel.set_permissions(role, send_messages=True)
+    raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/eggs/{}?cache=4'.format(str(egg_img))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
     if len(egg_info['pokemon']) > 1:
         raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
@@ -4326,7 +4336,7 @@ async def counters(ctx, *, args = None):
 
 
 async def _counters(ctx, pkmn, user = None, weather = None):
-    img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=2'.format(str(get_number(pkmn)).zfill(3))
+    img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(get_number(pkmn)).zfill(3))
     level = get_level(pkmn) if get_level(pkmn).isdigit() else "5"
     url = "https://fight.pokebattler.com/raids/defenders/{pkmn}/levels/RAID_LEVEL_{level}/attackers/".format(pkmn=pkmn.replace('-','_').upper(),level=level)
     if user:
@@ -4961,7 +4971,7 @@ async def starting(ctx, team: str = ''):
     ctx_startinglist = []
     id_startinglist = []
     team_list = []
-    team_names = ["mystic","valor","instinct"]
+    team_names = ["mystic","valor","instinct","unknown"]
     team = team if team and team.lower() in team_names else "all"
     trainer_dict = copy.deepcopy(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'])
     if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('type',None) == 'egg':
@@ -5223,17 +5233,32 @@ async def list(ctx):
                 return
         if checks.check_raidchannel(ctx):
             if checks.check_raidactive(ctx):
-                bulletpoint = '🔹'
+                team_list = ["mystic","valor","instinct","unknown"]
+                tag = False
+                team = False
                 starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
                 rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
-                if " 0 interested!" not in await _interest(ctx):
-                    listmsg += ('\n' + bulletpoint) + (await _interest(ctx))
-                if " 0 on the way!" not in await _otw(ctx):
-                    listmsg += ('\n' + bulletpoint) + (await _otw(ctx))
-                if " 0 waiting at the raid!" not in await _waiting(ctx):
-                    listmsg += ('\n' + bulletpoint) + (await _waiting(ctx))
-                if " 0 in the lobby!" not in await _lobbylist(ctx):
-                    listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx))
+                list_split = ctx.message.clean_content.split()
+                if "tags" in list_split or "tag" in list_split:
+                    tag = True
+                for word in list_split:
+                    if word.lower() in team_list:
+                        team = word
+                        break
+                if team == "mystic" or team == "valor" or team == "instinct":
+                    bulletpoint = parse_emoji(ctx.guild, config['team_dict'][team])
+                elif team == "unknown":
+                    bulletpoint = '❔'
+                else:
+                    bulletpoint = '🔹'
+                if " 0 interested!" not in await _interest(ctx, tag, team):
+                    listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag, team))
+                if " 0 on the way!" not in await _otw(ctx, tag, team):
+                    listmsg += ('\n' + bulletpoint) + (await _otw(ctx, tag, team))
+                if " 0 waiting at the raid!" not in await _waiting(ctx, tag, team):
+                    listmsg += ('\n' + bulletpoint) + (await _waiting(ctx, tag, team))
+                if " 0 in the lobby!" not in await _lobbylist(ctx, tag, team):
+                    listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx, tag, team))
                 if (len(listmsg.splitlines()) <= 1):
                     listmsg +=  ('\n' + bulletpoint) + (_(" Nobody has updated their status yet!"))
                 listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
@@ -5243,99 +5268,6 @@ async def list(ctx):
                 return
         else:
             raise checks.errors.CityRaidChannelCheckFail()
-
-@list.command()
-@checks.activeraidchannel()
-async def mystic(ctx, tag=False):
-    "List mentions of the users that have RSVP'd to a raid.\n\n    Usage: !list tags\n    Works only in raid channels."
-    guild = ctx.guild
-    channel = ctx.channel
-    now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[guild.id]['offset'])
-    if checks.check_raidchannel(ctx):
-        if checks.check_raidactive(ctx):
-            listmsg = _('**Meowth!** ')
-            guild = ctx.guild
-            channel = ctx.channel
-            bulletpoint = parse_emoji(ctx.guild, config['team_dict']['mystic'])
-            starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
-            rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
-            if " 0 interested!" not in await _interest(ctx, tag, team="mystic"):
-                listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag, team="mystic"))
-            if " 0 on the way!" not in await _otw(ctx, tag, team="mystic"):
-                listmsg += ('\n' + bulletpoint) + (await _otw(ctx, tag, team="mystic"))
-            if " 0 waiting at the raid!" not in await _waiting(ctx, tag, team="mystic"):
-                listmsg += ('\n' + bulletpoint) + (await _waiting(ctx, tag, team="mystic"))
-            if " 0 in the lobby!" not in await _lobbylist(ctx, tag, team="mystic"):
-                listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx, tag, team="mystic"))
-            if (len(listmsg.splitlines()) <= 1):
-                listmsg +=  ('\n' + bulletpoint) + (" Nobody has updated their status yet!")
-            listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
-            if starttime and (starttime > now):
-                listmsg += _('\nThe next group will be starting at **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
-            await channel.send(listmsg)
-            return
-
-@list.command()
-@checks.activeraidchannel()
-async def valor(ctx, tag=False):
-    "List mentions of the users that have RSVP'd to a raid.\n\n    Usage: !list tags\n    Works only in raid channels."
-    guild = ctx.guild
-    channel = ctx.channel
-    now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[guild.id]['offset'])
-    if checks.check_raidchannel(ctx):
-        if checks.check_raidactive(ctx):
-            listmsg = _('**Meowth!** ')
-            guild = ctx.guild
-            channel = ctx.channel
-            bulletpoint = parse_emoji(ctx.guild, config['team_dict']['valor'])
-            starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
-            rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
-            if " 0 interested!" not in await _interest(ctx, tag, team="valor"):
-                listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag, team="valor"))
-            if " 0 on the way!" not in await _otw(ctx, tag, team="valor"):
-                listmsg += ('\n' + bulletpoint) + (await _otw(ctx, tag, team="valor"))
-            if " 0 waiting at the raid!" not in await _waiting(ctx, tag, team="valor"):
-                listmsg += ('\n' + bulletpoint) + (await _waiting(ctx, tag, team="valor"))
-            if " 0 in the lobby!" not in await _lobbylist(ctx, tag, team="valor"):
-                listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx, tag, team="valor"))
-            if (len(listmsg.splitlines()) <= 1):
-                listmsg +=  ('\n' + bulletpoint) + (" Nobody has updated their status yet!")
-            listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
-            if starttime and (starttime > now):
-                listmsg += _('\nThe next group will be starting at **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
-            await channel.send(listmsg)
-            return
-
-@list.command()
-@checks.activeraidchannel()
-async def instinct(ctx, tag=False):
-    "List mentions of the users that have RSVP'd to a raid.\n\n    Usage: !list tags\n    Works only in raid channels."
-    guild = ctx.guild
-    channel = ctx.channel
-    now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[guild.id]['offset'])
-    if checks.check_raidchannel(ctx):
-        if checks.check_raidactive(ctx):
-            listmsg = _('**Meowth!** ')
-            guild = ctx.guild
-            channel = ctx.channel
-            bulletpoint = parse_emoji(ctx.guild, config['team_dict']['instinct'])
-            starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
-            rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
-            if " 0 interested!" not in await _interest(ctx, tag, team="instinct"):
-                listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag, team="instinct"))
-            if " 0 on the way!" not in await _otw(ctx, tag, team="instinct"):
-                listmsg += ('\n' + bulletpoint) + (await _otw(ctx, tag, team="instinct"))
-            if " 0 waiting at the raid!" not in await _waiting(ctx, tag, team="instinct"):
-                listmsg += ('\n' + bulletpoint) + (await _waiting(ctx, tag, team="instinct"))
-            if " 0 in the lobby!" not in await _lobbylist(ctx, tag, team="instinct"):
-                listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx, tag, team="instinct"))
-            if (len(listmsg.splitlines()) <= 1):
-                listmsg +=  ('\n' + bulletpoint) + (" Nobody has updated their status yet!")
-            listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
-            if starttime and (starttime > now):
-                listmsg += _('\nThe next group will be starting at **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
-            await channel.send(listmsg)
-            return
 
 @list.command()
 @checks.activeraidchannel()
@@ -5574,37 +5506,6 @@ async def _teamlist(ctx):
     else:
         listmsg = _(' Nobody has updated their status!')
     return listmsg
-
-@list.command()
-@checks.activeraidchannel()
-async def tags(ctx):
-    "List mentions of the users that have RSVP'd to a raid.\n\n    Usage: !list tags\n    Works only in raid channels."
-    guild = ctx.guild
-    channel = ctx.channel
-    now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[guild.id]['offset'])
-    if checks.check_raidchannel(ctx):
-        if checks.check_raidactive(ctx):
-            listmsg = _('**Meowth!** ')
-            guild = ctx.guild
-            channel = ctx.channel
-            bulletpoint = '🔹'
-            starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
-            rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
-            if " 0 interested!" not in await _interest(ctx):
-                listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag=True))
-            if " 0 on the way!" not in await _otw(ctx):
-                listmsg += ('\n' + bulletpoint) + (await _otw(ctx, tag=True))
-            if " 0 waiting at the raid!" not in await _waiting(ctx):
-                listmsg += ('\n' + bulletpoint) + (await _waiting(ctx, tag=True))
-            if " 0 in the lobby!" not in await _lobbylist(ctx):
-                listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx, tag=True))
-            if (len(listmsg.splitlines()) <= 1):
-                listmsg +=  ('\n' + bulletpoint) + (" Nobody has updated their status yet!")
-            listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
-            if starttime and (starttime > now):
-                listmsg += _('\nThe next group will be starting at **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
-            await channel.send(listmsg)
-            return
 
 @list.command()
 @checks.wantset()
