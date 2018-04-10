@@ -30,6 +30,9 @@ import hastebin
 from operator import itemgetter
 from errors import custom_error_handling
 import dateparser
+import io
+import traceback
+from contextlib import redirect_stdout
 
 tessdata_dir_config = "--tessdata-dir 'C:\\Program Files (x86)\\Tesseract-OCR\\tessdata' "
 xtraconfig = '-l eng -c tessedit_char_blacklist=&|=+%#^*[]{};<> -psm 6'
@@ -87,10 +90,10 @@ active_raids = []
 # config files which we're loading.
 # Assumes that config files will always live in the same directory.
 script_path = os.path.dirname(os.path.realpath(__file__))
+
 """
 Helper functions
 """
-
 
 def load_config():
     global config
@@ -159,7 +162,6 @@ def get_level(pkmn):
             if pokemon == pkmn_number:
                 return level
 
-
 def get_raidlist():
     raidlist = []
     for level in raid_info['raid_eggs']:
@@ -170,7 +172,6 @@ def get_raidlist():
 
 # Given a Pokemon name, return a list of its
 # weaknesses as defined in the type chart
-
 
 def get_weaknesses(species):
     # Get the Pokemon's number
@@ -203,7 +204,6 @@ def get_weaknesses(species):
 # space-separated string of their type IDs,
 # as defined in the type_id_dict
 
-
 def weakness_to_str(guild, weak_list):
     ret = ''
     for weakness in weak_list:
@@ -220,7 +220,6 @@ def weakness_to_str(guild, weak_list):
 # Convert an arbitrary string into something which
 # is acceptable as a Discord channel name.
 
-
 def sanitize_channel_name(name):
     # Remove all characters other than alphanumerics,
     # dashes, underscores, and spaces
@@ -234,14 +233,12 @@ def sanitize_channel_name(name):
 # return the string <:emoji name:emoji id>. Otherwise,
 # just return the string unmodified.
 
-
 def parse_emoji(guild, emoji_string):
     if (emoji_string[0] == ':') and (emoji_string[(- 1)] == ':'):
         emoji = discord.utils.get(guild.emojis, name=emoji_string.strip(':'))
         if emoji:
             emoji_string = '<:{0}:{1}>'.format(emoji.name, emoji.id)
     return emoji_string
-
 
 def print_emoji_name(guild, emoji_string):
     # By default, just print the emoji_string
@@ -256,7 +253,6 @@ def print_emoji_name(guild, emoji_string):
 
 # Given an arbitrary string, create a Google Maps
 # query using the configured hints
-
 
 def create_gmaps_query(details, channel):
     if "/maps" in details and "http" in details:
@@ -282,17 +278,14 @@ def create_gmaps_query(details, channel):
 
 # Given a User, check that it is Meowth's master
 
-
 def check_master(user):
     return str(user) == config['master']
-
 
 def check_server_owner(user, guild):
     return str(user) == str(guild.owner)
 
 # Given a violating message, raise an exception
 # reporting unauthorized use of admin commands
-
 
 def raise_admin_violation(message):
     raise Exception(_('Received admin command {command} from unauthorized user, {user}!').format(
@@ -422,7 +415,6 @@ def get_category(channel, level):
     else:
         return None
 
-
 @Meowth.command(hidden=True)
 async def template(ctx, *, sample_message):
     """Sample template messages to see how they would appear."""
@@ -448,7 +440,6 @@ async def template(ctx, *, sample_message):
 """
 Server Management
 """
-
 
 async def expiry_check(channel):
     logger.info('Expiry_Check - ' + channel.name)
@@ -1066,7 +1057,7 @@ async def on_huntr(message):
                     roletest = _("{pokemon} - ").format(pokemon=raid.mention)
                 raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=_('https://www.google.com/maps/dir/Current+Location/{0}').format(huntrgps), colour=message.guild.me.colour)
                 raid_number = pkmn_info['pokemon_list'].index(ghpokeid.lower().strip()) + 1
-                raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(raid_number).zfill(3))
+                raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
                 raid_embed.add_field(name='**Details:**', value=_('{pokemon} ({pokemonnumber}) {type}\n{moves}').format(pokemon=ghpokeid.title(), pokemonnumber=str(raid_number), type=''.join(get_type(message.guild, raid_number)), moves=ghmoves), inline=True)
                 raid_embed.add_field(name='**Weaknesses:**', value=_('{weakness_list}').format(weakness_list=weakness_to_str(message.guild, get_weaknesses(ghpokeid.lower().strip()))), inline=True)
                 raid_embed.add_field(name='**Location:**', value=_('{raid_details}').format(raid_details='\n'.join(textwrap.wrap(ghgym, width=30))), inline=True)
@@ -1122,7 +1113,7 @@ async def on_huntr(message):
                 raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=_('https://www.google.com/maps/dir/Current+Location/{0}').format(huntrgps), colour=message.guild.me.colour)
                 raid_embed.add_field(name='**Location:**', value=_('{raid_details}').format(raid_details='\n'.join(textwrap.wrap(ghgym, width=30))), inline=True)
                 raid_embed.add_field(name='**Starting in:**', value=_('{minutes} mins ({ghtimestamp})').format(minutes=ghminute, ghtimestamp=ghtimestamp), inline=True)
-                raid_embed.set_thumbnail(url=_('https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}.png?cache=4'.format(str(ghegglevel))))
+                raid_embed.set_thumbnail(url=_('https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}.png?cache=0'.format(str(ghegglevel))))
                 raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=_('https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}'.format(user=message.author, format='jpg', size=32)))
                 raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=ghegglevel, member=message.author.mention, location_details=ghgym), embed=raid_embed)
                 timeout = (int(ghminute) * 60)
@@ -1294,6 +1285,56 @@ async def on_message_delete(message):
 """
 Admin Commands
 """
+@Meowth.command(hidden=True, name="eval")
+@checks.is_owner()
+async def _eval(ctx, *, body: str):
+    """Evaluates a code"""
+    env = {
+        'bot': ctx.bot,
+        'ctx': ctx,
+        'channel': ctx.channel,
+        'author': ctx.author,
+        'guild': ctx.guild,
+        'message': ctx.message
+    }
+    def cleanup_code(content):
+        """Automatically removes code blocks from the code."""
+        # remove ```py\n```
+        if content.startswith('```') and content.endswith('```'):
+            return '\n'.join(content.split('\n')[1:-1])
+        # remove `foo`
+        return content.strip('` \n')
+    env.update(globals())
+    body = cleanup_code(body)
+    stdout = io.StringIO()
+    to_compile = (f'async def func():\n{textwrap.indent(body, "  ")}')
+    try:
+        exec(to_compile, env)
+    except Exception as e:
+        return await ctx.send(f'```py\n{e.__class__.__name__}: {e}\n```')
+    func = env['func']
+    try:
+        with redirect_stdout(stdout):
+            ret = await func()
+    except Exception as e:
+        value = stdout.getvalue()
+        await ctx.send(f'```py\n{value}{traceback.format_exc()}\n```')
+    else:
+        value = stdout.getvalue()
+        try:
+            await ctx.message.add_reaction('\u2705')
+        except:
+            pass
+        if ret is None:
+            if value:
+                paginator = commands.Paginator(prefix='```py')
+                for line in textwrap.wrap(value, 80):
+                    paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                for p in paginator.pages:
+                    await ctx.send(p)
+        else:
+            ctx.bot._last_result = ret
+            await ctx.send(f'```py\n{value}{ret}\n```')
 
 @Meowth.command()
 @checks.is_owner()
@@ -1357,7 +1398,6 @@ async def exit(ctx):
     await Meowth.logout()
 
 @Meowth.group(name='set')
-@commands.has_permissions(manage_guild=True)
 async def _set(ctx):
     """Changes a setting."""
     if ctx.invoked_subcommand == None:
@@ -1407,6 +1447,52 @@ async def prefix(ctx, prefix=None):
 
 def _set_prefix(bot, guild, prefix):
     bot.guild_dict[guild.id]['prefix'] = prefix
+
+@_set.command()
+async def silph(ctx, silphid: str):
+    """Links a server member to a Silph Road Travelers Card."""
+    if not silphid:
+        await ctx.send(_('Silph Road Travelers Card cleared!'))
+        return
+    url = f'https://sil.ph/{silphid}.json'
+    async with ctx.typing():
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get(url) as resp:
+                data = await resp.json()
+        if data.get('error', None):
+            if data['error']=="Private Travelers Card":
+                await ctx.send(_('This Travelers Card is private and cannot be linked!'))
+                return
+            elif data['error']=='Card not found':
+                await ctx.send(_('Travelers Card not found!'))
+                return
+        else:
+            socials = data['data'].get('socials', None)
+            if not socials:
+                await ctx.send(_('No Discord account found linked to this Travelers Card!'))
+                return
+            else:
+                disuser = ''
+                for social in socials:
+                    if social['vendor'] == "Discord":
+                        disuser = social['username']
+                        break
+                    else:
+                        continue
+                if not disuser:
+                    await ctx.send(_('No Discord account found linked to this Travelers Card!'))
+                    return
+                elif disuser != str(ctx.author):
+                    await ctx.send(_('This Travelers Card is linked to another Discord account!'))
+                    return
+                else:
+                    embed = _get_silph(ctx,data)
+                    trainers = guild_dict[ctx.guild.id].get('trainers', {})
+                    author = trainers.get(ctx.author.id,{})
+                    author['silphid'] = silphid
+                    trainers[ctx.author.id] = author
+                    guild_dict[ctx.guild.id]['trainers'] = trainers
+                    await ctx.send(_('This Travelers Card has been successfully linked to you!'),embed=embed)
 
 @Meowth.group(name='get')
 @commands.has_permissions(manage_guild=True)
@@ -2464,7 +2550,7 @@ async def changeraid(ctx, newraid):
             p_name = get_name(p)
             p_type = get_type(message.guild, p)
             boss_list.append((((p_name + ' (') + str(p)) + ') ') + ''.join(p_type))
-        raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/eggs/{}?cache=4'.format(str(egg_img))
+        raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
         raid_message = await channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidmessage'])
         report_channel = Meowth.get_channel(raid_message.raw_channel_mentions[0])
         report_message = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
@@ -2714,6 +2800,74 @@ async def team(ctx):
         except discord.Forbidden:
             await ctx.channel.send(_("Meowth! I can't add roles!"))
 
+@Meowth.command()
+async def silphcard(ctx, user: str = None):
+    if not user:
+        user = guild_dict[ctx.guild.id].get('trainers',{}).get(ctx.author.id,{}).get('silphid', None)
+    else:
+        if ctx.message.mentions:
+            user = guild_dict[ctx.guild.id].get('trainers', {}).get(ctx.message.mentions[0].id,{}).get('silphid', None)
+    if not user:
+        await ctx.send(_('Meowth! You did not provide a known Silph Road Traveler!'))
+        return
+    else:
+        url = f'https://sil.ph/{user}.json'
+        async with ctx.typing():
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get(url) as resp:
+                    data = await resp.json()
+        if data.get('error', None):
+            await ctx.send(_(f"Meowth! {user} does not have a public Travelers Card!"))
+            return
+        embed = _get_silph(ctx,data)
+        await ctx.send(embed=embed)
+
+def _get_silph(ctx,data):
+    hyperlink_icon = "https://i.imgur.com/fn9E5nb.png"
+    silph_icon = "https://assets.thesilphroad.com/img/snoo_sr_icon.png"
+    card_id = data['data']['card_id']
+    home_region = data['data']['home_region']
+    pokedex_count = data['data']['pokedex_count']
+    raid_average = data['data']['raid_average']
+    team = data['data']['team']
+    playstyle = data['data']['playstyle']
+    modified = data['data']['modified']
+    modified_datetime = dateparser.parse(modified, settings={'TIMEZONE': 'UTC'})
+    local_datetime = modified_datetime + datetime.timedelta(hours=guild_dict[ctx.guild.id]['offset'])
+    local_date = local_datetime.date().isoformat()
+    goal = data['data']['goal']
+    trainer_level = data['data']['trainer_level']
+    nest_migrations = data['data']['nest_migrations']
+    title = data['data']['title']
+    avatar = data['data']['avatar']
+    ign = data['data']['in_game_username']
+    joined = data['data']['joined']
+    joined_datetime = datetime.datetime.strptime(joined, "%Y-%m-%d %H:%M:%S")
+    local_joined = joined_datetime + datetime.timedelta(hours=guild_dict[ctx.guild.id]['offset'])
+    joined_date = local_joined.date().isoformat()
+    badge_count = len(data['data']['badges'])
+    checkins = len(data['data']['checkins'])
+    handshakes = data['data']['handshakes']
+    socials = data['data']['socials']
+    disuser = ''
+    for social in socials:
+        if social['vendor'] == "Discord":
+            disuser = social['username']
+            break
+        else:
+            continue
+    if not disuser:
+        disstring = ":grey_question: **Discord Not Provided**"
+    else:
+        disstring = ":ballot_box_with_check: **Connected to Discord:**"
+    embed = discord.Embed(title="Playstyle", colour=discord.Colour(0xe8c13c), description=f"{playstyle}, working on {goal.lower()}.\nActive around {home_region}.\n\n{disstring} {disuser}")
+    embed.set_thumbnail(url=avatar)
+    embed.set_author(name=f"{title} {ign} - Level {trainer_level} {team}", url=f"https://sil.ph/{ign.lower()}", icon_url=hyperlink_icon)
+    embed.set_footer(text=f"Silph Road Travelers Card - ID{card_id} - Updated {local_date}", icon_url=silph_icon)
+    embed.add_field(name="__Silph Stats__", value=f"**Joined:** {joined_date}\n**Badges:** {badge_count}\n**Check-ins:** {checkins}\n**Handshakes:** {handshakes}\n**Migrations:** {nest_migrations}", inline=True)
+    embed.add_field(name="__Game Stats__", value=f"**Name:** {ign}\n**Team:** {team}\n**Level:** {trainer_level}\n**Pokedex:** {pokedex_count}\n**Raids:** {raid_average}/week", inline=True)
+    return embed
+
 @Meowth.command(hidden=True)
 @checks.activeraidchannel()
 async def interest(ctx):
@@ -2821,7 +2975,7 @@ async def want(ctx):
         if len(added_list) == 1:
             #If you want Images
             #want_number = pkmn_info['pokemon_list'].index(added_list[0].lower()) + 1
-            #want_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(want_number).zfill(3))
+            #want_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(want_number).zfill(3))
             #want_embed = discord.Embed(colour=guild.me.colour)
             #want_embed.set_thumbnail(url=want_img_url)
             #await channel.send(content=_('Meowth! Got it! {member} wants {pokemon}').format(member=ctx.author.mention, pokemon=added_list[0].capitalize()), embed=want_embed)
@@ -2979,7 +3133,7 @@ async def _wild(message, huntr=False):
     else:
         roletest = _("{pokemon} - ").format(pokemon=wild.mention)
     wild_number = pkmn_info['pokemon_list'].index(entered_wild) + 1
-    wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(wild_number).zfill(3))
+    wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(wild_number).zfill(3))
     if (not huntr):
         wild_gmaps_link = create_gmaps_query(wild_details, message.channel)
         wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
@@ -3126,7 +3280,7 @@ async def _raid(message, huntr=False):
     else:
         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
-    raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(raid_number).zfill(3))
+    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(message.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(message.guild, get_weaknesses(entered_raid))), inline=True)
@@ -3253,7 +3407,7 @@ async def _raidegg(message, huntr=False):
         ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
         ow.send_messages = True
         await raid_channel.set_permissions(raid_channel.guild.default_role, overwrite = ow)
-        raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/eggs/{}?cache=4'.format(str(egg_img))
+        raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
@@ -3333,7 +3487,7 @@ async def _eggassume(args, raid_channel, author=None):
     else:
         roletest = _("{pokemon} - ").format(pokemon=raidrole.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
-    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(raid_number).zfill(3))
+    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(raid_channel.guild, get_weaknesses(entered_raid))), inline=True)
@@ -3435,7 +3589,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     else:
         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
-    raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(raid_number).zfill(3))
+    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(raid_channel.guild, get_weaknesses(entered_raid))), inline=True)
@@ -3573,7 +3727,7 @@ async def _exraid(ctx):
     for role in channel.guild.role_hierarchy:
         if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
             await raid_channel.set_permissions(role, send_messages=True)
-    raid_img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/eggs/{}?cache=4'.format(str(egg_img))
+    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
     if len(egg_info['pokemon']) > 1:
         raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
@@ -4328,46 +4482,45 @@ async def duplicate(ctx):
         return
 
 @Meowth.command()
-@checks.activeraidchannel()
 async def counters(ctx, *, args = None):
     """Simulate a Raid battle with Pokebattler.
 
     Usage: !counters [pokemon] [weather] [user]
     See !help weather for acceptable values for weather.
     If [user] is a valid Pokebattler user id, Meowth will simulate the Raid with that user's Pokebox.
-    Only usable in raid channels. Uses current boss and weather by default.
+    Uses current boss and weather by default if available.
     """
     channel = ctx.channel
     guild = channel.guild
+    user = None
+    weather = None
+    pkmn = None
     if args:
         args_split = args.split()
         for arg in args_split:
             if arg.isdigit():
                 user = arg
                 break
-        else:
-            user = None
         rgx = '[^a-zA-Z0-9]'
         pkmn = next((str(p) for p in get_raidlist() if not str(p).isdigit() and re.sub(rgx, '', str(p)) in re.sub(rgx, '', args.lower())), None)
         if not pkmn:
-            pkmn = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('pokemon', None)
+            pkmn = guild_dict[guild.id]['raidchannel_dict'].get(channel.id,{}).get('pokemon', None)
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
         weather = next((w for w in weather_list if re.sub(rgx, '', w) in re.sub(rgx, '', args.lower())), None)
         if not weather:
-            weather = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('weather', None)
+            weather = guild_dict[guild.id]['raidchannel_dict'].get(channel.id,{}).get('weather', None)
     else:
-        pkmn = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('pokemon', None)
-        weather = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('weather', None)
-        user = None
+        pkmn = guild_dict[guild.id]['raidchannel_dict'].get(channel.id,{}).get('pokemon', None)
+        weather = guild_dict[guild.id]['raidchannel_dict'].get(channel.id,{}).get('weather', None)
     if not pkmn:
-        await ctx.channel.send("Meowth! Enter a Pokemon that appears in raids, or wait for this raid egg to hatch!")
+        await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon that appears in raids! Usage: **!counters <pkmn> [weather] [user ID]**"))
         return
     await _counters(ctx, pkmn, user, weather)
 
 
 async def _counters(ctx, pkmn, user = None, weather = None):
-    img_url = 'https://raw.githubusercontent.com/FoglyOgly/Meowth/master/images/pkmn/{0}_.png?cache=4'.format(str(get_number(pkmn)).zfill(3))
+    img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(get_number(pkmn)).zfill(3))
     level = get_level(pkmn) if get_level(pkmn).isdigit() else "5"
     url = "https://fight.pokebattler.com/raids/defenders/{pkmn}/levels/RAID_LEVEL_{level}/attackers/".format(pkmn=pkmn.replace('-','_').upper(),level=level)
     if user:
@@ -5251,19 +5404,34 @@ async def list(ctx):
             if activeraidnum:
                 listmsg += _("**Here's the current raids for {0}**\n\n").format(cty.capitalize())
             if raid_dict:
-                listmsg += _('**Active Raids:**\n').format(cty.capitalize())
+                listmsg += _('**Active Raids:**\n')
                 for (r, e) in sorted(raid_dict.items(), key=itemgetter(1)):
-                    listmsg += list_output(r)
+                    if len(listmsg) < 1800:
+                        listmsg += list_output(r)
+                    else:
+                        await channel.send(listmsg)
+                        listmsg = _('**Active Raids:** (continued)\n')
+                        listmsg += list_output(r)
                 listmsg += '\n'
             if egg_dict:
-                listmsg += _('**Raid Eggs:**\n').format(cty.capitalize())
+                listmsg += _('**Raid Eggs:**\n')
                 for (r, e) in sorted(egg_dict.items(), key=itemgetter(1)):
-                    listmsg += list_output(r)
+                    if len(listmsg) < 1800:
+                        listmsg += list_output(r)
+                    else:
+                        await channel.send(listmsg)
+                        listmsg = _('**Raid Eggs:** (continued)\n')
+                        listmsg += list_output(r)
                 listmsg += '\n'
             if exraid_list:
-                listmsg += _('**EX Raids:**\n').format(cty.capitalize())
+                listmsg += _('**EX Raids:**\n')
                 for r in exraid_list:
-                    listmsg += list_output(r)
+                    if len(listmsg) < 1800:
+                        listmsg += list_output(r)
+                    else:
+                        await channel.send(listmsg)
+                        listmsg = _('**EX Raids::** (continued)\n')
+                        listmsg += list_output(r)
             if activeraidnum == 0:
                 await channel.send(_('Meowth! No active raids! Report one with **!raid <name> <location>**.'))
                 return
