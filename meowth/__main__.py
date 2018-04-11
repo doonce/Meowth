@@ -3975,8 +3975,6 @@ async def research(ctx, *, args = None):
             'reward':reward
         }
         guild_dict[guild.id]['questreport_dict'] = research_dict
-        await asyncio.sleep(to_midnight)
-        await confirmation.delete()
     else:
         research_embed.clear_fields()
         research_embed.add_field(name='**Research Report Cancelled**', value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
