@@ -773,6 +773,53 @@ async def guild_cleanup(loop=True):
         await asyncio.sleep(7200)
         continue
 
+async def report_cleanup(loop=True):
+    while (not Meowth.is_closed()):
+        logger.info('Report_Cleanup ------ BEGIN ------')
+        guilddict_temp = copy.deepcopy(guild_dict)
+        for guildid in guilddict_temp.keys():
+            research_dict = guilddict_temp[guildid].get('questreport_dict',{})
+            wild_dict = guilddict_temp[guildid].get('wildreport_dict',{})
+            for questid in research_dict.keys():
+                if research_dict[questid]['exp'] < time.time():
+                    report_channel = Meowth.get_channel(research_dict[questid]['reportchannel'])
+                    if report_channel:
+                        try:
+                            report_message = await report_channel.get_message(questid)
+                            await report_message.delete()
+                        except discord.errors.NotFound:
+                            pass
+                        try:
+                            user_message = await report_channel.get_message(research_dict[questid]['reportmessage'])
+                            await user_message.delete()
+                        except discord.errors.NotFound:
+                            pass
+                    del guild_dict[guildid]['questreport_dict'][questid]
+            for wildid in wild_dict.keys():
+                if wild_dict[wildid]['exp'] < time.time():
+                    report_channel = Meowth.get_channel(wild_dict[wildid]['reportchannel'])
+                    if report_channel:
+                        try:
+                            report_message = await report_channel.get_message(wildid)
+                            expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=wild_dict[wildid]['pokemon'].title())
+                            await report_message.edit(embed=discord.Embed(description=expiremsg, colour=report_message.embeds[0].colour.value))
+                        except discord.errors.NotFound:
+                            pass
+                        try:
+                            user_message = await report_channel.get_message(wild_dict[wildid]['reportmessage'])
+                            await user_message.delete()
+                        except discord.errors.NotFound:
+                            pass
+                    del guild_dict[guildid]['wildreport_dict'][wildid]
+        # save server_dict changes after cleanup
+        logger.info('Report_Cleanup - SAVING CHANGES')
+        try:
+            await _save()
+        except Exception as err:
+            logger.info('Report_Cleanup - SAVING FAILED' + err)
+        logger.info('Report_Cleanup ------ END ------')
+        await asyncio.sleep(600)
+        continue
 
 async def _print(owner, message):
     if 'launcher' in sys.argv[1:]:
@@ -786,6 +833,7 @@ async def maint_start():
     try:
         event_loop.create_task(guild_cleanup())
         event_loop.create_task(channel_cleanup())
+        event_loop.create_task(report_cleanup())
         logger.info('Maintenance Tasks Started')
     except KeyboardInterrupt as e:
         tasks.cancel()
@@ -1701,30 +1749,6 @@ async def announce(ctx, *, announce=None):
         await confirmation.delete()
     await asyncio.sleep(30)
     await message.delete()
-
-@Meowth.command()
-@commands.has_permissions(manage_guild=True)
-async def convert(ctx):
-    guild_dict_convert = copy.deepcopy(guild_dict)
-    for guildid in guild_dict_convert.keys():
-        for channelid in guild_dict_convert[guildid]['raidchannel_dict'].keys():
-            for trainerid in guild_dict_convert[guildid]['raidchannel_dict'][channelid]['trainer_dict'].keys():
-                if type(guild_dict_convert[guildid]['raidchannel_dict'][channelid]['trainer_dict'][trainerid]['party']) is not dict:
-                    count = guild_dict_convert[guildid]['raidchannel_dict'][channelid]['trainer_dict'][trainerid].get('count',1)
-                    party = guild_dict_convert[guildid]['raidchannel_dict'][channelid]['trainer_dict'][trainerid].get('party',[0,0,0,1])
-                    status = guild_dict_convert[guildid]['raidchannel_dict'][channelid]['trainer_dict'][trainerid].get('status',"maybe")
-                    party = {"mystic":party[0], "valor":party[1], "instinct":party[2], "unknown":party[3]}
-                    if status == "maybe":
-                        status = {"maybe": count, "coming":0, "here":0, "lobby":0}
-                    elif status == "omw":
-                        status = {"maybe": 0, "coming":count, "here":0, "lobby":0}
-                    elif status == "waiting":
-                        status = {"maybe": 0, "coming":0, "here":count, "lobby":0}
-                    elif status == "lobby":
-                        status = {"maybe": 0, "coming":0, "here":0, "lobby":count}
-                    guild_dict_convert[guildid]['raidchannel_dict'][channelid]['trainer_dict'][trainerid]['party'] = party
-                    guild_dict_convert[guildid]['raidchannel_dict'][channelid]['trainer_dict'][trainerid]['status'] = status
-        guild_dict[guildid] = guild_dict_convert[guildid]
 
 @Meowth.command()
 @commands.has_permissions(manage_guild=True)
@@ -3155,12 +3179,17 @@ async def _wild(message, huntr=False):
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         wild_embed.set_thumbnail(url=wild_img_url)
         wildreportmsg = await message.channel.send(content=_('{roletest}Meowth! Wild {pokemon} reported by {member}! Details: <https://pokehuntr.com/#{location_details}>').format(roletest=roletest,pokemon=entered_wild.title(), member=message.author.mention, location_details=wild_details, gps=wild_details), embed=wild_embed)
-    expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
-    await asyncio.sleep(despawn)
-    try:
-        await wildreportmsg.edit(embed=discord.Embed(description=expiremsg, colour=message.guild.me.colour))
-    except discord.errors.NotFound:
-        pass
+
+    wild_dict = copy.deepcopy(guild_dict[message.guild.id].get('wildreport_dict',{}))
+    wild_dict[wildreportmsg.id] = {
+        'exp':time.time() + despawn,
+        'reportmessage':message.id,
+        'reportchannel':message.channel.id,
+        'reportauthor':message.author.id,
+        'location':wild_details,
+        'pokemon':entered_wild,
+    }
+    guild_dict[message.guild.id]['wildreport_dict'] = wild_dict
 
 @Meowth.command()
 @checks.cityeggchannel()
@@ -3858,6 +3887,9 @@ async def research(ctx, *, args = None):
     error = False
     research_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=0')
     research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+    if checks.check_raidchannel(ctx):
+        await message.channel.send(_('Meowth! Please restrict research reports to outside of raid channels!'))
+        return
     while True:
         if args:
             research_split = message.clean_content.replace("!research\n ","").split(", ")
@@ -3932,6 +3964,17 @@ async def research(ctx, *, args = None):
                 roletest = _("{pokemon} - ").format(pokemon=role.mention)
         research_msg = _("{roletest}Field Research reported by {author}").format(roletest=roletest,author=author.mention)
         confirmation = await channel.send(research_msg,embed=research_embed)
+        research_dict = copy.deepcopy(guild_dict[guild.id].get('questreport_dict',{}))
+        research_dict[confirmation.id] = {
+            'exp':time.time() + to_midnight,
+            'reportmessage':message.id,
+            'reportchannel':channel.id,
+            'reportauthor':author.id,
+            'location':location,
+            'quest':quest,
+            'reward':reward
+        }
+        guild_dict[guild.id]['questreport_dict'] = research_dict
         await asyncio.sleep(to_midnight)
         await confirmation.delete()
     else:
@@ -3940,6 +3983,7 @@ async def research(ctx, *, args = None):
         confirmation = await channel.send(embed=research_embed)
         await asyncio.sleep(10)
         await confirmation.delete()
+        await message.delete()
 
 """
 Raid Channel Management
