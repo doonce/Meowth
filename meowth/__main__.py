@@ -1206,6 +1206,7 @@ async def on_huntr(message, reactuser=None):
     else:
         huntr = pokehuntr_dict[message.id]['huntr']
         reporttime = pokehuntr_dict[message.id]['reporttime']
+        reporttype = pokehuntr_dict[message.id]['reporttype']
         huntrtime = huntr.split("|")[0][-1]
         reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])
         timediff = relativedelta(reacttime, reporttime)
@@ -1312,6 +1313,7 @@ async def on_pokealarm(message, reactuser=None):
         huntr = pokealarm_dict[message.id]['huntr']
         embed = pokealarm_dict[message.id]['embed']
         reporttime = pokealarm_dict[message.id]['reporttime']
+        reporttype = pokealarm_dict[message.id]['reporttype']
         huntrtime = huntr.split("|")[0][-1]
         reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])
         timediff = relativedelta(reacttime, reporttime)
