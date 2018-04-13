@@ -778,55 +778,45 @@ async def message_cleanup(loop=True):
         logger.info('message_cleanup ------ BEGIN ------')
         guilddict_temp = copy.deepcopy(guild_dict)
         for guildid in guilddict_temp.keys():
-            research_dict = guilddict_temp[guildid].get('questreport_dict',{})
-            wild_dict = guilddict_temp[guildid].get('wildreport_dict',{})
+            questreport_dict = guilddict_temp[guildid].get('questreport_dict',{})
+            wildreport_dict = guilddict_temp[guildid].get('wildreport_dict',{})
             pokealarm_dict = guilddict_temp[guildid].get('pokealarm_dict',{})
-            for questid in research_dict.keys():
-                if research_dict[questid]['exp'] <= time.time():
-                    report_channel = Meowth.get_channel(research_dict[questid]['reportchannel'])
-                    if report_channel:
-                        try:
-                            report_message = await report_channel.get_message(questid)
-                            await report_message.delete()
-                        except discord.errors.NotFound:
-                            pass
-                        try:
-                            user_message = await report_channel.get_message(research_dict[questid]['reportmessage'])
-                            await user_message.delete()
-                        except discord.errors.NotFound:
-                            pass
-                    del guild_dict[guildid]['questreport_dict'][questid]
-            for wildid in wild_dict.keys():
-                if wild_dict[wildid]['exp'] <= time.time():
-                    report_channel = Meowth.get_channel(wild_dict[wildid]['reportchannel'])
-                    if report_channel:
-                        try:
-                            report_message = await report_channel.get_message(wildid)
-                            expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=wild_dict[wildid]['pokemon'].title())
-                            await report_message.edit(embed=discord.Embed(description=expiremsg, colour=report_message.embeds[0].colour.value))
-                        except discord.errors.NotFound:
-                            pass
-                        try:
-                            user_message = await report_channel.get_message(wild_dict[wildid]['reportmessage'])
-                            await user_message.delete()
-                        except discord.errors.NotFound:
-                            pass
-                    del guild_dict[guildid]['wildreport_dict'][wildid]
-            for alertid in pokealarm_dict.keys():
-                if pokealarm_dict[alertid]['exp'] <= time.time():
-                    report_channel = Meowth.get_channel(pokealarm_dict[alertid]['reportchannel'])
-                    if report_channel:
-                        try:
-                            report_message = await report_channel.get_message(alertid)
-                            report_type = pokealarm_dict[alertid]['reporttype']
-                            if report_type == "raid":
-                                expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=pokealarm_dict[alertid]['pokemon'].title())
-                            elif report_type == "egg":
-                                expiremsg = _('**This level {level} raid egg has hatched!**').format(level=pokealarm_dict[alertid]['level'])
-                            await report_message.edit(embed=discord.Embed(description=expiremsg, colour=report_message.embeds[0].colour.value))
-                        except discord.errors.NotFound:
-                            pass
-                    del guild_dict[guildid]['pokealarm_dict'][alertid]
+            pokehuntr_dict = guilddict_temp[guildid].get('pokehuntr_dict',{})
+            report_dict_dict = {
+                'questreport_dict':questreport_dict,
+                'wildreport_dict':wildreport_dict,
+                'pokealarm_dict':pokealarm_dict,
+                'pokehuntr_dict':pokehuntr_dict
+            }
+            report_edit_dict = {}
+            report_delete_dict = {}
+            for report_dict in report_dict_dict:
+                for reportid in report_dict_dict[report_dict].keys():
+                    if report_dict_dict[report_dict][reportid]['exp'] <= time.time():
+                        report_channel = Meowth.get_channel(report_dict_dict[report_dict][reportid]['reportchannel'])
+                        if report_channel:
+                            print(reportid)
+                            user_report = report_dict_dict[report_dict][reportid].get('reportmessage',None)
+                            if user_report:
+                                report_delete_dict[user_report] = {"action":"delete","channel":report_channel}
+                            if report_dict_dict[report_dict][reportid]['expedit'] == "delete":
+                                report_delete_dict[reportid] = {"action":report_dict_dict[report_dict][reportid]['expedit'],"channel":report_channel}
+                            else:
+                                report_edit_dict[reportid] = {"action":report_dict_dict[report_dict][reportid]['expedit'],"channel":report_channel}
+                    del guild_dict[guildid][report_dict][reportid]
+            for messageid in report_delete_dict.keys():
+                try:
+                    report_message = await report_delete_dict[messageid]['channel'].get_message(messageid)
+                    await report_message.delete()
+                except discord.errors.NotFound:
+                    pass
+            for messageid in report_edit_dict.keys():
+                try:
+                    report_message = await report_edit_dict[messageid]['channel'].get_message(messageid)
+                    await report_message.edit(content=report_edit_dict[messageid]['action']['content'],embed=discord.Embed(description=report_edit_dict[messageid]['action']['embedcontent'], colour=report_message.embeds[0].colour.value))
+                    await report_messsage.clear_reactions()
+                except discord.errors.NotFound:
+                    pass
         # save server_dict changes after cleanup
         logger.info('message_cleanup - SAVING CHANGES')
         try:
@@ -1060,171 +1050,172 @@ async def on_message(message):
     if (not message.author.bot):
         await Meowth.process_commands(message)
 
-async def on_huntr(message):
+async def on_huntr(message, reactuser=None):
     timestamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])).strftime('%I:%M %p')
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])
-    if message.embeds and (message.author.id == 329412230481444886 or message.author.id == 295116861920772098):
-        try:
-            huntrgps = message.embeds[0].url.split('#')[1]
-        except IndexError:
-            req = urllib.request.Request(message.embeds[0].url, headers={
-                'User-Agent': 'Magic Browser',
-            })
-            con = urllib.request.urlopen(req)
+    pokehuntr_dict = copy.deepcopy(guild_dict[guild.id].get('pokehuntr_dict',{}))
+    if not reactuser:
+        if message.embeds and (message.author.id == 329412230481444886 or message.author.id == 295116861920772098):
             try:
-                huntrgps = con.geturl().split('#')[1]
-                con.close()
+                huntrgps = message.embeds[0].url.split('#')[1]
             except IndexError:
-                source = str(con.read().decode('utf8').replace('\n', '').replace(' ', ''))
-                sourceindex = source.find('huntr.com/#')
-                newsourceindex = source.rfind('http', 0, sourceindex)
-                newsourceend = source.find('"', newsourceindex)
-                newsource = source[newsourceindex:newsourceend]
-                huntrgps = newsource.split('#')[1]
-                con.close()
-    if message.author.id == 329412230481444886 and message.embeds:
-        if (len(message.embeds[0].title.split(' ')) == 5) and guild_dict[message.guild.id]['autoraid']:
-            ghduplicate = False
-            ghraidlevel = message.embeds[0].title.split(' ')[1]
-            ghdesc = message.embeds[0].description.splitlines()
-            ghgym = ghdesc[0][2:(- 3)]
-            ghpokeid = ghdesc[1]
-            ghmoves = '\u200b'
-            if len(ghdesc[2].split()) > 3:
-                ghmoves = ghdesc[2].split('**Moves:** ')[1]
-            ghtime = ghdesc[3].split(' ')
-            ghhour = ghtime[2]
-            ghminute = int(ghtime[4].zfill(2))
-            ghsec = int(ghtime[6].zfill(2))
-            huntr = '!raid {0} {1} {2}:{3}|{4}|{5}'.format(ghpokeid, ghgym, ghhour, ghminute, huntrgps, ghmoves)
-            ghtimestamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'], minutes=int(ghminute), seconds=int(ghsec))).strftime('%I:%M %p')
-            await message.delete()
-            for channelid in guild_dict[message.guild.id]['raidchannel_dict']:
+                req = urllib.request.Request(message.embeds[0].url, headers={
+                    'User-Agent': 'Magic Browser',
+                })
+                con = urllib.request.urlopen(req)
                 try:
-                    if guild_dict[message.guild.id]['raidchannel_dict'][channelid]['gymhuntrgps'] == huntrgps:
-                        ghduplicate = True
-                        channel = Meowth.get_channel(channelid)
-                        if guild_dict[message.guild.id]['raidchannel_dict'][channelid]['type'] == 'egg':
-                            await _eggtoraid(ghpokeid.lower().strip(), channel, author=message.author, huntr=huntr)
-                        raidmsg = await channel.get_message(guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
-                        if raidmsg.embeds[0].fields[2].name != ghmoves:
-                            await channel.send(_("This {pokemon}'s moves are: **{moves}**").format(pokemon=ghpokeid, moves=ghmoves))
-                except KeyError:
-                    pass
-            if (ghduplicate == False) and (int(ghraidlevel) in guild_dict[message.guild.id]['raidlvls']):
-                await _raid(message, huntr)
-            elif (ghduplicate is False) and (int(ghraidlevel) not in guild_dict[message.guild.id]['raidlvls']):
-                raid = discord.utils.get(message.guild.roles, name=ghpokeid.lower().strip())
-                if raid is None:
-                    roletest = ""
-                else:
-                    roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-                raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=_('https://www.google.com/maps/dir/Current+Location/{0}').format(huntrgps), colour=message.guild.me.colour)
-                raid_number = pkmn_info['pokemon_list'].index(ghpokeid.lower().strip()) + 1
-                raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
-                raid_embed.add_field(name='**Details:**', value=_('{pokemon} ({pokemonnumber}) {type}\n{moves}').format(pokemon=ghpokeid.title(), pokemonnumber=str(raid_number), type=''.join(get_type(message.guild, raid_number)), moves=ghmoves), inline=True)
-                raid_embed.add_field(name='**Weaknesses:**', value=_('{weakness_list}').format(weakness_list=weakness_to_str(message.guild, get_weaknesses(ghpokeid.lower().strip()))), inline=True)
-                raid_embed.add_field(name='**Location:**', value=_('{raid_details}').format(raid_details='\n'.join(textwrap.wrap(ghgym, width=30))), inline=True)
-                raid_embed.add_field(name='**Expires in:**', value=_('{minutes} mins ({ghtimestamp})').format(minutes=ghminute, ghtimestamp=ghtimestamp), inline=True)
-                raid_embed.set_thumbnail(url=raid_img_url)
-                raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=_('https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}'.format(user=message.author, format='jpg', size=32)))
-                raidreport = await message.channel.send(content=_('{roletest}Meowth! {pokemon} raid reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(roletest=roletest,pokemon=ghpokeid.title(), member=message.author.mention, location_details=ghgym), embed=raid_embed)
-                timeout = (int(ghminute) * 60)
-                await asyncio.sleep(0.25)
-                await raidreport.add_reaction('✅')
-                def check(reaction, user):
-                    return (user.id != message.guild.me.id) and (reaction.message.id == raidreport.id) and (reaction.emoji == "✅")
-                try:
-                    reaction, user = await Meowth.wait_for('reaction_add', timeout=timeout, check=check)
-                except asyncio.TimeoutError:
-                    await raidreport.clear_reactions()
+                    huntrgps = con.geturl().split('#')[1]
+                    con.close()
+                except IndexError:
+                    source = str(con.read().decode('utf8').replace('\n', '').replace(' ', ''))
+                    sourceindex = source.find('huntr.com/#')
+                    newsourceindex = source.rfind('http', 0, sourceindex)
+                    newsourceend = source.find('"', newsourceindex)
+                    newsource = source[newsourceindex:newsourceend]
+                    huntrgps = newsource.split('#')[1]
+                    con.close()
+        if message.author.id == 329412230481444886 and message.embeds:
+            if (len(message.embeds[0].title.split(' ')) == 5) and guild_dict[message.guild.id]['autoraid']:
+                ghduplicate = False
+                ghraidlevel = message.embeds[0].title.split(' ')[1]
+                ghdesc = message.embeds[0].description.splitlines()
+                ghgym = ghdesc[0][2:(- 3)]
+                ghpokeid = ghdesc[1]
+                ghmoves = '\u200b'
+                if len(ghdesc[2].split()) > 3:
+                    ghmoves = ghdesc[2].split('**Moves:** ')[1]
+                ghtime = ghdesc[3].split(' ')
+                ghhour = ghtime[2]
+                ghminute = int(ghtime[4].zfill(2))
+                ghsec = int(ghtime[6].zfill(2))
+                huntr = '!raid {0} {1} {2}|{3}|{4}'.format(ghpokeid, ghgym, ghminute, huntrgps, ghmoves)
+                ghtimestamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'], minutes=int(ghminute), seconds=int(ghsec))).strftime('%I:%M %p')
+                await message.delete()
+                for channelid in guild_dict[message.guild.id]['raidchannel_dict']:
+                    try:
+                        if guild_dict[message.guild.id]['raidchannel_dict'][channelid]['gymhuntrgps'] == huntrgps:
+                            ghduplicate = True
+                            channel = Meowth.get_channel(channelid)
+                            if guild_dict[message.guild.id]['raidchannel_dict'][channelid]['type'] == 'egg':
+                                await _eggtoraid(ghpokeid.lower().strip(), channel, author=message.author, huntr=huntr)
+                            raidmsg = await channel.get_message(guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
+                            if raidmsg.embeds[0].fields[2].name != ghmoves:
+                                await channel.send(_("This {pokemon}'s moves are: **{moves}**").format(pokemon=ghpokeid, moves=ghmoves))
+                    except KeyError:
+                        pass
+                if (ghduplicate == False) and (int(ghraidlevel) in guild_dict[message.guild.id]['raidlvls']):
+                    await _raid(message, huntr)
+                elif (ghduplicate is False) and (int(ghraidlevel) not in guild_dict[message.guild.id]['raidlvls']):
+                    raid = discord.utils.get(message.guild.roles, name=ghpokeid.lower().strip())
+                    if raid is None:
+                        roletest = ""
+                    else:
+                        roletest = _("{pokemon} - ").format(pokemon=raid.mention)
+                    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=_('https://www.google.com/maps/dir/Current+Location/{0}').format(huntrgps), colour=message.guild.me.colour)
+                    raid_number = pkmn_info['pokemon_list'].index(ghpokeid.lower().strip()) + 1
+                    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
+                    raid_embed.add_field(name='**Details:**', value=_('{pokemon} ({pokemonnumber}) {type}\n{moves}').format(pokemon=ghpokeid.title(), pokemonnumber=str(raid_number), type=''.join(get_type(message.guild, raid_number)), moves=ghmoves), inline=True)
+                    raid_embed.add_field(name='**Weaknesses:**', value=_('{weakness_list}').format(weakness_list=weakness_to_str(message.guild, get_weaknesses(ghpokeid.lower().strip()))), inline=True)
+                    raid_embed.add_field(name='**Location:**', value=_('{raid_details}').format(raid_details='\n'.join(textwrap.wrap(ghgym, width=30))), inline=True)
+                    raid_embed.add_field(name='**Expires in:**', value=_('{minutes} mins ({ghtimestamp})').format(minutes=ghminute, ghtimestamp=ghtimestamp), inline=True)
+                    raid_embed.set_thumbnail(url=raid_img_url)
+                    raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=_('https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}'.format(user=message.author, format='jpg', size=32)))
+                    raidreport = await message.channel.send(content=_('{roletest}Meowth! {pokemon} raid reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(roletest=roletest,pokemon=ghpokeid.title(), member=message.author.mention, location_details=ghgym), embed=raid_embed)
+                    timeout = (int(ghminute) * 60)
                     expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=ghpokeid)
-                    try:
-                        await raidreport.edit(content=raidreport.content.split(" React")[0],embed=discord.Embed(description=expiremsg, colour=message.guild.me.colour))
-                    except discord.errors.NotFound:
-                        pass
+                    await asyncio.sleep(0.25)
+                    await raidreport.add_reaction('✅')
+                    pokehuntr_dict[raidreport.id] = {
+                        "exp":time.time() + timeout,
+                        'expedit': {"content":raidreport.content.split(" React")[0],"embedcontent":expiremsg},
+                        "reporttype":"raid",
+                        "reportchannel":message.channel.id,
+                        "level":0,
+                        "pokemon":ghpokeid,
+                        "reporttime":now,
+                        "huntr":huntr,
+                        "embed":raid_embed
+                    }
+                    guild_dict[message.guild.id]['pokehuntr_dict'] = pokehuntr_dict
                     return
-                if reaction:
-                    reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])
-                    timediff = relativedelta(reacttime, now)
-                    time = int(ghminute) - int(timediff.minutes)
-                    huntr = '!raid {0} {1} {2}|{3}|{4}'.format(ghpokeid, ghgym, time, huntrgps, ghmoves)
-                    raid_channel = await _raid(message, huntr)
-                    await raidreport.delete()
-            return
-        elif (len(message.embeds[0].title.split(' ')) == 6) and guild_dict[message.guild.id]['autoegg']:
-            ghduplicate = False
-            ghegglevel = message.embeds[0].title.split(' ')[1]
-            ghdesc = message.embeds[0].description.splitlines()
-            ghgym = ghdesc[0][2:(- 3)]
-            ghtime = ghdesc[1].split(' ')
-            ghhour = ghtime[2]
-            ghminute = int(ghtime[4].zfill(2))
-            ghsec = int(ghtime[4].zfill(2))
-            huntr = '!raidegg {0} {1} {2}:{3}|{4}'.format(ghegglevel, ghgym, ghhour, ghminute, huntrgps)
-            ghtimestamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'], minutes=int(ghminute), seconds=int(ghsec))).strftime('%I:%M %p')
+            elif (len(message.embeds[0].title.split(' ')) == 6) and guild_dict[message.guild.id]['autoegg']:
+                ghduplicate = False
+                ghegglevel = message.embeds[0].title.split(' ')[1]
+                ghdesc = message.embeds[0].description.splitlines()
+                ghgym = ghdesc[0][2:(- 3)]
+                ghtime = ghdesc[1].split(' ')
+                ghhour = ghtime[2]
+                ghminute = int(ghtime[4].zfill(2))
+                ghsec = int(ghtime[4].zfill(2))
+                huntr = '!raidegg {0} {1} {2}|{3}'.format(ghegglevel, ghgym, ghminute, huntrgps)
+                ghtimestamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'], minutes=int(ghminute), seconds=int(ghsec))).strftime('%I:%M %p')
+                await message.delete()
+                for channelid in guild_dict[message.guild.id]['raidchannel_dict']:
+                    try:
+                        if guild_dict[message.guild.id]['raidchannel_dict'][channelid]['gymhuntrgps'] == huntrgps:
+                            ghduplicate = True
+                            break
+                    except KeyError:
+                        pass
+                if (ghduplicate == False) and (int(ghegglevel) in guild_dict[message.guild.id]['egglvls']):
+                    await _raidegg(message, huntr)
+                elif (ghduplicate is False) and (int(ghegglevel) not in guild_dict[message.guild.id]['egglvls']):
+                    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=_('https://www.google.com/maps/dir/Current+Location/{0}').format(huntrgps), colour=message.guild.me.colour)
+                    raid_embed.add_field(name='**Location:**', value=_('{raid_details}').format(raid_details='\n'.join(textwrap.wrap(ghgym, width=30))), inline=True)
+                    raid_embed.add_field(name='**Starting in:**', value=_('{minutes} mins ({ghtimestamp})').format(minutes=ghminute, ghtimestamp=ghtimestamp), inline=True)
+                    raid_embed.set_thumbnail(url=_('https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}.png?cache=0'.format(str(ghegglevel))))
+                    raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=_('https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}'.format(user=message.author, format='jpg', size=32)))
+                    raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=ghegglevel, member=message.author.mention, location_details=ghgym), embed=raid_embed)
+                    timeout = (int(ghminute) * 60)
+                    await asyncio.sleep(0.25)
+                    await raidreport.add_reaction('✅')
+                    pokehuntr_dict[raidreport.id] = {
+                        "exp":time.time() + timeout,
+                        'expedit': {"content":raidreport.content.split(" React")[0],"embedcontent":expiremsg},
+                        "reporttype":"egg",
+                        "reportchannel":message.channel.id,
+                        "level":ghegglevel,
+                        "pokemon":None,
+                        "reporttime":now,
+                        "huntr":huntr,
+                        "embed":raid_embed
+                    }
+                    guild_dict[message.guild.id]['pokehuntr_dict'] = pokehuntr_dict
+                    return
+        if message.author.id == 295116861920772098 and message.embeds and guild_dict[message.guild.id]['autowild']:
+            hpokeid = message.embeds[0].title.split(' ')[2]
+            hdesc = message.embeds[0].description.splitlines()
+            hexpire = None
+            hweather = None
+            hiv = None
+            huntrgps = "https://pokehuntr.com/#{huntrgps}".format(huntrgps=huntrgps)
+            for line in hdesc:
+                if "remaining:" in line.lower():
+                    hexpire = line.split(': ')[1][:(- 1)]
+                if "weather:" in line.lower():
+                    hweather = line.split(': ')[1][1:(- 1)]
+                if "iv:" in line.lower():
+                    hiv = line.split(': ')[1][2:(-2)]
+            hextra = "Weather: {hweather}".format(hweather=hweather)
+            if hiv:
+                hextra += " / IV: {hiv}".format(hiv=hiv)
+            huntr = '!wild {0} {1}|{2}|{3}'.format(hpokeid, huntrgps, hexpire, hextra)
             await message.delete()
-            for channelid in guild_dict[message.guild.id]['raidchannel_dict']:
-                try:
-                    if guild_dict[message.guild.id]['raidchannel_dict'][channelid]['gymhuntrgps'] == huntrgps:
-                        ghduplicate = True
-                        break
-                except KeyError:
-                    pass
-            if (ghduplicate == False) and (int(ghegglevel) in guild_dict[message.guild.id]['egglvls']):
-                await _raidegg(message, huntr)
-            elif (ghduplicate is False) and (int(ghegglevel) not in guild_dict[message.guild.id]['egglvls']):
-                raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=_('https://www.google.com/maps/dir/Current+Location/{0}').format(huntrgps), colour=message.guild.me.colour)
-                raid_embed.add_field(name='**Location:**', value=_('{raid_details}').format(raid_details='\n'.join(textwrap.wrap(ghgym, width=30))), inline=True)
-                raid_embed.add_field(name='**Starting in:**', value=_('{minutes} mins ({ghtimestamp})').format(minutes=ghminute, ghtimestamp=ghtimestamp), inline=True)
-                raid_embed.set_thumbnail(url=_('https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}.png?cache=0'.format(str(ghegglevel))))
-                raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=_('https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.{format}?size={size}'.format(user=message.author, format='jpg', size=32)))
-                raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=ghegglevel, member=message.author.mention, location_details=ghgym), embed=raid_embed)
-                timeout = (int(ghminute) * 60)
-                await asyncio.sleep(0.25)
-                await raidreport.add_reaction('✅')
-                def check(reaction, user):
-                    return (user.id != message.guild.me.id) and (reaction.message.id == raidreport.id) and (reaction.emoji == "✅")
-                try:
-                    reaction, user = await Meowth.wait_for('reaction_add', timeout=timeout, check=check)
-                except asyncio.TimeoutError:
-                    await raidreport.clear_reactions()
-                    expiremsg = _('**This level {level} raid egg has hatched!**').format(level=ghegglevel)
-                    try:
-                        await raidreport.edit(content=raidreport.content.split(" React")[0],embed=discord.Embed(description=expiremsg, colour=message.guild.me.colour))
-                    except discord.errors.NotFound:
-                        pass
-                    return
-                if reaction:
-                    reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])
-                    timediff = relativedelta(reacttime, now)
-                    time = int(ghminute) - int(timediff.minutes)
-                    huntr = '!raidegg {0} {1} {2}|{3}'.format(ghegglevel, ghgym, time, huntrgps)
-                    raid_channel = await _raidegg(message, huntr)
-                    await raidreport.delete()
+            await _wild(message, huntr)
             return
-        return
-    if message.author.id == 295116861920772098 and message.embeds and guild_dict[message.guild.id]['autowild']:
-        hpokeid = message.embeds[0].title.split(' ')[2]
-        hdesc = message.embeds[0].description.splitlines()
-        hexpire = None
-        hweather = None
-        hiv = None
-        huntrgps = "https://pokehuntr.com/#{huntrgps}".format(huntrgps=huntrgps)
-        for line in hdesc:
-            if "remaining:" in line.lower():
-                hexpire = line.split(': ')[1][:(- 1)]
-            if "weather:" in line.lower():
-                hweather = line.split(': ')[1][1:(- 1)]
-            if "iv:" in line.lower():
-                hiv = line.split(': ')[1][2:(-2)]
-        hextra = "Weather: {hweather}".format(hweather=hweather)
-        if hiv:
-            hextra += " / IV: {hiv}".format(hiv=hiv)
-        huntr = '!wild {0} {1}|{2}|{3}'.format(hpokeid, huntrgps, hexpire, hextra)
+    else:
+        huntr = pokehuntr_dict[message.id]['huntr']
+        reporttime = pokehuntr_dict[message.id]['reporttime']
+        huntrtime = huntr.split("|")[0][-1]
+        reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['offset'])
+        timediff = relativedelta(reacttime, reporttime)
+        time = int(huntrtime) - int(timediff.minutes)
+        huntr = huntr.replace(huntrtime,time)
+        if reporttype == "egg":
+            raid_channel = await _raidegg(message, huntr)
+        elif reporttype == "raid":
+            raid_channel = await _raid(message, huntr)
         await message.delete()
-        await _wild(message, huntr)
-        return
     return
 
 async def on_pokealarm(message, reactuser=None):
@@ -1250,6 +1241,7 @@ async def on_pokealarm(message, reactuser=None):
             time = painfo.pop(-1)[:-1]
             gym = " ".join(painfo)
             timeout = int(time)*60
+            expiremsg = _('**This level {level} raid egg has hatched!**').format(level=pokealarm_dict[alertid]['level'])
             huntr = "!raidegg {level} {gym} {time}|{gps}".format(level=level,gym=gym,time=time,gps=gps)
         elif "!raid" in message.content.lower():
             reporttype = "raid"
@@ -1261,6 +1253,7 @@ async def on_pokealarm(message, reactuser=None):
             time = painfo.pop(-1)[:-1]
             gym = " ".join(painfo)
             timeout = int(time)*60
+            expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=pokeid.title())
             huntr = "!raid {pokeid} {gym} {time}|{gps}|{moves}".format(pokeid=pokeid,gym=gym,time=time,gps=gps,moves=moves)
         elif "!wild" in message.content.lower():
             reporttype = "wild"
@@ -1305,6 +1298,7 @@ async def on_pokealarm(message, reactuser=None):
                 await pamsg.add_reaction('✅')
                 pokealarm_dict[pamsg.id] = {
                     "exp":time.time() + timeout,
+                    'expedit': {"content":None,"embedcontent":expiremsg},
                     "reporttype":reporttype,
                     "reportchannel":message.channel.id,
                     "level":level,
@@ -1337,8 +1331,11 @@ async def on_raw_reaction_add(emoji, message_id, channel_id, user_id):
     user = channel.guild.get_member(user_id)
     message = await channel.get_message(message_id)
     pokealarm_dict = copy.deepcopy(guild_dict[channel.guild.id].get('pokealarm_dict',{}))
+    pokehuntr_dict = copy.deepcopy(guild_dict[channel.guild.id].get('pokehuntr_dict',{}))
     if message.id in pokealarm_dict.keys() and not user.bot and str(emoji) == "✅":
         await on_pokealarm(message, user)
+    if message.id in pokehuntr_dict.keys() and not user.bot and str(emoji) == "✅":
+        await on_huntr(message, user)
 
 @Meowth.event
 async def on_message_delete(message):
@@ -3184,6 +3181,7 @@ async def _wild(message, huntr=False):
         roletest = _("{pokemon} - ").format(pokemon=wild.mention)
     wild_number = pkmn_info['pokemon_list'].index(entered_wild) + 1
     wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(wild_number).zfill(3))
+    expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
     if (not huntr):
         wild_gmaps_link = create_gmaps_query(wild_details, message.channel)
         wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
@@ -3206,6 +3204,7 @@ async def _wild(message, huntr=False):
     wild_dict = copy.deepcopy(guild_dict[message.guild.id].get('wildreport_dict',{}))
     wild_dict[wildreportmsg.id] = {
         'exp':time.time() + despawn,
+        'expedit': {"content":wildreportmsg.content,"embedcontent":expiremsg},
         'reportmessage':message.id,
         'reportchannel':message.channel.id,
         'reportauthor':message.author.id,
@@ -3991,6 +3990,7 @@ async def research(ctx, *, args = None):
         research_dict = copy.deepcopy(guild_dict[guild.id].get('questreport_dict',{}))
         research_dict[confirmation.id] = {
             'exp':time.time() + to_midnight,
+            'expedit':"delete",
             'reportmessage':message.id,
             'reportchannel':channel.id,
             'reportauthor':author.id,
