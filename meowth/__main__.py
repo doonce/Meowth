@@ -941,6 +941,11 @@ async def on_ready():
                 del guild_dict[guild.id]['want']
                 del guild_dict[guild.id]['other']
                 del guild_dict[guild.id]['done']
+                del guild_dict[guild.id]['autoraid']
+                del guild_dict[guild.id]['autowild']
+                del guild_dict[guild.id]['raidlvls']
+                del guild_dict[guild.id]['egglvls']
+                del guild_dict[guild.id]['alarmaction']
             except:
                 pass
             #DELETE TO HERE
@@ -2763,7 +2768,7 @@ async def configure(ctx):
         if (configcancel == False) and config_dict_temp['scanners']['autoraid']:
             await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create raid channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name='Automatic Raid Report Levels', icon_url=Meowth.user.avatar_url))
             raidlevel_list = []
-            config_dict_temp['raidlvls'] = []
+            config_dict_temp['scanners']['raidlvls'] = []
             while True:
                 raidlevels = await Meowth.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if raidlevels.content.lower() == 'cancel':
@@ -2807,7 +2812,7 @@ async def configure(ctx):
         if (configcancel == False) and config_dict_temp['scanners']['autoegg']:
             await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create egg channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized egg report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name='Automatic Egg Report Levels', icon_url=Meowth.user.avatar_url))
             egglevel_list = []
-            config_dict_temp['egglvls'] = []
+            config_dict_temp['scanners']['egglvls'] = []
             while True:
                 egglevels = await Meowth.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if egglevels.content.lower() == 'cancel':
