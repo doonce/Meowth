@@ -411,14 +411,14 @@ def get_category(channel, level, type="raid"):
         report = "raid"
     else:
         report = type
-    catsort = guild_dict[guild.id][report].get('categories', None)
+    catsort = guild_dict[guild.id]['configure_dict'][report].get('categories', None)
     if catsort == "same":
         return channel.category
     elif catsort == "region":
-        category = discord.utils.get(guild.categories,id=guild_dict[guild.id][report]['category_dict'][channel.id])
+        category = discord.utils.get(guild.categories,id=guild_dict[guild.id]['configure_dict'][report]['category_dict'][channel.id])
         return category
     elif catsort == "level":
-        category = discord.utils.get(guild.categories,id=guild_dict[guild.id][report]['category_dict'][level])
+        category = discord.utils.get(guild.categories,id=guild_dict[guild.id]['configure_dict'][report]['category_dict'][level])
         return category
     else:
         return None
