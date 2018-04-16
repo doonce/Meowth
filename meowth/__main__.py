@@ -1319,7 +1319,7 @@ async def on_pokealarm(message, reactuser=None):
         report = None
         embed = message.embeds[0] if message.embeds else None
         await message.delete()
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['configure_dict']['scanners']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
         painfo = message.content.split("|")
         if "!raidegg" in message.content.lower():
             reporttype = "egg"
