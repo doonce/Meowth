@@ -4044,7 +4044,11 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         raidmsg = _("Meowth! The egg reported by {member} in {citychannel} hatched into a {pokemon} raid! Details: {location_details}. Coordinate here!\n\nTo update your status, choose from the following commands: **!maybe**, **!coming**, **!here**, **!cancel**. If you are bringing more than one trainer/account, add in the number of accounts total on your first status update.\nExample: `!coming 5`\n\nTo see the list of trainers who have given their status:\n**!list interested**, **!list coming**, **!list here** or use just **!list** to see all lists. Use **!list teams** to see team distribution.\n\nSometimes I'm not great at directions, but I'll correct my directions if anybody sends me a maps link or uses **!location new <address>**. You can see the location of a raid by using **!location**\n\nYou can set the time remaining with **!timerset <minutes>** and access this with **!timer**.\nYou can set the start time with **!starttime [HH:MM AM/PM]** (you can also omit AM/PM and use 24-hour time) and access this with **!starttime**.\n\nMessage **!starting** when the raid is beginning to clear the raid's 'here' list.\n\nThis channel will be deleted five minutes after the timer expires.").format(member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, pokemon=entered_raid.capitalize(), location_details=egg_address)
     elif egglevel == 'EX':
         hatchtype = 'exraid'
-        raidreportcontent = _('Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. Use the **!invite** command to gain access and coordinate in {raid_channel}').format(pokemon=entered_raid.capitalize(), location_details=egg_address, raid_channel=raid_channel.mention)
+        if guild_dict[channel.guild.id]['configure_dict']['invite']['enabled']:
+            invitemsgstr = _("Use the **!invite command to gain access and coordinate")
+        else:
+            invitemsgstr = _("Coordinate")
+        raidreportcontent = _('Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. {invitemsgstr} coordinate in {raid_channel}').format(pokemon=entered_raid.capitalize(), location_details=egg_address, invitemsgstr=invitemsgstr,raid_channel=raid_channel.mention)
         raidmsg = _("Meowth! {pokemon} EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here after using **!invite** to gain access!\n\nTo update your status, choose from the following commands: **!maybe**, **!coming**, **!here**, **!cancel**. If you are bringing more than one trainer/account, add in the number of accounts total on your first status update.\nExample: `!coming 5`\n\nTo see the list of trainers who have given their status:\n**!list interested**, **!list coming**, **!list here** or use just **!list** to see all lists. Use **!list teams** to see team distribution.\n\nSometimes I'm not great at directions, but I'll correct my directions if anybody sends me a maps link or uses **!location new <address>**. You can see the location of a raid by using **!location**\n\nYou can set the time remaining with **!timerset <minutes>** and access this with **!timer**.\nYou can set the start time with **!starttime [HH:MM AM/PM]** (you can also omit AM/PM and use 24-hour time) and access this with **!starttime**.\n\nMessage **!starting** when the raid is beginning to clear the raid's 'here' list.\n\nThis channel will be deleted five minutes after the timer expires.").format(pokemon=entered_raid.capitalize(), member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, location_details=egg_address)
     raid_channel_name = (entered_raid + '-') + sanitize_channel_name(egg_address)
     oldembed = raid_message.embeds[0]
@@ -4210,7 +4214,11 @@ async def _exraid(ctx):
     raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
     raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
     raid_embed.set_thumbnail(url=raid_img_url)
-    raidreport = await channel.send(content=_('Meowth! EX raid egg reported by {member}! Details: {location_details}. Use the **!invite** command to gain access and coordinate in {raid_channel}').format(member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
+    if guild_dict[channel.guild.id]['configure_dict']['invite']['enabled']:
+        invitemsgstr = _("Use the **!invite command to gain access and coordinate")
+    else:
+        invitemsgstr = _("Coordinate")
+    raidreport = await channel.send(content=_('Meowth! EX raid egg reported by {member}! Details: {location_details}. {invitemsgstr} in {raid_channel}').format(member=message.author.mention, location_details=raid_details, invitemsgstr=invitemsgstr,raid_channel=raid_channel.mention), embed=raid_embed)
     await asyncio.sleep(1)
     raidmsg = _("Meowth! EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here after using **!invite** to gain access!\n\nTo update your status, choose from the following commands: **!maybe**, **!coming**, **!here**, **!cancel**. If you are bringing more than one trainer/account, add in the number of accounts total on your first status update.\nExample: `!coming 5`\n\nTo see the list of trainers who have given their status:\n**!list interested**, **!list coming**, **!list here** or use just **!list** to see all lists. Use **!list teams** to see team distribution.\n\nSometimes I'm not great at directions, but I'll correct my directions if anybody sends me a maps link or uses **!location new <address>**. You can see the location of a raid by using **!location**\n\nYou can set the hatch time with **!timerset <MM/DD HH:MM AM/PM>** and access this with **!timer**.\nYou can set the start time with **!starttime [HH:MM AM/PM]** (you can also omit AM/PM and use 24-hour time) and access this with **!starttime**.\n\nMessage **!starting** when the raid is beginning to clear the raid's 'here' list.\n\nThis channel will be deleted five minutes after the timer expires.").format(member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
     raidmessage = await raid_channel.send(content=raidmsg, embed=raid_embed)
@@ -6382,7 +6390,7 @@ async def research(ctx):
     await ctx.channel.send(listmsg)
 
 async def _researchlist(ctx):
-    research_dict = copy.deepcopy(guild_dict[ctx.guild.id]['questreport_dict'])
+    research_dict = copy.deepcopy(guild_dict[ctx.guild.id].get('questreport_dict',{}))
     questmsg = ""
     for questid in research_dict:
         if research_dict[questid]['reportchannel'] == ctx.message.channel.id:
@@ -6410,7 +6418,7 @@ async def wilds(ctx):
     await ctx.channel.send(listmsg)
 
 async def _wildlist(ctx):
-    wild_dict = copy.deepcopy(guild_dict[ctx.guild.id]['wildreport_dict'])
+    wild_dict = copy.deepcopy(guild_dict[ctx.guild.id].get('wildreport_dict',{}))
     wildmsg = ""
     for wildid in wild_dict:
         if wild_dict[wildid]['reportchannel'] == ctx.message.channel.id:
