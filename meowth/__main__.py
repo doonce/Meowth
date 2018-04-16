@@ -931,20 +931,65 @@ async def on_ready():
             guild_dict[guild.id]['configure_dict'] = configure_dict
             try:
                 del guild_dict[guild.id]['want_channel_list']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['offset']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['welcome']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['welcomechan']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['wantset']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['raidset']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['wildset']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['team']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['want']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['other']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['done']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['autoraid']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['autowild']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['raidlvls']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['egglvls']
+            except:
+                pass
+            try:
                 del guild_dict[guild.id]['alarmaction']
             except:
                 pass
@@ -4126,8 +4171,8 @@ async def _exraid(ctx):
     raid_channel_name = _('ex-raid-egg-')
     raid_channel_name += sanitize_channel_name(raid_details)
     raid_channel_overwrite_list = channel.overwrites
-    if guild_dict['configure_dict']['invite']['enabled']:
-        if guild_dict['configure_dict']['exraid']['permissions'] == "everyone":
+    if guild_dict[channel.guild.id]['configure_dict']['invite']['enabled']:
+        if guild_dict[channel.guild.id]['configure_dict']['exraid']['permissions'] == "everyone":
             everyone_overwrite = (channel.guild.default_role, discord.PermissionOverwrite(send_messages=False))
             raid_channel_overwrite_list.append(everyone_overwrite)
         meowth_overwrite = (Meowth.user, discord.PermissionOverwrite(send_messages=True,read_messages=True))
@@ -4144,7 +4189,7 @@ async def _exraid(ctx):
             if (overwrite[0].name not in channel.guild.me.top_role.name) and (overwrite[0].name not in channel.guild.me.name):
                 overwrite[1].send_messages = False
     else:
-        if guild_dict['configure_dict']['exraid']['permissions'] == "everyone":
+        if guild_dict[channel.guild.id]['configure_dict']['exraid']['permissions'] == "everyone":
             everyone_overwrite = (channel.guild.default_role, discord.PermissionOverwrite(send_messages=True))
             raid_channel_overwrite_list.append(everyone_overwrite)
     raid_channel_overwrites = dict(raid_channel_overwrite_list)
