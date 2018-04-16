@@ -892,7 +892,7 @@ async def on_ready():
                 "enabled":guild_dict[guild.id].get('raidset',False),
                 'report_channels': guild_dict[guild.id].get('city_channels',{}),
                 "categories":guild_dict[guild.id].get('categories',None),
-                "category_dict":guild_dict[guild.id].get('category_dict',{})
+                "category_dict":guild_dict[guild.id].get('category_dict',{}),
                 "permissions":"everyone"
             }
             configure_dict['wild'] = {
@@ -1932,7 +1932,6 @@ async def configure(ctx):
                 continue
             else:
                 break
-        print(configreplylist)
     elif firstconfig == True:
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=configmessage).set_author(name=_('Meowth Configuration - {0}').format(guild.name), icon_url=Meowth.user.avatar_url))
         configreplylist = all_commands
