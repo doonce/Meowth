@@ -958,7 +958,7 @@ async def on_ready():
                         'invite': {'enabled':False},
                         'team':{'enabled':False},
                         'settings':{'offset':0,'regional':None,'done':False,'prefix':None},
-                        'scanners':{'autoraid':False, 'raidlvls':[0],'autoegg':False,'egglvls':[0],'autowild':False,'alarmaction',False}
+                        'scanners':{'autoraid':False, 'raidlvls':[0],'autoegg':False,'egglvls':[0],'autowild':False,'alarmaction':False}
                     },
                     'wildreport_dict:':{},
                     'questreport_dict':{},
@@ -978,7 +978,7 @@ async def on_ready():
                     'invite': {'enabled':False},
                     'team':{'enabled':False},
                     'settings':{'offset':0,'regional':None,'done':False,'prefix':None},
-                    'scanners':{'autoraid':False, 'raidlvls':[0],'autoegg':False,'egglvls':[0],'autowild':False,'alarmaction',False}
+                    'scanners':{'autoraid':False, 'raidlvls':[0],'autoegg':False,'egglvls':[0],'autowild':False,'alarmaction':False}
                 },
                 'wildreport_dict:':{},
                 'questreport_dict':{},
@@ -992,25 +992,25 @@ async def on_ready():
 @Meowth.event
 async def on_guild_join(guild):
     owner = guild.owner
-        guild_dict[guild.id] = {
-            'configure_dict':{
-                'welcome': {'enabled':False,'welcomechan':'','welcomemsg':''},
-                'want': {'enabled':False, 'report_channels': []},
-                'raid': {'enabled':False, 'report_channels': {}, 'categories':'same','category_dict':{}},
-                'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same','category_dict':{}, 'permissions':'everyone'},
-                'wild': {'enabled':False, 'report_channels': {}},
-                'research': {'enabled':False, 'report_channels': {}},
-                'archive': {'enabled':False, 'category':'same','list':None},
-                'invite': {'enabled':False},
-                'team':{'enabled':False},
-                'settings':{'offset':0,'regional':None,'done':False,'prefix':None},
-                'scanners':{'autoraid':False, 'raidlvls':[0],'autoegg':False,'egglvls':[0],'autowild':False,'alarmaction',False}
-            },
-            'wildreport_dict:':{},
-            'questreport_dict':{},
-            'raidchannel_dict':{},
-            'trainers':{}
-        }
+    guild_dict[guild.id] = {
+        'configure_dict':{
+            'welcome': {'enabled':False,'welcomechan':'','welcomemsg':''},
+            'want': {'enabled':False, 'report_channels': []},
+            'raid': {'enabled':False, 'report_channels': {}, 'categories':'same','category_dict':{}},
+            'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same','category_dict':{}, 'permissions':'everyone'},
+            'wild': {'enabled':False, 'report_channels': {}},
+            'research': {'enabled':False, 'report_channels': {}},
+            'archive': {'enabled':False, 'category':'same','list':None},
+            'invite': {'enabled':False},
+            'team':{'enabled':False},
+            'settings':{'offset':0,'regional':None,'done':False,'prefix':None},
+            'scanners':{'autoraid':False, 'raidlvls':[0],'autoegg':False,'egglvls':[0],'autowild':False,'alarmaction':False}
+        },
+        'wildreport_dict:':{},
+        'questreport_dict':{},
+        'raidchannel_dict':{},
+        'trainers':{}
+    }
     await owner.send(_("Meowth! I'm Meowth, a Discord helper bot for Pokemon Go communities, and someone has invited me to your server! Type **!help** to see a list of things I can do, and type **!configure** in any channel of your server to begin!"))
 
 
