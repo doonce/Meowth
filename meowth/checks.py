@@ -104,6 +104,8 @@ def check_raidactive(ctx):
     guild = ctx.guild
     return ctx.bot.guild_dict[guild.id].get('raidchannel_dict',{}).get(channel.id,{}).get('active',False)
 
+
+
 def check_exraidset(ctx):
     if ctx.guild is None:
         return False
@@ -238,11 +240,12 @@ def allowinvite():
 def allowteam():
     def predicate(ctx):
         if check_teamset(ctx):
-            if check_nonraidchannel(ctx):
+            if not check_raidchannel(ctx):
                 return True
             else:
                 raise errors.NonRaidChannelCheckFail()
-        raise errors.TeamSetCheckFail()
+        else:
+            raise errors.TeamSetCheckFail()
     return commands.check(predicate)
 
 def allowwant():
