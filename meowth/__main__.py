@@ -366,7 +366,7 @@ def do_template(message, author, guild):
             if (not role):
                 not_found.append(full_match)
             return role.mention if role else full_match
-    template_pattern = '{(@|#|&|<)([^{}]+)}|{(user|server)}|<*:([a-zA-Z0-9]+):[0-9]*>*'
+    template_pattern = '(?i){(@|#|&|<)([^{}]+)}|{(user|server)}|<*:([a-zA-Z0-9]+):[0-9]*>*'
     msg = re.sub(template_pattern, template_replace, message)
     return (msg, not_found)
 
@@ -1500,10 +1500,13 @@ async def on_pokealarm(message, reactuser=None):
 @Meowth.event
 async def on_raw_reaction_add(emoji, message_id, channel_id, user_id):
     channel = Meowth.get_channel(channel_id)
-    user = channel.guild.get_member(user_id)
+    try:
+        user = channel.guild_dict.get_member(user_id)
+    except AttributeError:
+        return
     try:
         message = await channel.get_message(message_id)
-    except discord.errors.NotFound:
+    except (discord.errors.NotFound, AttributeError):
         return
     guild = message.guild
     pokealarm_dict = copy.deepcopy(guild_dict[channel.guild.id].get('pokealarm_dict',{}))
@@ -2006,8 +2009,14 @@ async def announce(ctx, *, announce=None):
 
 @Meowth.command()
 @commands.has_permissions(manage_guild=True)
-async def configure(ctx):
-    'Meowth Configuration\n\n    Usage: !configure\n    Meowth will DM you instructions on how to configure Meowth for your server.\n    If it is not your first time configuring, you can choose a section to jump to.'
+async def configure(ctx,*,configlist: str=""):
+    """Meowth Configuration
+
+    Usage: !configure [list]
+    Meowth will DM you instructions on how to configure Meowth for your server.
+    If it is not your first time configuring, you can choose a section to jump to.
+    You can also include a comma separated [list] of sections from the following:
+    all, team, welcome, raid, exraid, invite, wild, research, want, archive, timezone, scanners"""
     guild = ctx.message.guild
     owner = ctx.message.author
     config_dict_temp = copy.deepcopy(guild_dict[guild.id]['configure_dict'])
@@ -2018,13 +2027,24 @@ async def configure(ctx):
     config_error = False
     if not config_dict_temp['settings']['done']:
         firstconfig = True
+    if configlist and not firstconfig:
+        configlist = configlist.lower().replace("timezone","settings").split(", ")
+        configlist = [x.strip().lower() for x in configlist]
+        diff =  set(configlist) - set(all_commands)
+        if diff and "all" in diff:
+            configreplylist = all_commands
+        elif not diff:
+            configreplylist = configlist
+        else:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("I'm sorry, I couldn't understand some of what you entered. Let's just start here.")))
+            configreplylist = []
     configmessage = _("Meowth! That's Right! Welcome to the configuration for Meowth the Pokemon Go Helper Bot! I will be guiding you through some steps to get me setup on your server.\n\n**Role Setup**\nBefore you begin the configuration, please make sure my role is moved to the top end of the server role hierarchy. It can be under admins and mods, but must be above team and general roles. [Here is an example](http://i.imgur.com/c5eaX1u.png)")
-    if firstconfig == False:
+    if not firstconfig and not configreplylist:
+        configmessage += _("\n\n**Welcome Back**\nThis isn't your first time configuring. You can either reconfigure everything by replying with **all** or reply with a comma separated list to configure those commands. Example: `want, raid, wild`")
+        configmessage += _("\n\n**Enabled Commands:**\n{enabled_commands}").format(enabled_commands=", ".join(enabled_commands))
         for commandconfig in config_dict_temp.keys():
             if config_dict_temp[commandconfig].get('enabled',False):
                 enabled_commands.append(commandconfig)
-        configmessage += _("\n\n**Welcome Back**\nThis isn't your first time configuring. You can either reconfigure everything by replying with **all** or reply with a comma separated list to configure those commands. Example: `want, raid, wild`")
-        configmessage += _("\n\n**Enabled Commands:**\n{enabled_commands}").format(enabled_commands=", ".join(enabled_commands))
         configmessage += _("\n\n**All Commands:**\n**all** - To redo configuration\n**team** - For Team Assignment configuration\n**welcome** - For Welcome Message configuration\n**raid** - for raid command configuration\n**exraid** - for EX raid command configuration\n**invite** - for invite command configuration\n**wild** - for wild command configuration\n**research** - for !research command configuration\n**want** - for want/unwant command configuration\n**archive** - For !archive configuration\n**timezone** - For timezone configuration\n**scanners** - For scanner bot integration configuration")
         configmessage += _('\n\nReply with **cancel** at any time throughout the questions to cancel the configure process.')
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=configmessage).set_author(name=_('Meowth Configuration - {0}').format(guild), icon_url=Meowth.user.avatar_url))
@@ -2032,11 +2052,12 @@ async def configure(ctx):
             def check(m):
                 return m.guild == None and m.author == owner
             configreply = await Meowth.wait_for('message', check=check)
+            configreply.content = configreply.content.replace("timezone", "settings")
             if configreply.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                 return
-            elif configreply.content.lower() == 'all':
+            elif "all" in configreply.content.lower():
                 configreplylist = all_commands
                 break
             else:
@@ -2044,9 +2065,6 @@ async def configure(ctx):
                 configreplylist = [x.strip() for x in configreplylist]
                 for configreplyitem in configreplylist:
                     if configreplyitem not in all_commands:
-                        if configreplyitem == "timezone":
-                            configreplylist.append("settings")
-                            continue
                         config_error = True
                         break
             if config_error:
@@ -2354,7 +2372,7 @@ async def configure(ctx):
                         guild_catlist = []
                         for cat in guild.categories:
                             guild_catlist.append(cat.id)
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("Pokemon Go currently has five levels of raids and EX. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5 \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `level 1-3, level 1-3, level 1-3, level 4, level 5, 1231231241561337813`")))
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("Pokemon Go currently has five levels of raids and EX. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5 \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `level 1-3, level 1-3, level 1-3, level 4, 1231231241561337813`")))
                         levelcats = await Meowth.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                         if levelcats.content.lower() == "cancel":
                             configcancel = True
@@ -2898,7 +2916,7 @@ async def configure(ctx):
                         if level.isdigit() and (int(level) <= 5):
                             config_dict_temp['scanners']['raidlvls'].append(int(level))
                     if len(config_dict_temp['scanners']['raidlvls']) > 0:
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Automatic Raid Channel Levels set to: {levels}').format(levels=','.join((str(x) for x in config_dict_temp['raidlvls'])))))
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Automatic Raid Channel Levels set to: {levels}').format(levels=','.join((str(x) for x in config_dict_temp['scanners']['raidlvls'])))))
                         break
                     else:
                         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic raids."))
@@ -2942,7 +2960,7 @@ async def configure(ctx):
                         if level.isdigit() and (int(level) <= 5):
                             config_dict_temp['scanners']['egglvls'].append(int(level))
                     if len(config_dict_temp['scanners']['egglvls']) > 0:
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Automatic Egg Channel Levels set to: {levels}').format(levels=','.join((str(x) for x in config_dict_temp['egglvls'])))))
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Automatic Egg Channel Levels set to: {levels}').format(levels=','.join((str(x) for x in config_dict_temp['scanners']['egglvls'])))))
                         break
                     else:
                         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic eggs."))
@@ -5446,8 +5464,9 @@ async def _get_generic_counters(guild, pkmn, weather=None):
     for moveset in ctrs_dict:
         moveset_list.append(f"{ctrs_dict[moveset]['emoji']}: {ctrs_dict[moveset]['moveset']}\n")
     for moveset in ctrs_dict:
-        ctrs_dict[moveset]['embed'].add_field(name="**Possible Movesets:**", value=f"{''.join(moveset_list[::2])}", inline=True)
-        ctrs_dict[moveset]['embed'].add_field(name="\u200b", value=f"{''.join(moveset_list[1::2])}",inline=True)
+        ctrs_split = int(round(len(moveset_list)/2))
+        ctrs_dict[moveset]['embed'].add_field(name="**Possible Movesets:**", value=f"{''.join(moveset_list[:ctrs_split])}", inline=True)
+        ctrs_dict[moveset]['embed'].add_field(name="\u200b", value=f"{''.join(moveset_list[ctrs_split:])}",inline=True)
         ctrs_dict[moveset]['embed'].add_field(name=_("Results with Level 30 attackers"), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pkmn.replace('-','_').upper()),inline=False)
 
     return ctrs_dict
