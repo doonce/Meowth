@@ -954,7 +954,8 @@ async def on_ready():
         #         "offset":guild_dict[guild.id].get('offset',0),
         #         "regional":guild_dict[guild.id].get('regional',None),
         #         "prefix":guild_dict[guild.id].get('prefix',None),
-        #         "done":guild_dict[guild.id].get('done',False)
+        #         "done":guild_dict[guild.id].get('done',False),
+        #         "config_sessions": {}
         #     }
         #     configure_dict['scanners'] = {
         #         'autoraid':guild_dict[guild.id].get('autoraid',False),
@@ -1044,7 +1045,7 @@ async def on_ready():
                         'archive': {'enabled':False, 'category':'same','list':None},
                         'invite': {'enabled':False},
                         'team':{'enabled':False},
-                        'settings':{'offset':0,'regional':None,'done':False,'prefix':None},
+                        'settings':{'offset':0,'regional':None,'done':False,'prefix':None,'config_sessions':{}},
                         'scanners':{'autoraid':False, 'raidlvls':[0],'autoegg':False,'egglvls':[0],'autowild':False,'alarmaction':False}
                     },
                     'wildreport_dict:':{},
@@ -1065,7 +1066,7 @@ async def on_ready():
                     'archive': {'enabled':False, 'category':'same','list':None},
                     'invite': {'enabled':False},
                     'team':{'enabled':False},
-                    'settings':{'offset':0,'regional':None,'done':False,'prefix':None},
+                    'settings':{'offset':0,'regional':None,'done':False,'prefix':None,'config_sessions':{}},
                     'scanners':{'autoraid':False, 'raidlvls':[0],'autoegg':False,'egglvls':[0],'autowild':False,'alarmaction':False}
                 },
                 'wildreport_dict:':{},
@@ -1092,7 +1093,7 @@ async def on_guild_join(guild):
             'archive': {'enabled':False, 'category':'same','list':None},
             'invite': {'enabled':False},
             'team':{'enabled':False},
-            'settings':{'offset':0,'regional':None,'done':False,'prefix':None},
+            'settings':{'offset':0,'regional':None,'done':False,'prefix':None,'config_sessions':{}},
             'scanners':{'autoraid':False, 'raidlvls':[0],'autoegg':False,'egglvls':[0],'autowild':False,'alarmaction':False}
         },
         'wildreport_dict:':{},
@@ -2023,6 +2024,13 @@ async def configure(ctx,*,configlist: str=""):
     all, team, welcome, raid, exraid, invite, counters, wild, research, want, archive, timezone, scanners"""
     guild = ctx.message.guild
     owner = ctx.message.author
+    try:
+        guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] += 1
+    except KeyError:
+        guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = 1
+    for session in guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].keys():
+        if not guild.get_member(session):
+            del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][session]
     config_dict_temp = copy.deepcopy(guild_dict[guild.id].get('configure_dict',{}))
     firstconfig = False
     configcancel = False
@@ -2042,6 +2050,8 @@ async def configure(ctx,*,configlist: str=""):
             configreplylist = configlist
         else:
             await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("I'm sorry, I couldn't understand some of what you entered. Let's just start here.")))
+    if config_dict_temp['settings']['config_sessions'][owner.id] > 1:
+        await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(config_dict_temp['settings']['config_sessions'].values()),yoursessions=config_dict_temp['settings']['config_sessions'][owner.id])))
     configmessage = _("Meowth! That's Right! Welcome to the configuration for Meowth the Pokemon Go Helper Bot! I will be guiding you through some steps to get me setup on your server.\n\n**Role Setup**\nBefore you begin the configuration, please make sure my role is moved to the top end of the server role hierarchy. It can be under admins and mods, but must be above team and general roles. [Here is an example](http://i.imgur.com/c5eaX1u.png)")
     if not firstconfig and not configreplylist:
         configmessage += _("\n\n**Welcome Back**\nThis isn't your first time configuring. You can either reconfigure everything by replying with **all** or reply with a comma separated list to configure those commands. Example: `want, raid, wild`")
@@ -2060,6 +2070,7 @@ async def configure(ctx,*,configlist: str=""):
             if configreply.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             elif "all" in configreply.content.lower():
                 configreplylist = all_commands
@@ -2109,6 +2120,7 @@ async def configure(ctx,*,configlist: str=""):
             elif teamreply.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
@@ -2148,6 +2160,7 @@ async def configure(ctx,*,configlist: str=""):
                     elif welcomemsgreply.content.lower() == "cancel":
                         configcancel = True
                         await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_("**CONFIG CANCELLED!**\n\nNo changes have been made.")))
+                        del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                         return
                     elif len(welcomemsgreply.content) > 500:
                         await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Please shorten your message to less than 500 characters. You entered {count}.").format(count=len(welcomemsgreply.content))))
@@ -2200,6 +2213,7 @@ async def configure(ctx,*,configlist: str=""):
                     elif welcomechannelreply.content.lower() == "cancel":
                         configcancel = True
                         await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                        del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                         return
                     else:
                         item = welcomechannelreply.content
@@ -2234,6 +2248,7 @@ async def configure(ctx,*,configlist: str=""):
             elif welcomereply.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable.")))
@@ -2251,6 +2266,7 @@ async def configure(ctx,*,configlist: str=""):
             elif citychannels.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 config_dict_temp['raid']['enabled'] = True
@@ -2292,6 +2308,7 @@ async def configure(ctx,*,configlist: str=""):
                 if cities.content.lower() == 'cancel':
                     configcancel = True
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                    del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                     return
                 city_list = cities.content.split(',')
                 city_list = [x.strip() for x in city_list]
@@ -2315,6 +2332,7 @@ async def configure(ctx,*,configlist: str=""):
                 if categories.content.lower() == 'cancel':
                     configcancel = True
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                    del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                     return
                 elif categories.content.lower() == 'none':
                     config_dict_temp['raid']['categories'] = None
@@ -2335,6 +2353,7 @@ async def configure(ctx,*,configlist: str=""):
                         if regioncats.content.lower() == "cancel":
                             configcancel = True
                             await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                            del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                             return
                         regioncat_list = regioncats.content.split(',')
                         regioncat_list = [x.strip() for x in regioncat_list]
@@ -2387,6 +2406,7 @@ async def configure(ctx,*,configlist: str=""):
                         if levelcats.content.lower() == "cancel":
                             configcancel = True
                             await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                            del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                             return
                         levelcat_list = levelcats.content.split(',')
                         levelcat_list = [x.strip() for x in levelcat_list]
@@ -2446,6 +2466,7 @@ async def configure(ctx,*,configlist: str=""):
             elif citychannels.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 config_dict_temp['exraid']['enabled'] = True
@@ -2487,6 +2508,7 @@ async def configure(ctx,*,configlist: str=""):
                 if cities.content.lower() == 'cancel':
                     configcancel = True
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                    del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                     return
                 city_list = cities.content.split(',')
                 city_list = [x.strip() for x in city_list]
@@ -2510,6 +2532,7 @@ async def configure(ctx,*,configlist: str=""):
                 if categories.content.lower() == 'cancel':
                     configcancel = True
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                    del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                     return
                 elif categories.content.lower() == 'none':
                     config_dict_temp['exraid']['categories'] = None
@@ -2530,6 +2553,7 @@ async def configure(ctx,*,configlist: str=""):
                         if regioncats.content.lower() == "cancel":
                             configcancel = True
                             await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                            del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                             return
                         regioncat_list = regioncats.content.split(',')
                         regioncat_list = [x.strip() for x in regioncat_list]
@@ -2590,6 +2614,7 @@ async def configure(ctx,*,configlist: str=""):
                 elif permsconfigset.content.lower() == 'cancel':
                     configcancel = True
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
+                    del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                     return
                 else:
                     await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
@@ -2610,6 +2635,7 @@ async def configure(ctx,*,configlist: str=""):
             elif inviteconfigset.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
@@ -2627,9 +2653,11 @@ async def configure(ctx,*,configlist: str=""):
             elif countersconfigset.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 raidlevel_list = countersconfigset.content.lower().split(',')
+                raidlevel_list = [x.strip() for x in raidlevel_list]
                 counterlevels = []
                 for level in raidlevel_list:
                     if level.isdigit() and (int(level) <= 5):
@@ -2657,6 +2685,7 @@ async def configure(ctx,*,configlist: str=""):
             elif citychannels.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 config_dict_temp['wild']['enabled'] = True
@@ -2698,6 +2727,7 @@ async def configure(ctx,*,configlist: str=""):
                 if cities.content.lower() == 'cancel':
                     configcancel = True
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                    del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                     return
                 city_list = cities.content.split(',')
                 city_list = [x.strip() for x in city_list]
@@ -2723,6 +2753,7 @@ async def configure(ctx,*,configlist: str=""):
             elif citychannels.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 config_dict_temp['research']['enabled'] = True
@@ -2764,6 +2795,7 @@ async def configure(ctx,*,configlist: str=""):
                 if cities.content.lower() == 'cancel':
                     configcancel = True
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                    del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                     return
                 city_list = cities.content.split(',')
                 city_list = [x.strip() for x in city_list]
@@ -2788,6 +2820,7 @@ async def configure(ctx,*,configlist: str=""):
             elif wantchs.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 want_list = wantchs.content.lower().split(',')
@@ -2831,6 +2864,7 @@ async def configure(ctx,*,configlist: str=""):
             if archivemsg.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             if archivemsg.content.lower() == 'same':
                 config_dict_temp['archive']['category'] = 'same'
@@ -2867,6 +2901,7 @@ async def configure(ctx,*,configlist: str=""):
             elif phrasemsg.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 phrase_list = phrasemsg.content.lower().split(",")
@@ -2882,6 +2917,7 @@ async def configure(ctx,*,configlist: str=""):
             if offsetmsg.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 try:
@@ -2912,6 +2948,7 @@ async def configure(ctx,*,configlist: str=""):
             elif wildconfigset.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
@@ -2925,6 +2962,7 @@ async def configure(ctx,*,configlist: str=""):
                 if raidlevels.content.lower() == 'cancel':
                     configcancel = True
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
+                    del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                     return
                 elif raidlevels.content.lower() == 'n':
                     config_dict_temp['scanners']['autoraid'] = False
@@ -2956,6 +2994,7 @@ async def configure(ctx,*,configlist: str=""):
             elif wildconfigset.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
@@ -2969,6 +3008,7 @@ async def configure(ctx,*,configlist: str=""):
                 if egglevels.content.lower() == 'cancel':
                     configcancel = True
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
+                    del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                     return
                 elif egglevels.content.lower() == 'n':
                     config_dict_temp['scanners']['autoegg'] = False
@@ -3000,6 +3040,7 @@ async def configure(ctx,*,configlist: str=""):
             elif wildconfigset.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
@@ -3024,12 +3065,14 @@ async def configure(ctx,*,configlist: str=""):
             elif alarmconfigset.content.lower() == 'cancel':
                 configcancel = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
+                del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                 return
             else:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply **N** to disable, **auto** to have all raids make a channel, or **react** to only make channels on user reaction."))
                 continue
-    config_dict_temp['settings']['done'] = True
     if configcancel == False:
+        config_dict_temp['settings']['done'] = True
+        del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         guild_dict[guild.id]['configure_dict'] = config_dict_temp
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")))
 
@@ -4474,11 +4517,12 @@ async def _invite(ctx):
         if (not discord.utils.get(guild.text_channels, id=channelid)):
             continue
         if (rc_dict[channelid]['egglevel'] == 'EX') or (rc_dict[channelid]['type'] == 'exraid'):
-            exraid_channel = bot.get_channel(channelid)
-            if exraid_channel.mention != '#deleted-channel':
-                exraidcount += 1
-                exraidlist += (('\n**' + str(exraidcount)) + '.**   ') + exraid_channel.mention
-                exraid_dict[str(exraidcount)] = exraid_channel
+            if guild_dict[guild.id]['configure_dict']['exraid']['permissions'] == "everyone" or (guild_dict[guild.id]['configure_dict']['exraid']['permissions'] == "same" and rc_dict[channelid]['reportcity'] == channel.id):
+                exraid_channel = bot.get_channel(channelid)
+                if exraid_channel.mention != '#deleted-channel':
+                    exraidcount += 1
+                    exraidlist += (('\n**' + str(exraidcount)) + '.**   ') + exraid_channel.mention
+                    exraid_dict[str(exraidcount)] = exraid_channel
     if exraidcount == 0:
         await channel.send(_('Meowth! No EX Raids have been reported in this server! Use **!exraid** to report one!'))
         return
