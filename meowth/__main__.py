@@ -552,8 +552,6 @@ async def expire_channel(channel):
             guild_dict[guild.id]['raidchannel_dict'][channel.id]['active'] = False
         logger.info('Expire_Channel - Channel Expired - ' + channel.name)
         dupecount = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('duplicate',0)
-        archive = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive',False)
-        logs = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('logs', {})
         if dupecount >= 3:
             if guild_dict[guild.id]['raidchannel_dict'][channel.id]['gymhuntrgps'] is not False:
                 gymhuntrexp = guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp']
@@ -614,6 +612,8 @@ async def expire_channel(channel):
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                         pass
                     # channel doesn't exist anymore in serverdict
+                archive = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive',False)
+                logs = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('logs', {})
                 channel_exists = Meowth.get_channel(channel.id)
                 if channel_exists == None:
                     return
@@ -1503,12 +1503,12 @@ async def on_pokealarm(message, reactuser=None):
 async def on_raw_reaction_add(payload):
     channel = Meowth.get_channel(payload.channel_id)
     try:
-        message = await channel.get_message(payload.channel_id)
+        message = await channel.get_message(payload.message_id)
     except (discord.errors.NotFound, AttributeError):
         return
     guild = message.guild
     try:
-        user = guild.get_member(payload.channel_id)
+        user = guild.get_member(payload.user_id)
     except AttributeError:
         return
     guild = message.guild
@@ -2025,6 +2025,10 @@ async def configure(ctx,*,configlist: str=""):
     guild = ctx.message.guild
     owner = ctx.message.author
     try:
+        await ctx.message.delete()
+    except (discord.errors.Forbidden, discord.errors.HTTPException):
+        pass
+    try:
         guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] += 1
     except KeyError:
         guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = 1
@@ -2088,6 +2092,7 @@ async def configure(ctx,*,configlist: str=""):
             else:
                 break
     elif firstconfig == True:
+        configmessage += _('\n\nReply with **cancel** at any time throughout the questions to cancel the configure process.')
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=configmessage).set_author(name=_('Meowth Configuration - {guild}').format(guild=guild.name), icon_url=Meowth.user.avatar_url))
         configreplylist = all_commands
     #configure team
@@ -3072,9 +3077,9 @@ async def configure(ctx,*,configlist: str=""):
                 continue
     if configcancel == False:
         config_dict_temp['settings']['done'] = True
-        del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         guild_dict[guild.id]['configure_dict'] = config_dict_temp
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")))
+        del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name='Configuration Complete', icon_url=Meowth.user.avatar_url))
 
 @Meowth.command()
 @checks.is_owner()
@@ -4576,7 +4581,7 @@ async def research(ctx, *, args = None):
         return
     while True:
         if args:
-            research_split = message.clean_content.replace("!research\n ","").split(", ")
+            research_split = message.clean_content.replace("!research ","").split(", ")
             if len(research_split) != 3:
                 error = _("entered an incorrect amount of arguments.\n\nUsage: **!research** or **!research <pokestop>, <quest>, <reward>**")
                 break
@@ -6321,7 +6326,7 @@ async def list(ctx):
         guild = ctx.guild
         channel = ctx.channel
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[guild.id]['configure_dict']['settings']['offset'])
-        if checks.check_citychannel(ctx):
+        if checks.check_raidreport(ctx) or checks.check_exraidreport(ctx):
             activeraidnum = 0
             cty = channel.name
             rc_d = guild_dict[guild.id]['raidchannel_dict']
@@ -6424,41 +6429,40 @@ async def list(ctx):
             else:
                 await channel.send(listmsg)
                 return
-        if checks.check_raidchannel(ctx):
-            if checks.check_raidactive(ctx):
-                team_list = ["mystic","valor","instinct","unknown"]
-                tag = False
-                team = False
-                starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
-                rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
-                list_split = ctx.message.clean_content.lower().split()
-                if "tags" in list_split or "tag" in list_split:
-                    tag = True
-                for word in list_split:
-                    if word in team_list:
-                        team = word.lower()
-                        break
-                if team == "mystic" or team == "valor" or team == "instinct":
-                    bulletpoint = parse_emoji(ctx.guild, config['team_dict'][team])
-                elif team == "unknown":
-                    bulletpoint = '❔'
-                else:
-                    bulletpoint = '🔹'
-                if " 0 interested!" not in await _interest(ctx, tag, team):
-                    listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag, team))
-                if " 0 on the way!" not in await _otw(ctx, tag, team):
-                    listmsg += ('\n' + bulletpoint) + (await _otw(ctx, tag, team))
-                if " 0 waiting at the raid!" not in await _waiting(ctx, tag, team):
-                    listmsg += ('\n' + bulletpoint) + (await _waiting(ctx, tag, team))
-                if " 0 in the lobby!" not in await _lobbylist(ctx, tag, team):
-                    listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx, tag, team))
-                if (len(listmsg.splitlines()) <= 1):
-                    listmsg +=  ('\n' + bulletpoint) + (_(" Nobody has updated their status yet!"))
-                listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
-                if starttime and (starttime > now):
-                    listmsg += _('\nThe next group will be starting at **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
-                await channel.send(listmsg)
-                return
+        elif checks.check_raidactive(ctx):
+            team_list = ["mystic","valor","instinct","unknown"]
+            tag = False
+            team = False
+            starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
+            rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
+            list_split = ctx.message.clean_content.lower().split()
+            if "tags" in list_split or "tag" in list_split:
+                tag = True
+            for word in list_split:
+                if word in team_list:
+                    team = word.lower()
+                    break
+            if team == "mystic" or team == "valor" or team == "instinct":
+                bulletpoint = parse_emoji(ctx.guild, config['team_dict'][team])
+            elif team == "unknown":
+                bulletpoint = '❔'
+            else:
+                bulletpoint = '🔹'
+            if " 0 interested!" not in await _interest(ctx, tag, team):
+                listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag, team))
+            if " 0 on the way!" not in await _otw(ctx, tag, team):
+                listmsg += ('\n' + bulletpoint) + (await _otw(ctx, tag, team))
+            if " 0 waiting at the raid!" not in await _waiting(ctx, tag, team):
+                listmsg += ('\n' + bulletpoint) + (await _waiting(ctx, tag, team))
+            if " 0 in the lobby!" not in await _lobbylist(ctx, tag, team):
+                listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx, tag, team))
+            if (len(listmsg.splitlines()) <= 1):
+                listmsg +=  ('\n' + bulletpoint) + (_(" Nobody has updated their status yet!"))
+            listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
+            if starttime and (starttime > now):
+                listmsg += _('\nThe next group will be starting at **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
+            await channel.send(listmsg)
+            return
         else:
             raise checks.errors.CityRaidChannelCheckFail()
 
