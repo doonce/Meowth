@@ -144,11 +144,17 @@ def get_type(guild, pkmn_number):
 
 def get_name(pkmn_number):
     pkmn_number = int(pkmn_number) - 1
-    name = pkmn_info['pokemon_list'][pkmn_number].capitalize()
+    try:
+        name = pkmn_info['pokemon_list'][pkmn_number]
+    except IndexError:
+        name = None
     return name
 
 def get_number(pkm_name):
-    number = pkmn_info['pokemon_list'].index(pkm_name) + 1
+    try:
+        number = pkmn_info['pokemon_list'].index(pkm_name) + 1
+    except ValueError:
+        number = None
     return number
 
 def get_level(pkmn):
@@ -565,6 +571,10 @@ async def expire_channel(channel):
             delete_time = (guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] + (1 * 60)) - time.time()
         elif guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg':
             if (not alreadyexpired):
+                pkmn = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('pokemon', None)
+                if pkmn:
+                    await _eggtoraid(pkmn, channel)
+                    return
                 maybe_list = []
                 trainer_dict = copy.deepcopy(
                     guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'])
@@ -1680,27 +1690,45 @@ async def _set(ctx):
 
 @_set.command()
 @commands.has_permissions(manage_guild=True)
-async def regional(ctx, regional=None):
+async def regional(ctx, regional):
     """Changes server regional pokemon."""
-    if regional.lower() == 'reset' and checks.is_owner_check(ctx):
-        guild_dict_copy = copy.deepcopy(guild_dict)
-        for guildid in guild_dict_copy.keys():
-            guild_dict[guildid]['configure_dict']['settings']['regional'] = None
-        return
-    elif regional.lower() == 'clear':
-        regional = None
-        await ctx.message.channel.send(_("Meowth! Regional raid boss cleared!"))
-    elif regional and regional.isdigit() and int(regional) in get_raidlist():
+
+    if regional.isdigit():
         regional = int(regional)
+    else:
+        regional = regional.lower()
+        if regional == "reset":
+            msg = _("Are you sure you want to clear all regionals?")
+            question = await ctx.channel.send(msg)
+            try:
+                timeout = False
+                res, reactuser = await ask(question, ctx.message.channel, ctx.message.author.id)
+            except TypeError:
+                timeout = True
+            await question.delete()
+            if timeout or res.emoji == '❎':
+                return
+            elif res.emoji == '✅':
+                pass
+            else:
+                return
+            guild_dict_copy = copy.deepcopy(guild_dict)
+            for guildid in guild_dict_copy.keys():
+                guild_dict[guildid]['configure_dict']['settings']['regional'] = None
+            return
+        elif regional == 'clear':
+            regional = None
+            _set_regional(Meowth, ctx.guild, regional)
+            await ctx.message.channel.send(_("Meowth! Regional raid boss cleared!"))
+            return
+        else:
+            regional = get_number(regional)
+    if regional in get_raidlist():
+        _set_regional(Meowth, ctx.guild, regional)
         await ctx.message.channel.send(_("Meowth! Regional raid boss set to **{boss}**!").format(boss=get_name(regional).title()))
-    elif regional and not regional.isdigit() and regional.lower() in get_raidlist():
-        await ctx.message.channel.send(_("Meowth! Regional raid boss set to **{boss}**!").format(boss=regional.title()))
-        regional = get_number(regional)
     else:
         await ctx.message.channel.send(_("Meowth! That Pokemon doesn't appear in raids!"))
         return
-    _set_regional(Meowth, ctx.guild, regional)
-
 
 def _set_regional(bot, guild, regional):
     bot.guild_dict[guild.id]['configure_dict']['settings']['regional'] = regional
@@ -3256,14 +3284,14 @@ async def raid_json(ctx, level=None, *, newlist=None):
         for level in raid_info['raid_eggs']:
             msg += _('\n**Level {level} raid list:** `{raidlist}` \n').format(level=level, raidlist=raid_info['raid_eggs'][level]['pokemon'])
             for pkmn in raid_info['raid_eggs'][level]['pokemon']:
-                msg += '{name} ({number})'.format(name=get_name(pkmn), number=pkmn)
+                msg += '{name} ({number})'.format(name=get_name(pkmn).title(), number=pkmn)
                 msg += ' '
             msg += '\n'
         return await ctx.channel.send(msg)
     elif level.isdigit() and (not newlist):
         msg += _('**Level {level} raid list:** `{raidlist}` \n').format(level=level, raidlist=raid_info['raid_eggs'][level]['pokemon'])
         for pkmn in raid_info['raid_eggs'][level]['pokemon']:
-            msg += '{name} ({number})'.format(name=get_name(pkmn), number=pkmn)
+            msg += '{name} ({number})'.format(name=get_name(pkmn).title(), number=pkmn)
             msg += ' '
         msg += '\n'
         return await ctx.channel.send(msg)
@@ -3273,12 +3301,12 @@ async def raid_json(ctx, level=None, *, newlist=None):
         msg += _('I will replace this:\n')
         msg += _('**Level {level} raid list:** `{raidlist}` \n').format(level=level, raidlist=raid_info['raid_eggs'][level]['pokemon'])
         for pkmn in raid_info['raid_eggs'][level]['pokemon']:
-            msg += '{name} ({number})'.format(name=get_name(pkmn), number=pkmn)
+            msg += '{name} ({number})'.format(name=get_name(pkmn).title(), number=pkmn)
             msg += ' '
         msg += _('\n\nWith this:\n')
         msg += _('**Level {level} raid list:** `{raidlist}` \n').format(level=level, raidlist=('[' + ', '.join(newlist)) + ']')
         for pkmn in newlist:
-            msg += '{name} ({number})'.format(name=get_name(pkmn), number=pkmn)
+            msg += '{name} ({number})'.format(name=get_name(pkmn).title(), number=pkmn)
             msg += ' '
         msg += _('\n\nContinue?')
         question = await ctx.channel.send(msg)
@@ -3323,7 +3351,7 @@ async def changeraid(ctx, newraid):
         egg_img = raid_info['raid_eggs'][newraid]['egg_img']
         boss_list = []
         for p in raid_info['raid_eggs'][newraid]['pokemon']:
-            p_name = get_name(p)
+            p_name = get_name(p).title()
             p_type = get_type(message.guild, p)
             boss_list.append((((p_name + ' (') + str(p)) + ') ') + ''.join(p_type))
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
@@ -4243,7 +4271,7 @@ async def _raidegg(message, content, huntr=False):
         egg_img = egg_info['egg_img']
         boss_list = []
         for p in egg_info['pokemon']:
-            p_name = get_name(p)
+            p_name = get_name(p).title()
             p_type = get_type(message.guild, p)
             boss_list.append((((p_name + ' (') + str(p)) + ') ') + ''.join(p_type))
         raid_channel_name = _('level-{egg_level}-egg-').format(egg_level=egg_level)
@@ -4588,7 +4616,7 @@ async def _exraid(ctx, location):
     egg_img = egg_info['egg_img']
     boss_list = []
     for p in egg_info['pokemon']:
-        p_name = get_name(p)
+        p_name = get_name(p).title()
         p_type = get_type(message.guild, p)
         boss_list.append((((p_name + ' (') + str(p)) + ') ') + ''.join(p_type))
     raid_channel_name = _('ex-raid-egg-')
@@ -5791,7 +5819,7 @@ async def interested(ctx, *, teamcounts: str=None):
     rgx = '[^a-zA-Z0-9]'
     if teamcounts:
         if "all" in teamcounts.lower():
-            teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([get_name(s) for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
+            teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([get_name(s).title() for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
             teamcounts = teamcounts.lower().replace("all","").strip()
         pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
@@ -5842,7 +5870,8 @@ async def _maybe(channel, author, count, party, entered_interest=None):
     if count == 1:
         await channel.send(_('Meowth! {member} is interested!').format(member=author.mention))
     else:
-        await channel.send(_('Meowth! {member} is interested with a total of {trainer_count} trainers! {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | ❔: {unknown}').format(member=author.mention, trainer_count=count, blue_emoji=parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=parse_emoji(channel.guild, config['team_dict']['instinct']), unknown=party['unknown']))
+        msg = _('Meowth! {member} is interested with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count)
+        await channel.send('{msg} {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | ❔: {unknown}'.format(msg=msg, blue_emoji=parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=parse_emoji(channel.guild, config['team_dict']['instinct']), unknown=party['unknown']))
     if author.id not in guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict']:
         trainer_dict[author.id] = {
 
@@ -5875,7 +5904,7 @@ async def coming(ctx, *, teamcounts: str=None):
     pkmn_match = None
     if teamcounts:
         if "all" in teamcounts.lower():
-            teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([get_name(s) for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
+            teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([get_name(s).title() for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
             teamcounts = teamcounts.lower().replace("all","").strip()
         pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
@@ -5945,7 +5974,8 @@ async def _coming(channel, author, count, party, entered_interest=None):
     if count == 1:
         await channel.send(_('Meowth! {member} is on the way!').format(member=author.mention))
     else:
-        await channel.send(_('Meowth! {member} is on the way with a total of {trainer_count} trainers! {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | ❔: {unknown}').format(member=author.mention, trainer_count=count, blue_emoji=parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=parse_emoji(channel.guild, config['team_dict']['instinct']), unknown=party['unknown']))
+        msg = _('Meowth! {member} is on the way with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count)
+        await channel.send('{msg} {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | ❔: {unknown}'.format(msg=msg, blue_emoji=parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=parse_emoji(channel.guild, config['team_dict']['instinct']), unknown=party['unknown']))
     if author.id not in trainer_dict:
         trainer_dict[author.id] = {
 
@@ -5978,7 +6008,7 @@ async def here(ctx, *, teamcounts: str=None):
     pkmn_match = None
     if teamcounts:
         if "all" in teamcounts.lower():
-            teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([get_name(s) for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
+            teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([get_name(s).title() for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
             teamcounts = teamcounts.lower().replace("all","").strip()
         pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
@@ -6054,7 +6084,8 @@ async def _here(channel, author, count, party, entered_interest=None):
         msg = _('Meowth! {member} is at the raid!').format(member=author.mention)
         await channel.send(msg + lobbymsg)
     else:
-        msg = _('Meowth! {member} is at the raid with a total of {trainer_count} trainers! {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | ❔: {unknown}').format(member=author.mention, trainer_count=count, blue_emoji=parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=parse_emoji(channel.guild, config['team_dict']['instinct']), unknown=party['unknown'])
+        msg = _('Meowth! {member} is at the raid with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count)
+        msg += ' {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | ❔: {unknown}'.format(blue_emoji=parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=parse_emoji(channel.guild, config['team_dict']['instinct']), unknown=party['unknown'])
         await channel.send(msg + lobbymsg)
     if author.id not in trainer_dict:
         trainer_dict[author.id] = {
@@ -6157,7 +6188,7 @@ async def _edit_party(channel, author=None):
         boss_list = []
         display_list = []
         for p in raid_info['raid_eggs'][egglevel]['pokemon']:
-            p_name = get_name(p)
+            p_name = get_name(p).title()
             boss_list.append(p_name.lower())
             p_type = get_type(channel.guild,p)
             boss_dict[p_name.lower()] = {"type": "{}".format(''.join(p_type)), "total": 0}
@@ -6865,7 +6896,7 @@ async def _bosslist(ctx):
     boss_list = []
     boss_dict["unspecified"] = {"type": "❔", "total": 0, "maybe": 0, "coming": 0, "here": 0}
     for p in egg_info['pokemon']:
-        p_name = get_name(p)
+        p_name = get_name(p).title()
         boss_list.append(p_name.lower())
         p_type = get_type(message.guild,p)
         boss_dict[p_name.lower()] = {"type": "{}".format(''.join(p_type)), "total": 0, "maybe": 0, "coming": 0, "here": 0}
@@ -6969,13 +7000,13 @@ async def _researchlist(ctx):
                 questreportmsg = await ctx.message.channel.get_message(questid)
                 questauthor = ctx.channel.guild.get_member(research_dict[questid]['reportauthor'])
                 if len(questmsg) < 1500:
-                    questmsg += _('\n🔹')
+                    questmsg += ('\n🔹')
                     questmsg += _("**Reward**: {reward}, **Pokestop**: {location}, **Quest**: {quest}, **Reported By**: {author}\n**Location**: <{url}>".format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
                 else:
                     listmsg = _('Meowth! **Here\'s the current research reports for {channel}**\n{questmsg}').format(channel=ctx.message.channel.name.capitalize(),questmsg=questmsg)
                     await ctx.channel.send(listmsg)
                     questmsg = ""
-                    questmsg += _('\n🔹')
+                    questmsg += ('\n🔹')
                     questmsg += _("**Reward**: {reward}, **Pokestop**: {location}, **Quest**: {quest}, **Reported By**: {author}\n**Location**: <{url}>".format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
             except discord.errors.NotFound:
                 continue
