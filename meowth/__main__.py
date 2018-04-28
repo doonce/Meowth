@@ -320,13 +320,13 @@ async def autocorrect(entered_word, destination, author):
                 timeout = True
             await question.delete()
             if timeout or res.emoji == '❎':
-                return
+                return None
             elif res.emoji == '✅':
                 return spellcheck(entered_word)
             else:
-                return
+                return None
         else:
-            return
+            return None
     else:
         question = await destination.send(msg)
         return
@@ -3675,7 +3675,7 @@ def _get_silph(ctx,data):
     embed.add_field(name="__Game Stats__", value=f"**Name:** {ign}\n**Team:** {team}\n**Level:** {trainer_level}\n**Pokedex:** {pokedex_count}\n**Raids:** {raid_average}/week", inline=True)
     return embed
 
-@Meowth.command()
+@Meowth.command(hidden=True)
 async def profile(ctx, user: discord.Member = None):
     if not user:
         user = ctx.message.author
@@ -3691,6 +3691,28 @@ async def profile(ctx, user: discord.Member = None):
     embed.add_field(name="EX Raid Reports", value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('ex_reports',0)}", inline=True)
     embed.add_field(name="Wild Reports", value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('wild_reports',0)}", inline=True)
     embed.add_field(name="Research Reports", value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('research_reports',0)}", inline=True)
+    await ctx.send(embed=embed)
+
+@Meowth.command(hidden=True)
+async def leaderboard(ctx):
+    trainers = copy.deepcopy(guild_dict[ctx.guild.id]['trainers'])
+    leaderboard = []
+    rank = 1
+    for trainer in trainers.keys():
+        raids = trainers[trainer].setdefault('raid_reports', 0)
+        wilds = trainers[trainer].setdefault('wild_reports', 0)
+        exraids = trainers[trainer].setdefault('ex_reports', 0)
+        eggs = trainers[trainer].setdefault('egg_reports', 0)
+        research = trainers[trainer].setdefault('research_reports', 0)
+        total_reports = raids + wilds + exraids + eggs + research
+        leaderboard.append({'trainer':trainer, 'total':total_reports, 'raids':raids, 'wilds':wilds, 'research':research, 'exraids':exraids, 'eggs':eggs})
+    leaderboard = sorted(leaderboard,key= lambda x: x['total'], reverse=True)[:10]
+    embed = discord.Embed(colour=ctx.guild.me.colour)
+    embed.set_author(name=_("Reporting Leaderboard"), icon_url=Meowth.user.avatar_url)
+    for trainer in leaderboard:
+        user = ctx.guild.get_member(trainer['trainer'])
+        embed.add_field(name=f"{rank}. {user.display_name} - Total: **{trainer['total']}**", value=f"Raids: **{trainer['raids']}** | Eggs: **{trainer['eggs']}** | EX Raids: **{trainer['exraids']}** | Wilds: **{trainer['wilds']}** | Research: **{trainer['research']}**", inline=False)
+        rank += 1
     await ctx.send(embed=embed)
 
 @Meowth.command(hidden=True)
@@ -3852,6 +3874,8 @@ async def unwant(ctx,*,pokemon):
                 entered_unwant = pkmn_match
             else:
                 entered_unwant = await autocorrect(entered_unwant, message.channel, message.author)
+            if not entered_unwant:
+                return
             # If user is not already wanting the Pokemon,
             # print a less noisy message
             role = discord.utils.get(guild.roles, name=entered_unwant)
@@ -3945,6 +3969,8 @@ async def _wild(message, content, huntr=False):
         entered_wild = pkmn_match
     else:
         entered_wild = await autocorrect(entered_wild, message.channel, message.author)
+    if not entered_wild:
+        return
     wild = discord.utils.get(message.guild.roles, name=entered_wild)
     if wild is None:
         roletest = ""
@@ -4084,6 +4110,8 @@ async def _raid(message, content, huntr=False):
         entered_raid = pkmn_match
     else:
         entered_raid = await autocorrect(entered_raid, message.channel, message.author)
+    if not entered_raid:
+        return
     raid_match = True if entered_raid in get_raidlist() else False
     if (not raid_match):
         await message.channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()))
@@ -4350,6 +4378,8 @@ async def _eggassume(args, raid_channel, author=None):
         entered_raid = pkmn_match
     else:
         entered_raid = await autocorrect(entered_raid, raid_channel, author)
+    if not entered_raid:
+        return
     raid_match = True if entered_raid in get_raidlist() else False
     if (not raid_match):
         await raid_channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()))
@@ -4417,6 +4447,8 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         entered_raid = pkmn_match
     else:
         entered_raid = await autocorrect(entered_raid, raid_channel, author)
+    if not entered_raid:
+        return
     eggdetails = guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]
     egglevel = eggdetails['egglevel']
     if egglevel == "0":
@@ -6644,7 +6676,7 @@ async def list(ctx):
                         listmsg = _('**EX Raids::** (continued)\n')
                         listmsg += list_output(r)
             if activeraidnum == 0:
-                await channel.send(_('Meowth! No active raids! Report one with **!raid <name> <location>**.'))
+                await channel.send(_('Meowth! No active raids! Report one with **!raid <name> <location> [weather] [timer]**.'))
                 return
             else:
                 await channel.send(listmsg)
