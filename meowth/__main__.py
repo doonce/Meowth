@@ -638,28 +638,38 @@ async def expire_channel(channel):
                         'Expire_Channel - Channel Deleted - ' + channel.name)
                 elif gymhuntrdupe == True and archive == False:
                     for overwrite in channel.overwrites:
-                        await channel.set_permissions(channel.guild.default_role, overwrite=discord.PermissionOverwrite(read_messages=False))
+                        try:
+                            await channel.set_permissions(channel.guild.default_role, overwrite=discord.PermissionOverwrite(read_messages=False))
+                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                            pass
                         if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
-                            await channel.set_permissions(overwrite[0], read_messages=False)
+                            try:
+                                await channel.set_permissions(overwrite[0], read_messages=False)
+                            except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                                pass
                     await channel.send(_('-----------------------------------------------\n**The channel has been removed from view for everybody but Meowth and server owner to protect from future GymHuntr duplicates. It will be removed on its own, please do not remove it. Just ignore what happens in this channel.**\n-----------------------------------------------'))
                     deltime = ((gymhuntrexp - time.time()) / 60) + 10
                     await _timerset(channel, deltime)
                 elif archive or logs:
-                    for overwrite in channel.overwrites:
-                        if isinstance(overwrite[0], discord.Role):
-                            if overwrite[0].permissions.manage_guild or overwrite[0].permissions.manage_channels:
-                                await channel.set_permissions(overwrite[0], read_messages=True)
-                                continue
-                        elif isinstance(overwrite[0], discord.Member):
-                            if channel.permissions_for(overwrite[0]).manage_guild or channel.permissions_for(overwrite[0]).manage_channels:
-                                await channel.set_permissions(overwrite[0], read_messages=True)
-                                continue
-                        if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
-                            await channel.set_permissions(overwrite[0], read_messages=False)
-                    for role in guild.role_hierarchy:
-                        if role.permissions.manage_guild or role.permissions.manage_channels:
-                            await channel.set_permissions(role, read_messages=True)
-                    await channel.set_permissions(guild.default_role, read_messages=False)
+                    try:
+                        for overwrite in channel.overwrites:
+                            if isinstance(overwrite[0], discord.Role):
+                                if overwrite[0].permissions.manage_guild or overwrite[0].permissions.manage_channels:
+                                    await channel.set_permissions(overwrite[0], read_messages=True)
+                                    continue
+                            elif isinstance(overwrite[0], discord.Member):
+                                if channel.permissions_for(overwrite[0]).manage_guild or channel.permissions_for(overwrite[0]).manage_channels:
+                                    await channel.set_permissions(overwrite[0], read_messages=True)
+                                    continue
+                            if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
+                                await channel.set_permissions(overwrite[0], read_messages=False)
+                        for role in guild.role_hierarchy:
+                            if role.permissions.manage_guild or role.permissions.manage_channels:
+                                await channel.set_permissions(role, read_messages=True)
+                            continue
+                        await channel.set_permissions(guild.default_role, read_messages=False)
+                    except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                        pass
                     new_name = _('archived-')
                     if new_name not in channel.name:
                         new_name += channel.name
@@ -2344,6 +2354,7 @@ async def _configure_welcome(ctx):
                         ow = channel.overwrites_for(Meowth.user)
                         ow.send_messages = True
                         ow.read_messages = True
+                        ow.manage_roles = True
                         try:
                             await channel.set_permissions(Meowth.user, overwrite = ow)
                         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
@@ -2420,6 +2431,7 @@ async def _configure_raid(ctx):
                     ow = channel.overwrites_for(Meowth.user)
                     ow.send_messages = True
                     ow.read_messages = True
+                    ow.manage_roles = True
                     try:
                         await channel.set_permissions(Meowth.user, overwrite = ow)
                     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
@@ -2626,6 +2638,7 @@ async def _configure_exraid(ctx):
                     ow = channel.overwrites_for(Meowth.user)
                     ow.send_messages = True
                     ow.read_messages = True
+                    ow.manage_roles = True
                     try:
                         await channel.set_permissions(Meowth.user, overwrite = ow)
                     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
@@ -2868,6 +2881,7 @@ async def _configure_wild(ctx):
                     ow = channel.overwrites_for(Meowth.user)
                     ow.send_messages = True
                     ow.read_messages = True
+                    ow.manage_roles = True
                     try:
                         await channel.set_permissions(Meowth.user, overwrite = ow)
                     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
@@ -2950,6 +2964,7 @@ async def _configure_research(ctx):
                     ow = channel.overwrites_for(Meowth.user)
                     ow.send_messages = True
                     ow.read_messages = True
+                    ow.manage_roles = True
                     try:
                         await channel.set_permissions(Meowth.user, overwrite = ow)
                     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
@@ -3031,6 +3046,7 @@ async def _configure_want(ctx):
                     ow = channel.overwrites_for(Meowth.user)
                     ow.send_messages = True
                     ow.read_messages = True
+                    ow.manage_roles = True
                     try:
                         await channel.set_permissions(Meowth.user, overwrite = ow)
                     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
@@ -3699,6 +3715,7 @@ async def leaderboard(ctx, type="total"):
     leaderboard = []
     rank = 1
     typelist = ["total", "raids", "exraids", "wilds", "research", "eggs"]
+    type = type.lower()
     if type not in typelist:
         await ctx.send(_("Leaderboard type not supported. Please select from: **total, raids, eggs, exraids, wilds, research**"))
         return
@@ -3718,7 +3735,7 @@ async def leaderboard(ctx, type="total"):
         embed.add_field(name=f"{rank}. {user.display_name} - {type.title()}: **{trainer[type]}**", value=f"Raids: **{trainer['raids']}** | Eggs: **{trainer['eggs']}** | EX Raids: **{trainer['exraids']}** | Wilds: **{trainer['wilds']}** | Research: **{trainer['research']}**", inline=False)
         rank += 1
     await ctx.send(embed=embed)
-    
+
 @Meowth.command(hidden=True)
 @checks.activeraidchannel()
 async def interest(ctx):
@@ -4151,7 +4168,10 @@ async def _raid(message, content, huntr=False):
     raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
     ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
     ow.send_messages = True
-    await raid_channel.set_permissions(raid_channel.guild.default_role, overwrite = ow)
+    try:
+        await raid_channel.set_permissions(raid_channel.guild.default_role, overwrite = ow)
+    except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+        pass
     raid = discord.utils.get(message.guild.roles, name=entered_raid)
     if raid == None:
         roletest = ""
@@ -4314,7 +4334,10 @@ async def _raidegg(message, content, huntr=False):
         raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
         ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
         ow.send_messages = True
-        await raid_channel.set_permissions(raid_channel.guild.default_role, overwrite = ow)
+        try:
+            await raid_channel.set_permissions(raid_channel.guild.default_role, overwrite = ow)
+        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+            pass
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
@@ -4677,7 +4700,7 @@ async def _exraid(ctx, location):
         if guild_dict[channel.guild.id]['configure_dict']['exraid']['permissions'] == "everyone":
             everyone_overwrite = (channel.guild.default_role, discord.PermissionOverwrite(send_messages=True))
             raid_channel_overwrite_list.append(everyone_overwrite)
-    meowth_overwrite = (Meowth.user, discord.PermissionOverwrite(send_messages=True,read_messages=True))
+    meowth_overwrite = (Meowth.user, discord.PermissionOverwrite(send_messages=True, read_messages=True, manage_roles=True))
     raid_channel_overwrite_list.append(meowth_overwrite)
     raid_channel_overwrites = dict(raid_channel_overwrite_list)
     raid_channel_category = get_category(message.channel,"EX", type="exraid")
@@ -4685,7 +4708,10 @@ async def _exraid(ctx, location):
     if guild_dict[channel.guild.id]['configure_dict']['invite']['enabled']:
         for role in channel.guild.role_hierarchy:
             if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
-                await raid_channel.set_permissions(role, send_messages=True)
+                try:
+                    await raid_channel.set_permissions(role, send_messages=True)
+                except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                    pass
     raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
     if len(egg_info['pokemon']) > 1:
@@ -4792,7 +4818,10 @@ async def _invite(ctx):
         overwrite.send_messages = True
         overwrite.read_messages = True
         exraid_channel = exraid_dict[str(int(reply.content))]
-        await exraid_channel.set_permissions(author, overwrite=overwrite)
+        try:
+            await exraid_channel.set_permissions(author, overwrite=overwrite)
+        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+            pass
         exraidmsg = await channel.send(_('Meowth! Alright {0}, you can now send messages in {1}! Make sure you let the trainers in there know if you can make it to the EX Raid!').format(author.mention, exraid_channel.mention))
         await _maybe(exraid_channel, author, 1, party=None)
     else:
