@@ -2136,7 +2136,7 @@ async def _configure(ctx, configlist):
                 return None
     finally:
         if ctx:
-            config_dict_temp['settings']['done'] = True
+            ctx.config_dict_temp['settings']['done'] = True
             guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
             await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name='Configuration Complete', icon_url=Meowth.user.avatar_url))
         del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
@@ -3279,7 +3279,7 @@ async def _configure_scanners(ctx):
         else:
             await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
             continue
-    if (configcancel == False) and config_dict_temp['scanners']['autoraid']:
+    if config_dict_temp['scanners']['autoraid']:
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create raid channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name='Automatic Raid Report Levels', icon_url=Meowth.user.avatar_url))
         raidlevel_list = []
         config_dict_temp['scanners']['raidlvls'] = []
@@ -3320,7 +3320,7 @@ async def _configure_scanners(ctx):
         else:
             await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
             continue
-    if (configcancel == False) and config_dict_temp['scanners']['autoegg']:
+    if config_dict_temp['scanners']['autoegg']:
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create egg channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized egg report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name='Automatic Egg Report Levels', icon_url=Meowth.user.avatar_url))
         egglevel_list = []
         config_dict_temp['scanners']['egglvls'] = []
@@ -5170,7 +5170,7 @@ async def _meetup(ctx, location):
     egg_info = raid_info['raid_eggs']['EX']
     raid_channel_name = _('meetup-')
     raid_channel_name += sanitize_channel_name(raid_details)
-    raid_channel_category = get_category(message.channel,"EX", type="exraid")
+    raid_channel_category = channel.category
     raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
     ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
     ow.send_messages = True
@@ -6631,7 +6631,7 @@ async def _edit_party(channel, author=None):
         s = _('status')
         if (t not in field.name.lower()) and (s not in field.name.lower()):
             newembed.add_field(name=field.name, value=field.value, inline=field.inline)
-    if egglevel != "0" and not guild_dict[channel.guild.id].get('raidchannel_dict',{}).get(channel.id,{}).get('meetup',False):
+    if egglevel != "0" and not guild_dict[channel.guild.id].get('raidchannel_dict',{}).get(channel.id,{}).get('meetup', {}):
         if len(boss_list) > 1:
             newembed.set_field_at(0, name=_("**Boss Interest:**") if channel_dict["boss"] > 0 else _("**Possible Bosses:**"), value=_('{bosslist1}').format(bosslist1='\n'.join(display_list[::2])), inline=True)
             newembed.set_field_at(1, name='\u200b', value=_('{bosslist2}').format(bosslist2='\n'.join(display_list[1::2])), inline=True)
