@@ -1819,7 +1819,7 @@ async def prefix(ctx):
 @commands.has_permissions(manage_guild=True)
 async def perms(ctx, channel_id = None):
     """Show Meowth's permissions for the guild and channel."""
-    channel = discord.utils.get(ctx.bot.get_all_channels(), id=int(channel_id))
+    channel = discord.utils.get(ctx.bot.get_all_channels(), id=channel_id)
     guild = channel.guild if channel else ctx.guild
     channel = channel or ctx.channel
     guild_perms = guild.me.guild_permissions
@@ -4685,6 +4685,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     starttime = eggdetails.get('starttime',None)
     duplicate = eggdetails.get('duplicate',0)
     archive = eggdetails.get('archive',False)
+    meetup = eggdetails.get('meetup',{})
     if not author:
         try:
             raid_messageauthor = raid_message.mentions[0]
@@ -4741,7 +4742,10 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(raid_channel.guild, get_weaknesses(entered_raid))), inline=True)
     raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
-    raid_embed.add_field(name=oldembed.fields[3].name, value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
+    if meetup:
+        raid_embed.add_field(name=oldembed.fields[3].name, value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
+    else:
+        raid_embed.add_field(name=_('**Expires:**'), value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
     if gymhuntrgps:
         gymhuntrmoves = "\u200b"
         if huntr:
@@ -5149,7 +5153,7 @@ async def research(ctx, *, details = None):
         await message.delete()
 
 @Meowth.command(aliases=['event'])
-@checks.allowraidreport()
+@checks.allowexraidreport()
 async def meetup(ctx, *,location:commands.clean_content=""):
     """Report an upcoming event.
 
@@ -5211,7 +5215,7 @@ async def _meetup(ctx, location):
         'gymhuntrgps' : False
     }
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
-    await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time that the event starts with **!starttime <date and time>** and also set the time that the event starts using **!timerset <date and time>**.').format(member=message.author.mention))
+    await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time that the event starts with **!starttime <date and time>** and also set the time that the event ends using **!timerset <date and time>**.').format(member=message.author.mention))
     event_loop.create_task(expiry_check(raid_channel))
 
 """
@@ -5228,6 +5232,8 @@ async def print_raid_timer(channel):
         if guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg':
             if start:
                 timerstr += _("This event will start at {expiry_time}").format(expiry_time=start.strftime(_('%B %d at %I:%M %p (%H:%M)')))
+                if end:
+                    timerstr += _(" | This event will end at {expiry_time}").format(expiry_time=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
             else:
                 timerstr += _("Nobody has told me a start time! Set it with **!starttime**")
         if guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['type'] == 'exraid':
