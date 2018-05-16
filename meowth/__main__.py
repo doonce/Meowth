@@ -1162,6 +1162,10 @@ async def on_message(message):
                     emoji_count = message.content.count(here_emoji)
                     await _here(message.channel, message.author, emoji_count, party=None)
                     return
+                if message.content.startswith("🚁"):
+                    emoji_count = message.content.count("🚁")
+                    await _here(message.channel, message.author, emoji_count, party=None)
+                    return
                 if "/maps" in message.content and "http" in message.content:
                     newcontent = message.content.replace("<","").replace(">","")
                     newloc = create_gmaps_query(newcontent, message.channel, type=guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['type'])
@@ -4818,7 +4822,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
     if author:
         raid_reports = guild_dict[raid_channel.guild.id].setdefault('trainers',{}).setdefault(author.id,{}).setdefault('raid_reports',0) + 1
-        guild_dict[message.guild.id]['trainers'][author.id]['raid_reports'] = raid_reports
+        guild_dict[raid_channel.guild.id]['trainers'][author.id]['raid_reports'] = raid_reports
         await _edit_party(raid_channel, author)
     event_loop.create_task(expiry_check(raid_channel))
 
@@ -5153,7 +5157,7 @@ async def meetup(ctx, *,location:commands.clean_content=""):
     Meowth will insert the details (really just everything after the species name) into a
     Google maps link and post the link to the same channel the report was made in.
 
-    Finally, Meowth will create a separate channel for the report, for the purposes of organizing the event."""
+    Finally, Meowth will create a separate channel for the raid report, for the purposes of organizing the event."""
     await _meetup(ctx, location)
 
 async def _meetup(ctx, location):
@@ -5394,6 +5398,7 @@ async def starttime(ctx,*,start_time=""):
     start_split = start_time.lower().split()
     rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
     timeset = False
+    start = None
     if rc_d.get('meetup',{}):
         try:
             start = dateparser.parse(' '.join(start_split).lower(), settings={'DATE_ORDER': 'MDY'})
@@ -5403,8 +5408,7 @@ async def starttime(ctx,*,start_time=""):
             timeset = True
             rc_d['meetup']['start'] = start
         except:
-            await channel.send(_("Meowth! Your timer wasn't formatted correctly. Change your **!starttime** to match this format: **MM/DD HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!)"))
-            return
+            pass
     if not timeset:
         if rc_d['type'] == 'egg':
             egglevel = rc_d['egglevel']
@@ -5461,7 +5465,7 @@ async def starttime(ctx,*,start_time=""):
                         timeset = True
                 else:
                     return
-    if now <= start or timeset:
+    if (start and now <= start) or timeset:
         rc_d['starttime'] = start
         nextgroup = start.strftime(_('%I:%M %p (%H:%M)'))
         if rc_d.get('meetup',{}):
@@ -7049,6 +7053,7 @@ async def list(ctx):
             tag = False
             team = False
             starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime',None)
+            meetup = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('meetup',{})
             rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
             list_split = ctx.message.clean_content.lower().split()
             if "tags" in list_split or "tag" in list_split:
@@ -7074,7 +7079,7 @@ async def list(ctx):
             if (len(listmsg.splitlines()) <= 1):
                 listmsg +=  ('\n' + bulletpoint) + (_(" Nobody has updated their status yet!"))
             listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
-            if starttime and (starttime > now):
+            if starttime and (starttime > now) and not meetup:
                 listmsg += _('\nThe next group will be starting at **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
             await channel.send(listmsg)
             return
