@@ -1706,10 +1706,10 @@ async def timezone(ctx,*, timezone: str = ''):
     try:
         timezone = float(timezone)
     except ValueError:
-        await ctx.channel.send(_("I couldn't convert your answer to an appropriate timezone! Please double check what you sent me and resend a number strarting from **-12** to **12**."))
+        await ctx.channel.send(_("I couldn't convert your answer to an appropriate timezone! Please double check what you sent me and resend a number from **-12** to **12**."))
         return
     if (not ((- 12) <= timezone <= 14)):
-        await ctx.channel.send(_("I couldn't convert your answer to an appropriate timezone! Please double check what you sent me and resend a number strarting from **-12** to **12**."))
+        await ctx.channel.send(_("I couldn't convert your answer to an appropriate timezone! Please double check what you sent me and resend a number from **-12** to **12**."))
         return
     _set_timezone(Meowth, ctx.guild, timezone)
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
@@ -1724,6 +1724,7 @@ async def prefix(ctx, prefix=None):
     """Changes server prefix."""
     if prefix == 'clear':
         prefix = None
+    prefix = prefix.strip()
     _set_prefix(Meowth, ctx.guild, prefix)
     if prefix != None:
         await ctx.channel.send(_('Prefix has been set to: `{}`').format(prefix))
@@ -4236,7 +4237,7 @@ async def _wild(message, content, huntr=False):
 
 @Meowth.command(aliases=['r', 're', 'egg', 'regg', 'raidegg'])
 @checks.allowraidreport()
-async def raid(ctx,pokemon,*,location:commands.clean_content="",timer=None):
+async def raid(ctx,pokemon,*,location:commands.clean_content(fix_channel_mentions=True)="", weather=None, timer=None):
     """Report an ongoing raid or a raid egg.
 
     Usage: !raid <species/level> <location> [weather] [minutes]
@@ -4434,6 +4435,8 @@ async def _raid(message, content, huntr=False):
 
 async def _raidegg(message, content, huntr=False):
     timestamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+    raidexp = False
+    hourminute = False
     if not huntr:
         raidegg_split = content.split()
         gymhuntrgps = False
@@ -4456,19 +4459,38 @@ async def _raidegg(message, content, huntr=False):
         raidexp = int(raidegg_split[(- 1)])
         del raidegg_split[(- 1)]
     elif ':' in raidegg_split[(- 1)]:
-        raidegg_split[(- 1)] = re.sub('[a-zA-Z]', '', raidegg_split[(- 1)])
-        if raidegg_split[(- 1)].split(':')[0] == '':
-            endhours = 0
-        else:
-            endhours = int(raidegg_split[(- 1)].split(':')[0])
-        if raidegg_split[(- 1)].split(':')[1] == '':
-            endmins = 0
-        else:
-            endmins = int(raidegg_split[(- 1)].split(':')[1])
-        raidexp = (60 * endhours) + endmins
+        msg = _("Did you mean egg hatch time 🥚 or time remaining before hatch ⏲?")
+        question = await message.channel.send(msg)
+        try:
+            timeout = False
+            res, reactuser = await ask(question, message.channel, message.author.id, react_list=['🥚', '⏲'])
+        except TypeError:
+            timeout = True
+        await question.delete()
+        if timeout or res.emoji == '⏲':
+            hourminute = True
+        elif res.emoji == '🥚':
+            now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
+            start = dateparser.parse(raidegg_split[(- 1)], settings={'PREFER_DATES_FROM': 'future'})
+            if start.day != now.day:
+                if "m" not in raidegg_split[(- 1)]:
+                    start = start + datetime.timedelta(hours=12)
+                start = start.replace(day=now.day)
+            timediff = relativedelta(start, now)
+            raidexp = (timediff.hours*60) + timediff.minutes + 1
+            if raidexp < 0:
+                await message.channel.send(_('Meowth! Please enter a time in the future.'))
+                return
+            del raidegg_split[(- 1)]
+    if hourminute:
+        (h, m) = re.sub('[a-zA-Z]', '', raidegg_split[(- 1)]).split(':', maxsplit=1)
+        if h == '':
+            h = '0'
+        if m == '':
+            m = '0'
+        if h.isdigit() and m.isdigit():
+            raidexp = (60 * int(h)) + int(m)
         del raidegg_split[(- 1)]
-    else:
-        raidexp = False
     if raidexp is not False and not huntr:
         if _timercheck(raidexp, raid_info['raid_eggs'][str(egg_level)]['hatchtime']):
             await message.channel.send(_("Meowth...that's too long. Level {raidlevel} Raid Eggs currently last no more than {hatchtime} minutes...").format(raidlevel=egg_level, hatchtime=raid_info['raid_eggs'][str(egg_level)]['hatchtime']))
@@ -4832,7 +4854,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
 
 @Meowth.command(aliases=['ex'])
 @checks.allowexraidreport()
-async def exraid(ctx, *,location:commands.clean_content=""):
+async def exraid(ctx,pokemon,*,location:commands.clean_content(fix_channel_mentions=True)="", weather=None, timer=None):
     """Report an upcoming EX raid.
 
     Usage: !exraid <location>
@@ -5154,7 +5176,7 @@ async def research(ctx, *, details = None):
 
 @Meowth.command(aliases=['event'])
 @checks.allowexraidreport()
-async def meetup(ctx, *,location:commands.clean_content=""):
+async def meetup(ctx,pokemon,*,location:commands.clean_content(fix_channel_mentions=True)="", weather=None, timer=None):
     """Report an upcoming event.
 
     Usage: !meetup <location>
@@ -5268,8 +5290,10 @@ async def timerset(ctx, *,timer):
     message = ctx.message
     channel = message.channel
     guild = message.guild
+    hourminute = False
+    type = guild_dict[guild.id]['raidchannel_dict'][channel.id]['type']
     if (not checks.check_exraidchannel(ctx)) and not (checks.check_meetupchannel(ctx)):
-        if guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg':
+        if type == 'egg':
             raidlevel = guild_dict[guild.id]['raidchannel_dict'][channel.id]['egglevel']
             raidtype = _('Raid Egg')
             maxtime = raid_info['raid_eggs'][raidlevel]['hatchtime']
@@ -5279,7 +5303,38 @@ async def timerset(ctx, *,timer):
             maxtime = raid_info['raid_eggs'][raidlevel]['raidtime']
         if timer.isdigit():
             raidexp = int(timer)
+        elif type == 'egg' and ':' in timer:
+            msg = _("Did you mean egg hatch time 🥚 or time remaining before hatch ⏲?")
+            question = await ctx.channel.send(msg)
+            try:
+                timeout = False
+                res, reactuser = await ask(question, ctx.message.channel, ctx.message.author.id, react_list=['🥚', '⏲'])
+            except TypeError:
+                timeout = True
+            await question.delete()
+            if timeout or res.emoji == '⏲':
+                hourminute = True
+            elif res.emoji == '🥚':
+                now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[channel.guild.id]['configure_dict']['settings']['offset'])
+                start = dateparser.parse(timer, settings={'PREFER_DATES_FROM': 'future'})
+                if start.day != now.day:
+                    if "m" not in timer:
+                        start = start + datetime.timedelta(hours=12)
+                    start = start.replace(day=now.day)
+                timediff = relativedelta(start, now)
+                raidexp = (timediff.hours*60) + timediff.minutes + 1
+                if raidexp < 0:
+                    await channel.send(_('Meowth! Please enter a time in the future.'))
+                    return
+            else:
+                await channel.send(_("Meowth! I couldn't understand your time format. Try again like this: **!timerset <minutes>**"))
+                return
         elif ':' in timer:
+            hourminute = True
+        else:
+            await channel.send(_("Meowth! I couldn't understand your time format. Try again like this: **!timerset <minutes>**"))
+            return
+        if hourminute:
             (h, m) = re.sub('[a-zA-Z]', '', timer).split(':', maxsplit=1)
             if h == '':
                 h = '0'
@@ -5290,9 +5345,6 @@ async def timerset(ctx, *,timer):
             else:
                 await channel.send(_("Meowth! I couldn't understand your time format. Try again like this: **!timerset <minutes>**"))
                 return
-        else:
-            await channel.send(_("Meowth! I couldn't understand your time format. Try again like this: **!timerset <minutes>**"))
-            return
         if _timercheck(raidexp, maxtime):
             await channel.send(_("Meowth...that's too long. Level {raidlevel} {raidtype}s currently last no more than {maxtime} minutes...").format(raidlevel=str(raidlevel), raidtype=raidtype.capitalize(), maxtime=str(maxtime)))
             return
@@ -5601,7 +5653,7 @@ async def recover(ctx):
         topic = channel.topic
         h = _('hatched-')
         e = _('expired-')
-        while h in name or e in name or a in name:
+        while h in name or e in name:
             name = name.replace(h,'')
             name = name.replace(e,'')
         egg = re.match(_('level-[1-5]-egg'), name)
