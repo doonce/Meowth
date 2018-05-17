@@ -568,20 +568,19 @@ async def expiry_check(channel):
                     end = guild_dict[guild.id]['raidchannel_dict'][channel.id]['meetup'].get('end',False)
                     if start and guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg':
                         if start < now:
-                            await _eggtoraid("mewtwo", channel, author=None, huntr=False)
-                            break
-                    if end and guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == 'exraid':
-                        if end < now:
-                            event_loop.create_task(expire_channel(channel))
-                            try:
-                                active_raids.remove(channel)
-                            except ValueError:
-                                logger.info(
-                                    'Expire_Channel - Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
+                            pokemon = get_name(raid_info['raid_eggs']['EX']['pokemon'][0])
+                            await _eggtoraid(pokemon, channel, author=None)
+                    if end and end < now:
+                        event_loop.create_task(expire_channel(channel))
+                        try:
+                            active_raids.remove(channel)
+                        except ValueError:
                             logger.info(
-                                'Expire_Channel - Channel Expired And Removed From Watchlist - ' + channel.name)
-                            break
-                if guild_dict[guild.id]['raidchannel_dict'][channel.id]['active']:
+                                'Expire_Channel - Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
+                        logger.info(
+                            'Expire_Channel - Channel Expired And Removed From Watchlist - ' + channel.name)
+                        break
+                elif guild_dict[guild.id]['raidchannel_dict'][channel.id]['active']:
                     if guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp']:
                         if guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] <= time.time():
                             if guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg':
@@ -599,7 +598,7 @@ async def expiry_check(channel):
                                     except ValueError:
                                         logger.info(
                                             'Expire_Channel - Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
-                                    await _eggtoraid(pokemon.lower(), channel, author=None, huntr=False)
+                                    await _eggtoraid(pokemon.lower(), channel, author=None)
                                     break
                             event_loop.create_task(expire_channel(channel))
                             try:
@@ -610,7 +609,7 @@ async def expiry_check(channel):
                             logger.info(
                                 'Expire_Channel - Channel Expired And Removed From Watchlist - ' + channel.name)
                             break
-            except KeyError:
+            except:
                 pass
             await asyncio.sleep(30)
             continue
@@ -649,7 +648,7 @@ async def expire_channel(channel):
             if (not alreadyexpired):
                 await channel.send(_('This channel has been successfully reported as a duplicate and will be deleted in 1 minute. Check the channel list for the other raid channel to coordinate in!\nIf this was in error, reset the raid with **!timerset**'))
             delete_time = (guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] + (1 * 60)) - time.time()
-        elif guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg':
+        elif guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg' and not guild_dict[guild.id]['raidchannel_dict'][channel.id].get('meetup',{}):
             if (not alreadyexpired):
                 pkmn = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('pokemon', None)
                 if pkmn:
@@ -4197,6 +4196,10 @@ async def _wild(message, content, huntr=False):
         wild_gmaps_link = create_gmaps_query(wild_details, message.channel, type="wild")
         wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
         wild_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.capitalize(), pokemonnumber=str(wild_number), type=''.join(get_type(message.guild, wild_number))), inline=False)
+        wild_embed.set_thumbnail(url=wild_img_url)
+        wild_embed.add_field(name='**Reactions:**', value=_("🏎: I'm on my way!"))
+        wild_embed.add_field(name='\u200b', value=_("💨: The Pokemon despawned!"))
+        wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         despawn = 3600
         wildreportmsg = await message.channel.send(content=_('{roletest}Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(roletest=roletest,pokemon=entered_wild.title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
     else:
@@ -4205,12 +4208,12 @@ async def _wild(message, content, huntr=False):
         wild_embed.add_field(name='**Details:**', value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.title(), pokemonnumber=str(wild_number), type=''.join(get_type(message.guild, wild_number)), inline=True))
         wild_embed.add_field(name='**Despawns in:**', value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=huntrexp.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
         wild_embed.add_field(name=huntrweather, value=_('Perform a scan to help find more by clicking [here]({huntrurl}).').format(huntrurl=wild_details), inline=False)
+        wild_embed.set_thumbnail(url=wild_img_url)
+        wild_embed.add_field(name='**Reactions:**', value=_("🏎: I'm on my way!"))
+        wild_embed.add_field(name='\u200b', value=_("💨: The Pokemon despawned!"))
+        wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         despawn = (int(huntrexp.split(' ')[0]) * 60) + int(huntrexp.split(' ')[2])
         wildreportmsg = await message.channel.send(content=_('{roletest}Meowth! Wild {pokemon} reported by {member}! Details: <{location_details}>').format(roletest=roletest,pokemon=entered_wild.title(), member=message.author.mention, location_details=wild_details, gps=wild_details), embed=wild_embed)
-    wild_embed.set_thumbnail(url=wild_img_url)
-    wild_embed.add_field(name='**Reactions:**', value=_("🏎: I'm on my way!"))
-    wild_embed.add_field(name='\u200b', value=_("💨: The Pokemon despawned!"))
-    wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
     await asyncio.sleep(0.25)
     await wildreportmsg.add_reaction('🏎')
     await asyncio.sleep(0.25)
@@ -5251,10 +5254,10 @@ async def print_raid_timer(channel):
         if guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg':
             if start:
                 timerstr += _("This event will start at {expiry_time}").format(expiry_time=start.strftime(_('%B %d at %I:%M %p (%H:%M)')))
-                if end:
-                    timerstr += _(" | This event will end at {expiry_time}").format(expiry_time=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
             else:
                 timerstr += _("Nobody has told me a start time! Set it with **!starttime**")
+            if end:
+                timerstr += _(" | This event will end at {expiry_time}").format(expiry_time=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
         if guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['type'] == 'exraid':
             if end:
                 timerstr += _("This event will end at {expiry_time}").format(expiry_time=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
@@ -5283,7 +5286,11 @@ async def print_raid_timer(channel):
 @Meowth.command()
 @checks.raidchannel()
 async def timerset(ctx, *,timer):
-    'Set the remaining duration on a raid.\n\n    Usage: !timerset <minutes>\n    Works only in raid channels, can be set or overridden by anyone.\n    Meowth displays the end time in HH:MM local time.'
+    """Set the remaining duration on a raid.
+
+    Usage: !timerset <minutes>
+    Works only in raid channels, can be set or overridden by anyone.
+    Meowth displays the end time in HH:MM local time."""
     message = ctx.message
     channel = message.channel
     guild = message.guild
@@ -5314,11 +5321,13 @@ async def timerset(ctx, *,timer):
             elif res.emoji == '🥚':
                 now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[channel.guild.id]['configure_dict']['settings']['offset'])
                 start = dateparser.parse(timer, settings={'PREFER_DATES_FROM': 'future'})
-                if start.day != now.day:
-                    if "m" not in timer:
-                        start = start + datetime.timedelta(hours=12)
-                    start = start.replace(day=now.day)
+                if now.hour > 12 and start.hour < 12 and "m" not in timer:
+                    start = start + datetime.timedelta(hours=12)
+                start = start.replace(day=now.day)
+                print(now)
+                print(start)
                 timediff = relativedelta(start, now)
+                print(timediff)
                 raidexp = (timediff.hours*60) + timediff.minutes + 1
                 if raidexp < 0:
                     await channel.send(_('Meowth! Please enter a time in the future.'))
@@ -5369,6 +5378,11 @@ async def timerset(ctx, *,timer):
                     except ValueError:
                         await channel.send(_("Meowth! Your timer wasn't formatted correctly. Change your **!timerset** to match this format: **MM/DD HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!)"))
                         return
+            if checks.check_meetupchannel(ctx):
+                starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id]['meetup'].get('start',False)
+                if starttime and start < starttime:
+                    await channel.send(_('Meowth! Please enter a time after your start time.'))
+                    return
             diff = start - now
             total = diff.total_seconds() / 60
             if now <= start:
@@ -5457,8 +5471,12 @@ async def starttime(ctx,*,start_time=""):
     if rc_d.get('meetup',{}):
         try:
             start = dateparser.parse(' '.join(start_split).lower(), settings={'DATE_ORDER': 'MDY'})
+            endtime = guild_dict[guild.id]['raidchannel_dict'][channel.id]['meetup'].get('end',False)
             if start < now:
                 await channel.send(_('Meowth! Please enter a time in the future.'))
+                return
+            if endtime and start > endtime:
+                await channel.send(_('Meowth! Please enter a time before your end time.'))
                 return
             timeset = True
             rc_d['meetup']['start'] = start
