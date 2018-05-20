@@ -19,10 +19,9 @@ def is_dev_check(ctx):
 def is_dev():
     def predicate(ctx):
         if is_dev_check(ctx):
-            print(1)
             return True
         else:
-            raise False
+            return False
     return commands.check(predicate)
 
 def check_permissions(ctx, perms):
