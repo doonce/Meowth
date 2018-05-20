@@ -4246,6 +4246,10 @@ async def want(ctx,*,pokemon):
         pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) == re.sub(rgx, '', entered_want)), None)
         if pkmn_match:
             entered_want = pkmn_match
+        elif len(want_list) == 1 and entered_want == "list":
+            msg = _("Meowth! Did you mean **!list wants**?").format(word=entered_want.title())
+            question = await message.channel.send(msg)
+            return
         else:
             entered_want = spellcheck(entered_want)
             pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_want)), None)
@@ -7418,7 +7422,7 @@ async def list(ctx):
                 listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag, team))
             if " 0 on the way!" not in await _otw(ctx, tag, team):
                 listmsg += ('\n' + bulletpoint) + (await _otw(ctx, tag, team))
-            if " 0 waiting at the raid!" not in await _waiting(ctx, tag, team):
+            if " 0 waiting!" not in await _waiting(ctx, tag, team):
                 listmsg += ('\n' + bulletpoint) + (await _waiting(ctx, tag, team))
             if " 0 in the lobby!" not in await _lobbylist(ctx, tag, team):
                 listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx, tag, team))
@@ -7567,13 +7571,13 @@ async def _waiting(ctx, tag=False, team=False):
             ctx_herecount += trainer_dict[trainer]['party'][team]
             if raid_dict.get('lobby',{"team":"all"})['team'] == team or raid_dict.get('lobby',{"team":"all"})['team'] == "all":
                 ctx_herecount -= trainer_dict[trainer]['status']['lobby']
-
+    raidtype = _("event") if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('meetup',False) else _("raid")
     if ctx_herecount > 0:
         if (now.time() >= datetime.time(5, 0)) and (now.time() <= datetime.time(21, 0)) and (tag == True):
             here_exstr = _(" including {trainer_list} and the people with them! Be considerate and let them know if and when you'll be there").format(trainer_list=', '.join(here_list))
         else:
             here_exstr = _(" including {trainer_list} and the people with them! Be considerate and let them know if and when you'll be there").format(trainer_list=', '.join(name_list))
-    listmsg = _(' {trainer_count} waiting at the raid{including_string}!').format(trainer_count=str(ctx_herecount), including_string=here_exstr)
+    listmsg = _(' {trainer_count} waiting at the {raidtype}{including_string}!').format(trainer_count=str(ctx_herecount), raidtype=raidtype, including_string=here_exstr)
     return listmsg
 
 @list.command()
