@@ -3660,7 +3660,7 @@ async def reload_json(ctx):
     await ctx.message.add_reaction('☑')
 
 @Meowth.command()
-@checks.is_dev()
+@checks.is_dev_or_owner()
 async def raid_json(ctx, level=None, *, newlist=None):
     'Edits or displays raid_info.json\n\n    Usage: !raid_json [level] [list]'
     msg = ''
@@ -5107,7 +5107,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
 
 @Meowth.command(aliases=['ex'])
 @checks.allowexraidreport()
-async def exraid(ctx,pokemon,*,location:commands.clean_content(fix_channel_mentions=True)="", weather=None, timer=None):
+async def exraid(ctx, *,location:commands.clean_content(fix_channel_mentions=True)=""):
     """Report an upcoming EX raid.
 
     Usage: !exraid <location>
