@@ -1853,31 +1853,68 @@ async def team(ctx):
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name='Configuration Complete', icon_url=Meowth.user.avatar_url))
     del guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
 
-
 async def _configure_team(ctx):
     guild = ctx.message.guild
     owner = ctx.message.author
     config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(guild_dict[guild.id]['configure_dict']))
-    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Team assignment allows users to assign their Pokemon Go team role using the **!team** command. If you have a bot that handles this already, you may want to disable this feature.\n\nIf you are to use this feature, ensure existing team roles are as follows: mystic, valor, instinct. These must be all lowercase letters. If they don't exist yet, I'll make some for you instead.\n\nRespond here with: **N** to disable, **Y** to enable:")).set_author(name=_('Team Assignments'), icon_url=Meowth.user.avatar_url))
+    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Team assignment allows users to assign their Pokemon Go team role using the **!team** command. If you have a bot that handles this already, you may want to disable this feature.\n\nIf you are to use this feature, you can configure the roles you would like to use for team assignment after enabling.\n\nRespond here with: **N** to disable, **Y** to enable:")).set_author(name=_('Team Assignments'), icon_url=Meowth.user.avatar_url))
     while True:
         teamreply = await Meowth.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
         if teamreply.content.lower() == 'y':
             config_dict_temp['team']['enabled'] = True
-            high_roles = []
-            guild_roles = []
-            lowercase_roles = []
-            for role in guild.roles:
-                if role.name.lower() in config['team_dict'] and role.name not in guild_roles:
-                    guild_roles.append(role.name)
-            lowercase_roles = [element.lower() for element in guild_roles]
-            for team in config['team_dict'].keys():
-                temp_role = discord.utils.get(guild.roles, name=team)
-                if temp_role == None:
-                    try:
-                        await guild.create_role(name=team, hoist=False, mentionable=True)
-                    except discord.errors.HTTPException:
-                        pass
-            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Team Assignments enabled!')))
+            team_list = ["mystic","valor","instinct","harmony"]
+            team_colors = [discord.Colour.blue(), discord.Colour.red(), discord.Colour.gold(), discord.Colour.default()]
+            team_roles = []
+            team_dict = {}
+            index = 0
+            role_error = False
+            role_create = ""
+            while True:
+                await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Please respond with the names or IDs for the roles you would like to use for teams in the following order:\n\n**mystic, valor, instinct, harmony**\n\nIf I can't find a role, I'll make a temporary role for you that you can either keep and rename, or you can delete and attempt to configure roles again.")).set_author(name=_('Team Assignments'), icon_url=Meowth.user.avatar_url))
+                def check(m):
+                    return m.guild == None and m.author == owner
+                rolesreply = await Meowth.wait_for('message', check=check)
+                if rolesreply.content.lower() == 'cancel':
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                    return None
+                else:
+                    rolesreplylist = rolesreply.content.split(",")
+                    rolesreplylist = [x.strip() for x in rolesreplylist]
+                    if len(rolesreplylist) == 4:
+                        for item in rolesreplylist:
+                            role = None
+                            if item.isdigit():
+                                role = discord.utils.get(guild.roles, id=int(item))
+                            if not role:
+                                name = await letter_case(guild.roles, item.lower())
+                                role = discord.utils.get(guild.roles, name=name)
+                            if not role:
+                                try:
+                                    role = await guild.create_role(name=f"Meowth{team_list[index].capitalize()}", hoist=False, mentionable=True, colour=team_colors[index])
+                                    role_create += _("I couldn\'t find role **{item}**. I created a role called {meowthrole} for team {team} in its place, you can rename it or delete it in Server Settings and try again later.\n\n").format(item=item, meowthrole=role.name, team=team_list[index].capitalize())
+                                except discord.errors.HTTPException:
+                                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Maximum guild roles reached, delete some and try again.")))
+                                except (discord.errors.Forbidden, discord.errors.InvalidArgument):
+                                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("I can\'t create roles! Try again when ready.")))
+                            if role:
+                                team_roles.append(role.id)
+                            else:
+                                role_error = True
+                                break
+                            index += 1
+                        if role_create:
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=role_create))
+                        if role_error:
+                            continue
+                        else:
+                            for i in range(len(team_roles)):
+                                team_dict[team_list[i]] = team_roles[i]
+                            break
+                    else:
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("I need you to enter four roles, one for each team and a role for no-team / harmony")))
+                        continue
+            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_("Team roles set")))
+            config_dict_temp['team']['team_roles'] = team_dict
             break
         elif teamreply.content.lower() == 'n':
             config_dict_temp['team']['enabled'] = False
@@ -3486,7 +3523,7 @@ async def about(ctx):
 
 @Meowth.command()
 @checks.allowteam()
-async def team(ctx,*,content):
+async def team(ctx,*,team):
     """Set your team role.
 
     Usage: !team <team name>
@@ -3494,62 +3531,48 @@ async def team(ctx,*,content):
     guild = ctx.guild
     toprole = guild.me.top_role.name
     position = guild.me.top_role.position
-    team_msg = _(' or ').join(['**!team {0}**'.format(team) for team in config['team_dict'].keys()])
+    guild_roles = guild_dict[guild.id]['configure_dict']['team']['team_roles']
+    team_roles = {k: discord.utils.get(ctx.guild.roles, id=v) for (k,v) in guild_roles.items()}
     high_roles = []
-    guild_roles = []
-    lowercase_roles = []
-    harmony = None
-    for role in guild.roles:
-        if (role.name.lower() in config['team_dict']) and (role.name not in guild_roles):
-            guild_roles.append(role.name)
-    lowercase_roles = [element.lower() for element in guild_roles]
-    for team in config['team_dict'].keys():
-        if team.lower() not in lowercase_roles:
+    team_colors = [discord.Colour.blue(), discord.Colour.red(), discord.Colour.gold(), discord.Colour.default()]
+    team_msg = _(' or ').join(['**!team {0}**'.format(team) for team in guild_roles.keys()])
+    index = 0
+    for teamrole in copy.copy(guild_roles).keys():
+        role = team_roles.get(teamrole, None)
+        if not role:
+            rolename = f"Meowth{teamrole.capitalize()}"
             try:
-                temp_role = await guild.create_role(name=team.lower(), hoist=False, mentionable=True)
-                guild_roles.append(team.lower())
+                role = await guild.create_role(name=rolename, hoist=False, mentionable=True, colour=team_colors[index])
             except discord.errors.HTTPException:
-                await message.channel.send(_('Maximum guild roles reached.'))
+                await ctx.message.channel.send(_('Maximum guild roles reached.'))
                 return
-            if temp_role.position > position:
-                high_roles.append(temp_role.name)
+            except (discord.errors.Forbidden, discord.errors.InvalidArgument):
+                await ctx.message.channel.send(_('I can\'t create roles!.'))
+                return
+            guild_dict[guild.id]['configure_dict']['team']['team_roles'][teamrole] = role.id
+            team_roles[teamrole] = role
+        if role.position > position:
+            high_roles.append(role.name)
+        index += 1
     if high_roles:
         await ctx.channel.send(_('Meowth! My roles are ranked lower than the following team roles: **{higher_roles_list}**\nPlease get an admin to move my roles above them!').format(higher_roles_list=', '.join(high_roles)))
         return
-    role = None
-    team_split = content.lower().split()
+    harmony = team_roles.get('harmony',None)
+    team_split = team.lower().split()
     entered_team = team_split[0]
     entered_team = ''.join([i for i in entered_team if i.isalpha()])
-    if entered_team in lowercase_roles:
-        index = lowercase_roles.index(entered_team)
-        role = discord.utils.get(ctx.guild.roles, name=guild_roles[index])
-    if 'harmony' in lowercase_roles:
-        index = lowercase_roles.index('harmony')
-        harmony = discord.utils.get(ctx.guild.roles, name=guild_roles[index])
-    # Check if user already belongs to a team role by
-    # getting the role objects of all teams in team_dict and
-    # checking if the message author has any of them.    for team in guild_roles:
-    for team in guild_roles:
-        temp_role = discord.utils.get(ctx.guild.roles, name=team)
-        if temp_role:
-            # and the user has this role,
-            if (temp_role in ctx.author.roles) and (harmony not in ctx.author.roles):
-                # then report that a role is already assigned
-                await ctx.channel.send(_('Meowth! You already have a team role!'))
-                return
-            if role and (role.name.lower() == 'harmony') and (harmony in ctx.author.roles):
-                # then report that a role is already assigned
-                await ctx.channel.send(_('Meowth! You are already in Team Harmony!'))
-                return
-        # If the role isn't valid, something is misconfigured, so fire a warning.
-        else:
-            await ctx.channel.send(_('Meowth! {team_role} is not configured as a role on this server. Please contact an admin for assistance.').format(team_role=team))
-            return
-    # Check if team is one of the three defined in the team_dict
-    if entered_team not in config['team_dict'].keys():
+    role = None
+    if entered_team in team_roles.keys():
+        role = team_roles[entered_team]
+    else:
         await ctx.channel.send(_('Meowth! "{entered_team}" isn\'t a valid team! Try {available_teams}').format(entered_team=entered_team, available_teams=team_msg))
         return
-    # Check if the role is configured on the server
+    for team in team_roles.values():
+        if (team in ctx.author.roles) and (harmony not in ctx.author.roles):
+            await ctx.channel.send(_('Meowth! You already have a team role!'))
+            return
+    if role and (role.name.lower() == 'harmony') and (harmony in ctx.author.roles):
+        await ctx.channel.send(_('Meowth! You are already in Team Harmony!'))
     elif role == None:
         await ctx.channel.send(_('Meowth! The "{entered_team}" role isn\'t configured on this server! Contact an admin!').format(entered_team=entered_team))
     else:
@@ -3557,7 +3580,7 @@ async def team(ctx,*,content):
             if harmony and (harmony in ctx.author.roles):
                 await ctx.author.remove_roles(harmony)
             await ctx.author.add_roles(role)
-            await ctx.channel.send(_('Meowth! Added {member} to Team {team_name}! {team_emoji}').format(member=ctx.author.mention, team_name=role.name.capitalize(), team_emoji=parse_emoji(ctx.guild, config['team_dict'][entered_team])))
+            await ctx.channel.send(_('Meowth! Added {member} to Team {team_name}! {team_emoji}').format(member=ctx.author.mention, team_name=entered_team.capitalize(), team_emoji=parse_emoji(ctx.guild, config['team_dict'][entered_team])))
         except discord.Forbidden:
             await ctx.channel.send(_("Meowth! I can't add roles!"))
 
@@ -5495,13 +5518,13 @@ async def recover(ctx):
                                 count = 1
                                 user = ctx.guild.get_member(trainerid)
                                 for role in user.roles:
-                                    if role.name.lower() == 'mystic':
+                                    if role.id == guild_dict[guild.id]['configure_dict']['team']['team_roles']['mystic']:
                                         party = {'mystic':1, 'valor':0, 'instinct':0, 'unknown':0}
                                         break
-                                    elif role.name.lower() == 'valor':
+                                    elif role.id == guild_dict[guild.id]['configure_dict']['team']['team_roles']['valor']:
                                         party = {'mystic':0, 'valor':1, 'instinct':0, 'unknown':0}
                                         break
-                                    elif role.name.lower() == 'instinct':
+                                    elif role.id == guild_dict[guild.id]['configure_dict']['team']['team_roles']['instinct']:
                                         party = {'mystic':0, 'valor':0, 'instinct':1, 'unknown':0}
                                         break
                                     else:
@@ -5965,13 +5988,13 @@ async def _maybe(channel, author, count, party, entered_interest=None):
     allunknown = 0
     if (not party):
         for role in author.roles:
-            if role.name.lower() == 'mystic':
+            if role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['mystic']:
                 allblue = count
                 break
-            elif role.name.lower() == 'valor':
+            elif role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['valor']:
                 allred = count
                 break
-            elif role.name.lower() == 'instinct':
+            elif role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['instinct']:
                 allyellow = count
                 break
         else:
@@ -6075,13 +6098,13 @@ async def _coming(channel, author, count, party, entered_interest=None):
     trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict']
     if (not party):
         for role in author.roles:
-            if role.name.lower() == 'mystic':
+            if role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['mystic']:
                 allblue = count
                 break
-            elif role.name.lower() == 'valor':
+            elif role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['valor']:
                 allred = count
                 break
-            elif role.name.lower() == 'instinct':
+            elif role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['instinct']:
                 allyellow = count
                 break
         else:
@@ -6191,13 +6214,13 @@ async def _here(channel, author, count, party, entered_interest=None):
         pass
     if (not party):
         for role in author.roles:
-            if role.name.lower() == 'mystic':
+            if role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['mystic']:
                 allblue = count
                 break
-            elif role.name.lower() == 'valor':
+            elif role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['valor']:
                 allred = count
                 break
-            elif role.name.lower() == 'instinct':
+            elif role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['instinct']:
                 allyellow = count
                 break
         else:
@@ -6231,13 +6254,13 @@ async def _party_status(ctx, total, teamcounts):
     channel = ctx.channel
     author = ctx.author
     for role in ctx.author.roles:
-        if role.name.lower() == 'mystic':
+        if role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['mystic']:
             my_team = 'mystic'
             break
-        elif role.name.lower() == 'valor':
+        elif role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['valor']:
             my_team = 'valor'
             break
-        elif role.name.lower() == 'instinct':
+        elif role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['instinct']:
             my_team = 'instinct'
             break
     else:
