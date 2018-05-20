@@ -2182,6 +2182,7 @@ async def _configure_team(ctx):
         if teamreply.content.lower() == 'y':
             config_dict_temp['team']['enabled'] = True
             team_list = ["mystic","valor","instinct","harmony"]
+            team_colors = [discord.Colour.blue(), discord.Colour.red(), discord.Colour.gold(), discord.Colour.default()]
             team_roles = []
             team_dict = {}
             index = 0
@@ -2208,11 +2209,11 @@ async def _configure_team(ctx):
                                 role = discord.utils.get(guild.roles, name=name)
                             if not role:
                                 try:
-                                    role = await guild.create_role(name=f"Meowth{team_list[index].capitalize()}", hoist=False, mentionable=True)
+                                    role = await guild.create_role(name=f"Meowth{team_list[index].capitalize()}", hoist=False, mentionable=True, colour=team_colors[index])
                                     role_create += _("I couldn\'t find role **{item}**. I created a role called {meowthrole} for team {team} in its place, you can rename it or delete it in Server Settings and try again later.\n\n").format(item=item, meowthrole=role.name, team=team_list[index].capitalize())
                                 except discord.errors.HTTPException:
                                     await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Maximum guild roles reached, delete some and try again.")))
-                                except (discord.errors.Forbidden, disord.errors.InvalidArgument):
+                                except (discord.errors.Forbidden, discord.errors.InvalidArgument):
                                     await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("I can\'t create roles! Try again when ready.")))
                             if role:
                                 team_roles.append(role.id)
@@ -2231,6 +2232,7 @@ async def _configure_team(ctx):
                     else:
                         await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("I need you to enter four roles, one for each team and a role for no-team / harmony")))
                         continue
+            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_("Team roles set")))
             config_dict_temp['team']['team_roles'] = team_dict
             break
         elif teamreply.content.lower() == 'n':
@@ -3988,23 +3990,26 @@ async def team(ctx,*,team):
     guild_roles = guild_dict[guild.id]['configure_dict']['team']['team_roles']
     team_roles = {k: discord.utils.get(ctx.guild.roles, id=v) for (k,v) in guild_roles.items()}
     high_roles = []
+    team_colors = [discord.Colour.blue(), discord.Colour.red(), discord.Colour.gold(), discord.Colour.default()]
     team_msg = _(' or ').join(['**!team {0}**'.format(team) for team in guild_roles.keys()])
+    index = 0
     for teamrole in copy.copy(guild_roles).keys():
         role = team_roles.get(teamrole, None)
         if not role:
             rolename = f"Meowth{teamrole.capitalize()}"
             try:
-                role = await guild.create_role(name=rolename, hoist=False, mentionable=True)
+                role = await guild.create_role(name=rolename, hoist=False, mentionable=True, colour=team_colors[index])
             except discord.errors.HTTPException:
                 await ctx.message.channel.send(_('Maximum guild roles reached.'))
                 return
-            except (discord.errors.Forbidden, disord.errors.InvalidArgument):
+            except (discord.errors.Forbidden, discord.errors.InvalidArgument):
                 await ctx.message.channel.send(_('I can\'t create roles!.'))
                 return
             guild_dict[guild.id]['configure_dict']['team']['team_roles'][teamrole] = role.id
             team_roles[teamrole] = role
         if role.position > position:
             high_roles.append(role.name)
+        index += 1
     if high_roles:
         await ctx.channel.send(_('Meowth! My roles are ranked lower than the following team roles: **{higher_roles_list}**\nPlease get an admin to move my roles above them!').format(higher_roles_list=', '.join(high_roles)))
         return
