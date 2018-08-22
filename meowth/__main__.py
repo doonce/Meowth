@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import tempfile
 import asyncio
@@ -744,8 +744,8 @@ async def expire_channel(channel):
                             if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
                                 await channel.set_permissions(overwrite[0], read_messages=False)
                         for role in guild.role_hierarchy:
-                            if role.permissions.manage_guild or role.permissions.manage_channels:
-                                await channel.set_permissions(role, read_messages=True)
+                            if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
+                                await channel.set_permissions(role, read_messages=True, manage_channels=True)
                             continue
                         await channel.set_permissions(guild.default_role, read_messages=False)
                     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
@@ -1158,6 +1158,10 @@ async def on_message(message):
                     except:
                         pass
                     emoji_count = message.content.count(here_emoji)
+                    await _here(message.channel, message.author, emoji_count, party=None)
+                    return
+                if message.content.startswith("🚁"):
+                    emoji_count = message.content.count("🚁")
                     await _here(message.channel, message.author, emoji_count, party=None)
                     return
                 if "/maps" in message.content and "http" in message.content:
@@ -1794,6 +1798,22 @@ async def pokebattler(ctx, pbid: int = 0):
     trainers[ctx.author.id] = author
     guild_dict[ctx.guild.id]['trainers'] = trainers
     await ctx.send(_(f'Pokebattler ID set to {pbid}!'))
+
+@_set.command()
+async def trainercode(ctx, *, trainercode: str = None):
+    if not trainercode:
+        await ctx.send(_('Trainer code cleared!'))
+        try:
+            del guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode']
+        except:
+            pass
+        return
+    trainers = guild_dict[ctx.guild.id].get('trainers',{})
+    author = trainers.get(ctx.author.id,{})
+    author['trainercode'] = trainercode
+    trainers[ctx.author.id] = author
+    guild_dict[ctx.guild.id]['trainers'] = trainers
+    await ctx.send(_(f'Trainer code set to {trainercode}!'))
 
 @Meowth.group(name='get', case_insensitive=True)
 @commands.has_permissions(manage_guild=True)
@@ -4125,6 +4145,7 @@ async def profile(ctx, user: discord.Member = None):
     embed.set_thumbnail(url=user.avatar_url)
     embed.add_field(name="Silph Road", value=f"{silph}", inline=True)
     embed.add_field(name="Pokebattler", value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('pokebattlerid',None)}", inline=True)
+    embed.add_field(name="Trainer Code", value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('trainercode',None)}", inline=True)
     embed.add_field(name="Raid Reports", value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('raid_reports',0)}", inline=True)
     embed.add_field(name="Egg Reports", value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('egg_reports',0)}", inline=True)
     embed.add_field(name="EX Raid Reports", value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('ex_reports',0)}", inline=True)
@@ -4620,6 +4641,16 @@ async def _raid(message, content, huntr=False):
         await raid_channel.set_permissions(raid_channel.guild.default_role, overwrite = ow)
     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
         pass
+    for role in raid_channel.guild.role_hierarchy:
+        if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
+            ow = raid_channel.overwrites_for(role)
+            ow.manage_channels = True
+            ow.manage_messages = True
+            ow.manage_roles = True
+            try:
+                await raid_channel.set_permissions(role, overwrite = ow)
+            except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                pass
     raid = discord.utils.get(message.guild.roles, name=entered_raid)
     if raid == None:
         roletest = ""
@@ -4791,6 +4822,16 @@ async def _raidegg(message, content, huntr=False):
             await raid_channel.set_permissions(raid_channel.guild.default_role, overwrite = ow)
         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
             pass
+        for role in raid_channel.guild.role_hierarchy:
+            if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
+                ow = raid_channel.overwrites_for(role)
+                ow.manage_channels = True
+                ow.manage_messages = True
+                ow.manage_roles = True
+                try:
+                    await raid_channel.set_permissions(role, overwrite = ow)
+                except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                    pass
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
@@ -5174,8 +5215,13 @@ async def _exraid(ctx, location):
     if guild_dict[channel.guild.id]['configure_dict']['invite']['enabled']:
         for role in channel.guild.role_hierarchy:
             if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
+                ow = raid_channel.overwrites_for(role)
+                ow.manage_channels = True
+                ow.manage_messages = True
+                ow.manage_roles = True
+                ow.send_messages = True
                 try:
-                    await raid_channel.set_permissions(role, send_messages=True)
+                    await raid_channel.set_permissions(role, overwrite = ow)
                 except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                     pass
     raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
@@ -7422,7 +7468,7 @@ async def list(ctx):
                 listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag, team))
             if " 0 on the way!" not in await _otw(ctx, tag, team):
                 listmsg += ('\n' + bulletpoint) + (await _otw(ctx, tag, team))
-            if " 0 waiting!" not in await _waiting(ctx, tag, team):
+            if " 0 waiting" not in await _waiting(ctx, tag, team):
                 listmsg += ('\n' + bulletpoint) + (await _waiting(ctx, tag, team))
             if " 0 in the lobby!" not in await _lobbylist(ctx, tag, team):
                 listmsg += ('\n' + bulletpoint) + (await _lobbylist(ctx, tag, team))

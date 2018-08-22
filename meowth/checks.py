@@ -13,12 +13,12 @@ def is_owner():
 
 def is_dev_check(ctx):
     author = ctx.author.id
-    dev_list = [132314336914833409, 288810647960158220, 174764205927432192, 263607303096369152]
+    dev_list = [288810647960158220, 330338480498671616, 335826199148494850, 343059254690971659]
     return author in dev_list
 
 def is_dev_or_owner():
     def predicate(ctx):
-        if is_dev_check(ctx):
+        if is_dev_check(ctx) or is_owner_check(ctx):
             return True
         else:
             return False
@@ -310,10 +310,8 @@ def allowwant():
     def predicate(ctx):
         if check_wantset(ctx):
             if check_wantchannel(ctx):
-                print(1)
                 return True
             else:
-                print(2)
                 raise errors.WantChannelCheckFail()
         raise errors.WantSetCheckFail()
     return commands.check(predicate)
