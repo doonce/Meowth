@@ -1610,7 +1610,7 @@ async def trainercode(ctx, *, trainercode: str = None):
     author['trainercode'] = trainercode
     trainers[ctx.author.id] = author
     guild_dict[ctx.guild.id]['trainers'] = trainers
-    await ctx.send(_(f'Trainer code set to {trainercode}!'))
+    await ctx.send(_(f'{ctx.author.display_name}\'s trainer code set to {trainercode}!'))
 
 @Meowth.group(name='get', case_insensitive=True)
 @commands.has_permissions(manage_guild=True)
@@ -4012,6 +4012,18 @@ async def team(ctx,*,team):
             await ctx.channel.send(_('Meowth! Added {member} to Team {team_name}! {team_emoji}').format(member=ctx.author.mention, team_name=entered_team.capitalize(), team_emoji=parse_emoji(ctx.guild, config['team_dict'][entered_team])))
         except discord.Forbidden:
             await ctx.channel.send(_("Meowth! I can't add roles!"))
+
+
+@Meowth.command()
+async def trainercode(ctx, user: discord.Member = None):
+    """Displays a user's trainer code."""
+    if not user:
+        user = ctx.message.author
+    trainercode = guild_dict[ctx.guild.id]['trainers'].setdefault(user.id, {}).get('trainercode', None)
+    if trainercode:
+        await ctx.channel.send(f"{user.display_name}\'s trainer code is: **{trainercode}**")
+    else:
+        await ctx.channel.send(f"{user.display_name} has not set a trainer code. Set it with **!set trainercode <code>**")
 
 @Meowth.command(hidden=True)
 async def profile(ctx, user: discord.Member = None):

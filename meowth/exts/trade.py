@@ -11,8 +11,8 @@ from meowth.exts import pokemon
 
 class Trade:
 
-    icon_url = ("https://raw.githubusercontent.com/FoglyOgly/Meowth/"
-                "discordpy-v1/images/misc/trade_icon_small.png")
+    icon_url = ("https://raw.githubusercontent.com/doonce/Meowth/"
+                "Rewrite/images/misc/trade_icon_small.png")
 
     __slots__ = [
         'bot', '_data', 'lister_id', 'listing_id', 'report_channel_id',
@@ -426,7 +426,7 @@ class Trading:
 
         want_ask = await ctx.send(
             f"{ctx.author.display_name}, what Pokemon are you willing to accept "
-            f"in exchange for {str(offer)}?")
+            f"in exchange for {str(offer)}? List your pokemon in a comma separated list.")
 
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
