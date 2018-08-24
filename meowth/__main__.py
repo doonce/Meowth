@@ -761,6 +761,13 @@ async def expire_channel(channel):
                         await reportmsg.edit(embed=discord.Embed(description=expiremsg, colour=channel.guild.me.colour))
                     except:
                         pass
+                try:
+                    report_channel = Meowth.get_channel(
+                        guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportcity'])
+                    user_message = await report_channel.get_message(guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['reportmessage'])
+                    await user_message.delete()
+                except:
+                    pass
                     # channel doesn't exist anymore in serverdict
                 archive = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive',False)
                 logs = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('logs', {})
@@ -1267,7 +1274,7 @@ async def on_message_delete(message):
     guild = message.guild
     channel = message.channel
     author = message.author
-    if channel.id in guild_dict[guild.id]['raidchannel_dict'] and guild_dict[guild.id]['configure_dict']['archive']['enabled']:
+    if channel and author and guild and channel.id in guild_dict[guild.id]['raidchannel_dict'] and guild_dict[guild.id]['configure_dict']['archive']['enabled']:
         if message.content.strip() == "!archive":
             guild_dict[guild.id]['raidchannel_dict'][channel.id]['archive'] = True
         if guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive', False):
@@ -4583,6 +4590,7 @@ async def _raid(message, content, huntr=False):
         'active': True,
         'raidmessage': raidmessage.id,
         'raidreport': raidreport.id,
+        'reportmessage': message.id,
         'ctrsmessage': ctrsmessage_id,
         'address': raid_details,
         'type': 'raid',
@@ -4760,6 +4768,7 @@ async def _raidegg(message, content, huntr=False):
             'active': True,
             'raidmessage': raidmessage.id,
             'raidreport': raidreport.id,
+            'reportmessage': message.id,
             'address': raid_details,
             'type': 'egg',
             'pokemon': '',
@@ -4883,6 +4892,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     manual_timer = eggdetails['manual_timer']
     trainer_dict = eggdetails['trainer_dict']
     egg_address = eggdetails['address']
+    user_report = eggdetails['reportmessage']
     weather = eggdetails.get('weather', None)
     raid_message = await raid_channel.get_message(eggdetails['raidmessage'])
     if not reportcitychannel:
@@ -5027,6 +5037,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         'active': True,
         'raidmessage': raid_message,
         'raidreport': egg_report,
+        'reportmessage': user_report,
         'address': egg_address,
         'type': hatchtype,
         'pokemon': entered_raid,
@@ -5157,6 +5168,7 @@ async def _exraid(ctx, location):
         'active': True,
         'raidmessage': raidmessage.id,
         'raidreport': raidreport.id,
+        'reportmessage': message.id,
         'address': raid_details,
         'type': 'egg',
         'pokemon': '',
@@ -5414,6 +5426,7 @@ async def _meetup(ctx, location):
         'active': True,
         'raidmessage': raidmessage.id,
         'raidreport': raidreport.id,
+        'reportmessage': message.id,
         'address': raid_details,
         'type': 'egg',
         'pokemon': '',
@@ -6004,6 +6017,7 @@ async def recover(ctx):
             'active': True,
             'raidmessage': raidmessage.id,
             'raidreport': None,
+            'reportmessage': None,
             'address': raid_details,
             'type': raidtype,
             'pokemon': pokemon,
@@ -7679,6 +7693,10 @@ async def trades(ctx, user: discord.Member=None):
     Works only in trading channels."""
     listmsg = _('**Meowth!**')
     codemsg = ""
+    try:
+        await ctx.message.delete()
+    except (discord.errors.Forbidden, discord.errors.HTTPException):
+        pass
     if (not user):
         user = ctx.author
     if user.id in guild_dict[ctx.guild.id].get('trainers',{}):

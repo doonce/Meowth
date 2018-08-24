@@ -365,6 +365,7 @@ class Pokemon():
             The argument didn't match a Pokemon ID or name.
         """
         argument = argument.lower()
+        pkmn_list = ctx.bot.pkmn_info['pokemon_list']
         if 'shiny' in argument.lower():
             shiny = True
             argument = argument.replace('shiny', '').strip()
@@ -383,7 +384,7 @@ class Pokemon():
         ]
         form_list.extend(' ' + c for c in ascii_lowercase)
         f = next((x for x in form_list if x in argument.lower()), None)
-        if f:
+        if f and "pory" not in argument:
             form = f.strip()
             argument = argument.replace(f, '').strip()
         else:
@@ -395,8 +396,10 @@ class Pokemon():
             except IndexError:
                 raise commands.errors.BadArgument(
                     'Pokemon ID "{}" not valid'.format(argument))
+        elif argument in pkmn_list:
+            match = argument.lower()
+            score = 100
         else:
-            pkmn_list = ctx.bot.pkmn_info['pokemon_list']
             match, score = utils.get_match(pkmn_list, argument)
         if match:
             if score >= 80:
@@ -406,7 +409,6 @@ class Pokemon():
                     'suggested' : str(match),
                     'original'   : argument
                 }
-
         if not result:
             raise commands.errors.BadArgument(
                 'Pokemon "{}" not valid'.format(argument))

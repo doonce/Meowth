@@ -400,16 +400,16 @@ class Trading:
                     Trade.from_data(
                         self.bot, message_id, trade_channel_data[message_id])
 
-    async def on_message(self, message):
-        ctx = await self.bot.get_context(message)
-        if not ctx.guild:
-            return
-        if checks.check_tradereport(ctx) and message.author != ctx.guild.me:
-            await asyncio.sleep(1)
-            try:
-                await message.delete()
-            except discord.HTTPException:
-                pass
+    # async def on_message(self, message):
+    #     ctx = await self.bot.get_context(message)
+    #     if not ctx.guild:
+    #         return
+    #     if checks.check_tradereport(ctx) and message.author != ctx.guild.me:
+    #         await asyncio.sleep(1)
+    #         try:
+    #             await message.delete()
+    #         except discord.HTTPException:
+    #             pass
 
     @commands.command()
     @checks.allowtrade()
@@ -423,6 +423,11 @@ class Trading:
             await asyncio.sleep(5)
             await trade_error.delete()
             return
+
+        try:
+            await ctx.message.delete()
+        except (discord.errors.Forbidden, discord.errors.HTTPException):
+            pass
 
         want_ask = await ctx.send(
             f"{ctx.author.display_name}, what Pokemon are you willing to accept "
