@@ -229,10 +229,10 @@ def get_level(bot, pkmn):
                 return level
 
 async def ask(bot, message, user_list=None, timeout=60, *, react_list=['✅', '❎']):
-    if user_list and type(user_list) != __builtins__.list:
+    if user_list and type(user_list) != list:
         user_list = [user_list]
     def check(reaction, user):
-        if user_list and type(user_list) is __builtins__.list:
+        if user_list and type(user_list) is list:
             return (user.id in user_list) and (reaction.message.id == message.id) and (reaction.emoji in react_list)
         elif not user_list:
             return (user.id != message.author.id) and (reaction.message.id == message.id) and (reaction.emoji in react_list)
@@ -245,3 +245,64 @@ async def ask(bot, message, user_list=None, timeout=60, *, react_list=['✅', '�
     except asyncio.TimeoutError:
         await message.clear_reactions()
         return
+
+async def letter_case(iterable, find, *, limits=None):
+    servercase_list = []
+    lowercase_list = []
+    for item in iterable:
+        if not item.name:
+            continue
+        elif item.name and (not limits or item.name.lower() in limits):
+            servercase_list.append(item.name)
+            lowercase_list.append(item.name.lower())
+    if find.lower() in lowercase_list:
+        index = lowercase_list.index(find.lower())
+        return servercase_list[index]
+    else:
+        return None
+
+def do_template(message, author, guild):
+    not_found = []
+
+    def template_replace(match):
+        if match.group(3):
+            if match.group(3) == 'user':
+                return '{user}'
+            elif match.group(3) == 'server':
+                return guild.name
+            else:
+                return match.group(0)
+        if match.group(4):
+            emoji = (':' + match.group(4)) + ':'
+            return parse_emoji(guild, emoji)
+        match_type = match.group(1)
+        full_match = match.group(0)
+        match = match.group(2)
+        if match_type == '<':
+            mention_match = re.search('(#|@!?|&)([0-9]+)', match)
+            match_type = mention_match.group(1)[0]
+            match = mention_match.group(2)
+        if match_type == '@':
+            member = guild.get_member_named(match)
+            if match.isdigit() and (not member):
+                member = guild.get_member(match)
+            if (not member):
+                not_found.append(full_match)
+            return member.mention if member else full_match
+        elif match_type == '#':
+            channel = discord.utils.get(guild.text_channels, name=match)
+            if match.isdigit() and (not channel):
+                channel = guild.get_channel(match)
+            if (not channel):
+                not_found.append(full_match)
+            return channel.mention if channel else full_match
+        elif match_type == '&':
+            role = discord.utils.get(guild.roles, name=match)
+            if match.isdigit() and (not role):
+                role = discord.utils.get(guild.roles, id=int(match))
+            if (not role):
+                not_found.append(full_match)
+            return role.mention if role else full_match
+    template_pattern = '(?i){(@|#|&|<)([^{}]+)}|{(user|server)}|<*:([a-zA-Z0-9]+):[0-9]*>*'
+    msg = re.sub(template_pattern, template_replace, message)
+    return (msg, not_found)
