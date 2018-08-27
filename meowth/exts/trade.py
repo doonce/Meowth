@@ -23,12 +23,9 @@ class Trade:
         self.bot = bot
         trade_dict = bot.guild_dict[guild_id].setdefault('trade_dict', {})
         trade_channel_data = trade_dict.setdefault(channel_id, {})
-        print(wanted_pokemon)
         if wanted_pokemon == "open trade":
-            print(1)
             wanted = "Open Trade (DM User)"
         else:
-            print(2)
             wanted = [str(want) for want in wanted_pokemon]
         trade_channel_data[message_id] = {
             'lister_id'         : lister_id,
@@ -132,10 +129,7 @@ class Trade:
             ctx.author, wanted_pokemon, offered_pokemon)
 
         role = offered_pokemon.role(ctx.guild)
-        if role:
-            rolestr = role.mention + " - "
-        else:
-            rolestr = ""
+        rolestr = ""
 
         offer_str = ("{role}Meowth! {lister} offers a {pkmn} up for trade!"
                      "").format(role=rolestr, lister=ctx.author.display_name,
