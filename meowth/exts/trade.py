@@ -23,11 +23,18 @@ class Trade:
         self.bot = bot
         trade_dict = bot.guild_dict[guild_id].setdefault('trade_dict', {})
         trade_channel_data = trade_dict.setdefault(channel_id, {})
+        print(wanted_pokemon)
+        if wanted_pokemon == "open trade":
+            print(1)
+            wanted = "Open Trade (DM User)"
+        else:
+            print(2)
+            wanted = [str(want) for want in wanted_pokemon]
         trade_channel_data[message_id] = {
             'lister_id'         : lister_id,
             'report_channel_id' : channel_id,
             'guild_id'          : guild_id,
-            'wanted_pokemon'    : [str(want) for want in wanted_pokemon],
+            'wanted_pokemon'    : wanted,
             'offered_pokemon'   : str(offered_pokemon),
             'offers'            : {}
         }
@@ -85,7 +92,7 @@ class Trade:
             ]
             wants = '\n'.join(wants)
         else:
-            wants = "Open Trade (DM user)"
+            wants = "Open Trade (DM User)"
 
         return utils.make_embed(
             title="Pokemon Trade - {}".format(lister.display_name),

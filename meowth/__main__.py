@@ -5866,15 +5866,21 @@ async def _tradelist(ctx, user):
             except:
                 continue
 
+            wanted_pokemon = tgt_trainer_trades[offer_id]['wanted_pokemon']
+            if "Open Trade" in wanted_pokemon:
+                wanted_pokemon = "Open Trade (DM User)"
+            else:
+                wanted_pokemon = ', '.join(wanted_pokemon)
+
             if len(listmsg) < 1500:
                 listmsg += ('\n🔹')
-                listmsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {', '.join(tgt_trainer_trades[offer_id]['wanted_pokemon'])} | [Go To Message]({offer_url})")
+                listmsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
             else:
                 listmsg = _("Meowth! Here are the current trades for {user}").format(user=user.display_name)
                 await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
                 listmsg = ""
                 listmsg += ('\n🔹')
-                listmsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {', '.join(tgt_trainer_trades[offer_id]['wanted_pokemon'])} | [Go To Message]({offer_url})")
+                listmsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
     else:
         listmsg += _(" {user} doesn't have any pokemon up for trade. Report one with **!trade**").format(user=user.display_name)
     return listmsg
