@@ -135,7 +135,7 @@ Meowth.config = config
 Meowth.pkmn_info_path = pkmn_path
 Meowth.raid_json_path = raid_path
 
-default_exts = ['datahandler', 'tutorial', 'silph', 'utilities', 'pokemon', 'trade', 'configure']
+default_exts = ['datahandler', 'tutorial', 'silph', 'utilities', 'pokemon', 'trade', 'configure', 'gymmatching']
 
 for ext in default_exts:
     try:
@@ -392,6 +392,7 @@ async def gym_match_prompt(channel, author_id, gym_name, gyms):
         if reaction.emoji == '✅':
             await q_msg.delete()
             return match
+        await q_msg.delete()
         return None
     return match
 
@@ -1947,7 +1948,6 @@ async def changeraid(ctx, newraid):
             pass
         await channel.edit(name=raid_channel_name, topic=channel.topic)
     elif newraid and not newraid.isdigit():
-        # What a hack, subtract raidtime from exp time because _eggtoraid will add it back
         egglevel = guild_dict[guild.id]['raidchannel_dict'][channel.id]['egglevel']
         if egglevel == "0":
             egglevel = get_level(newraid)
@@ -2655,13 +2655,14 @@ async def _raid(message, content, huntr=False):
         raid_channel_name = entered_raid + "-" + sanitize_channel_name(raid_details) + "-bot"
     if gyms:
         match = await gym_match_prompt(message.channel, message.author.id, raid_details, gyms)
-        if not match:
-            return await message.channel.send(_("Meowth! I couldn't find a gym named '{0}'.").format(raid_details))
-        gym = gyms[match]
-        raid_details = match
-        gym_coords = gym['coordinates']
-        gym_note = gym.get('notes', _('No notes for this gym.'))
-        raid_gmaps_link = create_gmaps_query(gym_coords, message.channel, type="raid")
+        if match:
+            gym = gyms[match]
+            raid_details = match
+            gym_coords = gym['coordinates']
+            gym_note = gym.get('notes', _('No notes for this gym.'))
+            raid_gmaps_link = create_gmaps_query(gym_coords, message.channel, type="raid")
+        else:
+            gyms = False
     raid_channel_category = get_category(message.channel, get_level(entered_raid), category_type="raid")
     raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
     ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
@@ -2837,13 +2838,14 @@ async def _raidegg(message, content, huntr=False):
     gyms = get_gyms(message.guild.id)
     if gyms:
         match = await gym_match_prompt(message.channel, message.author.id, raid_details, gyms)
-        if not match:
-            return await message.channel.send(_("Meowth! I couldn't find a gym named '{0}'.").format(raid_details))
-        gym = gyms[match]
-        raid_details = match
-        gym_coords = gym['coordinates']
-        gym_note = gym.get('notes', _('No notes for this gym.'))
-        raid_gmaps_link = create_gmaps_query(gym_coords, message.channel, type="raid")
+        if match:
+            gym = gyms[match]
+            raid_details = match
+            gym_coords = gym['coordinates']
+            gym_note = gym.get('notes', _('No notes for this gym.'))
+            raid_gmaps_link = create_gmaps_query(gym_coords, message.channel, type="raid")
+        else:
+            gyms = False
     if (egg_level > 5) or (egg_level == 0):
         await message.channel.send(_('Meowth! Raid egg levels are only from 1-5!'))
         return
@@ -5245,8 +5247,6 @@ async def starting(ctx, team: str = ''):
     if timeout or res.emoji == '❎':
         await question.delete()
         return
-
-
     elif res.emoji == '✅':
         await question.delete()
         guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'] = ctx.trainer_dict
@@ -5865,8 +5865,16 @@ async def _tradelist(ctx, user):
                 offer_url = offer_message.jump_url
             except:
                 continue
-            listmsg += ('\n🔹')
-            listmsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {', '.join(tgt_trainer_trades[offer_id]['wanted_pokemon'])} | [Go To Message]({offer_url})")
+
+            if len(listmsg) < 1500:
+                listmsg += ('\n🔹')
+                listmsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {', '.join(tgt_trainer_trades[offer_id]['wanted_pokemon'])} | [Go To Message]({offer_url})")
+            else:
+                listmsg = _("Meowth! Here are the current trades for {user}").format(user=user.display_name)
+                await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+                listmsg = ""
+                listmsg += ('\n🔹')
+                listmsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {', '.join(tgt_trainer_trades[offer_id]['wanted_pokemon'])} | [Go To Message]({offer_url})")
     else:
         listmsg += _(" {user} doesn't have any pokemon up for trade. Report one with **!trade**").format(user=user.display_name)
     return listmsg

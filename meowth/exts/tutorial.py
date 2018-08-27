@@ -94,10 +94,18 @@ class Tutorial:
             f"Ex: `{ctx.prefix}wild magikarp some park`")
 
         try:
-            await self.wait_for_cmd(ctx.tutorial_channel, ctx.author, 'wild')
+            wild_ctx = await self.wait_for_cmd(
+                ctx.tutorial_channel, ctx.author, 'wild')
 
             # acknowledge and wait a second before continuing
             await ctx.tutorial_channel.send("Great job!")
+            await ctx.tutorial_channel.send(
+            "The 🏎 emoji adds you to a list of trainers chasing the wild "
+            "spawn and the 💨 emoji alerts others that it has despawned.")
+
+            wild_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports']
+            ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports'] = wild_reports - 1
+
             await asyncio.sleep(1)
 
         # if no response for 5 minutes, close tutorial
@@ -153,8 +161,7 @@ class Tutorial:
             "minutes remaining until hatch or expiry (at the end of the "
             "report) \n\n"
             "Try reporting a raid!\n"
-            f"Ex: `{prefix}raid magikarp local church cloudy 42`\n"
-            f"`{prefix}raid 3 local church sunny 27`")
+            f"Ex: `{prefix}raid magikarp local church cloudy 42`")
 
         try:
             while True:
@@ -191,6 +198,13 @@ class Tutorial:
         await raid_channel.send(
             f"This is an example of a raid channel. Here is a list of "
             "commands that can be used in here:", embed=helpembed)
+
+        if raid_ctx.message.content.split()[1].isdigit():
+            egg_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['egg_reports']
+            ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['egg_reports'] = egg_reports - 1
+        else:
+            raid_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['raid_reports']
+            ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['raid_reports'] = raid_reports - 1
 
         await raid_channel.send(
             f"Try expressing interest in this raid!\n\n"
@@ -364,15 +378,20 @@ class Tutorial:
             "reward of the research task. You can also use "
             f"**{ctx.prefix}research <pokestop>, <task>, <reward>** to "
             "submit the report all at once.\n\n"
-            f"Try it out by typing `{ctx.prefix}research`")
+            f"Try it out by typing `{ctx.prefix}research` and then a random "
+            "pokestop, task, and reward.")
 
         # wait for research command completion
         try:
-            await self.wait_for_cmd(
+            research_ctx = await self.wait_for_cmd(
                 ctx.tutorial_channel, ctx.author, 'research')
 
             # acknowledge and wait a second before continuing
             await ctx.tutorial_channel.send("Great job!")
+
+            research_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['research_reports']
+            ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['research_reports'] = research_reports - 1
+
             await asyncio.sleep(1)
 
         # if no response for 5 minutes, close tutorial
@@ -435,6 +454,11 @@ class Tutorial:
 
             # acknowledge and wait a second before continuing
             await ctx.tutorial_channel.send("Great job!")
+
+            await ctx.tutorial_channel.send(
+            "The number emojis make an offer for that pokemon and the \u23f9"
+            "emoji cancels the listing. Other interaction will take place in DM.")
+
             await asyncio.sleep(1)
 
         # if no response for 5 minutes, close tutorial

@@ -79,16 +79,20 @@ class Trade:
     def make_trade_embed(lister, wanted_pokemon, offered_pokemon):
         """Returns a formatted embed message with trade details."""
 
-        wants = [
-            f'{i+1}\u20e3: {pkmn}' for i, pkmn in enumerate(wanted_pokemon)
-        ]
+        if "open trade" not in wanted_pokemon:
+            wants = [
+                f'{i+1}\u20e3: {pkmn}' for i, pkmn in enumerate(wanted_pokemon)
+            ]
+            wants = '\n'.join(wants)
+        else:
+            wants = "Open Trade (DM user)"
 
         return utils.make_embed(
             title="Pokemon Trade - {}".format(lister.display_name),
             msg_colour=utils.colour(lister.guild),
             icon=Trade.icon_url,
             fields={
-                "Wants":'\n'.join(wants),
+                "Wants":wants,
                 "Offers": str(offered_pokemon)
                 },
             inline=True,
@@ -130,7 +134,10 @@ class Trade:
                      "").format(role=rolestr, lister=ctx.author.display_name,
                                 pkmn=offered_pokemon)
 
-        instructions = "React to this message to make an offer!"
+        if "open trade" not in wanted_pokemon:
+            instructions = "React to this message to make an offer!"
+        else:
+            instructions = f"DM {ctx.author.display_name} to make an offer!"
 
         codemsg = ""
         if ctx.author.id in ctx.bot.guild_dict[ctx.guild.id].get('trainers',{}):
@@ -145,8 +152,9 @@ class Trade:
             f"{offer_str}\n\n{instructions}\n\n{cancel_inst}\n\n{codemsg}",
             embed=trade_embed)
 
-        for i in range(len(wanted_pokemon)):
-            await trade_msg.add_reaction(f'{i+1}\u20e3')
+        if "open trade" not in wanted_pokemon:
+            for i in range(len(wanted_pokemon)):
+                await trade_msg.add_reaction(f'{i+1}\u20e3')
         await trade_msg.add_reaction('\u23f9')
 
         trade = cls(
@@ -431,7 +439,8 @@ class Trading:
 
         want_ask = await ctx.send(
             f"{ctx.author.display_name}, what Pokemon are you willing to accept "
-            f"in exchange for {str(offer)}? List your pokemon in a comma separated list.")
+            f"in exchange for {str(offer)}? List your pokemon in a comma separated "
+            "list or just say **ask** to create an open trade.")
 
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
@@ -447,11 +456,13 @@ class Trading:
         await want_ask.delete()
         await want_reply.delete()
 
-        pkmn_convert = functools.partial(pokemon.Pokemon.get_pokemon, ctx)
-
-        wants = map(str.strip, wants)
-        wants = map(pkmn_convert, wants)
-        wants = [str(want) for want in wants]
+        if wants[0] == "ask":
+            wants = "open trade"
+        else:
+            pkmn_convert = functools.partial(pokemon.Pokemon.get_pokemon, ctx)
+            wants = map(str.strip, wants)
+            wants = map(pkmn_convert, wants)
+            wants = [str(want) for want in wants]
 
         await Trade.create_trade(ctx, wants, offer)
 
