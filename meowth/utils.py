@@ -6,7 +6,7 @@ from fuzzywuzzy import process
 import discord
 import asyncio
 
-def get_match(word_list: list, word: str, score_cutoff: int = 50):
+def get_match(word_list: list, word: str, score_cutoff: int = 60):
     """Uses fuzzywuzzy to see if word is close to entries in word_list
 
     Returns a tuple of (MATCH, SCORE)

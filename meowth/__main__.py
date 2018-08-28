@@ -1165,7 +1165,7 @@ async def on_message(message):
                     report_channel = Meowth.get_channel(guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['reportcity'])
                     oldreportmsg = await report_channel.get_message(guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['raidreport'])
                     oldembed = oldraidmsg.embeds[0]
-                    newembed = discord.Embed(title=oldembed.title, url=newloc, colour=message.guild.me.colour)
+                    newembed = discord.Embed(title=oldembed.title, description=oldembed.description, url=newloc, colour=message.guild.me.colour)
                     for field in oldembed.fields:
                         newembed.add_field(name=field.name, value=field.value, inline=field.inline)
                     newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
@@ -1919,7 +1919,7 @@ async def changeraid(ctx, newraid):
         report_channel = Meowth.get_channel(raid_message.raw_channel_mentions[0])
         report_message = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
         oldembed = raid_message.embeds[0]
-        raid_embed = discord.Embed(title=oldembed.title, url=oldembed.url, colour=message.guild.me.colour)
+        raid_embed = discord.Embed(title=oldembed.title, description=oldembed.description, url=oldembed.url, colour=message.guild.me.colour)
         if len(raid_info['raid_eggs'][newraid]['pokemon']) > 1:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
             raid_embed.add_field(name='\u200b', value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
@@ -2659,10 +2659,16 @@ async def _raid(message, content, huntr=False):
             gym = gyms[match]
             raid_details = match
             gym_coords = gym['coordinates']
-            gym_note = gym.get('notes', _('No notes for this gym.'))
-            raid_gmaps_link = create_gmaps_query(gym_coords, message.channel, type="raid")
+            gym_note = gym.get('notes', "")
+            gym_alias = gym.get('alias', "")
+            if gym_note:
+                gym_note = f"**Notes:** {gym_note}"
+            if gym_alias:
+                raid_details = gym_alias
+            raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gym_coords)
         else:
             gyms = False
+            gym_info = ""
     raid_channel_category = get_category(message.channel, get_level(entered_raid), category_type="raid")
     raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
     ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
@@ -2688,10 +2694,9 @@ async def _raid(message, content, huntr=False):
         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
-    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
     if gyms:
-        gym_info = _("**Name:** {0}\n**Notes:** {1}").format(raid_details, gym_note)
-        raid_embed.add_field(name=_('**Gym:**'), value=gym_info, inline=False)
+        gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
+    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(message.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(message.guild, get_weaknesses(entered_raid))), inline=True)
     raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
@@ -2842,10 +2847,16 @@ async def _raidegg(message, content, huntr=False):
             gym = gyms[match]
             raid_details = match
             gym_coords = gym['coordinates']
-            gym_note = gym.get('notes', _('No notes for this gym.'))
-            raid_gmaps_link = create_gmaps_query(gym_coords, message.channel, type="raid")
+            gym_note = gym.get('notes', "")
+            gym_alias = gym.get('alias', "")
+            if gym_note:
+                gym_note = f"**Notes:** {gym_note}"
+            if gym_alias:
+                raid_details = gym_alias
+            raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gym_coords)
         else:
             gyms = False
+            gym_info = ""
     if (egg_level > 5) or (egg_level == 0):
         await message.channel.send(_('Meowth! Raid egg levels are only from 1-5!'))
         return
@@ -2879,10 +2890,9 @@ async def _raidegg(message, content, huntr=False):
                 except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                     pass
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
-        raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=message.guild.me.colour)
         if gyms:
-            gym_info = _("**Name:** {0}\n**Notes:** {1}").format(raid_details, gym_note)
-            raid_embed.add_field(name=_('**Gym:**'), value=gym_info, inline=False)
+            gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
+        raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
             raid_embed.add_field(name='\u200b', value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
@@ -2971,7 +2981,7 @@ async def _eggassume(args, raid_channel, author=None):
         roletest = _("{pokemon} - ").format(pokemon=raidrole.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
-    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
+    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(raid_channel.guild, get_weaknesses(entered_raid))), inline=True)
     raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
@@ -3106,7 +3116,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
-    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
+    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(raid_channel.guild, get_weaknesses(entered_raid))), inline=True)
     raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
@@ -3923,7 +3933,7 @@ async def location(ctx):
         report_channel = Meowth.get_channel(rc_d[channel.id]['reportcity'])
         oldembed = raidmsg.embeds[0]
         locurl = oldembed.url
-        newembed = discord.Embed(title=oldembed.title, url=locurl, colour=guild.me.colour)
+        newembed = discord.Embed(title=oldembed.title, description=oldembed.description, url=locurl, colour=guild.me.colour)
         for field in oldembed.fields:
             newembed.add_field(name=field.name, value=field.value, inline=field.inline)
         newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
@@ -3959,7 +3969,7 @@ async def new(ctx,*,content):
         oldraidmsg = await message.channel.get_message(guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['raidmessage'])
         oldreportmsg = await report_channel.get_message(guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['raidreport'])
         oldembed = oldraidmsg.embeds[0]
-        newembed = discord.Embed(title=oldembed.title, url=newloc, colour=message.guild.me.colour)
+        newembed = discord.Embed(title=oldembed.title, description=oldembed.description, url=newloc, colour=message.guild.me.colour)
         for field in oldembed.fields:
             t = _('team')
             s = _('status')
@@ -4294,7 +4304,7 @@ async def duplicate(ctx):
                             duperaidmsg = await channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidmessage'])
                             oldembed = oldraidmsg.embeds[0]
                             dupeembed = duperaidmsg.embeds[0]
-                            newembed = discord.Embed(title=oldembed.title, url=dupeembed.url, colour=guild.me.colour)
+                            newembed = discord.Embed(title=oldembed.title, description=oldembed.description, url=dupeembed.url, colour=guild.me.colour)
                             for field in oldembed.fields:
                                 newembed.add_field(name=field.name, value=field.value, inline=field.inline)
                             newembed.add_field(name=dupeembed.fields[2].name, value=dupeembed.fields[2].value, inline=True)
@@ -5041,7 +5051,7 @@ async def _edit_party(channel, author=None):
                     raidmsg = message
                     break
     reportembed = raidmsg.embeds[0]
-    newembed = discord.Embed(title=reportembed.title, url=reportembed.url, colour=channel.guild.me.colour)
+    newembed = discord.Embed(title=reportembed.title, description=reportembed.description, url=reportembed.url, colour=channel.guild.me.colour)
     for field in reportembed.fields:
         t = _('team')
         s = _('status')

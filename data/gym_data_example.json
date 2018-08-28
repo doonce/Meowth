@@ -5,9 +5,14 @@
             "coordinates": "-33.877055, 151.207662",
             "notes": "these are notes about gym_name_to_match_with"
         },
-        "another_gym":
+        "Actual Gym Name":
         {
             "coordinates": "-33.876516, 151.203160"
+        },
+        "shorthand_name":
+        {
+            "coordinates": "-33.876516, 151.203160",
+            "alias": "Actual Gym Name"
         },
         "last_gym_sample":
         {
