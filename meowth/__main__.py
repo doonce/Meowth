@@ -2647,12 +2647,6 @@ async def _raid(message, content, huntr=False):
         await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**'))
         return
     gyms = get_gyms(message.guild.id)
-    if not huntr:
-        raid_gmaps_link = create_gmaps_query(raid_details, message.channel, type="raid")
-        raid_channel_name = (entered_raid + '-') + sanitize_channel_name(raid_details)
-    else:
-        raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(huntr.split("|")[1])
-        raid_channel_name = entered_raid + "-" + sanitize_channel_name(raid_details) + "-bot"
     if gyms:
         match = await gym_match_prompt(message.channel, message.author.id, raid_details, gyms)
         if match:
@@ -2666,10 +2660,40 @@ async def _raid(message, content, huntr=False):
             if gym_alias:
                 raid_details = gym_alias
             raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gym_coords)
+            gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
+            for raid in guild_dict[message.guild.id]['raidchannel_dict']:
+                raid_address = guild_dict[message.guild.id]['raidchannel_dict'][raid]['address']
+                raid_coords = guild_dict[message.guild.id]['raidchannel_dict'][raid]['gymhuntrgps']
+                raid_reportcity = guild_dict[message.guild.id]['raidchannel_dict'][raid]['reportcity']
+                if (raid_details == raid_address or gym_coords == raid_coords) and message.channel.id == raid_reportcity:
+                    rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported. Please check and let me know if you want to report it!'))
+                    try:
+                        timeout = False
+                        res, reactuser = await utils.ask(Meowth, rusure, message.author.id)
+                    except TypeError:
+                        timeout = True
+                    if timeout or res.emoji == '❎':
+                        await rusure.delete()
+                        confirmation = await message.channel.send(_('Report cancelled.'))
+                        await message.delete()
+                        await asyncio.sleep(10)
+                        await confirmation.delete()
+                        return
+                    elif res.emoji == '✅':
+                        await rusure.delete()
+                        break
+                    else:
+                        return
         else:
             gyms = False
             gym_info = ""
-    raid_channel_category = get_category(message.channel, get_level(entered_raid), category_type="raid")
+    if not huntr:
+        raid_gmaps_link = create_gmaps_query(raid_details, message.channel, type="raid")
+        raid_channel_name = (entered_raid + '-') + sanitize_channel_name(raid_details)
+    else:
+        raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(huntr.split("|")[1])
+        raid_channel_name = entered_raid + "-" + sanitize_channel_name(raid_details) + "-bot"
+    raid_channel_category = get_category(message.chanel, get_level(entered_raid), category_type="raid")
     raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
     ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
     ow.send_messages = True
@@ -2694,8 +2718,6 @@ async def _raid(message, content, huntr=False):
         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
-    if gyms:
-        gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(get_type(message.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=weakness_to_str(message.guild, get_weaknesses(entered_raid))), inline=True)
@@ -2854,6 +2876,30 @@ async def _raidegg(message, content, huntr=False):
             if gym_alias:
                 raid_details = gym_alias
             raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gym_coords)
+            gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
+            for raid in guild_dict[message.guild.id]['raidchannel_dict']:
+                raid_address = guild_dict[message.guild.id]['raidchannel_dict'][raid]['address']
+                raid_coords = guild_dict[message.guild.id]['raidchannel_dict'][raid]['gymhuntrgps']
+                raid_reportcity = guild_dict[message.guild.id]['raidchannel_dict'][raid]['reportcity']
+                if (raid_details == raid_address or gym_coords == raid_coords) and message.channel.id == raid_reportcity:
+                    rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported. Please check and let me know if you want to report it!'))
+                    try:
+                        timeout = False
+                        res, reactuser = await utils.ask(Meowth, rusure, message.author.id)
+                    except TypeError:
+                        timeout = True
+                    if timeout or res.emoji == '❎':
+                        await rusure.delete()
+                        confirmation = await message.channel.send(_('Report cancelled.'))
+                        await message.delete()
+                        await asyncio.sleep(10)
+                        await confirmation.delete()
+                        return
+                    elif res.emoji == '✅':
+                        await rusure.delete()
+                        break
+                    else:
+                        return
         else:
             gyms = False
             gym_info = ""
@@ -2869,8 +2915,12 @@ async def _raidegg(message, content, huntr=False):
             p_name = get_name(p).title()
             p_type = get_type(message.guild, p)
             boss_list.append((((p_name + ' (') + str(p)) + ') ') + ''.join(p_type))
-        raid_channel_name = _('level-{egg_level}-egg-').format(egg_level=egg_level)
-        raid_channel_name += sanitize_channel_name(raid_details)
+        if not huntr:
+            raid_channel_name = _('level-{egg_level}-egg-').format(egg_level=egg_level)
+            raid_channel_name += sanitize_channel_name(raid_details)
+        else:
+            raid_channel_name = _('level-{egg_level}-egg-').format(egg_level=egg_level)
+            raid_channel_name += sanitize_channel_name(raid_details) + "-bot"
         raid_channel_category = get_category(message.channel, egg_level, category_type="raid")
         raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
         ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
@@ -2890,8 +2940,6 @@ async def _raidegg(message, content, huntr=False):
                 except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                     pass
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
-        if gyms:
-            gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
