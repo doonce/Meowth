@@ -67,7 +67,7 @@ class Configure:
                 if config_dict_temp[commandconfig].get('enabled',False):
                     enabled_commands.append(commandconfig)
             configmessage += _("\n\n**Enabled Commands:**\n{enabled_commands}").format(enabled_commands=", ".join(enabled_commands))
-            configmessage += _("\n\n**All Commands:**\n**all** - To redo configuration\n**team** - For Team Assignment configuration\n**welcome** - For Welcome Message configuration\n**raid** - for raid command configuration\n**exraid** - for EX raid command configuration\n**invite** - for invite command configuration\n**counters** - for automatic counters configuration\n**wild** - for wild command configuration\n**research** - for !research command configuration\n**meetup** - for !meetup command configuration\n**want** - for want/unwant command configuration\n**archive** - For !archive configuration\n**trade** - For trade command configuration\n**timezone** - For timezone configuration\n**scanners** - For scanner bot integration configuration")
+            configmessage += _("\n\n**All Commands:**\n**all** - To redo configuration\n**team** - For Team Assignment configuration\n**welcome** - For Welcome Message configuration\n**raid** - for raid command configuration\n**exraid** - for EX raid command configuration\n**invite** - for invite command configuration\n**counters** - for automatic counters configuration\n**wild** - for wild command configuration\n**research** - for !research command configuration\n**meetup** - for !meetup command configuration\n**want** - for want/unwant command configuration\n**archive** - For !archive configuration\n**trade** - For trade command configuration\n**nest** - For nest command configuration\n**timezone** - For timezone configuration\n**scanners** - For scanner bot integration configuration")
             configmessage += _('\n\nReply with **cancel** at any time throughout the questions to cancel the configure process.')
             await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=configmessage).set_author(name=_('Meowth Configuration - {guild}').format(guild=guild.name), icon_url=ctx.bot.user.avatar_url))
             while True:
@@ -148,6 +148,10 @@ class Configure:
                     return None
             if "trade" in configreplylist:
                 ctx = await self._configure_trade(ctx)
+                if not ctx:
+                    return None
+            if "nest" in configreplylist:
+                ctx = await self._configure_nest(ctx)
                 if not ctx:
                     return None
             if "settings" in configreplylist:
@@ -1641,6 +1645,90 @@ class Configure:
                     break
                 else:
                     await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(trade_list_errors))))
+                    continue
+        ctx.config_dict_temp = config_dict_temp
+        return ctx
+
+    @configure.command()
+    async def nest(self, ctx):
+        """!nest reporting settings"""
+        guild = ctx.message.guild
+        owner = ctx.message.author
+        try:
+            await ctx.message.delete()
+        except (discord.errors.Forbidden, discord.errors.HTTPException):
+            pass
+        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            await self._configure(ctx, "all")
+            return
+        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        ctx = await self._configure_nest(ctx)
+        if ctx:
+            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+        try:
+            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+        except KeyError:
+            pass
+
+    async def _configure_nest(self, ctx):
+        guild = ctx.message.guild
+        owner = ctx.message.author
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!nest** command allows your users to report nests. This command requires at least one channel specifically for nests.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!nest** command in, separated by commas.")).set_author(name=_('nest Configuration'), icon_url=ctx.bot.user.avatar_url))
+        while True:
+            nestmsg = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            if nestmsg.content.lower() == 'cancel':
+                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                return None
+            elif nestmsg.content.lower() == 'n':
+                config_dict_temp['nest'] = {'enabled': False, 'report_channels': []}
+                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Nest Reporting disabled.')))
+                break
+            else:
+                nest_list = nestmsg.content.lower().split(',')
+                nest_list = [x.strip() for x in nest_list]
+                guild_channel_list = []
+                for channel in guild.text_channels:
+                    guild_channel_list.append(channel.id)
+                nest_list_objs = []
+                nest_list_names = []
+                nest_list_errors = []
+                for item in nest_list:
+                    channel = None
+                    if item.isdigit():
+                        channel = discord.utils.get(guild.text_channels, id=int(item))
+                    if not channel:
+                        item = re.sub('[^a-zA-Z0-9 _\\-]+', '', item)
+                        item = item.replace(" ","-")
+                        name = await utils.letter_case(guild.text_channels, item.lower())
+                        channel = discord.utils.get(guild.text_channels, name=name)
+                    if channel:
+                        nest_list_objs.append(channel)
+                        nest_list_names.append(channel.name)
+                    else:
+                        nest_list_errors.append(item)
+                nest_list_set = [x.id for x in nest_list_objs]
+                diff = set(nest_list_set) - set(guild_channel_list)
+                if (not diff) and (not nest_list_errors):
+                    config_dict_temp['nest']['enabled'] = True
+                    config_dict_temp['nest']['report_channels'] = nest_list_set
+                    for channel in nest_list_objs:
+                        ow = channel.overwrites_for(ctx.bot.user)
+                        ow.send_messages = True
+                        ow.read_messages = True
+                        ow.manage_roles = True
+                        try:
+                            await channel.set_permissions(ctx.bot.user, overwrite = ow)
+                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Nest Reporting enabled')))
+                    break
+                else:
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(nest_list_errors))))
                     continue
         ctx.config_dict_temp = config_dict_temp
         return ctx

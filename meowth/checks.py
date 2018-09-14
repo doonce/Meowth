@@ -13,7 +13,7 @@ def is_owner():
 
 def is_dev_check(ctx):
     author = ctx.author.id
-    dev_list = [132314336914833409, 174764205927432192, 263607303096369152]
+    dev_list = [288810647960158220, 330338480498671616, 335826199148494850, 343059254690971659]
     return author in dev_list
 
 def is_dev_or_owner():
@@ -232,6 +232,20 @@ def check_researchreport(ctx):
     channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict']['research'].get('report_channels',{}).keys()]
     return channel.id in channel_list
 
+def check_nestset(ctx):
+    if ctx.guild is None:
+        return False
+    guild = ctx.guild
+    return ctx.bot.guild_dict[guild.id]['configure_dict']['nest'].get('enabled',False)
+
+def check_nestreport(ctx):
+    if ctx.guild is None:
+        return False
+    channel = ctx.channel
+    guild = ctx.guild
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).get('report_channels',[])]
+    return channel.id in channel_list
+
 #Decorators
 def allowreports():
     def predicate(ctx):
@@ -289,6 +303,17 @@ def allowresearchreport():
                 raise errors.ResearchReportChannelCheckFail()
         else:
             raise errors.ResearchSetCheckFail()
+    return commands.check(predicate)
+
+def allownestreport():
+    def predicate(ctx):
+        if check_nestset(ctx):
+            if check_nestreport(ctx):
+                return True
+            else:
+                raise errors.NestChannelCheckFail()
+        else:
+            raise errors.NestSetCheckFail()
     return commands.check(predicate)
 
 def allowmeetupreport():

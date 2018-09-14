@@ -18,7 +18,10 @@ class GymMatching:
         return self.gym_data.get(str(guild_id))
 
     def gym_match(self, gym_name, gyms):
-        return utils.get_match(list(gyms.keys()), gym_name)
+        match, score = utils.get_match(list(gyms.keys()), gym_name)
+        if match:
+            match = gyms[match].get('alias', match)
+        return (match, score)
 
     @commands.command(hidden=True)
     async def gym_match_test(self, ctx, gym_name):

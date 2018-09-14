@@ -135,7 +135,7 @@ Meowth.config = config
 Meowth.pkmn_info_path = pkmn_path
 Meowth.raid_json_path = raid_path
 
-default_exts = ['datahandler', 'tutorial', 'silph', 'utilities', 'pokemon', 'trade', 'configure', 'gymmatching']
+default_exts = ['datahandler', 'tutorial', 'silph', 'utilities', 'pokemon', 'trade', 'configure', 'gymmatching', 'nest']
 
 for ext in default_exts:
     try:
@@ -337,37 +337,6 @@ def raise_admin_violation(message):
     raise Exception(_('Received admin command {command} from unauthorized user, {user}!').format(
         command=message.content, user=message.author))
 
-def spellcheck(word):
-    suggestion = pkmn_match.get_pkmn(re.sub(r"[^A-Za-z0-9 ]+", '', word))
-    # If we have a spellcheck suggestion
-    if suggestion and suggestion != word:
-        result = pkmn_info['pokemon_list'][suggestion]
-        return result
-
-async def autocorrect(entered_word, destination, author):
-    msg = _("Meowth! **{word}** isn't a Pokemon!").format(word=entered_word.title())
-    if spellcheck(entered_word) and (spellcheck(entered_word) != entered_word):
-        msg += _(' Did you mean **{correction}**?').format(correction=spellcheck(entered_word).title())
-        question = await destination.send(msg)
-        if author:
-            try:
-                timeout = False
-                res, reactuser = await utils.ask(Meowth, question, author.id)
-            except TypeError:
-                timeout = True
-            await question.delete()
-            if timeout or res.emoji == '❎':
-                return None
-            elif res.emoji == '✅':
-                return spellcheck(entered_word)
-            else:
-                return None
-        else:
-            return None
-    else:
-        question = await destination.send(msg)
-        return
-
 def get_gyms(guild_id):
     gym_matching_cog = Meowth.cogs.get('GymMatching')
     if not gym_matching_cog:
@@ -386,8 +355,10 @@ async def gym_match_prompt(channel, author_id, gym_name, gyms):
             q_msg = await channel.send(question)
             reaction, __ = await utils.ask(Meowth, q_msg, author_id)
         except TypeError:
+            await q_msg.delete()
             return None
         if not reaction:
+            await q_msg.delete()
             return None
         if reaction.emoji == '✅':
             await q_msg.delete()
@@ -969,6 +940,9 @@ async def _print(owner, message):
 
 async def maint_start():
     try:
+        Nest = Meowth.cogs.get('Nest')
+        if Nest:
+            event_loop.create_task(Nest.nest_cleanup())
         event_loop.create_task(guild_cleanup())
         event_loop.create_task(channel_cleanup())
         event_loop.create_task(message_cleanup())
@@ -1764,7 +1738,9 @@ async def reload_json(ctx):
 @Meowth.command()
 @checks.is_dev_or_owner()
 async def raid_json(ctx, level=None, *, newlist=None):
-    'Edits or displays raid_info.json\n\n    Usage: !raid_json [level] [list]'
+    """Edits or displays raid_info.json
+
+    Usage: !raid_json [level] [list]"""
     msg = ''
     if (not level) and (not newlist):
         for level in raid_info['raid_eggs']:
@@ -1805,6 +1781,7 @@ async def raid_json(ctx, level=None, *, newlist=None):
         except TypeError:
             timeout = True
         if timeout or res.emoji == '❎':
+            await question.delete()
             return await ctx.channel.send(_("Meowth! Configuration cancelled!"))
         elif res.emoji == '✅':
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
@@ -1816,9 +1793,70 @@ async def raid_json(ctx, level=None, *, newlist=None):
             load_config()
             await question.clear_reactions()
             await question.add_reaction('☑')
-            return await ctx.channel.send(_("Meowth! Configuration successful!"))
+            await ctx.channel.send(_("Meowth! Configuration successful!"))
+            await asyncio.sleep(10)
+            await question.delete()
         else:
             return await ctx.channel.send(_("Meowth! I'm not sure what went wrong, but configuration is cancelled!"))
+
+@Meowth.command()
+@checks.is_dev_or_owner()
+async def raid_time(ctx, hatch_or_raid, level, newtime):
+    """Edits raid time in raid_info.json
+
+    Usage: !raid_time <hatch_or_raid> <level> <newtime>
+    hatch_or_raid = input the word hatch or raid to set which time to change
+    level = 1 through 5 or all
+    newtime = new time to change to in minutes"""
+    msg = ''
+    if hatch_or_raid.lower() == "hatch":
+        modify_time = "hatchtime"
+    elif hatch_or_raid.lower() == "raid":
+        modify_time = "raidtime"
+    else:
+        return await ctx.channel.send(_("Please enter **raid** or **hatch** so I know what time to change!"))
+    if level.lower() == "all" and newtime.isdigit():
+        msg += _('I will change all level raids (1-5) **{hatch_or_raid}** time to **{newtime}** minutes.').format(hatch_or_raid=hatch_or_raid, newtime=newtime)
+    elif not level.isdigit() or not newtime.isdigit():
+        return await ctx.channel.send(_("Please make sure level and newtime are numbers"))
+    else:
+        newtime = int(newtime)
+        msg += _('I will change Level **{level}**\'s **{hatch_or_raid}** time from **{oldtime}** minutes to **{newtime}** minutes.').format(level=level, hatch_or_raid=hatch_or_raid, oldtime=raid_info['raid_eggs'][level][modify_time], newtime=newtime)
+    msg += _('\n\nContinue?')
+    question = await ctx.channel.send(msg)
+    try:
+        timeout = False
+        res, reactuser = await utils.ask(Meowth, question, ctx.author.id)
+    except TypeError:
+        timeout = True
+    if timeout or res.emoji == '❎':
+        await question.delete()
+        return await ctx.channel.send(_("Meowth! Configuration cancelled!"))
+    elif res.emoji == '✅':
+        with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
+            data = json.load(fd)
+        if level.lower() == "all":
+            levellist = ["1","2","3","4","5"]
+            for level in levellist:
+                tmp = data['raid_eggs'][level][modify_time]
+                data['raid_eggs'][level][modify_time] = newtime
+                with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                    json.dump(data, fd, indent=2, separators=(', ', ': '))
+        else:
+            tmp = data['raid_eggs'][level][modify_time]
+            data['raid_eggs'][level][modify_time] = newtime
+            with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                json.dump(data, fd, indent=2, separators=(', ', ': '))
+        load_config()
+        await question.clear_reactions()
+        await question.add_reaction('☑')
+        await ctx.channel.send(_("Meowth! Configuration successful!"))
+        await asyncio.sleep(10)
+        await question.delete()
+    else:
+        return await ctx.channel.send(_("Meowth! I'm not sure what went wrong, but configuration is cancelled!"))
+        await asyncio.sleep(10)
+        await question.delete()
 
 @Meowth.command()
 @commands.has_permissions(manage_guild=True)
@@ -1855,6 +1893,9 @@ async def reset_board(ctx, *, user=None, type=None):
             elif "res" in argument.lower():
                 type = "research_reports"
                 break
+            elif "nest" in argument.lower():
+                type = "nest_reports"
+                break
     if not type:
         type = "total_reports"
     msg = _("Are you sure you want to reset the **{type}** report stats for **{target}**?").format(type=type, target=tgt_string)
@@ -1880,6 +1921,7 @@ async def reset_board(ctx, *, user=None, type=None):
             trainers[trainer]['ex_reports'] = 0
             trainers[trainer]['egg_reports'] = 0
             trainers[trainer]['research_reports'] = 0
+            trainers[trainer]['nest_reports'] = 0
         else:
             trainers[trainer][type] = 0
         if tgt_trainer:
@@ -2194,6 +2236,7 @@ async def profile(ctx, user: discord.Member = None):
     embed.add_field(name=_("EX Raid Reports"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('ex_reports',0)}", inline=True)
     embed.add_field(name=_("Wild Reports"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('wild_reports',0)}", inline=True)
     embed.add_field(name=_("Research Reports"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('research_reports',0)}", inline=True)
+    embed.add_field(name=_("Nest Reports"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('nest_reports',0)}", inline=True)
     await ctx.send(embed=embed)
 
 @Meowth.command()
@@ -2206,10 +2249,10 @@ async def leaderboard(ctx, type="total"):
     leaderboard = []
     rank = 1
     field_value = ""
-    typelist = ["total", "raids", "exraids", "wilds", "research", "eggs"]
+    typelist = ["total", "raids", "exraids", "wilds", "research", "eggs", "nests"]
     type = type.lower()
     if type not in typelist:
-        await ctx.send(_("Leaderboard type not supported. Please select from: **total, raids, eggs, exraids, wilds, research**"))
+        await ctx.send(_("Leaderboard type not supported. Please select from: **{typelist}**").format(typelist = ", ".join(typelist)))
         return
     for trainer in trainers.keys():
         user = ctx.guild.get_member(trainer)
@@ -2218,8 +2261,9 @@ async def leaderboard(ctx, type="total"):
         exraids = trainers[trainer].setdefault('ex_reports', 0)
         eggs = trainers[trainer].setdefault('egg_reports', 0)
         research = trainers[trainer].setdefault('research_reports', 0)
+        nests = trainers[trainer].setdefault('nest_reports', 0)
         total_reports = raids + wilds + exraids + eggs + research
-        trainer_stats = {'trainer':trainer, 'total':total_reports, 'raids':raids, 'wilds':wilds, 'research':research, 'exraids':exraids, 'eggs':eggs}
+        trainer_stats = {'trainer':trainer, 'total':total_reports, 'raids':raids, 'wilds':wilds, 'research':research, 'exraids':exraids, 'eggs':eggs, 'nests':nests}
         if trainer_stats[type] > 0 and user:
             leaderboard.append(trainer_stats)
     leaderboard = sorted(leaderboard,key= lambda x: x[type], reverse=True)[:10]
@@ -2236,6 +2280,8 @@ async def leaderboard(ctx, type="total"):
                 field_value += _("Wilds: **{wilds}** | ").format(wilds=trainer['wilds'])
             if guild_dict[ctx.guild.id]['configure_dict']['research']['enabled']:
                 field_value += _("Research: **{research}** | ").format(research=trainer['research'])
+            if guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
+                field_value += _("Nests: **{nest}** | ").format(nest=trainer['nests'])
             embed.add_field(name=f"{rank}. {user.display_name} - {type.title()}: **{trainer[type]}**", value=field_value[:-3], inline=False)
             field_value = ""
             rank += 1
@@ -2295,7 +2341,7 @@ async def want(ctx,*,pokemon):
             question = await message.channel.send(msg)
             return
         else:
-            entered_want = spellcheck(entered_want)
+            entered_want = utils.spellcheck(Meowth, entered_want)
             pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_want)), None)
             if not pkmn_match:
                 if len(want_list) == 1:
@@ -2304,7 +2350,7 @@ async def want(ctx,*,pokemon):
                     return
                 else:
                     spellcheck_list.append(entered_want)
-                    spellcheck_dict[entered_want] = spellcheck(entered_want) if spellcheck(entered_want) != entered_want else None
+                    spellcheck_dict[entered_want] = utils.spellcheck(Meowth, entered_want) if utils.spellcheck(Meowth, entered_want) != entered_want else None
                     continue
         role = discord.utils.get(guild.roles, name=entered_want)
         # Create role if it doesn't exist yet
@@ -2386,7 +2432,7 @@ async def unwant(ctx,*,pokemon):
             if pkmn_match:
                 entered_unwant = pkmn_match
             else:
-                entered_unwant = await autocorrect(entered_unwant, message.channel, message.author)
+                entered_unwant = await utils.autocorrect(Meowth, entered_unwant, message.channel, message.author)
             if not entered_unwant:
                 return
             # If user is not already wanting the Pokemon,
@@ -2479,7 +2525,7 @@ async def _wild(message, content, huntr=False):
     if pkmn_match:
         entered_wild = pkmn_match
     else:
-        entered_wild = await autocorrect(entered_wild, message.channel, message.author)
+        entered_wild = await utils.autocorrect(Meowth, entered_wild, message.channel, message.author)
     if not entered_wild:
         return
     wild = discord.utils.get(message.guild.roles, name=entered_wild)
@@ -2618,7 +2664,7 @@ async def _raid(message, content, huntr=False):
     if pkmn_match:
         entered_raid = pkmn_match
     else:
-        entered_raid = await autocorrect(entered_raid, message.channel, message.author)
+        entered_raid = await utils.autocorrect(Meowth, entered_raid, message.channel, message.author)
     if not entered_raid:
         return
     raid_match = True if entered_raid in get_raidlist() else False
@@ -2666,7 +2712,8 @@ async def _raid(message, content, huntr=False):
                 raid_coords = guild_dict[message.guild.id]['raidchannel_dict'][raid]['gymhuntrgps']
                 raid_reportcity = guild_dict[message.guild.id]['raidchannel_dict'][raid]['reportcity']
                 if (raid_details == raid_address or gym_coords == raid_coords) and message.channel.id == raid_reportcity:
-                    rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported. Please check and let me know if you want to report it!'))
+                    dupe_channel = Meowth.get_channel(raid)
+                    rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=dupe_channel.mention))
                     try:
                         timeout = False
                         res, reactuser = await utils.ask(Meowth, rusure, message.author.id)
@@ -2693,7 +2740,7 @@ async def _raid(message, content, huntr=False):
     else:
         raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(huntr.split("|")[1])
         raid_channel_name = entered_raid + "-" + sanitize_channel_name(raid_details) + "-bot"
-    raid_channel_category = get_category(message.chanel, get_level(entered_raid), category_type="raid")
+    raid_channel_category = get_category(message.channel, get_level(entered_raid), category_type="raid")
     raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
     ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
     ow.send_messages = True
@@ -2882,7 +2929,8 @@ async def _raidegg(message, content, huntr=False):
                 raid_coords = guild_dict[message.guild.id]['raidchannel_dict'][raid]['gymhuntrgps']
                 raid_reportcity = guild_dict[message.guild.id]['raidchannel_dict'][raid]['reportcity']
                 if (raid_details == raid_address or gym_coords == raid_coords) and message.channel.id == raid_reportcity:
-                    rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported. Please check and let me know if you want to report it!'))
+                    dupe_channel = Meowth.get_channel(raid)
+                    rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=dupe_channel.mention))
                     try:
                         timeout = False
                         res, reactuser = await utils.ask(Meowth, rusure, message.author.id)
@@ -3009,7 +3057,7 @@ async def _eggassume(args, raid_channel, author=None):
     if pkmn_match:
         entered_raid = pkmn_match
     else:
-        entered_raid = await autocorrect(entered_raid, raid_channel, author)
+        entered_raid = await utils.autocorrect(Meowth, entered_raid, raid_channel, author)
     if not entered_raid:
         return
     raid_match = True if entered_raid in get_raidlist() else False
@@ -3078,7 +3126,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     if pkmn_match:
         entered_raid = pkmn_match
     else:
-        entered_raid = await autocorrect(entered_raid, raid_channel, author)
+        entered_raid = await utils.autocorrect(Meowth, entered_raid, raid_channel, author)
     if not entered_raid:
         return
     eggdetails = guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]
@@ -3445,7 +3493,7 @@ async def _invite(ctx):
     await reply.delete()
     await exraidmsg.delete()
 
-@Meowth.command(aliases=['res'])
+@Meowth.group(aliases=['res'], invoke_without_command=True, case_insensitive=True)
 @checks.allowresearchreport()
 async def research(ctx, *, details = None):
     """Report Field research
@@ -3571,6 +3619,52 @@ async def research(ctx, *, details = None):
         await asyncio.sleep(10)
         await confirmation.delete()
         await message.delete()
+
+@research.command()
+@checks.allowresearchreport()
+@commands.has_permissions(manage_channels=True)
+async def reset(ctx):
+    """Resets all research reports."""
+
+    author = ctx.author
+    guild = ctx.guild
+    message = ctx.message
+    channel = ctx.channel
+
+    # get settings
+    research_dict = copy.deepcopy(guild_dict[guild.id].setdefault('questreport_dict', {}))
+    await message.delete()
+
+    if not research_dict:
+        return
+    rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all research reports?'))
+    try:
+        timeout = False
+        res, reactuser = await utils.ask(Meowth, rusure, author.id)
+    except TypeError:
+        timeout = True
+    if timeout or res.emoji == '❎':
+        await rusure.delete()
+        confirmation = await channel.send(_('Manual reset cancelled.'))
+        await asyncio.sleep(10)
+        await confirmation.delete()
+        return
+    elif res.emoji == '✅':
+        await rusure.delete()
+        for report in research_dict:
+            report_message = await channel.get_message(report)
+            try:
+                await report_message.delete()
+            except (discord.errors.Forbidden, discord.errors.HTTPException):
+                pass
+            del guild_dict[guild.id]['questreport_dict'][report]
+        confirmation = await channel.send(_('Research reset.'))
+        await asyncio.sleep(10)
+        await confirmation.delete()
+        return
+    else:
+        return
+
 
 @Meowth.command(aliases=['event'])
 @checks.allowmeetupreport()
@@ -6014,6 +6108,17 @@ async def _wildlist(ctx):
     else:
         listmsg = _(" There are no reported wild pokemon. Report one with **!wild <pokemon> <location>**")
     return listmsg
+
+@_list.command()
+@checks.allownestreport()
+async def nests(ctx):
+    """List the nests for the channel
+
+    Usage: !list nests"""
+    Nest = Meowth.cogs.get('Nest')
+    listmsg = _('**Meowth!** Here\'s the current nests for {channel}').format(channel=ctx.channel.mention)
+    nest_embed = await Nest.get_nest_reports(ctx)
+    await ctx.channel.send(listmsg, embed=nest_embed)
 
 try:
     event_loop.run_until_complete(Meowth.start(config['bot_token']))

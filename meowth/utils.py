@@ -6,6 +6,8 @@ from fuzzywuzzy import process
 import discord
 import asyncio
 
+from meowth import pkmn_match
+
 def get_match(word_list: list, word: str, score_cutoff: int = 60):
     """Uses fuzzywuzzy to see if word is close to entries in word_list
 
@@ -306,3 +308,34 @@ def do_template(message, author, guild):
     template_pattern = '(?i){(@|#|&|<)([^{}]+)}|{(user|server)}|<*:([a-zA-Z0-9]+):[0-9]*>*'
     msg = re.sub(template_pattern, template_replace, message)
     return (msg, not_found)
+
+def spellcheck(bot, word):
+    suggestion = pkmn_match.get_pkmn(re.sub(r"[^A-Za-z0-9 ]+", '', word))
+    # If we have a spellcheck suggestion
+    if suggestion and suggestion != word:
+        result = bot.pkmn_info['pokemon_list'][suggestion]
+        return result
+
+async def autocorrect(bot, entered_word, destination, author):
+    msg = _("Meowth! **{word}** isn't a Pokemon!").format(word=entered_word.title())
+    if spellcheck(bot, entered_word) and (spellcheck(bot, entered_word) != entered_word):
+        msg += _(' Did you mean **{correction}**?').format(correction=spellcheck(bot, entered_word).title())
+        question = await destination.send(msg)
+        if author:
+            try:
+                timeout = False
+                res, reactuser = await ask(bot, question, author.id)
+            except TypeError:
+                timeout = True
+            await question.delete()
+            if timeout or res.emoji == '❎':
+                return None
+            elif res.emoji == '✅':
+                return spellcheck(bot, entered_word)
+            else:
+                return None
+        else:
+            return None
+    else:
+        question = await destination.send(msg)
+        return
