@@ -32,7 +32,7 @@ class Nest:
     #             }
     #         }
     #     }
-    # }        
+    # }
 
     async def nest_cleanup(self, loop=True):
         while (not self.bot.is_closed()):
@@ -92,7 +92,7 @@ class Nest:
                     pkmn_dict[report_pkmn] += 1
                 else:
                     pkmn_dict[report_pkmn] = 1
-            reported_pkmn = sorted(pkmn_dict.items(), key=lambda kv: kv[1], reverse=True)[:2]
+            reported_pkmn = sorted(pkmn_dict.items(), key=lambda kv: kv[1], reverse=True)[:1]
             if reported_pkmn:
                 embed_value = ""
             for pkmn in reported_pkmn:

@@ -32,15 +32,15 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        for session in ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].keys():
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        for session in self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].keys():
             if not guild.get_member(session):
                 try:
-                    del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][session]
+                    del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][session]
                 except KeyError:
                     pass
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         firstconfig = False
         all_commands = [str(x) for x in config_dict_temp.keys()]
         enabled_commands = []
@@ -69,16 +69,16 @@ class Configure:
             configmessage += _("\n\n**Enabled Commands:**\n{enabled_commands}").format(enabled_commands=", ".join(enabled_commands))
             configmessage += _("\n\n**All Commands:**\n**all** - To redo configuration\n**team** - For Team Assignment configuration\n**welcome** - For Welcome Message configuration\n**raid** - for raid command configuration\n**exraid** - for EX raid command configuration\n**invite** - for invite command configuration\n**counters** - for automatic counters configuration\n**wild** - for wild command configuration\n**research** - for !research command configuration\n**meetup** - for !meetup command configuration\n**want** - for want/unwant command configuration\n**archive** - For !archive configuration\n**trade** - For trade command configuration\n**nest** - For nest command configuration\n**timezone** - For timezone configuration\n**scanners** - For scanner bot integration configuration")
             configmessage += _('\n\nReply with **cancel** at any time throughout the questions to cancel the configure process.')
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=configmessage).set_author(name=_('Meowth Configuration - {guild}').format(guild=guild.name), icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=configmessage).set_author(name=_('Meowth Configuration - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
             while True:
                 def check(m):
                     return m.guild == None and m.author == owner
-                configreply = await ctx.bot.wait_for('message', check=check)
+                configreply = await self.bot.wait_for('message', check=check)
                 configreply.content = configreply.content.replace("timezone", "settings")
                 if configreply.content.lower() == 'cancel':
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                     try:
-                        del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+                        del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
                     except KeyError:
                         pass
                     return None
@@ -99,7 +99,7 @@ class Configure:
                     break
         elif firstconfig == True:
             configmessage += _('\n\nReply with **cancel** at any time throughout the questions to cancel the configure process.')
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=configmessage).set_author(name=_('Meowth Configuration - {guild}').format(guild=guild.name), icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=configmessage).set_author(name=_('Meowth Configuration - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
             configreplylist = all_commands
         try:
             if "team" in configreplylist:
@@ -165,10 +165,10 @@ class Configure:
         finally:
             if ctx:
                 ctx.config_dict_temp['settings']['done'] = True
-                ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+                self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+                await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
             try:
-                del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+                del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
             except KeyError:
                 pass
 
@@ -186,29 +186,29 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_team(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_team(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Team assignment allows users to assign their Pokemon Go team role using the **!team** command. If you have a bot that handles this already, you may want to disable this feature.\n\nIf you are to use this feature, ensure existing team roles are as follows: mystic, valor, instinct. These must be all lowercase letters. If they don't exist yet, I'll make some for you instead.\n\nRespond here with: **N** to disable, **Y** to enable:")).set_author(name=_('Team Assignments'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Team assignment allows users to assign their Pokemon Go team role using the **!team** command. If you have a bot that handles this already, you may want to disable this feature.\n\nIf you are to use this feature, ensure existing team roles are as follows: mystic, valor, instinct. These must be all lowercase letters. If they don't exist yet, I'll make some for you instead.\n\nRespond here with: **N** to disable, **Y** to enable:")).set_author(name=_('Team Assignments'), icon_url=self.bot.user.avatar_url))
         while True:
-            teamreply = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            teamreply = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if teamreply.content.lower() == 'y':
                 config_dict_temp['team']['enabled'] = True
                 team_list = ["mystic","valor","instinct","harmony"]
@@ -219,10 +219,10 @@ class Configure:
                 role_error = False
                 role_create = ""
                 while True:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Please respond with the names or IDs for the roles you would like to use for teams in the following order:\n\n**mystic, valor, instinct, harmony**\n\nIf I can't find a role, I'll make a temporary role for you that you can either keep and rename, or you can delete and attempt to configure roles again.")).set_author(name=_('Team Assignments'), icon_url=ctx.bot.user.avatar_url))
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Please respond with the names or IDs for the roles you would like to use for teams in the following order:\n\n**mystic, valor, instinct, harmony**\n\nIf I can't find a role, I'll make a temporary role for you that you can either keep and rename, or you can delete and attempt to configure roles again.")).set_author(name=_('Team Assignments'), icon_url=self.bot.user.avatar_url))
                     def check(m):
                         return m.guild == None and m.author == owner
-                    rolesreply = await ctx.bot.wait_for('message', check=check)
+                    rolesreply = await self.bot.wait_for('message', check=check)
                     if rolesreply.content.lower() == 'cancel':
                         await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                         return None
@@ -287,35 +287,35 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_welcome(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_welcome(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         welcomeconfig = _('I can welcome new members to the server with a short message. Here is an example, but it is customizable:\n\n')
         if config_dict_temp['team']['enabled']:
             welcomeconfig += _("Meowth! Welcome to {server_name}, {owner_name.mention}! Set your team by typing '**!team mystic**' or '**!team valor**' or '**!team instinct**' without quotations. If you have any questions just ask an admin.").format(server_name=guild.name, owner_name=owner)
         else:
             welcomeconfig += _('Meowth! Welcome to {server_name}, {owner_name.mention}! If you have any questions just ask an admin.').format(server_name=guild, owner_name=owner)
         welcomeconfig += _('\n\nThis welcome message can be in a specific channel or a direct message. If you have a bot that handles this already, you may want to disable this feature.\n\nRespond with: **N** to disable, **Y** to enable:')
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=welcomeconfig).set_author(name=_('Welcome Message'), icon_url=ctx.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=welcomeconfig).set_author(name=_('Welcome Message'), icon_url=self.bot.user.avatar_url))
         while True:
-            welcomereply = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            welcomereply = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if welcomereply.content.lower() == 'y':
                 config_dict_temp['welcome']['enabled'] = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Welcome Message enabled!')))
@@ -330,11 +330,11 @@ class Configure:
                                  "**{&role}** - Replace role name or ID (shows as @deleted-role DM preview)\n"
                                  "**{user}** - Will mention the new user\n"
                                  "**{server}** - Will print your server's name\n"
-                                 "Surround your message with [] to send it as an embed. **Warning:** Mentions within embeds may be broken on mobile, this is a Discord bug."))).set_author(name=_("Welcome Message"), icon_url=ctx.bot.user.avatar_url))
+                                 "Surround your message with [] to send it as an embed. **Warning:** Mentions within embeds may be broken on mobile, this is a Discord bug."))).set_author(name=_("Welcome Message"), icon_url=self.bot.user.avatar_url))
                 if config_dict_temp['welcome']['welcomemsg'] != 'default':
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['welcome']['welcomemsg']).set_author(name=_("Current Welcome Message"), icon_url=ctx.bot.user.avatar_url))
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['welcome']['welcomemsg']).set_author(name=_("Current Welcome Message"), icon_url=self.bot.user.avatar_url))
                 while True:
-                    welcomemsgreply = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and (message.author == owner)))
+                    welcomemsgreply = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and (message.author == owner)))
                     if welcomemsgreply.content.lower() == 'n':
                         config_dict_temp['welcome']['welcomemsg'] = 'default'
                         await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_("Default welcome message set")))
@@ -362,14 +362,14 @@ class Configure:
                                 question = await owner.send(content=_("Here's what you sent. Does it look ok?"),embed=embed)
                                 try:
                                     timeout = False
-                                    res, reactuser = await utils.ask(ctx.bot, question, owner.id)
+                                    res, reactuser = await utils.ask(self.bot, question, owner.id)
                                 except TypeError:
                                     timeout = True
                             else:
                                 question = await owner.send(content=_("Here's what you sent. Does it look ok?\n\n{welcome}").format(welcome=welcomemessage.format(user=owner.mention)))
                                 try:
                                     timeout = False
-                                    res, reactuser = await utils.ask(ctx.bot, question, owner.id)
+                                    res, reactuser = await utils.ask(self.bot, question, owner.id)
                                 except TypeError:
                                     timeout = True
                         if timeout or res.emoji == '❎':
@@ -380,9 +380,9 @@ class Configure:
                             await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_("Welcome Message set to:\n\n{}").format(config_dict_temp['welcome']['welcomemsg'])))
                             break
                     break
-                await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Which channel in your server would you like me to post the Welcome Messages? You can also choose to have them sent to the new member via Direct Message (DM) instead.\n\nRespond with: **channel-name** or ID of a channel in your server or **DM** to Direct Message:")).set_author(name=_("Welcome Message Channel"), icon_url=ctx.bot.user.avatar_url))
+                await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Which channel in your server would you like me to post the Welcome Messages? You can also choose to have them sent to the new member via Direct Message (DM) instead.\n\nRespond with: **channel-name** or ID of a channel in your server or **DM** to Direct Message:")).set_author(name=_("Welcome Message Channel"), icon_url=self.bot.user.avatar_url))
                 while True:
-                    welcomechannelreply = await ctx.bot.wait_for('message',check=lambda message: message.guild == None and message.author == owner)
+                    welcomechannelreply = await self.bot.wait_for('message',check=lambda message: message.guild == None and message.author == owner)
                     if welcomechannelreply.content.lower() == "dm":
                         config_dict_temp['welcome']['welcomechan'] = "dm"
                         await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_("Welcome DM set")))
@@ -412,12 +412,12 @@ class Configure:
                             diff = True
                         if (not diff):
                             config_dict_temp['welcome']['welcomechan'] = channel.id
-                            ow = channel.overwrites_for(ctx.bot.user)
+                            ow = channel.overwrites_for(self.bot.user)
                             ow.send_messages = True
                             ow.read_messages = True
                             ow.manage_roles = True
                             try:
-                                await channel.set_permissions(ctx.bot.user, overwrite = ow)
+                                await channel.set_permissions(self.bot.user, overwrite = ow)
                             except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
                             await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Welcome Channel set to {channel}').format(channel=welcomechannelreply.content.lower())))
@@ -449,30 +449,30 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_raid(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_raid(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Raid Reporting allows users to report active raids with **!raid** or raid eggs with **!raidegg**. Pokemon raid reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-raids, hull-raids, sydney-raids`\n\nIf you do not require raid or raid egg reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Raid Reporting Channels'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Raid Reporting allows users to report active raids with **!raid** or raid eggs with **!raidegg**. Pokemon raid reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-raids, hull-raids, sydney-raids`\n\nIf you do not require raid or raid egg reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Raid Reporting Channels'), icon_url=self.bot.user.avatar_url))
         citychannel_dict = {}
         while True:
-            citychannels = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if citychannels.content.lower() == 'n':
                 config_dict_temp['raid']['enabled'] = False
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Raid Reporting disabled')))
@@ -509,12 +509,12 @@ class Configure:
                 if (not diff) and (not citychannel_errors):
                     await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Raid Reporting Channels enabled')))
                     for channel in citychannel_objs:
-                        ow = channel.overwrites_for(ctx.bot.user)
+                        ow = channel.overwrites_for(self.bot.user)
                         ow.send_messages = True
                         ow.read_messages = True
                         ow.manage_roles = True
                         try:
-                            await channel.set_permissions(ctx.bot.user, overwrite = ow)
+                            await channel.set_permissions(self.bot.user, overwrite = ow)
                         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                             await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
                     break
@@ -522,10 +522,10 @@ class Configure:
                     await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
                     continue
         if config_dict_temp['raid']['enabled']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to the raid or egg! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Raid Reporting Locations'), icon_url=ctx.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to the raid or egg! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Raid Reporting Locations'), icon_url=self.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
             while True:
-                cities = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+                cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if cities.content.lower() == 'cancel':
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                     return None
@@ -540,14 +540,14 @@ class Configure:
                     continue
             config_dict_temp['raid']['report_channels'] = citychannel_dict
             await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Raid Reporting Locations are set')))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**region** - If you want them categorized by region\n**level** - If you want them categorized by level.")).set_author(name=_('Raid Reporting Categories'), icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**region** - If you want them categorized by region\n**level** - If you want them categorized by level.")).set_author(name=_('Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
             while True:
-                guild = ctx.bot.get_guild(guild.id)
+                guild = self.bot.get_guild(guild.id)
                 guild_catlist = []
                 for cat in guild.categories:
                     guild_catlist.append(cat.id)
                 category_dict = {}
-                categories = await ctx.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
+                categories = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                 if categories.content.lower() == 'cancel':
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                     return None
@@ -559,14 +559,14 @@ class Configure:
                     break
                 elif categories.content.lower() == 'region':
                     while True:
-                        guild = ctx.bot.get_guild(guild.id)
+                        guild = self.bot.get_guild(guild.id)
                         guild_catlist = []
                         for cat in guild.categories:
                             guild_catlist.append(cat.id)
                         config_dict_temp['raid']['categories'] = 'region'
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as raid reporting channels.")).set_author(name=_('Raid Reporting Categories'), icon_url=ctx.bot.user.avatar_url))
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=ctx.bot.user.avatar_url))
-                        regioncats = await ctx.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as raid reporting channels.")).set_author(name=_('Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
+                        regioncats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                         if regioncats.content.lower() == "cancel":
                             await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                             return None
@@ -611,12 +611,12 @@ class Configure:
                 elif categories.content.lower() == 'level':
                     config_dict_temp['raid']['categories'] = 'level'
                     while True:
-                        guild = ctx.bot.get_guild(guild.id)
+                        guild = self.bot.get_guild(guild.id)
                         guild_catlist = []
                         for cat in guild.categories:
                             guild_catlist.append(cat.id)
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("Pokemon Go currently has five levels of raids. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5 \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `level 1-3, level 1-3, level 1-3, level 4, 1231231241561337813`")).set_author(name=_('Raid Reporting Categories'), icon_url=ctx.bot.user.avatar_url))
-                        levelcats = await ctx.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("Pokemon Go currently has five levels of raids. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5 \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `level 1-3, level 1-3, level 1-3, level 4, 1231231241561337813`")).set_author(name=_('Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
+                        levelcats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                         if levelcats.content.lower() == "cancel":
                             await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                             return None
@@ -676,30 +676,30 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_exraid(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_exraid(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("EX Raid Reporting allows users to report EX raids with **!exraid**. Pokemon EX raid reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-raids, hull-raids, sydney-raids`\n\nIf you do not require EX raid reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('EX Raid Reporting Channels'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("EX Raid Reporting allows users to report EX raids with **!exraid**. Pokemon EX raid reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-raids, hull-raids, sydney-raids`\n\nIf you do not require EX raid reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('EX Raid Reporting Channels'), icon_url=self.bot.user.avatar_url))
         citychannel_dict = {}
         while True:
-            citychannels = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if citychannels.content.lower() == 'n':
                 config_dict_temp['exraid']['enabled'] = False
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('EX Raid Reporting disabled')))
@@ -736,12 +736,12 @@ class Configure:
                 if (not diff) and (not citychannel_errors):
                     await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('EX Raid Reporting Channels enabled')))
                     for channel in citychannel_objs:
-                        ow = channel.overwrites_for(ctx.bot.user)
+                        ow = channel.overwrites_for(self.bot.user)
                         ow.send_messages = True
                         ow.read_messages = True
                         ow.manage_roles = True
                         try:
-                            await channel.set_permissions(ctx.bot.user, overwrite = ow)
+                            await channel.set_permissions(self.bot.user, overwrite = ow)
                         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                             await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
                     break
@@ -749,10 +749,10 @@ class Configure:
                     await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
                     continue
         if config_dict_temp['exraid']['enabled']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to EX raids! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('EX Raid Reporting Locations'), icon_url=ctx.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to EX raids! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('EX Raid Reporting Locations'), icon_url=self.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
             while True:
-                cities = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+                cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if cities.content.lower() == 'cancel':
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                     return None
@@ -767,14 +767,14 @@ class Configure:
                     continue
             config_dict_temp['exraid']['report_channels'] = citychannel_dict
             await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('EX Raid Reporting Locations are set')))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the EX raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('EX Raid Reporting Categories'), icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the EX raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('EX Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
             while True:
-                guild = ctx.bot.get_guild(guild.id)
+                guild = self.bot.get_guild(guild.id)
                 guild_catlist = []
                 for cat in guild.categories:
                     guild_catlist.append(cat.id)
                 category_dict = {}
-                categories = await ctx.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
+                categories = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                 if categories.content.lower() == 'cancel':
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                     return None
@@ -786,14 +786,14 @@ class Configure:
                     break
                 elif categories.content.lower() == 'other':
                     while True:
-                        guild = ctx.bot.get_guild(guild.id)
+                        guild = self.bot.get_guild(guild.id)
                         guild_catlist = []
                         for cat in guild.categories:
                             guild_catlist.append(cat.id)
                         config_dict_temp['exraid']['categories'] = 'region'
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as EX raid reporting channels.")).set_author(name=_('EX Raid Reporting Categories'), icon_url=ctx.bot.user.avatar_url))
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=ctx.bot.user.avatar_url))
-                        regioncats = await ctx.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as EX raid reporting channels.")).set_author(name=_('EX Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
+                        regioncats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                         if regioncats.content.lower() == "cancel":
                             await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                             return None
@@ -841,9 +841,9 @@ class Configure:
                 break
             await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('EX Raid Categories are set')))
             config_dict_temp['exraid']['category_dict'] = category_dict
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Who do you want to be able to **see** the EX Raid channels? Your options are:\n\n**everyone** - To have everyone be able to see all reported EX Raids\n**same** - To only allow those with access to the reporting channel.")).set_author(name=_('EX Raid Channel Read Permissions'), icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Who do you want to be able to **see** the EX Raid channels? Your options are:\n\n**everyone** - To have everyone be able to see all reported EX Raids\n**same** - To only allow those with access to the reporting channel.")).set_author(name=_('EX Raid Channel Read Permissions'), icon_url=self.bot.user.avatar_url))
             while True:
-                permsconfigset = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+                permsconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if permsconfigset.content.lower() == 'everyone':
                     config_dict_temp['exraid']['permissions'] = "everyone"
                     await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Everyone permission enabled')))
@@ -870,29 +870,29 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_invite(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_invite(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want access to EX raids controlled through members using the **!invite** command?\nIf enabled, members will have read-only permissions for all EX Raids until they use **!invite** to gain access. If disabled, EX Raids will inherit the permissions from their reporting channels.\n\nRespond with: **N** to disable, or **Y** to enable:')).set_author(name=_('Invite Configuration'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want access to EX raids controlled through members using the **!invite** command?\nIf enabled, members will have read-only permissions for all EX Raids until they use **!invite** to gain access. If disabled, EX Raids will inherit the permissions from their reporting channels.\n\nRespond with: **N** to disable, or **Y** to enable:')).set_author(name=_('Invite Configuration'), icon_url=self.bot.user.avatar_url))
         while True:
-            inviteconfigset = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            inviteconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if inviteconfigset.content.lower() == 'y':
                 config_dict_temp['invite']['enabled'] = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Invite Command enabled')))
@@ -919,27 +919,27 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
         ctx = await self._configure_counters(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_counters(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want to generate an automatic counters list in newly created raid channels using PokeBattler?\nIf enabled, I will post a message containing the best counters for the raid boss in new raid channels. Users will still be able to use **!counters** to generate this list.\n\nRespond with: **N** to disable, or enable with a comma separated list of boss levels that you would like me to generate counters for. Example:`3,4,5,EX`')).set_author(name=_('Automatic Counters Configuration'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want to generate an automatic counters list in newly created raid channels using PokeBattler?\nIf enabled, I will post a message containing the best counters for the raid boss in new raid channels. Users will still be able to use **!counters** to generate this list.\n\nRespond with: **N** to disable, or enable with a comma separated list of boss levels that you would like me to generate counters for. Example:`3,4,5,EX`')).set_author(name=_('Automatic Counters Configuration'), icon_url=self.bot.user.avatar_url))
         while True:
-            countersconfigset = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            countersconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if countersconfigset.content.lower() == 'n':
                 config_dict_temp['counters']['enabled'] = False
                 config_dict_temp['counters']['auto_levels'] = []
@@ -977,30 +977,30 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_wild(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_wild(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Wild Reporting allows users to report wild spawns with **!wild**. Pokemon **wild** reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-wilds, hull-wilds, sydney-wilds`\n\nIf you do not require **wild** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Wild Reporting Channels'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Wild Reporting allows users to report wild spawns with **!wild**. Pokemon **wild** reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-wilds, hull-wilds, sydney-wilds`\n\nIf you do not require **wild** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Wild Reporting Channels'), icon_url=self.bot.user.avatar_url))
         citychannel_dict = {}
         while True:
-            citychannels = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if citychannels.content.lower() == 'n':
                 config_dict_temp['wild']['enabled'] = False
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Wild Reporting disabled')))
@@ -1037,12 +1037,12 @@ class Configure:
                 if (not diff) and (not citychannel_errors):
                     await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Wild Reporting Channels enabled')))
                     for channel in citychannel_objs:
-                        ow = channel.overwrites_for(ctx.bot.user)
+                        ow = channel.overwrites_for(self.bot.user)
                         ow.send_messages = True
                         ow.read_messages = True
                         ow.manage_roles = True
                         try:
-                            await channel.set_permissions(ctx.bot.user, overwrite = ow)
+                            await channel.set_permissions(self.bot.user, overwrite = ow)
                         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                             await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
                     break
@@ -1050,10 +1050,10 @@ class Configure:
                     await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
                     continue
         if config_dict_temp['wild']['enabled']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to wild spawns! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Wild Reporting Locations'), icon_url=ctx.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to wild spawns! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Wild Reporting Locations'), icon_url=self.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
             while True:
-                cities = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+                cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if cities.content.lower() == 'cancel':
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                     return None
@@ -1080,30 +1080,30 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_research(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_research(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Research Reporting allows users to report field research with **!research**. Pokemon **research** reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-research, hull-research, sydney-research`\n\nIf you do not require **research** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Research Reporting Channels'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Research Reporting allows users to report field research with **!research**. Pokemon **research** reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-research, hull-research, sydney-research`\n\nIf you do not require **research** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Research Reporting Channels'), icon_url=self.bot.user.avatar_url))
         citychannel_dict = {}
         while True:
-            citychannels = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if citychannels.content.lower() == 'n':
                 config_dict_temp['research']['enabled'] = False
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Research Reporting disabled')))
@@ -1140,12 +1140,12 @@ class Configure:
                 if (not diff) and (not citychannel_errors):
                     await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Research Reporting Channels enabled')))
                     for channel in citychannel_objs:
-                        ow = channel.overwrites_for(ctx.bot.user)
+                        ow = channel.overwrites_for(self.bot.user)
                         ow.send_messages = True
                         ow.read_messages = True
                         ow.manage_roles = True
                         try:
-                            await channel.set_permissions(ctx.bot.user, overwrite = ow)
+                            await channel.set_permissions(self.bot.user, overwrite = ow)
                         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                             await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
                     break
@@ -1153,10 +1153,10 @@ class Configure:
                     await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
                     continue
         if config_dict_temp['research']['enabled']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to field research! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Research Reporting Locations'), icon_url=ctx.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to field research! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Research Reporting Locations'), icon_url=self.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
             while True:
-                cities = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+                cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if cities.content.lower() == 'cancel':
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                     return None
@@ -1183,31 +1183,31 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_meetup(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_meetup(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         config_dict_temp['meetup'] = {}
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meetup Reporting allows users to report meetups with **!meetup** or **!event**. Meetup reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-meetups, hull-meetups, sydney-meetups`\n\nIf you do not require meetup reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Meetup Reporting Channels'), icon_url=ctx.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meetup Reporting allows users to report meetups with **!meetup** or **!event**. Meetup reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-meetups, hull-meetups, sydney-meetups`\n\nIf you do not require meetup reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Meetup Reporting Channels'), icon_url=self.bot.user.avatar_url))
         citychannel_dict = {}
         while True:
-            citychannels = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if citychannels.content.lower() == 'n':
                 config_dict_temp['meetup']['enabled'] = False
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Meetup Reporting disabled')))
@@ -1244,12 +1244,12 @@ class Configure:
                 if (not diff) and (not citychannel_errors):
                     await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Meetup Reporting Channels enabled')))
                     for channel in citychannel_objs:
-                        ow = channel.overwrites_for(ctx.bot.user)
+                        ow = channel.overwrites_for(self.bot.user)
                         ow.send_messages = True
                         ow.read_messages = True
                         ow.manage_roles = True
                         try:
-                            await channel.set_permissions(ctx.bot.user, overwrite = ow)
+                            await channel.set_permissions(self.bot.user, overwrite = ow)
                         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                             await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
                     break
@@ -1257,10 +1257,10 @@ class Configure:
                     await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
                     continue
         if config_dict_temp['meetup']['enabled']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to meetups! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Meetup Reporting Locations'), icon_url=ctx.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to meetups! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Meetup Reporting Locations'), icon_url=self.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
             while True:
-                cities = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+                cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if cities.content.lower() == 'cancel':
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                     return None
@@ -1275,14 +1275,14 @@ class Configure:
                     continue
             config_dict_temp['meetup']['report_channels'] = citychannel_dict
             await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Meetup Reporting Locations are set')))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the meetup channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('Meetup Reporting Categories'), icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the meetup channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('Meetup Reporting Categories'), icon_url=self.bot.user.avatar_url))
             while True:
-                guild = ctx.bot.get_guild(guild.id)
+                guild = self.bot.get_guild(guild.id)
                 guild_catlist = []
                 for cat in guild.categories:
                     guild_catlist.append(cat.id)
                 category_dict = {}
-                categories = await ctx.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
+                categories = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                 if categories.content.lower() == 'cancel':
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                     return None
@@ -1294,14 +1294,14 @@ class Configure:
                     break
                 elif categories.content.lower() == 'other':
                     while True:
-                        guild = ctx.bot.get_guild(guild.id)
+                        guild = self.bot.get_guild(guild.id)
                         guild_catlist = []
                         for cat in guild.categories:
                             guild_catlist.append(cat.id)
                         config_dict_temp['meetup']['categories'] = 'region'
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as meetup reporting channels.")).set_author(name=_('Meetup Reporting Categories'), icon_url=ctx.bot.user.avatar_url))
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=ctx.bot.user.avatar_url))
-                        regioncats = await ctx.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as meetup reporting channels.")).set_author(name=_('Meetup Reporting Categories'), icon_url=self.bot.user.avatar_url))
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
+                        regioncats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                         if regioncats.content.lower() == "cancel":
                             await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                             return None
@@ -1361,29 +1361,29 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_want(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_want(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!want** and **!unwant** commands let you add or remove roles for Pokemon that will be mentioned in reports. This let you get notifications on the Pokemon you want to track. I just need to know what channels you want to allow people to manage their pokemon with the **!want** and **!unwant** command.\n\nIf you don't want to allow the management of tracked Pokemon roles, then you may want to disable this feature.\n\nRepond with: **N** to disable, or the **channel-name** list to enable, each seperated by a comma and space.")).set_author(name=_('Pokemon Notifications'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!want** and **!unwant** commands let you add or remove roles for Pokemon that will be mentioned in reports. This let you get notifications on the Pokemon you want to track. I just need to know what channels you want to allow people to manage their pokemon with the **!want** and **!unwant** command.\n\nIf you don't want to allow the management of tracked Pokemon roles, then you may want to disable this feature.\n\nRepond with: **N** to disable, or the **channel-name** list to enable, each seperated by a comma and space.")).set_author(name=_('Pokemon Notifications'), icon_url=self.bot.user.avatar_url))
         while True:
-            wantchs = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            wantchs = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if wantchs.content.lower() == 'n':
                 config_dict_temp['want']['enabled'] = False
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Pokemon Notifications disabled')))
@@ -1420,12 +1420,12 @@ class Configure:
                     config_dict_temp['want']['enabled'] = True
                     config_dict_temp['want']['report_channels'] = want_list_set
                     for channel in want_list_objs:
-                        ow = channel.overwrites_for(ctx.bot.user)
+                        ow = channel.overwrites_for(self.bot.user)
                         ow.send_messages = True
                         ow.read_messages = True
                         ow.manage_roles = True
                         try:
-                            await channel.set_permissions(ctx.bot.user, overwrite = ow)
+                            await channel.set_permissions(self.bot.user, overwrite = ow)
                         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                             await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
                     await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Pokemon Notifications enabled')))
@@ -1445,30 +1445,30 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_archive(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_archive(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!archive** command marks temporary raid channels for archival rather than deletion. This can be useful for investigating potential violations of your server's rules in these channels.\n\nIf you would like to disable this feature, reply with **N**. Otherwise send the category you would like me to place archived channels in. You can say **same** to keep them in the same category, or type the name or ID of a category in your server.")).set_author(name=_('Archive Configuration'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!archive** command marks temporary raid channels for archival rather than deletion. This can be useful for investigating potential violations of your server's rules in these channels.\n\nIf you would like to disable this feature, reply with **N**. Otherwise send the category you would like me to place archived channels in. You can say **same** to keep them in the same category, or type the name or ID of a category in your server.")).set_author(name=_('Archive Configuration'), icon_url=self.bot.user.avatar_url))
         config_dict_temp['archive'] = {}
         while True:
-            archivemsg = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            archivemsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if archivemsg.content.lower() == 'cancel':
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                 return None
@@ -1497,8 +1497,8 @@ class Configure:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Archive category set.')))
                 break
         if config_dict_temp['archive']['enabled']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("I can also listen in your raid channels for words or phrases that you want to trigger an automatic archival. For example, if discussion of spoofing is against your server rules, you might tell me to listen for the word 'spoofing'.\n\nReply with **none** to disable this feature, or reply with a comma separated list of phrases you want me to listen in raid channels for.")).set_author(name=_('Archive Configuration'), icon_url=ctx.bot.user.avatar_url))
-            phrasemsg = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("I can also listen in your raid channels for words or phrases that you want to trigger an automatic archival. For example, if discussion of spoofing is against your server rules, you might tell me to listen for the word 'spoofing'.\n\nReply with **none** to disable this feature, or reply with a comma separated list of phrases you want me to listen in raid channels for.")).set_author(name=_('Archive Configuration'), icon_url=self.bot.user.avatar_url))
+            phrasemsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if phrasemsg.content.lower() == 'none':
                 config_dict_temp['archive']['list'] = None
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Phrase list disabled.')))
@@ -1523,29 +1523,29 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_settings(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_settings(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("There are a few settings available that are not within **!configure**. To set these, use **!set <setting>** in any channel to set that setting.\n\nThese include:\n**!set regional <name or number>** - To set a server's regional raid boss\n**!set prefix <prefix>** - To set my command prefix\n**!set timezone <offset>** - To set offset outside of **!configure**\n**!set silph <trainer>** - To set a trainer's SilphRoad card (usable by members)\n**!set pokebattler <ID>** - To set a trainer's pokebattler ID (usable by members)\n\nHowever, we can do your timezone now to help coordinate reports for you. For others, use the **!set** command.\n\nThe current 24-hr time UTC is {utctime}. How many hours off from that are you?\n\nRespond with: A number from **-12** to **12**:").format(utctime=strftime('%H:%M', time.gmtime()))).set_author(name=_('Timezone Configuration and Other Settings'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("There are a few settings available that are not within **!configure**. To set these, use **!set <setting>** in any channel to set that setting.\n\nThese include:\n**!set regional <name or number>** - To set a server's regional raid boss\n**!set prefix <prefix>** - To set my command prefix\n**!set timezone <offset>** - To set offset outside of **!configure**\n**!set silph <trainer>** - To set a trainer's SilphRoad card (usable by members)\n**!set pokebattler <ID>** - To set a trainer's pokebattler ID (usable by members)\n\nHowever, we can do your timezone now to help coordinate reports for you. For others, use the **!set** command.\n\nThe current 24-hr time UTC is {utctime}. How many hours off from that are you?\n\nRespond with: A number from **-12** to **12**:").format(utctime=strftime('%H:%M', time.gmtime()))).set_author(name=_('Timezone Configuration and Other Settings'), icon_url=self.bot.user.avatar_url))
         while True:
-            offsetmsg = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            offsetmsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if offsetmsg.content.lower() == 'cancel':
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                 return None
@@ -1574,29 +1574,29 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_trade(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_trade(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!trade** command allows your users to organize and coordinate trades. This command requires at least one channel specifically for trades.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!trade** command in, separated by commas.")).set_author(name=_('Trade Configuration'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!trade** command allows your users to organize and coordinate trades. This command requires at least one channel specifically for trades.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!trade** command in, separated by commas.")).set_author(name=_('Trade Configuration'), icon_url=self.bot.user.avatar_url))
         while True:
-            trademsg = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            trademsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if trademsg.content.lower() == 'cancel':
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                 return None
@@ -1633,12 +1633,12 @@ class Configure:
                     config_dict_temp['trade']['enabled'] = True
                     config_dict_temp['trade']['report_channels'] = trade_list_set
                     for channel in trade_list_objs:
-                        ow = channel.overwrites_for(ctx.bot.user)
+                        ow = channel.overwrites_for(self.bot.user)
                         ow.send_messages = True
                         ow.read_messages = True
                         ow.manage_roles = True
                         try:
-                            await channel.set_permissions(ctx.bot.user, overwrite = ow)
+                            await channel.set_permissions(self.bot.user, overwrite = ow)
                         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                             await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
                     await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Pokemon Trades enabled')))
@@ -1658,29 +1658,29 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
-        if ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        if self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id] > 1:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("**MULTIPLE SESSIONS!**\n\nIt looks like you have **{yoursessions}** active configure sessions. I recommend you send **cancel** first and then send your request again to avoid confusing me.\n\nYour Sessions: **{yoursessions}** | Total Sessions: **{allsessions}**").format(allsessions=sum(self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].values()),yoursessions=self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id])))
         ctx = await self._configure_nest(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=ctx.bot.user.avatar_url))
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
         try:
-            del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
         except KeyError:
             pass
 
     async def _configure_nest(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!nest** command allows your users to report nests. This command requires at least one channel specifically for nests.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!nest** command in, separated by commas.")).set_author(name=_('nest Configuration'), icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!nest** command allows your users to report nests. This command requires at least one channel specifically for nests.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!nest** command in, separated by commas.")).set_author(name=_('nest Configuration'), icon_url=self.bot.user.avatar_url))
         while True:
-            nestmsg = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            nestmsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if nestmsg.content.lower() == 'cancel':
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                 return None
@@ -1717,12 +1717,12 @@ class Configure:
                     config_dict_temp['nest']['enabled'] = True
                     config_dict_temp['nest']['report_channels'] = nest_list_set
                     for channel in nest_list_objs:
-                        ow = channel.overwrites_for(ctx.bot.user)
+                        ow = channel.overwrites_for(self.bot.user)
                         ow.send_messages = True
                         ow.read_messages = True
                         ow.manage_roles = True
                         try:
-                            await channel.set_permissions(ctx.bot.user, overwrite = ow)
+                            await channel.set_permissions(self.bot.user, overwrite = ow)
                         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                             await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
                     await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Nest Reporting enabled')))
@@ -1742,24 +1742,24 @@ class Configure:
             await ctx.message.delete()
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-        if not ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+        if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
-        config_sessions = ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
-        ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
+        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions',{}).setdefault(owner.id,0) + 1
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
         ctx = await self._configure_scanners(ctx)
         if ctx:
-            ctx.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name='Configuration Complete', icon_url=ctx.bot.user.avatar_url))
-        del ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
+            self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name='Configuration Complete', icon_url=self.bot.user.avatar_url))
+        del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][owner.id]
 
     async def _configure_scanners(self, ctx):
         guild = ctx.message.guild
         owner = ctx.message.author
-        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(ctx.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raid** reports using @GymHuntrBot enabled?\n\nAny raid that @GymHuntrBot posts in a channel that Meowth also has access to will be converted to a **!raid** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Raid Reports', icon_url=ctx.bot.user.avatar_url))
+        config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raid** reports using @GymHuntrBot enabled?\n\nAny raid that @GymHuntrBot posts in a channel that Meowth also has access to will be converted to a **!raid** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Raid Reports', icon_url=self.bot.user.avatar_url))
         while True:
-            wildconfigset = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if wildconfigset.content.lower() == 'y':
                 config_dict_temp['scanners']['autoraid'] = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Raid Reports enabled'))
@@ -1775,11 +1775,11 @@ class Configure:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
                 continue
         if config_dict_temp['scanners']['autoraid']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create raid channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name='Automatic Raid Report Levels', icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create raid channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name='Automatic Raid Report Levels', icon_url=self.bot.user.avatar_url))
             raidlevel_list = []
             config_dict_temp['scanners']['raidlvls'] = []
             while True:
-                raidlevels = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+                raidlevels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if raidlevels.content.lower() == 'cancel':
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
                     return None
@@ -1798,9 +1798,9 @@ class Configure:
                     else:
                         await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic raids."))
                         continue
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raidegg** reports using @GymHuntrBot enabled?\n\nAny egg that @GymHuntrBot posts in a channel that Meowth also has access to will be converted to a **!raidegg** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Egg Reports', icon_url=ctx.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raidegg** reports using @GymHuntrBot enabled?\n\nAny egg that @GymHuntrBot posts in a channel that Meowth also has access to will be converted to a **!raidegg** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Egg Reports', icon_url=self.bot.user.avatar_url))
         while True:
-            wildconfigset = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if wildconfigset.content.lower() == 'y':
                 config_dict_temp['scanners']['autoegg'] = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Egg Reports enabled'))
@@ -1816,11 +1816,11 @@ class Configure:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
                 continue
         if config_dict_temp['scanners']['autoegg']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create egg channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized egg report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name='Automatic Egg Report Levels', icon_url=ctx.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create egg channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized egg report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name='Automatic Egg Report Levels', icon_url=self.bot.user.avatar_url))
             egglevel_list = []
             config_dict_temp['scanners']['egglvls'] = []
             while True:
-                egglevels = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+                egglevels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if egglevels.content.lower() == 'cancel':
                     await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
                     return None
@@ -1839,9 +1839,9 @@ class Configure:
                     else:
                         await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic eggs."))
                         continue
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!wild** reports using @HuntrBot enabled?\n\nAnything that @HuntrBot posts in a channel that Meowth also has access to will be converted to a **!wild** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Wild Reports', icon_url=ctx.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!wild** reports using @HuntrBot enabled?\n\nAnything that @HuntrBot posts in a channel that Meowth also has access to will be converted to a **!wild** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Wild Reports', icon_url=self.bot.user.avatar_url))
         while True:
-            wildconfigset = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if wildconfigset.content.lower() == 'y':
                 config_dict_temp['scanners']['autowild'] = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Wild Reports enabled'))
@@ -1857,9 +1857,9 @@ class Configure:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
                 continue
         # configure pokealarm
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want reports using PokeAlarm enabled?\n\nAny PokeAlarm with the following configuration in the *content* field of your alarm will be converted.\n\n```Raid format = !raid <mon_name> <gym_name> <raid_time_left>|<lat>,<lng>|<quick_move> / <charge_move>\nRaidegg format = !raidegg <egg_lvl> <gym_name> <hatch_time_left>|<lat>,<lng>\nWild format = !wild <mon_name> <lat>,<lng>|<time_left>|Weather: <weather> / IV: <iv>```\nI also recommend to set the username to just PokeAlarm\n\nRespond with: **N** to disable, **auto** to have all raids make a channel, or **react** to only make channels on user reaction.').set_author(name='Pokealarm Reports', icon_url=ctx.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want reports using PokeAlarm enabled?\n\nAny PokeAlarm with the following configuration in the *content* field of your alarm will be converted.\n\n```Raid format = !raid <mon_name> <gym_name> <raid_time_left>|<lat>,<lng>|<quick_move> / <charge_move>\nRaidegg format = !raidegg <egg_lvl> <gym_name> <hatch_time_left>|<lat>,<lng>\nWild format = !wild <mon_name> <lat>,<lng>|<time_left>|Weather: <weather> / IV: <iv>```\nI also recommend to set the username to just PokeAlarm\n\nRespond with: **N** to disable, **auto** to have all raids make a channel, or **react** to only make channels on user reaction.').set_author(name='Pokealarm Reports', icon_url=self.bot.user.avatar_url))
         while True:
-            alarmconfigset = await ctx.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            alarmconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if alarmconfigset.content.lower() == 'auto':
                 config_dict_temp['scanners']['alarmaction'] = "auto"
                 await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Reports enabled'))
