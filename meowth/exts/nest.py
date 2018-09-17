@@ -194,7 +194,7 @@ class Nest:
         await message.delete()
 
         nest_embed = await self.get_nest_reports(ctx)
-        nest_list = await channel.send("**Meowth!** {mentio}, here's a list of all of the current nests, what's the name of the nest you would like to add?".format(mention=author.mention), embed=nest_embed)
+        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the name of the nest you would like to add?".format(mention=author.mention), embed=nest_embed)
 
         try:
             nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
