@@ -180,6 +180,71 @@ class Nest:
 
     @nest.command()
     @checks.allownestreport()
+    async def info(self, ctx):
+        """Shows all reports and location for a nest."""
+
+        author = ctx.author
+        guild = ctx.guild
+        message = ctx.message
+        channel = ctx.channel
+
+        # get settings
+        nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
+        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', time.time() + 10000)
+        migration_local = migration_utc - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+
+        await message.delete()
+
+        if not nest_dict:
+            return
+
+        nest_embed = await self.get_nest_reports(ctx)
+
+        nest_list = await channel.send("**Meowth!** Here's a list of all of the current nests, what's the number of the nest you would like more information on?", embed=nest_embed)
+
+        try:
+            nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
+            await nest_list.delete()
+        except asyncio.TimeoutError:
+            await nest_list.delete()
+            return
+        if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
+            return
+        else:
+            await nest_name_reply.delete()
+        nest_name = nest_embed.description.splitlines()[int(nest_name_reply.content)-1].split("\u2013")[1].split("**")[0].strip().title()
+        nest_loc = nest_dict[nest_name]['location'].split()
+        nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
+        pkmn_dict = {}
+        embed_value = "No Reports"
+        report_count = 0
+        nest_report_dict = nest_dict[nest_name]['reports']
+        for report in nest_report_dict:
+            report_pkmn = nest_report_dict[report]['pokemon']
+            if report_pkmn in pkmn_dict:
+                pkmn_dict[report_pkmn] += 1
+            else:
+                pkmn_dict[report_pkmn] = 1
+        reported_pkmn = sorted(pkmn_dict.items(), key=lambda kv: kv[1], reverse=True)
+        if reported_pkmn:
+            embed_value = ""
+        for pkmn in reported_pkmn:
+            if report_count == 0:
+                embed_value += f"**{pkmn[0].title()} ({pkmn[1]})** "
+                report_count += 1
+                nest_number = self.bot.pkmn_info['pokemon_list'].index(pkmn[0]) + 1
+            else:
+                embed_value += f"{pkmn[0].title()} ({pkmn[1]}) "
+        nest_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(nest_number).zfill(3))
+        nest_description = f"**Nest**: {nest_name.title()}\n**All Reports**: {embed_value}\n**Migration**: {migration_local.strftime(_('%B %d'))}"
+        nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
+        nest_embed.set_thumbnail(url=nest_img_url)
+        info_message = await channel.send(embed=nest_embed)
+        await asyncio.sleep(60)
+        await info_message.delete()
+
+    @nest.command()
+    @checks.allownestreport()
     @commands.has_permissions(manage_channels=True)
     async def add(self, ctx):
         """Adds a reportable nest for the channel."""
@@ -366,7 +431,7 @@ class Nest:
         channel = ctx.channel
 
         # get settings
-        migration = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', time.time()+10000)
+        migration = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
 
         await message.delete()

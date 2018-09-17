@@ -1678,13 +1678,14 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!nest** command allows your users to report nests. This command requires at least one channel specifically for nests.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!nest** command in, separated by commas.")).set_author(name=_('nest Configuration'), icon_url=self.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!nest** command allows your users to report nests. This command requires at least one channel specifically for nests.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!nest** command in, separated by commas.")).set_author(name=_('Nest Configuration'), icon_url=self.bot.user.avatar_url))
         while True:
             nestmsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if nestmsg.content.lower() == 'cancel':
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                 return None
             elif nestmsg.content.lower() == 'n':
+                config_dict_temp['nest'] = {}
                 config_dict_temp['nest'] = {'enabled': False, 'report_channels': []}
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Nest Reporting disabled.')))
                 break
@@ -1714,6 +1715,7 @@ class Configure:
                 nest_list_set = [x.id for x in nest_list_objs]
                 diff = set(nest_list_set) - set(guild_channel_list)
                 if (not diff) and (not nest_list_errors):
+                    config_dict_temp['nest'] = {}
                     config_dict_temp['nest']['enabled'] = True
                     config_dict_temp['nest']['report_channels'] = nest_list_set
                     for channel in nest_list_objs:

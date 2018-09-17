@@ -6109,7 +6109,7 @@ async def _wildlist(ctx):
         listmsg = _(" There are no reported wild pokemon. Report one with **!wild <pokemon> <location>**")
     return listmsg
 
-@_list.command()
+@_list.command(aliases=['nest'])
 @checks.allownestreport()
 async def nests(ctx):
     """List the nests for the channel
