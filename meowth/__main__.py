@@ -2692,6 +2692,10 @@ async def _raid(message, content, huntr=False):
     if raid_details == '':
         await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**'))
         return
+    if not huntr:
+        raid_gmaps_link = create_gmaps_query(raid_details, message.channel, type="raid")
+    else:
+        raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(huntr.split("|")[1])
     gyms = get_gyms(message.guild.id)
     if gyms:
         match = await gym_match_prompt(message.channel, message.author.id, raid_details, gyms)
@@ -2735,10 +2739,8 @@ async def _raid(message, content, huntr=False):
             gyms = False
             gym_info = ""
     if not huntr:
-        raid_gmaps_link = create_gmaps_query(raid_details, message.channel, type="raid")
         raid_channel_name = (entered_raid + '-') + sanitize_channel_name(raid_details)
     else:
-        raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(huntr.split("|")[1])
         raid_channel_name = entered_raid + "-" + sanitize_channel_name(raid_details) + "-bot"
     raid_channel_category = get_category(message.channel, get_level(entered_raid), category_type="raid")
     raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
