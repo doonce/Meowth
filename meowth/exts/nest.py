@@ -44,7 +44,6 @@ class Nest:
                 new_migration = False
                 if utcnow > migration_utc:
                     new_migration = migration_utc + datetime.timedelta(days=14)
-                    new_migration = new_migration.replace(hour=0, minute=0, second=0, microsecond=0)
                     self.bot.guild_dict[guildid]['configure_dict']['nest']['migration'] = new_migration
                 for channel in nest_dict:
                     report_channel = self.bot.get_channel(channel)
@@ -74,7 +73,7 @@ class Nest:
         migration_local = migration_utc - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         migration_exp = migration_utc.timestamp()
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here to open the Silph Road Nest Atlas!", url="https://thesilphroad.com/atlas", description="")
-        nest_embed.set_footer(text=f"Next Migration: {migration_local.strftime(_('%B %d'))}")
+        nest_embed.set_footer(text=f"Next Migration: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}")
         char_count = len(nest_embed.title) + len(nest_embed.footer.text)
         nest_count = 0
         if not nest_dict:
@@ -144,7 +143,7 @@ class Nest:
         else:
             entered_pkmn = entered_nest.title()
         nest_embed = await self.get_nest_reports(ctx)
-        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a {pokemon} report to?".format(mention=author.mention, pokemon=entered_nest.title()), embed=nest_embed)
+        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a {pokemon} report to\n\nIf you want to stop your report, reply with **cancel**.?".format(mention=author.mention, pokemon=entered_nest.title()), embed=nest_embed)
         try:
             nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
             await nest_list.delete()
@@ -152,6 +151,10 @@ class Nest:
             await nest_list.delete()
             return
         if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
+            await nest_name_reply.delete()
+            confirmation = await channel.send(_('Report cancelled.'))
+            await asyncio.sleep(10)
+            await confirmation.delete()
             return
         else:
             await nest_name_reply.delete()
@@ -160,7 +163,7 @@ class Nest:
         nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
         nest_number = self.bot.pkmn_info['pokemon_list'].index(entered_nest) + 1
         nest_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(nest_number).zfill(3))
-        nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {entered_nest.title()}\n**Migration**: {migration_local.strftime(_('%B %d'))}"
+        nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {entered_nest.title()}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
         nest_embed.set_thumbnail(url=nest_img_url)
         nest_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -200,7 +203,7 @@ class Nest:
 
         nest_embed = await self.get_nest_reports(ctx)
 
-        nest_list = await channel.send("**Meowth!** Here's a list of all of the current nests, what's the number of the nest you would like more information on?", embed=nest_embed)
+        nest_list = await channel.send("**Meowth!** Here's a list of all of the current nests, what's the number of the nest you would like more information on?\n\nIf you want to stop, reply with **cancel**.", embed=nest_embed)
 
         try:
             nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
@@ -209,6 +212,10 @@ class Nest:
             await nest_list.delete()
             return
         if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
+            await nest_name_reply.delete()
+            confirmation = await channel.send(_('Request cancelled.'))
+            await asyncio.sleep(10)
+            await confirmation.delete()
             return
         else:
             await nest_name_reply.delete()
@@ -236,7 +243,7 @@ class Nest:
             else:
                 embed_value += f"{pkmn[0].title()} ({pkmn[1]}) "
         nest_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(nest_number).zfill(3))
-        nest_description = f"**Nest**: {nest_name.title()}\n**All Reports**: {embed_value}\n**Migration**: {migration_local.strftime(_('%B %d'))}"
+        nest_description = f"**Nest**: {nest_name.title()}\n**All Reports**: {embed_value}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
         nest_embed.set_thumbnail(url=nest_img_url)
         info_message = await channel.send(embed=nest_embed)
@@ -259,7 +266,7 @@ class Nest:
         await message.delete()
 
         nest_embed = await self.get_nest_reports(ctx)
-        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the name of the nest you would like to add?".format(mention=author.mention), embed=nest_embed)
+        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the name of the nest you would like to add?\n\nIf you don't want to add a nest, reply with **cancel**.".format(mention=author.mention), embed=nest_embed)
 
         try:
             nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
@@ -269,6 +276,10 @@ class Nest:
             await nest_list.delete()
             return
         if nest_name_reply.content.lower() == "cancel":
+            await nest_name_reply.delete()
+            confirmation = await channel.send(_('Nest addition cancelled.'))
+            await asyncio.sleep(10)
+            await confirmation.delete()
             return
         else:
             await nest_name_reply.delete()
@@ -277,7 +288,7 @@ class Nest:
             await asyncio.sleep(10)
             await confirmation.delete()
             return
-        nest_loc_ask = await channel.send("What's the location of the **{nest}**? This can be GPS coordinates or an address.".format(nest=nest_name))
+        nest_loc_ask = await channel.send("What's the location of the **{nest}** to use for direction links? This can be GPS coordinates or an address, but I would recommend GPS if possible.\n\nIf you don't want to add a nest, reply with **cancel**.".format(nest=nest_name))
         try:
             nest_loc_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
             nest_loc = nest_loc_reply.clean_content
@@ -286,7 +297,10 @@ class Nest:
             await nest_loc_ask.delete()
             return
         if nest_loc_reply.content.lower() == "cancel":
-            await nest_loc_ask.delete()
+            await nest_loc_reply.delete()
+            confirmation = await channel.send(_('Nest addition cancelled.'))
+            await asyncio.sleep(10)
+            await confirmation.delete()
             return
         else:
             await nest_loc_reply.delete()
@@ -337,7 +351,7 @@ class Nest:
 
         nest_embed = await self.get_nest_reports(ctx)
 
-        nest_list = await channel.send("**Meowth!** Here's a list of all of the current nests, what's the number of the nest you would like to remove?", embed=nest_embed)
+        nest_list = await channel.send("**Meowth!** Here's a list of all of the current nests, what's the number of the nest you would like to remove?\n\nIf you don't want to remove a nest, reply with **cancel**.", embed=nest_embed)
 
         try:
             nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
@@ -346,6 +360,10 @@ class Nest:
             await nest_list.delete()
             return
         if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
+            await nest_name_reply.delete()
+            confirmation = await channel.send(_('Nest deletion cancelled.'))
+            await asyncio.sleep(10)
+            await confirmation.delete()
             return
         else:
             await nest_name_reply.delete()
@@ -419,10 +437,10 @@ class Nest:
         else:
             return
 
-    @nest.command()
+    @nest.command(name='time')
     @checks.allownestreport()
     @commands.has_permissions(manage_channels=True)
-    async def time(self, ctx):
+    async def _time(self, ctx):
         """Sets the nest migration time."""
 
         author = ctx.author
@@ -431,12 +449,13 @@ class Nest:
         channel = ctx.channel
 
         # get settings
-        migration = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
 
         await message.delete()
 
-        nest_time_ask = await channel.send("**Meowth!** The current nest migration is **{time}**.\n\nIf you don't want to change this, reply with **cancel**. Otherwise, what is the date of the nest migration?".format(time=migration.strftime(_('%B %d at %I:%M %p (%H:%M)'))))
+        nest_time_ask = await channel.send("**Meowth!** The current nest migration is **{time}**.\n\nIf you don't want to change this, reply with **cancel**. Otherwise, what is the local date and time of the nest migration?".format(time=migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))))
         try:
             nest_time_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
             await nest_time_ask.delete()
@@ -444,13 +463,15 @@ class Nest:
             await nest_time_ask.delete()
             return
         if nest_time_reply.content.lower() == "cancel":
+            await nest_time_reply.delete()
+            confirmation = await channel.send(_('Migration time set cancelled.'))
+            await asyncio.sleep(10)
+            await confirmation.delete()
             return
         else:
             await nest_time_reply.delete()
         migration_local = dateparser.parse(nest_time_reply.clean_content, settings={'RETURN_AS_TIMEZONE_AWARE': False, 'PREFER_DATES_FROM': 'future'})
-        migration_local = migration_local.replace(hour=0, minute=0, second=0, microsecond=0)
         migration_utc = migration_local + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
-
         rusure = await channel.send(_('Are you sure you\'d like to set the next migration to {time}?\n\nThis will also set all current nest reports to expire at this new time.').format(time=migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))))
         try:
             timeout = False

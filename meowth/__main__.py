@@ -1839,12 +1839,12 @@ async def raid_time(ctx, hatch_or_raid, level, newtime):
             levellist = ["1","2","3","4","5"]
             for level in levellist:
                 tmp = data['raid_eggs'][level][modify_time]
-                data['raid_eggs'][level][modify_time] = newtime
+                data['raid_eggs'][level][modify_time] = int(newtime)
                 with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                     json.dump(data, fd, indent=2, separators=(', ', ': '))
         else:
             tmp = data['raid_eggs'][level][modify_time]
-            data['raid_eggs'][level][modify_time] = newtime
+            data['raid_eggs'][level][modify_time] = int(newtime)
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
         load_config()
@@ -3885,7 +3885,7 @@ async def timerset(ctx, *,timer):
             await channel.send(_("Meowth! Timerset isn't supported for EX Raids after they have hatched."))
 
 def _timercheck(time, maxtime):
-    return time > maxtime
+    return int(time) > int(maxtime)
 
 async def _timerset(raidchannel, exptime):
     guild = raidchannel.guild
@@ -5866,7 +5866,7 @@ async def _lobbylist(ctx, tag=False, team=False):
     listmsg = _(' {trainer_count} in the lobby{including_string}!').format(trainer_count=str(ctx_lobbycount), including_string=lobby_exstr)
     return listmsg
 
-@_list.command()
+@_list.command(aliases=['boss'])
 @checks.activeraidchannel()
 async def bosses(ctx):
     """List each possible boss and the number of users that have RSVP'd for it.
@@ -5875,13 +5875,16 @@ async def bosses(ctx):
     Works only in raid channels."""
     listmsg = _('**Meowth!**')
     listmsg += await _bosslist(ctx)
-    await ctx.channel.send(listmsg)
+    await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
 
 async def _bosslist(ctx):
     message = ctx.message
     channel = ctx.channel
     egglevel = guild_dict[message.guild.id]['raidchannel_dict'][channel.id]['egglevel']
     egg_level = str(egglevel)
+    if egg_level == "0":
+        listmsg = _(' The egg has already hatched!')
+        return listmsg
     egg_info = raid_info['raid_eggs'][egg_level]
     egg_img = egg_info['egg_img']
     boss_dict = {}
@@ -5908,12 +5911,12 @@ async def _bosslist(ctx):
         if boss_dict[boss]['total'] > 0:
             bossliststr += _('{type}{name}: **{total} total,** {interested} interested, {coming} coming, {here} waiting{type}\n').format(type=boss_dict[boss]['type'],name=boss.capitalize(), total=boss_dict[boss]['total'], interested=boss_dict[boss]['maybe'], coming=boss_dict[boss]['coming'], here=boss_dict[boss]['here'])
     if bossliststr:
-        listmsg = _(' Boss numbers for the raid:\n{}').format(bossliststr)
+        listmsg = _(' Boss numbers for the raid:\n\n{}').format(bossliststr)
     else:
         listmsg = _(' Nobody has told me what boss they want!')
     return listmsg
 
-@_list.command()
+@_list.command(aliases=['team'])
 @checks.activechannel()
 async def teams(ctx):
     """List the teams for the users that have RSVP'd to a raid.
@@ -5922,7 +5925,7 @@ async def teams(ctx):
     Works only in raid channels."""
     listmsg = _('**Meowth!**')
     listmsg += await _teamlist(ctx)
-    await ctx.channel.send(listmsg)
+    await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
 
 async def _teamlist(ctx):
     message = ctx.message
@@ -5952,12 +5955,12 @@ async def _teamlist(ctx):
         teamliststr += ' ❔'
         teamliststr = teamliststr.format(grey_number=team_dict['unknown']['total'], greymaybe=team_dict['unknown']['maybe'], greycoming=team_dict['unknown']['coming'], greyhere=team_dict['unknown']['here'])
     if teamliststr:
-        listmsg = _(' Team numbers for the raid:\n{}').format(teamliststr)
+        listmsg = _(' Team numbers for the raid:\n\n{}').format(teamliststr)
     else:
         listmsg = _(' Nobody has updated their status!')
     return listmsg
 
-@_list.command()
+@_list.command(aliases=['want'])
 @checks.allowwant()
 async def wants(ctx):
     """List the wants for the user
@@ -5966,7 +5969,7 @@ async def wants(ctx):
     Works only in the want channel."""
     listmsg = _('**Meowth!**')
     listmsg += await _wantlist(ctx)
-    await ctx.channel.send(listmsg)
+    await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
 
 async def _wantlist(ctx):
     wantlist = []
@@ -5974,12 +5977,12 @@ async def _wantlist(ctx):
         if role.name in pkmn_info['pokemon_list']:
             wantlist.append(role.name.title())
     if len(wantlist) > 0:
-        listmsg = _(' Your current **!want** list is: ```{wantlist}```').format(wantlist=', '.join(wantlist))
+        listmsg = _(' Your current **!want** list is:\n\n**{wantlist}**').format(wantlist=', '.join(wantlist))
     else:
         listmsg = _(" You don\'t have any wants! use **!want** to add some.")
     return listmsg
 
-@_list.command()
+@_list.command(aliases=['trade'])
 @checks.allowtrade()
 async def trades(ctx, user: discord.Member=None):
     """List the trades for the user
@@ -6075,7 +6078,7 @@ async def _researchlist(ctx):
         listmsg = _(" There are no reported research reports. Report one with **!research**")
     return listmsg
 
-@_list.command()
+@_list.command(aliases=['wild'])
 @checks.allowwildreport()
 async def wilds(ctx):
     """List the wilds for the channel
