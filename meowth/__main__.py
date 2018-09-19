@@ -1742,6 +1742,8 @@ async def raid_json(ctx, level=None, *, newlist=None):
 
     Usage: !raid_json [level] [list]"""
     msg = ''
+    if level.lower() == "ex":
+        level = "EX"
     if (not level) and (not newlist):
         for level in raid_info['raid_eggs']:
             msg += _('\n**Level {level} raid list:** `{raidlist}` \n').format(level=level, raidlist=raid_info['raid_eggs'][level]['pokemon'])
