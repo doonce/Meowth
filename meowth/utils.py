@@ -217,7 +217,7 @@ def get_raidlist(bot):
     for level in bot.raid_info['raid_eggs']:
         for pokemon in bot.raid_info['raid_eggs'][level]['pokemon']:
             raidlist.append(pokemon)
-            raidlist.append(get_name(pokemon).lower())
+            raidlist.append(get_name(bot, pokemon).lower())
     return raidlist
 
 def get_level(bot, pkmn):
@@ -339,3 +339,142 @@ async def autocorrect(bot, entered_word, destination, author):
     else:
         question = await destination.send(msg)
         return
+
+def get_type(bot, guild, pkmn_number):
+    pkmn_number = int(pkmn_number) - 1
+    types = bot.type_list[pkmn_number]
+    ret = []
+    for type in types:
+        ret.append(parse_emoji(guild, bot.config['type_id_dict'][type.lower()]))
+    return ret
+
+def parse_emoji(guild, emoji_string):
+    if (emoji_string[0] == ':') and (emoji_string[(- 1)] == ':'):
+        emoji = discord.utils.get(guild.emojis, name=emoji_string.strip(':'))
+        if emoji:
+            emoji_string = '<:{0}:{1}>'.format(emoji.name, emoji.id)
+    return emoji_string
+
+def print_emoji_name(guild, emoji_string):
+    # By default, just print the emoji_string
+    ret = ('`' + emoji_string) + '`'
+    emoji = parse_emoji(guild, emoji_string)
+    # If the string was transformed by the utils.parse_emoji
+    # call, then it really was an emoji and we should
+    # add the raw string so people know what to write.
+    if emoji != emoji_string:
+        ret = ((emoji + ' (`') + emoji_string) + '`)'
+    return ret
+
+def get_weaknesses(bot, species):
+    # Get the Pokemon's number
+    number = bot.pkmn_info['pokemon_list'].index(species)
+    # Look up its type
+    pk_type = bot.type_list[number]
+
+    # Calculate sum of its weaknesses
+    # and resistances.
+    # -2 == immune
+    # -1 == NVE
+    #  0 == neutral
+    #  1 == SE
+    #  2 == double SE
+    type_eff = {}
+    for type in pk_type:
+        for atk_type in bot.type_chart[type]:
+            if atk_type not in type_eff:
+                type_eff[atk_type] = 0
+            type_eff[atk_type] += bot.type_chart[type][atk_type]
+    ret = []
+    for (type, effectiveness) in sorted(type_eff.items(), key=(lambda x: x[1]), reverse=True):
+        if effectiveness == 1:
+            ret.append(type.lower())
+        elif effectiveness == 2:
+            ret.append(type.lower() + 'x2')
+    return ret
+
+def weakness_to_str(bot, guild, weak_list):
+    ret = ''
+    for weakness in weak_list:
+
+        x2 = ''
+        if weakness[(- 2):] == 'x2':
+            weakness = weakness[:(- 2)]
+            x2 = 'x2'
+        # Append to string
+        ret += (parse_emoji(guild,
+                bot.config['type_id_dict'][weakness]) + x2) + ' '
+    return ret
+
+def create_gmaps_query(bot, details, channel, type="raid"):
+    if type == "raid" or type == "egg":
+        report = "raid"
+    else:
+        report = type
+    if "/maps" in details and "http" in details:
+        mapsindex = details.find('/maps')
+        newlocindex = details.rfind('http', 0, mapsindex)
+        if newlocindex == (- 1):
+            return
+        newlocend = details.find(' ', newlocindex)
+        if newlocend == (- 1):
+            newloc = details[newlocindex:]
+            return newloc
+        else:
+            newloc = details[newlocindex:newlocend + 1]
+            return newloc
+    details_list = details.split()
+    #look for lat/long coordinates in the location details. If provided,
+    #then channel location hints are not needed in the  maps query
+    if re.match (r'^\s*-?\d{1,2}\.?\d*,\s*-?\d{1,3}\.?\d*\s*$', details): #regex looks for lat/long in the format similar to 42.434546, -83.985195.
+        return "https://www.google.com/maps/search/?api=1&query={0}".format('+'.join(details_list))
+    loc_list = bot.guild_dict[channel.guild.id]['configure_dict'][report]['report_channels'][channel.id].split()
+    return 'https://www.google.com/maps/search/?api=1&query={0}+{1}'.format('+'.join(details_list), '+'.join(loc_list))
+
+def get_gyms(bot, guild_id):
+    gym_matching_cog = bot.cogs.get('GymMatching')
+    if not gym_matching_cog:
+        return None
+    gyms = gym_matching_cog.get_gyms(guild_id)
+    return gyms
+
+async def gym_match_prompt(bot, channel, author_id, gym_name, gyms):
+    gym_matching_cog = bot.cogs.get('GymMatching')
+    match, score = gym_matching_cog.gym_match(gym_name, gyms)
+    if not match:
+        return None
+    if score < 80:
+        try:
+            question = _("Did you mean: '{0}'").format(match)
+            q_msg = await channel.send(question)
+            reaction, __ = await ask(bot, q_msg, author_id)
+        except TypeError:
+            await q_msg.delete()
+            return None
+        if not reaction:
+            await q_msg.delete()
+            return None
+        if reaction.emoji == '✅':
+            await q_msg.delete()
+            return match
+        await q_msg.delete()
+        return None
+    return match
+
+def get_category(bot, channel, level, category_type="raid"):
+    guild = channel.guild
+    if category_type == "raid" or category_type == "egg":
+        report = "raid"
+    else:
+        report = category_type
+    catsort = bot.guild_dict[guild.id]['configure_dict'][report].get('categories', None)
+    if catsort == "same":
+        return channel.category
+    elif catsort == "region":
+        category = discord.utils.get(guild.categories,id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][channel.id])
+        return category
+    elif catsort == "level":
+        category = discord.utils.get(guild.categories,id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][level])
+        return category
+    else:
+        return None
