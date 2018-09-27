@@ -454,6 +454,14 @@ class Trading:
 
         wants = want_reply.content.lower().split(',')
 
+        if len(wants) > 9:
+            trade_error = await ctx.send(
+                f"{ctx.author.display_name}, please limit your trade to 9 or "
+                f"fewer pokemon. Try again!")
+            await asyncio.sleep(5)
+            await trade_error.delete()
+            return
+
         await want_ask.delete()
         await want_reply.delete()
 

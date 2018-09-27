@@ -38,6 +38,7 @@ from meowth.logs import init_loggers
 
 logger = init_loggers()
 
+
 def _get_prefix(bot, message):
     guild = message.guild
     try:
@@ -113,23 +114,23 @@ def load_config():
     # Load Pokemon list and raid info
     with open(pokemon_path_source, 'r') as fd:
         pkmn_info = json.load(fd)
+    Meowth.pkmn_info = pkmn_info
     with open(raid_path_source, 'r') as fd:
         raid_info = json.load(fd)
+    Meowth.raid_info = raid_info
     # Load type information
     with open(os.path.join('data', 'type_chart.json'), 'r') as fd:
         type_chart = json.load(fd)
+    Meowth.type_chart = type_chart
     with open(os.path.join('data', 'type_list.json'), 'r') as fd:
         type_list = json.load(fd)
+    Meowth.type_list = type_list
     # Set spelling dictionary to our list of Pokemon
     pkmn_match.set_list(pkmn_info['pokemon_list'])
     return (pokemon_path_source, raid_path_source)
 
-pkmn_path, raid_path = load_config()
 
-Meowth.pkmn_info = pkmn_info
-Meowth.raid_info = raid_info
-Meowth.type_list = type_list
-Meowth.type_chart = type_chart
+pkmn_path, raid_path = load_config()
 
 Meowth.config = config
 Meowth.pkmn_info_path = pkmn_path
@@ -261,36 +262,60 @@ async def template(ctx, *, sample_message):
     else:
         await ctx.channel.send(msg.format(user=ctx.author.mention))
 
+async def reset_raid_roles():
+    for guild_id in guild_dict:
+        guild = Meowth.get_guild(guild_id)
+        for role in guild.roles:
+            if role.name.lower() not in utils.get_raidlist(Meowth) and role.name.lower() in pkmn_info['pokemon_list'] and role != guild.me.top_role:
+                try:
+                    await role.delete()
+                except:
+                    pass
+        for boss in utils.get_raidlist(Meowth):
+            if not isinstance(boss, int):
+                role = discord.utils.get(guild.roles, name=boss)
+                if not role:
+                    role = await guild.create_role(name = boss, hoist = False, mentionable = True)
+        for trainer in guild_dict[guild.id]['trainers']:
+            role_list = []
+            user = guild.get_member(trainer)
+            if not user:
+                continue
+            user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('wants', [])
+            for want in user_wants:
+                if want in utils.get_raidlist(Meowth):
+                    role = discord.utils.get(guild.roles, name=utils.get_name(Meowth, want))
+                    if role and role not in user.roles:
+                        role_list.append(role)
+            if role_list:
+                await user.add_roles(*role_list)
+
 """
 Server Management
 """
 
-async def wild_expiry_check(message):
-    logger.info('Expiry_Check - ' + message.channel.name)
+async def expire_research(message):
     guild = message.channel.guild
-    global active_wilds
-    message = await message.channel.get_message(message.id)
-    if message not in active_wilds:
-        active_wilds.append(message)
-        logger.info(
-        'wild_expiry_check - Message added to watchlist - ' + message.channel.name
-        )
-        await asyncio.sleep(0.5)
-        while True:
-            try:
-                if guild_dict[guild.id]['wildreport_dict'][message.id]['exp'] <= time.time():
-                    await expire_wild(message)
-            except KeyError:
-                pass
-            await asyncio.sleep(30)
-            continue
+    channel = message.channel
+    research_dict = copy.deepcopy(guild_dict[guild.id]['questreport_dict'])
+    try:
+        await message.delete()
+    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+        pass
+    try:
+        user_message = await channel.get_message(research_dict[message.id]['reportmessage'])
+        await user_message.delete()
+    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+        pass
+    await utils.expire_dm_reports(Meowth, research_dict[message.id].get('dm_dict', {}))
+    del guild_dict[guild.id]['questreport_dict'][message.id]
 
 async def expire_wild(message):
     guild = message.channel.guild
     channel = message.channel
-    wild_dict = guild_dict[guild.id]['wildreport_dict']
+    wild_dict = copy.deepcopy(guild_dict[guild.id]['wildreport_dict'])
     try:
-        await message.edit(embed=discord.Embed(description=guild_dict[guild.id]['wildreport_dict'][message.id]['expedit']['embedcontent'], colour=message.embeds[0].colour.value))
+        await message.edit(embed=discord.Embed(description=wild_dict[message.id]['expedit']['embedcontent'], colour=message.embeds[0].colour.value))
         await message.clear_reactions()
     except discord.errors.NotFound:
         pass
@@ -299,6 +324,7 @@ async def expire_wild(message):
         await user_message.delete()
     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
         pass
+    await utils.expire_dm_reports(Meowth, wild_dict[message.id].get('dm_dict', {}))
     del guild_dict[guild.id]['wildreport_dict'][message.id]
 
 async def expiry_check(channel):
@@ -671,6 +697,7 @@ async def guild_cleanup(loop=True):
         except Exception as err:
             logger.info('Server_Cleanup - SAVING FAILED' + err)
         logger.info('Server_Cleanup ------ END ------')
+        await reset_raid_roles()
         await asyncio.sleep(7200)
         continue
 
@@ -679,6 +706,8 @@ async def message_cleanup(loop=True):
         logger.info('message_cleanup ------ BEGIN ------')
         guilddict_temp = copy.deepcopy(guild_dict)
         for guildid in guilddict_temp.keys():
+            report_edit_dict = {}
+            report_delete_dict = {}
             questreport_dict = guilddict_temp[guildid].get('questreport_dict',{})
             wildreport_dict = guilddict_temp[guildid].get('wildreport_dict',{})
             pokealarm_dict = guilddict_temp[guildid].get('pokealarm_dict',{})
@@ -689,8 +718,6 @@ async def message_cleanup(loop=True):
                 'pokealarm_dict':pokealarm_dict,
                 'pokehuntr_dict':pokehuntr_dict
             }
-            report_edit_dict = {}
-            report_delete_dict = {}
             for report_dict in report_dict_dict:
                 for reportid in report_dict_dict[report_dict].keys():
                     if report_dict_dict[report_dict][reportid].get('exp', 0) <= time.time():
@@ -703,6 +730,8 @@ async def message_cleanup(loop=True):
                                 report_delete_dict[reportid] = {"action":"delete","channel":report_channel}
                             else:
                                 report_edit_dict[reportid] = {"action":report_dict_dict[report_dict][reportid]['expedit'],"channel":report_channel}
+                            if report_dict_dict[report_dict][reportid].get('dm_dict', False):
+                                await utils.expire_dm_reports(Meowth, report_dict_dict[report_dict][reportid]['dm_dict'])
                         try:
                             del guild_dict[guildid][report_dict][reportid]
                         except KeyError:
@@ -745,6 +774,7 @@ async def maint_start():
         event_loop.create_task(guild_cleanup())
         event_loop.create_task(channel_cleanup())
         event_loop.create_task(message_cleanup())
+        await reset_raid_roles()
         logger.info('Maintenance Tasks Started')
     except KeyboardInterrupt as e:
         tasks.cancel()
@@ -1541,7 +1571,7 @@ async def raid_json(ctx, level=None, *, newlist=None):
 
     Usage: !raid_json [level] [list]"""
     msg = ''
-    if level.lower() == "ex":
+    if level and level.lower() == "ex":
         level = "EX"
     if (not level) and (not newlist):
         for level in raid_info['raid_eggs']:
@@ -1592,6 +1622,7 @@ async def raid_json(ctx, level=None, *, newlist=None):
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
             load_config()
+            await reset_raid_roles()
             await question.clear_reactions()
             await question.add_reaction('☑')
             await ctx.channel.send(_("Meowth! Configuration successful!"))
@@ -1854,19 +1885,19 @@ async def setstatus(ctx, member: discord.Member, status,*, status_counts: str = 
     ctx.message.author = member
     await ctx.bot.process_commands(ctx.message)
 
-@Meowth.command()
-@commands.has_permissions(manage_guild=True)
-async def cleanroles(ctx):
-    """Removes all 0 member pokemon roles.
-
-    Usage: !cleanroles"""
-    cleancount = 0
-    for role in copy.copy(ctx.guild.roles):
-        if role.members == [] and role.name in pkmn_info['pokemon_list']:
-            server_role = discord.utils.get(ctx.guild.roles, name=role.name)
-            await server_role.delete()
-            cleancount += 1
-    await ctx.message.channel.send(_("Removed {cleancount} empty roles").format(cleancount=cleancount))
+# @Meowth.command()
+# @commands.has_permissions(manage_guild=True)
+# async def cleanroles(ctx):
+#     """Removes all 0 member pokemon roles.
+#
+#     Usage: !cleanroles"""
+#     cleancount = 0
+#     for role in copy.copy(ctx.guild.roles):
+#         if role.members == [] and role.name in pkmn_info['pokemon_list']:
+#             server_role = discord.utils.get(ctx.guild.roles, name=role.name)
+#             await server_role.delete()
+#             cleancount += 1
+#     await ctx.message.channel.send(_("Removed {cleancount} empty roles").format(cleancount=cleancount))
 
 @Meowth.command()
 @checks.allowarchive()
@@ -2131,6 +2162,7 @@ async def want(ctx,*,pokemon):
     already_want_list = []
     added_list = []
     role_list = []
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wants', [])
     if ',' in ''.join(want_split):
         for pkmn in ''.join(want_split).split(','):
             if pkmn.isdigit():
@@ -2166,23 +2198,26 @@ async def want(ctx,*,pokemon):
                     spellcheck_list.append(entered_want)
                     spellcheck_dict[entered_want] = utils.spellcheck(Meowth, entered_want) if utils.spellcheck(Meowth, entered_want) != entered_want else None
                     continue
-        role = discord.utils.get(guild.roles, name=entered_want)
-        # Create role if it doesn't exist yet
-        if role == None:
-            try:
-                role = await guild.create_role(name = entered_want.lower(), hoist = False, mentionable = True)
-            except discord.errors.HTTPException:
-                await message.channel.send(_('Maximum guild roles reached. Pokemon not added.'))
-                return
-            await asyncio.sleep(0.5)
+        if entered_want.lower() in utils.get_raidlist(Meowth):
+            role = discord.utils.get(guild.roles, name=entered_want)
+            # Create role if it doesn't exist yet
+            if role == None:
+                try:
+                    role = await guild.create_role(name = entered_want.lower(), hoist = False, mentionable = True)
+                except discord.errors.HTTPException:
+                    await message.channel.send(_('Maximum guild roles reached. Pokemon not added.'))
+                    return
+                await asyncio.sleep(0.5)
 
-        # If user is already wanting the Pokemon,
-        # print a less noisy message
-        if role in ctx.author.roles:
+            # If user is already wanting the Pokemon,
+            # print a less noisy message
+            if role not in ctx.author.roles:
+                role_list.append(role)
+        if utils.get_number(Meowth, entered_want) in user_wants:
             already_want_list.append(entered_want.capitalize())
             already_want_count += 1
         else:
-            role_list.append(role)
+            user_wants.append(utils.get_number(Meowth, entered_want))
             added_list.append(entered_want.capitalize())
             added_count += 1
     await ctx.author.add_roles(*role_list)
@@ -2228,6 +2263,8 @@ async def unwant(ctx,*,pokemon):
     message = ctx.message
     guild = message.guild
     channel = message.channel
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wants', [])
+    role_list = []
     if ctx.invoked_subcommand == None:
         unwant_split = pokemon.lower().split()
         unwant_list = []
@@ -2252,12 +2289,12 @@ async def unwant(ctx,*,pokemon):
             # If user is not already wanting the Pokemon,
             # print a less noisy message
             role = discord.utils.get(guild.roles, name=entered_unwant)
-            if role not in message.author.roles:
-                await message.add_reaction('☑')
-            else:
-                await message.author.remove_roles(role)
-                unwant_number = pkmn_info['pokemon_list'].index(entered_unwant) + 1
-                await message.add_reaction('☑')
+            if role in message.author.roles:
+                role_list.append(role)
+            if utils.get_number(Meowth, entered_unwant) in user_wants:
+                user_wants.remove(utils.get_number(Meowth, entered_unwant))
+        await message.author.remove_roles(*role_list)
+        await message.add_reaction('☑')
 
 @unwant.command(name='all')
 @checks.allowwant()
@@ -2273,27 +2310,27 @@ async def unwant_all(ctx):
     guild = message.guild
     channel = message.channel
     author = message.author
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wants', [])
+    count = len(user_wants)
+    if count == 0:
+        await channel.send(content=_('{0}, you have no pokemon in your want list.').format(author.mention, count))
+        return
     await channel.trigger_typing()
-    count = 0
     roles = author.roles
     remove_roles = []
     for role in roles:
         if role.name in pkmn_info['pokemon_list']:
             remove_roles.append(role)
-            count += 1
         continue
     await author.remove_roles(*remove_roles)
-    if count == 0:
-        await channel.send(content=_('{0}, you have no pokemon in your want list.').format(author.mention, count))
-        return
+    guild_dict[guild.id]['trainers'][message.author.id]['wants'] = []
     await channel.send(content=_("{0}, I've removed {1} pokemon from your want list.").format(author.mention, count))
-    return
 
 """
 Reporting
 """
 
-@Meowth.command(aliases=['w'])
+@Meowth.group(aliases=['w'], invoke_without_command=True, case_insensitive=True)
 @checks.allowwildreport()
 async def wild(ctx,pokemon,*,location):
     """Report a wild Pokemon spawn location.
@@ -2304,19 +2341,9 @@ async def wild(ctx,pokemon,*,location):
     content = f"{pokemon} {location}"
     await _wild(ctx.message, content)
 
-async def _wild(message, content, huntr=False):
+async def _wild(message, content):
     timestamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
-    if (not huntr):
-        wild_split = content.split()
-        huntrexp = ''
-        huntrweather = '\u200b'
-        huntrexpstamp = ''
-    else:
-        wild_split = huntr.split('|')[0].split()
-        del wild_split[0]
-        huntrexp = huntr.split('|')[1]
-        huntrweather = huntr.split('|')[2]
-        huntrexpstamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(huntrexp.split()[0]), seconds=int(huntrexp.split()[2]))).strftime('%I:%M %p')
+    wild_split = content.split()
     if len(wild_split) <= 1:
         await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**'))
         return
@@ -2342,36 +2369,29 @@ async def _wild(message, content, huntr=False):
         entered_wild = await utils.autocorrect(Meowth, entered_wild, message.channel, message.author)
     if not entered_wild:
         return
-    wild = discord.utils.get(message.guild.roles, name=entered_wild)
-    if wild is None:
-        roletest = ""
-    else:
-        roletest = _("{pokemon} - ").format(pokemon=wild.mention)
     wild_number = pkmn_info['pokemon_list'].index(entered_wild) + 1
     wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(wild_number).zfill(3))
     expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
-    if (not huntr):
-        wild_gmaps_link = utils.create_gmaps_query(Meowth, wild_details, message.channel, type="wild")
-        wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
-        wild_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.capitalize(), pokemonnumber=str(wild_number), type=''.join(utils.get_type(Meowth, message.guild, wild_number))), inline=False)
-        wild_embed.set_thumbnail(url=wild_img_url)
-        wild_embed.add_field(name='**Reactions:**', value=_("🏎: I'm on my way!"))
-        wild_embed.add_field(name='\u200b', value=_("💨: The Pokemon despawned!"))
-        wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
-        despawn = 3600
-        wildreportmsg = await message.channel.send(content=_('{roletest}Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(roletest=roletest,pokemon=entered_wild.title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
-    else:
-        wild_gmaps_link = 'https://www.google.com/maps/dir/Current+Location/{0}'.format(wild_details)
-        wild_embed = discord.Embed(title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), url=wild_gmaps_link, colour=message.guild.me.colour)
-        wild_embed.add_field(name='**Details:**', value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.title(), pokemonnumber=str(wild_number), type=''.join(utils.get_type(Meowth, message.guild, wild_number)), inline=True))
-        wild_embed.add_field(name='**Despawns in:**', value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=huntrexp.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
-        wild_embed.add_field(name=huntrweather, value=_('Perform a scan to help find more by clicking [here]({huntrurl}).').format(huntrurl=wild_details), inline=False)
-        wild_embed.set_thumbnail(url=wild_img_url)
-        wild_embed.add_field(name='**Reactions:**', value=_("🏎: I'm on my way!"))
-        wild_embed.add_field(name='\u200b', value=_("💨: The Pokemon despawned!"))
-        wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
-        despawn = (int(huntrexp.split(' ')[0]) * 60) + int(huntrexp.split(' ')[2])
-        wildreportmsg = await message.channel.send(content=_('{roletest}Meowth! Wild {pokemon} reported by {member}! Details: <{location_details}>').format(roletest=roletest,pokemon=entered_wild.title(), member=message.author.mention, location_details=wild_details, gps=wild_details), embed=wild_embed)
+    wild_gmaps_link = utils.create_gmaps_query(Meowth, wild_details, message.channel, type="wild")
+    wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
+    wild_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.capitalize(), pokemonnumber=str(wild_number), type=''.join(utils.get_type(Meowth, message.guild, wild_number))), inline=False)
+    wild_embed.set_thumbnail(url=wild_img_url)
+    wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
+    despawn = 3600
+    dm_dict = {}
+    for trainer in guild_dict[message.guild.id].get('trainers', {}):
+        user = message.guild.get_member(trainer)
+        if not user:
+            continue
+        perms = user.permissions_in(message.channel)
+        if not perms.read_messages:
+            continue
+        if wild_number in guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('wants', []):
+            wilddmmsg = await user.send(content=_('Meowth! Wild {pokemon} reported by {member} in {channel}! Details: {location_details}').format(pokemon=entered_wild.title(), member=message.author.display_name, channel=message.channel.mention, location_details=wild_details), embed=wild_embed)
+            dm_dict[user.id] = wilddmmsg.id
+    wild_embed.add_field(name='**Reactions:**', value=_("🏎: I'm on my way!"))
+    wild_embed.add_field(name='\u200b', value=_("💨: The Pokemon despawned!"))
+    wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=entered_wild.title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
     await asyncio.sleep(0.25)
     await wildreportmsg.add_reaction('🏎')
     await asyncio.sleep(0.25)
@@ -2384,6 +2404,7 @@ async def _wild(message, content, huntr=False):
         'reportmessage':message.id,
         'reportchannel':message.channel.id,
         'reportauthor':message.author.id,
+        'dm_dict':dm_dict,
         'location':wild_details,
         'url':wild_gmaps_link,
         'pokemon':entered_wild,
@@ -2392,6 +2413,47 @@ async def _wild(message, content, huntr=False):
     guild_dict[message.guild.id]['wildreport_dict'] = wild_dict
     wild_reports = guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(message.author.id,{}).setdefault('wild_reports',0) + 1
     guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports
+
+@wild.command()
+@checks.allowwildreport()
+@commands.has_permissions(manage_channels=True)
+async def reset(ctx):
+    """Resets all wild reports."""
+
+    author = ctx.author
+    guild = ctx.guild
+    message = ctx.message
+    channel = ctx.channel
+
+    # get settings
+    wild_dict = copy.deepcopy(guild_dict[guild.id].setdefault('wildreport_dict', {}))
+    await message.delete()
+
+    if not wild_dict:
+        return
+    rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all wild reports?'))
+    try:
+        timeout = False
+        res, reactuser = await utils.ask(Meowth, rusure, author.id)
+    except TypeError:
+        timeout = True
+    if timeout or res.emoji == '❎':
+        await rusure.delete()
+        confirmation = await channel.send(_('Manual reset cancelled.'))
+        await asyncio.sleep(10)
+        await confirmation.delete()
+        return
+    elif res.emoji == '✅':
+        await rusure.delete()
+        for report in wild_dict:
+            report_message = await channel.get_message(report)
+            await expire_wild(report_message)
+        confirmation = await channel.send(_('Wilds reset.'))
+        await asyncio.sleep(10)
+        await confirmation.delete()
+        return
+    else:
+        return
 
 @Meowth.command(aliases=['r', 're', 'egg', 'regg', 'raidegg'])
 @checks.allowraidreport()
@@ -2586,7 +2648,7 @@ async def _raid(message, content, huntr=False):
     raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(utils.get_type(Meowth, message.guild, raid_number)), inline=True))
-    raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(Meowth, message.guild, utils.utils.get_weaknesses(Meowth, Meowth, entered_raid))), inline=True)
+    raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(Meowth, message.guild, utils.get_weaknesses(Meowth, entered_raid))), inline=True)
     raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
     raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
     if huntr:
@@ -3450,15 +3512,27 @@ async def research(ctx, *, details = None):
             break
     if not error:
         pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', reward.lower())), None)
-        roletest = ""
-        if pkmn_match:
-            role = discord.utils.get(guild.roles, name=pkmn_match)
-            if role:
-                roletest = _("{pokemon} - ").format(pokemon=role.mention)
-        research_msg = _("{roletest}Field Research reported by {author}").format(roletest=roletest,author=author.mention)
+        if not pkmn_match:
+            for word in reward.split():
+                pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', word.lower())), None)
+                if pkmn_match:
+                    break
+        pkmn_number = utils.get_number(Meowth, pkmn_match)
+        research_msg = _("Field Research reported by {author}").format(author=author.mention)
         research_embed.title = _('Meowth! Click here for my directions to the research!')
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=author.name)
         research_embed.url = loc_url
+        dm_dict = {}
+        for trainer in guild_dict[guild.id].get('trainers', {}):
+            user = guild.get_member(trainer)
+            if not user:
+                continue
+            perms = user.permissions_in(channel)
+            if not perms.read_messages:
+                continue
+            if pkmn_number and pkmn_number in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('wants', []):
+                resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pkmn_match.title(), author=author.mention, channel=channel.mention),embed=research_embed)
+                dm_dict[user.id] = resdmmsg.id
         confirmation = await channel.send(research_msg,embed=research_embed)
         research_dict = copy.deepcopy(guild_dict[guild.id].get('questreport_dict',{}))
         research_dict[confirmation.id] = {
@@ -3467,6 +3541,7 @@ async def research(ctx, *, details = None):
             'reportmessage':message.id,
             'reportchannel':channel.id,
             'reportauthor':author.id,
+            'dm_dict':dm_dict,
             'location':location,
             'url':loc_url,
             'quest':quest,
@@ -3516,11 +3591,7 @@ async def reset(ctx):
         await rusure.delete()
         for report in research_dict:
             report_message = await channel.get_message(report)
-            try:
-                await report_message.delete()
-            except (discord.errors.Forbidden, discord.errors.HTTPException):
-                pass
-            del guild_dict[guild.id]['questreport_dict'][report]
+            await expire_research(report_message)
         confirmation = await channel.send(_('Research reset.'))
         await asyncio.sleep(10)
         await confirmation.delete()
@@ -5233,6 +5304,7 @@ async def lobby_countdown(ctx):
             return
 
 @Meowth.command()
+@commands.cooldown(1,5,commands.BucketType.channel)
 @checks.activeraidchannel()
 async def starting(ctx, team: str = ''):
     """Signal that a raid is starting.
@@ -5260,7 +5332,7 @@ async def starting(ctx, team: str = ''):
         ctx.bot.loop.create_task(lobby_countdown(ctx))
         return
     for trainer in trainer_dict:
-        ctx.count = trainer_dict[trainer]['count']
+        ctx.count = trainer_dict[trainer].get('count', 1)
         user = ctx.guild.get_member(trainer)
         if team in team_names:
             if trainer_dict[trainer]['party'][team]:
@@ -5899,9 +5971,9 @@ async def wants(ctx):
 
 async def _wantlist(ctx):
     wantlist = []
-    for role in ctx.author.roles:
-        if role.name in pkmn_info['pokemon_list']:
-            wantlist.append(role.name.title())
+    user_wants = guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('wants', [])
+    for pkmn in user_wants:
+        wantlist.append(utils.get_name(Meowth, pkmn).title())
     if len(wantlist) > 0:
         listmsg = _(' Your current **!want** list is:\n\n**{wantlist}**').format(wantlist=', '.join(wantlist))
     else:

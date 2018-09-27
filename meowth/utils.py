@@ -478,3 +478,15 @@ def get_category(bot, channel, level, category_type="raid"):
         return category
     else:
         return None
+
+async def expire_dm_reports(bot, dm_dict):
+    for dm_user, dm_message in dm_dict.items():
+        dm_user = bot.get_user(dm_user)
+        dm_channel = dm_user.dm_channel
+        if not dm_user or not dm_channel:
+            continue
+        try:
+            dm_message = await dm_channel.get_message(dm_message)
+            await dm_message.delete()
+        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+            pass

@@ -25,6 +25,7 @@ class Nest:
     #                     'reportmessage':message.id,
     #                     'reportchannel':message.channel.id,
     #                     'reportauthor':message.author.id,
+    #                     'dm_dict': dm_dict,
     #                     'location':nest_details,
     #                     'url':nest_link,
     #                     'pokemon':entered_nest
@@ -61,6 +62,7 @@ class Nest:
                                     await report_message.delete()
                                 except:
                                     pass
+                                await utils.expire_dm_reports(self.bot, nest_dict[channel][nest]['reports'][report].get('dm_dict', {}))
                                 del self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]
             await asyncio.sleep(600)
             continue
@@ -137,11 +139,7 @@ class Nest:
             entered_nest = await utils.autocorrect(self.bot, entered_nest, channel, author)
         if not entered_nest:
             return
-        role = discord.utils.get(guild.roles, name=entered_nest)
-        if role:
-            entered_pkmn = role.mention
-        else:
-            entered_pkmn = entered_nest.title()
+        entered_pkmn = entered_nest.title()
         nest_embed = await self.get_nest_reports(ctx)
         nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a {pokemon} report to\n\nIf you want to stop your report, reply with **cancel**.?".format(mention=author.mention, pokemon=entered_nest.title()), embed=nest_embed)
         try:
@@ -167,6 +165,17 @@ class Nest:
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
         nest_embed.set_thumbnail(url=nest_img_url)
         nest_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        dm_dict = {}
+        for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
+            user = message.guild.get_member(trainer)
+            if not user:
+                continue
+            perms = user.permissions_in(message.channel)
+            if not perms.read_messages:
+                continue
+            if nest_number in self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('wants', []):
+                nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name}** is a **{entered_pkmn}** nest in {channel.mention}!", embed=nest_embed)
+                dm_dict[user.id] = nestdmmsg.id
         nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name}** is a **{entered_pkmn}** nest!", embed=nest_embed)
         nest_dict[nest_name]['reports'][nestreportmsg.id] = {
             'exp':migration_exp,
@@ -174,6 +183,7 @@ class Nest:
             'reportchannel':channel.id,
             'reportauthor':author.id,
             'reporttime':datetime.datetime.utcnow(),
+            'dm_dict': dm_dict,
             'location':nest_name,
             'pokemon':entered_nest
         }
@@ -430,6 +440,7 @@ class Nest:
                     except (discord.errors.Forbidden, discord.errors.HTTPException):
                         pass
                     del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report]
+                    await utils.expire_dm_reports(self.bot, nest_dict[nest]['reports'][report].get('dm_dict', {}))
             confirmation = await channel.send(_('Nests reset. Use **!nest time** to set a new migration time.'))
             await asyncio.sleep(10)
             await confirmation.delete()

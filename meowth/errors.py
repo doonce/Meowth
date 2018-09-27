@@ -181,6 +181,12 @@ def custom_error_handling(bot, logger):
             pass
         elif isinstance(error, commands.CheckFailure):
             pass
+        elif isinstance(error, commands.CommandOnCooldown):
+            if ctx.invoked_with == "starting":
+                error = await channel.send(_("The command **{prefix}{cmd_name}** is on cooldown to prevent errors. If you still need to start, try again in {retry} seconds.").format(prefix=prefix, cmd_name=ctx.invoked_subcommand or ctx.invoked_with, retry=int(error.retry_after)))
+            if error:
+                await asyncio.sleep(10)
+                await delete_error(ctx.message, error)
         elif isinstance(error, TeamSetCheckFail):
             msg = _('Meowth! Team Management is not enabled on this server. **{prefix}{cmd_name}** is unable to be used.').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             error = await ctx.channel.send(msg)
