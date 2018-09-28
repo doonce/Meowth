@@ -431,36 +431,6 @@ def create_gmaps_query(bot, details, channel, type="raid"):
     loc_list = bot.guild_dict[channel.guild.id]['configure_dict'][report]['report_channels'][channel.id].split()
     return 'https://www.google.com/maps/search/?api=1&query={0}+{1}'.format('+'.join(details_list), '+'.join(loc_list))
 
-def get_gyms(bot, guild_id):
-    gym_matching_cog = bot.cogs.get('GymMatching')
-    if not gym_matching_cog:
-        return None
-    gyms = gym_matching_cog.get_gyms(guild_id)
-    return gyms
-
-async def gym_match_prompt(bot, channel, author_id, gym_name, gyms):
-    gym_matching_cog = bot.cogs.get('GymMatching')
-    match, score = gym_matching_cog.gym_match(gym_name, gyms)
-    if not match:
-        return None
-    if score < 80:
-        try:
-            question = _("Did you mean: '{0}'").format(match)
-            q_msg = await channel.send(question)
-            reaction, __ = await ask(bot, q_msg, author_id)
-        except TypeError:
-            await q_msg.delete()
-            return None
-        if not reaction:
-            await q_msg.delete()
-            return None
-        if reaction.emoji == '✅':
-            await q_msg.delete()
-            return match
-        await q_msg.delete()
-        return None
-    return match
-
 def get_category(bot, channel, level, category_type="raid"):
     guild = channel.guild
     if category_type == "raid" or category_type == "egg":

@@ -93,7 +93,7 @@ class Huntr:
                                     await channel.send(_("This {pokemon}'s moves are: **{moves}**").format(pokemon=pokemon.title(), moves=moveset))
                         except KeyError:
                             pass
-                    auto_report = True if int(ghraidlevel) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls'] else False
+                    auto_report = True if int(utils.get_level(self.bot, pokemon)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls'] else False
                     await self.huntr_raid(ctx, pokemon, raid_details, raidexp, huntrgps, moveset, auto_report)
                     return
                 elif (len(message.embeds[0].title.split(' ')) == 6) and self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['autoegg']:
@@ -335,31 +335,12 @@ class Huntr:
             return
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id,{}).get('weather', None)
         raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gymhuntrgps)
-        gyms = utils.get_gyms(self.bot, message.guild.id)
-        if gyms:
-            match = await utils.gym_match_prompt(self.bot, message.channel, message.author.id, raid_details, gyms)
-            gym_info = ""
-            if match:
-                gym = gyms[match]
-                raid_details = match
-                gym_coords = gym['coordinates']
-                gym_note = gym.get('notes', "")
-                gym_alias = gym.get('alias', "")
-                if gym_note:
-                    gym_note = f"**Notes:** {gym_note}"
-                if gym_alias:
-                    raid_details = gym_alias
-                raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gym_coords)
-                gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
-                for raid in ctx.bot.guild_dict[message.guild.id]['raidchannel_dict']:
-                    raid_address = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid]['address']
-                    raid_coords = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid].get('gymhuntrgps', False)
-                    raid_reportcity = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid]['reportcity']
-                    if (raid_details == raid_address or gym_coords == raid_coords) and message.channel.id == raid_reportcity:
-                        return
-        else:
-            gyms = False
-            gym_info = ""
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        gym_info = ""
+        if gym_matching_cog:
+            gym_info, raid_details = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+        if not raid_details:
+            return
         raid = discord.utils.get(message.guild.roles, name=entered_raid)
         if raid == None:
             roletest = ""
@@ -472,31 +453,12 @@ class Huntr:
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id,{}).get('weather', None)
         raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gymhuntrgps)
-        gyms = utils.get_gyms(self.bot, message.guild.id)
-        if gyms:
-            match = await utils.gym_match_prompt(self.bot, message.channel, message.author.id, raid_details, gyms)
-            gym_info = ""
-            if match:
-                gym = gyms[match]
-                raid_details = match
-                gym_coords = gym['coordinates']
-                gym_note = gym.get('notes', "")
-                gym_alias = gym.get('alias', "")
-                if gym_note:
-                    gym_note = f"**Notes:** {gym_note}"
-                if gym_alias:
-                    raid_details = gym_alias
-                raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gym_coords)
-                gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
-                for raid in ctx.bot.guild_dict[message.guild.id]['raidchannel_dict']:
-                    raid_address = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid]['address']
-                    raid_coords = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid].get('gymhuntrgps', False)
-                    raid_reportcity = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid]['reportcity']
-                    if (raid_details == raid_address or gym_coords == raid_coords) and message.channel.id == raid_reportcity:
-                        return
-        else:
-            gyms = False
-            gym_info = ""
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        gym_info = ""
+        if gym_matching_cog:
+            gym_info, raid_details = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+        if not raid_details:
+            return
         egg_level = str(egg_level)
         egg_info = ctx.bot.raid_info['raid_eggs'][egg_level]
         egg_img = egg_info['egg_img']

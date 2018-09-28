@@ -519,6 +519,8 @@ async def expire_channel(channel):
                 elif archive or logs:
                     try:
                         for overwrite in channel.overwrites:
+                            if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
+                                await channel.set_permissions(overwrite[0], read_messages=False)
                             if isinstance(overwrite[0], discord.Role):
                                 if overwrite[0].permissions.manage_guild or overwrite[0].permissions.manage_channels:
                                     await channel.set_permissions(overwrite[0], read_messages=True)
@@ -527,8 +529,6 @@ async def expire_channel(channel):
                                 if channel.permissions_for(overwrite[0]).manage_guild or channel.permissions_for(overwrite[0]).manage_channels:
                                     await channel.set_permissions(overwrite[0], read_messages=True)
                                     continue
-                            if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
-                                await channel.set_permissions(overwrite[0], read_messages=False)
                         for role in guild.role_hierarchy:
                             if role.permissions.manage_guild or role.permissions.manage_channels:
                                 await channel.set_permissions(role, read_messages=True)
@@ -2446,12 +2446,13 @@ async def raid(ctx,pokemon,*,location:commands.clean_content(fix_channel_mention
     Finally, Meowth will create a separate channel for the raid report, for the purposes of organizing the raid."""
     content = f"{pokemon} {location}"
     if pokemon.isdigit():
-        new_channel = await _raidegg(ctx.message, content)
+        new_channel = await _raidegg(ctx, content)
     else:
-        new_channel = await _raid(ctx.message, content)
+        new_channel = await _raid(ctx, content)
     ctx.raid_channel = new_channel
 
-async def _raid(message, content):
+async def _raid(ctx, content):
+    message = ctx.message
     fromegg = False
     if guild_dict[message.channel.guild.id]['raidchannel_dict'].get(message.channel.id,{}).get('type') == "egg":
         fromegg = True
@@ -2539,48 +2540,12 @@ async def _raid(message, content):
         await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**'))
         return
     raid_gmaps_link = utils.create_gmaps_query(Meowth, raid_details, message.channel, type="raid")
-    gyms = utils.get_gyms(Meowth, message.guild.id)
-    if gyms:
-        match = await utils.gym_match_prompt(Meowth, message.channel, message.author.id, raid_details, gyms)
-        gym_info = ""
-        if match:
-            gym = gyms[match]
-            raid_details = match
-            gym_coords = gym['coordinates']
-            gym_note = gym.get('notes', "")
-            gym_alias = gym.get('alias', "")
-            if gym_note:
-                gym_note = f"**Notes:** {gym_note}"
-            if gym_alias:
-                raid_details = gym_alias
-            raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gym_coords)
-            gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
-            for raid in guild_dict[message.guild.id]['raidchannel_dict']:
-                raid_address = guild_dict[message.guild.id]['raidchannel_dict'][raid]['address']
-                raid_reportcity = guild_dict[message.guild.id]['raidchannel_dict'][raid]['reportcity']
-                if (raid_details == raid_address) and message.channel.id == raid_reportcity:
-                    dupe_channel = Meowth.get_channel(raid)
-                    rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=dupe_channel.mention))
-                    try:
-                        timeout = False
-                        res, reactuser = await utils.ask(Meowth, rusure, message.author.id)
-                    except TypeError:
-                        timeout = True
-                    if timeout or res.emoji == '❎':
-                        await rusure.delete()
-                        confirmation = await message.channel.send(_('Report cancelled.'))
-                        await message.delete()
-                        await asyncio.sleep(10)
-                        await confirmation.delete()
-                        return
-                    elif res.emoji == '✅':
-                        await rusure.delete()
-                        break
-                    else:
-                        return
-    else:
-        gyms = False
-        gym_info = ""
+    gym_matching_cog = Meowth.cogs.get('GymMatching')
+    gym_info = ""
+    if gym_matching_cog:
+        gym_info, raid_details = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+    if not raid_details:
+        return
     raid_channel_name = (entered_raid + '-') + utils.sanitize_channel_name(raid_details)
     raid_channel_category = utils.get_category(Meowth, message.channel, utils.get_level(Meowth, entered_raid), category_type="raid")
     raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
@@ -2665,7 +2630,8 @@ async def _raid(message, content):
     guild_dict[message.guild.id]['trainers'][message.author.id]['raid_reports'] = raid_reports
     return raid_channel
 
-async def _raidegg(message, content):
+async def _raidegg(ctx, content):
+    message = ctx.message
     timestamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
     raidexp = False
     hourminute = False
@@ -2737,48 +2703,12 @@ async def _raidegg(message, content):
         await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**'))
         return
     raid_gmaps_link = utils.create_gmaps_query(Meowth, raid_details, message.channel, type="raid")
-    gyms = utils.get_gyms(Meowth, message.guild.id)
-    if gyms:
-        match = await utils.gym_match_prompt(Meowth, message.channel, message.author.id, raid_details, gyms)
-        gym_info = ""
-        if match:
-            gym = gyms[match]
-            raid_details = match
-            gym_coords = gym['coordinates']
-            gym_note = gym.get('notes', "")
-            gym_alias = gym.get('alias', "")
-            if gym_note:
-                gym_note = f"**Notes:** {gym_note}"
-            if gym_alias:
-                raid_details = gym_alias
-            raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gym_coords)
-            gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
-            for raid in guild_dict[message.guild.id]['raidchannel_dict']:
-                raid_address = guild_dict[message.guild.id]['raidchannel_dict'][raid]['address']
-                raid_reportcity = guild_dict[message.guild.id]['raidchannel_dict'][raid]['reportcity']
-                if (raid_details == raid_address) and message.channel.id == raid_reportcity:
-                    dupe_channel = Meowth.get_channel(raid)
-                    rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=dupe_channel.mention))
-                    try:
-                        timeout = False
-                        res, reactuser = await utils.ask(Meowth, rusure, message.author.id)
-                    except TypeError:
-                        timeout = True
-                    if timeout or res.emoji == '❎':
-                        await rusure.delete()
-                        confirmation = await message.channel.send(_('Report cancelled.'))
-                        await message.delete()
-                        await asyncio.sleep(10)
-                        await confirmation.delete()
-                        return
-                    elif res.emoji == '✅':
-                        await rusure.delete()
-                        break
-                    else:
-                        return
-    else:
-        gyms = False
-        gym_info = ""
+    gym_matching_cog = Meowth.cogs.get('GymMatching')
+    gym_info = ""
+    if gym_matching_cog:
+        gym_info, raid_details = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+    if not raid_details:
+        return
     if (egg_level > 5) or (egg_level == 0):
         await message.channel.send(_('Meowth! Raid egg levels are only from 1-5!'))
         return
@@ -3159,48 +3089,12 @@ async def _exraid(ctx, location):
     raid_details = ' '.join(exraid_split)
     raid_details = raid_details.strip()
     raid_gmaps_link = utils.create_gmaps_query(Meowth, raid_details, message.channel, type="exraid")
-    gyms = utils.get_gyms(Meowth, message.guild.id)
-    if gyms:
-        match = await utils.gym_match_prompt(Meowth, message.channel, message.author.id, raid_details, gyms)
-        gym_info = ""
-        if match:
-            gym = gyms[match]
-            raid_details = match
-            gym_coords = gym['coordinates']
-            gym_note = gym.get('notes', "")
-            gym_alias = gym.get('alias', "")
-            if gym_note:
-                gym_note = f"**Notes:** {gym_note}"
-            if gym_alias:
-                raid_details = gym_alias
-            raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gym_coords)
-            gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
-            for raid in guild_dict[message.guild.id]['raidchannel_dict']:
-                raid_address = guild_dict[message.guild.id]['raidchannel_dict'][raid]['address']
-                raid_reportcity = guild_dict[message.guild.id]['raidchannel_dict'][raid]['reportcity']
-                if (raid_details == raid_address) and message.channel.id == raid_reportcity:
-                    dupe_channel = Meowth.get_channel(raid)
-                    rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=dupe_channel.mention))
-                    try:
-                        timeout = False
-                        res, reactuser = await utils.ask(Meowth, rusure, message.author.id)
-                    except TypeError:
-                        timeout = True
-                    if timeout or res.emoji == '❎':
-                        await rusure.delete()
-                        confirmation = await message.channel.send(_('Report cancelled.'))
-                        await message.delete()
-                        await asyncio.sleep(10)
-                        await confirmation.delete()
-                        return
-                    elif res.emoji == '✅':
-                        await rusure.delete()
-                        break
-                    else:
-                        return
-    else:
-        gyms = False
-        gym_info = ""
+    gym_matching_cog = Meowth.cogs.get('GymMatching')
+    gym_info = ""
+    if gym_matching_cog:
+        gym_info, raid_details = await gym_matching_cog.get_gym_info(ctx, raid_details, "exraid")
+    if not raid_details:
+        return
     egg_info = raid_info['raid_eggs']['EX']
     egg_img = egg_info['egg_img']
     boss_list = []
