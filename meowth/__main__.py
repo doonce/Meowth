@@ -519,20 +519,17 @@ async def expire_channel(channel):
                 elif archive or logs:
                     try:
                         for overwrite in channel.overwrites:
+                            ow = channel.overwrites_for(overwrite[0])
                             if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
-                                await channel.set_permissions(overwrite[0], read_messages=False)
-                            if isinstance(overwrite[0], discord.Role):
-                                if overwrite[0].permissions.manage_guild or overwrite[0].permissions.manage_channels:
-                                    await channel.set_permissions(overwrite[0], read_messages=True)
-                                    continue
-                            elif isinstance(overwrite[0], discord.Member):
-                                if channel.permissions_for(overwrite[0]).manage_guild or channel.permissions_for(overwrite[0]).manage_channels:
-                                    await channel.set_permissions(overwrite[0], read_messages=True)
-                                    continue
+                                ow.read_messages = False
+                            if channel.overwrites_for(overwrite[0]).manage_guild or channel.overwrites_for(overwrite[0]).manage_channels:
+                                ow.read_messages = True
+                            await channel.set_permissions(overwrite[0], overwrite = ow)
                         for role in guild.role_hierarchy:
+                            ow = channel.overwrites_for(role)
                             if role.permissions.manage_guild or role.permissions.manage_channels:
-                                await channel.set_permissions(role, read_messages=True)
-                            continue
+                                ow.read_messages = True
+                                await channel.set_permissions(role, overwrite = ow)
                         await channel.set_permissions(guild.default_role, read_messages=False)
                     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                         pass
@@ -605,7 +602,7 @@ async def channel_cleanup(loop=True):
                                 # and list the channel to be deleted in discord
                                 discord_channel_delete.append(channel)
                                 logger.info(
-                                    log_str + ' - 15+ MIN EXPIRY NONACTIVE EGG')
+                                    log_str + ' - 45+ MIN EXPIRY NONACTIVE EGG')
                                 continue
                             # and if it has been expired for longer than 5 minutes already
                         elif guilddict_chtemp[guildid]['raidchannel_dict'][channelid]['exp'] < (time.time() - (5 * 60)):
@@ -625,22 +622,16 @@ async def channel_cleanup(loop=True):
                         # if it's an exraid
                         if guilddict_chtemp[guildid]['raidchannel_dict'][channelid]['type'] == 'exraid':
                             logger.info(log_str + ' - EXRAID')
-
-                            continue
                         # or if the expiry time for the channel has already passed within 5 minutes
                         elif guilddict_chtemp[guildid]['raidchannel_dict'][channelid]['exp'] <= time.time():
                             # list the channel to be sent to the channel expiry function
                             event_loop.create_task(expire_channel(channel))
                             logger.info(log_str + ' - RECENTLY EXPIRED')
-
-                            continue
-
                         if channel not in active_raids:
                             # if channel is still active, make sure it's expiry is being monitored
                             event_loop.create_task(expiry_check(channel))
                             logger.info(
                                 log_str + ' - MISSING FROM EXPIRY CHECK')
-                            continue
             # for every channel listed to have save data deleted
             for c in dict_channel_delete:
                 try:
@@ -1215,7 +1206,6 @@ async def regional(ctx, regional):
     if regional in utils.get_raidlist(Meowth):
         _set_regional(Meowth, ctx.guild, regional)
         await ctx.message.channel.send(_("Meowth! Regional raid boss set to **{boss}**!").format(boss=utils.get_name(Meowth, regional).title()))
-
     else:
         await ctx.message.channel.send(_("Meowth! That Pokemon doesn't appear in raids!"))
         return
@@ -2037,41 +2027,72 @@ async def trainercode(ctx, user: discord.Member = None):
         await ctx.channel.send(f"{user.display_name} has not set a trainer code. Set it with **!set trainercode <code>**")
 
 @Meowth.command(hidden=True)
-async def profile(ctx, user: discord.Member = None):
-    """Displays a user's social and reporting profile.
+async def profile(ctx, member: discord.Member = None):
+    """Displays a member's social and reporting profile.
 
-    Usage:!profile [user]"""
-    if not user:
-        user = ctx.message.author
-    silph = guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('silphid',None)
+    Usage:!profile [member]"""
+    if not member:
+        member = ctx.message.author
+    trainers = guild_dict[ctx.guild.id]['trainers']
+    silph = guild_dict[ctx.guild.id]['trainers'].setdefault(member.id,{}).get('silphid',None)
     if silph:
         card = _("Traveler Card")
         silph = f"[{card}](https://sil.ph/{silph.lower()})"
-    embed = discord.Embed(title=_("{user}\'s Trainer Profile").format(user=user.display_name), colour=user.colour)
-    embed.set_thumbnail(url=user.avatar_url)
+    field_value = ""
+    raids = trainers.setdefault(member.id,{}).get('raid_reports',0)
+    eggs = trainers.setdefault(member.id,{}).get('egg_reports',0)
+    exraids = trainers.setdefault(member.id,{}).get('ex_reports',0)
+    wilds = trainers.setdefault(member.id,{}).get('wild_reports',0)
+    research = trainers.setdefault(member.id,{}).get('research_reports',0)
+    nests = trainers.setdefault(member.id,{}).get('nest_reports',0)
+    wants = trainers.setdefault(member.id,{}).get('wants',[])
+    wants = sorted(wants)
+    wants = [utils.get_name(Meowth, x).title() for x in wants]
+    roles = [x.mention for x in sorted(member.roles, reverse=True) if ctx.guild.id != x.id]
+    embed = discord.Embed(title=_("{member}\'s Trainer Profile").format(member=member.display_name, colour=member.colour))
+    embed.set_thumbnail(url=member.avatar_url)
+    embed.set_footer(text=f"User Registered: {member.created_at.strftime(_('%b %d, %Y %I:%M %p'))} | Status: {str(member.status).title()}")
     embed.add_field(name=_("Silph Road"), value=f"{silph}", inline=True)
-    embed.add_field(name=_("Pokebattler"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('pokebattlerid',None)}", inline=True)
-    embed.add_field(name=_("Trainer Code"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('trainercode',None)}", inline=True)
-    embed.add_field(name=_("Raid Reports"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('raid_reports',0)}", inline=True)
-    embed.add_field(name=_("Egg Reports"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('egg_reports',0)}", inline=True)
-    embed.add_field(name=_("EX Raid Reports"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('ex_reports',0)}", inline=True)
-    embed.add_field(name=_("Wild Reports"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('wild_reports',0)}", inline=True)
-    embed.add_field(name=_("Research Reports"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('research_reports',0)}", inline=True)
-    embed.add_field(name=_("Nest Reports"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(user.id,{}).get('nest_reports',0)}", inline=True)
+    embed.add_field(name=_("Pokebattler"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(member.id,{}).get('pokebattlerid',None)}", inline=True)
+    embed.add_field(name=_("Trainer Code"), value=f"{guild_dict[ctx.guild.id]['trainers'].setdefault(member.id,{}).get('trainercode',None)}", inline=True)
+    embed.add_field(name=_("Member Since"), value=f"{member.joined_at.strftime(_('%b %d, %Y %I:%M %p'))}", inline=True)
+    if guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled']:
+        field_value += _("Raid: **{raids}** | Egg: **{eggs}** | ").format(raids=raids, eggs=eggs)
+    if guild_dict[ctx.guild.id]['configure_dict']['exraid']['enabled']:
+        field_value += _("EX: **{exraids}** | ").format(exraids=exraids)
+    if guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled']:
+        field_value += _("Wild: **{wilds}** | ").format(wilds=wilds)
+    if guild_dict[ctx.guild.id]['configure_dict']['research']['enabled']:
+        field_value += _("Research: **{research}** | ").format(research=research)
+    if guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
+        field_value += _("Nest: **{nest}** | ").format(nest=nests)
+    embed.add_field(name=_("Reports"), value=field_value[:-3], inline=False)
+    if guild_dict[ctx.guild.id]['configure_dict']['want']['enabled'] and wants:
+        embed.add_field(name=_("Want List"), value=f"{(', ').join(wants)[:2000]}", inline=False)
+    embed.add_field(name=_("Roles"), value=f"{(' ').join(roles)[:2000]}", inline=False)
+
     await ctx.send(embed=embed)
 
 @Meowth.command()
-async def leaderboard(ctx, type="total"):
+async def leaderboard(ctx, type="total", range="1"):
     """Displays the top ten reporters of a server.
 
-    Usage: !leaderboard [type]
-    Accepted types: raids, eggs, exraids, wilds, research"""
+    Usage: !leaderboard [type] [page]
+    Accepted types: raids, eggs, exraids, wilds, research, nest
+    Page: 1 = 1 through 10, 2 = 11 through 20, etc."""
     trainers = copy.deepcopy(guild_dict[ctx.guild.id]['trainers'])
     leaderboard = []
-    rank = 1
     field_value = ""
     typelist = ["total", "raids", "exraids", "wilds", "research", "eggs", "nests"]
     type = type.lower()
+    if type.isdigit():
+        range = type
+        type = "total"
+    if not range.isdigit():
+        range = "1"
+    range = int(range) * 10
+    begin_range = int(range) - 10
+    rank = int(range) - 9
     if type not in typelist:
         await ctx.send(_("Leaderboard type not supported. Please select from: **{typelist}**").format(typelist = ", ".join(typelist)))
         return
@@ -2087,22 +2108,22 @@ async def leaderboard(ctx, type="total"):
         trainer_stats = {'trainer':trainer, 'total':total_reports, 'raids':raids, 'wilds':wilds, 'research':research, 'exraids':exraids, 'eggs':eggs, 'nests':nests}
         if trainer_stats[type] > 0 and user:
             leaderboard.append(trainer_stats)
-    leaderboard = sorted(leaderboard,key= lambda x: x[type], reverse=True)[:10]
+    leaderboard = sorted(leaderboard,key= lambda x: x[type], reverse=True)[begin_range:int(range)]
     embed = discord.Embed(colour=ctx.guild.me.colour)
     embed.set_author(name=_("Reporting Leaderboard ({type})").format(type=type.title()), icon_url=Meowth.user.avatar_url)
     for trainer in leaderboard:
         user = ctx.guild.get_member(trainer['trainer'])
         if user:
             if guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled']:
-                field_value += _("Raids: **{raids}** | Eggs: **{eggs}** | ").format(raids=trainer['raids'], eggs=trainer['eggs'])
+                field_value += _("Raid: **{raids}** | Egg: **{eggs}** | ").format(raids=trainer['raids'], eggs=trainer['eggs'])
             if guild_dict[ctx.guild.id]['configure_dict']['exraid']['enabled']:
-                field_value += _("EX Raids: **{exraids}** | ").format(exraids=trainer['exraids'])
+                field_value += _("EX: **{exraids}** | ").format(exraids=trainer['exraids'])
             if guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled']:
-                field_value += _("Wilds: **{wilds}** | ").format(wilds=trainer['wilds'])
+                field_value += _("Wild: **{wilds}** | ").format(wilds=trainer['wilds'])
             if guild_dict[ctx.guild.id]['configure_dict']['research']['enabled']:
                 field_value += _("Research: **{research}** | ").format(research=trainer['research'])
             if guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
-                field_value += _("Nests: **{nest}** | ").format(nest=trainer['nests'])
+                field_value += _("Nest: **{nest}** | ").format(nest=trainer['nests'])
             embed.add_field(name=f"{rank}. {user.display_name} - {type.title()}: **{trainer[type]}**", value=field_value[:-3], inline=False)
             field_value = ""
             rank += 1
@@ -2317,9 +2338,10 @@ async def wild(ctx,pokemon,*,location):
     Meowth will insert the details (really just everything after the species name) into a
     Google maps link and post the link to the same channel the report was made in."""
     content = f"{pokemon} {location}"
-    await _wild(ctx.message, content)
+    await _wild(ctx, content)
 
-async def _wild(message, content):
+async def _wild(ctx, content):
+    message = ctx.message
     timestamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
     wild_split = content.split()
     if len(wild_split) <= 1:
@@ -2475,7 +2497,7 @@ async def _raid(ctx, content):
                 await _eggtoraid(raid_split[1].lower(), message.channel, message.author)
                 return
             else:
-                await _eggassume(" ".join(raid_split), message.channel, message.author)
+                await _eggassume(ctx, " ".join(raid_split), message.channel, message.author)
                 return
         elif guild_dict[message.channel.guild.id]['raidchannel_dict'][message.channel.id]['active'] == False:
             await _eggtoraid(" ".join(raid_split).lower(), message.channel, message.author)
@@ -2543,7 +2565,9 @@ async def _raid(ctx, content):
     gym_matching_cog = Meowth.cogs.get('GymMatching')
     gym_info = ""
     if gym_matching_cog:
-        gym_info, raid_details = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+        gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+        if gym_url:
+            raid_gmaps_link = gym_url
     if not raid_details:
         return
     raid_channel_name = (entered_raid + '-') + utils.sanitize_channel_name(raid_details)
@@ -2706,7 +2730,9 @@ async def _raidegg(ctx, content):
     gym_matching_cog = Meowth.cogs.get('GymMatching')
     gym_info = ""
     if gym_matching_cog:
-        gym_info, raid_details = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+        gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+        if gym_url:
+            raid_gmaps_link = gym_url
     if not raid_details:
         return
     if (egg_level > 5) or (egg_level == 0):
@@ -2782,15 +2808,15 @@ async def _raidegg(ctx, content):
         else:
             await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
         if len(raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
-            await _eggassume('assume ' + utils.get_name(Meowth, raid_info['raid_eggs'][egg_level]['pokemon'][0]), raid_channel)
+            await _eggassume(ctx, 'assume ' + utils.get_name(Meowth, raid_info['raid_eggs'][egg_level]['pokemon'][0]), raid_channel)
         elif egg_level == "5" and guild_dict[raid_channel.guild.id]['configure_dict']['settings'].get('regional',None) in raid_info['raid_eggs']["5"]['pokemon']:
-            await _eggassume('assume ' + utils.get_name(Meowth, guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional']), raid_channel)
+            await _eggassume(ctx, 'assume ' + utils.get_name(Meowth, guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional']), raid_channel)
         event_loop.create_task(expiry_check(raid_channel))
         egg_reports = guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(message.author.id,{}).setdefault('egg_reports',0) + 1
         guild_dict[message.guild.id]['trainers'][message.author.id]['egg_reports'] = egg_reports
         return raid_channel
 
-async def _eggassume(args, raid_channel, author=None):
+async def _eggassume(ctx, args, raid_channel, author=None):
     eggdetails = guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]
     report_channel = Meowth.get_channel(eggdetails['reportcity'])
     egglevel = eggdetails['egglevel']
@@ -3092,7 +3118,9 @@ async def _exraid(ctx, location):
     gym_matching_cog = Meowth.cogs.get('GymMatching')
     gym_info = ""
     if gym_matching_cog:
-        gym_info, raid_details = await gym_matching_cog.get_gym_info(ctx, raid_details, "exraid")
+        gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+        if gym_url:
+            raid_gmaps_link = gym_url
     if not raid_details:
         return
     egg_info = raid_info['raid_eggs']['EX']
@@ -3182,7 +3210,7 @@ async def _exraid(ctx, location):
         'egglevel': 'EX'
     }
     if len(raid_info['raid_eggs']['EX']['pokemon']) == 1:
-        await _eggassume('assume ' + utils.get_name(Meowth, raid_info['raid_eggs']['EX']['pokemon'][0]), raid_channel)
+        await _eggassume(ctx, 'assume ' + utils.get_name(Meowth, raid_info['raid_eggs']['EX']['pokemon'][0]), raid_channel)
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
     await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <date and time>** so others can check it with **!timer**. **<date and time>** can just be written exactly how it appears on your EX Raid Pass.').format(member=message.author.mention))
     ex_reports = guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(message.author.id,{}).setdefault('ex_reports',0) + 1
@@ -5403,7 +5431,7 @@ async def _list(ctx):
             if raid_dict:
                 listmsg += _('**Active Raids:**\n')
                 for (r, e) in sorted(raid_dict.items(), key=itemgetter(1)):
-                    if len(listmsg) < 5800:
+                    if len(listmsg) < 1800:
                         listmsg += list_output(r)
                     else:
                         await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
@@ -5413,7 +5441,7 @@ async def _list(ctx):
             if egg_dict:
                 listmsg += _('**Raid Eggs:**\n')
                 for (r, e) in sorted(egg_dict.items(), key=itemgetter(1)):
-                    if len(listmsg) < 5800:
+                    if len(listmsg) < 1800:
                         listmsg += list_output(r)
                     else:
                         await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
@@ -5423,7 +5451,7 @@ async def _list(ctx):
             if exraid_list:
                 listmsg += _('**EX Raids:**\n')
                 for r in exraid_list:
-                    if len(listmsg) < 5800:
+                    if len(listmsg) < 1800:
                         listmsg += list_output(r)
                     else:
                         await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
@@ -5432,7 +5460,7 @@ async def _list(ctx):
             if event_list:
                 listmsg += _('**Meetups:**\n')
                 for r in event_list:
-                    if len(listmsg) < 5800:
+                    if len(listmsg) < 1800:
                         listmsg += list_output(r)
                     else:
                         await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
@@ -5811,6 +5839,34 @@ async def _wantlist(ctx):
         listmsg = _(' Your current **!want** list is:\n\n**{wantlist}**').format(wantlist=', '.join(wantlist))
     else:
         listmsg = _(" You don\'t have any wants! use **!want** to add some.")
+    return listmsg
+
+@_list.command()
+@commands.has_permissions(manage_guild=True)
+@checks.allowwant()
+async def allwants(ctx):
+    """List the wants for the user
+
+    Usage: !list wants
+    Works only in the want channel."""
+    listmsg = _('**Meowth!**')
+    listmsg += await _allwantlist(ctx)
+    await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+
+async def _allwantlist(ctx):
+    wantlist = []
+    for trainer in guild_dict[ctx.guild.id].setdefault('trainers', {}):
+        for want in guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('wants', []):
+            if want not in wantlist:
+                wantlist.append(want)
+    wantlist = sorted(wantlist)
+    wantlist = [utils.get_name(Meowth, x).title() for x in wantlist]
+    print(wantlist)
+    return
+    if len(wantlist) > 0:
+        listmsg = _(' The server **!want** list is:\n\n**{wantlist}**').format(wantlist=', '.join(wantlist))
+    else:
+        listmsg = _("Nobody has any wants! use **!want** to add some.")
     return listmsg
 
 @_list.command(aliases=['trade'])

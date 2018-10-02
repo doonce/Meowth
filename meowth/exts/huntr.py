@@ -338,7 +338,9 @@ class Huntr:
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog:
-            gym_info, raid_details = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+            gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+            if gym_url:
+                raid_gmaps_link = gym_url
         if not raid_details:
             return
         raid = discord.utils.get(message.guild.roles, name=entered_raid)
@@ -456,7 +458,9 @@ class Huntr:
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog:
-            gym_info, raid_details = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+            gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+            if gym_url:
+                raid_gmaps_link = gym_url
         if not raid_details:
             return
         egg_level = str(egg_level)
@@ -530,9 +534,9 @@ class Huntr:
                 await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
             await raid_channel.send("This egg was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
             if len(ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
-                await self.bot.eggassume('assume ' + utils.get_name(self.bot, ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0]), raid_channel)
+                await self.bot.eggassume(ctx, 'assume ' + utils.get_name(self.bot, ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0]), raid_channel)
             elif egg_level == "5" and ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings'].get('regional',None) in ctx.bot.raid_info['raid_eggs']["5"]['pokemon']:
-                await self.bot.eggassume('assume ' + utils.get_name(self.bot, ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional']), raid_channel)
+                await self.bot.eggassume(ctx, 'assume ' + utils.get_name(self.bot, ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional']), raid_channel)
             self.event_loop.create_task(self.bot.expiry_check(raid_channel))
         else:
             raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=egg_level, member=message.author.mention, location_details=raid_details), embed=raid_embed)

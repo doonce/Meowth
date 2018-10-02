@@ -50,9 +50,9 @@ class GymMatching:
             return None
         if score < 80:
             try:
-                question = _("Did you mean: '{0}'").format(match)
+                question = _("{mention} Did you mean: '{match}'").format(mention=author.mention, match=match)
                 q_msg = await channel.send(question)
-                reaction, __ = await ask(self.bot, q_msg, author.id)
+                reaction, __ = await utils.ask(self.bot, q_msg, author.id)
             except TypeError:
                 await q_msg.delete()
                 return None
@@ -71,10 +71,10 @@ class GymMatching:
         gyms = self.get_gyms(ctx.guild.id)
         gym_info = ""
         if not gyms:
-            return gym_info, raid_details
+            return gym_info, raid_details, False
         match = await self.gym_match_prompt(ctx, raid_details, gyms)
         if not match:
-            return gym_info, raid_details
+            return gym_info, raid_details, False
         else:
             gym = gyms[match]
             raid_details = match
@@ -97,7 +97,7 @@ class GymMatching:
                     raid_type = "raid"
                 if (raid_details == raid_address) and message.channel.id == raid_reportcity and raid_type == type:
                     if message.author.bot:
-                        return "", False
+                        return "", False, False
                     dupe_channel = self.bot.get_channel(raid)
                     if dupe_channel:
                         duplicate_raids.append(dupe_channel.mention)
@@ -117,14 +117,14 @@ class GymMatching:
                         pass
                     await asyncio.sleep(10)
                     await confirmation.delete()
-                    return "", False
+                    return "", False, False
                 elif res.emoji == '✅':
                     await rusure.delete()
-                    return gym_info, raid_details
+                    return gym_info, raid_details, raid_gmaps_link
                 else:
-                    return "", False
+                    return "", False, False
             else:
-                return gym_info, raid_details
+                return gym_info, raid_details, raid_gmaps_link
 
 def setup(bot):
     bot.add_cog(GymMatching(bot))

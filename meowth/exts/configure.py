@@ -13,6 +13,269 @@ class Configure:
     def __init__(self, bot):
         self.bot = bot
 
+    async def configure_city_channels(self, ctx, config_dict_temp, type, reply_options, output):
+        guild = ctx.message.guild
+        owner = ctx.message.author
+        citychannel_dict = {}
+        while True:
+            citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            if citychannels.content.lower() == 'n':
+                config_dict_temp[type]['enabled'] = False
+                if output == "list":
+                    config_dict_temp[type]['report_channels'] = []
+                else:
+                    config_dict_temp[type]['report_channels'] = {}
+                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('{type} Reporting disabled').format(type=type.title())))
+                config_dict_temp[type]['enabled'] = False
+                return config_dict_temp
+            elif citychannels.content.lower() == 'cancel':
+                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                return None
+            else:
+                config_dict_temp[type]['enabled'] = True
+                citychannel_list = citychannels.content.lower().split(',')
+                citychannel_list = [x.strip() for x in citychannel_list]
+                guild_channel_list = []
+                for channel in guild.text_channels:
+                    guild_channel_list.append(channel.id)
+                citychannel_objs = []
+                citychannel_names = []
+                citychannel_errors = []
+                for item in citychannel_list:
+                    channel = None
+                    if item.isdigit():
+                        channel = discord.utils.get(guild.text_channels, id=int(item))
+                    if not channel:
+                        item = re.sub('[^a-zA-Z0-9 _\\-]+', '', item)
+                        item = item.replace(" ","-")
+                        name = await utils.letter_case(guild.text_channels, item.lower())
+                        channel = discord.utils.get(guild.text_channels, name=name)
+                    if channel:
+                        citychannel_objs.append(channel)
+                        citychannel_names.append(channel.name)
+                    else:
+                        citychannel_errors.append(item)
+                citychannel_list = [x.id for x in citychannel_objs]
+                diff = set(citychannel_list) - set(guild_channel_list)
+                if (not diff) and (not citychannel_errors):
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('{type} Reporting Channels enabled').format(type=type.title())))
+                    for channel in citychannel_objs:
+                        ow = channel.overwrites_for(self.bot.user)
+                        ow.send_messages = True
+                        ow.read_messages = True
+                        ow.manage_roles = True
+                        try:
+                            await channel.set_permissions(self.bot.user, overwrite = ow)
+                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
+                    break
+                else:
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
+                    continue
+        if output == "list":
+            config_dict_temp[type]['report_channels'] = citychannel_list
+            return config_dict_temp
+        if config_dict_temp[type]['enabled']:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to the raid or egg! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('{type} Reporting Locations').format(type=type.title()), icon_url=self.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
+            while True:
+                cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+                if cities.content.lower() == 'cancel':
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                    return None
+                city_list = cities.content.split(',')
+                city_list = [x.strip() for x in city_list]
+                if len(city_list) == len(citychannel_list):
+                    for i in range(len(citychannel_list)):
+                        citychannel_dict[citychannel_list[i]] = city_list[i]
+                    break
+                else:
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The number of cities doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n{channellist}\n{citylist}\n\nPlease double check that your locations match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), citylist=', '.join(city_list))))
+                    continue
+            config_dict_temp[type]['report_channels'] = citychannel_dict
+            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('{type} Reporting Locations are set').format(type=type.title())))
+            if output == "dict":
+                return config_dict_temp
+            if type == "raid":
+                await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**region** - If you want them categorized by region\n**level** - If you want them categorized by level.")).set_author(name=_('Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
+            elif type == "exraid":
+                await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the EX raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('EX Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
+            while True:
+                guild = self.bot.get_guild(guild.id)
+                guild_catlist = []
+                for cat in guild.categories:
+                    guild_catlist.append(cat.id)
+                category_dict = {}
+                categories = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
+                if categories.content.lower() == 'cancel':
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                    return None
+                elif categories.content.lower() == 'none' and categories.content.lower() in reply_options:
+                    config_dict_temp[type]['categories'] = None
+                    break
+                elif categories.content.lower() == 'same' and categories.content.lower() in reply_options:
+                    config_dict_temp[type]['categories'] = 'same'
+                    break
+                elif categories.content.lower() == 'region' and categories.content.lower() in reply_options:
+                    while True:
+                        guild = self.bot.get_guild(guild.id)
+                        guild_catlist = []
+                        for cat in guild.categories:
+                            guild_catlist.append(cat.id)
+                        config_dict_temp[type]['categories'] = 'region'
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as raid reporting channels.")).set_author(name=_('{type} Reporting Categories').format(type=type.title()), icon_url=self.bot.user.avatar_url))
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
+                        regioncats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
+                        if regioncats.content.lower() == "cancel":
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                            return None
+                        regioncat_list = regioncats.content.split(',')
+                        regioncat_list = [x.strip() for x in regioncat_list]
+                        regioncat_ids = []
+                        regioncat_names = []
+                        regioncat_errors = []
+                        for item in regioncat_list:
+                            category = None
+                            if item.isdigit():
+                                category = discord.utils.get(guild.categories, id=int(item))
+                            if not category:
+                                name = await utils.letter_case(guild.categories, item.lower())
+                                category = discord.utils.get(guild.categories, name=name)
+                            if category:
+                                regioncat_ids.append(category.id)
+                                regioncat_names.append(category.name)
+                            else:
+                                regioncat_errors.append(item)
+                        regioncat_list = regioncat_ids
+                        if len(regioncat_list) == len(citychannel_list):
+                            catdiff = set(regioncat_list) - set(guild_catlist)
+                            if (not catdiff) and (not regioncat_errors):
+                                for i in range(len(citychannel_list)):
+                                    category_dict[citychannel_list[i]] = regioncat_list[i]
+                                break
+                            else:
+                                msg = _("The category list you provided doesn't match with your server's categories.")
+                                if regioncat_errors:
+                                    msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(regioncat_errors))
+                                msg += _("\n\nPlease double check your category list and resend your response. If you just made these categories, try again.")
+                                await owner.send(embed=discord.Embed(colour=discord.Colour.orange(),description=msg))
+                                continue
+                        else:
+                            msg = _("The number of categories I found in your server doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n**Matched Channels:** {channellist}\n**Matched Categories:** {catlist}\n\nPlease double check that your categories match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), catlist=', '.join(regioncat_names) if len(regioncat_list)>0 else "None")
+                            if regioncat_errors:
+                                msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(regioncat_errors))
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=msg))
+                            continue
+                        break
+                elif categories.content.lower() == 'level' and categories.content.lower() in reply_options:
+                    config_dict_temp[type]['categories'] = 'level'
+                    while True:
+                        guild = self.bot.get_guild(guild.id)
+                        guild_catlist = []
+                        for cat in guild.categories:
+                            guild_catlist.append(cat.id)
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("Pokemon Go currently has five levels of raids. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5 \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `level 1-3, level 1-3, level 1-3, level 4, 1231231241561337813`")).set_author(name=_('{type} Reporting Categories').format(type=type.title()), icon_url=self.bot.user.avatar_url))
+                        levelcats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
+                        if levelcats.content.lower() == "cancel":
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                            return None
+                        levelcat_list = levelcats.content.split(',')
+                        levelcat_list = [x.strip() for x in levelcat_list]
+                        levelcat_ids = []
+                        levelcat_names = []
+                        levelcat_errors = []
+                        for item in levelcat_list:
+                            category = None
+                            if item.isdigit():
+                                category = discord.utils.get(guild.categories, id=int(item))
+                            if not category:
+                                name = await utils.letter_case(guild.categories, item.lower())
+                                category = discord.utils.get(guild.categories, name=name)
+                            if category:
+                                levelcat_ids.append(category.id)
+                                levelcat_names.append(category.name)
+                            else:
+                                levelcat_errors.append(item)
+                        levelcat_list = levelcat_ids
+                        if len(levelcat_list) == 5:
+                            catdiff = set(levelcat_list) - set(guild_catlist)
+                            if (not catdiff) and (not levelcat_errors):
+                                level_list = ["1",'2','3','4','5']
+                                for i in range(5):
+                                    category_dict[level_list[i]] = levelcat_list[i]
+                                break
+                            else:
+                                msg = _("The category list you provided doesn't match with your server's categories.")
+                                if levelcat_errors:
+                                    msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(levelcat_errors))
+                                msg += _("\n\nPlease double check your category list and resend your response. If you just made these categories, try again.")
+                                await owner.send(embed=discord.Embed(colour=discord.Colour.orange(),description=msg))
+                                continue
+                        else:
+                            msg = _("The number of categories I found in your server doesn't match the number of raid levels! Make sure you give me exactly six categories, one for each level of raid. You can use the same category for multiple levels if you want, but I need to see five category names.\n\n**Matched Categories:** {catlist}\n\nPlease double check your categories.").format(catlist=', '.join(levelcat_names) if len(levelcat_list)>0 else "None")
+                            if levelcat_errors:
+                                msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(levelcat_errors))
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=msg))
+                            continue
+                elif categories.content.lower() == 'other' and categories.content.lower() in reply_options:
+                    while True:
+                        guild = self.bot.get_guild(guild.id)
+                        guild_catlist = []
+                        for cat in guild.categories:
+                            guild_catlist.append(cat.id)
+                        config_dict_temp[type]['categories'] = 'region'
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as reporting channels.")).set_author(name=_('{type} Reporting Categories').format(type=type.title()), icon_url=self.bot.user.avatar_url))
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
+                        regioncats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
+                        if regioncats.content.lower() == "cancel":
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                            return None
+                        regioncat_list = regioncats.content.split(',')
+                        regioncat_list = [x.strip() for x in regioncat_list]
+                        regioncat_ids = []
+                        regioncat_names = []
+                        regioncat_errors = []
+                        for item in regioncat_list:
+                            category = None
+                            if item.isdigit():
+                                category = discord.utils.get(guild.categories, id=int(item))
+                            if not category:
+                                name = await utils.letter_case(guild.categories, item.lower())
+                                category = discord.utils.get(guild.categories, name=name)
+                            if category:
+                                regioncat_ids.append(category.id)
+                                regioncat_names.append(category.name)
+                            else:
+                                regioncat_errors.append(item)
+                        regioncat_list = regioncat_ids
+                        if len(regioncat_list) == len(citychannel_list):
+                            catdiff = set(regioncat_list) - set(guild_catlist)
+                            if (not catdiff) and (not regioncat_errors):
+                                for i in range(len(citychannel_list)):
+                                    category_dict[citychannel_list[i]] = regioncat_list[i]
+                                break
+                            else:
+                                msg = _("The category list you provided doesn't match with your server's categories.")
+                                if regioncat_errors:
+                                    msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(regioncat_errors))
+                                msg += _("\n\nPlease double check your category list and resend your response. If you just made these categories, try again.")
+                                await owner.send(embed=discord.Embed(colour=discord.Colour.orange(),description=msg))
+                                continue
+                        else:
+                            msg = _("The number of categories I found in your server doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n**Matched Channels:** {channellist}\n**Matched Categories:** {catlist}\n\nPlease double check that your categories match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), catlist=', '.join(regioncat_names) if len(regioncat_list)>0 else "None")
+                            if regioncat_errors:
+                                msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(regioncat_errors))
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=msg))
+                            continue
+                        break
+                else:
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(),description=_("Sorry, I didn't understand your answer! Try again.")))
+                    continue
+                break
+            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('{type} Categories are set').format(type=type.title())))
+            config_dict_temp[type]['category_dict'] = category_dict
+            return config_dict_temp
+
     @commands.group(case_insensitive=True, invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)
     async def configure(self, ctx, *, configlist: str=""):
@@ -470,200 +733,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Raid Reporting allows users to report active raids with **!raid** or raid eggs with **!raidegg**. Pokemon raid reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-raids, hull-raids, sydney-raids`\n\nIf you do not require raid or raid egg reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Raid Reporting Channels'), icon_url=self.bot.user.avatar_url))
-        citychannel_dict = {}
-        while True:
-            citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-            if citychannels.content.lower() == 'n':
-                config_dict_temp['raid']['enabled'] = False
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Raid Reporting disabled')))
-                break
-            elif citychannels.content.lower() == 'cancel':
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                return None
-            else:
-                config_dict_temp['raid']['enabled'] = True
-                citychannel_list = citychannels.content.lower().split(',')
-                citychannel_list = [x.strip() for x in citychannel_list]
-                guild_channel_list = []
-                for channel in guild.text_channels:
-                    guild_channel_list.append(channel.id)
-                citychannel_objs = []
-                citychannel_names = []
-                citychannel_errors = []
-                for item in citychannel_list:
-                    channel = None
-                    if item.isdigit():
-                        channel = discord.utils.get(guild.text_channels, id=int(item))
-                    if not channel:
-                        item = re.sub('[^a-zA-Z0-9 _\\-]+', '', item)
-                        item = item.replace(" ","-")
-                        name = await utils.letter_case(guild.text_channels, item.lower())
-                        channel = discord.utils.get(guild.text_channels, name=name)
-                    if channel:
-                        citychannel_objs.append(channel)
-                        citychannel_names.append(channel.name)
-                    else:
-                        citychannel_errors.append(item)
-                citychannel_list = [x.id for x in citychannel_objs]
-                diff = set(citychannel_list) - set(guild_channel_list)
-                if (not diff) and (not citychannel_errors):
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Raid Reporting Channels enabled')))
-                    for channel in citychannel_objs:
-                        ow = channel.overwrites_for(self.bot.user)
-                        ow.send_messages = True
-                        ow.read_messages = True
-                        ow.manage_roles = True
-                        try:
-                            await channel.set_permissions(self.bot.user, overwrite = ow)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
-                    continue
-        if config_dict_temp['raid']['enabled']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to the raid or egg! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Raid Reporting Locations'), icon_url=self.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
-            while True:
-                cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-                if cities.content.lower() == 'cancel':
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                    return None
-                city_list = cities.content.split(',')
-                city_list = [x.strip() for x in city_list]
-                if len(city_list) == len(citychannel_list):
-                    for i in range(len(citychannel_list)):
-                        citychannel_dict[citychannel_list[i]] = city_list[i]
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The number of cities doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n{channellist}\n{citylist}\n\nPlease double check that your locations match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), citylist=', '.join(city_list))))
-                    continue
-            config_dict_temp['raid']['report_channels'] = citychannel_dict
-            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Raid Reporting Locations are set')))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**region** - If you want them categorized by region\n**level** - If you want them categorized by level.")).set_author(name=_('Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
-            while True:
-                guild = self.bot.get_guild(guild.id)
-                guild_catlist = []
-                for cat in guild.categories:
-                    guild_catlist.append(cat.id)
-                category_dict = {}
-                categories = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
-                if categories.content.lower() == 'cancel':
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                    return None
-                elif categories.content.lower() == 'none':
-                    config_dict_temp['raid']['categories'] = None
-                    break
-                elif categories.content.lower() == 'same':
-                    config_dict_temp['raid']['categories'] = 'same'
-                    break
-                elif categories.content.lower() == 'region':
-                    while True:
-                        guild = self.bot.get_guild(guild.id)
-                        guild_catlist = []
-                        for cat in guild.categories:
-                            guild_catlist.append(cat.id)
-                        config_dict_temp['raid']['categories'] = 'region'
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as raid reporting channels.")).set_author(name=_('Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
-                        regioncats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
-                        if regioncats.content.lower() == "cancel":
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                            return None
-                        regioncat_list = regioncats.content.split(',')
-                        regioncat_list = [x.strip() for x in regioncat_list]
-                        regioncat_ids = []
-                        regioncat_names = []
-                        regioncat_errors = []
-                        for item in regioncat_list:
-                            category = None
-                            if item.isdigit():
-                                category = discord.utils.get(guild.categories, id=int(item))
-                            if not category:
-                                name = await utils.letter_case(guild.categories, item.lower())
-                                category = discord.utils.get(guild.categories, name=name)
-                            if category:
-                                regioncat_ids.append(category.id)
-                                regioncat_names.append(category.name)
-                            else:
-                                regioncat_errors.append(item)
-                        regioncat_list = regioncat_ids
-                        if len(regioncat_list) == len(citychannel_list):
-                            catdiff = set(regioncat_list) - set(guild_catlist)
-                            if (not catdiff) and (not regioncat_errors):
-                                for i in range(len(citychannel_list)):
-                                    category_dict[citychannel_list[i]] = regioncat_list[i]
-                                break
-                            else:
-                                msg = _("The category list you provided doesn't match with your server's categories.")
-                                if regioncat_errors:
-                                    msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(regioncat_errors))
-                                msg += _("\n\nPlease double check your category list and resend your response. If you just made these categories, try again.")
-                                await owner.send(embed=discord.Embed(colour=discord.Colour.orange(),description=msg))
-                                continue
-                        else:
-                            msg = _("The number of categories I found in your server doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n**Matched Channels:** {channellist}\n**Matched Categories:** {catlist}\n\nPlease double check that your categories match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), catlist=', '.join(regioncat_names) if len(regioncat_list)>0 else "None")
-                            if regioncat_errors:
-                                msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(regioncat_errors))
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=msg))
-                            continue
-                        break
-                elif categories.content.lower() == 'level':
-                    config_dict_temp['raid']['categories'] = 'level'
-                    while True:
-                        guild = self.bot.get_guild(guild.id)
-                        guild_catlist = []
-                        for cat in guild.categories:
-                            guild_catlist.append(cat.id)
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("Pokemon Go currently has five levels of raids. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5 \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `level 1-3, level 1-3, level 1-3, level 4, 1231231241561337813`")).set_author(name=_('Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
-                        levelcats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
-                        if levelcats.content.lower() == "cancel":
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                            return None
-                        levelcat_list = levelcats.content.split(',')
-                        levelcat_list = [x.strip() for x in levelcat_list]
-                        levelcat_ids = []
-                        levelcat_names = []
-                        levelcat_errors = []
-                        for item in levelcat_list:
-                            category = None
-                            if item.isdigit():
-                                category = discord.utils.get(guild.categories, id=int(item))
-                            if not category:
-                                name = await utils.letter_case(guild.categories, item.lower())
-                                category = discord.utils.get(guild.categories, name=name)
-                            if category:
-                                levelcat_ids.append(category.id)
-                                levelcat_names.append(category.name)
-                            else:
-                                levelcat_errors.append(item)
-                        levelcat_list = levelcat_ids
-                        if len(levelcat_list) == 5:
-                            catdiff = set(levelcat_list) - set(guild_catlist)
-                            if (not catdiff) and (not levelcat_errors):
-                                level_list = ["1",'2','3','4','5']
-                                for i in range(5):
-                                    category_dict[level_list[i]] = levelcat_list[i]
-                                break
-                            else:
-                                msg = _("The category list you provided doesn't match with your server's categories.")
-                                if levelcat_errors:
-                                    msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(levelcat_errors))
-                                msg += _("\n\nPlease double check your category list and resend your response. If you just made these categories, try again.")
-                                await owner.send(embed=discord.Embed(colour=discord.Colour.orange(),description=msg))
-                                continue
-                        else:
-                            msg = _("The number of categories I found in your server doesn't match the number of raid levels! Make sure you give me exactly six categories, one for each level of raid. You can use the same category for multiple levels if you want, but I need to see five category names.\n\n**Matched Categories:** {catlist}\n\nPlease double check your categories.").format(catlist=', '.join(levelcat_names) if len(levelcat_list)>0 else "None")
-                            if levelcat_errors:
-                                msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(levelcat_errors))
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=msg))
-                            continue
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(),description=_("Sorry, I didn't understand your answer! Try again.")))
-                    continue
-                break
-            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Raid Categories are set')))
-            config_dict_temp['raid']['category_dict'] = category_dict
+        config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "raid", ["none", "same", "region", "level"], output="category_dict")
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -697,150 +767,8 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("EX Raid Reporting allows users to report EX raids with **!exraid**. Pokemon EX raid reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-raids, hull-raids, sydney-raids`\n\nIf you do not require EX raid reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('EX Raid Reporting Channels'), icon_url=self.bot.user.avatar_url))
-        citychannel_dict = {}
-        while True:
-            citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-            if citychannels.content.lower() == 'n':
-                config_dict_temp['exraid']['enabled'] = False
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('EX Raid Reporting disabled')))
-                break
-            elif citychannels.content.lower() == 'cancel':
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                return None
-            else:
-                config_dict_temp['exraid']['enabled'] = True
-                citychannel_list = citychannels.content.lower().split(',')
-                citychannel_list = [x.strip() for x in citychannel_list]
-                guild_channel_list = []
-                for channel in guild.text_channels:
-                    guild_channel_list.append(channel.id)
-                citychannel_objs = []
-                citychannel_names = []
-                citychannel_errors = []
-                for item in citychannel_list:
-                    channel = None
-                    if item.isdigit():
-                        channel = discord.utils.get(guild.text_channels, id=int(item))
-                    if not channel:
-                        item = re.sub('[^a-zA-Z0-9 _\\-]+', '', item)
-                        item = item.replace(" ","-")
-                        name = await utils.letter_case(guild.text_channels, item.lower())
-                        channel = discord.utils.get(guild.text_channels, name=name)
-                    if channel:
-                        citychannel_objs.append(channel)
-                        citychannel_names.append(channel.name)
-                    else:
-                        citychannel_errors.append(item)
-                citychannel_list = [x.id for x in citychannel_objs]
-                diff = set(citychannel_list) - set(guild_channel_list)
-                if (not diff) and (not citychannel_errors):
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('EX Raid Reporting Channels enabled')))
-                    for channel in citychannel_objs:
-                        ow = channel.overwrites_for(self.bot.user)
-                        ow.send_messages = True
-                        ow.read_messages = True
-                        ow.manage_roles = True
-                        try:
-                            await channel.set_permissions(self.bot.user, overwrite = ow)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
-                    continue
+        config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "exraid", ["none", "same", "other"], output="category_dict")
         if config_dict_temp['exraid']['enabled']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to EX raids! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('EX Raid Reporting Locations'), icon_url=self.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
-            while True:
-                cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-                if cities.content.lower() == 'cancel':
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                    return None
-                city_list = cities.content.split(',')
-                city_list = [x.strip() for x in city_list]
-                if len(city_list) == len(citychannel_list):
-                    for i in range(len(citychannel_list)):
-                        citychannel_dict[citychannel_list[i]] = city_list[i]
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The number of cities doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n{channellist}\n{citylist}\n\nPlease double check that your locations match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), citylist=', '.join(city_list))))
-                    continue
-            config_dict_temp['exraid']['report_channels'] = citychannel_dict
-            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('EX Raid Reporting Locations are set')))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the EX raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('EX Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
-            while True:
-                guild = self.bot.get_guild(guild.id)
-                guild_catlist = []
-                for cat in guild.categories:
-                    guild_catlist.append(cat.id)
-                category_dict = {}
-                categories = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
-                if categories.content.lower() == 'cancel':
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                    return None
-                elif categories.content.lower() == 'none':
-                    config_dict_temp['exraid']['categories'] = None
-                    break
-                elif categories.content.lower() == 'same':
-                    config_dict_temp['exraid']['categories'] = 'same'
-                    break
-                elif categories.content.lower() == 'other':
-                    while True:
-                        guild = self.bot.get_guild(guild.id)
-                        guild_catlist = []
-                        for cat in guild.categories:
-                            guild_catlist.append(cat.id)
-                        config_dict_temp['exraid']['categories'] = 'region'
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as EX raid reporting channels.")).set_author(name=_('EX Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
-                        regioncats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
-                        if regioncats.content.lower() == "cancel":
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                            return None
-                        regioncat_list = regioncats.content.split(',')
-                        regioncat_list = [x.strip() for x in regioncat_list]
-                        regioncat_ids = []
-                        regioncat_names = []
-                        regioncat_errors = []
-                        for item in regioncat_list:
-                            category = None
-                            if item.isdigit():
-                                category = discord.utils.get(guild.categories, id=int(item))
-                            if not category:
-                                name = await utils.letter_case(guild.categories, item.lower())
-                                category = discord.utils.get(guild.categories, name=name)
-                            if category:
-                                regioncat_ids.append(category.id)
-                                regioncat_names.append(category.name)
-                            else:
-                                regioncat_errors.append(item)
-                        regioncat_list = regioncat_ids
-                        if len(regioncat_list) == len(citychannel_list):
-                            catdiff = set(regioncat_list) - set(guild_catlist)
-                            if (not catdiff) and (not regioncat_errors):
-                                for i in range(len(citychannel_list)):
-                                    category_dict[citychannel_list[i]] = regioncat_list[i]
-                                break
-                            else:
-                                msg = _("The category list you provided doesn't match with your server's categories.")
-                                if regioncat_errors:
-                                    msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(regioncat_errors))
-                                msg += _("\n\nPlease double check your category list and resend your response. If you just made these categories, try again.")
-                                await owner.send(embed=discord.Embed(colour=discord.Colour.orange(),description=msg))
-                                continue
-                        else:
-                            msg = _("The number of categories I found in your server doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n**Matched Channels:** {channellist}\n**Matched Categories:** {catlist}\n\nPlease double check that your categories match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), catlist=', '.join(regioncat_names) if len(regioncat_list)>0 else "None")
-                            if regioncat_errors:
-                                msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(regioncat_errors))
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=msg))
-                            continue
-                        break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(),description=_("Sorry, I didn't understand your answer! Try again.")))
-                    continue
-                break
-            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('EX Raid Categories are set')))
-            config_dict_temp['exraid']['category_dict'] = category_dict
             await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Who do you want to be able to **see** the EX Raid channels? Your options are:\n\n**everyone** - To have everyone be able to see all reported EX Raids\n**same** - To only allow those with access to the reporting channel.")).set_author(name=_('EX Raid Channel Read Permissions'), icon_url=self.bot.user.avatar_url))
             while True:
                 permsconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
@@ -890,6 +818,8 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        if not config_dict_temp["exraid"]['enabled']:
+            return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want access to EX raids controlled through members using the **!invite** command?\nIf enabled, members will have read-only permissions for all EX Raids until they use **!invite** to gain access. If disabled, EX Raids will inherit the permissions from their reporting channels.\n\nRespond with: **N** to disable, or **Y** to enable:')).set_author(name=_('Invite Configuration'), icon_url=self.bot.user.avatar_url))
         while True:
             inviteconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
@@ -998,76 +928,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Wild Reporting allows users to report wild spawns with **!wild**. Pokemon **wild** reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-wilds, hull-wilds, sydney-wilds`\n\nIf you do not require **wild** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Wild Reporting Channels'), icon_url=self.bot.user.avatar_url))
-        citychannel_dict = {}
-        while True:
-            citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-            if citychannels.content.lower() == 'n':
-                config_dict_temp['wild']['enabled'] = False
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Wild Reporting disabled')))
-                break
-            elif citychannels.content.lower() == 'cancel':
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                return None
-            else:
-                config_dict_temp['wild']['enabled'] = True
-                citychannel_list = citychannels.content.lower().split(',')
-                citychannel_list = [x.strip() for x in citychannel_list]
-                guild_channel_list = []
-                for channel in guild.text_channels:
-                    guild_channel_list.append(channel.id)
-                citychannel_objs = []
-                citychannel_names = []
-                citychannel_errors = []
-                for item in citychannel_list:
-                    channel = None
-                    if item.isdigit():
-                        channel = discord.utils.get(guild.text_channels, id=int(item))
-                    if not channel:
-                        item = re.sub('[^a-zA-Z0-9 _\\-]+', '', item)
-                        item = item.replace(" ","-")
-                        name = await utils.letter_case(guild.text_channels, item.lower())
-                        channel = discord.utils.get(guild.text_channels, name=name)
-                    if channel:
-                        citychannel_objs.append(channel)
-                        citychannel_names.append(channel.name)
-                    else:
-                        citychannel_errors.append(item)
-                citychannel_list = [x.id for x in citychannel_objs]
-                diff = set(citychannel_list) - set(guild_channel_list)
-                if (not diff) and (not citychannel_errors):
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Wild Reporting Channels enabled')))
-                    for channel in citychannel_objs:
-                        ow = channel.overwrites_for(self.bot.user)
-                        ow.send_messages = True
-                        ow.read_messages = True
-                        ow.manage_roles = True
-                        try:
-                            await channel.set_permissions(self.bot.user, overwrite = ow)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
-                    continue
-        if config_dict_temp['wild']['enabled']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to wild spawns! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Wild Reporting Locations'), icon_url=self.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
-            while True:
-                cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-                if cities.content.lower() == 'cancel':
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                    return None
-                city_list = cities.content.split(',')
-                city_list = [x.strip() for x in city_list]
-                if len(city_list) == len(citychannel_list):
-                    for i in range(len(citychannel_list)):
-                        citychannel_dict[citychannel_list[i]] = city_list[i]
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The number of cities doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n{channellist}\n{citylist}\n\nPlease double check that your locations match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), citylist=', '.join(city_list))))
-                    continue
-            config_dict_temp['wild']['report_channels'] = citychannel_dict
-            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Wild Reporting Locations are set')))
+        config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "wild", [], output="dict")
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -1101,76 +962,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Research Reporting allows users to report field research with **!research**. Pokemon **research** reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-research, hull-research, sydney-research`\n\nIf you do not require **research** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Research Reporting Channels'), icon_url=self.bot.user.avatar_url))
-        citychannel_dict = {}
-        while True:
-            citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-            if citychannels.content.lower() == 'n':
-                config_dict_temp['research']['enabled'] = False
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Research Reporting disabled')))
-                break
-            elif citychannels.content.lower() == 'cancel':
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                return None
-            else:
-                config_dict_temp['research']['enabled'] = True
-                citychannel_list = citychannels.content.lower().split(',')
-                citychannel_list = [x.strip() for x in citychannel_list]
-                guild_channel_list = []
-                for channel in guild.text_channels:
-                    guild_channel_list.append(channel.id)
-                citychannel_objs = []
-                citychannel_names = []
-                citychannel_errors = []
-                for item in citychannel_list:
-                    channel = None
-                    if item.isdigit():
-                        channel = discord.utils.get(guild.text_channels, id=int(item))
-                    if not channel:
-                        item = re.sub('[^a-zA-Z0-9 _\\-]+', '', item)
-                        item = item.replace(" ","-")
-                        name = await utils.letter_case(guild.text_channels, item.lower())
-                        channel = discord.utils.get(guild.text_channels, name=name)
-                    if channel:
-                        citychannel_objs.append(channel)
-                        citychannel_names.append(channel.name)
-                    else:
-                        citychannel_errors.append(item)
-                citychannel_list = [x.id for x in citychannel_objs]
-                diff = set(citychannel_list) - set(guild_channel_list)
-                if (not diff) and (not citychannel_errors):
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Research Reporting Channels enabled')))
-                    for channel in citychannel_objs:
-                        ow = channel.overwrites_for(self.bot.user)
-                        ow.send_messages = True
-                        ow.read_messages = True
-                        ow.manage_roles = True
-                        try:
-                            await channel.set_permissions(self.bot.user, overwrite = ow)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
-                    continue
-        if config_dict_temp['research']['enabled']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to field research! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Research Reporting Locations'), icon_url=self.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
-            while True:
-                cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-                if cities.content.lower() == 'cancel':
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                    return None
-                city_list = cities.content.split(',')
-                city_list = [x.strip() for x in city_list]
-                if len(city_list) == len(citychannel_list):
-                    for i in range(len(citychannel_list)):
-                        citychannel_dict[citychannel_list[i]] = city_list[i]
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The number of cities doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n{channellist}\n{citylist}\n\nPlease double check that your locations match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), citylist=', '.join(city_list))))
-                    continue
-            config_dict_temp['research']['report_channels'] = citychannel_dict
-            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Research Reporting Locations are set')))
+        config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "research", [], output="dict")
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -1205,150 +997,7 @@ class Configure:
         config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         config_dict_temp['meetup'] = {}
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meetup Reporting allows users to report meetups with **!meetup** or **!event**. Meetup reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-meetups, hull-meetups, sydney-meetups`\n\nIf you do not require meetup reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Meetup Reporting Channels'), icon_url=self.bot.user.avatar_url))
-        citychannel_dict = {}
-        while True:
-            citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-            if citychannels.content.lower() == 'n':
-                config_dict_temp['meetup']['enabled'] = False
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Meetup Reporting disabled')))
-                break
-            elif citychannels.content.lower() == 'cancel':
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                return None
-            else:
-                config_dict_temp['meetup']['enabled'] = True
-                citychannel_list = citychannels.content.lower().split(',')
-                citychannel_list = [x.strip() for x in citychannel_list]
-                guild_channel_list = []
-                for channel in guild.text_channels:
-                    guild_channel_list.append(channel.id)
-                citychannel_objs = []
-                citychannel_names = []
-                citychannel_errors = []
-                for item in citychannel_list:
-                    channel = None
-                    if item.isdigit():
-                        channel = discord.utils.get(guild.text_channels, id=int(item))
-                    if not channel:
-                        item = re.sub('[^a-zA-Z0-9 _\\-]+', '', item)
-                        item = item.replace(" ","-")
-                        name = await utils.letter_case(guild.text_channels, item.lower())
-                        channel = discord.utils.get(guild.text_channels, name=name)
-                    if channel:
-                        citychannel_objs.append(channel)
-                        citychannel_names.append(channel.name)
-                    else:
-                        citychannel_errors.append(item)
-                citychannel_list = [x.id for x in citychannel_objs]
-                diff = set(citychannel_list) - set(guild_channel_list)
-                if (not diff) and (not citychannel_errors):
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Meetup Reporting Channels enabled')))
-                    for channel in citychannel_objs:
-                        ow = channel.overwrites_for(self.bot.user)
-                        ow.send_messages = True
-                        ow.read_messages = True
-                        ow.manage_roles = True
-                        try:
-                            await channel.set_permissions(self.bot.user, overwrite = ow)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
-                    continue
-        if config_dict_temp['meetup']['enabled']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to meetups! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('Meetup Reporting Locations'), icon_url=self.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
-            while True:
-                cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-                if cities.content.lower() == 'cancel':
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                    return None
-                city_list = cities.content.split(',')
-                city_list = [x.strip() for x in city_list]
-                if len(city_list) == len(citychannel_list):
-                    for i in range(len(citychannel_list)):
-                        citychannel_dict[citychannel_list[i]] = city_list[i]
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The number of cities doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n{channellist}\n{citylist}\n\nPlease double check that your locations match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), citylist=', '.join(city_list))))
-                    continue
-            config_dict_temp['meetup']['report_channels'] = citychannel_dict
-            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Meetup Reporting Locations are set')))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the meetup channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('Meetup Reporting Categories'), icon_url=self.bot.user.avatar_url))
-            while True:
-                guild = self.bot.get_guild(guild.id)
-                guild_catlist = []
-                for cat in guild.categories:
-                    guild_catlist.append(cat.id)
-                category_dict = {}
-                categories = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
-                if categories.content.lower() == 'cancel':
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                    return None
-                elif categories.content.lower() == 'none':
-                    config_dict_temp['meetup']['categories'] = None
-                    break
-                elif categories.content.lower() == 'same':
-                    config_dict_temp['meetup']['categories'] = 'same'
-                    break
-                elif categories.content.lower() == 'other':
-                    while True:
-                        guild = self.bot.get_guild(guild.id)
-                        guild_catlist = []
-                        for cat in guild.categories:
-                            guild_catlist.append(cat.id)
-                        config_dict_temp['meetup']['categories'] = 'region'
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as meetup reporting channels.")).set_author(name=_('Meetup Reporting Categories'), icon_url=self.bot.user.avatar_url))
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
-                        regioncats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
-                        if regioncats.content.lower() == "cancel":
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                            return None
-                        regioncat_list = regioncats.content.split(',')
-                        regioncat_list = [x.strip() for x in regioncat_list]
-                        regioncat_ids = []
-                        regioncat_names = []
-                        regioncat_errors = []
-                        for item in regioncat_list:
-                            category = None
-                            if item.isdigit():
-                                category = discord.utils.get(guild.categories, id=int(item))
-                            if not category:
-                                name = await utils.letter_case(guild.categories, item.lower())
-                                category = discord.utils.get(guild.categories, name=name)
-                            if category:
-                                regioncat_ids.append(category.id)
-                                regioncat_names.append(category.name)
-                            else:
-                                regioncat_errors.append(item)
-                        regioncat_list = regioncat_ids
-                        if len(regioncat_list) == len(citychannel_list):
-                            catdiff = set(regioncat_list) - set(guild_catlist)
-                            if (not catdiff) and (not regioncat_errors):
-                                for i in range(len(citychannel_list)):
-                                    category_dict[citychannel_list[i]] = regioncat_list[i]
-                                break
-                            else:
-                                msg = _("The category list you provided doesn't match with your server's categories.")
-                                if regioncat_errors:
-                                    msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(regioncat_errors))
-                                msg += _("\n\nPlease double check your category list and resend your response. If you just made these categories, try again.")
-                                await owner.send(embed=discord.Embed(colour=discord.Colour.orange(),description=msg))
-                                continue
-                        else:
-                            msg = _("The number of categories I found in your server doesn't match the number of channels you gave me earlier!\n\nI'll show you the two lists to compare:\n\n**Matched Channels:** {channellist}\n**Matched Categories:** {catlist}\n\nPlease double check that your categories match up with your provided channels and resend your response.").format(channellist=', '.join(citychannel_names), catlist=', '.join(regioncat_names) if len(regioncat_list)>0 else "None")
-                            if regioncat_errors:
-                                msg += _("\n\nThe following aren't in your server: **{invalid_categories}**").format(invalid_categories=', '.join(regioncat_errors))
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=msg))
-                            continue
-                        break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(),description=_("Sorry, I didn't understand your answer! Try again.")))
-                    continue
-                break
-            await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Meetup Categories are set')))
-            config_dict_temp['meetup']['category_dict'] = category_dict
+        config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "meetup", ["none","same","other"], output="category_dict")
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -1382,57 +1031,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!want** and **!unwant** commands let you add or remove roles for Pokemon that will be mentioned in reports. This let you get notifications on the Pokemon you want to track. I just need to know what channels you want to allow people to manage their pokemon with the **!want** and **!unwant** command.\n\nIf you don't want to allow the management of tracked Pokemon roles, then you may want to disable this feature.\n\nRepond with: **N** to disable, or the **channel-name** list to enable, each seperated by a comma and space.")).set_author(name=_('Pokemon Notifications'), icon_url=self.bot.user.avatar_url))
-        while True:
-            wantchs = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-            if wantchs.content.lower() == 'n':
-                config_dict_temp['want']['enabled'] = False
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Pokemon Notifications disabled')))
-                break
-            elif wantchs.content.lower() == 'cancel':
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                return None
-            else:
-                want_list = wantchs.content.lower().split(',')
-                want_list = [x.strip() for x in want_list]
-                guild_channel_list = []
-                for channel in guild.text_channels:
-                    guild_channel_list.append(channel.id)
-                want_list_objs = []
-                want_list_names = []
-                want_list_errors = []
-                for item in want_list:
-                    channel = None
-                    if item.isdigit():
-                        channel = discord.utils.get(guild.text_channels, id=int(item))
-                    if not channel:
-                        item = re.sub('[^a-zA-Z0-9 _\\-]+', '', item)
-                        item = item.replace(" ","-")
-                        name = await utils.letter_case(guild.text_channels, item.lower())
-                        channel = discord.utils.get(guild.text_channels, name=name)
-                    if channel:
-                        want_list_objs.append(channel)
-                        want_list_names.append(channel.name)
-                    else:
-                        want_list_errors.append(item)
-                want_list_set = [x.id for x in want_list_objs]
-                diff = set(want_list_set) - set(guild_channel_list)
-                if (not diff) and (not want_list_errors):
-                    config_dict_temp['want']['enabled'] = True
-                    config_dict_temp['want']['report_channels'] = want_list_set
-                    for channel in want_list_objs:
-                        ow = channel.overwrites_for(self.bot.user)
-                        ow.send_messages = True
-                        ow.read_messages = True
-                        ow.manage_roles = True
-                        try:
-                            await channel.set_permissions(self.bot.user, overwrite = ow)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Pokemon Notifications enabled')))
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(want_list_errors))))
-                    continue
+        config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "want", [], output="list")
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -1595,57 +1194,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!trade** command allows your users to organize and coordinate trades. This command requires at least one channel specifically for trades.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!trade** command in, separated by commas.")).set_author(name=_('Trade Configuration'), icon_url=self.bot.user.avatar_url))
-        while True:
-            trademsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-            if trademsg.content.lower() == 'cancel':
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                return None
-            elif trademsg.content.lower() == 'n':
-                config_dict_temp['trade'] = {'enabled': False, 'report_channels': []}
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Trade disabled.')))
-                break
-            else:
-                trade_list = trademsg.content.lower().split(',')
-                trade_list = [x.strip() for x in trade_list]
-                guild_channel_list = []
-                for channel in guild.text_channels:
-                    guild_channel_list.append(channel.id)
-                trade_list_objs = []
-                trade_list_names = []
-                trade_list_errors = []
-                for item in trade_list:
-                    channel = None
-                    if item.isdigit():
-                        channel = discord.utils.get(guild.text_channels, id=int(item))
-                    if not channel:
-                        item = re.sub('[^a-zA-Z0-9 _\\-]+', '', item)
-                        item = item.replace(" ","-")
-                        name = await utils.letter_case(guild.text_channels, item.lower())
-                        channel = discord.utils.get(guild.text_channels, name=name)
-                    if channel:
-                        trade_list_objs.append(channel)
-                        trade_list_names.append(channel.name)
-                    else:
-                        trade_list_errors.append(item)
-                trade_list_set = [x.id for x in trade_list_objs]
-                diff = set(trade_list_set) - set(guild_channel_list)
-                if (not diff) and (not trade_list_errors):
-                    config_dict_temp['trade']['enabled'] = True
-                    config_dict_temp['trade']['report_channels'] = trade_list_set
-                    for channel in trade_list_objs:
-                        ow = channel.overwrites_for(self.bot.user)
-                        ow.send_messages = True
-                        ow.read_messages = True
-                        ow.manage_roles = True
-                        try:
-                            await channel.set_permissions(self.bot.user, overwrite = ow)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Pokemon Trades enabled')))
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(trade_list_errors))))
-                    continue
+        config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "trade", [], output="list")
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -1679,59 +1228,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!nest** command allows your users to report nests. This command requires at least one channel specifically for nests.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!nest** command in, separated by commas.")).set_author(name=_('Nest Configuration'), icon_url=self.bot.user.avatar_url))
-        while True:
-            nestmsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-            if nestmsg.content.lower() == 'cancel':
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
-                return None
-            elif nestmsg.content.lower() == 'n':
-                config_dict_temp['nest'] = {}
-                config_dict_temp['nest'] = {'enabled': False, 'report_channels': []}
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Nest Reporting disabled.')))
-                break
-            else:
-                nest_list = nestmsg.content.lower().split(',')
-                nest_list = [x.strip() for x in nest_list]
-                guild_channel_list = []
-                for channel in guild.text_channels:
-                    guild_channel_list.append(channel.id)
-                nest_list_objs = []
-                nest_list_names = []
-                nest_list_errors = []
-                for item in nest_list:
-                    channel = None
-                    if item.isdigit():
-                        channel = discord.utils.get(guild.text_channels, id=int(item))
-                    if not channel:
-                        item = re.sub('[^a-zA-Z0-9 _\\-]+', '', item)
-                        item = item.replace(" ","-")
-                        name = await utils.letter_case(guild.text_channels, item.lower())
-                        channel = discord.utils.get(guild.text_channels, name=name)
-                    if channel:
-                        nest_list_objs.append(channel)
-                        nest_list_names.append(channel.name)
-                    else:
-                        nest_list_errors.append(item)
-                nest_list_set = [x.id for x in nest_list_objs]
-                diff = set(nest_list_set) - set(guild_channel_list)
-                if (not diff) and (not nest_list_errors):
-                    config_dict_temp['nest'] = {}
-                    config_dict_temp['nest']['enabled'] = True
-                    config_dict_temp['nest']['report_channels'] = nest_list_set
-                    for channel in nest_list_objs:
-                        ow = channel.overwrites_for(self.bot.user)
-                        ow.send_messages = True
-                        ow.read_messages = True
-                        ow.manage_roles = True
-                        try:
-                            await channel.set_permissions(self.bot.user, overwrite = ow)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Nest Reporting enabled')))
-                    break
-                else:
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(nest_list_errors))))
-                    continue
+        config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "nest", [], output="list")
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
