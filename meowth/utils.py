@@ -453,6 +453,8 @@ async def expire_dm_reports(bot, dm_dict):
     for dm_user, dm_message in dm_dict.items():
         dm_user = bot.get_user(dm_user)
         dm_channel = dm_user.dm_channel
+        if not dm_channel:
+            dm_channel = await dm_user.create_dm()
         if not dm_user or not dm_channel:
             continue
         try:

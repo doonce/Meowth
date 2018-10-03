@@ -45,6 +45,7 @@ class Nest:
                 new_migration = False
                 if utcnow > migration_utc:
                     new_migration = migration_utc + datetime.timedelta(days=14)
+                    migration_local = new_migration + datetime.timedelta(hours=self.bot.guild_dict[guildid]['configure_dict']['settings']['offset'])
                     self.bot.guild_dict[guildid]['configure_dict']['nest']['migration'] = new_migration
                 for channel in nest_dict:
                     report_channel = self.bot.get_channel(channel)
@@ -54,16 +55,30 @@ class Nest:
                     for nest in nest_dict[channel]:
                         for report in nest_dict[channel][nest]['reports']:
                             if nest_dict[channel][nest]['reports'][report].get('exp', 0) <= time.time():
-                                if new_migration and nest_dict[channel][nest]['reports'][report]['reporttime'] > migration_utc:
-                                    self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
-                                    continue
                                 try:
                                     report_message = await report_channel.get_message(report)
+                                    if new_migration and nest_dict[channel][nest]['reports'][report]['reporttime'] > migration_utc:
+                                        self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
+                                        nest_embed = report_message.embeds[0]
+                                        edit_embed = nest_embed.description.splitlines()
+                                        edit_embed[2] = f"**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
+                                        nest_embed.description = ("\n").join(edit_embed)
+                                        await report_message.edit(content=report_message.content, embed=nest_embed)
+                                        for dm_user, dm_message in nest_dict[channel][nest]['reports'][report]['dm_dict'].items():
+                                            dm_user = self.bot.get_user(dm_user)
+                                            dm_channel = dm_user.dm_channel
+                                            if not dm_channel:
+                                                dm_channel = await dm_user.create_dm()
+                                            if not dm_user or not dm_channel:
+                                                continue
+                                            dm_message = await dm_channel.get_message(dm_message)
+                                            await dm_message.edit(content=dm_message.content, embed=nest_embed)
+                                        continue
                                     await report_message.delete()
+                                    await utils.expire_dm_reports(self.bot, nest_dict[channel][nest]['reports'][report].get('dm_dict', {}))
+                                    del self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]
                                 except:
                                     pass
-                                await utils.expire_dm_reports(self.bot, nest_dict[channel][nest]['reports'][report].get('dm_dict', {}))
-                                del self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]
             await asyncio.sleep(600)
             continue
 
@@ -481,7 +496,7 @@ class Nest:
             return
         else:
             await nest_time_reply.delete()
-        migration_local = dateparser.parse(nest_time_reply.clean_content, settings={'RETURN_AS_TIMEZONE_AWARE': False, 'PREFER_DATES_FROM': 'future'})
+        migration_local = dateparser.parse(nest_time_reply.clean_content, settings={'RETURN_AS_TIMEZONE_AWARE': False})
         migration_utc = migration_local - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         rusure = await channel.send(_('Are you sure you\'d like to set the next migration to **{time}**?\n\nThis will also set all current nest reports to expire at this new time.').format(time=migration_local.strftime(_('%B %d %Y at %I:%M %p (%H:%M)'))))
         try:
