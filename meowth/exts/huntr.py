@@ -262,10 +262,6 @@ class Huntr:
                 await raid_channel.send(embed=embed)
             await message.delete()
 
-    """Expiry"""
-
-#todo: expire_channel, expiry_check, duplicate, egg_assume, egg_to_raid, on_pokealarm
-
 
     """Reporting"""
 
@@ -286,6 +282,7 @@ class Huntr:
         wild_embed.add_field(name='\u200b', value=_("💨: The Pokemon despawned!"))
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         despawn = (int(huntrexp.split(' ')[0]) * 60) + int(huntrexp.split(' ')[2])
+        wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=entered_wild.title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
         dm_dict = {}
         for trainer in ctx.bot.guild_dict[message.guild.id].get('trainers', {}):
             user = message.guild.get_member(trainer)
@@ -297,7 +294,6 @@ class Huntr:
             if wild_number in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('wants', []):
                 wilddmmsg = await user.send(content=_('Meowth! Wild {pokemon} reported by {member} in {channel}! Details: {location_details}').format(pokemon=entered_wild.title(), member=message.author.display_name, channel=message.channel.mention, location_details=wild_details), embed=wild_embed)
                 dm_dict[user.id] = wilddmmsg.id
-        wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=entered_wild.title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
         await asyncio.sleep(0.25)
         await wildreportmsg.add_reaction('🏎')
         await asyncio.sleep(0.25)
@@ -316,9 +312,6 @@ class Huntr:
             'pokemon':entered_wild,
             'omw':[]
         }
-        ctx.bot.guild_dict[message.guild.id]['wildreport_dict'] = wild_dict
-        wild_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(message.author.id,{}).setdefault('wild_reports',0) + 1
-        ctx.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports
 
     async def huntr_raid(self, ctx, entered_raid, raid_details, raidexp, gymhuntrgps, gymhuntrmoves, auto_report = True):
         message = ctx.message

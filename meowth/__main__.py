@@ -2049,7 +2049,7 @@ async def profile(ctx, member: discord.Member = None):
     wants = sorted(wants)
     wants = [utils.get_name(Meowth, x).title() for x in wants]
     roles = [x.mention for x in sorted(member.roles, reverse=True) if ctx.guild.id != x.id]
-    embed = discord.Embed(title=_("{member}\'s Trainer Profile").format(member=member.display_name, colour=member.colour))
+    embed = discord.Embed(title=_("{member}\'s Trainer Profile").format(member=member.display_name), colour=member.colour)
     embed.set_thumbnail(url=member.avatar_url)
     embed.set_footer(text=f"User Registered: {member.created_at.strftime(_('%b %d, %Y %I:%M %p'))} | Status: {str(member.status).title()}")
     embed.add_field(name=_("Silph Road"), value=f"{silph}", inline=True)
@@ -2378,6 +2378,7 @@ async def _wild(ctx, content):
     wild_embed.set_thumbnail(url=wild_img_url)
     wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
     despawn = 3600
+    wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=entered_wild.title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
     dm_dict = {}
     for trainer in guild_dict[message.guild.id].get('trainers', {}):
         user = message.guild.get_member(trainer)
@@ -2391,7 +2392,6 @@ async def _wild(ctx, content):
             dm_dict[user.id] = wilddmmsg.id
     wild_embed.add_field(name='**Reactions:**', value=_("🏎: I'm on my way!"))
     wild_embed.add_field(name='\u200b', value=_("💨: The Pokemon despawned!"))
-    wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=entered_wild.title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
     await asyncio.sleep(0.25)
     await wildreportmsg.add_reaction('🏎')
     await asyncio.sleep(0.25)
@@ -3382,18 +3382,23 @@ async def research(ctx, *, details = None):
         research_embed.title = _('Meowth! Click here for my directions to the research!')
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=author.name)
         research_embed.url = loc_url
-        dm_dict = {}
-        for trainer in guild_dict[guild.id].get('trainers', {}):
-            user = guild.get_member(trainer)
-            if not user:
-                continue
-            perms = user.permissions_in(channel)
-            if not perms.read_messages:
-                continue
-            if pkmn_number and pkmn_number in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('wants', []):
-                resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pkmn_match.title(), author=author.mention, channel=channel.mention),embed=research_embed)
-                dm_dict[user.id] = resdmmsg.id
-        confirmation = await channel.send(research_msg,embed=research_embed)
+        if pkmn_number:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=4".format(pkmn_number).zfill(3))
+            research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=0")
+            confirmation = await channel.send(research_msg,embed=research_embed)
+            dm_dict = {}
+            for trainer in guild_dict[guild.id].get('trainers', {}):
+                user = guild.get_member(trainer)
+                if not user:
+                    continue
+                perms = user.permissions_in(channel)
+                if not perms.read_messages:
+                    continue
+                if pkmn_number in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('wants', []):
+                    resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pkmn_match.title(), author=author.mention, channel=channel.mention),embed=research_embed)
+                    dm_dict[user.id] = resdmmsg.id
+        else:
+            confirmation = await channel.send(research_msg,embed=research_embed)
         research_dict = copy.deepcopy(guild_dict[guild.id].get('questreport_dict',{}))
         research_dict[confirmation.id] = {
             'exp':time.time() + to_midnight,
