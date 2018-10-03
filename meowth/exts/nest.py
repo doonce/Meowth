@@ -71,8 +71,8 @@ class Nest:
         channel = ctx.channel
         guild = ctx.guild
         nest_dict = copy.deepcopy(ctx.bot.guild_dict[guild.id].setdefault('nest_dict',{}).setdefault(channel.id, {}))
-        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', time.time() + 10000)
-        migration_local = migration_utc - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         migration_exp = migration_utc.timestamp()
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here to open the Silph Road Nest Atlas!", url="https://thesilphroad.com/atlas", description="")
         nest_embed.set_footer(text=f"Next Migration: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}")
@@ -123,8 +123,8 @@ class Nest:
         message = ctx.message
         channel = ctx.channel
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
-        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', time.time() + 10000)
-        migration_local = migration_utc - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         migration_exp = migration_utc.timestamp()
 
         await message.delete()
@@ -203,8 +203,8 @@ class Nest:
 
         # get settings
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
-        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', time.time() + 10000)
-        migration_local = migration_utc - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
 
         await message.delete()
 
@@ -461,7 +461,7 @@ class Nest:
 
         # get settings
         migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
-        migration_local = migration_utc - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
 
         await message.delete()
@@ -482,7 +482,7 @@ class Nest:
         else:
             await nest_time_reply.delete()
         migration_local = dateparser.parse(nest_time_reply.clean_content, settings={'RETURN_AS_TIMEZONE_AWARE': False, 'PREFER_DATES_FROM': 'future'})
-        migration_utc = migration_local + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        migration_utc = migration_local - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         rusure = await channel.send(_('Are you sure you\'d like to set the next migration to {time}?\n\nThis will also set all current nest reports to expire at this new time.').format(time=migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))))
         try:
             timeout = False
