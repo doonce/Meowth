@@ -3383,7 +3383,7 @@ async def research(ctx, *, details = None):
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=author.name)
         research_embed.url = loc_url
         if pkmn_number:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=4".format(pkmn_number).zfill(3))
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=4".format(str(pkmn_number).zfill(3)))
             research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=0")
             confirmation = await channel.send(research_msg,embed=research_embed)
             dm_dict = {}
