@@ -5857,7 +5857,7 @@ async def _allwantlist(ctx):
         listmsg = _('**Meowth!** The server **!want** list is:')
         paginator = commands.Paginator(prefix="", suffix="")
         await ctx.send(listmsg)
-        for line in ", ".join(wantlist).splitlines():
+        for line in textwrap.wrap(", ".join(wantlist), 80):
             paginator.add_line(line.rstrip().replace('`', '\u200b`'))
         for p in paginator.pages:
             await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
