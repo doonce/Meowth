@@ -2596,7 +2596,7 @@ async def _raid(ctx, content):
         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
-    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
+    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=utils.get_level(Meowth, entered_raid)), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(utils.get_type(Meowth, message.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(Meowth, message.guild, utils.get_weaknesses(Meowth, entered_raid))), inline=True)
     raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
@@ -2768,7 +2768,7 @@ async def _raidegg(ctx, content):
                 except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                     pass
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
-        raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
+        raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
             raid_embed.add_field(name='\u200b', value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
@@ -2852,7 +2852,7 @@ async def _eggassume(ctx, args, raid_channel, author=None):
         roletest = _("{pokemon} - ").format(pokemon=raidrole.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
-    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
+    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(utils.get_type(Meowth, raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(Meowth, raid_channel.guild, utils.get_weaknesses(Meowth, entered_raid))), inline=True)
     raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
@@ -2989,7 +2989,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
     raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
     raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
-    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
+    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(utils.get_type(Meowth, raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(Meowth, raid_channel.guild, utils.get_weaknesses(Meowth, entered_raid))), inline=True)
     raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
@@ -3170,7 +3170,7 @@ async def _exraid(ctx, location):
                 except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                     pass
     raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
-    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
+    raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level EX raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
     if len(egg_info['pokemon']) > 1:
         raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
         raid_embed.add_field(name='\u200b', value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
@@ -3250,7 +3250,7 @@ async def _invite(ctx):
     if exraidcount == 0:
         await channel.send(_('Meowth! No EX Raids have been reported in this server! Use **!exraid** to report one!'))
         return
-    exraidchoice = await channel.send(_("Meowth! {0}, you've told me you have an invite to an EX Raid, and I'm just going to take your word for it! The following {1} EX Raids have been reported:\n{2}\nReply with **the number** (1, 2, etc) of the EX Raid you have been invited to. If none of them match your invite, type 'N' and report it with **!exraid**").format(author.mention, str(exraidcount), exraidlist))
+    exraidchoice = await channel.send(_("Meowth! {0}, you've told me you have an invite to an EX Raid! The following {1} EX Raids have been reported:\n{2}\nReply with **the number** (1, 2, etc) of the EX Raid you have been invited to. If none of them match your invite, type 'N' and report it with **!exraid**").format(author.mention, str(exraidcount), exraidlist))
     reply = await bot.wait_for('message', check=(lambda message: (message.author == author)))
     if reply.content.lower() == 'n':
         await exraidchoice.delete()
@@ -3399,6 +3399,7 @@ async def research(ctx, *, details = None):
                     dm_dict[user.id] = resdmmsg.id
         else:
             confirmation = await channel.send(research_msg,embed=research_embed)
+            dm_dict = {}
         research_dict = copy.deepcopy(guild_dict[guild.id].get('questreport_dict',{}))
         research_dict[confirmation.id] = {
             'exp':time.time() + to_midnight,
@@ -4290,6 +4291,9 @@ async def counters(ctx, *, args = None):
     channel = ctx.channel
     guild = channel.guild
     user = guild_dict[ctx.guild.id].get('trainers',{}).get(ctx.author.id,{}).get('pokebattlerid', None)
+    weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
+                    _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
+    form_list = [_('alolan')]
     if checks.check_raidchannel(ctx) and not checks.check_meetupchannel(ctx):
         if args:
             args_split = args.split()
@@ -4316,7 +4320,9 @@ async def counters(ctx, *, args = None):
             moveset = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('moveset', 0)
             movesetstr = guild_dict[guild.id]['raidchannel_dict'][channel.id]['ctrs_dict'].get(moveset,{}).get('moveset',"Unknown Moveset")
             weather = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('weather', None)
-            form = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('form', None)
+            form = next((w for w in form_list if re.sub(rgx, '', w) in re.sub(rgx, '', args.lower())), None)
+            if not form:
+                form = guild_dict[guild.id]['raidchannel_dict'].get(channel.id,{}).get('form', None)
         else:
             pkmn = next((str(p) for p in utils.get_raidlist(Meowth) if not str(p).isdigit() and re.sub(rgx, '', str(p)) in re.sub(rgx, '', args.lower())), None)
             if not pkmn:
@@ -4324,8 +4330,6 @@ async def counters(ctx, *, args = None):
                 return
         if not weather:
             if args:
-                weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
-                                _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
                 weather = next((w for w in weather_list if re.sub(rgx, '', w) in re.sub(rgx, '', args.lower())), None)
         return await _counters(ctx, pkmn, user, weather, form, movesetstr)
     if args:
@@ -4338,12 +4342,9 @@ async def counters(ctx, *, args = None):
         pkmn = next((str(p) for p in utils.get_raidlist(Meowth) if not str(p).isdigit() and re.sub(rgx, '', str(p)) in re.sub(rgx, '', args.lower())), None)
         if not pkmn:
             pkmn = guild_dict[guild.id]['raidchannel_dict'].get(channel.id,{}).get('pokemon', None)
-        weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
-                        _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
         weather = next((w for w in weather_list if re.sub(rgx, '', w) in re.sub(rgx, '', args.lower())), None)
         if not weather:
             weather = guild_dict[guild.id]['raidchannel_dict'].get(channel.id,{}).get('weather', None)
-        form_list = [_('alolan')]
         form = next((w for w in form_list if re.sub(rgx, '', w) in re.sub(rgx, '', args.lower())), None)
         if not form:
             form = guild_dict[guild.id]['raidchannel_dict'].get(channel.id,{}).get('form', None)
@@ -5342,6 +5343,7 @@ async def _list(ctx):
     the raid timer. In city channels, lists all active raids."""
     if ctx.invoked_subcommand == None:
         listmsg = _('**Meowth!** ')
+        raidlist = ""
         guild = ctx.guild
         channel = ctx.channel
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[guild.id]['configure_dict']['settings']['offset'])
@@ -5431,50 +5433,35 @@ async def _list(ctx):
                 output += _('    {raidchannel}{expiry_text}\n').format(raidchannel=rchan.mention, expiry_text=expirytext)
                 output += _('    **{interestcount}** interested, **{comingcount}** coming, **{herecount}** here, **{lobbycount}** in lobby.{start_str}\n').format(raidchannel=rchan.mention, interestcount=ctx_maybecount, comingcount=ctx_comingcount, herecount=ctx_herecount, lobbycount=ctx_lobbycount, start_str=start_str)
                 return output
-            if activeraidnum:
-                listmsg += _("**Here's the current channels for {0}**\n\n").format(cty.capitalize())
+
             if raid_dict:
-                listmsg += _('**Active Raids:**\n')
+                raidlist += _('**Active Raids:**\n')
                 for (r, e) in sorted(raid_dict.items(), key=itemgetter(1)):
-                    if len(listmsg) < 1800:
-                        listmsg += list_output(r)
-                    else:
-                        await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
-                        listmsg = _('**Active Raids:** (continued)\n')
-                        listmsg += list_output(r)
-                listmsg += '\n'
+                    raidlist += list_output(r)
+                raidlist += '\n'
             if egg_dict:
-                listmsg += _('**Raid Eggs:**\n')
+                raidlist += _('**Raid Eggs:**\n')
                 for (r, e) in sorted(egg_dict.items(), key=itemgetter(1)):
-                    if len(listmsg) < 1800:
-                        listmsg += list_output(r)
-                    else:
-                        await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
-                        listmsg = _('**Raid Eggs:** (continued)\n')
-                        listmsg += list_output(r)
-                listmsg += '\n'
+                    raidlist += list_output(r)
+                raidlist += '\n'
             if exraid_list:
-                listmsg += _('**EX Raids:**\n')
+                raidlist += _('**EX Raids:**\n')
                 for r in exraid_list:
-                    if len(listmsg) < 1800:
-                        listmsg += list_output(r)
-                    else:
-                        await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
-                        listmsg = _('**EX Raids:** (continued)\n')
-                        listmsg += list_output(r)
+                    raidlist += list_output(r)
             if event_list:
-                listmsg += _('**Meetups:**\n')
+                raidlist += _('**Meetups:**\n')
                 for r in event_list:
-                    if len(listmsg) < 1800:
-                        listmsg += list_output(r)
-                    else:
-                        await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
-                        listmsg = _('**Meetups:** (continued)\n')
-                        listmsg += list_output(r)
+                    raidlist += list_output(r)
             if activeraidnum == 0:
                 list_message = await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=_('Meowth! No active raids!\n\nReport one with **!raid <name> <location> [weather] [timer]**.')))
             else:
-                list_message = await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+                listmsg += _("**Here's the current channels for {0}**\n\n").format(cty.capitalize())
+                paginator = commands.Paginator(prefix="", suffix="")
+                await ctx.send(listmsg)
+                for line in raidlist.splitlines():
+                    paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                for p in paginator.pages:
+                    list_message = await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
             await asyncio.sleep(1800)
             try:
                 await list_message.delete()
@@ -5866,10 +5853,15 @@ async def _allwantlist(ctx):
                 wantlist.append(want)
     wantlist = sorted(wantlist)
     wantlist = [utils.get_name(Meowth, x).title() for x in wantlist]
-    print(wantlist)
-    return
     if len(wantlist) > 0:
-        listmsg = _(' The server **!want** list is:\n\n**{wantlist}**').format(wantlist=', '.join(wantlist))
+        listmsg = _('**Meowth!** The server **!want** list is:')
+        paginator = commands.Paginator(prefix="", suffix="")
+        await ctx.send(listmsg)
+        for line in ", ".join(wantlist).splitlines():
+            paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+        for p in paginator.pages:
+            await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+        return
     else:
         listmsg = _("Nobody has any wants! use **!want** to add some.")
     return listmsg
@@ -5899,12 +5891,12 @@ async def trades(ctx, user: discord.Member=None):
 async def _tradelist(ctx, user):
     tgt_trainer_trades = {}
     listmsg = ""
+    trademsg = ""
     for channel_id in guild_dict[ctx.guild.id]['trade_dict']:
         for offer_id in guild_dict[ctx.guild.id]['trade_dict'][channel_id]:
             if guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['lister_id'] == user.id:
                 tgt_trainer_trades[offer_id] = guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
     if tgt_trainer_trades:
-        listmsg += _(" Here are the current trades for {user}").format(user=user.display_name)
         for offer_id in tgt_trainer_trades:
             offer_url = ""
             try:
@@ -5921,15 +5913,17 @@ async def _tradelist(ctx, user):
             else:
                 wanted_pokemon = ', '.join(wanted_pokemon)
 
-            if len(listmsg) < 1500:
-                listmsg += ('\n🔹')
-                listmsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
-            else:
-                listmsg = _("Meowth! Here are the current trades for {user}").format(user=user.display_name)
-                await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
-                listmsg = ""
-                listmsg += ('\n🔹')
-                listmsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
+            trademsg += ('\n🔹')
+            trademsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
+
+            listmsg += _(" Here are the current trades for {user}").format(user=user.display_name)
+            paginator = commands.Paginator(prefix="", suffix="")
+            await ctx.send(listmsg)
+            for line in trademsg.splitlines():
+                paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+            for p in paginator.pages:
+                await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+            return
     else:
         listmsg += _(" {user} doesn't have any pokemon up for trade. Report one with **!trade**").format(user=user.display_name)
     return listmsg
@@ -5953,19 +5947,19 @@ async def _researchlist(ctx):
                 questreportmsg = await ctx.message.channel.get_message(questid)
                 questauthor = ctx.channel.guild.get_member(research_dict[questid]['reportauthor'])
                 if questauthor:
-                    if len(questmsg) < 1500:
-                        questmsg += ('\n🔹')
-                        questmsg += _("**Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None))
-                    else:
-                        listmsg = _('Meowth! **Here\'s the current research reports for {channel}**\n{questmsg}').format(channel=ctx.message.channel.name.capitalize(),questmsg=questmsg)
-                        await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
-                        questmsg = ""
-                        questmsg += ('\n🔹')
-                        questmsg += _("**Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None))
+                    questmsg += ('\n🔹')
+                    questmsg += _("**Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None))
             except discord.errors.NotFound:
                 continue
     if questmsg:
-        listmsg = _(' **Here\'s the current research reports for {channel}**\n{questmsg}').format(channel=ctx.message.channel.name.capitalize(),questmsg=questmsg)
+        listmsg = _(' **Here\'s the current research reports for {channel}**').format(channel=ctx.message.channel.name.capitalize())
+        paginator = commands.Paginator(prefix="", suffix="")
+        await ctx.send(listmsg)
+        for line in questmsg.splitlines():
+            paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+        for p in paginator.pages:
+            await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+        return
     else:
         listmsg = _(" There are no reported research reports. Report one with **!research**")
     return listmsg
@@ -5989,19 +5983,19 @@ async def _wildlist(ctx):
                 wildreportmsg = await ctx.message.channel.get_message(wildid)
                 wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['reportauthor'])
                 if wildauthor:
-                    if len(wildmsg) < 1500:
-                        wildmsg += ('\n🔹')
-                        wildmsg += _("**Pokemon**: {pokemon}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=wild_dict[wildid]['pokemon'].title(),location=wild_dict[wildid]['location'].title(),author=wildauthor.display_name,url=wild_dict[wildid].get('url',None))
-                    else:
-                        listmsg = _('Meowth! **Here\'s the current wild reports for {channel}**\n{wildmsg}').format(channel=ctx.message.channel.name.capitalize(),wildmsg=wildmsg)
-                        await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
-                        wildmsg = ""
-                        wildmsg += ('\n🔹')
-                        wildmsg += _("**Pokemon**: {pokemon}, **Location**: [{location}]({url}), **Reported By**: {author}\n**Location**: <{url}>").format(pokemon=wild_dict[wildid]['pokemon'].title(),location=wild_dict[wildid]['location'].title(),author=wildauthor.display_name,url=wild_dict[wildid].get('url',None))
+                    wildmsg += ('\n🔹')
+                    wildmsg += _("**Pokemon**: {pokemon}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=wild_dict[wildid]['pokemon'].title(),location=wild_dict[wildid]['location'].title(),author=wildauthor.display_name,url=wild_dict[wildid].get('url',None))
             except discord.errors.NotFound:
                 continue
     if wildmsg:
-        listmsg = _(' **Here\'s the current wild reports for {channel}**\n{wildmsg}').format(channel=ctx.message.channel.name.capitalize(),wildmsg=wildmsg)
+        listmsg = _(' **Here\'s the current wild reports for {channel}**').format(channel=ctx.message.channel.name.capitalize())
+        paginator = commands.Paginator(prefix="", suffix="")
+        await ctx.send(listmsg)
+        for line in wildmsg.splitlines():
+            paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+        for p in paginator.pages:
+            await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+        return
     else:
         listmsg = _(" There are no reported wild pokemon. Report one with **!wild <pokemon> <location>**")
     return listmsg
