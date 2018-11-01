@@ -50,15 +50,18 @@ class GymMatching:
             return None
         if score < 80:
             try:
-                question = _("{mention} Did you mean: '{match}'").format(mention=author.mention, match=match)
+                question = _("{mention} Did you mean: **{match}**?\n\nReact with ✅ to match report with **{match}** gym, ❎ to report without matching, or ❌ to cancel report.").format(mention=author.mention, match=match)
                 q_msg = await channel.send(question)
-                reaction, __ = await utils.ask(self.bot, q_msg, author.id)
+                reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=['✅', '❎','❌'])
             except TypeError:
                 await q_msg.delete()
                 return None
             if not reaction:
                 await q_msg.delete()
                 return None
+            if reaction.emoji == '❌':
+                await q_msg.delete()
+                return False
             if reaction.emoji == '✅':
                 await q_msg.delete()
                 return match
@@ -73,6 +76,8 @@ class GymMatching:
         if not gyms:
             return gym_info, raid_details, False
         match = await self.gym_match_prompt(ctx, raid_details, gyms)
+        if match == False:
+            return gym_info, False, False
         if not match:
             return gym_info, raid_details, False
         else:

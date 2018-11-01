@@ -233,7 +233,7 @@ class Pokemon():
             shiny_str = ""
         return ("https://raw.githubusercontent.com/doonce/"
                 f"Meowth/Rewrite/images/pkmn/{pkmn_no}{form_str}"
-                f"_{alolan_str}{shiny_str}.png?cache=3")
+                f"_{alolan_str}{shiny_str}.png?cache=1")
 
     # async def colour(self):
     #     """:class:`discord.Colour` : Discord colour based on Pokemon sprite."""

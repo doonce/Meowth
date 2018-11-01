@@ -270,7 +270,7 @@ class Huntr:
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         huntrexpstamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(huntrexp.split()[0]), seconds=int(huntrexp.split()[2]))).strftime('%I:%M %p')
         wild_number = ctx.bot.pkmn_info['pokemon_list'].index(entered_wild) + 1
-        wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(wild_number).zfill(3))
+        wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(wild_number).zfill(3))
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
         wild_gmaps_link = 'https://www.google.com/maps/dir/Current+Location/{0}'.format(wild_details.split("#")[1])
         wild_embed = discord.Embed(title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), url=wild_gmaps_link, colour=message.guild.me.colour)
@@ -342,7 +342,7 @@ class Huntr:
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
         raid_number = ctx.bot.pkmn_info['pokemon_list'].index(entered_raid) + 1
-        raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=0'.format(str(raid_number).zfill(3))
+        raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(raid_number).zfill(3))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(utils.get_type(self.bot, message.guild, raid_number)), inline=True))
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(self.bot, message.guild, utils.get_weaknesses(self.bot, entered_raid))), inline=True)
@@ -464,7 +464,7 @@ class Huntr:
             p_name = utils.get_name(self.bot, p).title()
             p_type = utils.get_type(self.bot, message.guild, p)
             boss_list.append((((p_name + ' (') + str(p)) + ') ') + ''.join(p_type))
-        raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=0'.format(str(egg_img))
+        raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=1'.format(str(egg_img))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
@@ -552,6 +552,7 @@ class Huntr:
             return
 
     @commands.command()
+    @commands.has_permissions(manage_guild=True)
     async def huntrraid(self, ctx):
         author = ctx.author
         guild = ctx.guild
@@ -560,7 +561,7 @@ class Huntr:
         await message.delete()
         description = "**Marilla Park.**\nMewtwo\n**CP:** 60540 - **Moves:** Confusion / Shadow Ball\n*Raid Ending: 0 hours 46 min 50 sec*"
         url = "https://gymhuntr.com/#34.008618,-118.49125"
-        img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=0'
+        img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=1'
         huntrembed = discord.Embed(title=_('Level 5 Raid has started!'), description=description, url=url, colour=message.guild.me.colour)
         huntrembed.set_thumbnail(url=img_url)
         huntrmessage = await ctx.channel.send(embed=huntrembed)
@@ -568,6 +569,7 @@ class Huntr:
         await self.on_huntr(ctx)
 
     @commands.command()
+    @commands.has_permissions(manage_guild=True)
     async def huntregg(self, ctx):
         author = ctx.author
         guild = ctx.guild
@@ -576,7 +578,7 @@ class Huntr:
         await message.delete()
         description = "**Marilla Park.**\n*Raid Starting: 0 hours 46 min 50 sec*"
         url = "https://gymhuntr.com/#34.008618,-118.49125"
-        img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=0'
+        img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1'
         huntrembed = discord.Embed(title=_('Level 5 Raid is starting soon!!'), description=description, url=url, colour=message.guild.me.colour)
         huntrembed.set_thumbnail(url=img_url)
         huntrmessage = await ctx.channel.send(embed=huntrembed)
@@ -584,6 +586,7 @@ class Huntr:
         await self.on_huntr(ctx)
 
     @commands.command()
+    @commands.has_permissions(manage_guild=True)
     async def huntrwild(self, ctx):
         author = ctx.author
         guild = ctx.guild
@@ -592,7 +595,7 @@ class Huntr:
         await message.delete()
         description = "Click above to view the wild\n\n*Remaining: 25 min 3 sec*\nWeather: *None*"
         url = "https://gymhuntr.com/#34.008618,-118.49125"
-        img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=0'
+        img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=1'
         huntrembed = discord.Embed(title=_('A wild Mewtwo (150) has appeared!'), description=description, url=url, colour=message.guild.me.colour)
         huntrembed.set_thumbnail(url=img_url)
         huntrmessage = await ctx.channel.send(embed=huntrembed)

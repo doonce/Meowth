@@ -49,9 +49,10 @@ class Tutorial:
         await ctx.tutorial_channel.send(
             f"This server utilizes the **{ctx.prefix}want** command to help "
             "members receive push notifications about Pokemon they want! "
-            "I create Discord roles for each Pokemon that people want, "
-            "and @mentioning these roles will send a notification to "
-            f"anyone who **{ctx.prefix}want**-ed that Pokemon!\n"
+            "I keep your list saved and then send you a DM for wild "
+            "spawns, nest spawns, and research reports. For raid bosses I will "
+            "@mention you. Please make sure you have DMs enabled in order to "
+            "receive alerts!\n\n"
             f"Try the {ctx.prefix}want command!\n"
             f"Ex: `{ctx.prefix}want unown`")
 
@@ -89,7 +90,7 @@ class Tutorial:
             "guess of the spawn location. If the reported Pokemon has "
             "an associated role on the server, I will @mention the role "
             "in my message! Your report must contain the name of the "
-            "Pokemon followed by its location. "
+            "Pokemon followed by its location.\n\n"
             "Try reporting a wild spawn!\n"
             f"Ex: `{ctx.prefix}wild magikarp some park`")
 
@@ -105,6 +106,12 @@ class Tutorial:
 
             wild_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports']
             ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports'] = wild_reports - 1
+
+            await asyncio.sleep(1)
+
+            for report in ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
+                if ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['reportchannel'] == ctx.tutorial_channel.id:
+                    await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('dm_dict', {}))
 
             await asyncio.sleep(1)
 
@@ -391,6 +398,12 @@ class Tutorial:
 
             research_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['research_reports']
             ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['research_reports'] = research_reports - 1
+
+            await asyncio.sleep(1)
+
+            for report in ctx.bot.guild_dict[ctx.guild.id]['questreport_dict']:
+                if ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['reportchannel'] == ctx.tutorial_channel.id:
+                    await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {}))
 
             await asyncio.sleep(1)
 
