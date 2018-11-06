@@ -1177,7 +1177,7 @@ async def regional(ctx, regional):
         regional = int(regional)
     else:
         regional = regional.lower()
-        if regional == "reset" and checks.is_dev_or_owner(ctx):
+        if regional == "reset" and checks.is_dev_check(ctx):
             msg = _("Are you sure you want to clear all regionals?")
             question = await ctx.channel.send(msg)
             try:
@@ -1214,9 +1214,11 @@ def _set_regional(bot, guild, regional):
     bot.guild_dict[guild.id]['configure_dict']['settings']['regional'] = regional
 
 @_set.command()
-@commands.has_permissions(manage_guild=True)
 async def timezone(ctx,*, timezone: str = ''):
     """Changes server timezone."""
+    if not ctx.author.guild_permissions.manage_guild:
+        if not checks.is_dev_check(ctx):
+            return
     try:
         timezone = float(timezone)
     except ValueError:
@@ -2145,17 +2147,14 @@ async def want(ctx,*,pokemon):
     this species in their !wild or !raid command."""
 
     """Behind the scenes, Meowth tracks user !wants by
-    creating a server role for the Pokemon species, and
-    assigning it to the user."""
+    storing information in a database."""
     message = ctx.message
     guild = message.guild
     channel = message.channel
     want_split = pokemon.lower().split()
     want_list = []
     added_count = 0
-    spellcheck_dict = {
-
-    }
+    spellcheck_dict = {}
     spellcheck_list = []
     already_want_count = 0
     already_want_list = []
@@ -2220,34 +2219,23 @@ async def want(ctx,*,pokemon):
             added_list.append(entered_want.capitalize())
             added_count += 1
     await ctx.author.add_roles(*role_list)
-    if (len(want_list) == 1) and ((len(added_list) == 1) or (len(spellcheck_dict) == 1) or (len(already_want_list) == 1)):
-        if len(added_list) == 1:
-            #If you want Images
-            #want_number = pkmn_info['pokemon_list'].index(added_list[0].lower()) + 1
-            #want_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(want_number).zfill(3))
-            #want_embed = discord.Embed(colour=guild.me.colour)
-            #want_embed.set_thumbnail(url=want_img_url)
-            #await channel.send(content=_('Meowth! Got it! {member} wants {pokemon}').format(member=ctx.author.mention, pokemon=added_list[0].capitalize()), embed=want_embed)
-            #return
-            #If you want reaction
-            await ctx.message.add_reaction('☑')
-        elif len(already_want_list) == 1:
-            await channel.send(content=_('Meowth! {member}, I already know you want {pokemon}!').format(member=ctx.author.mention, pokemon=already_want_list[0].capitalize()))
-            return
-    else:
-        confirmation_msg = _('Meowth! {member}, out of your total {count} items:').format(member=ctx.author.mention, count=(added_count + already_want_count) + len(spellcheck_dict))
-        if added_count > 0:
-            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
-        if already_want_count > 0:
-            confirmation_msg += _('\n**{already_want_count} Already Following:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
-        if spellcheck_dict:
-            spellcheckmsg = ''
-            for word in spellcheck_dict:
-                spellcheckmsg += _('\n\t{word}').format(word=word)
-                if spellcheck_dict[word]:
-                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        await channel.send(content=confirmation_msg)
+    want_count = added_count + already_want_count + len(spellcheck_dict)
+    confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:').format(member=ctx.author.mention, count=want_count, s="s" if want_count > 1 else "")
+    if added_count > 0:
+        confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+    if already_want_count > 0:
+        confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+    if spellcheck_dict:
+        spellcheckmsg = ''
+        for word in spellcheck_dict:
+            spellcheckmsg += _('\n\t{word}').format(word=word)
+            if spellcheck_dict[word]:
+                spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
+        confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+    want_confirmation = await channel.send(content=confirmation_msg)
+    await asyncio.sleep(90)
+    await utils.safe_delete(want_confirmation)
+    await ctx.message.add_reaction('☑')
 
 @Meowth.group(case_insensitive=True, invoke_without_command=True)
 @checks.allowwant()
@@ -5839,8 +5827,8 @@ async def wants(ctx):
 async def _wantlist(ctx):
     wantlist = []
     user_wants = guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('wants', [])
-    for pkmn in user_wants:
-        wantlist.append(utils.get_name(Meowth, pkmn).title())
+    user_wants = sorted(user_wants)
+    wantlist = [utils.get_name(Meowth, x).title() for x in user_wants]
     if len(wantlist) > 0:
         listmsg = _(' Your current **!want** list is:\n\n**{wantlist}**').format(wantlist=', '.join(wantlist))
     else:
@@ -5948,6 +5936,7 @@ async def research(ctx):
     """List the quests for the channel
 
     Usage: !list research"""
+    await utils.safe_delete(ctx.message)
     listmsg = _('**Meowth!**')
     researchlist = await _researchlist(ctx)
     if researchlist:
@@ -5957,24 +5946,54 @@ async def research(ctx):
 async def _researchlist(ctx):
     research_dict = copy.deepcopy(guild_dict[ctx.guild.id].get('questreport_dict',{}))
     questmsg = ""
+    item_quests = []
+    encounter_quests = []
+    dust_quests = []
+    candy_quests = []
+    list_messages = []
     for questid in research_dict:
         if research_dict[questid]['reportchannel'] == ctx.message.channel.id:
             try:
                 questreportmsg = await ctx.message.channel.get_message(questid)
                 questauthor = ctx.channel.guild.get_member(research_dict[questid]['reportauthor'])
                 if questauthor:
-                    questmsg += ('\n🔹')
-                    questmsg += _("**Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None))
+                    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', research_dict[questid]['reward'].lower())), None)
+                    if not pkmn_match:
+                        for word in research_dict[questid]['reward'].split():
+                            pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', word.lower())), None)
+                            if pkmn_match:
+                                break
+                    if "candy" in research_dict[questid]['reward'].lower() or "candies" in research_dict[questid]['reward'].lower():
+                        candy_quests.append(_("🍬**Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
+                    elif "dust" in research_dict[questid]['reward'].lower():
+                        dust_quests.append(_("⭐**Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
+                    elif pkmn_match:
+                        encounter_quests.append(_("❓**Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
+                    else:
+                        item_quests.append(_("🔹**Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
             except discord.errors.NotFound:
                 continue
+    if encounter_quests:
+        questmsg += "\n\n**Pokemon Encounters**\n{encounterlist}".format(encounterlist="\n".join(encounter_quests))
+    if candy_quests:
+        questmsg += "\n\n**Rare Candy**\n{candylist}".format(candylist="\n".join(candy_quests))
+    if item_quests:
+        questmsg += "\n\n**Other Rewards**\n{itemlist}".format(itemlist="\n".join(item_quests))
+    if dust_quests:
+        questmsg += "\n\n**Stardust**\n{dustlist}".format(dustlist="\n".join(dust_quests))
     if questmsg:
         listmsg = _(' **Here\'s the current research reports for {channel}**').format(channel=ctx.message.channel.name.capitalize())
         paginator = commands.Paginator(prefix="", suffix="")
-        await ctx.send(listmsg)
+        list_msg = await ctx.send(listmsg)
+        list_messages.append(list_msg)
         for line in questmsg.splitlines():
             paginator.add_line(line.rstrip().replace('`', '\u200b`'))
         for p in paginator.pages:
-            await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+            list_msg = await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+            list_messages.append(list_msg)
+        await asyncio.sleep(60)
+        for msg in list_messages:
+            await utils.safe_delete(msg)
         return
     else:
         listmsg = _(" There are no reported research reports. Report one with **!research**")
