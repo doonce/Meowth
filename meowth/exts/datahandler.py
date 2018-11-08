@@ -11,8 +11,8 @@ class DataHandler:
     def __init__(self, bot):
         self.bot = bot
         self.raid_info = bot.raid_info
-        self.pkmn_info = bot.pkmn_info
-        self.pkmn_match = partial(utils.get_match, self.pkmn_info['pokemon_list'])
+        self.pkmn_list = bot.pkmn_list
+        self.pkmn_match = partial(utils.get_match, self.pkmn_list)
 
     def __local_check(self, ctx):
         return checks.is_owner_check(ctx) or checks.is_dev_check(ctx)
@@ -20,14 +20,14 @@ class DataHandler:
     def get_name(self, pkmn_number):
         pkmn_number = int(pkmn_number) - 1
         try:
-            name = self.pkmn_info['pokemon_list'][pkmn_number]
+            name = self.pkmn_list[pkmn_number]
         except IndexError:
             name = None
         return name
 
     def get_number(self, pkm_name):
         try:
-            number = self.pkmn_info['pokemon_list'].index(pkm_name) + 1
+            number = self.pkmn_list.index(pkm_name) + 1
         except ValueError:
             number = None
         return int(number)

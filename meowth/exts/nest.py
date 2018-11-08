@@ -142,7 +142,7 @@ class Nest:
 
         Usage: !nest <pokemon>
         Meowth will ask which nest you would like to add your report to.
-        
+
         Also available:
         !nest info - to get information about a nest"""
         author = ctx.author
@@ -159,7 +159,7 @@ class Nest:
         entered_nest = pokemon
         entered_nest = utils.get_name(entered_nest).lower() if entered_nest.isdigit() else entered_nest
         rgx = '[^a-zA-Z0-9]'
-        pkmn_match = next((p for p in self.bot.pkmn_info['pokemon_list'] if re.sub(rgx, '', p) == re.sub(rgx, '', entered_nest)), None)
+        pkmn_match = next((p for p in self.bot.pkmn_list if re.sub(rgx, '', p) == re.sub(rgx, '', entered_nest)), None)
         if pkmn_match:
             entered_nest = pkmn_match
         else:
@@ -186,8 +186,8 @@ class Nest:
         nest_name = nest_embed.description.splitlines()[int(nest_name_reply.content)-1].split("\u2013")[1].split("**")[0].strip().title()
         nest_loc = nest_dict[nest_name]['location'].split()
         nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
-        nest_number = self.bot.pkmn_info['pokemon_list'].index(entered_nest) + 1
-        nest_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(nest_number).zfill(3))
+        nest_number = self.bot.pkmn_list.index(entered_nest) + 1
+        nest_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1'.format(str(nest_number).zfill(3))
         nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {entered_nest.title()}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
         nest_embed.set_thumbnail(url=nest_img_url)
@@ -279,10 +279,10 @@ class Nest:
             if report_count == 0:
                 embed_value += f"**{pkmn[0].title()} ({pkmn[1]})** "
                 report_count += 1
-                nest_number = self.bot.pkmn_info['pokemon_list'].index(pkmn[0]) + 1
+                nest_number = self.bot.pkmn_list.index(pkmn[0]) + 1
             else:
                 embed_value += f"{pkmn[0].title()} ({pkmn[1]}) "
-        nest_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(nest_number).zfill(3))
+        nest_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1'.format(str(nest_number).zfill(3))
         nest_description = f"**Nest**: {nest_name.title()}\n**All Reports**: {embed_value}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
         nest_embed.set_thumbnail(url=nest_img_url)

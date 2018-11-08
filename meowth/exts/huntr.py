@@ -269,8 +269,8 @@ class Huntr:
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         huntrexpstamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(huntrexp.split()[0]), seconds=int(huntrexp.split()[2]))).strftime('%I:%M %p')
-        wild_number = ctx.bot.pkmn_info['pokemon_list'].index(entered_wild) + 1
-        wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(wild_number).zfill(3))
+        wild_number = ctx.bot.pkmn_list.index(entered_wild) + 1
+        wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1'.format(str(wild_number).zfill(3))
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
         wild_gmaps_link = 'https://www.google.com/maps/dir/Current+Location/{0}'.format(wild_details.split("#")[1])
         wild_embed = discord.Embed(title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), url=wild_gmaps_link, colour=message.guild.me.colour)
@@ -318,7 +318,7 @@ class Huntr:
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
         rgx = '[^a-zA-Z0-9]'
-        pkmn_match = next((p for p in ctx.bot.pkmn_info['pokemon_list'] if re.sub(rgx, '', p) == re.sub(rgx, '', entered_raid)), None)
+        pkmn_match = next((p for p in ctx.bot.pkmn_list if re.sub(rgx, '', p) == re.sub(rgx, '', entered_raid)), None)
         raid_match = True if entered_raid in utils.get_raidlist(self.bot) else False
         if (not raid_match):
             await message.channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()))
@@ -341,8 +341,8 @@ class Huntr:
             roletest = ""
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-        raid_number = ctx.bot.pkmn_info['pokemon_list'].index(entered_raid) + 1
-        raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(raid_number).zfill(3))
+        raid_number = ctx.bot.pkmn_list.index(entered_raid) + 1
+        raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1'.format(str(raid_number).zfill(3))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(utils.get_type(self.bot, message.guild, raid_number)), inline=True))
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(self.bot, message.guild, utils.get_weaknesses(self.bot, entered_raid))), inline=True)

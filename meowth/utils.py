@@ -197,18 +197,17 @@ async def get_raid_help(prefix, avatar, user=None):
         return helpembed
     await user.send(embed=helpembed)
 
-def get_number(bot, pkm_name):
+def get_number(bot, pkmn_name):
     try:
-        number = bot.pkmn_info['pokemon_list'].index(pkm_name) + 1
-    except ValueError:
+        number = bot.pkmn_info[pkmn_name]['number']
+    except:
         number = None
     return number
 
 def get_name(bot, pkmn_number):
-    pkmn_number = int(pkmn_number) - 1
     try:
-        name = bot.pkmn_info['pokemon_list'][pkmn_number]
-    except IndexError:
+        name = bot.pkmn_list[pkmn_number-1]
+    except:
         name = None
     return name
 
@@ -313,7 +312,7 @@ def spellcheck(bot, word):
     suggestion = pkmn_match.get_pkmn(re.sub(r"[^A-Za-z0-9 ]+", '', word))
     # If we have a spellcheck suggestion
     if suggestion and suggestion != word:
-        result = bot.pkmn_info['pokemon_list'][suggestion]
+        result = bot.pkmn_list[suggestion]
         return result
 
 async def autocorrect(bot, entered_word, destination, author):
@@ -340,9 +339,9 @@ async def autocorrect(bot, entered_word, destination, author):
         question = await destination.send(msg)
         return
 
-def get_type(bot, guild, pkmn_number):
-    pkmn_number = int(pkmn_number) - 1
-    types = bot.type_list[pkmn_number]
+def get_type(bot, guild, pkmn_number, form="none"):
+    pkmn_name = bot.pkmn_list[pkmn_number-1]
+    types = bot.pkmn_info[pkmn_name]['forms'][form]['type']
     ret = []
     for type in types:
         ret.append(parse_emoji(guild, bot.config['type_id_dict'][type.lower()]))
@@ -366,11 +365,11 @@ def print_emoji_name(guild, emoji_string):
         ret = ((emoji + ' (`') + emoji_string) + '`)'
     return ret
 
-def get_weaknesses(bot, species):
+def get_weaknesses(bot, species, form="none"):
     # Get the Pokemon's number
-    number = bot.pkmn_info['pokemon_list'].index(species)
+    number = bot.pkmn_list.index(species)
     # Look up its type
-    pk_type = bot.type_list[number]
+    pk_type = bot.pkmn_info[species]['forms'][form]['type']
 
     # Calculate sum of its weaknesses
     # and resistances.
@@ -462,7 +461,7 @@ async def expire_dm_reports(bot, dm_dict):
             await dm_message.delete()
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
             pass
-		
+
 async def safe_delete(message):
     try:
         await message.delete()

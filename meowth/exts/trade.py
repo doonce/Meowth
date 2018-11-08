@@ -424,7 +424,6 @@ class Trading:
     @checks.allowtrade()
     async def trade(self, ctx, *, offer: pokemon.Pokemon):
         """Create a trade listing."""
-
         if type(offer) == dict:
             trade_error = await ctx.send(
                 f"{ctx.author.display_name}, check your spelling and make sure "
@@ -468,10 +467,16 @@ class Trading:
         if wants[0] == "ask":
             wants = "open trade"
         else:
-            pkmn_convert = functools.partial(pokemon.Pokemon.get_pokemon, ctx)
-            wants = map(str.strip, wants)
-            wants = map(pkmn_convert, wants)
+            wants = [x.strip() for x in wants]
+            wants = [pokemon.Pokemon.get_pokemon(ctx, x) for x in wants]
+            wants = [x for x in wants if x]
             wants = [str(want) for want in wants]
+        if not wants:
+            trade_error = await ctx.send(
+                f"{ctx.author.display_name}, please check your input. Try again!")
+            await asyncio.sleep(5)
+            await trade_error.delete()
+            return
 
         await Trade.create_trade(ctx, wants, offer)
 

@@ -80,7 +80,6 @@ guild_dict = Meowth.guild_dict
 config = {}
 pkmn_info = {}
 type_chart = {}
-type_list = []
 raid_info = {}
 
 active_raids = []
@@ -98,7 +97,6 @@ def load_config():
     global config
     global pkmn_info
     global type_chart
-    global type_list
     global raid_info
     # Load configuration
     with open('config.json', 'r') as fd:
@@ -122,11 +120,19 @@ def load_config():
     with open(os.path.join('data', 'type_chart.json'), 'r') as fd:
         type_chart = json.load(fd)
     Meowth.type_chart = type_chart
-    with open(os.path.join('data', 'type_list.json'), 'r') as fd:
-        type_list = json.load(fd)
-    Meowth.type_list = type_list
+    pkmn_list = []
+    count = 1
+    try:
+        pkmn_list = Meowth.pkmn_list
+    except AttributeError:
+        for k,v in pkmn_info.items():
+            if v['number'] == count:
+                pkmn_list.append(k)
+            count += 1
+        Meowth.pkmn_list = pkmn_list
+
     # Set spelling dictionary to our list of Pokemon
-    pkmn_match.set_list(pkmn_info['pokemon_list'])
+    pkmn_match.set_list(pkmn_list)
     return (pokemon_path_source, raid_path_source)
 
 
@@ -266,7 +272,7 @@ async def reset_raid_roles():
     for guild_id in guild_dict:
         guild = Meowth.get_guild(guild_id)
         for role in guild.roles:
-            if role.name.lower() not in utils.get_raidlist(Meowth) and role.name.lower() in pkmn_info['pokemon_list'] and role != guild.me.top_role:
+            if role.name.lower() not in utils.get_raidlist(Meowth) and role.name.lower() in Meowth.pkmn_list and role != guild.me.top_role:
                 try:
                     await role.delete()
                 except:
@@ -1049,6 +1055,28 @@ async def on_raw_reaction_add(payload):
 """
 Admin Commands
 """
+
+# @Meowth.command(hidden=True)
+# @checks.is_owner()
+# async def new_dict(ctx):
+#     pkmn_dict = {}
+#     for pkmn in Meowth.pkmn_list:
+#         form_list = []
+#         pkmn_number = pkmn_info['pokemon_list'].index(pkmn)+1
+#         gender = True if pkmn_number in pkmnmod.Pokemon.gender_list else False
+#         shiny = True if pkmn_number in pkmnmod.Pokemon.shiny_list else False
+#         alolan = True if pkmn_number in pkmnmod.Pokemon.alolan_list else False
+#         legendary = True if pkmn_number in pkmnmod.Pokemon.lgnd_list else False
+#         mythical = True if pkmn_number in pkmnmod.Pokemon.mythical_list else False
+#         if pkmn_number in pkmnmod.Pokemon.form_dict:
+#             form_list = pkmnmod.Pokemon.form_dict[pkmn_number]
+#         none_type = type_list[pkmn_number-1]
+#         pkmn_dict[pkmn] = {"number":pkmn_number, "shiny":shiny, "legendary":legendary,"mythical":mythical, "gender":gender,"forms":{"list":form_list,"none":{"type":none_type}}}
+#         if alolan:
+#             pkmn_dict[pkmn]['forms']['alolan'] = {"type":[]}
+#     with open(os.path.join('data', 'new_pokemon.json'), 'w') as fd:
+#         json.dump(pkmn_dict, fd, indent=4, separators=(', ', ': '))
+
 @Meowth.command(hidden=True, name="eval")
 @checks.is_owner()
 async def _eval(ctx, *, body: str):
@@ -2175,7 +2203,7 @@ async def want(ctx,*,pokemon):
         entered_want = want
         entered_want = utils.get_name(Meowth, entered_want).lower() if entered_want.isdigit() else entered_want
         rgx = '[^a-zA-Z0-9]'
-        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) == re.sub(rgx, '', entered_want)), None)
+        pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, '', p) == re.sub(rgx, '', entered_want)), None)
         if pkmn_match:
             entered_want = pkmn_match
         elif len(want_list) == 1 and entered_want == "list":
@@ -2186,7 +2214,7 @@ async def want(ctx,*,pokemon):
             entered_want = utils.spellcheck(Meowth, entered_want)
             if not entered_want:
                 return await channel.send(content=_('Meowth! {member}, I couldn\'t understand your input!').format(member=ctx.author.mention))
-            pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, "", p) == re.sub(rgx, "", entered_want)), None)
+            pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, "", p) == re.sub(rgx, "", entered_want)), None)
             if not pkmn_match:
                 if len(want_list) == 1:
                     msg = _("Meowth! **{word}** isn't a Pokemon!").format(word=entered_want.title())
@@ -2266,7 +2294,7 @@ async def unwant(ctx,*,pokemon):
             entered_unwant = unwant
             entered_unwant = utils.get_name(Meowth, entered_unwant).lower() if entered_unwant.isdigit() else entered_unwant
             rgx = '[^a-zA-Z0-9]'
-            pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) == re.sub(rgx, '', entered_unwant)), None)
+            pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, '', p) == re.sub(rgx, '', entered_unwant)), None)
             if pkmn_match:
                 entered_unwant = pkmn_match
             else:
@@ -2306,7 +2334,7 @@ async def unwant_all(ctx):
     roles = author.roles
     remove_roles = []
     for role in roles:
-        if role.name in pkmn_info['pokemon_list']:
+        if role.name in Meowth.pkmn_list:
             remove_roles.append(role)
         continue
     await author.remove_roles(*remove_roles)
@@ -2340,10 +2368,10 @@ async def _wild(ctx, content):
     entered_wild = content.split(' ', 1)[0]
     entered_wild = utils.get_name(Meowth, entered_wild).lower() if entered_wild.isdigit() else entered_wild.lower()
     wild_details = content.split(' ', 1)[1]
-    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) == re.sub(rgx, '', entered_wild)), None)
+    pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, '', p) == re.sub(rgx, '', entered_wild)), None)
     if (not pkmn_match):
         entered_wild2 = ' '.join([content.split(' ', 2)[0], content.split(' ', 2)[1]]).lower()
-        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) == re.sub(rgx, '', entered_wild2)), None)
+        pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, '', p) == re.sub(rgx, '', entered_wild2)), None)
         if pkmn_match:
             entered_wild = entered_wild2
             try:
@@ -2357,8 +2385,8 @@ async def _wild(ctx, content):
         entered_wild = await utils.autocorrect(Meowth, entered_wild, message.channel, message.author)
     if not entered_wild:
         return
-    wild_number = pkmn_info['pokemon_list'].index(entered_wild) + 1
-    wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(wild_number).zfill(3))
+    wild_number = Meowth.pkmn_list.index(entered_wild) + 1
+    wild_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1'.format(str(wild_number).zfill(3))
     expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
     wild_gmaps_link = utils.create_gmaps_query(Meowth, wild_details, message.channel, type="wild")
     wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
@@ -2520,7 +2548,7 @@ async def _raid(ctx, content):
     else:
         raidexp = False
     rgx = '[^a-zA-Z0-9]'
-    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) == re.sub(rgx, '', entered_raid)), None)
+    pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, '', p) == re.sub(rgx, '', entered_raid)), None)
     if pkmn_match:
         entered_raid = pkmn_match
     else:
@@ -2586,8 +2614,8 @@ async def _raid(ctx, content):
         roletest = ""
     else:
         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-    raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
-    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(raid_number).zfill(3))
+    raid_number = Meowth.pkmn_list.index(entered_raid) + 1
+    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1'.format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=utils.get_level(Meowth, entered_raid)), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(utils.get_type(Meowth, message.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(Meowth, message.guild, utils.get_weaknesses(Meowth, entered_raid))), inline=True)
@@ -2820,7 +2848,7 @@ async def _eggassume(ctx, args, raid_channel, author=None):
     entered_raid = re.sub('[\\@]', '', args.lower().lstrip('assume').lstrip(' '))
     entered_raid = utils.get_name(Meowth, entered_raid).lower() if entered_raid.isdigit() else entered_raid
     rgx = '[^a-zA-Z0-9]'
-    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) == re.sub(rgx, '', entered_raid)), None)
+    pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, '', p) == re.sub(rgx, '', entered_raid)), None)
     if pkmn_match:
         entered_raid = pkmn_match
     else:
@@ -2842,8 +2870,8 @@ async def _eggassume(ctx, args, raid_channel, author=None):
         roletest = ""
     else:
         roletest = _("{pokemon} - ").format(pokemon=raidrole.mention)
-    raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
-    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(raid_number).zfill(3))
+    raid_number = Meowth.pkmn_list.index(entered_raid) + 1
+    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1'.format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(utils.get_type(Meowth, raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(Meowth, raid_channel.guild, utils.get_weaknesses(Meowth, entered_raid))), inline=True)
@@ -2891,7 +2919,7 @@ Meowth.eggassume = _eggassume
 async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     entered_raid = utils.get_name(Meowth, entered_raid).lower() if entered_raid.isdigit() else entered_raid.lower()
     rgx = '[^a-zA-Z0-9]'
-    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) == re.sub(rgx, '', entered_raid)), None)
+    pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, '', p) == re.sub(rgx, '', entered_raid)), None)
     if pkmn_match:
         entered_raid = pkmn_match
     else:
@@ -2979,8 +3007,8 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         roletest = ""
     else:
         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-    raid_number = pkmn_info['pokemon_list'].index(entered_raid) + 1
-    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(raid_number).zfill(3))
+    raid_number = Meowth.pkmn_list.index(entered_raid) + 1
+    raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1'.format(str(raid_number).zfill(3))
     raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
     raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(raid_number), type=''.join(utils.get_type(Meowth, raid_channel.guild, raid_number)), inline=True))
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(Meowth, raid_channel.guild, utils.get_weaknesses(Meowth, entered_raid))), inline=True)
@@ -3098,7 +3126,7 @@ async def _exraid(ctx, location):
         await channel.send(_('Meowth! Give more details when reporting! Usage: **!exraid <location>**'))
         return
     rgx = '[^a-zA-Z0-9]'
-    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) == re.sub(rgx, '', exraid_split[0].lower())), None)
+    pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, '', p) == re.sub(rgx, '', exraid_split[0].lower())), None)
     if pkmn_match:
         del exraid_split[0]
     if len(exraid_split) <= 0:
@@ -3363,10 +3391,10 @@ async def research(ctx, *, details = None):
             research_embed.remove_field(0)
             break
     if not error:
-        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', reward.lower())), None)
+        pkmn_match = next((p for p in Meowth.pkmn_list if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', reward.lower())), None)
         if not pkmn_match:
             for word in reward.split():
-                pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', word.lower())), None)
+                pkmn_match = next((p for p in Meowth.pkmn_list if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', word.lower())), None)
                 if pkmn_match:
                     break
         pkmn_number = utils.get_number(Meowth, pkmn_match)
@@ -3375,7 +3403,7 @@ async def research(ctx, *, details = None):
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=author.name)
         research_embed.url = loc_url
         if pkmn_number:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1".format(str(pkmn_number).zfill(3)))
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1".format(str(pkmn_number).zfill(3)))
             research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
             confirmation = await channel.send(research_msg,embed=research_embed)
             dm_dict = {}
@@ -4452,7 +4480,7 @@ async def _get_generic_counters(guild, pkmn, weather=None):
     ctrs_dict[ctrs_index] = {}
     ctrs_dict[ctrs_index]['moveset'] = "Unknown Moveset"
     ctrs_dict[ctrs_index]['emoji'] = '0\u20e3'
-    img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{0}_.png?cache=1'.format(str(utils.get_number(Meowth, pkmn)).zfill(3))
+    img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1'.format(str(utils.get_number(Meowth, pkmn)).zfill(3))
     level = utils.get_level(Meowth, pkmn) if utils.get_level(Meowth, pkmn).isdigit() else "5"
     url = "https://fight.pokebattler.com/raids/defenders/{pkmn}/levels/RAID_LEVEL_{level}/attackers/".format(pkmn=pkmn.replace('-','_').upper(),level=level)
     url += "levels/30/"
@@ -4590,11 +4618,11 @@ async def interested(ctx, *, teamcounts: str=None):
             # What a hack
             teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([utils.get_name(Meowth, s).title() for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
             teamcounts = teamcounts.lower().replace("all","").strip()
-        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
+        pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
         entered_interest = []
         for word in re.split(' |,', teamcounts.lower()):
-            if word.lower() in pkmn_info['pokemon_list']:
+            if word.lower() in Meowth.pkmn_list:
                 if utils.get_number(Meowth, word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
                     if word.lower() not in entered_interest:
                         entered_interest.append(word.lower())
@@ -4683,12 +4711,12 @@ async def coming(ctx, *, teamcounts: str=None):
         if "all" in teamcounts.lower():
             teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([utils.get_name(Meowth, s).title() for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
             teamcounts = teamcounts.lower().replace("all","").strip()
-        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
+        pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
         entered_interest = []
         unmatched_mons = False
         for word in re.split(' |,', teamcounts.lower()):
-            if word.lower() in pkmn_info['pokemon_list']:
+            if word.lower() in Meowth.pkmn_list:
                 if word.lower() not in entered_interest:
                     entered_interest.append(word.lower())
                     if not utils.get_number(Meowth, word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
@@ -4790,11 +4818,11 @@ async def here(ctx, *, teamcounts: str=None):
         if "all" in teamcounts.lower():
             teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts,bosslist=" ".join([utils.get_name(Meowth, s).title() for s in raid_info['raid_eggs'][egglevel]['pokemon']]))
             teamcounts = teamcounts.lower().replace("all","").strip()
-        pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
+        pkmn_match = next((p for p in Meowth.pkmn_list if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
     if pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
         entered_interest = []
         for word in re.split(' |,', teamcounts.lower()):
-            if word.lower() in pkmn_info['pokemon_list']:
+            if word.lower() in Meowth.pkmn_list:
                 if utils.get_number(Meowth, word.lower()) in raid_info['raid_eggs'][egglevel]['pokemon']:
                     if word.lower() not in entered_interest:
                         entered_interest.append(word.lower())
@@ -5957,10 +5985,10 @@ async def _researchlist(ctx):
                 questreportmsg = await ctx.message.channel.get_message(questid)
                 questauthor = ctx.channel.guild.get_member(research_dict[questid]['reportauthor'])
                 if questauthor:
-                    pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', research_dict[questid]['reward'].lower())), None)
+                    pkmn_match = next((p for p in Meowth.pkmn_list if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', research_dict[questid]['reward'].lower())), None)
                     if not pkmn_match:
                         for word in research_dict[questid]['reward'].split():
-                            pkmn_match = next((p for p in pkmn_info['pokemon_list'] if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', word.lower())), None)
+                            pkmn_match = next((p for p in Meowth.pkmn_list if re.sub('[^a-zA-Z0-9]', '', p) == re.sub('[^a-zA-Z0-9]', '', word.lower())), None)
                             if pkmn_match:
                                 break
                     if "candy" in research_dict[questid]['reward'].lower() or "candies" in research_dict[questid]['reward'].lower():
