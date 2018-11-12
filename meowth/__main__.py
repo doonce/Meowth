@@ -2481,7 +2481,7 @@ async def _raid(ctx, content):
         del raid_split[(- 1)]
     else:
         raidexp = False
-        
+
     rgx = '[^a-zA-Z0-9]'
     weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                     _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
@@ -3295,6 +3295,7 @@ async def research(ctx, *, details = None):
     loc_url = utils.create_gmaps_query(Meowth, "", message.channel, type="research")
     research_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
     research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+    dm_dict = {}
     while True:
         if details:
             research_split = details.rsplit(",", 2)
@@ -3374,19 +3375,24 @@ async def research(ctx, *, details = None):
             break
     if not error:
         pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, reward)
-        if pokemon:
-            pkmn_number = pokemon.id
-        else:
-            pkmn_number = False
+        dust = re.search(r'(?i)dust', reward)
+        candy = re.search(r'(?i)candy|(?i)candies', reward)
         research_msg = _("Field Research reported by {author}").format(author=author.mention)
         research_embed.title = _('Meowth! Click here for my directions to the research!')
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=author.name)
         research_embed.url = loc_url
-        if pkmn_number:
+        if dust:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png")
+            research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
+            confirmation = await channel.send(research_msg,embed=research_embed)
+        elif candy:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1301.png")
+            research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
+            confirmation = await channel.send(research_msg,embed=research_embed)
+        elif pokemon:
             research_embed.set_thumbnail(url=pokemon.img_url)
             research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
             confirmation = await channel.send(research_msg,embed=research_embed)
-            dm_dict = {}
             for trainer in guild_dict[guild.id].get('trainers', {}):
                 user = guild.get_member(trainer)
                 if not user:
@@ -3394,7 +3400,7 @@ async def research(ctx, *, details = None):
                 perms = user.permissions_in(channel)
                 if not perms.read_messages:
                     continue
-                if pkmn_number in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('wants', []):
+                if pokemon.id in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('wants', []):
                     try:
                         resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pokemon.name.title(), author=author.mention, channel=channel.mention),embed=research_embed)
                         dm_dict[user.id] = resdmmsg.id
@@ -3402,7 +3408,6 @@ async def research(ctx, *, details = None):
                         continue
         else:
             confirmation = await channel.send(research_msg,embed=research_embed)
-            dm_dict = {}
         research_dict = copy.deepcopy(guild_dict[guild.id].get('questreport_dict',{}))
         research_dict[confirmation.id] = {
             'exp':time.time() + to_midnight,
