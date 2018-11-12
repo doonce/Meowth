@@ -7,6 +7,7 @@ import discord
 import asyncio
 
 from meowth import pkmn_match
+from meowth.exts import pokemon as pkmn_class
 
 def get_match(word_list: list, word: str, score_cutoff: int = 60):
     """Uses fuzzywuzzy to see if word is close to entries in word_list
@@ -205,6 +206,7 @@ def get_number(bot, pkmn_name):
     return number
 
 def get_name(bot, pkmn_number):
+    pkmn_number = int(pkmn_number)
     try:
         name = bot.pkmn_list[pkmn_number-1]
     except:
@@ -214,9 +216,12 @@ def get_name(bot, pkmn_number):
 def get_raidlist(bot):
     raidlist = []
     for level in bot.raid_info['raid_eggs']:
-        for pokemon in bot.raid_info['raid_eggs'][level]['pokemon']:
+        for pkmn in bot.raid_info['raid_eggs'][level]['pokemon']:
+            pokemon = pkmn_class.Pokemon.get_pokemon(bot, pkmn)
             raidlist.append(pokemon)
-            raidlist.append(get_name(bot, pokemon).lower())
+            raidlist.append(str(pokemon))
+            raidlist.append(pokemon.name)
+            raidlist.append(pokemon.id)
     return raidlist
 
 def get_level(bot, pkmn):
@@ -224,10 +229,13 @@ def get_level(bot, pkmn):
         pkmn_number = pkmn
     else:
         pkmn_number = get_number(bot, pkmn)
+    entered_pkmn = pkmn_class.Pokemon.get_pokemon(bot, pkmn_number)
     for level in bot.raid_info['raid_eggs']:
         for level, pkmn_list in bot.raid_info['raid_eggs'].items():
-            if pkmn_number in pkmn_list["pokemon"]:
-                return level
+            for pokemon in pkmn_list['pokemon']:
+                pokemon = pkmn_class.Pokemon.get_pokemon(bot, pokemon)
+                if pokemon.id == entered_pkmn.id:
+                    return level
 
 async def ask(bot, message, user_list=None, timeout=60, *, react_list=['✅', '❎']):
     if user_list and type(user_list) != list:
@@ -317,8 +325,9 @@ def spellcheck(bot, word):
 
 async def autocorrect(bot, entered_word, destination, author):
     msg = _("Meowth! **{word}** isn't a Pokemon!").format(word=entered_word.title())
-    if spellcheck(bot, entered_word) and (spellcheck(bot, entered_word) != entered_word):
-        msg += _(' Did you mean **{correction}**?').format(correction=spellcheck(bot, entered_word).title())
+    match, score = get_match(bot.pkmn_list, entered_word)
+    if match:
+        msg += _(' Did you mean **{correction}**?').format(correction=match.title())
         question = await destination.send(msg)
         if author:
             try:
@@ -330,18 +339,26 @@ async def autocorrect(bot, entered_word, destination, author):
             if timeout or res.emoji == '❎':
                 return None
             elif res.emoji == '✅':
-                return spellcheck(bot, entered_word)
+                return match
             else:
                 return None
         else:
             return None
     else:
         question = await destination.send(msg)
-        return
+        return None
 
-def get_type(bot, guild, pkmn_number, form="none"):
+def get_type(bot, guild, pkmn_number, form="none", alolan=False):
+    pkmn_number = int(pkmn_number)
     pkmn_name = bot.pkmn_list[pkmn_number-1]
-    types = bot.pkmn_info[pkmn_name]['forms'][form]['type']
+    if not form:
+        form = "none"
+    if alolan:
+        form = "alolan"
+    try:
+        types = bot.pkmn_info[pkmn_name]['forms'][form]['type']
+    except KeyError:
+        types = bot.pkmn_info[pkmn_name]['forms']["none"]['type']
     ret = []
     for type in types:
         ret.append(parse_emoji(guild, bot.config['type_id_dict'][type.lower()]))
@@ -365,11 +382,18 @@ def print_emoji_name(guild, emoji_string):
         ret = ((emoji + ' (`') + emoji_string) + '`)'
     return ret
 
-def get_weaknesses(bot, species, form="none"):
+def get_weaknesses(bot, species, form="none", alolan=False):
     # Get the Pokemon's number
     number = bot.pkmn_list.index(species)
+    if not form:
+        form = "none"
+    if alolan:
+        form = "alolan"
     # Look up its type
-    pk_type = bot.pkmn_info[species]['forms'][form]['type']
+    try:
+        pk_type = bot.pkmn_info[species]['forms'][form]['type']
+    except KeyError:
+        pk_type = bot.pkmn_info[species]['forms']["none"]['type']
 
     # Calculate sum of its weaknesses
     # and resistances.

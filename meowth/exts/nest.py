@@ -9,6 +9,7 @@ import discord
 from discord.ext import commands
 
 from meowth import utils, checks
+from meowth.exts import pokemon as pkmn_class
 
 class Nest:
     def __init__(self, bot):
@@ -28,7 +29,7 @@ class Nest:
     #                     'dm_dict': dm_dict,
     #                     'location':nest_details,
     #                     'url':nest_link,
-    #                     'pokemon':entered_nest
+    #                     'pokemon':pokemon
     #                 }
     #             }
     #         }
@@ -137,7 +138,7 @@ class Nest:
 
     @commands.group(invoke_without_command=True)
     @checks.allownestreport()
-    async def nest(self, ctx, pokemon):
+    async def nest(self, ctx, *, pokemon):
         """Report a suspected nest pokemon.
 
         Usage: !nest <pokemon>
@@ -155,20 +156,15 @@ class Nest:
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
 
         await utils.safe_delete(message)
-        nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
-        entered_nest = pokemon
-        entered_nest = utils.get_name(entered_nest).lower() if entered_nest.isdigit() else entered_nest
-        rgx = '[^a-zA-Z0-9]'
-        pkmn_match = next((p for p in self.bot.pkmn_list if re.sub(rgx, '', p) == re.sub(rgx, '', entered_nest)), None)
-        if pkmn_match:
-            entered_nest = pkmn_match
-        else:
-            entered_nest = await utils.autocorrect(self.bot, entered_nest, channel, author)
-        if not entered_nest:
+
+        pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
+        if not pokemon:
+            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!nest <pokemon>**'))
             return
-        entered_pkmn = entered_nest.title()
+
+        nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
         nest_embed = await self.get_nest_reports(ctx)
-        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a {pokemon} report to\n\nIf you want to stop your report, reply with **cancel**.?".format(mention=author.mention, pokemon=entered_nest.title()), embed=nest_embed)
+        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a {pokemon} report to\n\nIf you want to stop your report, reply with **cancel**.?".format(mention=author.mention, pokemon=pokemon.name.title()), embed=nest_embed)
         try:
             nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
             await utils.safe_delete(nest_list)
@@ -186,9 +182,9 @@ class Nest:
         nest_name = nest_embed.description.splitlines()[int(nest_name_reply.content)-1].split("\u2013")[1].split("**")[0].strip().title()
         nest_loc = nest_dict[nest_name]['location'].split()
         nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
-        nest_number = self.bot.pkmn_list.index(entered_nest) + 1
-        nest_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1'.format(str(nest_number).zfill(3))
-        nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {entered_nest.title()}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
+        nest_number = pokemon.id
+        nest_img_url = pokemon.img_url
+        nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {pokemon.name.title()}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
         nest_embed.set_thumbnail(url=nest_img_url)
         nest_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -202,11 +198,11 @@ class Nest:
                 continue
             if nest_number in self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('wants', []):
                 try:
-                    nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name}** is a **{entered_pkmn}** nest in {channel.mention}!", embed=nest_embed)
+                    nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name}** is a **{pokemon.name.title()}** nest in {channel.mention}!", embed=nest_embed)
                     dm_dict[user.id] = nestdmmsg.id
                 except:
                     continue
-        nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name}** is a **{entered_pkmn}** nest!", embed=nest_embed)
+        nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name}** is a **{pokemon.name.title()}** nest!", embed=nest_embed)
         nest_dict[nest_name]['reports'][nestreportmsg.id] = {
             'exp':migration_exp,
             'expedit': "delete",
@@ -215,7 +211,7 @@ class Nest:
             'reporttime':datetime.datetime.utcnow(),
             'dm_dict': dm_dict,
             'location':nest_name,
-            'pokemon':entered_nest
+            'pokemon':pokemon.name.lower()
         }
         self.bot.guild_dict[guild.id]['nest_dict'][channel.id] = nest_dict
         nest_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(message.author.id,{}).setdefault('nest_reports',0) + 1

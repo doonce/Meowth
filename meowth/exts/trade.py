@@ -6,8 +6,7 @@ from discord.ext import commands
 
 from meowth import utils, checks
 
-from meowth.exts import pokemon
-
+from meowth.exts import pokemon as pkmn_class
 
 class Trade:
 
@@ -184,12 +183,12 @@ class Trade:
     async def offered_pokemon(self):
         listingmsg = await self.get_listmsg()
         ctx = await self.bot.get_context(listingmsg)
-        return pokemon.Pokemon.get_pokemon(ctx, self._data['offered_pokemon'])
+        return pkmn_class.Pokemon.get_pokemon(ctx.bot, self._data['offered_pokemon'])
 
     async def wanted_pokemon(self):
         listingmsg = await self.get_listmsg()
         ctx = await self.bot.get_context(listingmsg)
-        return [pokemon.Pokemon.get_pokemon(ctx, want) for want in self._data['wanted_pokemon']]
+        return [pkmn_class.Pokemon.get_pokemon(ctx.bot, want) for want in self._data['wanted_pokemon']]
 
     async def make_offer(self, trader_id, pkmn):
         offered_pokemon = await self.offered_pokemon()
@@ -220,7 +219,7 @@ class Trade:
         listingmsg = await self.get_listmsg()
 
         ctx = await self.bot.get_context(listingmsg)
-        offer = pokemon.Pokemon.get_pokemon(ctx, offer)
+        offer = pkmn_class.Pokemon.get_pokemon(ctx.bot, offer)
         offered_pokemon = await self.offered_pokemon()
 
         acceptedmsg = (
@@ -420,9 +419,15 @@ class Trading:
     #         except discord.HTTPException:
     #             pass
 
+    @commands.command(hidden=True)
+    async def sprite(self, ctx, *, sprite: pkmn_class.Pokemon):
+        preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
+        preview_embed.set_thumbnail(url=sprite.img_url)
+        sprite_msg = await ctx.send(embed=preview_embed)
+
     @commands.command()
     @checks.allowtrade()
-    async def trade(self, ctx, *, offer: pokemon.Pokemon):
+    async def trade(self, ctx, *, offer: pkmn_class.Pokemon):
         """Create a trade listing."""
         if type(offer) == dict:
             trade_error = await ctx.send(
@@ -437,10 +442,14 @@ class Trading:
         except (discord.errors.Forbidden, discord.errors.HTTPException):
             pass
 
+        preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
+        preview_embed.set_thumbnail(url=offer.img_url)
+
         want_ask = await ctx.send(
-            f"{ctx.author.display_name}, what Pokemon are you willing to accept "
-            f"in exchange for {str(offer)}? List your pokemon in a comma separated "
-            "list or just say **ask** to create an open trade.")
+            f"{ctx.author.mention}, what Pokemon are you willing to accept "
+            f"in exchange for {str(offer)}?\n\nList your pokemon in a comma "
+            f"separated list, reply with **ask** to create an open trade, or "
+            f"reply with **cancel** to cancel", embed=preview_embed)
 
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
@@ -464,11 +473,13 @@ class Trading:
         await want_ask.delete()
         await want_reply.delete()
 
-        if wants[0] == "ask":
+        if wants[0].lower() == "ask":
             wants = "open trade"
+        elif wants[0].lower() == "cancel":
+            return
         else:
             wants = [x.strip() for x in wants]
-            wants = [pokemon.Pokemon.get_pokemon(ctx, x) for x in wants]
+            wants = [pkmn_class.Pokemon.get_pokemon(ctx.bot, x) for x in wants]
             wants = [x for x in wants if x]
             wants = [str(want) for want in wants]
         if not wants:
