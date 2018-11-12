@@ -2451,7 +2451,7 @@
     },
     "cyndaquil": {
         "number": 155,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -2466,7 +2466,7 @@
     },
     "quilava": {
         "number": 156,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -2481,7 +2481,7 @@
     },
     "typhlosion": {
         "number": 157,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
