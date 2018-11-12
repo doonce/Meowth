@@ -227,7 +227,6 @@ class Pokemon():
     def img_url(self):
         """:class:`str` : Pokemon sprite image URL"""
         pkmn_no = str(self.id).zfill(3)
-
         form_str = ""
         if self.id in self.bot.gender_list:
             if self.gender == 'female':
@@ -239,7 +238,7 @@ class Pokemon():
                 form_str = form_str + "_" + str(self.bot.form_dict[self.id].index(self.form) + 11)
             else:
                 form_str = form_str + "_" + str(self.bot.form_dict[self.id].index(self.form) + 1).zfill(2)
-        if self.id not in self.bot.gender_list and self.id not in self.bot.form_dict:
+        if self.id not in self.bot.gender_list and not self.form:
             form_str = form_str + "_00"
         if self.alolan:
             form_str = "_61"

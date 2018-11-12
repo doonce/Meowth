@@ -2485,10 +2485,9 @@ async def _raid(ctx, content):
     rgx = '[^a-zA-Z0-9]'
     weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                     _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
-    weather = next((w for w in weather_list if re.sub(rgx, '', w) in re.sub(rgx, '', raid_details.lower())), None)
+    weather = next((w for w in weather_list if re.sub(rgx, '', w) in re.sub(rgx, '', content.lower())), None)
     if not weather:
         weather = guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id,{}).get('weather', None)
-    raid_details = raid_details.replace(str(weather), '', 1)
 
     pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, ' '.join(raid_split))
     if pokemon:
@@ -2497,6 +2496,7 @@ async def _raid(ctx, content):
     else:
         await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**'))
         return
+
     raid_match = True if pokemon.id in Meowth.raid_list else False
     if (not raid_match):
         await message.channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()))
@@ -3296,6 +3296,7 @@ async def research(ctx, *, details = None):
     research_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
     research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
     dm_dict = {}
+    pokemon = False
     while True:
         if details:
             research_split = details.rsplit(",", 2)
@@ -3374,7 +3375,11 @@ async def research(ctx, *, details = None):
             research_embed.remove_field(0)
             break
     if not error:
-        pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, reward)
+        for word in reward.split():
+            if not word.isdigit():
+                pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, word)
+            if pokemon:
+                break
         dust = re.search(r'(?i)dust', reward)
         candy = re.search(r'(?i)candy|(?i)candies', reward)
         research_msg = _("Field Research reported by {author}").format(author=author.mention)
@@ -6016,12 +6021,17 @@ async def _researchlist(ctx):
     candy_quests = []
     list_messages = []
     for questid in research_dict:
+        pokemon = None
         if research_dict[questid]['reportchannel'] == ctx.message.channel.id:
             try:
                 questreportmsg = await ctx.message.channel.get_message(questid)
                 questauthor = ctx.channel.guild.get_member(research_dict[questid]['reportauthor'])
                 if questauthor:
-                    pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, research_dict[questid]['reward'])
+                    for word in research_dict[questid]['reward'].split():
+                        if not word.isdigit():
+                            pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, word)
+                        if pokemon:
+                            break
                     if "candy" in research_dict[questid]['reward'].lower() or "candies" in research_dict[questid]['reward'].lower():
                         candy_quests.append(_("🍬 **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
                     elif "dust" in research_dict[questid]['reward'].lower():
