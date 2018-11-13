@@ -17,6 +17,7 @@ class Nest:
 
     # nest_dict:{
     #     nestrepotchannel_id: {
+    #         list:[],
     #         nest:{
     #             location: nest_Details,
     #             reports:{
@@ -54,6 +55,8 @@ class Nest:
                         del self.bot.guild_dict[guildid]['nest_dict'][channel]
                         continue
                     for nest in nest_dict[channel]:
+                        if nest == 'list':
+                            continue
                         for report in nest_dict[channel][nest]['reports']:
                             if nest_dict[channel][nest]['reports'][report].get('exp', 0) <= time.time():
                                 try:
@@ -96,17 +99,20 @@ class Nest:
         channel = ctx.channel
         guild = ctx.guild
         nest_dict = copy.deepcopy(ctx.bot.guild_dict[guild.id].setdefault('nest_dict',{}).setdefault(channel.id, {}))
+        nest_list = nest_dict['list']
         migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here to open the Silph Road Nest Atlas!", url="https://thesilphroad.com/atlas", description="")
         nest_embed.set_footer(text=f"Next Migration: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}")
         char_count = len(nest_embed.title) + len(nest_embed.footer.text)
+        paginator = commands.Paginator(prefix="", suffix="")
         nest_count = 0
+        description = ""
         if not nest_dict:
-            nest_embed.description += _("There are no nests.")
+            description += _("There are no nests.")
             return nest_embed
-        for nest in nest_dict:
+        for nest in nest_list:
             nest_count += 1
             pkmn_dict = {}
             embed_value = "No Reports"
@@ -122,19 +128,18 @@ class Nest:
             if reported_pkmn:
                 embed_value = ""
             for pkmn in reported_pkmn:
+                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn[0])
                 if report_count == 0:
-                    embed_value += f"**{pkmn[0].title()} ({pkmn[1]})** "
+                    embed_value += f"**{pokemon.name.title()}** {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))} **({pkmn[1]})**"
                     report_count += 1
                 else:
-                    embed_value += f"{pkmn[0].title()} ({pkmn[1]}) "
-            char_count += len(nest_embed.description)
-            if char_count < (5950 - len(f"**{nest_count} \u2013 {nest}** | {embed_value}\n")):
-                nest_embed.description += f"**{nest_count} \u2013 {nest}** | {embed_value}\n"
-            else:
-                nest_embed.description += f"\n**NEST LIMIT REACHED FOR THIS CHANNEL**"
-                break
+                    embed_value += f"{pokemon.name.title()} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))} ({pkmn[1]})"
+            description += f"**{nest_count} \u2013 {nest.title()}** | {embed_value}\n"
 
-        return nest_embed
+        for line in description.splitlines():
+            paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+
+        return nest_embed, paginator.pages
 
     @commands.group(invoke_without_command=True)
     @checks.allownestreport()
@@ -154,6 +159,7 @@ class Nest:
         migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
+        list_messages = []
 
         await utils.safe_delete(message)
 
@@ -161,15 +167,24 @@ class Nest:
         if not pokemon:
             await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!nest <pokemon>**'))
             return
-
+        pokemon.alolan = False
+        pokemon.gender = None
+        pokemon.form = None
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
-        nest_embed = await self.get_nest_reports(ctx)
-        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a {pokemon} report to\n\nIf you want to stop your report, reply with **cancel**.?".format(mention=author.mention, pokemon=pokemon.name.title()), embed=nest_embed)
+        nest_embed, nest_pages = await self.get_nest_reports(ctx)
+        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a **{pokemon}** report to?\n\nIf you want to stop your report, reply with **cancel**.".format(mention=author.mention, pokemon=pokemon.name.title()))
+        list_messages.append(nest_list)
+        for p in nest_pages:
+            nest_embed.description = p
+            nest_list = await channel.send(embed=nest_embed)
+            list_messages.append(nest_list)
         try:
             nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
-            await utils.safe_delete(nest_list)
+            for msg in list_messages:
+                await utils.safe_delete(msg)
         except asyncio.TimeoutError:
-            await utils.safe_delete(nest_list)
+            for msg in list_messages:
+                await utils.safe_delete(msg)
             return
         if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
             await utils.safe_delete(nest_name_reply)
@@ -179,15 +194,19 @@ class Nest:
             return
         else:
             await utils.safe_delete(nest_name_reply)
-        nest_name = nest_embed.description.splitlines()[int(nest_name_reply.content)-1].split("\u2013")[1].split("**")[0].strip().title()
+        try:
+            nest_name = nest_dict['list'][int(nest_name_reply.content)-1]
+        except IndexError:
+            return
         nest_loc = nest_dict[nest_name]['location'].split()
         nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
         nest_number = pokemon.id
         nest_img_url = pokemon.img_url
-        nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {pokemon.name.title()}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
+        nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {pokemon.name.title()} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
         nest_embed.set_thumbnail(url=nest_img_url)
         nest_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        pokemon.shiny = False
         dm_dict = {}
         for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
             user = message.guild.get_member(trainer)
@@ -198,11 +217,11 @@ class Nest:
                 continue
             if nest_number in self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('wants', []):
                 try:
-                    nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name}** is a **{pokemon.name.title()}** nest in {channel.mention}!", embed=nest_embed)
+                    nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name}** is a **{str(pokemon)}** nest in {channel.mention}!", embed=nest_embed)
                     dm_dict[user.id] = nestdmmsg.id
                 except:
                     continue
-        nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name}** is a **{pokemon.name.title()}** nest!", embed=nest_embed)
+        nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name}** is a **{str(pokemon)}** nest!", embed=nest_embed)
         nest_dict[nest_name]['reports'][nestreportmsg.id] = {
             'exp':migration_exp,
             'expedit': "delete",
@@ -211,7 +230,7 @@ class Nest:
             'reporttime':datetime.datetime.utcnow(),
             'dm_dict': dm_dict,
             'location':nest_name,
-            'pokemon':pokemon.name.lower()
+            'pokemon':str(pokemon)
         }
         self.bot.guild_dict[guild.id]['nest_dict'][channel.id] = nest_dict
         nest_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(message.author.id,{}).setdefault('nest_reports',0) + 1
@@ -231,21 +250,29 @@ class Nest:
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
         migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        list_messages = []
 
         await utils.safe_delete(message)
 
         if not nest_dict:
             return
 
-        nest_embed = await self.get_nest_reports(ctx)
+        nest_embed, nest_pages = await self.get_nest_reports(ctx)
 
-        nest_list = await channel.send("**Meowth!** Here's a list of all of the current nests, what's the number of the nest you would like more information on?\n\nIf you want to stop, reply with **cancel**.", embed=nest_embed)
+        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you would like more information on?\n\nIf you want to stop, reply with **cancel**.".format(mention=author.mention))
+        list_messages.append(nest_list)
+        for p in nest_pages:
+            nest_embed.description = p
+            nest_list = await channel.send(embed=nest_embed)
+            list_messages.append(nest_list)
 
         try:
             nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
-            await utils.safe_delete(nest_list)
+            for msg in list_messages:
+                await utils.safe_delete(msg)
         except asyncio.TimeoutError:
-            await utils.safe_delete(nest_list)
+            for msg in list_messages:
+                await utils.safe_delete(msg)
             return
         if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
             await utils.safe_delete(nest_name_reply)
@@ -255,7 +282,10 @@ class Nest:
             return
         else:
             await utils.safe_delete(nest_name_reply)
-        nest_name = nest_embed.description.splitlines()[int(nest_name_reply.content)-1].split("\u2013")[1].split("**")[0].strip().title()
+        try:
+            nest_name = nest_dict['list'][int(nest_name_reply.content)-1]
+        except IndexError:
+            return
         nest_loc = nest_dict[nest_name]['location'].split()
         nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
         pkmn_dict = {}
@@ -272,18 +302,19 @@ class Nest:
         if reported_pkmn:
             embed_value = ""
         for pkmn in reported_pkmn:
+            pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn[0])
             if report_count == 0:
-                embed_value += f"**{pkmn[0].title()} ({pkmn[1]})** "
+                embed_value += f"**{str(pokemon)}** {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))} **({pkmn[1]})**"
                 report_count += 1
+                nest_img_url = pokemon.img_url
                 nest_number = self.bot.pkmn_list.index(pkmn[0]) + 1
             else:
-                embed_value += f"{pkmn[0].title()} ({pkmn[1]}) "
-        nest_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{0}_00.png?cache=1'.format(str(nest_number).zfill(3))
+                embed_value += f", {str(pokemon)} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))} ({pkmn[1]})"
         nest_description = f"**Nest**: {nest_name.title()}\n**All Reports**: {embed_value}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
         nest_embed.set_thumbnail(url=nest_img_url)
         info_message = await channel.send(embed=nest_embed)
-        await asyncio.sleep(60)
+        await asyncio.sleep(600)
         await utils.safe_delete(info_message)
 
     @nest.command()
@@ -295,21 +326,30 @@ class Nest:
         guild = ctx.guild
         message = ctx.message
         channel = ctx.channel
+        list_messages = []
 
         # get settings
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
+        nest_list = nest_dict['list']
 
         await utils.safe_delete(message)
 
-        nest_embed = await self.get_nest_reports(ctx)
-        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the name of the nest you would like to add?\n\nIf you don't want to add a nest, reply with **cancel**.".format(mention=author.mention), embed=nest_embed)
+        nest_embed, nest_pages = await self.get_nest_reports(ctx)
+        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the name of the nest you would like to add?\n\nIf you don't want to add a nest, reply with **cancel**.".format(mention=author.mention))
+        list_messages.append(nest_list)
+        for p in nest_pages:
+            nest_embed.description = p
+            nest_list = await channel.send(embed=nest_embed)
+            list_messages.append(nest_list)
 
         try:
             nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
-            nest_name = nest_name_reply.clean_content.title()
-            await utils.safe_delete(nest_list)
+            nest_name = nest_name_reply.clean_content.lower()
+            for msg in list_messages:
+                await utils.safe_delete(msg)
         except asyncio.TimeoutError:
-            await utils.safe_delete(nest_list)
+            for msg in list_messages:
+                await utils.safe_delete(msg)
             return
         if nest_name_reply.content.lower() == "cancel":
             await utils.safe_delete(nest_name_reply)
@@ -319,12 +359,12 @@ class Nest:
             return
         else:
             await utils.safe_delete(nest_name_reply)
-        if nest_name.title() in nest_dict.keys():
+        if nest_name.lower() in nest_dict.keys():
             confirmation = await channel.send(_('**{nest}** is already a nest for {channel}').format(nest=nest_name, channel=channel.mention))
             await asyncio.sleep(10)
             await utils.safe_delete(confirmation)
             return
-        nest_loc_ask = await channel.send("What's the location of the **{nest}** to use for direction links? This can be GPS coordinates or an address, but I would recommend GPS if possible.\n\nIf you don't want to add a nest, reply with **cancel**.".format(nest=nest_name))
+        nest_loc_ask = await channel.send("What's the location of the **{nest}** to use for direction links? This can be GPS coordinates or an address, but I would recommend GPS if possible.\n\nIf you don't want to add a nest, reply with **cancel**.".format(nest=nest_name.title()))
         try:
             nest_loc_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
             nest_loc = nest_loc_reply.clean_content
@@ -340,7 +380,7 @@ class Nest:
             return
         else:
             await utils.safe_delete(nest_loc_reply)
-        rusure = await channel.send(_('Are you sure you\'d like to add **{nest}** to the list of nests in {channel}?').format(nest=nest_name, channel=channel.mention))
+        rusure = await channel.send(_('Are you sure you\'d like to add **{nest}** to the list of nests in {channel}?').format(nest=nest_name.title(), channel=channel.mention))
         try:
             timeout = False
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
@@ -359,6 +399,7 @@ class Nest:
                 'reports': {}
             }
             self.bot.guild_dict[guild.id]['nest_dict'][channel.id] = nest_dict
+            self.bot.guild_dict[guild.id]['nest_dict'][channel.id]['list'].append(nest_name)
             confirmation = await channel.send(_('Nest added.'))
             await asyncio.sleep(10)
             await utils.safe_delete(confirmation)
@@ -376,6 +417,7 @@ class Nest:
         guild = ctx.guild
         message = ctx.message
         channel = ctx.channel
+        list_messages = []
 
         # get settings
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
@@ -385,15 +427,20 @@ class Nest:
         if not nest_dict:
             return
 
-        nest_embed = await self.get_nest_reports(ctx)
-
-        nest_list = await channel.send("**Meowth!** Here's a list of all of the current nests, what's the number of the nest you would like to remove?\n\nIf you don't want to remove a nest, reply with **cancel**.", embed=nest_embed)
-
+        nest_embed, nest_pages = await self.get_nest_reports(ctx)
+        nest_list = await channel.send("**Meowth!** Here's a list of all of the current nests, what's the number of the nest you would like to remove?\n\nIf you don't want to remove a nest, reply with **cancel**.")
+        list_messages.append(nest_list)
+        for p in nest_pages:
+            nest_embed.description = p
+            nest_list = await channel.send(embed=nest_embed)
+            list_messages.append(nest_list)
         try:
             nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
-            await utils.safe_delete(nest_list)
+            for msg in list_messages:
+                await utils.safe_delete(msg)
         except asyncio.TimeoutError:
-            await utils.safe_delete(nest_list)
+            for msg in list_messages:
+                await utils.safe_delete(msg)
             return
         if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
             await utils.safe_delete(nest_name_reply)
@@ -403,8 +450,11 @@ class Nest:
             return
         else:
             await utils.safe_delete(nest_name_reply)
-        nest_name = nest_embed.description.splitlines()[int(nest_name_reply.content)-1].split("\u2013")[1].split("**")[0].strip().title()
-        rusure = await channel.send(_('Are you sure you\'d like to remove **{nest}** from the list of nests in {channel}?').format(nest=nest_name, channel=channel.mention))
+        try:
+            nest_name = nest_dict['list'][int(nest_name_reply.content)-1]
+        except IndexError:
+            return
+        rusure = await channel.send(_('Are you sure you\'d like to remove **{nest}** from the list of nests in {channel}?').format(nest=nest_name.title(), channel=channel.mention))
         try:
             timeout = False
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
@@ -419,6 +469,7 @@ class Nest:
         elif res.emoji == '✅':
             await utils.safe_delete(rusure)
             del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name]
+            self.bot.guild_dict[guild.id]['nest_dict'][channel.id]['list'].remove(nest_name)
             confirmation = await channel.send(_('Nest deleted.'))
             await asyncio.sleep(10)
             await utils.safe_delete(confirmation)
@@ -459,6 +510,8 @@ class Nest:
         elif res.emoji == '✅':
             await utils.safe_delete(rusure)
             for nest in nest_dict:
+                if nest == "list":
+                    continue
                 for report in nest_dict[nest]['reports']:
                     try:
                         report_message = await channel.get_message(report)

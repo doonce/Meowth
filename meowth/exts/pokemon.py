@@ -449,7 +449,7 @@ class Pokemon():
         return result
 
     @classmethod
-    def get_pokemon(cls, bot, argument):
+    def get_pokemon(cls, bot, argument, allow_digits = True):
         argument = str(argument)
         shiny = re.search(r'shiny', argument, re.IGNORECASE)
         alolan = re.search(r'alolan', argument, re.IGNORECASE)
@@ -496,7 +496,7 @@ class Pokemon():
                 else:
                     argument = argument.replace(word, match).strip()
 
-        if argument.isdigit():
+        if argument.isdigit() and allow_digits:
             match = utils.get_name(bot, int(argument))
         else:
             match = utils.get_match(bot.pkmn_list, argument)[0]
@@ -509,7 +509,7 @@ class Pokemon():
         return pokemon
 
     @classmethod
-    async def ask_pokemon(cls, ctx, argument):
+    async def ask_pokemon(cls, ctx, argument, allow_digits = True):
         argument = str(argument)
         shiny = re.search(r'shiny', argument, re.IGNORECASE)
         alolan = re.search(r'alolan', argument, re.IGNORECASE)
@@ -578,7 +578,7 @@ class Pokemon():
         if not argument:
             return None
 
-        if argument.isdigit():
+        if argument.isdigit() and allow_digits:
             match = utils.get_name(ctx.bot, int(argument))
         else:
             match = utils.get_match(ctx.bot.pkmn_list, argument)[0]
