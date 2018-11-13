@@ -2809,7 +2809,7 @@ async def _eggassume(ctx, args, raid_channel, author=None):
     gymhuntrgps = eggdetails.get('gymhuntrgps', False)
     boss_list = []
 
-    pokemon = await pkmn_class.Pokemon.ask_pokemon(ctx, args)
+    pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, args)
     for boss in raid_info['raid_eggs'][str(egglevel)]['pokemon']:
         boss = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
         boss_list.append(pokemon.name.lower())
@@ -3110,7 +3110,7 @@ async def _exraid(ctx, location):
     boss_list = []
     for p in egg_info['pokemon']:
         pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, p)
-        p_name = p_name.name.title()
+        p_name = pokemon.name.title()
         p_type = utils.get_type(Meowth, message.guild, pokemon.id, pokemon.form, pokemon.alolan)
         boss_list.append((((p_name + ' (') + str(pokemon.id)) + ') ') + ''.join(p_type))
     raid_channel_name = _('ex-raid-egg-')
@@ -4607,6 +4607,7 @@ async def interested(ctx, *, teamcounts: str=None):
     entered_interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
     pokemon = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('pkmn_obj', None)
     boss_list = []
+    egglevel = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egglevel']
     if not pokemon:
         for boss in raid_info['raid_eggs'][egglevel]['pokemon']:
             pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
@@ -5422,6 +5423,13 @@ async def _list(ctx):
             egg_dict = {}
             exraid_list = []
             event_list = []
+            list_dict = guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.get_message(msg)
+                    await utils.safe_delete(msg)
+                except:
+                    pass
             for r in rc_d:
                 reportcity = Meowth.get_channel(rc_d[r]['reportcity'])
                 if not reportcity:
@@ -5511,20 +5519,21 @@ async def _list(ctx):
                     raidlist += list_output(r)
             if activeraidnum == 0:
                 list_message = await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=_('Meowth! No active raids!\n\nReport one with **!raid <name> <location> [weather] [timer]**.')))
-                list_messages.append(list_message)
+                list_messages.append(list_message.id)
             else:
-                listmsg += _("**Here's the current channels for {0}**\n\n").format(cty.capitalize())
+                listmsg += _("**Here's the current channels for {0}**\n\n").format(channel.mention)
                 paginator = commands.Paginator(prefix="", suffix="")
-                listmsg = await ctx.send(listmsg)
-                list_messages.append(listmsg)
+                index = 0
                 for line in raidlist.splitlines():
                     paginator.add_line(line.rstrip().replace('`', '\u200b`'))
                 for p in paginator.pages:
-                    list_message = await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
-                    list_messages.append(list_message)
-            await asyncio.sleep(1800)
-            for msg in list_messages:
-                await utils.safe_delete(msg)
+                    if index == 0:
+                        list_message = await ctx.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    else:
+                        list_message = await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    list_messages.append(list_message.id)
+                    index += 1
+            guild_dict[ctx.guild.id]['list_dict']['raid'][ctx.channel.id] = list_messages
             return
         elif checks.check_raidactive(ctx):
             team_list = ["mystic","valor","instinct","unknown"]
@@ -5993,22 +6002,30 @@ async def research(ctx):
 
     Usage: !list research"""
     await utils.safe_delete(ctx.message)
+    list_dict = guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('research', {}).setdefault(ctx.channel.id, [])
+    for msg in list_dict:
+        try:
+            msg = await ctx.channel.get_message(msg)
+            await utils.safe_delete(msg)
+        except:
+            pass
     listmsg, res_pages = await _researchlist(ctx)
     list_messages = []
     if res_pages:
-        listmsg = await ctx.channel.send(listmsg)
-        list_messages.append(listmsg)
+        index = 0
         for p in res_pages:
-            listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
-            list_messages.append(listmsg)
+            if index == 0:
+                listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+            else:
+                listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+            list_messages.append(listmsg.id)
+            index += 1
     elif listmsg:
-        listmsg = await ctx.channel.send(listmsg)
-        list_messages.append(listmsg)
+        listmsg = await ctx.channel.send(listmsg.id)
+        list_messages.append(listmsg.id)
     else:
         return
-    await asyncio.sleep(3600)
-    for msg in list_messages:
-        await utils.safe_delete(msg)
+    guild_dict[ctx.guild.id]['list_dict']['research'][ctx.channel.id] = list_messages
 
 async def _researchlist(ctx):
     research_dict = copy.deepcopy(guild_dict[ctx.guild.id].get('questreport_dict',{}))
@@ -6044,7 +6061,7 @@ async def _researchlist(ctx):
     if dust_quests:
         questmsg += "\n\n**Stardust**\n{dustlist}".format(dustlist="\n".join(dust_quests))
     if questmsg:
-        listmsg = _('**Meowth! Here\'s the current research reports for {channel}**').format(channel=ctx.message.channel.name.capitalize())
+        listmsg = _('**Meowth! Here\'s the current research reports for {channel}**').format(channel=ctx.message.channel.mention)
         paginator = commands.Paginator(prefix="", suffix="")
         for line in questmsg.splitlines():
             paginator.add_line(line.rstrip().replace('`', '\u200b`'))
@@ -6060,22 +6077,30 @@ async def wilds(ctx):
 
     Usage: !list wilds"""
     await utils.safe_delete(ctx.message)
+    list_dict = guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('wild', {}).setdefault(ctx.channel.id, [])
+    for msg in list_dict:
+        try:
+            msg = await ctx.channel.get_message(msg)
+            await utils.safe_delete(msg)
+        except:
+            pass
     listmsg, wild_pages = await _wildlist(ctx)
     list_messages = []
     if wild_pages:
-        listmsg = await ctx.channel.send(listmsg)
-        list_messages.append(listmsg)
+        index = 0
         for p in wild_pages:
-            listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
-            list_messages.append(listmsg)
+            if index == 0:
+                listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+            else:
+                listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+            list_messages.append(listmsg.id)
+            index += 1
     elif listmsg:
         listmsg = await ctx.channel.send(listmsg)
-        list_messages.append(listmsg)
+        list_messages.append(listmsg.id)
     else:
         return
-    await asyncio.sleep(3600)
-    for msg in list_messages:
-        await utils.safe_delete(msg)
+    guild_dict[ctx.guild.id]['list_dict']['wild'][ctx.channel.id] = list_messages
 
 async def _wildlist(ctx):
     wild_dict = copy.deepcopy(guild_dict[ctx.guild.id].get('wildreport_dict',{}))
@@ -6086,12 +6111,13 @@ async def _wildlist(ctx):
                 wildreportmsg = await ctx.message.channel.get_message(wildid)
                 wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['reportauthor'])
                 if wildauthor:
+                    pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, wild_dict[wildid]['pokemon'])
                     wildmsg += ('\n🔹')
-                    wildmsg += _("**Pokemon**: {pokemon}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=wild_dict[wildid]['pokemon'].title(),location=wild_dict[wildid]['location'].title(),author=wildauthor.display_name,url=wild_dict[wildid].get('url',None))
+                    wildmsg += _("**Pokemon**: {pokemon} {type}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=pokemon.name.title(),type=''.join(utils.get_type(Meowth, ctx.message.guild, pokemon.id, pokemon.form, pokemon.alolan)),location=wild_dict[wildid]['location'].title(),author=wildauthor.display_name,url=wild_dict[wildid].get('url',None))
             except discord.errors.NotFound:
                 continue
     if wildmsg:
-        listmsg = _('**Meowth! Here\'s the current wild reports for {channel}**').format(channel=ctx.message.channel.name.capitalize())
+        listmsg = _('**Meowth! Here\'s the current wild reports for {channel}**').format(channel=ctx.message.channel.mention)
         paginator = commands.Paginator(prefix="", suffix="")
         for line in wildmsg.splitlines():
             paginator.add_line(line.rstrip().replace('`', '\u200b`'))
@@ -6107,18 +6133,26 @@ async def nests(ctx):
 
     Usage: !list nests"""
     await utils.safe_delete(ctx.message)
+    list_dict = guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('nest', {}).setdefault(ctx.channel.id, [])
+    for msg in list_dict:
+        try:
+            msg = await ctx.channel.get_message(msg)
+            await utils.safe_delete(msg)
+        except:
+            pass
     Nest = Meowth.cogs.get('Nest')
     list_messages = []
     nest_embed, nest_pages = await Nest.get_nest_reports(ctx)
-    listmsg = await ctx.channel.send(_('**Meowth!** Here\'s the current nests for {channel}').format(channel=ctx.channel.mention))
-    list_messages.append(listmsg)
+    index = 0
     for p in nest_pages:
         nest_embed.description = p
-        listmsg = await ctx.channel.send(embed=nest_embed)
-        list_messages.append(listmsg)
-    await asyncio.sleep(3600)
-    for msg in list_messages:
-        await utils.safe_delete(msg)
+        if index == 0:
+            listmsg = await ctx.channel.send(_('**Meowth!** Here\'s the current nests for {channel}').format(channel=ctx.channel.mention), embed=nest_embed)
+        else:
+            listmsg = await ctx.channel.send(embed=nest_embed)
+        list_messages.append(listmsg.id)
+        index += 1
+    guild_dict[ctx.guild.id]['list_dict']['nest'][ctx.channel.id] = list_messages
 
 try:
     event_loop.run_until_complete(Meowth.start(config['bot_token']))
