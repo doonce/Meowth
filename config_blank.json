@@ -21,12 +21,13 @@
 "master": 000000000000000000,
 
 "//": "Limit egg assumed hatches to certain egg levels.",
-"allow_assume": {"EX": "False", "5": "False", "4": "False", "3": "False", "2": "False", "1": "False"},
+"allow_assume": {"EX": "True", "5": "True", "4": "False", "3": "False", "2": "False", "1": "False"},
 
-"//": "Define your server's emoji strings here.",
+"//": "Define your server's emoji strings here. These can be custom <:emoji:123123123> on your server or a shared server or standard :emoji:",
 
-"//": "Emoji for team assignments",
+"//": "Team assignments and team representation",
 "team_dict": {"mystic": ":mystic:", "valor": ":valor:", "instinct": ":instinct:", "harmony": ":harmony:"},
+"unknown": ":grey_question:",
 
 "//": "Emoji for raid organization",
 "omw_id": ":omw:",
@@ -52,6 +53,27 @@
     "dark"     : ":dark:",
     "steel"    : ":steel:",
     "fairy"    : ":fairy:"
-}
+},
+
+"//":"Emoji for List.",
+"bullet":":small_blue_diamond:",
+
+"//": "Emoji for Research List.",
+"res_candy": ":candy:",
+"res_dust": ":star:",
+"res_encounter": ":question:",
+"res_other": ":small_blue_diamond:",
+
+"//": "Emoji for Wild Command. Reactions are different; These must be unicode or custom emoji without <>. Not discord alias.",
+"//": "Example: Custom:`emojiname:emojiid` | Standard: Use https://gist.github.com/Vexs/629488c4bb4126ad2a9909309ed6bd71",
+"wild_omw" : "\ud83c\udfce",
+"wild_despawn":"\ud83d\udca8",
+
+"//": "Emoji for Wild List.",
+"wild_bullet" : ":small_blue_diamond:",
+
+"//": "Emoji for Trade List.",
+"trade_bullet":":small_blue_diamond:"
+
 
 }

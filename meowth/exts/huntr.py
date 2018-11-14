@@ -24,7 +24,10 @@ class Huntr:
         ctx = await self.bot.get_context(message)
         if not ctx.guild:
             return
+        print(message.author.bot)
         if message.guild and message.webhook_id and ("!raid" in message.content or "!raidegg" in message.content or "!wild" in message.content):
+            await self.on_pokealarm(ctx)
+        if message.author.bot and ("!raid" in message.content or "!raidegg" in message.content or "!wild" in message.content):
             await self.on_pokealarm(ctx)
         if (str(message.author) == 'GymHuntrBot#7279') or (str(message.author) == 'HuntrBot#1845'):
             await self.on_huntr(ctx)
@@ -278,8 +281,8 @@ class Huntr:
         wild_embed.add_field(name='**Despawns in:**', value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=huntrexp.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
         wild_embed.add_field(name=huntrweather, value=_('Perform a scan to help find more by clicking [here]({huntrurl}).').format(huntrurl=wild_details), inline=False)
         wild_embed.set_thumbnail(url=wild_img_url)
-        wild_embed.add_field(name='**Reactions:**', value=_("🏎: I'm on my way!"))
-        wild_embed.add_field(name='\u200b', value=_("💨: The Pokemon despawned!"))
+        wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=ctx.bot.config['wild_omw']))
+        wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=ctx.bot.config['wild_despawn']))
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         despawn = (int(huntrexp.split(' ')[0]) * 60) + int(huntrexp.split(' ')[2])
         wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=entered_wild.title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
@@ -295,9 +298,9 @@ class Huntr:
                 wilddmmsg = await user.send(content=_('Meowth! Wild {pokemon} reported by {member} in {channel}! Details: {location_details}').format(pokemon=entered_wild.title(), member=message.author.display_name, channel=message.channel.mention, location_details=wild_details), embed=wild_embed)
                 dm_dict[user.id] = wilddmmsg.id
         await asyncio.sleep(0.25)
-        await wildreportmsg.add_reaction('🏎')
+        await wildreportmsg.add_reaction(ctx.bot.config['wild_omw'])
         await asyncio.sleep(0.25)
-        await wildreportmsg.add_reaction('💨')
+        await wildreportmsg.add_reaction(ctx.bot.config['wild_despawn'])
         await asyncio.sleep(0.25)
         wild_dict = copy.deepcopy(ctx.bot.guild_dict[message.guild.id].get('wildreport_dict',{}))
         wild_dict[wildreportmsg.id] = {

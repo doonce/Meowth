@@ -1054,12 +1054,12 @@ async def on_raw_reaction_add(payload):
         wildreport_dict = []
     if message.id in wildreport_dict and user.id != Meowth.user.id:
         wild_dict = guild_dict[guild.id]['wildreport_dict'][message.id]
-        if str(payload.emoji) == '🏎':
+        if str(payload.emoji) == config['wild_omw']:
             wild_dict['omw'].append(user.mention)
             guild_dict[guild.id]['wildreport_dict'][message.id] = wild_dict
-        elif str(payload.emoji) == '💨':
+        elif str(payload.emoji) == config['wild_despawn']:
             for reaction in message.reactions:
-                if reaction.emoji == '💨' and reaction.count >= 2:
+                if reaction.emoji == config['wild_despawn'] and reaction.count >= 2:
                     if wild_dict['omw']:
                         despawn = _("has despawned")
                         await channel.send(f"{', '.join(wild_dict['omw'])}: {wild_dict['pokemon'].title()} {despawn}!")
@@ -1127,7 +1127,7 @@ async def _eval(ctx, *, body: str):
     else:
         value = stdout.getvalue()
         try:
-            await ctx.message.add_reaction('\u2705')
+            await ctx.message.add_reaction('☑')
         except:
             pass
         if ret is None:
@@ -2363,12 +2363,12 @@ async def _wild(ctx, content):
                 dm_dict[user.id] = wilddmmsg.id
             except:
                 continue
-    wild_embed.add_field(name='**Reactions:**', value=_("🏎: I'm on my way!"))
-    wild_embed.add_field(name='\u200b', value=_("💨: The Pokemon despawned!"))
+    wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=config['wild_omw']))
+    wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=config['wild_despawn']))
     await asyncio.sleep(0.25)
-    await wildreportmsg.add_reaction('🏎')
+    await wildreportmsg.add_reaction(config['wild_omw'])
     await asyncio.sleep(0.25)
-    await wildreportmsg.add_reaction('💨')
+    await wildreportmsg.add_reaction(config['wild_despawn'])
     await asyncio.sleep(0.25)
     wild_dict = copy.deepcopy(guild_dict[message.guild.id].get('wildreport_dict',{}))
     wild_dict[wildreportmsg.id] = {
@@ -3363,8 +3363,13 @@ async def research(ctx, *, details = None):
                 break
             elif rewardmsg:
                 reward = rewardmsg.clean_content
+                pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, reward, allow_digits=False)
+                if pokemon:
+                    reward = f"{reward.title()} {''.join(utils.get_type(Meowth, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
+                    research_embed.add_field(name=_("**Reward:**"),value=reward.title(),inline=True)
+                else:
+                    research_embed.add_field(name=_("**Reward:**"),value='\n'.join(textwrap.wrap(reward.title(), width=30)),inline=True)
             await rewardmsg.delete()
-            research_embed.add_field(name=_("**Reward:**"),value='\n'.join(textwrap.wrap(reward.title(), width=30)),inline=True)
             research_embed.remove_field(0)
             break
     if not error:
@@ -4128,7 +4133,7 @@ async def recover(ctx):
         }
         await _edit_party(channel, message.author)
         recovermsg = _("Meowth! This channel has been recovered! However, there may be some inaccuracies in what I remembered! Here's what I have:")
-        bulletpoint = '🔹'
+        bulletpoint = utils.parse_emoji(ctx.guild, config['bullet'])
         recovermsg += ('\n' + bulletpoint) + (await _interest(ctx))
         recovermsg += ('\n' + bulletpoint) + (await _otw(ctx))
         recovermsg += ('\n' + bulletpoint) + (await _waiting(ctx))
@@ -4681,13 +4686,13 @@ async def _maybe(channel, author, count, party, entered_interest=None):
     if count == 1:
         team_emoji = max(party, key=lambda key: party[key])
         if team_emoji == "unknown":
-            team_emoji = "❔"
+            team_emoji = utils.parse_emoji(channel.guild, config['unknown'])
         else:
             team_emoji = utils.parse_emoji(channel.guild, config['team_dict'][team_emoji])
         await channel.send(_('Meowth! {member} is interested! {emoji}: 1').format(member=author.mention, emoji=team_emoji))
     else:
         msg = _('Meowth! {member} is interested with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count)
-        await channel.send('{msg} {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | ❔: {unknown}'.format(msg=msg, blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), unknown=party['unknown']))
+        await channel.send('{msg} {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(msg=msg, blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, config['unknown']), unknown=party['unknown']))
     if author.id not in guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict']:
         trainer_dict[author.id] = {
 
@@ -4797,13 +4802,13 @@ async def _coming(channel, author, count, party, entered_interest=None):
     if count == 1:
         team_emoji = max(party, key=lambda key: party[key])
         if team_emoji == "unknown":
-            team_emoji = "❔"
+            team_emoji = utils.parse_emoji(channel.guild, config['unknown'])
         else:
             team_emoji = utils.parse_emoji(channel.guild, config['team_dict'][team_emoji])
         await channel.send(_('Meowth! {member} is on the way! {emoji}: 1').format(member=author.mention, emoji=team_emoji))
     else:
         msg = _('Meowth! {member} is on the way with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count)
-        await channel.send('{msg} {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | ❔: {unknown}'.format(msg=msg, blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), unknown=party['unknown']))
+        await channel.send('{msg} {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(msg=msg, blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, config['unknown']), unknown=party['unknown']))
     if author.id not in trainer_dict:
         trainer_dict[author.id] = {
 
@@ -4916,14 +4921,14 @@ async def _here(channel, author, count, party, entered_interest=None):
     if count == 1:
         team_emoji = max(party, key=lambda key: party[key])
         if team_emoji == "unknown":
-            team_emoji = "❔"
+            team_emoji = utils.parse_emoji(channel.guild, config['unknown'])
         else:
             team_emoji = utils.parse_emoji(channel.guild, config['team_dict'][team_emoji])
         msg = _('Meowth! {member} is at the {raidtype}! {emoji}: 1').format(member=author.mention, emoji=team_emoji, raidtype=raidtype)
         await channel.send(msg + lobbymsg)
     else:
         msg = _('Meowth! {member} is at the {raidtype} with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count, raidtype=raidtype)
-        msg += ' {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | ❔: {unknown}'.format(blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), unknown=party['unknown'])
+        msg += ' {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, config['unknown']), unknown=party['unknown'])
         await channel.send(msg + lobbymsg)
     if author.id not in trainer_dict:
         trainer_dict[author.id] = {
@@ -5086,7 +5091,7 @@ async def _edit_party(channel, author=None):
             newembed.set_field_at(1, name='\u200b', value='\u200b', inline=True)
     if channel_dict["total"] > 0:
         newembed.add_field(name=_('**Status List**'), value=_('Maybe: **{channelmaybe}** | Coming: **{channelcoming}** | Here: **{channelhere}**').format(channelmaybe=channel_dict["maybe"], channelcoming=channel_dict["coming"], channelhere=channel_dict["here"]), inline=True)
-        newembed.add_field(name=_('**Team List**'), value='{blue_emoji}: **{channelblue}** | {red_emoji}: **{channelred}** | {yellow_emoji}: **{channelyellow}** | ❔: **{channelunknown}**'.format(blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), channelblue=channel_dict["mystic"], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), channelred=channel_dict["valor"], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), channelyellow=channel_dict["instinct"], channelunknown=channel_dict["unknown"]), inline=True)
+        newembed.add_field(name=_('**Team List**'), value='{blue_emoji}: **{channelblue}** | {red_emoji}: **{channelred}** | {yellow_emoji}: **{channelyellow}** | {grey_emoji}: **{channelunknown}**'.format(blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), channelblue=channel_dict["mystic"], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), channelred=channel_dict["valor"], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), channelyellow=channel_dict["instinct"], grey_emoji=utils.parse_emoji(channel.guild, config['unknown']), channelunknown=channel_dict["unknown"]), inline=True)
     newembed.set_footer(text=reportembed.footer.text, icon_url=reportembed.footer.icon_url)
     newembed.set_thumbnail(url=reportembed.thumbnail.url)
     try:
@@ -5554,9 +5559,9 @@ async def _list(ctx):
             if team == "mystic" or team == "valor" or team == "instinct":
                 bulletpoint = utils.parse_emoji(ctx.guild, config['team_dict'][team])
             elif team == "unknown":
-                bulletpoint = '❔'
+                bulletpoint = utils.parse_emoji(ctx.guild, config['unknown'])
             else:
-                bulletpoint = '🔹'
+                bulletpoint = utils.parse_emoji(ctx.guild, config['bullet'])
             if " 0 interested!" not in await _interest(ctx, tag, team):
                 listmsg += ('\n' + bulletpoint) + (await _interest(ctx, tag, team))
             if " 0 on the way!" not in await _otw(ctx, tag, team):
@@ -5868,9 +5873,9 @@ async def _teamlist(ctx):
         if team_dict[team]['total'] > 0:
             teamliststr += _('{emoji} **{total} total,** {interested} interested, {coming} coming, {here} waiting {emoji}\n').format(emoji=utils.parse_emoji(ctx.guild, config['team_dict'][team]), total=team_dict[team]['total'], interested=team_dict[team]['maybe'], coming=team_dict[team]['coming'], here=team_dict[team]['here'])
     if team_dict["unknown"]['total'] > 0:
-        teamliststr += '❔ '
+        teamliststr += '{emoji} '.format(emoji=utils.parse_emoji(ctx.guild, config['unknown']))
         teamliststr += _('**{grey_number} total,** {greymaybe} interested, {greycoming} coming, {greyhere} waiting')
-        teamliststr += ' ❔'
+        teamliststr += ' {emoji}'.format(emoji=utils.parse_emoji(ctx.guild, config['unknown']))
         teamliststr = teamliststr.format(grey_number=team_dict['unknown']['total'], greymaybe=team_dict['unknown']['maybe'], greycoming=team_dict['unknown']['coming'], greyhere=team_dict['unknown']['here'])
     if teamliststr:
         listmsg = _(' Team numbers for the raid:\n\n{}').format(teamliststr)
@@ -5980,7 +5985,7 @@ async def _tradelist(ctx, user):
             else:
                 wanted_pokemon = ', '.join(wanted_pokemon)
 
-            trademsg += ('\n🔹')
+            trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, config['trade_bullet']))
             trademsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
 
             listmsg += _(" Here are the current trades for {user}").format(user=user.display_name)
@@ -6021,7 +6026,7 @@ async def research(ctx):
             list_messages.append(listmsg.id)
             index += 1
     elif listmsg:
-        listmsg = await ctx.channel.send(listmsg.id)
+        listmsg = await ctx.channel.send(listmsg)
         list_messages.append(listmsg.id)
     else:
         return
@@ -6043,13 +6048,13 @@ async def _researchlist(ctx):
                 if questauthor:
                     pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, research_dict[questid]['reward'], allow_digits = False)
                     if "candy" in research_dict[questid]['reward'].lower() or "candies" in research_dict[questid]['reward'].lower():
-                        candy_quests.append(_("🍬 **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
+                        candy_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, config['res_candy']),location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
                     elif "dust" in research_dict[questid]['reward'].lower():
-                        dust_quests.append(_("⭐ **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
+                        dust_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, config['res_dust']),location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
                     elif pokemon:
-                        encounter_quests.append(_("❓ **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
+                        encounter_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, config['res_encounter']),location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
                     else:
-                        item_quests.append(_("🔹**Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
+                        item_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, config['res_other']),location=research_dict[questid]['location'].title(),quest=research_dict[questid]['quest'].title(),reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url',None)))
             except discord.errors.NotFound:
                 continue
     if encounter_quests:
@@ -6112,7 +6117,7 @@ async def _wildlist(ctx):
                 wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['reportauthor'])
                 if wildauthor:
                     pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, wild_dict[wildid]['pokemon'])
-                    wildmsg += ('\n🔹')
+                    wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, config['wild_bullet']))
                     wildmsg += _("**Pokemon**: {pokemon} {type}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=pokemon.name.title(),type=''.join(utils.get_type(Meowth, ctx.message.guild, pokemon.id, pokemon.form, pokemon.alolan)),location=wild_dict[wildid]['location'].title(),author=wildauthor.display_name,url=wild_dict[wildid].get('url',None))
             except discord.errors.NotFound:
                 continue

@@ -101,8 +101,8 @@ class Tutorial:
             # acknowledge and wait a second before continuing
             await ctx.tutorial_channel.send("Great job!")
             await ctx.tutorial_channel.send(
-            "The 🏎 emoji adds you to a list of trainers chasing the wild "
-            "spawn and the 💨 emoji alerts others that it has despawned.")
+            "The {omw} emoji adds you to a list of trainers chasing the wild "
+            "spawn and the {despawn} emoji alerts others that it has despawned.").format(omw=ctx.bot.config['wild_omw'], despawn=ctx.bot.config['wild_despawn'])
 
             wild_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports']
             ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports'] = wild_reports - 1
