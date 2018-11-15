@@ -184,6 +184,8 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, commands.CommandOnCooldown):
             if ctx.invoked_with == "starting":
                 error = await channel.send(_("The command **{prefix}{cmd_name}** is on cooldown to prevent errors. If you still need to start, try again in {retry} seconds.").format(prefix=prefix, cmd_name=ctx.invoked_subcommand or ctx.invoked_with, retry=int(error.retry_after)))
+            else:
+                error = await channel.send(_("The command **{prefix}{cmd_name}** is on cooldown to prevent errors. Try again in {retry} seconds.").format(prefix=prefix, cmd_name=ctx.invoked_subcommand or ctx.invoked_with, retry=int(error.retry_after)))
             if error:
                 await asyncio.sleep(10)
                 await delete_error(ctx.message, error)

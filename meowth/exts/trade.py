@@ -44,14 +44,13 @@ class Trade:
     async def on_raw_reaction_add(self, payload):
 
         emoji = payload.emoji.name
-
         # ignore if not relevant to this trade object
         if payload.message_id != self.listing_id:
             return
 
         emoji_check = [
             '\u20e3' in emoji, # keycap 1-9
-            emoji == '\u23f9' # stop button
+            emoji == self.bot.config['trade_stop'] # stop button
         ]
 
         if not any(emoji_check):
@@ -63,7 +62,7 @@ class Trade:
             offer = wanted_pokemon[i-1]
             await self.make_offer(payload.user_id, offer)
 
-        elif payload.user_id == self.lister_id and emoji == '\u23f9':
+        elif payload.user_id == self.lister_id and emoji == self.bot.config['trade_stop']:
             await self.cancel_trade()
 
     @property
@@ -155,7 +154,7 @@ class Trade:
         if "open trade" not in wanted_pokemon:
             for i in range(len(wanted_pokemon)):
                 await trade_msg.add_reaction(f'{i+1}\u20e3')
-        await trade_msg.add_reaction('\u23f9')
+        await trade_msg.add_reaction(ctx.bot.config['trade_stop'])
 
         trade = cls(
             ctx.bot, ctx.author.id, trade_msg.id, ctx.channel.id, ctx.guild.id,
@@ -197,18 +196,19 @@ class Trade:
         offer_embed = self.make_offer_embed(trader, offered_pokemon, pkmn)
 
         offermsg = await self.lister.send(
-            ("Meowth! {} offers to trade their {} for your {}! "
-             "React with :white_check_mark: to accept the offer or "
-             ":negative_squared_cross_mark: to reject it!").format(
-                 trader.display_name, pkmn, offered_pokemon),
+            ("Meowth! {trader} offers to trade their {pkmn} for your {offer}! "
+             "React with {accept_emoji} to accept the offer or "
+             "{reject_emoji} to reject it!").format(
+                 trader=trader.display_name, pkmn=pkmn, offer=offered_pokemon, accept_emoji=self.bot.config['trade_accept'], reject_emoji=self.bot.config['trade_reject']),
             embed=offer_embed)
 
         reaction, __ = await utils.ask(self.bot, offermsg, timeout=None)
 
-        if reaction.emoji == '\u2705':
+        if reaction.emoji == self.bot.config['trade_accept']:
             await self.accept_offer(trader_id)
+            await offermsg.delete()
 
-        elif reaction.emoji == '\u274e':
+        elif reaction.emoji == self.bot.config['trade_reject']:
             await self.reject_offer(trader_id)
             await offermsg.delete()
 
@@ -225,13 +225,13 @@ class Trade:
         acceptedmsg = (
             "Meowth! {} has agreed to trade their {} for {}'s {}\n\n"
             "Please DM them to coordinate the trade! "
-            "React with :ballot_box_with_check: when the trade has been "
+            "React with {} when the trade has been "
             "completed! To reject or cancel this offer, react with "
-            ":stop_button:").format(
+            "{}").format(
                 self.lister.display_name,
                 offered_pokemon,
                 trader.display_name,
-                offer)
+                offer,self.bot.config['trade_complete'], self.bot.config['trade_stop'])
 
         special_check = [
             offered_pokemon.shiny,
@@ -250,10 +250,10 @@ class Trade:
         tradermsg = await trader.send(acceptedmsg)
         listermsg = await lister.send(acceptedmsg)
 
-        await tradermsg.add_reaction('\u2611')
-        await tradermsg.add_reaction('\u23f9')
-        await listermsg.add_reaction('\u2611')
-        await listermsg.add_reaction('\u23f9')
+        await tradermsg.add_reaction(self.bot.config['trade_complete'])
+        await tradermsg.add_reaction(self.bot.config['trade_stop'])
+        await listermsg.add_reaction(self.bot.config['trade_complete'])
+        await listermsg.add_reaction(self.bot.config['trade_stop'])
 
         for offerid in self.offers.keys():
             if offerid != offer_id:
@@ -280,7 +280,7 @@ class Trade:
         def check(r, u):
             user_check = [u == trader, u == lister]
             msg_check = [r.message.id == tradermsg.id, r.message.id == listermsg.id]
-            emoji_check = [r.emoji == '\u2611', r.emoji == '\u23f9']
+            emoji_check = [r.emoji == self.bot.config['trade_complete'], r.emoji == self.bot.config['trade_stop']]
             if not any(msg_check) or not any(user_check) or not any(emoji_check):
                 return False
             else:
@@ -289,15 +289,15 @@ class Trade:
         while True:
             reaction, user = await self.bot.wait_for('reaction_add', check=check)
             if user.id == trader.id:
-                if reaction.emoji == '\u2611':
+                if reaction.emoji == self.bot.config['trade_complete']:
                     trader_confirms = True
-                elif reaction.emoji == '\u23f9':
+                elif reaction.emoji == self.bot.config['trade_stop']:
                     await tradermsg.delete()
                     return await self.withdraw_offer(trader.id)
             elif user.id == lister.id:
-                if reaction.emoji == '\u2611':
+                if reaction.emoji == self.bot.config['trade_complete']:
                     lister_confirms = True
-                elif reaction.emoji == '\u23f9':
+                elif reaction.emoji == self.bot.config['trade_stop']:
                     await listermsg.delete()
                     return await self.reject_offer(trader.id)
             if trader_confirms and lister_confirms:
@@ -325,8 +325,8 @@ class Trade:
             lister=self.lister.display_name, pkmn=offered_pokemon)
 
         instructions = "React to this message to make an offer!"
-        cancel_inst = "{lister} may cancel the trade with :stop_button:".format(
-            lister=self.lister.display_name)
+        cancel_inst = "{lister} may cancel the trade with {stop_emoji}".format(
+            lister=self.lister.display_name, stop_emoji=self.bot.config['trade_stop'])
 
         await listingmsg.edit(
             content=f"{offer_str}\n\n{instructions}\n\n{cancel_inst}",
@@ -335,7 +335,7 @@ class Trade:
         for i in range(len(wanted_pokemon)):
             await listingmsg.add_reaction(f'{i+1}\u20e3')
 
-        await listingmsg.add_reaction('\u23f9')
+        await listingmsg.add_reaction(self.bot.config['trade_stop'])
         del self.offers[offer_id]
 
     async def reject_offer(self, offer_id):
@@ -352,8 +352,8 @@ class Trade:
             lister=self.lister.display_name, pkmn=offered_pokemon)
 
         instructions = "React to this message to make an offer!"
-        cancel_inst = "{lister} may cancel the trade with :stop_button:".format(
-            lister=self.lister.display_name)
+        cancel_inst = "{lister} may cancel the trade with {stop_emoji}".format(
+            lister=self.lister.display_name, stop_emoji=self.bot.config['trade_stop'])
 
         await listingmsg.edit(
             content=f"{offer_str}\n\n{instructions}\n\n{cancel_inst}",
@@ -362,7 +362,7 @@ class Trade:
         for i in range(len(wanted_pokemon)):
             await listingmsg.add_reaction(f'{i+1}\u20e3')
 
-        await listingmsg.add_reaction('\u23f9')
+        await listingmsg.add_reaction(self.bot.config['trade_stop'])
 
         del self.offers[offer_id]
 

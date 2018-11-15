@@ -217,11 +217,11 @@ class Nest:
                 continue
             if nest_number in self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('wants', []):
                 try:
-                    nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name}** is a **{str(pokemon)}** nest in {channel.mention}!", embed=nest_embed)
+                    nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest in {channel.mention}!", embed=nest_embed)
                     dm_dict[user.id] = nestdmmsg.id
                 except:
                     continue
-        nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name}** is a **{str(pokemon)}** nest!", embed=nest_embed)
+        nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest!", embed=nest_embed)
         nest_dict[nest_name]['reports'][nestreportmsg.id] = {
             'exp':migration_exp,
             'expedit': "delete",
@@ -386,13 +386,13 @@ class Nest:
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == '❎':
+        if timeout or res.emoji == self.bot.config['answer_no']:
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Nest addition cancelled.'))
             await asyncio.sleep(10)
             await utils.safe_delete(confirmation)
             return
-        elif res.emoji == '✅':
+        elif res.emoji == self.bot.config['answer_yes']:
             await utils.safe_delete(rusure)
             nest_dict[nest_name] = {
                 'location':nest_loc,
@@ -460,13 +460,13 @@ class Nest:
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == '❎':
+        if timeout or res.emoji == self.bot.config['answer_no']:
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Nest deletion cancelled.'))
             await asyncio.sleep(10)
             await utils.safe_delete(confirmation)
             return
-        elif res.emoji == '✅':
+        elif res.emoji == self.bot.config['answer_yes']:
             await utils.safe_delete(rusure)
             del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name]
             self.bot.guild_dict[guild.id]['nest_dict'][channel.id]['list'].remove(nest_name)
@@ -501,13 +501,13 @@ class Nest:
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == '❎':
+        if timeout or res.emoji == self.bot.config['answer_no']:
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Manual reset cancelled.'))
             await asyncio.sleep(10)
             await utils.safe_delete(confirmation)
             return
-        elif res.emoji == '✅':
+        elif res.emoji == self.bot.config['answer_yes']:
             await utils.safe_delete(rusure)
             for nest in nest_dict:
                 if nest == "list":
@@ -568,13 +568,13 @@ class Nest:
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == '❎':
+        if timeout or res.emoji == self.bot.config['answer_no']:
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Migration time set cancelled.'))
             await asyncio.sleep(10)
             await utils.safe_delete(confirmation)
             return
-        elif res.emoji == '✅':
+        elif res.emoji == self.bot.config['answer_yes']:
             await utils.safe_delete(rusure)
             ctx.bot.guild_dict[guild.id]['configure_dict']['nest']['migration'] = migration_utc
             for nest in nest_dict:

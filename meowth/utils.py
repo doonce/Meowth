@@ -237,7 +237,9 @@ def get_level(bot, pkmn):
                 if pokemon.id == entered_pkmn.id:
                     return level
 
-async def ask(bot, message, user_list=None, timeout=60, *, react_list=['✅', '❎']):
+async def ask(bot, message, user_list=None, timeout=60, *, react_list=[]):
+    if not react_list:
+        react_list=[bot.config['answer_yes'], bot.config['answer_no']]
     if user_list and type(user_list) != list:
         user_list = [user_list]
     def check(reaction, user):
@@ -336,9 +338,9 @@ async def autocorrect(bot, entered_word, destination, author):
             except TypeError:
                 timeout = True
             await question.delete()
-            if timeout or res.emoji == '❎':
+            if timeout or res.emoji == bot.config['answer_no']:
                 return None
-            elif res.emoji == '✅':
+            elif res.emoji == bot.config['answer_yes']:
                 return match
             else:
                 return None

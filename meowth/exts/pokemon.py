@@ -570,13 +570,13 @@ class Pokemon():
                     else:
                         match = await utils.autocorrect(ctx.bot, word, ctx.channel, ctx.author)
                         if not match:
-                            return None
+                            return None, None
                         match_list.append(word)
                         argument = argument.replace(word, match).strip()
                         pokemon = match
 
         if not argument:
-            return None
+            return None, None
 
         if argument.isdigit() and allow_digits:
             match = utils.get_name(ctx.bot, int(argument))
@@ -584,7 +584,7 @@ class Pokemon():
             match = utils.get_match(ctx.bot.pkmn_list, argument)[0]
 
         if not match:
-            return None
+            return None, None
 
         pokemon = cls(ctx.bot, str(match), None, shiny=shiny, alolan=alolan, form=form)
 

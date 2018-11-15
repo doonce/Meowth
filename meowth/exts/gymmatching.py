@@ -50,19 +50,19 @@ class GymMatching:
             return None
         if score < 80:
             try:
-                question = _("{mention} Did you mean: **{match}**?\n\nReact with ✅ to match report with **{match}** gym, ❎ to report without matching, or ❌ to cancel report.").format(mention=author.mention, match=match)
+                question = _("{mention} Did you mean: **{match}**?\n\nReact with {yes_emoji} to match report with **{match}** gym, {no_emoji} to report without matching, or {cancel_emoji} to cancel report.").format(mention=author.mention, match=match, yes_emoji=self.bot.config['answer_yes'],  no_emoji=self.bot.config['answer_no'],  cancel_emoji=self.bot.config['answer_cancel'], )
                 q_msg = await channel.send(question)
-                reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=['✅', '❎','❌'])
+                reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=[self.bot.config['answer_yes'],self.bot.config['answer_no'],self.bot.config['answer_cancel']])
             except TypeError:
                 await q_msg.delete()
                 return None
             if not reaction:
                 await q_msg.delete()
                 return None
-            if reaction.emoji == '❌':
+            if reaction.emoji == self.bot.config['answer_cancel']:
                 await q_msg.delete()
                 return False
-            if reaction.emoji == '✅':
+            if reaction.emoji == self.bot.config['answer_yes']:
                 await q_msg.delete()
                 return match
             await q_msg.delete()
@@ -113,7 +113,7 @@ class GymMatching:
                     res, reactuser = await utils.ask(self.bot, rusure, message.author.id)
                 except TypeError:
                     timeout = True
-                if timeout or res.emoji == '❎':
+                if timeout or res.emoji == self.bot.config['answer_no']:
                     await rusure.delete()
                     confirmation = await message.channel.send(_('Report cancelled.'))
                     try:
@@ -123,7 +123,7 @@ class GymMatching:
                     await asyncio.sleep(10)
                     await confirmation.delete()
                     return "", False, False
-                elif res.emoji == '✅':
+                elif res.emoji == self.bot.config['answer_yes']:
                     await rusure.delete()
                     return gym_info, raid_details, raid_gmaps_link
                 else:
