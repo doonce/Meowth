@@ -280,14 +280,13 @@ async def reset_raid_roles(bot):
             boss_names.append(boss)
     for guild_id in guild_dict:
         guild = Meowth.get_guild(guild_id)
-        for trainer in guild_dict[guild.id]['trainers']:
-            user = guild.get_member(trainer)
-            if not user:
-                continue
-            user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('wants', [])
-            for role in user.roles:
-                if role.name.lower() in Meowth.pkmn_list and int(utils.get_number(Meowth, role.name.lower())) not in user_wants:
-                    user_wants.append(int(utils.get_number(Meowth, role.name.lower())))
+        for member in guild.members:
+            user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('wants', [])
+            for role in member.roles:
+                if role.name.lower() in Meowth.pkmn_list:
+                    number = utils.get_number(Meowth, role.name.lower())
+                    if number not in guild_dict[guild.id]['trainers'].setdefault(member.id, {}).setdefault('wants', []):
+                        guild_dict[guild.id]['trainers'].setdefault(member.id, {}).setdefault('wants', []).append(number)
         for role in guild.roles:
             if role.name not in boss_names and role.name.lower() in Meowth.pkmn_list and role != guild.me.top_role:
                 try:
