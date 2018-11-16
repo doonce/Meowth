@@ -272,14 +272,22 @@ async def template(ctx, *, sample_message):
         await ctx.channel.send(msg.format(user=ctx.author.mention))
 
 async def reset_raid_roles(bot):
+    boss_names = []
+    for boss in Meowth.raid_list:
+        boss = pkmn_class.Pokemon.get_pokemon(bot, boss)
+        boss = boss.name.lower()
+        if boss not in boss_names:
+            boss_names.append(boss)
     for guild_id in guild_dict:
         guild = Meowth.get_guild(guild_id)
-        boss_names = []
-        for boss in Meowth.raid_list:
-            boss = pkmn_class.Pokemon.get_pokemon(bot, boss)
-            boss = boss.name.lower()
-            if boss not in boss_names:
-                boss_names.append(boss)
+        for trainer in guild_dict[guild.id]['trainers']:
+            user = guild.get_member(trainer)
+            if not user:
+                continue
+            user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('wants', [])
+            for role in user.roles:
+                if role.name.lower() in Meowth.pkmn_list and int(utils.get_number(Meowth, role.name.lower())) not in user_wants:
+                    user_wants.append(int(utils.get_number(Meowth, role.name.lower())))
         for role in guild.roles:
             if role.name not in boss_names and role.name.lower() in Meowth.pkmn_list and role != guild.me.top_role:
                 try:
@@ -2988,7 +2996,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         if huntr:
             gymhuntrmoves = huntr
         #raid_embed.add_field(name=gymhuntrmoves, value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
-        raid_embed.add_field(name=_("Moveset"), value=gymhuntrmoves)
+        raid_embed.add_field(name=_("**Moveset:**"), value=gymhuntrmoves)
     raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
     raid_embed.set_thumbnail(url=pokemon.img_url)
     await raid_channel.edit(name=raid_channel_name, topic=end.strftime(_('Ends on %B %d at %I:%M %p (%H:%M)')))

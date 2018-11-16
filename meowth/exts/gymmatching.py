@@ -48,6 +48,8 @@ class GymMatching:
         match, score = self.gym_match(gym_name, gyms)
         if not match:
             return None
+        if ctx.bot:
+            return match
         if score < 80:
             try:
                 question = _("{mention} Did you mean: **{match}**?\n\nReact with {yes_emoji} to match report with **{match}** gym, {no_emoji} to report without matching, or {cancel_emoji} to cancel report.").format(mention=author.mention, match=match, yes_emoji=self.bot.config['answer_yes'],  no_emoji=self.bot.config['answer_no'],  cancel_emoji=self.bot.config['answer_cancel'], )

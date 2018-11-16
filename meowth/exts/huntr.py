@@ -160,14 +160,16 @@ class Huntr:
         I also recommend to set the username to just PokeAlarm"""
         message = ctx.message
         pokealarm_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id].get('pokealarm_dict',{}))
+        raid_channel = False
         if not reactuser:
             reporttype = None
             report = None
             embed = message.embeds[0] if message.embeds else None
-            await message.delete()
             now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
             painfo = message.content.split("|")
             if "!raidegg" in message.content.lower():
+                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoegg', False):
+                    return
                 reporttype = "egg"
                 gps = painfo.pop(1)
                 moves = None
@@ -179,6 +181,8 @@ class Huntr:
                 timeout = int(raidexp)*60
                 expiremsg = _('**This level {level} raid egg has hatched!**').format(level=egg_level)
             elif "!raid" in message.content.lower():
+                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoraid', False):
+                    return
                 reporttype = "raid"
                 gps = painfo.pop(1)
                 moves = painfo.pop(1)
@@ -190,7 +194,8 @@ class Huntr:
                 timeout = int(raidexp)*60
                 expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=entered_raid.title())
             elif "!wild" in message.content.lower():
-                return
+                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autowild', False):
+                    return
                 reporttype = "wild"
                 exptime = painfo.pop(1).split()
                 minutes = exptime.pop(0)[:-1]
@@ -202,6 +207,7 @@ class Huntr:
                 wild_details = " ".join(painfo)
                 location = "https://www.google.com/maps/dir/Current+Location/{location}".format(location=wild_details)
                 despawn = (int(minutes) * 60) + int(seconds)
+            await message.delete()
             if reporttype == "wild":
                 await self.huntr_wild(ctx, entered_wild, wild_details, huntrexp, huntrweather, reporter="alarm")
                 return
@@ -218,35 +224,39 @@ class Huntr:
                         if embed and channel:
                             await channel.send(embed=embed)
                         return
-                if self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('alarmaction',None) == 'auto':
-                    if reporttype == "egg":
+                if reporttype == "egg":
+                    if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('egglvls', False):
                         raid_channel = await self.huntr_raidegg(ctx, egg_level, raid_details, raidexp, gps, auto_report=True, reporter="alarm")
-                    elif reporttype == "raid":
+                        if embed and raid_channel:
+                            await raid_channel.send(embed=embed)
+                        return
+                    else:
+                        pamsg = await message.channel.send(("React with {emoji} to make a channel for this **Level {level} Egg**!").format(emoji=self.bot.config['answer_yes'], level=egg_level),embed=embed)
+                elif reporttype == "raid":
+                    if int(utils.get_level(self.bot, entered_raid)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('raidlvls', False):
                         raid_channel = await self.huntr_raid(ctx, entered_raid, raid_details, raidexp, gps, moves, auto_report = True, reporter="alarm")
-                    if embed and raid_channel:
-                        await raid_channel.send(embed=embed)
-                elif self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('alarmaction',None) == 'react':
-                    if reporttype == "egg":
-                        pamsg = await message.channel.send(("If you want me to make a channel for this **Level {level} Egg**, just react!").format(level=egg_level),embed=embed)
-                    elif reporttype == "raid":
-                        pamsg = await message.channel.send(("If you want me to make a channel for this **{pokeid}** raid, just react!").format(pokeid=entered_raid),embed=embed)
-                    await asyncio.sleep(0.25)
-                    await pamsg.add_reaction(self.bot.config['answer_yes'])
-                    pokealarm_dict[pamsg.id] = {
-                        "exp":time.time() + timeout,
-                        'expedit': {"content":None,"embedcontent":expiremsg},
-                        "reporttype":reporttype,
-                        "reportchannel":message.channel.id,
-                        "level":egg_level,
-                        "pokemon":entered_raid,
-                        "gps":gps,
-                        "gym":raid_details,
-                        "raidexp":raidexp,
-                        "reporttime":now,
-                        "moves":moves,
-                        "embed":embed
-                    }
-                    self.bot.guild_dict[message.guild.id]['pokealarm_dict'] = pokealarm_dict
+                        if embed and raid_channel:
+                            await raid_channel.send(embed=embed)
+                        return
+                    else:
+                        pamsg = await message.channel.send(("React with {emoji} to make a channel for this **{pokeid}** raid!").format(emoji=self.bot.config['answer_yes'], pokeid=entered_raid),embed=embed)
+                await asyncio.sleep(0.25)
+                await pamsg.add_reaction(self.bot.config['answer_yes'])
+                pokealarm_dict[pamsg.id] = {
+                    "exp":time.time() + timeout,
+                    'expedit': {"content":None,"embedcontent":expiremsg},
+                    "reporttype":reporttype,
+                    "reportchannel":message.channel.id,
+                    "level":egg_level,
+                    "pokemon":entered_raid,
+                    "gps":gps,
+                    "gym":raid_details,
+                    "raidexp":raidexp,
+                    "reporttime":now,
+                    "moves":moves,
+                    "embed":embed
+                }
+                self.bot.guild_dict[message.guild.id]['pokealarm_dict'] = pokealarm_dict
         else:
             alarm_details = pokealarm_dict[message.id]
             embed = alarm_details['embed']

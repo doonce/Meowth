@@ -199,6 +199,7 @@ async def get_raid_help(prefix, avatar, user=None):
     await user.send(embed=helpembed)
 
 def get_number(bot, pkmn_name):
+    pkmn_name = pkmn_name.lower()
     try:
         number = bot.pkmn_info[pkmn_name]['number']
     except:

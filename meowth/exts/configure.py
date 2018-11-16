@@ -1256,7 +1256,10 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp',copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raid** reports using @GymHuntrBot enabled?\n\nAny raid that @GymHuntrBot posts in a channel that Meowth also has access to will be converted to a **!raid** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Raid Reports', icon_url=self.bot.user.avatar_url))
+        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raid** reports using supported bots enabled?\n\nAny raid that a bot posts in a channel that Meowth also has access to will be converted to a **!raid** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Raid Reports', icon_url=self.bot.user.avatar_url)
+        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
+        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raid <mon_name> <gym_name> <raid_time_left>|<lat>,<lng>|<quick_move> / <charge_move>`'))
+        await owner.send(embed=scanner_embed)
         while True:
             wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if wildconfigset.content.lower() == 'y':
@@ -1274,7 +1277,10 @@ class Configure:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
                 continue
         if config_dict_temp['scanners']['autoraid']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create raid channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name='Automatic Raid Report Levels', icon_url=self.bot.user.avatar_url))
+            scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create raid channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. Use both this configuration and the other bot's configuration to customize your needs. See below.").set_author(name='Automatic Raid Report Levels', icon_url=self.bot.user.avatar_url)
+            scanner_embed.add_field(name=_('**GymhuntrBot:**'), value=_("For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created."))
+            scanner_embed.add_field(name=_('**NovaBot and PokeAlarm:**'), value=_("For example: `3,4,5`\n\nIn this example, only 3+ raids will auto reported. You can customize the other levels manually in your alarm settings. "))
+            await owner.send(embed=scanner_embed)
             raidlevel_list = []
             config_dict_temp['scanners']['raidlvls'] = []
             while True:
@@ -1297,7 +1303,10 @@ class Configure:
                     else:
                         await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic raids."))
                         continue
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raidegg** reports using @GymHuntrBot enabled?\n\nAny egg that @GymHuntrBot posts in a channel that Meowth also has access to will be converted to a **!raidegg** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Egg Reports', icon_url=self.bot.user.avatar_url))
+        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raidegg** reports using supported bots enabled?\n\nAny egg that a bot posts in a channel that Meowth also has access to will be converted to a **!raidegg** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Egg Reports', icon_url=self.bot.user.avatar_url)
+        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
+        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raidegg <egg_lvl> <gym_name> <hatch_time_left>|<lat>,<lng>`'))
+        await owner.send(embed=scanner_embed)
         while True:
             wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if wildconfigset.content.lower() == 'y':
@@ -1315,7 +1324,10 @@ class Configure:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
                 continue
         if config_dict_temp['scanners']['autoegg']:
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create egg channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized egg report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created.\n\nUse both this configuration and @GymHuntrBot's commands to customize to your needs.").set_author(name='Automatic Egg Report Levels', icon_url=self.bot.user.avatar_url))
+            scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create egg channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. Use both this configuration and the other bot's configuration to customize your needs. See below.").set_author(name='Automatic Egg Report Levels', icon_url=self.bot.user.avatar_url)
+            scanner_embed.add_field(name=_('**GymhuntrBot:**'), value=_("For example: `3,4,5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created."))
+            scanner_embed.add_field(name=_('**NovaBot and PokeAlarm:**'), value=_("For example: `3,4,5`\n\nIn this example, only 3+ raids will auto reported. You can customize the other levels manually in your alarm settings. "))
+            await owner.send(embed=scanner_embed)
             egglevel_list = []
             config_dict_temp['scanners']['egglvls'] = []
             while True:
@@ -1338,7 +1350,10 @@ class Configure:
                     else:
                         await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1,2,3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic eggs."))
                         continue
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!wild** reports using @HuntrBot enabled?\n\nAnything that @HuntrBot posts in a channel that Meowth also has access to will be converted to a **!wild** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Wild Reports', icon_url=self.bot.user.avatar_url))
+        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!wild** reports using supported bots enabled?\n\nAny wild that a bot posts in a channel that Meowth also has access to will be converted to a **!wild** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Wild Reports', icon_url=self.bot.user.avatar_url)
+        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
+        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!wild <mon_name> <lat>,<lng>|<time_left>|Weather: <weather>`'))
+        await owner.send(embed=scanner_embed)
         while True:
             wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if wildconfigset.content.lower() == 'y':
@@ -1354,28 +1369,6 @@ class Configure:
                 return None
             else:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
-                continue
-        # configure pokealarm
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want reports using PokeAlarm enabled?\n\nAny PokeAlarm with the following configuration in the *content* field of your alarm will be converted.\n\n```Raid format = !raid <mon_name> <gym_name> <raid_time_left>|<lat>,<lng>|<quick_move> / <charge_move>\nRaidegg format = !raidegg <egg_lvl> <gym_name> <hatch_time_left>|<lat>,<lng>\nWild format = !wild <mon_name> <lat>,<lng>|<time_left>|Weather: <weather> / IV: <iv>```\nI also recommend to set the username to just PokeAlarm\n\nRespond with: **N** to disable, **auto** to have all raids make a channel, or **react** to only make channels on user reaction.').set_author(name='Pokealarm Reports', icon_url=self.bot.user.avatar_url))
-        while True:
-            alarmconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-            if alarmconfigset.content.lower() == 'auto':
-                config_dict_temp['scanners']['alarmaction'] = "auto"
-                await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Reports enabled'))
-                break
-            elif alarmconfigset.content.lower() == 'react':
-                config_dict_temp['scanners']['alarmaction'] = "react"
-                await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description='Reaction Reports enabled'))
-                break
-            elif alarmconfigset.content.lower() == 'n':
-                config_dict_temp['scanners']['alarmaction'] = False
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='Pokealarm Reports disabled'))
-                break
-            elif alarmconfigset.content.lower() == 'cancel':
-                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
-                return None
-            else:
-                await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply **N** to disable, **auto** to have all raids make a channel, or **react** to only make channels on user reaction."))
                 continue
         ctx.config_dict_temp = config_dict_temp
         return ctx
