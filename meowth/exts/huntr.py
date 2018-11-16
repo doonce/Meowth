@@ -268,12 +268,15 @@ class Huntr:
             exptime = int(huntrtime) - int(timediff.minutes)
             if reporttype == "egg":
                 raid_channel = await self.huntr_raidegg(ctx, alarm_details['level'], alarm_details['gym'], exptime, alarm_details['gps'], auto_report=True, reporter="alarm")
+                egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(reactuser.id,{}).setdefault('egg_reports',0) + 1
+                self.bot.guild_dict[message.guild.id]['trainers'][reactuser.id]['egg_reports'] = egg_reports
             elif reporttype == "raid":
                 raid_channel = await self.huntr_raid(ctx, alarm_details['pokemon'], alarm_details['gym'], exptime, alarm_details['gps'], alarm_details['moves'], auto_report = True, reporter="alarm")
+                raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(reactuser.id,{}).setdefault('raid_reports',0) + 1
+                self.bot.guild_dict[message.guild.id]['trainers'][reactuser.id]['raid_reports'] = raid_reports
             if embed and raid_channel:
                 await raid_channel.send(embed=embed)
             await message.delete()
-
 
     """Reporting"""
 
