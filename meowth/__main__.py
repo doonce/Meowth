@@ -1619,6 +1619,7 @@ async def raid_json(ctx, level=None, *, newlist=None):
     elif level in raid_info['raid_eggs'] and newlist:
         newlist = [str(item.title().strip()) for item in newlist.strip('[]').split(',')]
         for pokemon in newlist:
+            pokemon = re.sub('[^a-zA-Z0-9]' ,'' ,pokemon)
             pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
             finallist.append(str(pokemon))
         newlist = finallist
@@ -2382,8 +2383,7 @@ async def _wild(ctx, content):
     await asyncio.sleep(0.25)
     await wildreportmsg.add_reaction(config['wild_despawn'])
     await asyncio.sleep(0.25)
-    wild_dict = copy.deepcopy(guild_dict[message.guild.id].get('wildreport_dict',{}))
-    wild_dict[wildreportmsg.id] = {
+    guild_dict[message.guild.id]['wildreport_dict'][wildreportmsg.id] = {
         'exp':time.time() + despawn,
         'expedit': {"content":wildreportmsg.content,"embedcontent":expiremsg},
         'reportmessage':message.id,
@@ -2396,7 +2396,6 @@ async def _wild(ctx, content):
         'pkmn_obj':str(pokemon),
         'omw':[]
     }
-    guild_dict[message.guild.id]['wildreport_dict'] = wild_dict
     wild_reports = guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(message.author.id,{}).setdefault('wild_reports',0) + 1
     guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports
 

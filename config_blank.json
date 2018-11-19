@@ -64,7 +64,8 @@
 "res_encounter": ":question:",
 "res_other": ":small_blue_diamond:",
 
-"//": "Emoji for Wild Command. Reactions are different; These must be unicode or custom emoji without <>. Not discord alias.",
+"//": "Emoji for Wild Command.",
+"//": "Reactions are different; These must be unicode or custom emoji without <>. Not discord alias.",
 "//": "Example: Custom:`emojiname:emojiid` | Standard: Use https://gist.github.com/Vexs/629488c4bb4126ad2a9909309ed6bd71",
 "wild_omw" : "\ud83c\udfce",
 "wild_despawn":"\ud83d\udca8",
@@ -72,8 +73,24 @@
 "//": "Emoji for Wild List.",
 "wild_bullet" : ":small_blue_diamond:",
 
+"//": "Emoji for Trade Command.",
+"//": "Reactions are different; These must be unicode or custom emoji without <>. Not discord alias.",
+"//": "Example: Custom:`emojiname:emojiid` | Standard: Use https://gist.github.com/Vexs/629488c4bb4126ad2a9909309ed6bd71",
+"trade_stop" : "\u23f9",
+"trade_accept":"\u2705",
+"trade_reject":"\u274e",
+"trade_complete":"\u2611",
+
 "//": "Emoji for Trade List.",
-"trade_bullet":":small_blue_diamond:"
+"trade_bullet":":small_blue_diamond:",
+
+"//":"Interacting with Meowth.",
+"//": "Reactions are different; These must be unicode or custom emoji without <>. Not discord alias.",
+"//": "Example: Custom:`emojiname:emojiid` | Standard: Use https://gist.github.com/Vexs/629488c4bb4126ad2a9909309ed6bd71",
+"answer_yes":"\u2705",
+"answer_no":"\u274e",
+"answer_cancel":"\u274c",
+"command_done":"\u2611"
 
 
 }
