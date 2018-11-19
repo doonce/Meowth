@@ -44,9 +44,9 @@ class Huntr:
             return
         pokealarm_dict = copy.deepcopy(ctx.bot.guild_dict[channel.guild.id].get('pokealarm_dict',{}))
         pokehuntr_dict = copy.deepcopy(ctx.bot.guild_dict[channel.guild.id].get('pokehuntr_dict',{}))
-        if message.id in pokealarm_dict.keys() and not user.bot and str(payload.emoji) == self.bot.config['answer_yes']:
+        if message.id in pokealarm_dict.keys() and not user.bot and str(payload.emoji) == self.bot.config['huntr_report']:
             await self.on_pokealarm(ctx, user)
-        if message.id in pokehuntr_dict.keys() and not user.bot and str(payload.emoji) == self.bot.config['answer_yes']:
+        if message.id in pokehuntr_dict.keys() and not user.bot and str(payload.emoji) == self.bot.config['huntr_report']:
             await self.on_huntr(ctx, user)
 
     async def on_huntr(self, ctx, reactuser=None):
@@ -230,7 +230,7 @@ class Huntr:
                             await raid_channel.send(embed=embed)
                         return
                     else:
-                        pamsg = await message.channel.send(("React with {emoji} to make a channel for this **Level {level} Egg**!").format(emoji=self.bot.config['answer_yes'], level=egg_level),embed=embed)
+                        pamsg = await message.channel.send(("React with {emoji} to make a channel for this **Level {level} Egg**!").format(emoji=self.bot.config['huntr_report'], level=egg_level),embed=embed)
                 elif reporttype == "raid":
                     if int(utils.get_level(self.bot, entered_raid)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('raidlvls', False):
                         raid_channel = await self.huntr_raid(ctx, entered_raid, raid_details, raidexp, gps, moves, auto_report = True, reporter="alarm")
@@ -243,7 +243,7 @@ class Huntr:
                             roletest = entered_raid.title()
                         else:
                             roletest = raid.mention
-                        pamsg = await message.channel.send(("React with {emoji} to make a channel for this {pokeid} raid!").format(emoji=self.bot.config['answer_yes'], pokeid=roletest),embed=embed)
+                        pamsg = await message.channel.send(("React with {emoji} to make a channel for this {pokeid} raid!").format(emoji=self.bot.config['huntr_report'], pokeid=roletest),embed=embed)
                 self.bot.guild_dict[message.guild.id]['pokealarm_dict'][pamsg.id] = {
                     "exp":time.time() + timeout,
                     'expedit': {"content":None,"embedcontent":expiremsg},
@@ -259,7 +259,7 @@ class Huntr:
                     "embed":embed
                 }
                 await asyncio.sleep(0.25)
-                await pamsg.add_reaction(self.bot.config['answer_yes'])
+                await pamsg.add_reaction(self.bot.config['huntr_report'])
         else:
             await message.delete()
             pokealarm_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id].get('pokealarm_dict',{}))
@@ -465,7 +465,7 @@ class Huntr:
         else:
             raidreport = await message.channel.send(content=_('{roletest}Meowth! {pokemon} raid reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(roletest=roletest,pokemon=entered_raid.title(), member=message.author.mention, location_details=raid_details), embed=raid_embed)
             await asyncio.sleep(0.25)
-            await raidreport.add_reaction(self.bot.config['answer_yes'])
+            await raidreport.add_reaction(self.bot.config['huntr_report'])
             self.bot.guild_dict[message.guild.id]['pokehuntr_dict'][raidreport.id] = {
                 "exp":time.time() + (raidexp * 60),
                 'expedit': {"content":raidreport.content.split(" React")[0],"embedcontent":_('**This {pokemon} raid has expired!**').format(pokemon=entered_raid)},
@@ -580,7 +580,7 @@ class Huntr:
         else:
             raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=egg_level, member=message.author.mention, location_details=raid_details), embed=raid_embed)
             await asyncio.sleep(0.25)
-            await raidreport.add_reaction(self.bot.config['answer_yes'])
+            await raidreport.add_reaction(self.bot.config['huntr_report'])
             self.bot.guild_dict[message.guild.id]['pokehuntr_dict'][raidreport.id] = {
                 "exp":time.time() + (int(raidexp) * 60),
                 'expedit': {"content":raidreport.content.split(" React")[0],"embedcontent": _('**This level {level} raid egg has hatched!**').format(level=egg_level)},
