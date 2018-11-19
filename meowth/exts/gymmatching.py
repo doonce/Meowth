@@ -109,6 +109,8 @@ class GymMatching:
                     if dupe_channel:
                         duplicate_raids.append(dupe_channel.mention)
             if duplicate_raids:
+                if ctx.author.bot:
+                    return "", False, False
                 rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_raids)))
                 try:
                     timeout = False

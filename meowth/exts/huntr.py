@@ -160,6 +160,7 @@ class Huntr:
         I also recommend to set the username to just PokeAlarm"""
         message = ctx.message
         raid_channel = False
+        pokealarm_dict = self.bot.guild_dict[ctx.guild.id].setdefault('pokealarm_dict', {})
         if not reactuser:
             reporttype = None
             report = None
@@ -463,6 +464,7 @@ class Huntr:
             self.event_loop.create_task(self.bot.expiry_check(raid_channel))
             return raid_channel
         else:
+            pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
             raidreport = await message.channel.send(content=_('{roletest}Meowth! {pokemon} raid reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(roletest=roletest,pokemon=entered_raid.title(), member=message.author.mention, location_details=raid_details), embed=raid_embed)
             await asyncio.sleep(0.25)
             await raidreport.add_reaction(self.bot.config['huntr_report'])
@@ -578,6 +580,7 @@ class Huntr:
             self.event_loop.create_task(self.bot.expiry_check(raid_channel))
             return raid_channel
         else:
+            pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
             raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=egg_level, member=message.author.mention, location_details=raid_details), embed=raid_embed)
             await asyncio.sleep(0.25)
             await raidreport.add_reaction(self.bot.config['huntr_report'])
