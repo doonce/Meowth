@@ -1821,7 +1821,7 @@
     },
     "tangela": {
         "number": 114,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -12648,9 +12648,24 @@
     },
     "meltan": {
         "number": 808,
-        "shiny": false,
-        "legendary": false,
-        "mythical": false,
+        "shiny": true,
+        "legendary": true,
+        "mythical": true,
+        "gender": false,
+        "forms": {
+            "list": [],
+            "none": {
+                "type": [
+                    "Steel"
+                ]
+            }
+        }
+    },
+    "melmetal": {
+        "number": 809,
+        "shiny": true,
+        "legendary": true,
+        "mythical": true,
         "gender": false,
         "forms": {
             "list": [],

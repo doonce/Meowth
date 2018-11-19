@@ -238,7 +238,12 @@ class Huntr:
                             await raid_channel.send(embed=embed)
                         return
                     else:
-                        pamsg = await message.channel.send(("React with {emoji} to make a channel for this **{pokeid}** raid!").format(emoji=self.bot.config['answer_yes'], pokeid=entered_raid),embed=embed)
+                        raid = discord.utils.get(message.guild.roles, name=entered_raid)
+                        if raid == None:
+                            roletest = entered_raid.title()
+                        else:
+                            roletest = raid.mention
+                        pamsg = await message.channel.send(("React with {emoji} to make a channel for this {pokeid} raid!").format(emoji=self.bot.config['answer_yes'], pokeid=roletest),embed=embed)
                 self.bot.guild_dict[message.guild.id]['pokealarm_dict'][pamsg.id] = {
                     "exp":time.time() + timeout,
                     'expedit': {"content":None,"embedcontent":expiremsg},
