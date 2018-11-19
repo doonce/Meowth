@@ -238,7 +238,7 @@ class Huntr:
                             await raid_channel.send(embed=embed)
                         return
                     else:
-                        raid = discord.utils.get(message.guild.roles, name=entered_raid)
+                        raid = discord.utils.get(message.guild.roles, name=entered_raid.lower())
                         if raid == None:
                             roletest = entered_raid.title()
                         else:
