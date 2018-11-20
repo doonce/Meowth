@@ -198,7 +198,8 @@ class Huntr:
                     return
                 reporttype = "wild"
                 exptime = painfo.pop(1).split()
-                minutes = exptime.pop(0)[:-1]
+                #minutes = exptime.pop(0)[:-1]
+                minutes = "45"
                 seconds = exptime.pop(0)[:-1]
                 huntrexp = "{min} min {sec} sec".format(min=minutes,sec=seconds)
                 huntrweather = painfo.pop(1)

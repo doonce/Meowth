@@ -3259,6 +3259,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['duplicate'] = duplicate
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
+    guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['gymhuntrgps'] = gymhuntrgps
     if author and not author.bot:
         raid_reports = guild_dict[raid_channel.guild.id].setdefault('trainers',{}).setdefault(author.id,{}).setdefault('raid_reports',0) + 1
         guild_dict[raid_channel.guild.id]['trainers'][author.id]['raid_reports'] = raid_reports
@@ -6143,13 +6144,13 @@ async def _wantlist(ctx):
         if user_stops:
             wantmsg += _('\n\n**Stops:**\n{user_stops}').format(user_stops = '\n'.join(textwrap.wrap(', '.join(user_stops), width=80)))
     if wantmsg:
-        listmsg = _('Meowth! Your current **!want** list is:')
+        listmsg = _('Meowth! {author}, your current **!want** list is:').format(author=ctx.author.display_name)
         paginator = commands.Paginator(prefix="", suffix="")
         for line in wantmsg.splitlines():
             paginator.add_line(line.rstrip().replace('`', '\u200b`'))
         return listmsg, paginator.pages
     else:
-        listmsg = _("Meowth! You don\'t have any wants! use **!want** to add some.")
+        listmsg = _("Meowth! {author}, you don\'t have any wants! use **!want** to add some.").format(author=ctx.author.display_name)
     return listmsg, None
 
 @_list.command()
