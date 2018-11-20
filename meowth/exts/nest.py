@@ -215,7 +215,7 @@ class Nest:
             perms = user.permissions_in(message.channel)
             if not perms.read_messages:
                 continue
-            if nest_number in self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('wants', []):
+            if nest_number in self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', []):
                 try:
                     nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest in {channel.mention}!", embed=nest_embed)
                     dm_dict[user.id] = nestdmmsg.id

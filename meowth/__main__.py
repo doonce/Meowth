@@ -281,12 +281,12 @@ async def reset_raid_roles(bot):
     for guild_id in guild_dict:
         guild = Meowth.get_guild(guild_id)
         for member in guild.members:
-            user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('wants', [])
+            user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('wants', [])
             for role in member.roles:
                 if role.name.lower() in Meowth.pkmn_list:
                     number = utils.get_number(Meowth, role.name.lower())
-                    if number not in guild_dict[guild.id]['trainers'].setdefault(member.id, {}).setdefault('wants', []):
-                        guild_dict[guild.id]['trainers'].setdefault(member.id, {}).setdefault('wants', []).append(number)
+                    if number not in guild_dict[guild.id]['trainers'].setdefault(member.id, {}).setdefault('alerts', {}).setdefault('wants', []):
+                        guild_dict[guild.id]['trainers'].setdefault(member.id, {}).setdefault('alerts', {}).setdefault('wants', []).append(number)
         for role in guild.roles:
             if role.name not in boss_names and role.name.lower() in Meowth.pkmn_list and role != guild.me.top_role:
                 try:
@@ -304,7 +304,7 @@ async def reset_raid_roles(bot):
             user = guild.get_member(trainer)
             if not user:
                 continue
-            user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('wants', [])
+            user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('wants', [])
             for want in user_wants:
                 if want in Meowth.raid_list:
                     role = discord.utils.get(guild.roles, name=utils.get_name(Meowth, want))
@@ -518,6 +518,7 @@ async def expire_channel(channel):
                 archive = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive',False)
                 logs = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('logs', {})
                 channel_exists = Meowth.get_channel(channel.id)
+                await utils.expire_dm_reports(Meowth, guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('dm_dict', {}))
                 if channel_exists == None:
                     return
                 elif not gymhuntrdupe and not archive and not logs:
@@ -2087,7 +2088,7 @@ async def profile(ctx, member: discord.Member = None):
     wilds = trainers.setdefault(member.id,{}).get('wild_reports',0)
     research = trainers.setdefault(member.id,{}).get('research_reports',0)
     nests = trainers.setdefault(member.id,{}).get('nest_reports',0)
-    wants = trainers.setdefault(member.id,{}).get('wants',[])
+    wants = trainers.setdefault(member.id,{}).get('alerts',{}).get('wants', [])
     wants = sorted(wants)
     wants = [utils.get_name(Meowth, x).title() for x in wants]
     roles = [x.mention for x in sorted(member.roles, reverse=True) if ctx.guild.id != x.id]
@@ -2177,7 +2178,7 @@ async def leaderboard(ctx, type="total", range="1"):
 Notifications
 """
 
-@Meowth.command()
+@Meowth.group(case_insensitive=True, invoke_without_command=True)
 @checks.allowwant()
 async def want(ctx,*,pokemon):
     """Add a Pokemon to your wanted list.
@@ -2200,7 +2201,7 @@ async def want(ctx,*,pokemon):
     already_want_list = []
     added_list = []
     role_list = []
-    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wants', [])
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
     for entered_want in want_split:
         pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_want.strip())
         if pokemon:
@@ -2253,6 +2254,108 @@ async def want(ctx,*,pokemon):
     await utils.safe_delete(want_confirmation)
     await ctx.message.add_reaction(config['command_done'])
 
+@want.command(name='gym')
+@checks.allowwant()
+async def want_gym(ctx,*,gyms):
+    message = ctx.message
+    guild = message.guild
+    channel = message.channel
+    want_split = gyms.lower().split(',')
+    want_list = []
+    added_count = 0
+    spellcheck_dict = {}
+    spellcheck_list = []
+    already_want_count = 0
+    already_want_list = []
+    added_list = []
+    gym_matching_cog = Meowth.cogs.get('GymMatching')
+    gyms = gym_matching_cog.get_gyms(ctx.guild.id)
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
+    for entered_want in want_split:
+        gym = await gym_matching_cog.gym_match_prompt(ctx, entered_want, gyms)
+        if gym:
+            want_list.append(gym.lower())
+        else:
+            spellcheck_list.append(entered_want)
+            match, score = utils.get_match(gyms.keys(), entered_want)
+            spellcheck_dict[entered_want] = match
+    for entered_want in want_list:
+        if entered_want.lower() in user_wants:
+            already_want_list.append(entered_want.title())
+            already_want_count += 1
+        else:
+            user_wants.append(entered_want.lower())
+            added_list.append(f"{entered_want.title()}")
+            added_count += 1
+    want_count = added_count + already_want_count + len(spellcheck_dict)
+    confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
+    if added_count > 0:
+        confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+    if already_want_count > 0:
+        confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+    if spellcheck_dict:
+        spellcheckmsg = ''
+        for word in spellcheck_dict:
+            spellcheckmsg += _('\n\t{word}').format(word=word)
+            if spellcheck_dict[word]:
+                spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
+        confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+    want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+    await asyncio.sleep(90)
+    await utils.safe_delete(want_confirmation)
+    await ctx.message.add_reaction(config['command_done'])
+
+@want.command(name='stop')
+@checks.allowwant()
+async def want_stop(ctx,*,stops):
+    message = ctx.message
+    guild = message.guild
+    channel = message.channel
+    want_split = stops.lower().split(',')
+    want_list = []
+    added_count = 0
+    spellcheck_dict = {}
+    spellcheck_list = []
+    already_want_count = 0
+    already_want_list = []
+    added_list = []
+    gym_matching_cog = Meowth.cogs.get('GymMatching')
+    stops = gym_matching_cog.get_stops(ctx.guild.id)
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
+    for entered_want in want_split:
+        stop = await gym_matching_cog.stop_match_prompt(ctx, entered_want, stops)
+        if stop:
+            want_list.append(stop.lower())
+        else:
+            spellcheck_list.append(entered_want)
+            match, score = utils.get_match(stops.keys(), entered_want)
+            spellcheck_dict[entered_want] = match
+    for entered_want in want_list:
+        if entered_want.lower() in user_wants:
+            already_want_list.append(entered_want.title())
+            already_want_count += 1
+        else:
+            user_wants.append(entered_want.lower())
+            added_list.append(f"{entered_want.title()}")
+            added_count += 1
+    want_count = added_count + already_want_count + len(spellcheck_dict)
+    confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
+    if added_count > 0:
+        confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+    if already_want_count > 0:
+        confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+    if spellcheck_dict:
+        spellcheckmsg = ''
+        for word in spellcheck_dict:
+            spellcheckmsg += _('\n\t{word}').format(word=word)
+            if spellcheck_dict[word]:
+                spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
+        confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+    want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+    await asyncio.sleep(90)
+    await utils.safe_delete(want_confirmation)
+    await ctx.message.add_reaction(config['command_done'])
+
 @Meowth.group(case_insensitive=True, invoke_without_command=True)
 @checks.allowwant()
 async def unwant(ctx,*,pokemon):
@@ -2266,7 +2369,7 @@ async def unwant(ctx,*,pokemon):
     message = ctx.message
     guild = message.guild
     channel = message.channel
-    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wants', [])
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
     role_list = []
     unwant_list = []
     if ctx.invoked_subcommand == None:
@@ -2300,20 +2403,76 @@ async def unwant_all(ctx):
     guild = message.guild
     channel = message.channel
     author = message.author
-    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wants', [])
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
     count = len(user_wants)
-    if count == 0:
-        await channel.send(content=_('{0}, you have no pokemon in your want list.').format(author.mention, count))
+    user_gyms = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
+    gym_count = len(user_gyms)
+    user_stops = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
+    stop_count = len(user_stops)
+    unwant_msg = ""
+    if count == 0 and gym_count == 0 and stop_count == 0:
+        await channel.send(content=_('{0}, you have no pokemon or gyms in your want list.').format(author.mention))
         return
-    await channel.trigger_typing()
-    roles = author.roles
-    remove_roles = []
-    for role in roles:
-        if role.name in Meowth.pkmn_list:
-            remove_roles.append(role)
-    await author.remove_roles(*remove_roles)
-    guild_dict[guild.id]['trainers'][message.author.id]['wants'] = []
-    await channel.send(content=_("{0}, I've removed {1} pokemon from your want list.").format(author.mention, count))
+    unwant_msg = f"{author.mention}"
+    if count > 0:
+        await channel.trigger_typing()
+        roles = author.roles
+        remove_roles = []
+        for role in roles:
+            if role.name in Meowth.pkmn_list:
+                remove_roles.append(role)
+        await author.remove_roles(*remove_roles)
+        guild_dict[guild.id]['trainers'][message.author.id]['alerts']['wants'] = []
+        unwant_msg += _(" I've removed {0} pokemon from your want list.").format(count)
+    if gym_count > 0:
+        await channel.trigger_typing()
+        guild_dict[guild.id]['trainers'][message.author.id]['alerts']['gyms'] = []
+        unwant_msg += _(" I've removed {0} gyms from your want list.").format(gym_count)
+    if stop_count > 0:
+        await channel.trigger_typing()
+        guild_dict[guild.id]['trainers'][message.author.id]['alerts']['stops'] = []
+        unwant_msg += _(" I've removed {0} stops from your want list.").format(stop_count)
+    await channel.send(unwant_msg)
+
+@unwant.command(name='gym')
+@checks.allowwant()
+async def unwant_gym(ctx,*,gyms):
+    message = ctx.message
+    guild = message.guild
+    channel = message.channel
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
+    unwant_list = []
+    unwant_split = gyms.lower().split(',')
+    gym_matching_cog = Meowth.cogs.get('GymMatching')
+    gyms = gym_matching_cog.get_gyms(ctx.guild.id)
+    for entered_unwant in unwant_split:
+        gym = await gym_matching_cog.gym_match_prompt(ctx, entered_unwant, gyms)
+        if gym:
+            unwant_list.append(gym.lower())
+    for entered_unwant in unwant_list:
+        if entered_unwant.lower() in user_wants:
+            user_wants.remove(entered_unwant.lower())
+    await message.add_reaction(config['command_done'])
+
+@unwant.command(name='stop')
+@checks.allowwant()
+async def unwant_stop(ctx,*,stops):
+    message = ctx.message
+    guild = message.guild
+    channel = message.channel
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
+    unwant_list = []
+    unwant_split = stops.lower().split(',')
+    gym_matching_cog = Meowth.cogs.get('GymMatching')
+    stops = gym_matching_cog.get_stops(ctx.guild.id)
+    for entered_unwant in unwant_split:
+        stop = await gym_matching_cog.stop_match_prompt(ctx, entered_unwant, stops)
+        if stop:
+            unwant_list.append(stop.lower())
+    for entered_unwant in unwant_list:
+        if entered_unwant.lower() in user_wants:
+            user_wants.remove(entered_unwant.lower())
+    await message.add_reaction(config['command_done'])
 
 """
 Reporting
@@ -2370,7 +2529,7 @@ async def _wild(ctx, content):
         perms = user.permissions_in(message.channel)
         if not perms.read_messages:
             continue
-        if wild_number in guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('wants', []):
+        if wild_number in guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', []):
             try:
                 wild_embed.remove_field(1)
                 wild_embed.remove_field(1)
@@ -2640,6 +2799,23 @@ async def _raid(ctx, content):
     event_loop.create_task(expiry_check(raid_channel))
     raid_reports = guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(message.author.id,{}).setdefault('raid_reports',0) + 1
     guild_dict[message.guild.id]['trainers'][message.author.id]['raid_reports'] = raid_reports
+    dm_dict = {}
+    raid_embed.remove_field(2)
+    raid_embed.remove_field(2)
+    for trainer in guild_dict[message.guild.id].get('trainers', {}):
+        user = message.guild.get_member(trainer)
+        if not user:
+            continue
+        perms = user.permissions_in(message.channel)
+        if not perms.read_messages:
+            continue
+        if raid_details.lower() in guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', []):
+            try:
+                raiddmmsg = await user.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=report_embed)
+                dm_dict[user.id] = raiddmmsg.id
+            except:
+                continue
+    guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
     return raid_channel
 
 async def _raidegg(ctx, content):
@@ -2807,6 +2983,21 @@ async def _raidegg(ctx, content):
         event_loop.create_task(expiry_check(raid_channel))
         egg_reports = guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(message.author.id,{}).setdefault('egg_reports',0) + 1
         guild_dict[message.guild.id]['trainers'][message.author.id]['egg_reports'] = egg_reports
+        dm_dict = {}
+        for trainer in guild_dict[message.guild.id].get('trainers', {}):
+            user = message.guild.get_member(trainer)
+            if not user:
+                continue
+            perms = user.permissions_in(message.channel)
+            if not perms.read_messages:
+                continue
+            if raid_details.lower() in guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', []):
+                try:
+                    raiddmmsg = await user.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
+                    dm_dict[user.id] = raiddmmsg.id
+                except:
+                    continue
+        guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         return raid_channel
 
 async def _eggassume(ctx, args, raid_channel, author=None):
@@ -2849,8 +3040,6 @@ async def _eggassume(ctx, args, raid_channel, author=None):
     raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(Meowth, raid_channel.guild, utils.get_weaknesses(Meowth, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
     raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
     raid_embed.add_field(name=_('**Hatches:**'), value=oldembed.fields[3].value, inline=True)
-    # if gymhuntrgps:
-    #     raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
     for field in oldembed.fields:
         t = _('team')
         s = _('status')
@@ -2930,6 +3119,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     duplicate = eggdetails.get('duplicate',0)
     archive = eggdetails.get('archive',False)
     meetup = eggdetails.get('meetup',{})
+    dm_dict = eggdetails.get('dm_dict',{})
     if not author:
         try:
             raid_messageauthor = raid_message.mentions[0]
@@ -2993,7 +3183,6 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         gymhuntrmoves = "\u200b"
         if huntr:
             gymhuntrmoves = huntr
-        #raid_embed.add_field(name=gymhuntrmoves, value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
         raid_embed.add_field(name=_("**Moveset:**"), value=gymhuntrmoves)
     raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
     raid_embed.set_thumbnail(url=pokemon.img_url)
@@ -3069,6 +3258,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['starttime'] = starttime
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['duplicate'] = duplicate
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
+    guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
     if author and not author.bot:
         raid_reports = guild_dict[raid_channel.guild.id].setdefault('trainers',{}).setdefault(author.id,{}).setdefault('raid_reports',0) + 1
         guild_dict[raid_channel.guild.id]['trainers'][author.id]['raid_reports'] = raid_reports
@@ -3304,8 +3494,16 @@ async def research(ctx, *, details = None):
                 error = _("entered an incorrect amount of arguments.\n\nUsage: **!research** or **!research <pokestop>, <quest>, <reward>**")
                 break
             location, quest, reward = research_split
-            loc_url = utils.create_gmaps_query(Meowth, location, message.channel, type="research")
             location = location.replace(loc_url,"").strip()
+            loc_url = utils.create_gmaps_query(Meowth, location, message.channel, type="research")
+            gym_matching_cog = Meowth.cogs.get('GymMatching')
+            stop_info = ""
+            if gym_matching_cog:
+                stop_info, location, stop_url = await gym_matching_cog.get_stop_info(ctx, location)
+                if stop_url:
+                    loc_url = stop_url
+            if not location:
+                return
             pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, reward, allow_digits=False)
             research_embed.add_field(name=_("**Pokestop:**"),value='\n'.join(textwrap.wrap(location.title(), width=30)),inline=True)
             research_embed.add_field(name=_("**Quest:**"),value='\n'.join(textwrap.wrap(quest.title(), width=30)),inline=True)
@@ -3339,6 +3537,15 @@ async def research(ctx, *, details = None):
                 location = pokestopmsg.clean_content
                 loc_url = utils.create_gmaps_query(Meowth, location, message.channel, type="research")
                 location = location.replace(loc_url,"").strip()
+                gym_matching_cog = Meowth.cogs.get('GymMatching')
+                stop_info = ""
+                if gym_matching_cog:
+                    stop_info, location, stop_url = await gym_matching_cog.get_stop_info(ctx, location)
+                    if stop_url:
+                        loc_url = stop_url
+                if not location:
+                    await pokestopmsg.delete()
+                    return
             await pokestopmsg.delete()
             research_embed.add_field(name=_("**Pokestop:**"),value='\n'.join(textwrap.wrap(location.title(), width=30)),inline=True)
             research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Great! Now, reply with the **quest** that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(location=location), inline=False)
@@ -3395,32 +3602,14 @@ async def research(ctx, *, details = None):
         if dust:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png")
             research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
-            confirmation = await channel.send(research_msg,embed=research_embed)
         elif candy:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1301.png")
             research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
-            confirmation = await channel.send(research_msg,embed=research_embed)
         elif pokemon:
             research_embed.set_thumbnail(url=pokemon.img_url)
             research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
-            confirmation = await channel.send(research_msg,embed=research_embed)
-            for trainer in guild_dict[guild.id].get('trainers', {}):
-                user = guild.get_member(trainer)
-                if not user:
-                    continue
-                perms = user.permissions_in(channel)
-                if not perms.read_messages:
-                    continue
-                if pokemon.id in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('wants', []):
-                    try:
-                        resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pokemon.name.title(), author=author.mention, channel=channel.mention),embed=research_embed)
-                        dm_dict[user.id] = resdmmsg.id
-                    except:
-                        continue
-        else:
-            confirmation = await channel.send(research_msg,embed=research_embed)
-        research_dict = copy.deepcopy(guild_dict[guild.id].get('questreport_dict',{}))
-        research_dict[confirmation.id] = {
+        confirmation = await channel.send(research_msg,embed=research_embed)
+        guild_dict[guild.id]['questreport_dict'][confirmation.id] = {
             'exp':time.time() + to_midnight,
             'expedit':"delete",
             'reportmessage':message.id,
@@ -3432,9 +3621,25 @@ async def research(ctx, *, details = None):
             'quest':quest,
             'reward':reward
         }
-        guild_dict[guild.id]['questreport_dict'] = research_dict
         research_reports = guild_dict[ctx.guild.id].setdefault('trainers',{}).setdefault(author.id,{}).setdefault('research_reports',0) + 1
         guild_dict[ctx.guild.id]['trainers'][author.id]['research_reports'] = research_reports
+        for trainer in guild_dict[guild.id].get('trainers', {}):
+            user = guild.get_member(trainer)
+            if not user:
+                continue
+            perms = user.permissions_in(channel)
+            if not perms.read_messages:
+                continue
+            if (pokemon and pokemon.id in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])) or location.lower() in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', []):
+                try:
+                    if pokemon:
+                        resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pokemon.name.title(), author=author.mention, channel=channel.mention),embed=research_embed)
+                    else:
+                        resdmmsg = await user.send(_("Field Research reported by {author} in {channel}").format(author=author.mention, channel=channel.mention),embed=research_embed)
+                    dm_dict[user.id] = resdmmsg.id
+                except:
+                    continue
+        guild_dict[guild.id]['questreport_dict'][confirmation.id]['dm_dict'] = dm_dict
     else:
         research_embed.clear_fields()
         research_embed.add_field(name=_('**Research Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
@@ -5903,20 +6108,49 @@ async def wants(ctx):
 
     Usage: !list wants
     Works only in the want channel."""
-    listmsg = _('**Meowth!**')
-    listmsg += await _wantlist(ctx)
-    await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+    listmsg, res_pages = await _wantlist(ctx)
+    list_messages = []
+    if res_pages:
+        index = 0
+        for p in res_pages:
+            if index == 0:
+                listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+            else:
+                listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+            list_messages.append(listmsg.id)
+            index += 1
+    elif listmsg:
+        listmsg = await ctx.channel.send(listmsg)
+        list_messages.append(listmsg.id)
+    else:
+        return
 
 async def _wantlist(ctx):
     wantlist = []
-    user_wants = guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('wants', [])
+    user_wants = guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
     user_wants = sorted(user_wants)
     wantlist = [utils.get_name(Meowth, x).title() for x in user_wants]
-    if len(wantlist) > 0:
-        listmsg = _(' Your current **!want** list is:\n\n**{wantlist}**').format(wantlist=', '.join(wantlist))
+    user_gyms = guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
+    user_gyms = [x.title() for x in user_gyms]
+    user_stops = guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
+    user_stops = [x.title() for x in user_stops]
+    wantmsg = ""
+    if len(wantlist) > 0 or len(user_gyms) > 0:
+        if wantlist:
+            wantmsg += _('**Pokemon:**\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(wantlist), width=80)))
+        if user_gyms:
+            wantmsg += _('\n\n**Gyms:**\n{user_gyms}').format(user_gyms = '\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
+        if user_stops:
+            wantmsg += _('\n\n**Stops:**\n{user_stops}').format(user_stops = '\n'.join(textwrap.wrap(', '.join(user_stops), width=80)))
+    if wantmsg:
+        listmsg = _('Meowth! Your current **!want** list is:')
+        paginator = commands.Paginator(prefix="", suffix="")
+        for line in wantmsg.splitlines():
+            paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+        return listmsg, paginator.pages
     else:
-        listmsg = _(" You don\'t have any wants! use **!want** to add some.")
-    return listmsg
+        listmsg = _("Meowth! You don\'t have any wants! use **!want** to add some.")
+    return listmsg, None
 
 @_list.command()
 @commands.has_permissions(manage_guild=True)
@@ -5933,7 +6167,7 @@ async def allwants(ctx):
 async def _allwantlist(ctx):
     wantlist = []
     for trainer in guild_dict[ctx.guild.id].setdefault('trainers', {}):
-        for want in guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('wants', []):
+        for want in guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('wants', []):
             if want not in wantlist:
                 wantlist.append(want)
     wantlist = sorted(wantlist)

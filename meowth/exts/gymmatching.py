@@ -10,18 +10,32 @@ class GymMatching:
     def __init__(self, bot):
         self.bot = bot
         self.gym_data = self.init_json()
+        self.stop_data = self.init_stop_json()
 
     def init_json(self):
         with open(os.path.join('data', 'gym_data.json')) as fd:
             return json.load(fd)
 
+    def init_stop_json(self):
+        with open(os.path.join('data', 'stop_data.json')) as fd:
+            return json.load(fd)
+
     def get_gyms(self, guild_id):
         return self.gym_data.get(str(guild_id))
+
+    def get_stops(self, guild_id):
+        return self.stop_data.get(str(guild_id))
 
     def gym_match(self, gym_name, gyms):
         match, score = utils.get_match(list(gyms.keys()), gym_name)
         if match:
             match = gyms[match].get('alias', match)
+        return (match, score)
+
+    def stop_match(self, stop_name, stops):
+        match, score = utils.get_match(list(stops.keys()), stop_name)
+        if match:
+            match = stops[match].get('alias', match)
         return (match, score)
 
     @commands.command(hidden=True)
@@ -53,6 +67,35 @@ class GymMatching:
         if score < 80:
             try:
                 question = _("{mention} Did you mean: **{match}**?\n\nReact with {yes_emoji} to match report with **{match}** gym, {no_emoji} to report without matching, or {cancel_emoji} to cancel report.").format(mention=author.mention, match=match, yes_emoji=self.bot.config['answer_yes'],  no_emoji=self.bot.config['answer_no'],  cancel_emoji=self.bot.config['answer_cancel'], )
+                q_msg = await channel.send(question)
+                reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=[self.bot.config['answer_yes'],self.bot.config['answer_no'],self.bot.config['answer_cancel']])
+            except TypeError:
+                await q_msg.delete()
+                return None
+            if not reaction:
+                await q_msg.delete()
+                return None
+            if reaction.emoji == self.bot.config['answer_cancel']:
+                await q_msg.delete()
+                return False
+            if reaction.emoji == self.bot.config['answer_yes']:
+                await q_msg.delete()
+                return match
+            await q_msg.delete()
+            return None
+        return match
+
+    async def stop_match_prompt(self, ctx, stop_name, stops):
+        channel = ctx.channel
+        author = ctx.author
+        match, score = self.stop_match(stop_name, stops)
+        if not match:
+            return None
+        if ctx.bot:
+            return match
+        if score < 80:
+            try:
+                question = _("{mention} Did you mean: **{match}**?\n\nReact with {yes_emoji} to match report with **{match}** stop, {no_emoji} to report without matching, or {cancel_emoji} to cancel report.").format(mention=author.mention, match=match, yes_emoji=self.bot.config['answer_yes'],  no_emoji=self.bot.config['answer_no'],  cancel_emoji=self.bot.config['answer_cancel'], )
                 q_msg = await channel.send(question)
                 reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=[self.bot.config['answer_yes'],self.bot.config['answer_no'],self.bot.config['answer_cancel']])
             except TypeError:
@@ -134,6 +177,65 @@ class GymMatching:
                     return "", False, False
             else:
                 return gym_info, raid_details, raid_gmaps_link
+
+    async def get_stop_info(self, ctx, stop_details):
+        message = ctx.message
+        stops = self.get_stops(ctx.guild.id)
+        stop_info = ""
+        if not stops:
+            return stop_info, stop_details, False
+        match = await self.stop_match_prompt(ctx, stop_details, stops)
+        if match == False:
+            return stop_info, False, False
+        if not match:
+            return stop_info, stop_details, False
+        else:
+            stop = stops[match]
+            stop_details = match
+            stop_coords = stop['coordinates']
+            stop_note = stop.get('notes', "")
+            stop_alias = stop.get('alias', "")
+            if stop_note:
+                stop_note = f"**Notes:** {stop_note}"
+            if stop_alias:
+                stop_details = stop_alias
+            stop_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(stop_coords)
+            stop_info = _("**Stop:** {0}\n{1}").format(stop_details, stop_note)
+            duplicate_research = []
+            for quest in self.bot.guild_dict[message.guild.id]['questreport_dict']:
+                quest_details = self.bot.guild_dict[message.guild.id]['questreport_dict'][quest]
+                research_location = quest_details['location']
+                research_channel = quest_details['reportchannel']
+                research_reward = quest_details['reward'].strip()
+                research_quest = quest_details['quest'].strip()
+                if (stop_details == research_location) and message.channel.id == research_channel:
+                    if message.author.bot:
+                        return "", False, False
+                    research_details = f"`Pokestop: {research_location} Quest: {research_quest} Reward: {research_reward}`"
+                    duplicate_research.append(research_details)
+            if duplicate_research:
+                if ctx.author.bot:
+                    return "", False, False
+                rusure = await message.channel.send(_('Meowth! It looks like that quest might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_research)))
+                try:
+                    timeout = False
+                    res, reactuser = await utils.ask(self.bot, rusure, message.author.id)
+                except TypeError:
+                    timeout = True
+                if timeout or res.emoji == self.bot.config['answer_no']:
+                    await utils.safe_delete(rusure)
+                    confirmation = await message.channel.send(_('Report cancelled.'))
+                    await utils.safe_delete(message)
+                    await asyncio.sleep(10)
+                    await utils.safe_delete(confirmation)
+                    return "", False, False
+                elif res.emoji == self.bot.config['answer_yes']:
+                    await rusure.delete()
+                    return stop_info, stop_details, stop_gmaps_link
+                else:
+                    return "", False, False
+            else:
+                return stop_info, stop_details, stop_gmaps_link
 
 def setup(bot):
     bot.add_cog(GymMatching(bot))

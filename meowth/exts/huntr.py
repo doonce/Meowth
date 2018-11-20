@@ -273,11 +273,11 @@ class Huntr:
             timediff = relativedelta(reacttime, reporttime)
             exptime = int(huntrtime) - int(timediff.minutes)
             if reporttype == "egg":
-                raid_channel = await self.huntr_raidegg(ctx, alarm_details['level'], alarm_details['gym'], exptime, alarm_details['gps'], auto_report=True, reporter="alarm")
+                raid_channel = await self.huntr_raidegg(ctx, alarm_details['level'], alarm_details['gym'], exptime, alarm_details['gps'], auto_report=True, reporter="alarm", report_user=reactuser)
                 egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(reactuser.id,{}).setdefault('egg_reports',0) + 1
                 self.bot.guild_dict[message.guild.id]['trainers'][reactuser.id]['egg_reports'] = egg_reports
             elif reporttype == "raid":
-                raid_channel = await self.huntr_raid(ctx, alarm_details['pokemon'], alarm_details['gym'], exptime, alarm_details['gps'], alarm_details['moves'], auto_report = True, reporter="alarm")
+                raid_channel = await self.huntr_raid(ctx, alarm_details['pokemon'], alarm_details['gym'], exptime, alarm_details['gps'], alarm_details['moves'], auto_report = True, reporter="alarm", report_user=reactuser)
                 raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(reactuser.id,{}).setdefault('raid_reports',0) + 1
                 self.bot.guild_dict[message.guild.id]['trainers'][reactuser.id]['raid_reports'] = raid_reports
             if embed and raid_channel:
@@ -285,7 +285,9 @@ class Huntr:
 
     """Reporting"""
 
-    async def huntr_wild(self, ctx, entered_wild, wild_details, huntrexp, huntrweather, reporter="huntr"):
+    async def huntr_wild(self, ctx, entered_wild, wild_details, huntrexp, huntrweather, reporter="huntr", report_user=None):
+        if report_user:
+            ctx.message.author = report_user
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         huntrexpstamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(huntrexp.split()[0]), seconds=int(huntrexp.split()[2]))).strftime('%I:%M %p')
@@ -320,7 +322,7 @@ class Huntr:
             perms = user.permissions_in(message.channel)
             if not perms.read_messages:
                 continue
-            if wild_number in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('wants', []):
+            if wild_number in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', []):
                 try:
                     wild_embed.remove_field(2)
                     wild_embed.remove_field(2)
@@ -347,7 +349,9 @@ class Huntr:
             'omw':[]
         }
 
-    async def huntr_raid(self, ctx, entered_raid, raid_details, raidexp, gymhuntrgps, gymhuntrmoves, auto_report = True, reporter="huntr"):
+    async def huntr_raid(self, ctx, entered_raid, raid_details, raidexp, gymhuntrgps, gymhuntrmoves, auto_report = True, reporter="huntr", report_user=None):
+        if report_user:
+            ctx.message.author = report_user
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
@@ -391,8 +395,7 @@ class Huntr:
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(ctx.bot, message.guild, utils.get_weaknesses(ctx.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
-        if reporter == "huntr":
-            raid_embed.add_field(name=gymhuntrmoves, value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
+        raid_embed.add_field(name=_("**Moveset:**"), value=gymhuntrmoves)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=pokemon.img_url)
         report_embed = raid_embed
@@ -462,6 +465,23 @@ class Huntr:
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrsmessage'] = ctrsmessage_id
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrs_dict'] = ctrs_dict
             self.event_loop.create_task(self.bot.expiry_check(raid_channel))
+            dm_dict = {}
+            raid_embed.remove_field(2)
+            raid_embed.remove_field(2)
+            for trainer in ctx.bot.guild_dict[message.guild.id].get('trainers', {}):
+                user = message.guild.get_member(trainer)
+                if not user:
+                    continue
+                perms = user.permissions_in(message.channel)
+                if not perms.read_messages:
+                    continue
+                if raid_details.lower() in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', []):
+                    try:
+                        raiddmmsg = await user.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=report_embed)
+                        dm_dict[user.id] = raiddmmsg.id
+                    except:
+                        continue
+            ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
             return raid_channel
         else:
             pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
@@ -483,7 +503,9 @@ class Huntr:
             }
             return
 
-    async def huntr_raidegg(self, ctx, egg_level, raid_details, raidexp, gymhuntrgps, auto_report=True, reporter="huntr"):
+    async def huntr_raidegg(self, ctx, egg_level, raid_details, raidexp, gymhuntrgps, auto_report=True, reporter="huntr", report_user=None):
+        if report_user:
+            ctx.message.author = report_user
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
@@ -578,6 +600,23 @@ class Huntr:
                 pokemon = pokemon.name.lower()
                 await ctx.bot.eggassume(ctx, 'assume ' + pokemon, raid_channel)
             self.event_loop.create_task(self.bot.expiry_check(raid_channel))
+            dm_dict = {}
+            raid_embed.remove_field(2)
+            raid_embed.remove_field(2)
+            for trainer in ctx.bot.guild_dict[message.guild.id].get('trainers', {}):
+                user = message.guild.get_member(trainer)
+                if not user:
+                    continue
+                perms = user.permissions_in(message.channel)
+                if not perms.read_messages:
+                    continue
+                if raid_details.lower() in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', []):
+                    try:
+                        raiddmmsg = await user.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
+                        dm_dict[user.id] = raiddmmsg.id
+                    except:
+                        continue
+            ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
             return raid_channel
         else:
             pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
