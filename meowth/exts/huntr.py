@@ -242,6 +242,8 @@ class Huntr:
                         raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this egg!"
                         pamsg = await message.channel.send(raidmsg, embed=embed)
                 elif reporttype == "raid":
+                    if not utils.get_level(self.bot, entered_raid):
+                        return
                     if int(utils.get_level(self.bot, entered_raid)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('raidlvls', False):
                         raid_channel = await self.huntr_raid(ctx, entered_raid, raid_details, raidexp, gps, moves, auto_report = True, reporter="alarm")
                         if embed and raid_channel:
