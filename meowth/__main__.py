@@ -5354,7 +5354,7 @@ async def lobby(ctx, *, count: str=None):
     await _lobby(ctx.message, count)
 
 async def _lobby(message, count):
-    if 'lobby' not in guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]:
+    if guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id].get('lobby', False):
         await message.channel.send(_('Meowth! There is no group in the lobby for you to join! Use **!starting** if the group waiting at the raid is entering the lobby!'))
         return
     trainer_dict = guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['trainer_dict']
