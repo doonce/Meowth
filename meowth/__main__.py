@@ -1754,6 +1754,8 @@ async def reset_board(ctx, *, user=None, type=None):
                 break
     if not type:
         type = "total_reports"
+    if not tgt_string:
+        tgt_string = _("every user")
     msg = _("Are you sure you want to reset the **{type}** report stats for **{target}**?").format(type=type.replace("_"," ").title(), target=tgt_string)
     question = await ctx.channel.send(msg)
     try:

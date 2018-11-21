@@ -284,12 +284,8 @@ class Huntr:
             exptime = int(huntrtime) - int(timediff.minutes)
             if reporttype == "egg":
                 raid_channel = await self.huntr_raidegg(ctx, alarm_details['level'], alarm_details['gym'], exptime, alarm_details['gps'], auto_report=True, reporter="alarm", report_user=reactuser)
-                egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(reactuser.id,{}).setdefault('egg_reports',0) + 1
-                self.bot.guild_dict[message.guild.id]['trainers'][reactuser.id]['egg_reports'] = egg_reports
             elif reporttype == "raid":
                 raid_channel = await self.huntr_raid(ctx, alarm_details['pokemon'], alarm_details['gym'], exptime, alarm_details['gps'], alarm_details['moves'], auto_report = True, reporter="alarm", report_user=reactuser)
-                raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(reactuser.id,{}).setdefault('raid_reports',0) + 1
-                self.bot.guild_dict[message.guild.id]['trainers'][reactuser.id]['raid_reports'] = raid_reports
             if embed and raid_channel:
                 await raid_channel.send(embed=embed)
 
@@ -491,6 +487,9 @@ class Huntr:
                     except:
                         continue
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
+            if report_user:
+                raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(report_user.id,{}).setdefault('raid_reports',0) + 1
+                self.bot.guild_dict[message.guild.id]['trainers'][report_user.id]['raid_reports'] = raid_reports
             return raid_channel
         elif reporter == "huntr":
             pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
@@ -625,6 +624,9 @@ class Huntr:
                     except:
                         continue
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
+            if report_user:
+                egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(report_user.id,{}).setdefault('egg_reports',0) + 1
+                self.bot.guild_dict[message.guild.id]['trainers'][report_user.id]['egg_reports'] = egg_reports
             return raid_channel
         elif reporter == "huntr":
             pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
