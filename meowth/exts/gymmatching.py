@@ -161,14 +161,11 @@ class GymMatching:
                 except TypeError:
                     timeout = True
                 if timeout or res.emoji == self.bot.config['answer_no']:
-                    await rusure.delete()
+                    await utils.safe_delete(rusure)
                     confirmation = await message.channel.send(_('Report cancelled.'))
-                    try:
-                        await message.delete()
-                    except (discord.errors.Forbidden, discord.errors.HTTPException):
-                        pass
+                    await utils.safe_delete(message)
                     await asyncio.sleep(10)
-                    await confirmation.delete()
+                    await utils.safe_delete(confirmation)
                     return "", False, False
                 elif res.emoji == self.bot.config['answer_yes']:
                     await rusure.delete()
