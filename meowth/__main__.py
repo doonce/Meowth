@@ -4435,17 +4435,17 @@ async def duplicate(ctx):
                 logger.info((('Duplicate Report - Channel Expired - ' + channel.name) + ' - Last Report by ') + author.name)
                 raidmsg = await channel.get_message(rc_d['raidmessage'])
                 reporter = raidmsg.mentions[0]
-                if 'egg' in raidmsg.content:
+                if 'egg' in raidmsg.content and not reporter.bot:
                     egg_reports = guild_dict[guild.id]['trainers'][reporter.id]['egg_reports']
                     guild_dict[guild.id]['trainers'][reporter.id]['egg_reports'] = egg_reports - 1
-                elif 'EX' in raidmsg.content:
+                elif 'EX' in raidmsg.content and not reporter.bot:
                     ex_reports = guild_dict[guild.id]['trainers'][reporter.id]['ex_reports']
                     guild_dict[guild.id]['trainers'][reporter.id]['ex_reports'] = ex_reports - 1
                 else:
                     raid_reports = guild_dict[guild.id]['trainers'][reporter.id]['raid_reports']
                     guild_dict[guild.id]['trainers'][reporter.id]['raid_reports'] = raid_reports - 1
                 if guild_dict[guild.id]['raidchannel_dict'][channel.id].get('gymhuntrgps', False):
-                    askdupe = await channel.send(_('Hey {reporters}, this is a GymHuntrBot channel that has some additional features. If you send me a channel mention (#channel) of the other channel I can move those features to it.').format(reporters=', '.join(reporters)))
+                    askdupe = await channel.send(_('Hey {reporter}, this is a bot channel that has some additional features. If you send me a channel mention (#channel) of the other channel I can move those features to it.').format(reporter=ctx.author.mention))
                     while True:
                         def checkmsg(msg):
                             if msg.author is not guild.me and msg.channel.id == channel.id:
@@ -4488,10 +4488,10 @@ async def duplicate(ctx):
                             except:
                                 pass
                             await channel.send('Settings moved!')
-                            await getdupechannel.send('Settings from a duplicate GymHuntrBot post have been moved to this channel.')
+                            await getdupechannel.send('Settings from a duplicate bot post have been moved to this channel.')
                             break
                         else:
-                            await channel.send("The channel you mentioned is already a GymHuntrBot channel. Try again. You can cancel with 'cancel' or I'll cancel in four minutes.")
+                            await channel.send("The channel you mentioned is already a bot channel. Try again. You can cancel with 'cancel' or I'll cancel in four minutes.")
                             continue
                 await expire_channel(channel)
                 return
