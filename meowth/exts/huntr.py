@@ -252,7 +252,7 @@ class Huntr:
                         if raid == None:
                             roletest = entered_raid.title()
                         else:
-                            roletest = raid.mention
+                            roletest = _("{pokemon} - ").format(pokemon=raid.mention)
                         raidmsg = f"{roletest}Meowth! {entered_raid.title()} raid reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this raid!"
                         pamsg = await message.channel.send(raidmsg, embed=embed)
                 self.bot.guild_dict[message.guild.id]['pokealarm_dict'][pamsg.id] = {
