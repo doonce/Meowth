@@ -194,6 +194,11 @@ class Huntr:
                 gps = painfo[3]
                 moves = painfo[4]
                 entered_raid = painfo[0].replace("!raid","").strip()
+                pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_raid)
+                if pokemon:
+                    pokemon.gender = None
+                    pokemon.shiny = None
+                    entered_raid = str(pokemon)
                 egg_level = 0
                 raidexp = painfo[2].split()[0][:-1]
                 raid_details = painfo[1]
