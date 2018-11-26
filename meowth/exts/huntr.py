@@ -161,9 +161,10 @@ class Huntr:
 
     async def on_pokealarm(self, ctx, reactuser=None):
         """Requires a specific message.content format, which is "content" in PokeAlarm
-        Raid format = !raid <mon_name> <gym_name> <raid_time_left>|<lat>,<lng>|<quick_move> / <charge_move>
-        Raidegg format = !raidegg <egg_lvl> <gym_name> <hatch_time_left>|<lat>,<lng>
-        Wild format = !wild <mon_name> <lat>,<lng>|<time_left>|Weather: <weather> / IV: <iv>
+        If an option is not available, replace <variable> with None
+        Raid format = !raid <form> <pkmn>|<gym_name>|<time_left>|<lat>,<lng>|<quick_move> / <charge_move>
+        Raidegg format = !raidegg <level>|<gym_name>|<time_left_start>|<lat>,<lng>
+        Wild format = !wild <form> <pkmn>|<lat>,<lng>|<time_left>|Weather: <weather> / IV: <iv>
         I also recommend to set the username to just PokeAlarm"""
         message = ctx.message
         raid_channel = False
@@ -178,41 +179,38 @@ class Huntr:
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoegg', False):
                     return
                 reporttype = "egg"
-                gps = painfo.pop(1)
+                gps = painfo[3]
                 moves = None
-                painfo = " ".join(painfo).split()[1:-1]
-                egg_level = painfo.pop(0)
+                egg_level = painfo[0].replace("!raidegg","").strip()
                 entered_raid = None
-                raidexp = painfo.pop(-1)[:-1]
-                raid_details = " ".join(painfo)
+                raidexp = painfo[2].split()[0][:-1]
+                raid_details = painfo[1]
                 timeout = int(raidexp)*60
-                expiremsg = _('**This level {level} raid egg has hatched!**').format(level=egg_level)
+                expiremsg = ('This level {level} raid egg has hatched!').format(level=egg_level)
             elif "!raid" in message.content.lower():
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoraid', False):
                     return
                 reporttype = "raid"
-                gps = painfo.pop(1)
-                moves = painfo.pop(1)
-                painfo = " ".join(painfo).split()[1:-1]
-                entered_raid = painfo.pop(0)
+                gps = painfo[3]
+                moves = painfo[4]
+                entered_raid = painfo[0].replace("!raid","").strip()
                 egg_level = 0
-                raidexp = painfo.pop(-1)[:-1]
-                raid_details = " ".join(painfo)
+                raidexp = painfo[2].split()[0][:-1]
+                raid_details = painfo[1]
                 timeout = int(raidexp)*60
                 expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=entered_raid.title())
             elif "!wild" in message.content.lower():
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autowild', False):
                     return
                 reporttype = "wild"
-                exptime = painfo.pop(1).split()
-                #minutes = exptime.pop(0)[:-1]
+                exptime = painfo[2]
+                #minutes = exptime.split()[0][:-1]
                 minutes = "45"
-                seconds = exptime.pop(0)[:-1]
+                seconds = exptime.split()[1][:-1]
                 huntrexp = "{min} min {sec} sec".format(min=minutes,sec=seconds)
-                huntrweather = painfo.pop(1)
-                painfo = " ".join(painfo).split()[1:]
-                entered_wild = painfo.pop(0).lower()
-                wild_details = " ".join(painfo)
+                huntrweather = painfo[3]
+                entered_wild = painfo[0].replace("!wild","").strip().lower()
+                wild_details = painfo[1]
                 location = "https://www.google.com/maps/dir/Current+Location/{location}".format(location=wild_details)
                 despawn = (int(minutes) * 60) + int(seconds)
             await message.delete()
