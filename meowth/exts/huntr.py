@@ -250,7 +250,7 @@ class Huntr:
                     else:
                         raid = discord.utils.get(message.guild.roles, name=entered_raid.lower())
                         if raid == None:
-                            roletest = entered_raid.title()
+                            roletest = ""
                         else:
                             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
                         raidmsg = f"{roletest}Meowth! {entered_raid.title()} raid reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this raid!"
