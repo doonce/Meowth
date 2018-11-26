@@ -227,7 +227,7 @@ def get_raidlist(bot):
 
 def get_level(bot, pkmn):
     if str(pkmn).isdigit():
-        pkmn_number = pkmn
+        pkmn_number = int(pkmn)
     else:
         pkmn_number = get_number(bot, pkmn.lower())
     entered_pkmn = pkmn_class.Pokemon.get_pokemon(bot, pkmn_number)

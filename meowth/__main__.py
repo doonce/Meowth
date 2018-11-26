@@ -2659,6 +2659,7 @@ async def _raid(ctx, content):
     if pokemon:
         entered_raid = pokemon.name.lower()
         pokemon.shiny = False
+        pokemon.gender = False
     else:
         await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**'))
         return
@@ -2670,12 +2671,22 @@ async def _raid(ctx, content):
         await message.channel.send(_("Meowth! The Pokemon {pokemon} only appears in EX Raids! Use **!exraid** to report one!").format(pokemon=entered_raid.capitalize()))
         return
 
+    matched_boss = False
     level = utils.get_level(Meowth, pokemon.id)
     for boss in raid_info['raid_eggs'][str(level)]['pokemon']:
         boss = pkmn_class.Pokemon.get_pokemon(ctx.bot, boss)
-        if boss.id == pokemon.id:
+        if str(boss) == str(pokemon):
             pokemon = boss
             entered_raid = boss.name.lower()
+            matched_boss = True
+            break
+    if not matched_boss:
+        for boss in raid_info['raid_eggs'][str(level)]['pokemon']:
+            boss = pkmn_class.Pokemon.get_pokemon(ctx.bot, boss)
+            if boss.id == pokemon.id:
+                pokemon = boss
+                entered_raid = boss.name.lower()
+                break
 
     if fromegg == True:
         eggdetails = guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]
@@ -3014,12 +3025,22 @@ async def _eggassume(ctx, args, raid_channel, author=None):
     boss_list = []
 
     pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, args)
+    matched_boss = False
     for boss in raid_info['raid_eggs'][str(egglevel)]['pokemon']:
         boss = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
-        boss_list.append(pokemon.name.lower())
-        if boss.id == pokemon.id:
+        boss_list.append(boss.name.lower())
+        if str(boss) == str(pokemon):
             pokemon = boss
             entered_raid = boss.name.lower()
+            matched_boss = True
+            break
+    if not matched_boss:
+        for boss in raid_info['raid_eggs'][str(egglevel)]['pokemon']:
+            boss = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
+            if boss.id == pokemon.id:
+                pokemon = boss
+                entered_raid = boss.name.lower()
+                break
 
     rgx = '[^a-zA-Z0-9]'
     if entered_raid not in boss_list:
@@ -3088,12 +3109,22 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     boss_list = []
 
     pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, entered_raid)
+    matched_boss = False
     for boss in raid_info['raid_eggs'][str(egglevel)]['pokemon']:
         boss = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
         boss_list.append(boss.name.lower())
-        if boss.id == pokemon.id:
+        if str(boss) == str(pokemon):
             pokemon = boss
             entered_raid = boss.name.lower()
+            matched_boss = True
+            break
+    if not matched_boss:
+        for boss in raid_info['raid_eggs'][str(egglevel)]['pokemon']:
+            boss = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
+            if boss.id == pokemon.id:
+                pokemon = boss
+                entered_raid = boss.name.lower()
+                break
     try:
         reportcitychannel = Meowth.get_channel(eggdetails['reportcity'])
         reportcity = reportcitychannel.name
@@ -4885,7 +4916,7 @@ async def interested(ctx, *, teamcounts: str=None):
         await _maybe(ctx.channel, ctx.author, count, partylist, entered_interest)
 
 async def _maybe(channel, author, count, party, entered_interest=None):
-    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict']
+    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].setdefault(author.id, {})
     allblue = 0
     allred = 0
     allyellow = 0
@@ -4914,17 +4945,13 @@ async def _maybe(channel, author, count, party, entered_interest=None):
     else:
         msg = _('Meowth! {member} is interested with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count)
         await channel.send('{msg} {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(msg=msg, blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, config['unknown']), unknown=party['unknown']))
-    if author.id not in guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict']:
-        trainer_dict[author.id] = {
-
-        }
-    trainer_dict[author.id]['status'] = {'maybe':count, 'coming':0, 'here':0, 'lobby':0}
+    trainer_dict['status'] = {'maybe':count, 'coming':0, 'here':0, 'lobby':0}
     if entered_interest:
-        trainer_dict[author.id]['interest'] = entered_interest
-    trainer_dict[author.id]['count'] = count
-    trainer_dict[author.id]['party'] = party
+        trainer_dict['interest'] = entered_interest
+    trainer_dict['count'] = count
+    trainer_dict['party'] = party
     await _edit_party(channel, author)
-    guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'] = trainer_dict
+    guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'][author.id] = trainer_dict
 
 @Meowth.command(aliases=['c'])
 @checks.activechannel()
@@ -5005,7 +5032,7 @@ async def _coming(channel, author, count, party, entered_interest=None):
     allred = 0
     allyellow = 0
     allunknown = 0
-    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict']
+    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].setdefault(author.id, {})
     if (not party):
         for role in author.roles:
             if role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['mystic']:
@@ -5030,17 +5057,13 @@ async def _coming(channel, author, count, party, entered_interest=None):
     else:
         msg = _('Meowth! {member} is on the way with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count)
         await channel.send('{msg} {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(msg=msg, blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, config['unknown']), unknown=party['unknown']))
-    if author.id not in trainer_dict:
-        trainer_dict[author.id] = {
-
-        }
-    trainer_dict[author.id]['status'] = {'maybe':0, 'coming':count, 'here':0, 'lobby':0}
-    trainer_dict[author.id]['count'] = count
-    trainer_dict[author.id]['party'] = party
+    trainer_dict['status'] = {'maybe':0, 'coming':count, 'here':0, 'lobby':0}
+    trainer_dict['count'] = count
+    trainer_dict['party'] = party
     if entered_interest:
-        trainer_dict[author.id]['interest'] = entered_interest
+        trainer_dict['interest'] = entered_interest
     await _edit_party(channel, author)
-    guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'] = trainer_dict
+    guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'][author.id] = trainer_dict
 
 @Meowth.command(aliases=['h'])
 @checks.activechannel()
@@ -5118,7 +5141,7 @@ async def _here(channel, author, count, party, entered_interest=None):
     allred = 0
     allyellow = 0
     allunknown = 0
-    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict']
+    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].setdefault(author.id, {})
     raidtype = _("event") if guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('meetup',False) else _("raid")
     try:
         if guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['lobby']:
@@ -5151,17 +5174,13 @@ async def _here(channel, author, count, party, entered_interest=None):
         msg = _('Meowth! {member} is at the {raidtype} with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count, raidtype=raidtype)
         msg += ' {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, config['unknown']), unknown=party['unknown'])
         await channel.send(msg + lobbymsg)
-    if author.id not in trainer_dict:
-        trainer_dict[author.id] = {
-
-        }
-    trainer_dict[author.id]['status'] = {'maybe':0, 'coming':0, 'here':count, 'lobby':0}
-    trainer_dict[author.id]['count'] = count
-    trainer_dict[author.id]['party'] = party
+    trainer_dict['status'] = {'maybe':0, 'coming':0, 'here':count, 'lobby':0}
+    trainer_dict['count'] = count
+    trainer_dict['party'] = party
     if entered_interest:
-        trainer_dict[author.id]['interest'] = entered_interest
+        trainer_dict['interest'] = entered_interest
     await _edit_party(channel, author)
-    guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'] = trainer_dict
+    guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'][author.id] = trainer_dict
 
 async def _party_status(ctx, total, teamcounts):
     channel = ctx.channel
@@ -5263,7 +5282,7 @@ async def _edit_party(channel, author=None):
     trainer_dict = copy.deepcopy(guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'])
     for trainer in trainer_dict:
         for team in team_list:
-            channel_dict[team] += int(trainer_dict[trainer]['party'][team])
+            channel_dict[team] += int(trainer_dict[trainer].get('party', {}).get(team, 0))
         for status in status_list:
             if trainer_dict[trainer]['status'][status]:
                 channel_dict[status] += int(trainer_dict[trainer]['count'])
@@ -5359,18 +5378,14 @@ async def _lobby(message, count):
     if guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id].get('lobby', False):
         await message.channel.send(_('Meowth! There is no group in the lobby for you to join! Use **!starting** if the group waiting at the raid is entering the lobby!'))
         return
-    trainer_dict = guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['trainer_dict']
+    trainer_dict = guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['trainer_dict'].setdefault(message.author.id, {})
     if count == 1:
         await message.channel.send(_('Meowth! {member} is entering the lobby!').format(member=message.author.mention))
     else:
         await message.channel.send(_('Meowth! {member} is entering the lobby with a total of {trainer_count} trainers!').format(member=message.author.mention, trainer_count=count))
-    if message.author.id not in trainer_dict:
-        trainer_dict[message.author.id] = {
-
-        }
-    trainer_dict[message.author.id]['status'] = {'maybe':0, 'coming':0, 'here':0, 'lobby':count}
-    trainer_dict[message.author.id]['count'] = count
-    guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['trainer_dict'] = trainer_dict
+    trainer_dict['status'] = {'maybe':0, 'coming':0, 'here':0, 'lobby':count}
+    trainer_dict['count'] = count
+    guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['trainer_dict'][message.author.id] = trainer_dict
 
 @Meowth.command(aliases=['x'])
 @checks.raidchannel()
