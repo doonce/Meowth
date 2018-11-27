@@ -1790,7 +1790,7 @@ async def reset_board(ctx, *, user=None, type=None):
 @Meowth.command()
 @commands.has_permissions(manage_channels=True)
 @checks.raidchannel()
-async def changeraid(ctx, newraid):
+async def changeraid(ctx, *, newraid):
     """Changes raid boss.
 
     Usage: !changeraid <new pokemon or level>
@@ -2208,14 +2208,14 @@ async def want(ctx,*,pokemon):
         pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_want.strip())
         if pokemon:
             want_list.append(pokemon.name.lower())
+        elif len(want_split) == 1 and "list" in entered_want:
+            msg = _("Meowth! Did you mean **!list wants**?").format(word=entered_want.title())
+            question = await message.channel.send(msg)
+            return
         else:
             spellcheck_list.append(entered_want)
             match, score = utils.get_match(ctx.bot.pkmn_list, entered_want)
             spellcheck_dict[entered_want] = match
-    if len(want_list) == 1 and want_list[0] == "list":
-        msg = _("Meowth! Did you mean **!list wants**?").format(word=entered_want.title())
-        question = await message.channel.send(msg)
-        return
     for entered_want in want_list:
         role_str = ""
         if entered_want in Meowth.raid_list:
@@ -3943,7 +3943,7 @@ def _timercheck(time, maxtime):
     return int(time) > int(maxtime)
 
 async def _timerset(raidchannel, exptime):
-    exptime = int(exptime)
+    exptime = float(exptime)
     guild = raidchannel.guild
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[guild.id]['configure_dict']['settings']['offset'])
     end = now + datetime.timedelta(minutes=exptime)
@@ -4105,6 +4105,12 @@ async def starttime(ctx,*,start_time=""):
         nextgroup = start.strftime(_('%I:%M %p (%H:%M)'))
         if rc_d.get('meetup',{}):
             nextgroup = start.strftime(_('%B %d at %I:%M %p (%H:%M)'))
+            end = rc_d['meetup'].get('end', False)
+            if end:
+                topicstr = _("Starts on {expiry} | Ends on {end}").format(expiry=start.strftime(_('%B %d at %I:%M %p (%H:%M)')), end=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
+            else:
+                topicstr = _("Starts on {expiry}").format(expiry=start.strftime(_('%B %d at %I:%M %p (%H:%M)')))
+        await channel.edit(topic=topicstr)
         await channel.send(_('Meowth! The current start time has been set to: **{starttime}**').format(starttime=nextgroup))
         report_channel = Meowth.get_channel(rc_d['reportcity'])
         raidmsg = await channel.get_message(rc_d['raidmessage'])
@@ -4229,11 +4235,10 @@ async def recover(ctx):
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[guild.id]['configure_dict']['settings']['offset'])
         reportchannel = None
         raidmessage = None
-        trainer_dict = {
-
-        }
+        pkmn_obj = None
+        trainer_dict = {}
         async for message in channel.history(limit=500, reverse=True):
-            if message.author.id == guild.me.id:
+            if message.author.id == guild.me.id or "Meowth" in message.author.display_name:
                 c = _('Coordinate here')
                 if c in message.content:
                     reportchannel = message.raw_channel_mentions[0]
@@ -4277,6 +4282,7 @@ async def recover(ctx):
                 utcend = localend - datetime.timedelta(hours=guild_dict[guild.id]['configure_dict']['settings']['offset'])
                 exp = utcend.replace(year=now.year, tzinfo=datetime.timezone.utc).timestamp()
                 manual_timer = True
+            pkmn_obj = pkmn_class.Pokemon.get_pokemon(Meowth, pokemon)
         elif name.split('-')[0] == 'ex':
             raidtype = 'egg'
             egglevel = 'EX'
@@ -4306,22 +4312,16 @@ async def recover(ctx):
             del chsplit[0]
             raid_details = ' '.join(chsplit)
             raid_details = raid_details.strip()
-            if (not topic):
-                exp = raidmessage.created_at.replace(tzinfo=datetime.timezone.utc).timestamp() + (((60 * 60) * 24) * 14)
-                manual_timer = False
-            else:
-                topicsplit = topic.split('|')
-                localhatch = datetime.datetime.strptime(topicsplit[0][:(- 9)], 'Hatches on %B %d at %I:%M %p')
-                utchatch = localhatch - datetime.timedelta(hours=guild_dict[guild.id]['configure_dict']['settings']['offset'])
-                exp = utchatch.replace(year=now.year, tzinfo=datetime.timezone.utc).timestamp()
-                manual_timer = True
+            await channel.edit(topic="")
+            exp = raidmessage.created_at.replace(tzinfo=datetime.timezone.utc).timestamp() + (((60 * 60) * 24) * 14)
+            manual_timer = False
             pokemon = ''
         else:
             await channel.send(_("Meowth! I couldn't recognize this as a raid channel!"))
             return
         async for message in channel.history(limit=500):
-            if message.author.id == guild.me.id:
-                if (_('is interested') in message.content) or (_('on the way') in message.content) or (_('at the raid') in message.content) or (_('no longer') in message.content) or (_('left the raid') in message.content):
+            if message.author.id == guild.me.id or "Meowth" in message.author.display_name:
+                if (_('is interested') in message.content) or (_('on the way') in message.content) or (_('at the raid') in message.content) or (_('at the event') in message.content) or (_('no longer') in message.content) or (_('left the raid') in message.content):
                     if message.raw_mentions:
                         if message.raw_mentions[0] not in trainer_dict:
                             trainerid = message.raw_mentions[0]
@@ -4331,7 +4331,7 @@ async def recover(ctx):
                                 trainerstatus = 'maybe'
                             if _('on the way') in message.content:
                                 trainerstatus = 'coming'
-                            if _('at the raid') in message.content:
+                            if _('at the') in message.content:
                                 trainerstatus = 'here'
                             if (_('no longer') in message.content) or (_('left the raid') in message.content):
                                 trainerstatus = None
@@ -4381,10 +4381,14 @@ async def recover(ctx):
             'address': raid_details,
             'type': raidtype,
             'pokemon': pokemon,
-            'egglevel': egglevel
+            'egglevel': egglevel,
+            'pkmn_obj': pkmn_obj
         }
-        await _edit_party(channel, message.author)
         recovermsg = _("Meowth! This channel has been recovered! However, there may be some inaccuracies in what I remembered! Here's what I have:")
+        if meetup:
+            guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['meetup'] = {'start':False,'end':False}
+            recovermsg += _(" You will have to set the event times again.")
+        await _edit_party(channel, message.author)
         bulletpoint = utils.parse_emoji(ctx.guild, config['bullet'])
         recovermsg += ('\n' + bulletpoint) + (await _interest(ctx))
         recovermsg += ('\n' + bulletpoint) + (await _otw(ctx))
