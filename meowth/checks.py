@@ -77,7 +77,7 @@ def check_citychannel(ctx):
     channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('exraid', {}).get('report_channels', {}).keys()])
     channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('wild', {}).get('report_channels', {}).keys()])
     channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('research', {}).get('report_channels', {}).keys()])
-    channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).get('report_channels', {}).keys()])
+    channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).get('report_channels', [])])
     return channel.id in channel_list
 
 def check_raidset(ctx):

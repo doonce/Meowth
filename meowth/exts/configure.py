@@ -1296,7 +1296,7 @@ class Configure:
                 else:
                     raidlevel_list = raidlevels.content.lower().split(',')
                     for level in raidlevel_list:
-                        if level.isdigit() and (int(level) <= 5):
+                        if level.strip().isdigit() and (int(level) <= 5):
                             config_dict_temp['scanners']['raidlvls'].append(int(level))
                     if len(config_dict_temp['scanners']['raidlvls']) > 0:
                         await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Automatic Raid Channel Levels set to: {levels}').format(levels=','.join((str(x) for x in config_dict_temp['scanners']['raidlvls'])))))
@@ -1343,7 +1343,7 @@ class Configure:
                 else:
                     egglevel_list = egglevels.content.lower().split(',')
                     for level in egglevel_list:
-                        if level.isdigit() and (int(level) <= 5):
+                        if level.strip().isdigit() and (int(level) <= 5):
                             config_dict_temp['scanners']['egglvls'].append(int(level))
                     if len(config_dict_temp['scanners']['egglvls']) > 0:
                         await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Automatic Egg Channel Levels set to: {levels}').format(levels=','.join((str(x) for x in config_dict_temp['scanners']['egglvls'])))))

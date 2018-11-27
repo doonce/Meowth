@@ -226,11 +226,7 @@ def get_raidlist(bot):
     return raidlist
 
 def get_level(bot, pkmn):
-    if str(pkmn).isdigit():
-        pkmn_number = int(pkmn)
-    else:
-        pkmn_number = get_number(bot, pkmn.lower())
-    entered_pkmn = pkmn_class.Pokemon.get_pokemon(bot, pkmn_number)
+    entered_pkmn = pkmn_class.Pokemon.get_pokemon(bot, pkmn)
     for level in bot.raid_info['raid_eggs']:
         for level, pkmn_list in bot.raid_info['raid_eggs'].items():
             for pokemon in pkmn_list['pokemon']:
