@@ -43,7 +43,6 @@ def role_or_permissions(ctx, check, **perms):
     return role is not None
 
 def serverowner_or_permissions(**perms):
-
     def predicate(ctx):
         owner = ctx.guild.owner
         if ctx.author.id == owner.id:
@@ -59,14 +58,14 @@ def check_wantset(ctx):
     if ctx.guild is None:
         return False
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id]['configure_dict']['want'].get('enabled',False)
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('want', {}).get('enabled', False)
 
 def check_wantchannel(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
-    want_channels = ctx.bot.guild_dict[guild.id]['configure_dict']['want'].get('report_channels',[])
+    want_channels = ctx.bot.guild_dict[guild.id]['configure_dict']['want'].get('report_channels', [])
     return channel.id in want_channels
 
 def check_citychannel(ctx):
@@ -74,24 +73,25 @@ def check_citychannel(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict']['raid'].get('report_channels',{}).keys()]
-    channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict']['exraid'].get('report_channels',{}).keys()])
-    channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict']['wild'].get('report_channels',{}).keys()])
-    channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict']['research'].get('report_channels',{}).keys()])
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('raid', {}).get('report_channels', {}).keys()]
+    channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('exraid', {}).get('report_channels', {}).keys()])
+    channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('wild', {}).get('report_channels', {}).keys()])
+    channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('research', {}).get('report_channels', {}).keys()])
+    channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).get('report_channels', {}).keys()])
     return channel.id in channel_list
 
 def check_raidset(ctx):
     if ctx.guild is None:
         return False
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id]['configure_dict']['raid'].get('enabled',False)
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('raid', {}).get('enabled', False)
 
 def check_raidreport(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
-    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict']['raid'].get('report_channels',{}).keys()]
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('raid', {}).get('report_channels', {}).keys()]
     return channel.id in channel_list
 
 def check_raidchannel(ctx):
@@ -99,7 +99,7 @@ def check_raidchannel(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    raid_channels = ctx.bot.guild_dict[guild.id]['raidchannel_dict'].keys()
+    raid_channels = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).keys()
     return channel.id in raid_channels
 
 def check_eggchannel(ctx):
@@ -107,7 +107,7 @@ def check_eggchannel(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    type = ctx.bot.guild_dict[guild.id].get('raidchannel_dict',{}).get(channel.id,{}).get('type',None)
+    type = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id,{}).get('type', None)
     return type == 'egg'
 
 def check_raidactive(ctx):
@@ -115,53 +115,49 @@ def check_raidactive(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id].get('raidchannel_dict',{}).get(channel.id,{}).get('active',False)
+    return ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id,{}).get('active', False)
 
 def check_exraidset(ctx):
     if ctx.guild is None:
         return False
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id]['configure_dict']['exraid'].get('enabled',False)
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('exraid', {}).get('enabled', False)
 
 def check_exraidreport(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
-    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict']['exraid'].get('report_channels',{}).keys()]
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('exraid', {}).get('report_channels', {}).keys()]
     return channel.id in channel_list
 
 def check_inviteset(ctx):
     if ctx.guild is None:
         return False
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id]['configure_dict']['invite'].get('enabled',False)
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('invite', {}).get('enabled', False)
 
 def check_exraidchannel(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
-    level = ctx.bot.guild_dict[guild.id].get('raidchannel_dict',{}).get(channel.id,{}).get('egglevel',False)
-    type =  ctx.bot.guild_dict[guild.id].get('raidchannel_dict',{}).get(channel.id,{}).get('type',False)
+    level = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id,{}).get('egglevel', False)
+    type =  ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id,{}).get('type', False)
     return (level == 'EX') or (type == 'exraid')
 
 def check_meetupset(ctx):
     if ctx.guild is None:
         return False
     guild = ctx.guild
-    if not ctx.bot.guild_dict[guild.id]['configure_dict'].get('meetup'):
-        return False
-    return ctx.bot.guild_dict[guild.id]['configure_dict']['meetup'].get('enabled',False)
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('meetup', {}).get('enabled', False)
 
 def check_meetupreport(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
-    if not ctx.bot.guild_dict[guild.id]['configure_dict'].get('meetup'):
-        return False
-    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict']['meetup'].get('report_channels',{}).keys()]
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('meetup', {}).get('report_channels', {}).keys()]
     return channel.id in channel_list
 
 def check_meetupchannel(ctx):
@@ -169,7 +165,7 @@ def check_meetupchannel(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    meetup =  ctx.bot.guild_dict[guild.id].get('raidchannel_dict',{}).get(channel.id,{}).get('meetup',False)
+    meetup =  ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id,{}).get('meetup', False)
     return meetup
 
 def check_tradeset(ctx):
@@ -183,67 +179,67 @@ def check_tradereport(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('trade', {}).get('report_channels',[])]
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('trade', {}).get('report_channels', [])]
     return channel.id in channel_list
 
 def check_wildset(ctx):
     if ctx.guild is None:
         return False
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id]['configure_dict']['wild'].get('enabled',False)
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('wild', {}).get('enabled', False)
 
 def check_wildreport(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
-    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict']['wild'].get('report_channels',{}).keys()]
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('wild', {}).get('report_channels', {}).keys()]
     return channel.id in channel_list
 
 def check_teamset(ctx):
     if ctx.guild is None:
         return False
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id]['configure_dict']['team'].get('enabled',False)
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('team', {}).get('enabled', False)
 
 def check_welcomeset(ctx):
     if ctx.guild is None:
         return False
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id]['configure_dict']['welcome'].get('enabled',False)
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('welcome', {}).get('enabled', False)
 
 def check_archiveset(ctx):
     if ctx.guild is None:
         return False
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id]['configure_dict']['archive'].get('enabled',False)
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('archive', {}).get('enabled', False)
 
 def check_researchset(ctx):
     if ctx.guild is None:
         return False
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id]['configure_dict']['research'].get('enabled',False)
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('research', {}).get('enabled', False)
 
 def check_researchreport(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
-    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict']['research'].get('report_channels',{}).keys()]
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('research', {}).get('report_channels', {}).keys()]
     return channel.id in channel_list
 
 def check_nestset(ctx):
     if ctx.guild is None:
         return False
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id]['configure_dict']['nest'].get('enabled',False)
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).get('enabled', False)
 
 def check_nestreport(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
-    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).get('report_channels',[])]
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).get('report_channels', [])]
     return channel.id in channel_list
 
 #Decorators
