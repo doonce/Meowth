@@ -4,7 +4,7 @@ import re
 
 import discord
 from discord.ext import commands
-
+from time import strftime
 
 from meowth import utils
 from meowth import checks
