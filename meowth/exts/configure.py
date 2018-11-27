@@ -4,6 +4,7 @@ import re
 
 import discord
 from discord.ext import commands
+import time
 from time import strftime
 
 from meowth import utils
