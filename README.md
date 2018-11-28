@@ -1,13 +1,13 @@
 [![PyPI](https://img.shields.io/badge/discord.py-1.0.0a-green.svg)](https://github.com/Rapptz/discord.py/tree/rewrite/)
 [![PyPI](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-364/)
-[![PyPI](https://img.shields.io/badge/support-discord-lightgrey.svg)](https://discord.gg/hhVjAN8)
+[![PyPI](https://img.shields.io/badge/support-discord-lightgrey.svg)](https://discord.gg/z44MV4X)
 
 # Meowth
 A Discord helper bot for Pokemon Go communities.
 
 Meowth is a Discord bot written in Python 3.6.1+ built with [discord.py v1.0.0a (rewrite branch)](https://github.com/Rapptz/discord.py/tree/rewrite)
 
-## Meowth v2 Features
+## Meowth v2 Features (with bot support by Doonce)
 
 Meowth assists with organising Pokemon Go communities with support for:
 
@@ -19,24 +19,12 @@ Meowth assists with organising Pokemon Go communities with support for:
  - Pokebattler integration for raid counters
  - Silph card integration
  - Gym matching extension for self-hosters
+ - NovaBot, Huntr, PokeAlarm support for automatic raid and wild reporting
 
 #### *`Note: All reports are provided by your active server members. Meowth does not support any TOS breaking features such as spoofing, Pokemon Go bot accounts and automated raid reporting.`*
 
-# Invite Public Meowth (no hosting required)
-
-
-1. Use [THIS LINK](https://discordapp.com/oauth2/authorize?client_id=346759953006198784&scope=bot&permissions=268822608) to invite Meowth  
-1. Select your server and click Authorize
-1. Verify you aren't a robot (if the captcha doesn't appear, disable your adblocker)
-1. In your server, type `!configure`
-1. Go through the DM configuration session with Meowth to setup your server  
-   *Be sure to read the prompts carefully and join the [support server](https://discord.gg/hhVjAN8) if you get stuck*
-1. That's it! Enjoy!
-
-#### *``Note: You must have the manage_server permission to invite a bot.``*
-
 You can join the Meowth Discord Support Server for updates, setup help, feature requests, or just to test out the bot before you add it:  
-https://discord.gg/hhVjAN8
+https://discord.gg/z44MV4X
 
 # Install your own Meowth
 
@@ -73,7 +61,7 @@ On install, ensure the following:
  - `Windows Explorer integration` component (and all sub-components) is selected.
  - `Use Git from the Windows Command Prompt` is selected in the PATH adjustment step.
  - `Checkout as-is, commit Unix-style line endings` is selected in the line ending config step.
- 
+
  ### Linux
 
 First check if it's already installed with:
@@ -133,7 +121,7 @@ The above may not be supported on all systems. You can sometimes find a suitable
    `https://discordapp.com/oauth2/authorize?client_id=<CLIENT_ID>&scope=bot&permissions=268822608`
    - Go to the URL, select your server and click `Authorize`
    - Verify you aren't a robot (if the captcha doesn't appear, disable your adblocker)
-  
+
 
 
 1. Run the launcher from the command prompt or terminal window:  
@@ -171,11 +159,11 @@ python3 launcher.py -r
 
 We currently only support English with our public bot, with self-hosting being the only way to support other languages.
 
-However, we have quite a few people [on our support server](https://discord.gg/hhVjAN8) who have been working on their own translations in a variety of languages.
+However, we have quite a few people [on our support server](https://discord.gg/z44MV4X) who have been working on their own translations in a variety of languages.
 
 If you are wanting to translate Meowth to your language, check there in our `#non-english-support` channel to see if someone might be able to share what they've worked on in the language you need.
 
-To translate Meowth yourself, you can use pygettext.py and edit the generated translation files using [Poedit](https://poedit.net/). 
+To translate Meowth yourself, you can use pygettext.py and edit the generated translation files using [Poedit](https://poedit.net/).
 
 To generate a .pot file in Windows for example:
 
