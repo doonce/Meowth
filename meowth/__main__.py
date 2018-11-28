@@ -6294,6 +6294,7 @@ async def _researchlist(ctx):
     encounter_quests = []
     dust_quests = []
     candy_quests = []
+    reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
     for questid in research_dict:
         pokemon = None
         if research_dict[questid]['reportchannel'] == ctx.message.channel.id:
@@ -6302,11 +6303,12 @@ async def _researchlist(ctx):
                 questauthor = ctx.channel.guild.get_member(research_dict[questid]['reportauthor'])
                 if questauthor:
                     pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, research_dict[questid]['reward'], allow_digits = False)
+                    other_reward = any(x in research_dict[questid]['reward'] for x in reward_list)
                     if "candy" in research_dict[questid]['reward'].lower() or "candies" in research_dict[questid]['reward'].lower():
                         candy_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, config['res_candy']), location=research_dict[questid]['location'].title(), quest=research_dict[questid]['quest'].title(), reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url', None)))
                     elif "dust" in research_dict[questid]['reward'].lower():
                         dust_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, config['res_dust']), location=research_dict[questid]['location'].title(), quest=research_dict[questid]['quest'].title(), reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url', None)))
-                    elif pokemon:
+                    elif pokemon and not other_reward:
                         encounter_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, config['res_encounter']), location=research_dict[questid]['location'].title(), quest=research_dict[questid]['quest'].title(), reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url', None)))
                     else:
                         item_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, config['res_other']), location=research_dict[questid]['location'].title(), quest=research_dict[questid]['quest'].title(), reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url', None)))
