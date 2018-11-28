@@ -3315,6 +3315,8 @@ async def _exraid(ctx, location):
     timestamp = (message.created_at + datetime.timedelta(hours=guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
     fromegg = False
     exraid_split = location.split()
+    if exraid_split[0].lower() == "raid":
+        del exraid_split[0]
     if len(exraid_split) <= 0:
         await channel.send(_('Meowth! Give more details when reporting! Usage: **!exraid <location>**'), delete_after=10)
         return
@@ -3331,7 +3333,7 @@ async def _exraid(ctx, location):
     gym_matching_cog = Meowth.cogs.get('GymMatching')
     gym_info = ""
     if gym_matching_cog:
-        gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+        gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "exraid")
         if gym_url:
             raid_gmaps_link = gym_url
     if not raid_details:
