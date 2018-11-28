@@ -162,10 +162,8 @@ class GymMatching:
                     timeout = True
                 if timeout or res.emoji == self.bot.config['answer_no']:
                     await utils.safe_delete(rusure)
-                    confirmation = await message.channel.send(_('Report cancelled.'))
+                    confirmation = await message.channel.send(_('Report cancelled.'), delete_after=10)
                     await utils.safe_delete(message)
-                    await asyncio.sleep(10)
-                    await utils.safe_delete(confirmation)
                     return "", False, False
                 elif res.emoji == self.bot.config['answer_yes']:
                     await rusure.delete()
@@ -221,10 +219,8 @@ class GymMatching:
                     timeout = True
                 if timeout or res.emoji == self.bot.config['answer_no']:
                     await utils.safe_delete(rusure)
-                    confirmation = await message.channel.send(_('Report cancelled.'))
+                    confirmation = await message.channel.send(_('Report cancelled.'), delete_after=10)
                     await utils.safe_delete(message)
-                    await asyncio.sleep(10)
-                    await utils.safe_delete(confirmation)
                     return "", False, False
                 elif res.emoji == self.bot.config['answer_yes']:
                     await rusure.delete()

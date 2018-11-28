@@ -374,10 +374,10 @@ class Huntr:
         else:
             return
         if not pokemon.id in ctx.bot.raid_list:
-            await message.channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()))
+            await message.channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()), delete_after=10)
             return
         elif utils.get_level(ctx.bot, entered_raid) == "EX":
-            await message.channel.send(_("Meowth! The Pokemon {pokemon} only appears in EX Raids! Use **!exraid** to report one!").format(pokemon=entered_raid.capitalize()))
+            await message.channel.send(_("Meowth! The Pokemon {pokemon} only appears in EX Raids! Use **!exraid** to report one!").format(pokemon=entered_raid.capitalize()), delete_after=10)
             return
         level = utils.get_level(ctx.bot, pokemon.id)
         for boss in ctx.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
@@ -422,7 +422,7 @@ class Huntr:
                 await raid_channel.set_permissions(raid_channel.guild.default_role, overwrite = ow)
             except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                 pass
-            for role in raid_channel.guild.role_hierarchy:
+            for role in raid_channel.guild.roles:
                 if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
                     ow = raid_channel.overwrites_for(role)
                     ow.manage_channels = True
@@ -568,7 +568,7 @@ class Huntr:
                 await raid_channel.set_permissions(raid_channel.guild.default_role, overwrite = ow)
             except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                 pass
-            for role in raid_channel.guild.role_hierarchy:
+            for role in raid_channel.guild.roles:
                 if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
                     ow = raid_channel.overwrites_for(role)
                     ow.manage_channels = True

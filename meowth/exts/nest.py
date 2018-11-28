@@ -165,7 +165,7 @@ class Nest:
 
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
         if not pokemon:
-            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!nest <pokemon>**'))
+            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!nest <pokemon>**'), delete_after=10)
             return
         pokemon.alolan = False
         pokemon.gender = None
@@ -188,9 +188,7 @@ class Nest:
             return
         if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
             await utils.safe_delete(nest_name_reply)
-            confirmation = await channel.send(_('Report cancelled.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Report cancelled.'), delete_after=10)
             return
         else:
             await utils.safe_delete(nest_name_reply)
@@ -276,9 +274,7 @@ class Nest:
             return
         if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
             await utils.safe_delete(nest_name_reply)
-            confirmation = await channel.send(_('Request cancelled.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Request cancelled.'), delete_after=10)
             return
         else:
             await utils.safe_delete(nest_name_reply)
@@ -353,16 +349,12 @@ class Nest:
             return
         if nest_name_reply.content.lower() == "cancel":
             await utils.safe_delete(nest_name_reply)
-            confirmation = await channel.send(_('Nest addition cancelled.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Nest addition cancelled.'), delete_after=10)
             return
         else:
             await utils.safe_delete(nest_name_reply)
         if nest_name.lower() in nest_dict.keys():
-            confirmation = await channel.send(_('**{nest}** is already a nest for {channel}').format(nest=nest_name, channel=channel.mention))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('**{nest}** is already a nest for {channel}').format(nest=nest_name, channel=channel.mention), delete_after=10)
             return
         nest_loc_ask = await channel.send("What's the location of the **{nest}** to use for direction links? This can be GPS coordinates or an address, but I would recommend GPS if possible.\n\nIf you don't want to add a nest, reply with **cancel**.".format(nest=nest_name.title()))
         try:
@@ -374,9 +366,7 @@ class Nest:
             return
         if nest_loc_reply.content.lower() == "cancel":
             await utils.safe_delete(nest_loc_reply)
-            confirmation = await channel.send(_('Nest addition cancelled.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Nest addition cancelled.'), delete_after=10)
             return
         else:
             await utils.safe_delete(nest_loc_reply)
@@ -388,9 +378,7 @@ class Nest:
             timeout = True
         if timeout or res.emoji == self.bot.config['answer_no']:
             await utils.safe_delete(rusure)
-            confirmation = await channel.send(_('Nest addition cancelled.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Nest addition cancelled.'), delete_after=10)
             return
         elif res.emoji == self.bot.config['answer_yes']:
             await utils.safe_delete(rusure)
@@ -400,9 +388,7 @@ class Nest:
             }
             self.bot.guild_dict[guild.id]['nest_dict'][channel.id] = nest_dict
             self.bot.guild_dict[guild.id]['nest_dict'][channel.id]['list'].append(nest_name)
-            confirmation = await channel.send(_('Nest added.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Nest added.'), delete_after=10)
             return
         else:
             return
@@ -444,9 +430,7 @@ class Nest:
             return
         if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
             await utils.safe_delete(nest_name_reply)
-            confirmation = await channel.send(_('Nest deletion cancelled.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Nest deletion cancelled.'), delete_after=10)
             return
         else:
             await utils.safe_delete(nest_name_reply)
@@ -462,17 +446,13 @@ class Nest:
             timeout = True
         if timeout or res.emoji == self.bot.config['answer_no']:
             await utils.safe_delete(rusure)
-            confirmation = await channel.send(_('Nest deletion cancelled.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Nest deletion cancelled.'), delete_after=10)
             return
         elif res.emoji == self.bot.config['answer_yes']:
             await utils.safe_delete(rusure)
             del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name]
             self.bot.guild_dict[guild.id]['nest_dict'][channel.id]['list'].remove(nest_name)
-            confirmation = await channel.send(_('Nest deleted.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Nest deleted.'), delete_after=10)
             return
         else:
             return
@@ -503,9 +483,7 @@ class Nest:
             timeout = True
         if timeout or res.emoji == self.bot.config['answer_no']:
             await utils.safe_delete(rusure)
-            confirmation = await channel.send(_('Manual reset cancelled.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
             return
         elif res.emoji == self.bot.config['answer_yes']:
             await utils.safe_delete(rusure)
@@ -520,9 +498,7 @@ class Nest:
                         pass
                     del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report]
                     await utils.expire_dm_reports(self.bot, nest_dict[nest]['reports'][report].get('dm_dict', {}))
-            confirmation = await channel.send(_('Nests reset. Use **!nest time** to set a new migration time.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Nests reset. Use **!nest time** to set a new migration time.'), delete_after=10)
             return
         else:
             return
@@ -554,9 +530,7 @@ class Nest:
             return
         if nest_time_reply.content.lower() == "cancel":
             await utils.safe_delete(nest_time_reply)
-            confirmation = await channel.send(_('Migration time set cancelled.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Migration time set cancelled.'), delete_after=10)
             return
         else:
             await utils.safe_delete(nest_time_reply)
@@ -570,9 +544,7 @@ class Nest:
             timeout = True
         if timeout or res.emoji == self.bot.config['answer_no']:
             await utils.safe_delete(rusure)
-            confirmation = await channel.send(_('Migration time set cancelled.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Migration time set cancelled.'), delete_after=10)
             return
         elif res.emoji == self.bot.config['answer_yes']:
             await utils.safe_delete(rusure)
@@ -585,9 +557,7 @@ class Nest:
                     except:
                         continue
                     await self.edit_nest_reports(report_message, migration_local, nest_dict[nest]['reports'][report]['dm_dict'])
-            confirmation = await channel.send(_('Migration time set.'))
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(_('Migration time set.'), delete_after=10)
             return
         else:
             return

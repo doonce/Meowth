@@ -429,18 +429,12 @@ class Trading:
     @checks.allowtrade()
     async def trade(self, ctx, *, offer: pkmn_class.Pokemon):
         """Create a trade listing."""
+        await utils.safe_delete(ctx.message)
         if type(offer) == dict:
             trade_error = await ctx.send(
                 f"{ctx.author.display_name}, check your spelling and make sure "
-                f"you are only listing one pokemon.")
-            await asyncio.sleep(5)
-            await trade_error.delete()
+                f"you are only listing one pokemon.", delete_after=5)
             return
-
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
 
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
         preview_embed.set_thumbnail(url=offer.img_url)
@@ -465,9 +459,7 @@ class Trading:
         if len(wants) > 9:
             trade_error = await ctx.send(
                 f"{ctx.author.display_name}, please limit your trade to 9 or "
-                f"fewer pokemon. Try again!")
-            await asyncio.sleep(5)
-            await trade_error.delete()
+                f"fewer pokemon. Try again!", delete_after=5)
             return
 
         await want_ask.delete()
@@ -484,9 +476,7 @@ class Trading:
             wants = [str(want) for want in wants]
         if not wants:
             trade_error = await ctx.send(
-                f"{ctx.author.display_name}, please check your input. Try again!")
-            await asyncio.sleep(5)
-            await trade_error.delete()
+                f"{ctx.author.display_name}, please check your input. Try again!", delete_after=5)
             return
 
         await Trade.create_trade(ctx, wants, offer)
