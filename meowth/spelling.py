@@ -19,19 +19,19 @@ def set_dictionary(word_list):
 def words(text):
     return re.findall(r'\w+', text.lower())
 
-    
+
 def P(word):
     "Probability of `word`."
     if not N:
         return 0
-    
+
     return WORDS[word] / N
 
 def correction(word):
     "Most probable spelling correction for word."
     return max(candidates(word), key=P)
 
-def candidates(word): 
+def candidates(word):
     "Generate possible spelling corrections for word."
     return (known([word]) or known(edits1(word)) or known(edits2(word)) or [word])
 
@@ -39,7 +39,7 @@ def known(words):
     "The subset of `words` that appear in the dictionary of WORDS."
     if not WORDS:
         return None
-    
+
     return set(w for w in words if w in WORDS)
 
 def edits1(word):
@@ -52,6 +52,6 @@ def edits1(word):
     inserts    = [L + c + R               for L, R in splits for c in letters]
     return set(deletes + transposes + replaces + inserts)
 
-def edits2(word): 
+def edits2(word):
     "All edits that are two edits away from `word`."
     return (e2 for e1 in edits1(word) for e2 in edits1(e1))

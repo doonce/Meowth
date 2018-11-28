@@ -139,7 +139,7 @@ class Trade:
             instructions = f"DM {ctx.author.display_name} to make an offer!"
 
         codemsg = ""
-        if ctx.author.id in ctx.bot.guild_dict[ctx.guild.id].get('trainers',{}):
+        if ctx.author.id in ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             trainercode = ctx.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id].get('trainercode', None)
             if trainercode:
                 codemsg += _("{user}\'s trainer code is: **{code}**").format(user=ctx.author.display_name, code=trainercode)
@@ -231,7 +231,7 @@ class Trade:
                 self.lister.display_name,
                 offered_pokemon,
                 trader.display_name,
-                offer,self.bot.config['trade_complete'], self.bot.config['trade_stop'])
+                offer, self.bot.config['trade_complete'], self.bot.config['trade_stop'])
 
         special_check = [
             offered_pokemon.shiny,

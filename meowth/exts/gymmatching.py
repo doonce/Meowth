@@ -68,7 +68,7 @@ class GymMatching:
             try:
                 question = _("{mention} Did you mean: **{match}**?\n\nReact with {yes_emoji} to match report with **{match}** gym, {no_emoji} to report without matching, or {cancel_emoji} to cancel report.").format(mention=author.mention, match=match, yes_emoji=self.bot.config['answer_yes'],  no_emoji=self.bot.config['answer_no'],  cancel_emoji=self.bot.config['answer_cancel'], )
                 q_msg = await channel.send(question)
-                reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=[self.bot.config['answer_yes'],self.bot.config['answer_no'],self.bot.config['answer_cancel']])
+                reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=[self.bot.config['answer_yes'], self.bot.config['answer_no'], self.bot.config['answer_cancel']])
             except TypeError:
                 await q_msg.delete()
                 return None
@@ -97,7 +97,7 @@ class GymMatching:
             try:
                 question = _("{mention} Did you mean: **{match}**?\n\nReact with {yes_emoji} to match report with **{match}** stop, {no_emoji} to report without matching, or {cancel_emoji} to cancel report.").format(mention=author.mention, match=match, yes_emoji=self.bot.config['answer_yes'],  no_emoji=self.bot.config['answer_no'],  cancel_emoji=self.bot.config['answer_cancel'], )
                 q_msg = await channel.send(question)
-                reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=[self.bot.config['answer_yes'],self.bot.config['answer_no'],self.bot.config['answer_cancel']])
+                reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=[self.bot.config['answer_yes'], self.bot.config['answer_no'], self.bot.config['answer_cancel']])
             except TypeError:
                 await q_msg.delete()
                 return None

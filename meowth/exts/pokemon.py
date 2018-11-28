@@ -74,7 +74,7 @@ class Pokemon():
         form_dict = {}
         form_list = []
         two_words = []
-        for k,v in bot.pkmn_info.items():
+        for k, v in bot.pkmn_info.items():
             if v['shiny'] == True:
                 shiny_list.append(bot.pkmn_info[k]['number'])
             if v['forms'].get('alolan', {}):
@@ -96,7 +96,7 @@ class Pokemon():
             for f in form_dict[pkmn]:
                 if f not in form_list:
                     form_list.append(f)
-        form_list = list(set(form_list) - set(ascii_lowercase) - set(['1','2','3','4','5','6','7','8','?','!']))
+        form_list = list(set(form_list) - set(ascii_lowercase) - set(['1', '2', '3', '4', '5', '6', '7', '8', '?', '!']))
         form_list.extend(' ' + c for c in ascii_lowercase)
         form_list.extend(c for c in [' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !'])
         form_dict['list'] = form_list
@@ -405,7 +405,7 @@ class Pokemon():
         if ctx.bot.pkmn_list[200] in argument or "201" in argument or ctx.bot.pkmn_list[326] in argument or "327" in argument:
             f = next((x for x in form_list if x in argument.lower()), None)
         else:
-            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1',' 2',' 3',' 4',' 5',' 6',' 7',' 8',' ?',' !']))
+            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
             if len(argument.split()) > 1:
                 f = next((x for x in form_list if x in argument.lower().split()), None)
             else:
@@ -456,9 +456,9 @@ class Pokemon():
         male = re.search(r'(?<!fe)male', argument, re.IGNORECASE)
         female = re.search(r'female', argument, re.IGNORECASE)
         form_list = bot.form_dict['list']
-        one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=bot.pkmn_list[200],spinda=bot.pkmn_list[326]), argument, re.IGNORECASE)
+        one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=bot.pkmn_list[200], spinda=bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not one_char_forms:
-            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1',' 2',' 3',' 4',' 5',' 6',' 7',' 8',' ?',' !']))
+            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
 
         if shiny:
             argument = argument.replace(shiny.group(0), '').strip()
@@ -516,9 +516,9 @@ class Pokemon():
         male = re.search(r'(?<!fe)male', argument, re.IGNORECASE)
         female = re.search(r'female', argument, re.IGNORECASE)
         form_list = ctx.bot.form_dict['list']
-        one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=ctx.bot.pkmn_list[200],spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
+        one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=ctx.bot.pkmn_list[200], spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not one_char_forms:
-            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1',' 2',' 3',' 4',' 5',' 6',' 7',' 8',' ?',' !']))
+            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
         pokemon = False
         match_list = []
 

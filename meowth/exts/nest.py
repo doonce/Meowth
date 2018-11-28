@@ -41,7 +41,7 @@ class Nest:
         while (not self.bot.is_closed()):
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             for guildid in guilddict_temp.keys():
-                nest_dict = guilddict_temp[guildid].setdefault('nest_dict',{})
+                nest_dict = guilddict_temp[guildid].setdefault('nest_dict', {})
                 utcnow = datetime.datetime.utcnow()
                 migration_utc = guilddict_temp[guildid]['configure_dict']['nest']['migration']
                 new_migration = False
@@ -98,7 +98,7 @@ class Nest:
     async def get_nest_reports(self, ctx):
         channel = ctx.channel
         guild = ctx.guild
-        nest_dict = copy.deepcopy(ctx.bot.guild_dict[guild.id].setdefault('nest_dict',{}).setdefault(channel.id, {}))
+        nest_dict = copy.deepcopy(ctx.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
         nest_list = nest_dict['list']
         migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
@@ -231,7 +231,7 @@ class Nest:
             'pokemon':str(pokemon)
         }
         self.bot.guild_dict[guild.id]['nest_dict'][channel.id] = nest_dict
-        nest_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers',{}).setdefault(message.author.id,{}).setdefault('nest_reports',0) + 1
+        nest_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('nest_reports', 0) + 1
         self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['nest_reports'] = nest_reports
 
     @nest.command()

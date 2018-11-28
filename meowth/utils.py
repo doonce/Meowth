@@ -448,7 +448,7 @@ def create_gmaps_query(bot, details, channel, type="raid"):
     details_list = details.split()
     #look for lat/long coordinates in the location details. If provided,
     #then channel location hints are not needed in the  maps query
-    if re.match (r'^\s*-?\d{1,2}\.?\d*,\s*-?\d{1,3}\.?\d*\s*$', details): #regex looks for lat/long in the format similar to 42.434546, -83.985195.
+    if re.match(r'^\s*-?\d{1,2}\.?\d*,\s*-?\d{1,3}\.?\d*\s*$', details): #regex looks for lat/long in the format similar to 42.434546, -83.985195.
         return "https://www.google.com/maps/search/?api=1&query={0}".format('+'.join(details_list))
     loc_list = bot.guild_dict[channel.guild.id]['configure_dict'][report]['report_channels'][channel.id].split()
     return 'https://www.google.com/maps/search/?api=1&query={0}+{1}'.format('+'.join(details_list), '+'.join(loc_list))
@@ -463,10 +463,10 @@ def get_category(bot, channel, level, category_type="raid"):
     if catsort == "same":
         return channel.category
     elif catsort == "region":
-        category = discord.utils.get(guild.categories,id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][channel.id])
+        category = discord.utils.get(guild.categories, id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][channel.id])
         return category
     elif catsort == "level":
-        category = discord.utils.get(guild.categories,id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][level])
+        category = discord.utils.get(guild.categories, id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][level])
         return category
     else:
         return None

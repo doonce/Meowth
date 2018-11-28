@@ -331,8 +331,8 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in an Active Raid channel. Use **{prefix}list** in any ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
             try:
-                egg_check = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('type',None)
-                meetup = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('meetup',{})
+                egg_check = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('type', None)
+                meetup = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('meetup', {})
             except:
                 egg_check = ""
                 meetup = False
@@ -356,8 +356,8 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in an Active channel. Use **{prefix}list** in any ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
             try:
-                egg_check = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('type',None)
-                meetup = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('meetup',{})
+                egg_check = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('type', None)
+                meetup = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('meetup', {})
             except:
                 egg_check = ""
                 meetup = False
@@ -512,7 +512,7 @@ def custom_error_handling(bot, logger):
             error = await ctx.channel.send(msg)
             await asyncio.sleep(10)
             await delete_error(ctx.message, error)
-        elif isinstance(error,WildReportChannelCheckFail):
+        elif isinstance(error, WildReportChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['wild']['report_channels']

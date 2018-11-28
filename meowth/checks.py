@@ -107,7 +107,7 @@ def check_eggchannel(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    type = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id,{}).get('type', None)
+    type = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('type', None)
     return type == 'egg'
 
 def check_raidactive(ctx):
@@ -115,7 +115,7 @@ def check_raidactive(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id,{}).get('active', False)
+    return ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('active', False)
 
 def check_exraidset(ctx):
     if ctx.guild is None:
@@ -142,8 +142,8 @@ def check_exraidchannel(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    level = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id,{}).get('egglevel', False)
-    type =  ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id,{}).get('type', False)
+    level = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('egglevel', False)
+    type =  ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('type', False)
     return (level == 'EX') or (type == 'exraid')
 
 def check_meetupset(ctx):
@@ -165,7 +165,7 @@ def check_meetupchannel(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    meetup =  ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id,{}).get('meetup', False)
+    meetup =  ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('meetup', False)
     return meetup
 
 def check_tradeset(ctx):
