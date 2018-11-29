@@ -19,7 +19,12 @@ Meowth assists with organising Pokemon Go communities with support for:
  - Pokebattler integration for raid counters
  - Silph card integration
  - Gym matching extension for self-hosters
+ - NEW:
  - NovaBot, Huntr, PokeAlarm support for automatic raid and wild reporting
+ - Nest reporting and listing
+ - Uses DMs instead of roles, which saves on server roles
+ - Allows all pokemon forms
+ - Pokestop matching
 
 #### *`Note: All reports are provided by your active server members. Meowth does not support any TOS breaking features such as spoofing, Pokemon Go bot accounts and automated raid reporting.`*
 
