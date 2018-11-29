@@ -26,7 +26,7 @@ def is_manager():
 
 def is_dev_check(ctx):
     author = ctx.author.id
-    dev_list = [288810647960158220, 330338480498671616, 335826199148494850, 343059254690971659]
+    dev_list = [288810647960158220]
     return author in dev_list
 
 def is_dev():
