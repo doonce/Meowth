@@ -15,7 +15,7 @@ class DataHandler:
         self.pkmn_match = partial(utils.get_match, self.pkmn_list)
 
     def __local_check(self, ctx):
-        return checks.is_owner_check(ctx) or checks.is_dev_check(ctx)
+        return checks.is_manager_check(ctx)
 
     def get_name(self, pkmn_number):
         pkmn_number = int(pkmn_number) - 1

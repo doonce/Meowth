@@ -20,6 +20,10 @@
 "//": "Meowth will only take admin commands from the user with this id",
 "master": 000000000000000000,
 
+"//": "Define a list of manager IDs with access to bot-wide commands. Will automatically include master and Meowth developers",
+"//": "Commands include !raid_json !raid_time etc",
+"managers": [],
+
 "//": "Limit egg assumed hatches to certain egg levels.",
 "allow_assume": {"EX": "True", "5": "True", "4": "False", "3": "False", "2": "False", "1": "False"},
 

@@ -11,14 +11,27 @@ def is_owner_check(ctx):
 def is_owner():
     return commands.check(is_owner_check)
 
+def is_manager_check(ctx):
+    author = ctx.author.id
+    manager_list = ctx.bot.config.get('managers', [])
+    return author in manager_list or is_dev_check(ctx) or is_owner_check(ctx)
+
+def is_manager():
+    def predicate(ctx):
+        if is_manager_check(ctx):
+            return True
+        else:
+            return False
+    return commands.check(predicate)
+
 def is_dev_check(ctx):
     author = ctx.author.id
     dev_list = [288810647960158220, 330338480498671616, 335826199148494850, 343059254690971659]
     return author in dev_list
 
-def is_dev_or_owner():
+def is_dev():
     def predicate(ctx):
-        if is_dev_check(ctx) or is_owner_check(ctx):
+        if is_dev_check(ctx):
             return True
         else:
             return False

@@ -1230,7 +1230,7 @@ async def regional(ctx, regional):
         regional = int(regional)
     else:
         regional = regional.lower()
-        if regional == "reset" and checks.is_dev_check(ctx):
+        if regional == "reset" and checks.is_manager_check(ctx):
             msg = _("Are you sure you want to clear all regionals?")
             question = await ctx.channel.send(msg)
             try:
@@ -1270,7 +1270,7 @@ def _set_regional(bot, guild, regional):
 async def timezone(ctx, *, timezone: str = ''):
     """Changes server timezone."""
     if not ctx.author.guild_permissions.manage_guild:
-        if not checks.is_dev_check(ctx):
+        if not checks.is_manager_check(ctx):
             return
     try:
         timezone = float(timezone)
@@ -1600,7 +1600,7 @@ async def reload_json(ctx):
     await ctx.message.add_reaction(config['command_done'])
 
 @Meowth.command()
-@checks.is_dev_or_owner()
+@checks.is_manager()
 async def raid_json(ctx, level=None, *, newlist=None):
     """Edits or displays raid_info.json
 
@@ -1655,7 +1655,7 @@ async def raid_json(ctx, level=None, *, newlist=None):
             return await ctx.channel.send(_("Meowth! I'm not sure what went wrong, but configuration is cancelled!"), delete_after=10)
 
 @Meowth.command()
-@checks.is_dev_or_owner()
+@checks.is_manager()
 async def raid_time(ctx, hatch_or_raid, level, newtime):
     """Edits raid time in raid_info.json
 

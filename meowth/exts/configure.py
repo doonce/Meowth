@@ -294,10 +294,7 @@ class Configure:
     async def _configure(self, ctx, configlist):
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(owner.id, 0) + 1
         self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][owner.id] = config_sessions
         for session in self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'].keys():
@@ -448,10 +445,7 @@ class Configure:
         """!team command settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -549,10 +543,7 @@ class Configure:
         """Welcome message settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -711,10 +702,7 @@ class Configure:
         """!raid reporting settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -745,10 +733,7 @@ class Configure:
         """!exraid reporting settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -797,10 +782,7 @@ class Configure:
         """!invite command settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -848,10 +830,7 @@ class Configure:
         """Automatic counters settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -906,10 +885,7 @@ class Configure:
         """!wild reporting settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -940,10 +916,7 @@ class Configure:
         """!research reporting settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -974,10 +947,7 @@ class Configure:
         """!meetup reporting settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -1009,10 +979,7 @@ class Configure:
         """!want/!unwant settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -1043,10 +1010,7 @@ class Configure:
         """Configure !archive command settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -1121,10 +1085,7 @@ class Configure:
         """Configure timezone and other settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -1172,10 +1133,7 @@ class Configure:
         """!trade reporting settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -1206,10 +1164,7 @@ class Configure:
         """!nest reporting settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
@@ -1240,10 +1195,7 @@ class Configure:
         """Configure scanner settings"""
         guild = ctx.message.guild
         owner = ctx.message.author
-        try:
-            await ctx.message.delete()
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
+        await utils.safe_delete(ctx.message)
         if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
             await self._configure(ctx, "all")
             return
