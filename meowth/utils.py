@@ -450,7 +450,7 @@ def create_gmaps_query(bot, details, channel, type="raid"):
     #then channel location hints are not needed in the  maps query
     if re.match(r'^\s*-?\d{1,2}\.?\d*,\s*-?\d{1,3}\.?\d*\s*$', details): #regex looks for lat/long in the format similar to 42.434546, -83.985195.
         return "https://www.google.com/maps/search/?api=1&query={0}".format('+'.join(details_list))
-    loc_list = bot.guild_dict[channel.guild.id]['configure_dict'][report]['report_channels'][channel.id].split()
+    loc_list = bot.guild_dict[channel.guild.id]['configure_dict'][report]['report_channels'].get(channel.id, "").split()
     return 'https://www.google.com/maps/search/?api=1&query={0}+{1}'.format('+'.join(details_list), '+'.join(loc_list))
 
 def get_category(bot, channel, level, category_type="raid"):
@@ -488,5 +488,12 @@ async def expire_dm_reports(bot, dm_dict):
 async def safe_delete(message):
     try:
         await message.delete()
-    except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.NotFound):
+    except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.NotFound, AttributeError):
         pass
+
+async def safe_get_message(channel, message_id):
+    try:
+        message = await channel.get_message(message_id)
+    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, AttributeError):
+        message = None
+    return message
