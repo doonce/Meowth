@@ -5809,8 +5809,9 @@ async def _list(ctx):
             if raid_message:
                 list_embed = discord.Embed(colour=ctx.guild.me.colour, description=listmsg, title=raid_message.embeds[0].title, url=raid_message.embeds[0].url)
                 if len(raid_message.embeds[0].fields) > 4:
-                    list_embed.add_field(name=raid_message.embeds[0].fields[4].name, value=raid_message.embeds[0].fields[4].value, inline=raid_message.embeds[0].fields[4].inline)
-                    list_embed.add_field(name=raid_message.embeds[0].fields[5].name, value=raid_message.embeds[0].fields[5].value, inline=raid_message.embeds[0].fields[5].inline)
+                    for field in raid_message.embeds[0].fields:
+                        if "status" in field.name.lower() or "team" in field.name.lower():
+                            list_embed.add_field(name=field.name, value=field.value, inline=field.inline)
             else:
                 list_embed = discord.Embed(colour=ctx.guild.me.colour, description=listmsg)
             if tag:
