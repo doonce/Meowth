@@ -424,6 +424,10 @@ async def expire_channel(channel):
             del guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]
         except KeyError:
             pass
+        try:
+            del guild_dict[ctx.guild.id]['list_dict']['raid'][channel.id]
+        except KeyError:
+            pass
         return
     elif (channel_exists):
         dupechannel = False
@@ -517,6 +521,10 @@ async def expire_channel(channel):
                         del guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]
                     except KeyError:
                         pass
+                    try:
+                        del guild_dict[ctx.guild.id]['list_dict']['raid'][channel.id]
+                    except KeyError:
+                        pass
                     await channel_exists.delete()
                     logger.info(
                         'Expire_Channel - Channel Deleted - ' + channel.name)
@@ -571,7 +579,14 @@ async def expire_channel(channel):
                             await channel.send(embed=embed)
                             del logs[earliest]
                             await asyncio.sleep(.25)
-                        del guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]
+                        try:
+                            del guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]
+                        except KeyError:
+                            pass
+                        try:
+                            del guild_dict[ctx.guild.id]['list_dict']['raid'][channel.id]
+                        except KeyError:
+                            pass
         except:
             pass
 
@@ -657,6 +672,10 @@ async def channel_cleanup(loop=True):
                     del guild_dict[guildid]['raidchannel_dict'][c]
                     logger.info(
                         'Channel_Cleanup - Channel Savedata Cleared - ' + str(c))
+                except KeyError:
+                    pass
+                try:
+                    del guild_dict[guildid]['list_dict']['raid'][c]
                 except KeyError:
                     pass
             # for every channel listed to have the discord channel deleted
@@ -2199,8 +2218,10 @@ async def want(ctx, *, pokemon):
         if pokemon:
             want_list.append(pokemon.name.lower())
         elif len(want_split) == 1 and "list" in entered_want:
-            msg = _("Meowth! Did you mean **!list wants**?").format(word=entered_want.title())
-            question = await message.channel.send(msg, delete_after=10)
+            await utils.safe_delete(ctx.message)
+            list_command = Meowth.get_command("list")
+            want_command = list_command.all_commands.get('wants')
+            await want_command.invoke(ctx)
             return
         else:
             spellcheck_list.append(entered_want)
@@ -5624,6 +5645,7 @@ List Commands
 """
 
 @Meowth.group(name="list", aliases=['lists', 'tag'], case_insensitive=True)
+@commands.cooldown(1, 5, commands.BucketType.channel)
 async def _list(ctx):
     """Lists all raid info for the current channel.
 
@@ -5638,7 +5660,7 @@ async def _list(ctx):
         channel = ctx.channel
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[guild.id]['configure_dict']['settings']['offset'])
         list_messages = []
-        if (checks.check_raidreport(ctx) or checks.check_exraidreport(ctx)):
+        if (checks.check_raidreport(ctx) or checks.check_exraidreport(ctx) or checks.check_meetupreport(ctx)):
             if ctx.invoked_with.lower() == "tag":
                 tag_error = await channel.send(f"Please use **{ctx.prefix}{ctx.invoked_with}** in an active raid channel.", delete_after=10)
                 await asyncio.sleep(10)
@@ -5772,6 +5794,7 @@ async def _list(ctx):
             team_list = ["mystic", "valor", "instinct", "unknown"]
             tag = False
             team = False
+            list_messages = []
             if ctx.invoked_with.lower() == "tag":
                 tag = True
             starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime', None)
@@ -5780,6 +5803,10 @@ async def _list(ctx):
             raid_message = await utils.safe_get_message(channel, raid_message)
             rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
             list_split = ctx.message.clean_content.lower().split()
+            list_dict = guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
+            for msg in list_dict:
+                msg = await utils.safe_get_message(ctx.channel, msg)
+                await utils.safe_delete(msg)
             if "tags" in list_split or "tag" in list_split:
                 tag = True
             for word in list_split:
@@ -5805,7 +5832,6 @@ async def _list(ctx):
             listmsg += ('\n' + bulletpoint) + (await print_raid_timer(channel))
             if starttime and (starttime > now) and not meetup:
                 listmsg += _('\nThe next group will be starting at **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
-
             if raid_message:
                 list_embed = discord.Embed(colour=ctx.guild.me.colour, description=listmsg, title=raid_message.embeds[0].title, url=raid_message.embeds[0].url)
                 if len(raid_message.embeds[0].fields) > 4:
@@ -5815,10 +5841,40 @@ async def _list(ctx):
             else:
                 list_embed = discord.Embed(colour=ctx.guild.me.colour, description=listmsg)
             if tag:
-                await ctx.channel.send(listmsg)
+                list_msg = await ctx.channel.send(listmsg)
             else:
-                await ctx.channel.send(embed=list_embed)
+                list_msg = await ctx.channel.send(embed=list_embed)
+            list_messages.append(list_msg.id)
+            guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {})[channel.id] = list_messages
             return
+        elif checks.check_wantchannel(ctx):
+            if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_researchreport(ctx)):
+                want_command = ctx.command.all_commands.get('wants')
+                await want_command.invoke(ctx)
+            else:
+                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests**", delete_after=10)
+                return
+        elif checks.check_researchreport(ctx):
+            if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx)):
+                research_command = ctx.command.all_commands.get('research')
+                await research_command.invoke(ctx)
+            else:
+                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests**", delete_after=10)
+                return
+        elif checks.check_wildreport(ctx):
+            if not (checks.check_researchreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx)):
+                wild_command = ctx.command.all_commands.get('wild')
+                await wild_command.invoke(ctx)
+            else:
+                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests**", delete_after=10)
+                return
+        elif checks.check_nestreport(ctx):
+            if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx)):
+                nest_command = ctx.command.all_commands.get('nest')
+                await nest_command.invoke(ctx)
+            else:
+                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests**", delete_after=10)
+                return
         else:
             raise checks.errors.CityRaidChannelCheckFail()
 
@@ -6404,6 +6460,7 @@ async def _wildlist(ctx):
     return listmsg, None
 
 @_list.command(aliases=['nest'])
+@commands.cooldown(1, 5, commands.BucketType.channel)
 @checks.allownestreport()
 async def nests(ctx):
     """List the nests for the channel
