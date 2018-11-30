@@ -425,7 +425,7 @@ async def expire_channel(channel):
         except KeyError:
             pass
         try:
-            del guild_dict[ctx.guild.id]['list_dict']['raid'][channel.id]
+            del guild_dict[channel.guild.id]['list_dict']['raid'][channel.id]
         except KeyError:
             pass
         return
@@ -522,7 +522,7 @@ async def expire_channel(channel):
                     except KeyError:
                         pass
                     try:
-                        del guild_dict[ctx.guild.id]['list_dict']['raid'][channel.id]
+                        del guild_dict[channel.guild.id]['list_dict']['raid'][channel.id]
                     except KeyError:
                         pass
                     await channel_exists.delete()
@@ -584,7 +584,7 @@ async def expire_channel(channel):
                         except KeyError:
                             pass
                         try:
-                            del guild_dict[ctx.guild.id]['list_dict']['raid'][channel.id]
+                            del guild_dict[channel.guild.id]['list_dict']['raid'][channel.id]
                         except KeyError:
                             pass
         except:
