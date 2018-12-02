@@ -321,9 +321,15 @@ async def expire_research(message):
     guild = message.channel.guild
     channel = message.channel
     research_dict = copy.deepcopy(guild_dict[guild.id]['questreport_dict'])
-    await utils.safe_delete(message)
-    user_message = await utils.safe_get_message(channel, research_dict[message.id]['reportmessage'])
-    await utils.safe_delete(user_message)
+    try:
+        await message.delete()
+    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+        pass
+    try:
+        user_message = await channel.get_message(research_dict[message.id]['reportmessage'])
+        await user_message.delete()
+    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+        pass
     await utils.expire_dm_reports(Meowth, research_dict[message.id].get('dm_dict', {}))
     del guild_dict[guild.id]['questreport_dict'][message.id]
 
@@ -336,8 +342,11 @@ async def expire_wild(message):
         await message.clear_reactions()
     except discord.errors.NotFound:
         pass
-    user_message = await utils.safe_get_message(channel, wild_dict[message.id]['reportmessage'])
-    await utils.safe_delete(user_message)
+    try:
+        user_message = await channel.get_message(wild_dict[message.id]['reportmessage'])
+        await user_message.delete()
+    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+        pass
     await utils.expire_dm_reports(Meowth, wild_dict[message.id].get('dm_dict', {}))
     del guild_dict[guild.id]['wildreport_dict'][message.id]
 
@@ -4472,13 +4481,13 @@ async def duplicate(ctx):
                 raidmsg = await channel.get_message(rc_d['raidmessage'])
                 reporter = raidmsg.mentions[0]
                 if 'egg' in raidmsg.content and not reporter.bot:
-                    egg_reports = guild_dict[guild.id]['trainers'][reporter.id]['egg_reports']
+                    egg_reports = guild_dict[guild.id]['trainers'].setdefault(reporter.id, {}).setdefault('egg_reports', 0)
                     guild_dict[guild.id]['trainers'][reporter.id]['egg_reports'] = egg_reports - 1
                 elif 'EX' in raidmsg.content and not reporter.bot:
-                    ex_reports = guild_dict[guild.id]['trainers'][reporter.id]['ex_reports']
+                    ex_reports = guild_dict[guild.id]['trainers'].setdefault(reporter.id, {}).setdefault('ex_reports', 0)
                     guild_dict[guild.id]['trainers'][reporter.id]['ex_reports'] = ex_reports - 1
                 else:
-                    raid_reports = guild_dict[guild.id]['trainers'][reporter.id]['raid_reports']
+                    raid_reports = guild_dict[guild.id]['trainers'].setdefault(reporter.id, {}).setdefault('raid_reports', 0)
                     guild_dict[guild.id]['trainers'][reporter.id]['raid_reports'] = raid_reports - 1
                 if guild_dict[guild.id]['raidchannel_dict'][channel.id].get('gymhuntrgps', False):
                     askdupe = await channel.send(_('Hey {reporter}, this is a bot channel that has some additional features. If you send me a channel mention (#channel) of the other channel I can move those features to it.').format(reporter=ctx.author.mention))
@@ -5800,13 +5809,18 @@ async def _list(ctx):
             starttime = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime', None)
             meetup = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('meetup', {})
             raid_message = guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidmessage']
-            raid_message = await utils.safe_get_message(channel, raid_message)
+            try:
+                raid_message = await channel.get_message(raid_message)
+            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                raid_message = None
             rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
             list_split = ctx.message.clean_content.lower().split()
             list_dict = guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
-            for msg in list_dict:
-                msg = await utils.safe_get_message(ctx.channel, msg)
+            try:
+                msg = await ctx.channel.get_message(msg)
                 await utils.safe_delete(msg)
+            except:
+                pass
             if "tags" in list_split or "tag" in list_split:
                 tag = True
             for word in list_split:
@@ -6382,7 +6396,7 @@ async def _researchlist(ctx):
                         encounter_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, config['res_encounter']), location=research_dict[questid]['location'].title(), quest=research_dict[questid]['quest'].title(), reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url', None)))
                     else:
                         item_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, config['res_other']), location=research_dict[questid]['location'].title(), quest=research_dict[questid]['quest'].title(), reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url', None)))
-            except discord.errors.NotFound:
+            except:
                 continue
     if encounter_quests:
         questmsg += "\n\n**Pokemon Encounters**\n{encounterlist}".format(encounterlist="\n".join(encounter_quests))
@@ -6447,7 +6461,7 @@ async def _wildlist(ctx):
                     pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, wild_dict[wildid]['pokemon'])
                     wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, config['wild_bullet']))
                     wildmsg += _("**Pokemon**: {pokemon} {type}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=pokemon.name.title(), type=''.join(utils.get_type(Meowth, ctx.message.guild, pokemon.id, pokemon.form, pokemon.alolan)), location=wild_dict[wildid]['location'].title(), author=wildauthor.display_name, url=wild_dict[wildid].get('url', None))
-            except discord.errors.NotFound:
+            except:
                 continue
     if wildmsg:
         listmsg = _('**Meowth! Here\'s the current wild reports for {channel}**').format(channel=ctx.message.channel.mention)

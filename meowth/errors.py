@@ -179,6 +179,8 @@ def custom_error_handling(bot, logger):
             await delete_error(ctx.message, error)
         elif isinstance(error, commands.CommandNotFound):
             pass
+        elif isinstance(error, commands.CommandInvokeError):
+            pass
         elif isinstance(error, commands.CheckFailure):
             pass
         elif isinstance(error, commands.CommandOnCooldown):
