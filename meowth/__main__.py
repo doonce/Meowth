@@ -321,13 +321,10 @@ async def expire_research(message):
     guild = message.channel.guild
     channel = message.channel
     research_dict = copy.deepcopy(guild_dict[guild.id]['questreport_dict'])
-    try:
-        await message.delete()
-    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-        pass
+    await utils.safe_delete(message)
     try:
         user_message = await channel.get_message(research_dict[message.id]['reportmessage'])
-        await user_message.delete()
+        await utils.safe_delete(user_message)
     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
         pass
     await utils.expire_dm_reports(Meowth, research_dict[message.id].get('dm_dict', {}))
@@ -344,7 +341,7 @@ async def expire_wild(message):
         pass
     try:
         user_message = await channel.get_message(wild_dict[message.id]['reportmessage'])
-        await user_message.delete()
+        await utils.safe_delete(user_message)
     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
         pass
     await utils.expire_dm_reports(Meowth, wild_dict[message.id].get('dm_dict', {}))
@@ -500,7 +497,7 @@ async def expire_channel(channel):
                         report_channel = Meowth.get_channel(
                             guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportcity'])
                         reportmsg = await report_channel.get_message(guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['raidreport'])
-                        await reportmsg.delete()
+                        await utils.safe_delete(reportmsg)
                     except:
                         pass
                 else:
@@ -515,7 +512,7 @@ async def expire_channel(channel):
                     report_channel = Meowth.get_channel(
                         guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportcity'])
                     user_message = await report_channel.get_message(guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['reportmessage'])
-                    await user_message.delete()
+                    await utils.safe_delete(user_message)
                 except:
                     pass
                     # channel doesn't exist anymore in serverdict
@@ -778,7 +775,7 @@ async def message_cleanup(loop=True):
             for messageid in report_delete_dict.keys():
                 try:
                     report_message = await report_delete_dict[messageid]['channel'].get_message(messageid)
-                    await report_message.delete()
+                    await utils.safe_delete(report_message)
                 except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
                     pass
             for messageid in report_edit_dict.keys():
@@ -1257,7 +1254,7 @@ async def regional(ctx, regional):
                 res, reactuser = await utils.ask(Meowth, question, ctx.message.author.id)
             except TypeError:
                 timeout = True
-            await question.delete()
+            await utils.safe_delete(question)
             if timeout or res.emoji == config['answer_no']:
                 return
             elif res.emoji == config['answer_yes']:
@@ -1518,7 +1515,7 @@ async def announce(ctx, *, announce=None):
         announcemsg = await Meowth.wait_for('message', timeout=180, check=(lambda reply: reply.author == message.author))
         if announcemsg != None:
             announce = announcemsg.content
-            await announcemsg.delete()
+            await utils.safe_delete(announcemsg)
         else:
             confirmation = await channel.send(_("Meowth! You took too long to send me your announcement! Retry when you're ready."), delete_after=10)
     embeddraft = discord.Embed(colour=guild.me.colour, description=announce)
@@ -1555,10 +1552,10 @@ async def announce(ctx, *, announce=None):
     except TypeError:
         timeout = True
     if not timeout:
-        await rusure.delete()
+        await utils.safe_delete(rusure)
         if res.emoji == config['answer_no']:
             confirmation = await channel.send(_('Announcement Cancelled.'), delete_after=10)
-            await draft.delete()
+            await utils.safe_delete(draft)
         elif res.emoji == config['answer_yes']:
             confirmation = await channel.send(_('Announcement Sent.'), delete_after=10)
         elif res.emoji == '❔':
@@ -1577,9 +1574,9 @@ async def announce(ctx, *, announce=None):
                 confirmation = await channel.send(_("Meowth! That channel doesn't exist! Retry when you're ready."), delete_after=10)
             else:
                 confirmation = await channel.send(_("Meowth! You took too long to send me your announcement! Retry when you're ready."), delete_after=10)
-            await channelwait.delete()
-            await channelmsg.delete()
-            await draft.delete()
+            await utils.safe_delete(channelwait)
+            await utils.safe_delete(channelmsg)
+            await utils.safe_delete(draft)
         elif (res.emoji == '🌎') and checks.is_owner_check(ctx):
             failed = 0
             sent = 0
@@ -1603,10 +1600,10 @@ async def announce(ctx, *, announce=None):
             logger.info('Announcement sent to {} server owners: {} successful, {} failed.'.format(count, sent, failed))
             confirmation = await channel.send(_('Announcement sent to {} server owners: {} successful, {} failed.').format(count, sent, failed), delete_after=10)
     else:
-        await rusure.delete()
+        await utils.safe_delete(rusure)
         confirmation = await channel.send(_('Announcement Timed Out.'), delete_after=10)
     await asyncio.sleep(30)
-    await message.delete()
+    await utils.safe_delete(message)
 
 @Meowth.command()
 @checks.is_owner()
@@ -1654,7 +1651,7 @@ async def raid_json(ctx, level=None, *, newlist=None):
         except TypeError:
             timeout = True
         if timeout or res.emoji == config['answer_no']:
-            await question.delete()
+            await utils.safe_delete(question)
             return await ctx.channel.send(_("Meowth! Configuration cancelled!"), delete_after=10)
         elif res.emoji == config['answer_yes']:
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
@@ -1669,7 +1666,7 @@ async def raid_json(ctx, level=None, *, newlist=None):
             await question.add_reaction(config['command_done'])
             await ctx.channel.send(_("Meowth! Configuration successful!"), delete_after=10)
             await asyncio.sleep(10)
-            await question.delete()
+            await utils.safe_delete(question)
         else:
             return await ctx.channel.send(_("Meowth! I'm not sure what went wrong, but configuration is cancelled!"), delete_after=10)
 
@@ -1704,7 +1701,7 @@ async def raid_time(ctx, hatch_or_raid, level, newtime):
     except TypeError:
         timeout = True
     if timeout or res.emoji == config['answer_no']:
-        await question.delete()
+        await utils.safe_delete(question)
         return await ctx.channel.send(_("Meowth! Configuration cancelled!"), delete_after=10)
     elif res.emoji == config['answer_yes']:
         with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
@@ -1726,84 +1723,11 @@ async def raid_time(ctx, hatch_or_raid, level, newtime):
         await question.add_reaction(config['command_done'])
         await ctx.channel.send(_("Meowth! Configuration successful!"), delete_after=10)
         await asyncio.sleep(10)
-        await question.delete()
+        await utils.safe_delete(question)
     else:
         return await ctx.channel.send(_("Meowth! I'm not sure what went wrong, but configuration is cancelled!"), delete_after=10)
         await asyncio.sleep(10)
-        await question.delete()
-
-@Meowth.command()
-@commands.has_permissions(manage_guild=True)
-async def reset_board(ctx, *, user=None, type=None):
-    guild = ctx.guild
-    trainers = guild_dict[guild.id]['trainers']
-    tgt_string = ""
-    tgt_trainer = None
-    if user:
-        converter = commands.MemberConverter()
-        for argument in user.split():
-            try:
-                tgt_trainer = await converter.convert(ctx, argument)
-                tgt_string = tgt_trainer.display_name
-            except:
-                tgt_trainer = None
-                tgt_string = _("every user")
-            if tgt_trainer:
-                user = user.replace(argument, "").strip()
-                break
-        for argument in user.split():
-            if "raid" in argument.lower():
-                type = "raid_reports"
-                break
-            elif "egg" in argument.lower():
-                type = "egg_reports"
-                break
-            elif "ex" in argument.lower():
-                type = "ex_reports"
-                break
-            elif "wild" in argument.lower():
-                type = "wild_reports"
-                break
-            elif "res" in argument.lower():
-                type = "research_reports"
-                break
-            elif "nest" in argument.lower():
-                type = "nest_reports"
-                break
-    if not type:
-        type = "total_reports"
-    if not tgt_string:
-        tgt_string = _("every user")
-    msg = _("Are you sure you want to reset the **{type}** report stats for **{target}**?").format(type=type.replace("_", " ").title(), target=tgt_string)
-    question = await ctx.channel.send(msg)
-    try:
-        timeout = False
-        res, reactuser = await utils.ask(Meowth, question, ctx.message.author.id)
-    except TypeError:
-        timeout = True
-    await question.delete()
-    if timeout or res.emoji == config['answer_no']:
-        return
-    elif res.emoji == config['answer_yes']:
-        pass
-    else:
-        return
-    for trainer in trainers:
-        if tgt_trainer:
-            trainer = tgt_trainer.id
-        if type == "total_reports":
-            trainers[trainer]['raid_reports'] = 0
-            trainers[trainer]['wild_reports'] = 0
-            trainers[trainer]['ex_reports'] = 0
-            trainers[trainer]['egg_reports'] = 0
-            trainers[trainer]['research_reports'] = 0
-            trainers[trainer]['nest_reports'] = 0
-        else:
-            trainers[trainer][type] = 0
-        if tgt_trainer:
-            await ctx.send(_("{trainer}'s report stats have been cleared!").format(trainer=tgt_trainer.display_name), delete_after=10)
-            return
-    await ctx.send("This server's report stats have been reset!", delete_after=10)
+        await utils.safe_delete(question)
 
 @Meowth.command()
 @commands.has_permissions(manage_channels=True)
@@ -1890,7 +1814,7 @@ async def clearstatus(ctx, status: str="all"):
         res, reactuser = await utils.ask(Meowth, question, ctx.message.author.id)
     except TypeError:
         timeout = True
-    await question.delete()
+    await utils.safe_delete(question)
     if timeout or res.emoji == config['answer_no']:
         return
     elif res.emoji == config['answer_yes']:
@@ -1938,7 +1862,7 @@ async def archive(ctx):
     Usage: !archive"""
     message = ctx.message
     channel = message.channel
-    await ctx.message.delete()
+    await utils.safe_delete(ctx.message)
     await _archive(channel)
 
 async def _archive(channel):
@@ -2136,7 +2060,7 @@ async def profile(ctx, member: discord.Member = None):
 
     await ctx.send(embed=embed)
 
-@Meowth.command()
+@Meowth.group(case_insensitive=True, invoke_without_command=True)
 async def leaderboard(ctx, type="total", range="1"):
     """Displays the top ten reporters of a server.
 
@@ -2193,6 +2117,79 @@ async def leaderboard(ctx, type="total", range="1"):
     if len(embed.fields) == 0:
         embed.add_field(name=_("No Reports"), value=_("Nobody has made a report or this report type is disabled."))
     await ctx.send(embed=embed)
+
+@leaderboard.command(name='reset')
+@commands.has_permissions(manage_guild=True)
+async def reset(ctx, *, user=None, type=None):
+    guild = ctx.guild
+    trainers = guild_dict[guild.id]['trainers']
+    tgt_string = ""
+    tgt_trainer = None
+    if user:
+        converter = commands.MemberConverter()
+        for argument in user.split():
+            try:
+                tgt_trainer = await converter.convert(ctx, argument)
+                tgt_string = tgt_trainer.display_name
+            except:
+                tgt_trainer = None
+                tgt_string = _("every user")
+            if tgt_trainer:
+                user = user.replace(argument, "").strip()
+                break
+        for argument in user.split():
+            if "raid" in argument.lower():
+                type = "raid_reports"
+                break
+            elif "egg" in argument.lower():
+                type = "egg_reports"
+                break
+            elif "ex" in argument.lower():
+                type = "ex_reports"
+                break
+            elif "wild" in argument.lower():
+                type = "wild_reports"
+                break
+            elif "res" in argument.lower():
+                type = "research_reports"
+                break
+            elif "nest" in argument.lower():
+                type = "nest_reports"
+                break
+    if not type:
+        type = "total_reports"
+    if not tgt_string:
+        tgt_string = _("every user")
+    msg = _("Are you sure you want to reset the **{type}** report stats for **{target}**?").format(type=type.replace("_", " ").title(), target=tgt_string)
+    question = await ctx.channel.send(msg)
+    try:
+        timeout = False
+        res, reactuser = await utils.ask(Meowth, question, ctx.message.author.id)
+    except TypeError:
+        timeout = True
+    await utils.safe_delete(question)
+    if timeout or res.emoji == config['answer_no']:
+        return
+    elif res.emoji == config['answer_yes']:
+        pass
+    else:
+        return
+    for trainer in trainers:
+        if tgt_trainer:
+            trainer = tgt_trainer.id
+        if type == "total_reports":
+            trainers[trainer]['raid_reports'] = 0
+            trainers[trainer]['wild_reports'] = 0
+            trainers[trainer]['ex_reports'] = 0
+            trainers[trainer]['egg_reports'] = 0
+            trainers[trainer]['research_reports'] = 0
+            trainers[trainer]['nest_reports'] = 0
+        else:
+            trainers[trainer][type] = 0
+        if tgt_trainer:
+            await ctx.send(_("{trainer}'s report stats have been cleared!").format(trainer=tgt_trainer.display_name), delete_after=10)
+            return
+    await ctx.send("This server's report stats have been reset!", delete_after=10)
 
 """
 Notifications
@@ -2580,10 +2577,10 @@ async def _wild(ctx, content):
     wild_reports = guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wild_reports', 0) + 1
     guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports
 
-@wild.command()
+@wild.command(aliases=['expire'])
 @checks.allowwildreport()
 @commands.has_permissions(manage_channels=True)
-async def reset(ctx):
+async def reset(ctx, *, report_message=None):
     """Resets all wild reports."""
 
     author = ctx.author
@@ -2593,9 +2590,13 @@ async def reset(ctx):
 
     # get settings
     wild_dict = copy.deepcopy(guild_dict[guild.id].setdefault('wildreport_dict', {}))
-    await message.delete()
+    await utils.safe_delete(message)
 
     if not wild_dict:
+        return
+    if report_message and int(report_message) in wild_dict.keys():
+        report_message = await channel.get_message(report_message)
+        await expire_wild(report_message)
         return
     rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all wild reports?'))
     try:
@@ -2604,11 +2605,11 @@ async def reset(ctx):
     except TypeError:
         timeout = True
     if timeout or res.emoji == config['answer_no']:
-        await rusure.delete()
+        await utils.safe_delete(rusure)
         confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
         return
     elif res.emoji == config['answer_yes']:
-        await rusure.delete()
+        await utils.safe_delete(rusure)
         for report in wild_dict:
             report_message = await channel.get_message(report)
             await expire_wild(report_message)
@@ -2875,7 +2876,7 @@ async def _raidegg(ctx, content):
             res, reactuser = await utils.ask(Meowth, question, message.author.id, react_list=['🥚', '⏲'])
         except TypeError:
             timeout = True
-        await question.delete()
+        await utils.safe_delete(question)
         if timeout or res.emoji == '⏲':
             hourminute = True
         elif res.emoji == '🥚':
@@ -3492,13 +3493,10 @@ async def _invite(ctx):
     exraidchoice = await channel.send(_("Meowth! {0}, you've told me you have an invite to an EX Raid! The following {1} EX Raids have been reported:\n{2}\nReply with **the number** (1, 2, etc) of the EX Raid you have been invited to. If none of them match your invite, type 'N' and report it with **!exraid**").format(author.mention, str(exraidcount), exraidlist))
     reply = await bot.wait_for('message', check=(lambda message: (message.author == author)))
     if reply.content.lower() == 'n':
-        await exraidchoice.delete()
         exraidmsg = await channel.send(_('Meowth! Be sure to report your EX Raid with **!exraid**!'), delete_after=30)
     elif (not reply.content.isdigit()) or (int(reply.content) > exraidcount):
-        await exraidchoice.delete()
         exraidmsg = await channel.send(_("Meowth! I couldn't tell which EX Raid you meant! Try the **!invite** command again, and make sure you respond with the number of the channel that matches!", delete_after=30))
     elif (int(reply.content) <= exraidcount) and (int(reply.content) > 0):
-        await exraidchoice.delete()
         overwrite = discord.PermissionOverwrite()
         overwrite.send_messages = True
         overwrite.read_messages = True
@@ -3510,9 +3508,9 @@ async def _invite(ctx):
         exraidmsg = await channel.send(_('Meowth! Alright {0}, you can now send messages in {1}! Make sure you let the trainers in there know if you can make it to the EX Raid!').format(author.mention, exraid_channel.mention), delete_after=30)
         await _maybe(exraid_channel, author, 1, party=None)
     else:
-        await exraidchoice.delete()
         exraidmsg = await channel.send(_("Meowth! I couldn't understand your reply! Try the **!invite** command again!"), delete_after=30)
     await asyncio.sleep(30)
+    await utils.safe_delete(exraidchoice)
     await utils.safe_delete(ctx.message)
     await utils.safe_delete(reply)
 
@@ -3558,7 +3556,7 @@ async def research(ctx, *, details = None):
                 return
             research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(location.title(), width=30)), inline=True)
             research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(quest.title(), width=30)), inline=True)
-            other_reward = any(x in reward for x in reward_list)
+            other_reward = any(x in reward.lower() for x in reward_list)
             pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, reward, allow_digits=False)
             if pokemon and not other_reward:
                 reward = f"{reward.title()} {''.join(utils.get_type(Meowth, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
@@ -3578,13 +3576,13 @@ async def research(ctx, *, details = None):
                 pokestopmsg = await Meowth.wait_for('message', timeout=60, check=check)
             except asyncio.TimeoutError:
                 pokestopmsg = None
-            await pokestopwait.delete()
+            await utils.safe_delete(pokestopwait)
             if not pokestopmsg:
                 error = _("took too long to respond")
                 break
             elif pokestopmsg.clean_content.lower() == "cancel":
                 error = _("cancelled the report")
-                await pokestopmsg.delete()
+                await utils.safe_delete(pokestopmsg)
                 break
             elif pokestopmsg:
                 location = pokestopmsg.clean_content
@@ -3597,9 +3595,9 @@ async def research(ctx, *, details = None):
                     if stop_url:
                         loc_url = stop_url
                 if not location:
-                    await pokestopmsg.delete()
+                    await utils.safe_delete(pokestopmsg)
                     return
-            await pokestopmsg.delete()
+            await utils.safe_delete(pokestopmsg)
             research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(location.title(), width=30)), inline=True)
             research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Great! Now, reply with the **quest** that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(location=location), inline=False)
             questwait = await channel.send(embed=research_embed)
@@ -3607,17 +3605,17 @@ async def research(ctx, *, details = None):
                 questmsg = await Meowth.wait_for('message', timeout=60, check=check)
             except asyncio.TimeoutError:
                 questmsg = None
-            await questwait.delete()
+            await utils.safe_delete(questwait)
             if not questmsg:
                 error = _("took too long to respond")
                 break
             elif questmsg.clean_content.lower() == "cancel":
                 error = _("cancelled the report")
-                await questmsg.delete()
+                await utils.safe_delete(questmsg)
                 break
             elif questmsg:
                 quest = questmsg.clean_content
-            await questmsg.delete()
+            await utils.safe_delete(questmsg)
             research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(quest.title(), width=30)), inline=True)
             research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Fantastic! Now, reply with the **reward** for the **{quest}** quest that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(quest=quest, location=location), inline=False)
             rewardwait = await channel.send(embed=research_embed)
@@ -3625,24 +3623,24 @@ async def research(ctx, *, details = None):
                 rewardmsg = await Meowth.wait_for('message', timeout=60, check=check)
             except asyncio.TimeoutError:
                 rewardmsg = None
-            await rewardwait.delete()
+            await utils.safe_delete(rewardwait)
             if not rewardmsg:
                 error = _("took too long to respond")
                 break
             elif rewardmsg.clean_content.lower() == "cancel":
                 error = _("cancelled the report")
-                await rewardmsg.delete()
+                await utils.safe_delete(rewardmsg)
                 break
             elif rewardmsg:
                 reward = rewardmsg.clean_content
-                other_reward = any(x in reward for x in reward_list)
+                other_reward = any(x in reward.lower() for x in reward_list)
                 pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, reward, allow_digits=False)
                 if pokemon and not other_reward:
                     reward = f"{reward.title()} {''.join(utils.get_type(Meowth, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
                     research_embed.add_field(name=_("**Reward:**"), value=reward.title(), inline=True)
                 else:
                     research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(reward.title(), width=30)), inline=True)
-            await rewardmsg.delete()
+            await utils.safe_delete(rewardmsg)
             research_embed.remove_field(0)
             break
     if not error:
@@ -3699,13 +3697,13 @@ async def research(ctx, *, details = None):
         research_embed.add_field(name=_('**Research Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
         confirmation = await channel.send(embed=research_embed)
         await asyncio.sleep(10)
-        await confirmation.delete()
-        await message.delete()
+        await utils.safe_delete(confirmation)
+        await utils.safe_delete(message)
 
-@research.command()
+@research.command(aliases=['expire'])
 @checks.allowresearchreport()
 @commands.has_permissions(manage_channels=True)
-async def reset(ctx):
+async def reset(ctx, *, report_message=None):
     """Resets all research reports."""
 
     author = ctx.author
@@ -3715,9 +3713,13 @@ async def reset(ctx):
 
     # get settings
     research_dict = copy.deepcopy(guild_dict[guild.id].setdefault('questreport_dict', {}))
-    await message.delete()
+    await utils.safe_delete(message)
 
     if not research_dict:
+        return
+    if report_message and int(report_message) in research_dict.keys():
+        report_message = await channel.get_message(report_message)
+        await expire_research(report_message)
         return
     rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all research reports?'))
     try:
@@ -3726,11 +3728,11 @@ async def reset(ctx):
     except TypeError:
         timeout = True
     if timeout or res.emoji == config['answer_no']:
-        await rusure.delete()
+        await utils.safe_delete(rusure)
         confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
         return
     elif res.emoji == config['answer_yes']:
-        await rusure.delete()
+        await utils.safe_delete(rusure)
         for report in research_dict:
             report_message = await channel.get_message(report)
             await expire_research(report_message)
@@ -3881,7 +3883,7 @@ async def timerset(ctx, *, timer):
                 res, reactuser = await utils.ask(Meowth, question, ctx.message.author.id, react_list=['🥚', '⏲'])
             except TypeError:
                 timeout = True
-            await question.delete()
+            await utils.safe_delete(question)
             if timeout or res.emoji == '⏲':
                 hourminute = True
             elif res.emoji == '🥚':
@@ -4105,11 +4107,11 @@ async def starttime(ctx, *, start_time=""):
                 except TypeError:
                     timeout = True
                 if timeout or res.emoji == config['answer_no']:
-                    await rusure.delete()
+                    await utils.safe_delete(rusure)
                     confirmation = await channel.send(_('Start time change cancelled.'), delete_after=10)
                     return
                 elif res.emoji == config['answer_yes']:
-                    await rusure.delete()
+                    await utils.safe_delete(rusure)
                     if now <= start:
                         timeset = True
                 else:
@@ -4468,14 +4470,14 @@ async def duplicate(ctx):
             timeout = True
         if not timeout:
             if res.emoji == config['answer_no']:
-                await rusure.delete()
+                await utils.safe_delete(rusure)
                 confirmation = await channel.send(_('Duplicate Report cancelled.'), delete_after=10)
                 logger.info((('Duplicate Report - Cancelled - ' + channel.name) + ' - Report by ') + author.name)
                 dupecount = 2
                 guild_dict[guild.id]['raidchannel_dict'][channel.id]['duplicate'] = dupecount
                 return
             elif res.emoji == config['answer_yes']:
-                await rusure.delete()
+                await utils.safe_delete(rusure)
                 await channel.send(_('Duplicate Confirmed'), delete_after=10)
                 logger.info((('Duplicate Report - Channel Expired - ' + channel.name) + ' - Last Report by ') + author.name)
                 raidmsg = await channel.get_message(rc_d['raidmessage'])
@@ -4541,7 +4543,7 @@ async def duplicate(ctx):
                 await expire_channel(channel)
                 return
         else:
-            await rusure.delete()
+            await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Duplicate Report Timed Out.'), delete_after=10)
             logger.info((('Duplicate Report - Timeout - ' + channel.name) + ' - Report by ') + author.name)
             dupecount = 2
@@ -5553,10 +5555,10 @@ async def starting(ctx, team: str = ''):
     if timeout:
         await ctx.channel.send(_('Meowth! The **!starting** command was not confirmed. I\'m not sure if the group started.'))
     if timeout or res.emoji == config['answer_no']:
-        await question.delete()
+        await utils.safe_delete(question)
         return
     elif res.emoji == config['answer_yes']:
-        await question.delete()
+        await utils.safe_delete(question)
         guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'] = trainer_dict
         starttime = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('starttime', None)
         if starttime:
@@ -5673,8 +5675,8 @@ async def _list(ctx):
             if ctx.invoked_with.lower() == "tag":
                 tag_error = await channel.send(f"Please use **{ctx.prefix}{ctx.invoked_with}** in an active raid channel.", delete_after=10)
                 await asyncio.sleep(10)
-                await ctx.message.delete()
-                await tag_error.delete()
+                await utils.safe_delete(ctx.message)
+                await utils.safe_delete(tag_error)
                 return
             activeraidnum = 0
             cty = channel.name
@@ -6285,10 +6287,7 @@ async def trades(ctx, user: discord.Member=None):
     Works only in trading channels."""
     listmsg = _('**Meowth!**')
     codemsg = ""
-    try:
-        await ctx.message.delete()
-    except (discord.errors.Forbidden, discord.errors.HTTPException):
-        pass
+    await utils.safe_delete(ctx.message)
     if (not user):
         user = ctx.author
     if user.id in guild_dict[ctx.guild.id].get('trainers', {}):
