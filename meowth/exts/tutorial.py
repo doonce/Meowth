@@ -509,7 +509,7 @@ class Tutorial:
         name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
         ctx.tutorial_channel = await guild.create_text_channel(
             name, overwrites=ows)
-        await ctx.message.delete()
+        await utils.safe_delete(ctx.message)
         await ctx.send(
             ("Meowth! I've created a private tutorial channel for "
              f"you! Continue in {ctx.tutorial_channel.mention}"),
@@ -613,7 +613,7 @@ class Tutorial:
         name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
         ctx.tutorial_channel = await guild.create_text_channel(
             name, overwrites=ows)
-        await ctx.message.delete()
+        await utils.safe_delete(ctx.message)
         await ctx.send(
             ("Meowth! I've created a private tutorial channel for "
              f"you! Continue in {ctx.tutorial_channel.mention}"),
@@ -658,7 +658,7 @@ class Tutorial:
         name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
         ctx.tutorial_channel = await guild.create_text_channel(
             name, overwrites=ows)
-        await ctx.message.delete()
+        await utils.safe_delete(ctx.message)
         await ctx.send(
             ("Meowth! I've created a private tutorial channel for "
              f"you! Continue in {ctx.tutorial_channel.mention}"),
@@ -703,7 +703,7 @@ class Tutorial:
         name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
         ctx.tutorial_channel = await guild.create_text_channel(
             name, overwrites=ows)
-        await ctx.message.delete()
+        await utils.safe_delete(ctx.message)
         await ctx.send(
             ("Meowth! I've created a private tutorial channel for "
              f"you! Continue in {ctx.tutorial_channel.mention}"),
@@ -748,7 +748,7 @@ class Tutorial:
         name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
         ctx.tutorial_channel = await guild.create_text_channel(
             name, overwrites=ows)
-        await ctx.message.delete()
+        await utils.safe_delete(ctx.message)
         await ctx.send(
             ("Meowth! I've created a private tutorial channel for "
              f"you! Continue in {ctx.tutorial_channel.mention}"),
@@ -793,7 +793,7 @@ class Tutorial:
         name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
         ctx.tutorial_channel = await guild.create_text_channel(
             name, overwrites=ows)
-        await ctx.message.delete()
+        await utils.safe_delete(ctx.message)
         await ctx.send(
             ("Meowth! I've created a private tutorial channel for "
              f"you! Continue in {ctx.tutorial_channel.mention}"),
@@ -838,7 +838,7 @@ class Tutorial:
         name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
         ctx.tutorial_channel = await guild.create_text_channel(
             name, overwrites=ows)
-        await ctx.message.delete()
+        await utils.safe_delete(ctx.message)
         await ctx.send(
             ("Meowth! I've created a private tutorial channel for "
              f"you! Continue in {ctx.tutorial_channel.mention}"),

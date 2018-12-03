@@ -89,7 +89,7 @@ class Huntr:
                     moveset = match.group(4)
                     raidexp = match.group(6)
                     egg_level = 0
-                    await message.delete()
+                    await utils.safe_delete(message)
                     auto_report = True if int(utils.get_level(self.bot, entered_raid)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls'] else False
                 elif (len(message.embeds[0].title.split(' ')) == 6) and auto_egg:
                     match = re.search('[* ]*([a-zA-Z ]*)[* .]*\n[*:a-zA-Z ]*([0-2]*)[ a-z]*([0-9]*)[ a-z]*([0-9]*)', message.embeds[0].description)
@@ -99,7 +99,7 @@ class Huntr:
                     raidexp = match.group(3)
                     entered_raid = None
                     moveset = False
-                    await message.delete()
+                    await utils.safe_delete(message)
                     auto_report = True if int(ghegglevel) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['egglvls'] else False
                 for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
                     channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('gymhuntrgps', None)
@@ -137,11 +137,11 @@ class Huntr:
                 if hiv:
                     hextra += " / IV: {hiv}".format(hiv=hiv)
                 huntr = '!wild {0} {1}|{2}|{3}'.format(hpokeid, huntrgps, hexpire, hextra)
-                await message.delete()
+                await utils.safe_delete(message)
                 await self.huntr_wild(ctx, hpokeid, huntrgps, hexpire, hextra, reporter="huntr")
                 return
         else:
-            await message.delete()
+            await utils.safe_delete(message)
             pokehuntr_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id].get('pokehuntr_dict', {}))
             reporttime = pokehuntr_dict[message.id]['reporttime']
             reporttype = pokehuntr_dict[message.id]['reporttype']
@@ -219,7 +219,7 @@ class Huntr:
                 wild_details = painfo[1]
                 location = "https://www.google.com/maps/dir/Current+Location/{location}".format(location=wild_details)
                 despawn = (int(minutes) * 60) + int(seconds)
-            await message.delete()
+            await utils.safe_delete(message)
             if reporttype == "wild":
                 await self.huntr_wild(ctx, entered_wild, wild_details, huntrexp, huntrweather, reporter="alarm")
                 return
@@ -278,7 +278,7 @@ class Huntr:
                 await asyncio.sleep(0.25)
                 await pamsg.add_reaction(self.bot.config['huntr_report'])
         else:
-            await message.delete()
+            await utils.safe_delete(message)
             pokealarm_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id].get('pokealarm_dict', {}))
             alarm_details = pokealarm_dict[message.id]
             embed = alarm_details['embed']
@@ -303,11 +303,13 @@ class Huntr:
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         huntrexpstamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(huntrexp.split()[0]), seconds=int(huntrexp.split()[2]))).strftime('%I:%M %p')
-        pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, entered_wild)
+        pokemon, match_list = pkmn_class.Pokemon.get_pokemon(ctx, entered_wild)
         if pokemon:
             entered_wild = pokemon.name.lower()
             pokemon.shiny = False
         else:
+            return
+        if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['scanners'].setdefault('wildfilter', []):
             return
         wild_number = pokemon.id
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
@@ -659,7 +661,7 @@ class Huntr:
         guild = ctx.guild
         message = ctx.message
         channel = ctx.channel
-        await message.delete()
+        await utils.safe_delete(message)
         description = "**Marilla Park.**\nMewtwo\n**CP:** 60540 - **Moves:** Confusion / Shadow Ball\n*Raid Ending: 0 hours 46 min 50 sec*"
         url = "https://gymhuntr.com/#34.008618,-118.49125"
         img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=1'
@@ -676,7 +678,7 @@ class Huntr:
         guild = ctx.guild
         message = ctx.message
         channel = ctx.channel
-        await message.delete()
+        await utils.safe_delete(message)
         description = "**Marilla Park.**\n*Raid Starting: 0 hours 46 min 50 sec*"
         url = "https://gymhuntr.com/#34.008618,-118.49125"
         img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1'
@@ -693,7 +695,7 @@ class Huntr:
         guild = ctx.guild
         message = ctx.message
         channel = ctx.channel
-        await message.delete()
+        await utils.safe_delete(message)
         description = "Click above to view the wild\n\n*Remaining: 25 min 3 sec*\nWeather: *None*"
         url = "https://gymhuntr.com/#34.008618,-118.49125"
         img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=1'

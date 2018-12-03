@@ -206,11 +206,11 @@ class Trade:
 
         if reaction.emoji == self.bot.config['trade_accept']:
             await self.accept_offer(trader_id)
-            await offermsg.delete()
+            await utils.safe_delete(offermsg)
 
         elif reaction.emoji == self.bot.config['trade_reject']:
             await self.reject_offer(trader_id)
-            await offermsg.delete()
+            await utils.safe_delete(offermsg)
 
     async def accept_offer(self, offer_id):
         offer = self.offers[offer_id]
@@ -292,17 +292,17 @@ class Trade:
                 if reaction.emoji == self.bot.config['trade_complete']:
                     trader_confirms = True
                 elif reaction.emoji == self.bot.config['trade_stop']:
-                    await tradermsg.delete()
+                    await utils.safe_delete(tradermsg)
                     return await self.withdraw_offer(trader.id)
             elif user.id == lister.id:
                 if reaction.emoji == self.bot.config['trade_complete']:
                     lister_confirms = True
                 elif reaction.emoji == self.bot.config['trade_stop']:
-                    await listermsg.delete()
+                    await utils.safe_delete(listermsg)
                     return await self.reject_offer(trader.id)
             if trader_confirms and lister_confirms:
-                await listermsg.delete()
-                await tradermsg.delete()
+                await utils.safe_delete(listermsg)
+                await utils.safe_delete(tradermsg)
                 return await self.confirm_trade()
             else:
                 continue
@@ -388,12 +388,12 @@ class Trade:
 
     async def close_trade(self):
         listingmsg = await self.get_listmsg()
-        await listingmsg.delete()
+        await utils.safe_delete(listingmsg)
         self.bot.remove_listener(self.on_raw_reaction_add)
         try:
             guild_trades = self.bot.guild_dict[self.guild_id]['trade_dict']
             del guild_trades[self.report_channel_id][self.listing_id]
-            await listingmsg.delete()
+            await utils.safe_delete(listingmsg)
         except (KeyError, discord.HTTPException):
             pass
 
@@ -414,10 +414,7 @@ class Trading:
     #         return
     #     if checks.check_tradereport(ctx) and message.author != ctx.guild.me:
     #         await asyncio.sleep(1)
-    #         try:
-    #             await message.delete()
-    #         except discord.HTTPException:
-    #             pass
+    #         await utils.safe_delete(message)
 
     @commands.command(hidden=True)
     async def sprite(self, ctx, *, sprite: pkmn_class.Pokemon):
@@ -451,7 +448,7 @@ class Trading:
         try:
             want_reply = await ctx.bot.wait_for('message', check=check, timeout=60)
         except asyncio.TimeoutError:
-            await want_ask.delete()
+            await utils.safe_delete(want_ask)
             return
 
         wants = want_reply.content.lower().split(',')
@@ -462,8 +459,8 @@ class Trading:
                 f"fewer pokemon. Try again!", delete_after=5)
             return
 
-        await want_ask.delete()
-        await want_reply.delete()
+        await utils.safe_delete(want_ask)
+        await utils.safe_delete(want_reply)
 
         if wants[0].lower() == "ask":
             wants = "open trade"

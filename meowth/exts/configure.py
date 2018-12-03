@@ -9,6 +9,7 @@ from time import strftime
 
 from meowth import utils
 from meowth import checks
+from meowth.exts import pokemon as pkmn_class
 
 class Configure:
     def __init__(self, bot):
@@ -861,10 +862,10 @@ class Configure:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                 return None
             else:
-                raidlevel_list = countersconfigset.content.lower().split(',')
-                raidlevel_list = [x.strip() for x in raidlevel_list]
+                counterlevel_list = countersconfigset.content.lower().split(',')
+                counterlevel_list = [x.strip() for x in counterlevel_list]
                 counterlevels = []
-                for level in raidlevel_list:
+                for level in counterlevel_list:
                     if level.isdigit() and (int(level) <= 5):
                         counterlevels.append(str(level))
                     elif level == "ex":
@@ -1216,16 +1217,16 @@ class Configure:
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raid <form> <pkmn>|<gym_name>|<time_left>|<lat>,<lng>|<quick_move> / <charge_move>`'))
         await owner.send(embed=scanner_embed)
         while True:
-            wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-            if wildconfigset.content.lower() == 'y':
+            autoraidset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            if autoraidset.content.lower() == 'y':
                 config_dict_temp['scanners']['autoraid'] = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Raid Reports enabled'))
                 break
-            elif wildconfigset.content.lower() == 'n':
+            elif autoraidset.content.lower() == 'n':
                 config_dict_temp['scanners']['autoraid'] = False
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Raid Reports disabled'))
                 break
-            elif wildconfigset.content.lower() == 'cancel':
+            elif autoraidset.content.lower() == 'cancel':
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
                 return None
             else:
@@ -1263,16 +1264,16 @@ class Configure:
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raidegg <level>|<gym_name>|<time_left_start>|<lat>,<lng>`'))
         await owner.send(embed=scanner_embed)
         while True:
-            wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
-            if wildconfigset.content.lower() == 'y':
+            autoeggset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            if autoeggset.content.lower() == 'y':
                 config_dict_temp['scanners']['autoegg'] = True
                 await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Egg Reports enabled'))
                 break
-            elif wildconfigset.content.lower() == 'n':
+            elif autoeggset.content.lower() == 'n':
                 config_dict_temp['scanners']['autoegg'] = False
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Egg Reports disabled'))
                 break
-            elif wildconfigset.content.lower() == 'cancel':
+            elif autoeggset.content.lower() == 'cancel':
                 await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
                 return None
             else:
@@ -1325,6 +1326,34 @@ class Configure:
             else:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
                 continue
+        if config_dict_temp['scanners']['autowild']:
+            scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Please enter a list of wild pokemon to block automatic reports of or reply with **N** to disable the fitler.").set_author(name='Automatic Wild Report Filter', icon_url=self.bot.user.avatar_url)
+            await owner.send(embed=scanner_embed)
+            wildfilter_list = []
+            wildfilter_names = []
+            config_dict_temp['scanners']['wildfilter'] = []
+            while True:
+                wildfilters = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+                if wildfilters.content.lower() == 'cancel':
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
+                    return None
+                elif wildfilters.content.lower() == 'n':
+                    config_dict_temp['scanners']['wildfilter'] = []
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Wild filter disabled'))
+                    break
+                else:
+                    wildfilter_list = wildfilters.content.lower().split(',')
+                    for pkmn in wildfilter_list:
+                        pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, pkmn)
+                        if pokemon:
+                            config_dict_temp['scanners']['wildfilter'].append(pokemon.id)
+                            wildfilter_names.append(pokemon.name)
+                    if len(config_dict_temp['scanners']['wildfilter']) > 0:
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Automatic wild filter will block: {wilds}').format(wilds=', '.join(wildfilter_names))))
+                        break
+                    else:
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one pokemon or **N** to turn off automatic wild filter."))
+                        continue
         ctx.config_dict_temp = config_dict_temp
         return ctx
 

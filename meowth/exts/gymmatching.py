@@ -70,18 +70,18 @@ class GymMatching:
                 q_msg = await channel.send(question)
                 reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=[self.bot.config['answer_yes'], self.bot.config['answer_no'], self.bot.config['answer_cancel']])
             except TypeError:
-                await q_msg.delete()
+                await utils.safe_delete(q_msg)
                 return None
             if not reaction:
-                await q_msg.delete()
+                await utils.safe_delete(q_msg)
                 return None
             if reaction.emoji == self.bot.config['answer_cancel']:
-                await q_msg.delete()
+                await utils.safe_delete(q_msg)
                 return False
             if reaction.emoji == self.bot.config['answer_yes']:
-                await q_msg.delete()
+                await utils.safe_delete(q_msg)
                 return match
-            await q_msg.delete()
+            await utils.safe_delete(q_msg)
             return None
         return match
 
@@ -99,18 +99,18 @@ class GymMatching:
                 q_msg = await channel.send(question)
                 reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=[self.bot.config['answer_yes'], self.bot.config['answer_no'], self.bot.config['answer_cancel']])
             except TypeError:
-                await q_msg.delete()
+                await utils.safe_delete(q_msg)
                 return None
             if not reaction:
-                await q_msg.delete()
+                await utils.safe_delete(q_msg)
                 return None
             if reaction.emoji == self.bot.config['answer_cancel']:
-                await q_msg.delete()
+                await utils.safe_delete(q_msg)
                 return False
             if reaction.emoji == self.bot.config['answer_yes']:
-                await q_msg.delete()
+                await utils.safe_delete(q_msg)
                 return match
-            await q_msg.delete()
+            await utils.safe_delete(q_msg)
             return None
         return match
 
@@ -166,7 +166,7 @@ class GymMatching:
                     await utils.safe_delete(message)
                     return "", False, False
                 elif res.emoji == self.bot.config['answer_yes']:
-                    await rusure.delete()
+                    await utils.safe_delete(rusure)
                     return gym_info, raid_details, raid_gmaps_link
                 else:
                     return "", False, False
@@ -223,7 +223,7 @@ class GymMatching:
                     await utils.safe_delete(message)
                     return "", False, False
                 elif res.emoji == self.bot.config['answer_yes']:
-                    await rusure.delete()
+                    await utils.safe_delete(rusure)
                     return stop_info, stop_details, stop_gmaps_link
                 else:
                     return "", False, False

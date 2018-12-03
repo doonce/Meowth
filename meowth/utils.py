@@ -334,7 +334,7 @@ async def autocorrect(bot, entered_word, destination, author):
                 res, reactuser = await ask(bot, question, author.id)
             except TypeError:
                 timeout = True
-            await question.delete()
+            await safe_delete(question)
             if timeout or res.emoji == bot.config['answer_no']:
                 return None
             elif res.emoji == bot.config['answer_yes']:
