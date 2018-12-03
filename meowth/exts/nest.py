@@ -326,7 +326,7 @@ class Nest:
 
         # get settings
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
-        nest_list = nest_dict['list']
+        nest_list = nest_dict.setdefault('list', [])
 
         await utils.safe_delete(message)
 
