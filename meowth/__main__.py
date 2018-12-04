@@ -4296,7 +4296,9 @@ async def recover(ctx):
                 utcend = localend - datetime.timedelta(hours=guild_dict[guild.id]['configure_dict']['settings']['offset'])
                 exp = utcend.replace(year=now.year, tzinfo=datetime.timezone.utc).timestamp()
                 manual_timer = True
-            pkmn_obj = pkmn_class.Pokemon.get_pokemon(Meowth, pokemon)
+            pkmn = pkmn_class.Pokemon.get_pokemon(Meowth, pokemon)
+            if pkmn:
+                pkmn_obj = str(pokemon)
         elif name.split('-')[0] == 'ex':
             raidtype = 'egg'
             egglevel = 'EX'
