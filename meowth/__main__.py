@@ -5820,11 +5820,12 @@ async def _list(ctx):
             rc_d = guild_dict[guild.id]['raidchannel_dict'][channel.id]
             list_split = ctx.message.clean_content.lower().split()
             list_dict = guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
-            try:
-                msg = await ctx.channel.get_message(msg)
-                await utils.safe_delete(msg)
-            except:
-                pass
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.get_message(msg)
+                    await utils.safe_delete(msg)
+                except:
+                    pass
             if "tags" in list_split or "tag" in list_split:
                 tag = True
             for word in list_split:
