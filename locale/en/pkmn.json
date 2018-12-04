@@ -1299,7 +1299,7 @@
     },
     "magnemite": {
         "number": 81,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -1315,7 +1315,7 @@
     },
     "magneton": {
         "number": 82,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -1990,7 +1990,7 @@
     },
     "electabuzz": {
         "number": 125,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -3155,7 +3155,7 @@
     },
     "misdreavus": {
         "number": 200,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -3789,7 +3789,7 @@
     },
     "elekid": {
         "number": 239,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -6410,7 +6410,7 @@
     },
     "roserade": {
         "number": 407,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": true,
@@ -6753,7 +6753,7 @@
     },
     "mismagius": {
         "number": 429,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -6768,7 +6768,7 @@
     },
     "honchkrow": {
         "number": 430,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -7330,7 +7330,7 @@
     },
     "electivire": {
         "number": 466,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -7345,7 +7345,7 @@
     },
     "magmortar": {
         "number": 467,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -7360,7 +7360,7 @@
     },
     "togekiss": {
         "number": 468,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -7501,7 +7501,7 @@
     },
     "dusknoir": {
         "number": 477,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
