@@ -67,9 +67,7 @@ except OSError:
         logger.info('Serverdict Backup Loaded Successfully')
     except OSError:
         logger.info('Serverdict Backup Not Found - Creating New Serverdict')
-        Meowth.guild_dict = {
-
-        }
+        Meowth.guild_dict = {}
         with open(os.path.join('data', 'serverdict'), 'wb') as fd:
             pickle.dump(Meowth.guild_dict, fd, (- 1))
         logger.info('Serverdict Created')
@@ -843,6 +841,7 @@ async def on_ready():
                         'wild': {'enabled':False, 'report_channels': {}},
                         'meetup': {'enabled':False, 'report_channels': {}},
                         'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
+                        'trade': {'enabled':False, 'report_channels': []},
                         'counters': {'enabled':False, 'auto_levels': []},
                         'research': {'enabled':False, 'report_channels': {}},
                         'archive': {'enabled':False, 'category':'same', 'list':None},
@@ -854,7 +853,8 @@ async def on_ready():
                     'wildreport_dict:':{},
                     'questreport_dict':{},
                     'raidchannel_dict':{},
-                    'trainers':{}
+                    'trainers':{},
+                    'trade_dict': {}
                 }
             else:
                 guild_dict[guild.id]['configure_dict'].setdefault('trade', {})
@@ -869,6 +869,7 @@ async def on_ready():
                     'wild': {'enabled':False, 'report_channels': {}},
                     'meetup': {'enabled':False, 'report_channels': {}},
                     'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
+                    'trade': {'enabled':False, 'report_channels': []},
                     'research': {'enabled':False, 'report_channels': {}},
                     'archive': {'enabled':False, 'category':'same', 'list':None},
                     'invite': {'enabled':False},
@@ -879,7 +880,8 @@ async def on_ready():
                 'wildreport_dict:':{},
                 'questreport_dict':{},
                 'raidchannel_dict':{},
-                'trainers':{}
+                'trainers':{},
+                'trade_dict': {}
             }
     await _print(Meowth.owner, _("Meowth! That's right!\n\n{server_count} servers connected.\n{member_count} members found.").format(server_count=guilds, member_count=users))
     await maint_start()
@@ -895,6 +897,9 @@ async def on_guild_join(guild):
             'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}, 'permissions':'everyone'},
             'counters': {'enabled':False, 'auto_levels': []},
             'wild': {'enabled':False, 'report_channels': {}},
+            'meetup': {'enabled':False, 'report_channels': {}},
+            'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
+            'trade': {'enabled':False, 'report_channels': []},
             'research': {'enabled':False, 'report_channels': {}},
             'archive': {'enabled':False, 'category':'same', 'list':None},
             'invite': {'enabled':False},
@@ -1184,11 +1189,6 @@ async def save(ctx):
         await _print(Meowth.owner, err)
 
 async def _save():
-    def convert(o):
-        if isinstance(o, datetime.datetime):
-            return o.__str__()
-        if isinstance(o, discord.Embed):
-            return o.to_dict()
     #human-readable format, used for backup only for now
     with tempfile.NamedTemporaryFile('w', dir=os.path.join('data'), delete=False, encoding="utf-8") as tf:
         tf.write(str(guild_dict))
