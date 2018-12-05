@@ -303,7 +303,7 @@ class Huntr:
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         huntrexpstamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(huntrexp.split()[0]), seconds=int(huntrexp.split()[2]))).strftime('%I:%M %p')
-        pokemon, match_list = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_wild)
+        pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_wild)
         if pokemon:
             entered_wild = pokemon.name.lower()
             pokemon.shiny = False
@@ -369,7 +369,7 @@ class Huntr:
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
-        pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, entered_raid)
+        pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_raid)
         if pokemon:
             entered_raid = pokemon.name.lower()
             pokemon.shiny = False
