@@ -419,7 +419,7 @@ class Trading:
     @commands.command(hidden=True)
     async def sprite(self, ctx, *, sprite: pkmn_class.Pokemon):
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
-        preview_embed.set_thumbnail(url=sprite.img_url)
+        preview_embed.set_image(url=sprite.img_url)
         sprite_msg = await ctx.send(embed=preview_embed)
 
     @commands.command()
