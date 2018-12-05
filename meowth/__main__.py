@@ -1184,6 +1184,26 @@ async def save(ctx):
         await _print(Meowth.owner, err)
 
 async def _save():
+    def convert(o):
+        if isinstance(o, datetime.datetime):
+            return o.__str__()
+        if isinstance(o, discord.Embed):
+            return o.to_dict()
+    #human-readable format, used for backup only for now
+    with tempfile.NamedTemporaryFile('w', dir=os.path.dirname(os.path.join('data', 'guilddict.json')), delete=False) as tf:
+        json.dump(guild_dict, tf, default=convert)
+        jstempname = tf.name
+    try:
+        os.remove(os.path.join('data', 'guilddict_backup.json'))
+    except OSError as e:
+        pass
+    try:
+        os.rename(os.path.join('data', 'guilddict.json'), os.path.join('data', 'guilddict_backup.json'))
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+    os.rename(jstempname, os.path.join('data', 'guilddict.json'))
+    #pickle, used for bot
     with tempfile.NamedTemporaryFile('wb', dir=os.path.dirname(os.path.join('data', 'serverdict')), delete=False) as tf:
         pickle.dump(guild_dict, tf, (- 1))
         tempname = tf.name
