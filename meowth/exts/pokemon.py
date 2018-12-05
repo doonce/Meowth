@@ -141,6 +141,8 @@ class Pokemon():
             self.legendary = False
             self.mythical = False
         self.gender = attribs.get('gender', None)
+        if self.id not in bot.gender_list:
+            self.gender = None
 
     def __str__(self):
         name = self.name.title()
@@ -504,7 +506,7 @@ class Pokemon():
         if not match:
             return None
 
-        pokemon = cls(bot, str(match), None, shiny=shiny, alolan=alolan, form=form)
+        pokemon = cls(bot, str(match), None, shiny=shiny, alolan=alolan, form=form, gender=gender)
 
         return pokemon
 
@@ -586,7 +588,7 @@ class Pokemon():
         if not match:
             return None, None
 
-        pokemon = cls(ctx.bot, str(match), None, shiny=shiny, alolan=alolan, form=form)
+        pokemon = cls(ctx.bot, str(match), None, shiny=shiny, alolan=alolan, form=form, gender=gender)
 
         return pokemon, match_list
 

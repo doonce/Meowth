@@ -6303,32 +6303,59 @@ async def _allwantlist(ctx):
 
 @_list.command(aliases=['trade'])
 @checks.allowtrade()
-async def trades(ctx, user: discord.Member=None):
-    """List the trades for the user
+async def trades(ctx, *, search=None):
+    """List the trades for the user or pokemon
 
-    Usage: !list trades [user]
+    Usage: !list trades [user or pokemon]
     Works only in trading channels."""
-    listmsg = _('**Meowth!**')
-    codemsg = ""
-    await utils.safe_delete(ctx.message)
-    if (not user):
-        user = ctx.author
-    if user.id in guild_dict[ctx.guild.id].get('trainers', {}):
-        trainercode = guild_dict[ctx.guild.id]['trainers'][user.id].get('trainercode', None)
-        if trainercode:
-            codemsg += _("{user}\'s trainer code is: **{code}**").format(user=user.display_name, code=trainercode)
-    listmsg += await _tradelist(ctx, user)
-    await ctx.channel.send(codemsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+    if not search:
+        search = ctx.author
+    else:
+        pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, search)
+        if pokemon:
+            search = str(pokemon)
+        else:
+            converter = commands.MemberConverter()
+            try:
+                search = await converter.convert(ctx, argument)
+            except:
+                search = ctx.author
+    listmsg, res_pages = await _tradelist(ctx, search)
+    list_messages = []
+    if res_pages:
+        index = 0
+        for p in res_pages:
+            if index == 0:
+                listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+            else:
+                listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+            list_messages.append(listmsg.id)
+            index += 1
+    elif listmsg:
+        listmsg = await ctx.channel.send(listmsg)
+        list_messages.append(listmsg.id)
+    else:
+        return
 
-async def _tradelist(ctx, user):
+async def _tradelist(ctx, search):
     tgt_trainer_trades = {}
+    tgt_pokemon_trades = {}
     listmsg = ""
     trademsg = ""
-    for channel_id in guild_dict[ctx.guild.id]['trade_dict']:
-        for offer_id in guild_dict[ctx.guild.id]['trade_dict'][channel_id]:
-            if guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['lister_id'] == user.id:
-                tgt_trainer_trades[offer_id] = guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
+    lister_str = ""
+    if isinstance(search, discord.member.Member):
+        for channel_id in guild_dict[ctx.guild.id]['trade_dict']:
+            for offer_id in guild_dict[ctx.guild.id]['trade_dict'][channel_id]:
+                if guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['lister_id'] == search.id:
+                    tgt_trainer_trades[offer_id] = guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
+    else:
+        pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, search)
+        for channel_id in guild_dict[ctx.guild.id]['trade_dict']:
+            for offer_id in guild_dict[ctx.guild.id]['trade_dict'][channel_id]:
+                if str(pokemon) in guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['offered_pokemon']:
+                    tgt_pokemon_trades[offer_id] = guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
     if tgt_trainer_trades:
+        listmsg = _("Meowth! Here are the current trades for {user}").format(user=search.display_name)
         for offer_id in tgt_trainer_trades:
             offer_url = ""
             try:
@@ -6338,27 +6365,42 @@ async def _tradelist(ctx, user):
                 offer_url = offer_message.jump_url
             except:
                 continue
-
             wanted_pokemon = tgt_trainer_trades[offer_id]['wanted_pokemon']
             if "Open Trade" in wanted_pokemon:
                 wanted_pokemon = "Open Trade (DM User)"
             else:
                 wanted_pokemon = ', '.join(wanted_pokemon)
-
             trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, config['trade_bullet']))
             trademsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
-
-            listmsg += _(" Here are the current trades for {user}").format(user=user.display_name)
-            paginator = commands.Paginator(prefix="", suffix="")
-            await ctx.send(listmsg)
-            for line in trademsg.splitlines():
-                paginator.add_line(line.rstrip().replace('`', '\u200b`'))
-            for p in paginator.pages:
-                await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
-            return
+    if tgt_pokemon_trades:
+        listmsg = _("Meowth! Here are the current {pokemon} trades").format(pokemon=str(pokemon))
+        for offer_id in tgt_pokemon_trades:
+            offer_url = ""
+            try:
+                offer_channel = Meowth.get_channel(
+                    tgt_pokemon_trades[offer_id]['report_channel_id'])
+                offer_message = await offer_channel.get_message(offer_id)
+                offer_url = offer_message.jump_url
+            except:
+                continue
+            lister = ctx.guild.get_member(tgt_pokemon_trades[offer_id]['lister_id'])
+            if lister:
+                lister_str = f"**Lister**: {lister.display_name} | "
+            wanted_pokemon = tgt_pokemon_trades[offer_id]['wanted_pokemon']
+            if "Open Trade" in wanted_pokemon:
+                wanted_pokemon = "Open Trade (DM User)"
+            else:
+                wanted_pokemon = ', '.join(wanted_pokemon)
+            trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, config['trade_bullet']))
+            trademsg += (f"{lister_str}**Offered Pokemon**: {tgt_pokemon_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
+    if trademsg:
+        paginator = commands.Paginator(prefix="", suffix="")
+        for line in trademsg.splitlines():
+            paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+        return listmsg, paginator.pages
     else:
-        listmsg += _(" {user} doesn't have any pokemon up for trade. Report one with **!trade**").format(user=user.display_name)
-    return listmsg
+        listmsg = _("Meowth! No active trades found. Report one with **!trade**")
+    return listmsg, None
 
 @_list.command()
 @commands.cooldown(1, 5, commands.BucketType.channel)
