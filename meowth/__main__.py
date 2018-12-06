@@ -4379,7 +4379,7 @@ async def recover(ctx):
                                 else:
                                     count = 1
                                     party = {'mystic':0, 'valor':0, 'instinct':0, 'unknown':count}
-                            else:
+                            elif trainerstatus:
                                 count = 1
                                 user = ctx.guild.get_member(trainerid)
                                 for role in user.roles:
@@ -4394,6 +4394,9 @@ async def recover(ctx):
                                         break
                                     else:
                                         party = {'mystic':0, 'valor':0, 'instinct':0, 'unknown':1}
+                            else:
+                                count = 0
+                                party = {'mystic':0, 'valor':0, 'instinct':0, 'unknown':0}
                             if trainerstatus:
                                 status[trainerstatus] = count
                             trainer_dict[trainerid] = {
