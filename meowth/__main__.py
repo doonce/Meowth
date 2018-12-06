@@ -5887,32 +5887,39 @@ async def _list(ctx):
             guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {})[channel.id] = list_messages
             return
         elif checks.check_wantchannel(ctx):
-            if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_researchreport(ctx)):
+            if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_researchreport(ctx) or checks.check_tradereport(ctx)):
                 want_command = ctx.command.all_commands.get('wants')
                 await want_command.invoke(ctx)
             else:
-                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests**", delete_after=10)
+                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
                 return
         elif checks.check_researchreport(ctx):
-            if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx)):
+            if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
                 research_command = ctx.command.all_commands.get('research')
                 await research_command.invoke(ctx)
             else:
-                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests**", delete_after=10)
+                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
                 return
         elif checks.check_wildreport(ctx):
-            if not (checks.check_researchreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx)):
+            if not (checks.check_researchreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
                 wild_command = ctx.command.all_commands.get('wild')
                 await wild_command.invoke(ctx)
             else:
-                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests**", delete_after=10)
+                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
                 return
         elif checks.check_nestreport(ctx):
-            if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx)):
+            if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
                 nest_command = ctx.command.all_commands.get('nest')
                 await nest_command.invoke(ctx)
             else:
-                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests**", delete_after=10)
+                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                return
+        elif checks.check_tradereport(ctx):
+            if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx)):
+                trade_command = ctx.command.all_commands.get('trades')
+                await trade_command.invoke(ctx)
+            else:
+                await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
                 return
         else:
             raise checks.errors.CityRaidChannelCheckFail()
@@ -6340,59 +6347,45 @@ async def trades(ctx, *, search=None):
 async def _tradelist(ctx, search):
     tgt_trainer_trades = {}
     tgt_pokemon_trades = {}
+    target_trades = {}
     listmsg = ""
     trademsg = ""
     lister_str = ""
-    if isinstance(search, discord.member.Member):
-        for channel_id in guild_dict[ctx.guild.id]['trade_dict']:
-            for offer_id in guild_dict[ctx.guild.id]['trade_dict'][channel_id]:
+    for channel_id in guild_dict[ctx.guild.id]['trade_dict']:
+        for offer_id in guild_dict[ctx.guild.id]['trade_dict'][channel_id]:
+            if isinstance(search, discord.member.Member):
                 if guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['lister_id'] == search.id:
                     tgt_trainer_trades[offer_id] = guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
-    else:
-        pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, search)
-        for channel_id in guild_dict[ctx.guild.id]['trade_dict']:
-            for offer_id in guild_dict[ctx.guild.id]['trade_dict'][channel_id]:
+            else:
+                pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, search)
                 if str(pokemon) in guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['offered_pokemon']:
                     tgt_pokemon_trades[offer_id] = guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
     if tgt_trainer_trades:
         listmsg = _("Meowth! Here are the current trades for {user}").format(user=search.display_name)
-        for offer_id in tgt_trainer_trades:
-            offer_url = ""
-            try:
-                offer_channel = Meowth.get_channel(
-                    tgt_trainer_trades[offer_id]['report_channel_id'])
-                offer_message = await offer_channel.get_message(offer_id)
-                offer_url = offer_message.jump_url
-            except:
-                continue
-            wanted_pokemon = tgt_trainer_trades[offer_id]['wanted_pokemon']
-            if "Open Trade" in wanted_pokemon:
-                wanted_pokemon = "Open Trade (DM User)"
-            else:
-                wanted_pokemon = ', '.join(wanted_pokemon)
-            trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, config['trade_bullet']))
-            trademsg += (f"**Offered Pokemon**: {tgt_trainer_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
+        target_trades = tgt_trainer_trades
     if tgt_pokemon_trades:
         listmsg = _("Meowth! Here are the current {pokemon} trades").format(pokemon=str(pokemon))
-        for offer_id in tgt_pokemon_trades:
+        target_trades = tgt_pokemon_trades
+    if target_trades:
+        for offer_id in target_trades:
             offer_url = ""
             try:
                 offer_channel = Meowth.get_channel(
-                    tgt_pokemon_trades[offer_id]['report_channel_id'])
+                    target_trades[offer_id]['report_channel_id'])
                 offer_message = await offer_channel.get_message(offer_id)
                 offer_url = offer_message.jump_url
             except:
                 continue
-            lister = ctx.guild.get_member(tgt_pokemon_trades[offer_id]['lister_id'])
-            if lister:
+            lister = ctx.guild.get_member(target_trades[offer_id]['lister_id'])
+            if lister and tgt_pokemon_trades:
                 lister_str = f"**Lister**: {lister.display_name} | "
-            wanted_pokemon = tgt_pokemon_trades[offer_id]['wanted_pokemon']
+            wanted_pokemon = target_trades[offer_id]['wanted_pokemon']
             if "Open Trade" in wanted_pokemon:
                 wanted_pokemon = "Open Trade (DM User)"
             else:
                 wanted_pokemon = ', '.join(wanted_pokemon)
             trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, config['trade_bullet']))
-            trademsg += (f"{lister_str}**Offered Pokemon**: {tgt_pokemon_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
+            trademsg += (f"{lister_str}**Offered Pokemon**: {target_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
     if trademsg:
         paginator = commands.Paginator(prefix="", suffix="")
         for line in trademsg.splitlines():

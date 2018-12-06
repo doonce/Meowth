@@ -432,7 +432,7 @@
     },
     "sandshrew": {
         "number": 27,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -450,7 +450,7 @@
     },
     "sandslash": {
         "number": 28,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,

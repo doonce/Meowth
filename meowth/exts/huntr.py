@@ -373,6 +373,7 @@ class Huntr:
         if pokemon:
             entered_raid = pokemon.name.lower()
             pokemon.shiny = False
+            pokemon.gender = False
         else:
             return
         if not pokemon.id in ctx.bot.raid_list:

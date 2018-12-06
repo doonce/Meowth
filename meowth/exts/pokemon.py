@@ -381,47 +381,50 @@ class Pokemon():
             The argument didn't match a Pokemon ID or name.
         """
         argument = str(argument)
-        argument = argument.lower()
-        pkmn_list = ctx.bot.pkmn_list
-        if 'shiny' in argument.lower():
+        shiny = re.search(r'shiny', argument, re.IGNORECASE)
+        alolan = re.search(r'alolan', argument, re.IGNORECASE)
+        male = re.search(r'(?<!fe)male', argument, re.IGNORECASE)
+        female = re.search(r'female', argument, re.IGNORECASE)
+        form_list = ctx.bot.form_dict['list']
+        one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=ctx.bot.pkmn_list[200], spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
+        if not one_char_forms:
+            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
+
+        if shiny:
+            argument = argument.replace(shiny.group(0), '').strip()
             shiny = True
-            argument = argument.replace('shiny', '').strip()
         else:
             shiny = False
-        if 'alolan' in argument.lower():
+        if alolan:
+            argument = argument.replace(alolan.group(0), '').strip()
             alolan = True
-            argument = argument.replace('alolan', '').strip()
         else:
             alolan = False
-        if 'female' in argument.lower():
-            gender = 'female'
-            argument = argument.replace('female', '').strip()
-        elif 'male' in argument.lower():
-            gender = 'male'
-            argument = argument.replace('male', '').strip()
+        if male:
+            argument = argument.replace(male.group(0), '').strip()
+            gender = "male"
+        elif female:
+            argument = argument.replace(female.group(0), '').strip()
+            gender = "female"
         else:
-            gender = None
+            gender = "male"
 
-        form_list = ctx.bot.form_dict['list']
-
-        if ctx.bot.pkmn_list[200] in argument or "201" in argument or ctx.bot.pkmn_list[326] in argument or "327" in argument:
-            f = next((x for x in form_list if x in argument.lower()), None)
-        else:
-            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
-            if len(argument.split()) > 1:
-                f = next((x for x in form_list if x in argument.lower().split()), None)
+        for form in form_list:
+            form = re.search(form, argument, re.IGNORECASE)
+            if form:
+                argument = argument.replace(form.group(0), '').strip()
+                form = form.group(0).lower().strip()
+                break
             else:
-                f = next((x for x in form_list if x in argument.lower()), None)
-
-        if f:
-            form = f.strip()
-            argument = argument.replace(f, '').strip()
-        else:
-            form = None
+                form = None
 
         for word in argument.split():
-            if word not in form_list and word not in ctx.bot.pkmn_list and not word.isdigit() and word not in ctx.bot.form_dict['two_words']:
-                argument = argument.replace(word, '').strip()
+            if word.lower() not in ctx.bot.pkmn_list and not word.isdigit() and word.lower() not in ctx.bot.form_dict['two_words']:
+                match, score = utils.get_match(ctx.bot.pkmn_list, word)
+                if not score or score < 80:
+                    argument = argument.replace(word, '').strip()
+                else:
+                    argument = argument.replace(word, match).strip()
 
         if argument.isdigit():
             try:
@@ -430,11 +433,12 @@ class Pokemon():
             except IndexError:
                 raise commands.errors.BadArgument(
                     'Pokemon ID "{}" not valid'.format(argument))
-        elif argument in pkmn_list:
+        elif argument in ctx.bot.pkmn_list:
             match = argument.lower()
             score = 100
         else:
-            match, score = utils.get_match(pkmn_list, argument)
+            match, score = utils.get_match(ctx.bot.pkmn_list, argument)
+
         result = False
         if match:
             if score >= 80:

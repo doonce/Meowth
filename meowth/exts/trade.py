@@ -23,7 +23,7 @@ class Trade:
         trade_dict = bot.guild_dict[guild_id].setdefault('trade_dict', {})
         trade_channel_data = trade_dict.setdefault(channel_id, {})
         if wanted_pokemon == "open trade":
-            wanted = "Open Trade (DM User)"
+            wanted = ["Open Trade (DM User)"]
         else:
             wanted = [str(want) for want in wanted_pokemon]
         trade_channel_data[message_id] = {
@@ -462,7 +462,7 @@ class Trading:
         await utils.safe_delete(want_ask)
         await utils.safe_delete(want_reply)
 
-        if wants[0].lower() == "ask":
+        if "ask" in wants:
             wants = "open trade"
         elif wants[0].lower() == "cancel":
             return
