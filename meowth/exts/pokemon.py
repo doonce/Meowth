@@ -407,7 +407,7 @@ class Pokemon():
             argument = argument.replace(female.group(0), '').strip()
             gender = "female"
         else:
-            gender = "male"
+            gender = None
 
         for form in form_list:
             form = re.search(form, argument, re.IGNORECASE)
@@ -483,7 +483,7 @@ class Pokemon():
             argument = argument.replace(female.group(0), '').strip()
             gender = "female"
         else:
-            gender = "male"
+            gender = None
 
         for form in form_list:
             form = re.search(form, argument, re.IGNORECASE)
@@ -549,7 +549,7 @@ class Pokemon():
             argument = argument.replace(female.group(0), '').strip()
             gender = "female"
         else:
-            gender = "male"
+            gender = None
 
         for form in form_list:
             form = re.search(form, argument, re.IGNORECASE)
