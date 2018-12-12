@@ -31,7 +31,7 @@ def run_meowth(autorestart):
     retries = 0
 
     while True:
-        if args.debug:
+        if args.debug and "debug" not in cmd:
             cmd.append("debug")
         try:
             code = subprocess.call(cmd)

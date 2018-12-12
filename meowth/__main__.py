@@ -3526,7 +3526,9 @@ async def _invite(ctx):
         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
             pass
         exraidmsg = await channel.send(_('Meowth! Alright {0}, you can now send messages in {1}! Make sure you let the trainers in there know if you can make it to the EX Raid!').format(author.mention, exraid_channel.mention), delete_after=30)
-        await _maybe(exraid_channel, author, 1, party=None)
+        maybe_command = Meowth.get_command("interested")
+        ctx.channel = exraid_channel
+        await maybe_command.invoke(ctx)
     else:
         exraidmsg = await channel.send(_("Meowth! I couldn't understand your reply! Try the **!invite** command again!"), delete_after=30)
     await asyncio.sleep(30)
