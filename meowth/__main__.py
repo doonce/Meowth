@@ -1752,6 +1752,26 @@ async def raid_time(ctx, hatch_or_raid, level, newtime):
 @Meowth.command()
 @commands.has_permissions(manage_channels=True)
 @checks.raidchannel()
+async def unassume(ctx):
+    "Use if a level 5 egg assumed before you changed raid_json"
+    if not guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon']:
+        return await ctx.send("This channel hasn't been assumed", delete_after=10)
+    egg_level = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egglevel']
+    boss_list = []
+    for p in raid_info['raid_eggs'][egg_level]['pokemon']:
+        pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, p)
+        p_name = pokemon.name.title()
+        boss_list.append(p_name.lower())
+    for trainer in guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']:
+        guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'][trainer]['interest'] = boss_list
+    guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon'] = ''
+    guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrs_dict'] = {}
+    await _edit_party(ctx.channel)
+    return await ctx.send("Channel successfully un-assumed", delete_after=10)
+
+@Meowth.command()
+@commands.has_permissions(manage_channels=True)
+@checks.raidchannel()
 async def changeraid(ctx, *, newraid):
     """Changes raid boss.
 
