@@ -4,6 +4,8 @@ from discord.ext import commands
 from discord.ext.commands.errors import CommandError
 from inspect import signature, getfullargspec
 import asyncio
+import io
+import traceback
 
 class TeamSetCheckFail(CommandError):
     'Exception raised checks.teamset fails'
@@ -164,6 +166,14 @@ def missing_arg_msg(ctx):
 def custom_error_handling(bot, logger):
 
     @bot.event
+    async def on_error(event, *args, **kwargs):
+        """Called when an event raises an uncaught exception"""
+        stdout = io.StringIO()
+        value = stdout.getvalue()
+        logger.warning(f'{value}{traceback.format_exc()}')
+        print(f'{value}{traceback.format_exc()}')
+
+    @bot.event
     async def on_command_error(ctx, error):
         channel = ctx.channel
         prefix = ctx.prefix.replace(ctx.bot.user.mention, '@' + ctx.bot.user.name)
@@ -178,8 +188,6 @@ def custom_error_handling(bot, logger):
             await asyncio.sleep(20)
             await delete_error(ctx.message, error)
         elif isinstance(error, commands.CommandNotFound):
-            pass
-        elif isinstance(error, commands.CommandInvokeError):
             pass
         elif isinstance(error, commands.CheckFailure):
             pass
