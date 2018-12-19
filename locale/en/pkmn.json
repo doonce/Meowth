@@ -418,7 +418,10 @@
                 "party",
                 "ash",
                 "witch",
-                "summer"
+                "summer",
+                "thunderbolt",
+                "flower",
+                "beanie"
             ],
             "none": {
                 "type": [
@@ -2890,7 +2893,7 @@
     },
     "marill": {
         "number": 183,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -2906,7 +2909,7 @@
     },
     "azumarill": {
         "number": 184,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -3572,7 +3575,7 @@
     },
     "delibird": {
         "number": 225,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -4704,7 +4707,7 @@
     },
     "azurill": {
         "number": 298,
-        "shiny": false,
+        "shiny": true,
         "legendary": false,
         "mythical": false,
         "gender": false,
@@ -6508,12 +6511,18 @@
         "mythical": false,
         "gender": false,
         "forms": {
-            "list": [],
+            "list": ["plant", "sandy", "trash"],
             "none": {
-                "type": [
-                    "Bug",
-                    "Grass"
-                ]
+                "type": ["Bug", "Grass"]
+            },
+            "plant": {
+                "type": ["Bug", "Grass"]
+            },
+            "sandy": {
+                "type": ["Bug", "Ground"]
+            },
+            "trash": {
+                "type": ["Bug", "Steel"]
             }
         }
     },
@@ -6637,9 +6646,7 @@
                 "sunshine"
             ],
             "none": {
-                "type": [
-                    "Grass"
-                ]
+                "type": ["Grass"]
             }
         }
     },
@@ -6650,7 +6657,7 @@
         "mythical": false,
         "gender": false,
         "forms": {
-            "list": [],
+            "list": ["pink", "blue"],
             "none": {
                 "type": [
                     "Water"
@@ -6665,7 +6672,7 @@
         "mythical": false,
         "gender": false,
         "forms": {
-            "list": [],
+            "list": ["pink", "blue"],
             "none": {
                 "type": [
                     "Water",
@@ -7745,9 +7752,13 @@
                 "sky"
             ],
             "none": {
-                "type": [
-                    "Grass"
-                ]
+                "type": ["Grass"]
+            },
+            "land": {
+                "type": ["Grass"]
+            },
+            "sky": {
+                "type": ["Grass", "Flying"]
             }
         }
     },

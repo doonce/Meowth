@@ -236,7 +236,7 @@ class Pokemon():
             else:
                 form_str = "_00"
         if self.form and self.id in self.bot.form_dict:
-            if self.id in [201, 327, 351, 386, 421, 487, 492]:
+            if self.id in [201, 327, 351, 386, 413, 421, 423, 423, 487, 492]:
                 form_str = form_str + "_" + str(self.bot.form_dict[self.id].index(self.form) + 11)
             else:
                 form_str = form_str + "_" + str(self.bot.form_dict[self.id].index(self.form) + 1).zfill(2)
@@ -249,7 +249,7 @@ class Pokemon():
         else:
             shiny_str = ""
 
-        return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{form_str}{shiny_str}.png?cache=1")
+        return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{form_str}{shiny_str}.png?cache=2")
 
     # async def colour(self):
     #     """:class:`discord.Colour` : Discord colour based on Pokemon sprite."""

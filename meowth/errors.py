@@ -4,7 +4,6 @@ from discord.ext import commands
 from discord.ext.commands.errors import CommandError
 from inspect import signature, getfullargspec
 import asyncio
-import io
 import sys
 import traceback
 
@@ -151,6 +150,7 @@ def missing_arg_msg(ctx):
             rqargs.append(varargs)
     arg_num = len(ctx.args) - 1
     sig.remove('ctx')
+    sig.remove('self')
     args_missing = sig[arg_num:]
     msg = _("Meowth! I'm missing some details! Usage: {prefix}{command}").format(prefix=prefix, command=command)
     for a in sig:
@@ -169,10 +169,8 @@ def custom_error_handling(bot, logger):
     @bot.event
     async def on_error(event, *args, **kwargs):
         """Called when an event raises an uncaught exception"""
-        stdout = io.StringIO()
-        value = stdout.getvalue()
         print(f"--------------------\nEXCEPTION: A {sys.exc_info()[0].__name__} exception has occured in {event}. Check outputlog for details.\n{sys.exc_info()[1]}\n--------------------")
-        logger.exception(f'{value}{traceback.format_exc()}')
+        logger.exception(f'{traceback.format_exc()}')
 
     @bot.event
     async def on_command_error(ctx, error):
