@@ -19,6 +19,7 @@ def init_loggers():
         '%(message)s',
         datefmt="[%d/%m/%Y %H:%M]")
 
+
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setFormatter(meowth_format)
     logger.setLevel(logging.INFO)
@@ -31,6 +32,6 @@ def init_loggers():
 
     logger.addHandler(fhandler)
 
-    # logger.addHandler(stdout_handler)
+    #logger.addHandler(stdout_handler)
 
     return logger

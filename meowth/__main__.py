@@ -846,8 +846,8 @@ async def on_ready():
                         'research': {'enabled':False, 'report_channels': {}},
                         'archive': {'enabled':False, 'category':'same', 'list':None},
                         'invite': {'enabled':False},
-                        'team':{'enabled':False},
-                        'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':None, 'config_sessions':{}},
+                        'team':{'enabled':False, 'team_roles':{}},
+                        'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':Meowth.config['default_prefix'], 'config_sessions':{}},
                         'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'alarmaction':False}
                     },
                     'wildreport_dict:':{},
@@ -873,8 +873,8 @@ async def on_ready():
                     'research': {'enabled':False, 'report_channels': {}},
                     'archive': {'enabled':False, 'category':'same', 'list':None},
                     'invite': {'enabled':False},
-                    'team':{'enabled':False},
-                    'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':None, 'config_sessions':{}},
+                    'team':{'enabled':False, 'team_roles':{}},
+                    'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':Meowth.config['default_prefix'], 'config_sessions':{}},
                     'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'alarmaction':False}
                 },
                 'wildreport_dict:':{},
@@ -903,8 +903,8 @@ async def on_guild_join(guild):
             'research': {'enabled':False, 'report_channels': {}},
             'archive': {'enabled':False, 'category':'same', 'list':None},
             'invite': {'enabled':False},
-            'team':{'enabled':False},
-            'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':None, 'config_sessions':{}},
+            'team':{'enabled':False, 'team_roles':{}},
+            'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':Meowth.config['default_prefix'], 'config_sessions':{}},
             'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'alarmaction':False}
         },
         'wildreport_dict:':{},
@@ -1687,6 +1687,7 @@ async def raid_json(ctx, level=None, *, newlist=None):
             await ctx.channel.send(_("Meowth! Configuration successful!"), delete_after=10)
             await asyncio.sleep(10)
             await utils.safe_delete(question)
+            await ctx.message.add_reaction(config['command_done'])
         else:
             return await ctx.channel.send(_("Meowth! I'm not sure what went wrong, but configuration is cancelled!"), delete_after=10)
 

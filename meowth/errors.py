@@ -5,6 +5,7 @@ from discord.ext.commands.errors import CommandError
 from inspect import signature, getfullargspec
 import asyncio
 import io
+import sys
 import traceback
 
 class TeamSetCheckFail(CommandError):
@@ -170,8 +171,8 @@ def custom_error_handling(bot, logger):
         """Called when an event raises an uncaught exception"""
         stdout = io.StringIO()
         value = stdout.getvalue()
-        logger.warning(f'{value}{traceback.format_exc()}')
-        print(f'{value}{traceback.format_exc()}')
+        print(f"--------------------\nEXCEPTION: A {sys.exc_info()[0].__name__} exception has occured in {event}. Check outputlog for details.\n{sys.exc_info()[1]}\n--------------------")
+        logger.exception(f'{value}{traceback.format_exc()}')
 
     @bot.event
     async def on_command_error(ctx, error):
@@ -540,4 +541,5 @@ def custom_error_handling(bot, logger):
             await asyncio.sleep(10)
             await delete_error(ctx.message, error)
         else:
+            print(f"--------------------\nEXCEPTION: A {type(error).__name__} exception has occured in {ctx.command}. Check outputlog for details.\n{error}\n--------------------")
             logger.exception(type(error).__name__, exc_info=error)

@@ -19,6 +19,15 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         citychannel_dict = {}
+        channels = ""
+        if config_dict_temp[type]['report_channels']:
+            if output == "list":
+                channels = [ctx.bot.get_channel(x) for x in config_dict_temp[type]['report_channels']]
+                channels = [x.name for x in channels if x]
+            else:
+                channels = [ctx.bot.get_channel(x) for x in config_dict_temp[type]['report_channels'].keys()]
+                channels = [x.name for x in channels if x]
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp[type]['enabled']}\nChannels: {channels}").set_author(name=_("Current {type} Setting").format(type=type.title()), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if citychannels.content.lower() == 'n':
@@ -79,7 +88,11 @@ class Configure:
             return config_dict_temp
         if config_dict_temp[type]['enabled']:
             await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('For each report, I generate Google Maps links to give people directions to the raid or egg! To do this, I need to know which suburb/town/region each report channel represents, to ensure we get the right location in the map. For each report channel you provided, I will need its corresponding general location using only letters and spaces, with each location seperated by a comma and space.\n\nExample: `kansas city mo, hull uk, sydney nsw australia`\n\nEach location will have to be in the same order as you provided the channels in the previous question.\n\nRespond with: **location info, location info, location info** each matching the order of the previous channel list below.')).set_author(name=_('{type} Reporting Locations').format(type=type.title()), icon_url=self.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
+            channels = ""
+            if config_dict_temp[type]['report_channels']:
+                channels = {ctx.bot.get_channel(k):v for k,v in config_dict_temp[type]['report_channels'].items()}
+                channels = {k.name:v for k,v in channels.items() if k}
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"{channels}\n\n**You Entered**:\n{citychannel_names}").set_author(name=_("Current Report Locations"), icon_url=self.bot.user.avatar_url), delete_after=300)
             while True:
                 cities = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if cities.content.lower() == 'cancel':
@@ -104,6 +117,7 @@ class Configure:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the EX raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('EX Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
             elif type == "meetup":
                 await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the meetup channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('Meetup Reporting Categories'), icon_url=self.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp[type]['categories'])).set_author(name=_("Current Category Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
             while True:
                 guild = self.bot.get_guild(guild.id)
                 guild_catlist = []
@@ -128,7 +142,11 @@ class Configure:
                             guild_catlist.append(cat.id)
                         config_dict_temp[type]['categories'] = 'region'
                         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as raid reporting channels.")).set_author(name=_('{type} Reporting Categories').format(type=type.title()), icon_url=self.bot.user.avatar_url))
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
+                        channels = ""
+                        if config_dict_temp[type]['category_dict']:
+                            channels = {ctx.bot.get_channel(k):ctx.bot.get_channel(v) for k,v in config_dict_temp[type]['category_dict'].items()}
+                            channels = {k.name:v.name for k,v in channels.items() if k}
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"{channels}\n\n**You Entered**:\n{citychannel_names}").set_author(name=_("Current Report Categories"), icon_url=self.bot.user.avatar_url), delete_after=300)
                         regioncats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                         if regioncats.content.lower() == "cancel":
                             await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
@@ -179,6 +197,11 @@ class Configure:
                         for cat in guild.categories:
                             guild_catlist.append(cat.id)
                         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Pokemon Go currently has five levels of raids. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5 \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `level 1-3, level 1-3, level 1-3, level 4, 1231231241561337813`")).set_author(name=_('{type} Reporting Categories').format(type=type.title()), icon_url=self.bot.user.avatar_url))
+                        channels = ""
+                        if config_dict_temp[type]['category_dict']:
+                            channels = {k:ctx.bot.get_channel(v) for k,v in config_dict_temp[type]['category_dict'].items()}
+                            channels = {k:v.name for k,v in channels.items() if k}
+                            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"{channels}").set_author(name=_("Current Report Categories"), icon_url=self.bot.user.avatar_url), delete_after=300)
                         levelcats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                         if levelcats.content.lower() == "cancel":
                             await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
@@ -229,7 +252,11 @@ class Configure:
                             guild_catlist.append(cat.id)
                         config_dict_temp[type]['categories'] = 'region'
                         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as reporting channels.")).set_author(name=_('{type} Reporting Categories').format(type=type.title()), icon_url=self.bot.user.avatar_url))
-                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('{citychannel_list}').format(citychannel_list=citychannels.content.lower()[:2000])).set_author(name=_('Entered Channels'), icon_url=self.bot.user.avatar_url))
+                        channels = ""
+                        if config_dict_temp[type]['category_dict']:
+                            channels = {ctx.bot.get_channel(k):ctx.bot.get_channel(v) for k,v in config_dict_temp[type]['category_dict'].items()}
+                            channels = {k.name:v.name for k,v in channels.items() if k}
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"{channels}\n\n**You Entered**:\n{citychannel_names}").set_author(name=_("Current Report Categories"), icon_url=self.bot.user.avatar_url), delete_after=300)
                         regioncats = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                         if regioncats.content.lower() == "cancel":
                             await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
@@ -468,6 +495,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Team assignment allows users to assign their Pokemon Go team role using the **!team** command. If you have a bot that handles this already, you may want to disable this feature.\n\nIf you are to use this feature, ensure existing team roles are as follows: mystic, valor, instinct. These must be all lowercase letters. If they don't exist yet, I'll make some for you instead.\n\nRespond here with: **N** to disable, **Y** to enable:")).set_author(name=_('Team Assignments'), icon_url=self.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['team']['enabled']).set_author(name=_("Current Team Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             teamreply = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if teamreply.content.lower() == 'y':
@@ -481,6 +509,10 @@ class Configure:
                 role_create = ""
                 while True:
                     await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Please respond with the names or IDs for the roles you would like to use for teams in the following order:\n\n**mystic, valor, instinct, harmony**\n\nIf I can't find a role, I'll make a temporary role for you that you can either keep and rename, or you can delete and attempt to configure roles again.")).set_author(name=_('Team Assignments'), icon_url=self.bot.user.avatar_url))
+                    if config_dict_temp['team']['team_roles']:
+                        roles = {k:guild.get_role(v) for k,v in config_dict_temp['team']['team_roles'].items()}
+                        roles = {k:v.name for k,v in roles.items() if v}
+                        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"{roles}").set_author(name=_("Current Team Roles"), icon_url=self.bot.user.avatar_url), delete_after=300)
                     def check(m):
                         return m.guild == None and m.author == owner
                     rolesreply = await self.bot.wait_for('message', check=check)
@@ -501,7 +533,7 @@ class Configure:
                                 if not role:
                                     try:
                                         role = await guild.create_role(name=f"Meowth{team_list[index].capitalize()}", hoist=False, mentionable=True, colour=team_colors[index])
-                                        role_create += _("I couldn\'t find role **{item}**. I created a role called {meowthrole} for team {team} in its place, you can rename it or delete it in Server Settings and try again later.\n\n").format(item=item, meowthrole=role.name, team=team_list[index].capitalize())
+                                        role_create += _("I couldn\'t find role **{item}**. I created a role called **{meowthrole}** for team {team} in its place, you can rename it or delete it in Server Settings and try again later.\n\n").format(item=item, meowthrole=role.name, team=team_list[index].capitalize())
                                     except discord.errors.HTTPException:
                                         await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Maximum guild roles reached, delete some and try again.")))
                                     except (discord.errors.Forbidden, discord.errors.InvalidArgument):
@@ -572,6 +604,7 @@ class Configure:
             welcomeconfig += _('Meowth! Welcome to {server_name}, {owner_name.mention}! If you have any questions just ask an admin.').format(server_name=guild, owner_name=owner)
         welcomeconfig += _('\n\nThis welcome message can be in a specific channel or a direct message. If you have a bot that handles this already, you may want to disable this feature.\n\nRespond with: **N** to disable, **Y** to enable:')
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=welcomeconfig).set_author(name=_('Welcome Message'), icon_url=self.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['welcome']['enabled']).set_author(name=_("Current Welcome Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             welcomereply = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if welcomereply.content.lower() == 'y':
@@ -590,7 +623,7 @@ class Configure:
                                  "**{server}** - Will print your server's name\n"
                                  "Surround your message with [] to send it as an embed. **Warning:** Mentions within embeds may be broken on mobile, this is a Discord bug."))).set_author(name=_("Welcome Message"), icon_url=self.bot.user.avatar_url))
                 if config_dict_temp['welcome']['welcomemsg'] != 'default':
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['welcome']['welcomemsg']).set_author(name=_("Current Welcome Message"), icon_url=self.bot.user.avatar_url))
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['welcome']['welcomemsg']).set_author(name=_("Current Welcome Message"), icon_url=self.bot.user.avatar_url), delete_after=300)
                 while True:
                     welcomemsgreply = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and (message.author == owner)))
                     if welcomemsgreply.content.lower() == 'n':
@@ -639,6 +672,13 @@ class Configure:
                             break
                     break
                 await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Which channel in your server would you like me to post the Welcome Messages? You can also choose to have them sent to the new member via Direct Message (DM) instead.\n\nRespond with: **channel-name** or ID of a channel in your server or **DM** to Direct Message:")).set_author(name=_("Welcome Message Channel"), icon_url=self.bot.user.avatar_url))
+                if config_dict_temp['welcome']['welcomechan']:
+                    if config_dict_temp['welcome']['welcomechan'] == "dm":
+                        channel = "DM"
+                    else:
+                        channel = ctx.bot.get_channel(config_dict_temp['welcome']['welcomechan'])
+                        channel = channel.name
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=channel).set_author(name=_("Current Welcome Channel"), icon_url=self.bot.user.avatar_url), delete_after=300)
                 while True:
                     welcomechannelreply = await self.bot.wait_for('message', check=lambda message: message.guild == None and message.author == owner)
                     if welcomechannelreply.content.lower() == "dm":
@@ -726,6 +766,8 @@ class Configure:
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Raid Reporting allows users to report active raids with **!raid** or raid eggs with **!raidegg**. Pokemon raid reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-raids, hull-raids, sydney-raids`\n\nIf you do not require raid or raid egg reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Raid Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "raid", ["none", "same", "region", "level"], output="category_dict")
+        if not config_dict_temp:
+            return None
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -756,9 +798,13 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("EX Raid Reporting allows users to report EX raids with **!exraid**. Pokemon EX raid reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-raids, hull-raids, sydney-raids`\n\nIf you do not require EX raid reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('EX Raid Reporting Channels'), icon_url=self.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['exraid']['enabled']).set_author(name=_("Current Exraid Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "exraid", ["none", "same", "other"], output="category_dict")
+        if not config_dict_temp:
+            return None
         if config_dict_temp['exraid']['enabled']:
             await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Who do you want to be able to **see** the EX Raid channels? Your options are:\n\n**everyone** - To have everyone be able to see all reported EX Raids\n**same** - To only allow those with access to the reporting channel.")).set_author(name=_('EX Raid Channel Read Permissions'), icon_url=self.bot.user.avatar_url))
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['exraid']['permissions']).set_author(name=_("Current Exraid Permissions"), icon_url=self.bot.user.avatar_url), delete_after=300)
             while True:
                 permsconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if permsconfigset.content.lower() == 'everyone':
@@ -807,6 +853,7 @@ class Configure:
         if not config_dict_temp['exraid']['enabled']:
             return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want access to EX raids controlled through members using the **!invite** command?\nIf enabled, members will have read-only permissions for all EX Raids until they use **!invite** to gain access. If disabled, EX Raids will inherit the permissions from their reporting channels.\n\nRespond with: **N** to disable, or **Y** to enable:')).set_author(name=_('Invite Configuration'), icon_url=self.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['invite']['enabled']).set_author(name=_("Current Invite Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             inviteconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if inviteconfigset.content.lower() == 'y':
@@ -851,6 +898,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want to generate an automatic counters list in newly created raid channels using PokeBattler?\nIf enabled, I will post a message containing the best counters for the raid boss in new raid channels. Users will still be able to use **!counters** to generate this list.\n\nRespond with: **N** to disable, or enable with a comma separated list of boss levels that you would like me to generate counters for. Example:`3, 4, 5, EX`')).set_author(name=_('Automatic Counters Configuration'), icon_url=self.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp['counters']['enabled']}\nLevels: {config_dict_temp['counters']['auto_levels']}").set_author(name=_("Current Counters Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             countersconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if countersconfigset.content.lower() == 'n':
@@ -909,6 +957,8 @@ class Configure:
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Wild Reporting allows users to report wild spawns with **!wild**. Pokemon **wild** reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-wilds, hull-wilds, sydney-wilds`\n\nIf you do not require **wild** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Wild Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "wild", [], output="dict")
+        if not config_dict_temp:
+            return None
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -940,6 +990,8 @@ class Configure:
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Research Reporting allows users to report field research with **!research**. Pokemon **research** reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-research, hull-research, sydney-research`\n\nIf you do not require **research** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Research Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "research", [], output="dict")
+        if not config_dict_temp:
+            return None
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -972,6 +1024,8 @@ class Configure:
         config_dict_temp['meetup'] = {}
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meetup Reporting allows users to report meetups with **!meetup** or **!event**. Meetup reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-meetups, hull-meetups, sydney-meetups`\n\nIf you do not require meetup reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Meetup Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "meetup", ["none", "same", "other"], output="category_dict")
+        if not config_dict_temp:
+            return None
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -1003,6 +1057,8 @@ class Configure:
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!want** and **!unwant** commands let you add or remove roles for Pokemon that will be mentioned in reports. This let you get notifications on the Pokemon you want to track. I just need to know what channels you want to allow people to manage their pokemon with the **!want** and **!unwant** command.\n\nIf you don't want to allow the management of tracked Pokemon roles, then you may want to disable this feature.\n\nRepond with: **N** to disable, or the **channel-name** list to enable, each seperated by a comma and space.")).set_author(name=_('Pokemon Notifications'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "want", [], output="list")
+        if not config_dict_temp:
+            return None
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -1033,6 +1089,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!archive** command marks temporary raid channels for archival rather than deletion. This can be useful for investigating potential violations of your server's rules in these channels.\n\nIf you would like to disable this feature, reply with **N**. Otherwise send the category you would like me to place archived channels in. You can say **same** to keep them in the same category, or type the name or ID of a category in your server.")).set_author(name=_('Archive Configuration'), icon_url=self.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp['archive']['enabled']}\nCategory: {config_dict_temp['archive']['category']}").set_author(name=_("Current Archive Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         config_dict_temp['archive'] = {}
         while True:
             archivemsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
@@ -1065,6 +1122,8 @@ class Configure:
                 break
         if config_dict_temp['archive']['enabled']:
             await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("I can also listen in your raid channels for words or phrases that you want to trigger an automatic archival. For example, if discussion of spoofing is against your server rules, you might tell me to listen for the word 'spoofing'.\n\nReply with **none** to disable this feature, or reply with a comma separated list of phrases you want me to listen in raid channels for.")).set_author(name=_('Archive Configuration'), icon_url=self.bot.user.avatar_url))
+            if config_dict_temp['archive']['list']:
+                await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['archive']['list']).set_author(name=_("Current Archive Phrases"), icon_url=self.bot.user.avatar_url), delete_after=300)
             phrasemsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if phrasemsg.content.lower() == 'none':
                 config_dict_temp['archive']['list'] = None
@@ -1108,6 +1167,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("There are a few settings available that are not within **!configure**. To set these, use **!set <setting>** in any channel to set that setting.\n\nThese include:\n**!set regional <name or number>** - To set a server's regional raid boss\n**!set prefix <prefix>** - To set my command prefix\n**!set timezone <offset>** - To set offset outside of **!configure**\n**!set silph <trainer>** - To set a trainer's SilphRoad card (usable by members)\n**!set pokebattler <ID>** - To set a trainer's pokebattler ID (usable by members)\n\nHowever, we can do your timezone now to help coordinate reports for you. For others, use the **!set** command.\n\nThe current 24-hr time UTC is {utctime}. How many hours off from that are you?\n\nRespond with: A number from **-12** to **12**:").format(utctime=strftime('%H:%M', time.gmtime()))).set_author(name=_('Timezone Configuration and Other Settings'), icon_url=self.bot.user.avatar_url))
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['settings']['offset']).set_author(name=_("Current Timezone Offset"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             offsetmsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if offsetmsg.content.lower() == 'cancel':
@@ -1157,6 +1217,8 @@ class Configure:
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!trade** command allows your users to organize and coordinate trades. This command requires at least one channel specifically for trades.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!trade** command in, separated by commas.")).set_author(name=_('Trade Configuration'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "trade", [], output="list")
+        if not config_dict_temp:
+            return None
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -1188,6 +1250,8 @@ class Configure:
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!nest** command allows your users to report nests. This command requires at least one channel specifically for nests.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!nest** command in, separated by commas.")).set_author(name=_('Nest Configuration'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "nest", [], output="list")
+        if not config_dict_temp:
+            return None
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
@@ -1216,6 +1280,7 @@ class Configure:
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raid <form> <pkmn>|<gym_name>|<time_left>|<lat>,<lng>|<quick_move> / <charge_move>`'))
         await owner.send(embed=scanner_embed)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scaners']['autoraid']).set_author(name=_("Current AutoRaid Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             autoraidset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if autoraidset.content.lower() == 'y':
@@ -1237,6 +1302,7 @@ class Configure:
             scanner_embed.add_field(name=_('**GymhuntrBot:**'), value=_("For example: `3, 4, 5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created."))
             scanner_embed.add_field(name=_('**NovaBot and PokeAlarm:**'), value=_("For example: `3, 4, 5`\n\nIn this example, only 3+ raids will auto reported. You can customize the other levels manually in your alarm settings. "))
             await owner.send(embed=scanner_embed)
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scaners']['raidlvls'])).set_author(name=_("Current AutoRaid Levels"), icon_url=self.bot.user.avatar_url), delete_after=300)
             raidlevel_list = []
             config_dict_temp['scanners']['raidlvls'] = []
             while True:
@@ -1263,6 +1329,7 @@ class Configure:
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raidegg <level>|<gym_name>|<time_left_start>|<lat>,<lng>`'))
         await owner.send(embed=scanner_embed)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scaners']['autoegg']).set_author(name=_("Current AutoEgg Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             autoeggset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if autoeggset.content.lower() == 'y':
@@ -1284,6 +1351,7 @@ class Configure:
             scanner_embed.add_field(name=_('**GymhuntrBot:**'), value=_("For example: `3, 4, 5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created."))
             scanner_embed.add_field(name=_('**NovaBot and PokeAlarm:**'), value=_("For example: `3, 4, 5`\n\nIn this example, only 3+ raids will auto reported. You can customize the other levels manually in your alarm settings. "))
             await owner.send(embed=scanner_embed)
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scaners']['egglvls'])).set_author(name=_("Current AutoEgg Levels"), icon_url=self.bot.user.avatar_url), delete_after=300)
             egglevel_list = []
             config_dict_temp['scanners']['egglvls'] = []
             while True:
@@ -1310,6 +1378,7 @@ class Configure:
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!wild <form> <pkmn>|<lat>,<lng>|<time_left>|Weather: <weather> / IV: <iv>`'))
         await owner.send(embed=scanner_embed)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scaners']['autowild']).set_author(name=_("Current AutoWild Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if wildconfigset.content.lower() == 'y':
@@ -1329,6 +1398,7 @@ class Configure:
         if config_dict_temp['scanners']['autowild']:
             scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Please enter a list of wild pokemon to block automatic reports of or reply with **N** to disable the fitler.").set_author(name='Automatic Wild Report Filter', icon_url=self.bot.user.avatar_url)
             await owner.send(embed=scanner_embed)
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scaners']['wildfilter']).set_author(name=_("Current AutoWild Filter"), icon_url=self.bot.user.avatar_url), delete_after=300)
             wildfilter_list = []
             wildfilter_names = []
             config_dict_temp['scanners']['wildfilter'] = []

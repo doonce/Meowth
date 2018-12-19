@@ -286,6 +286,7 @@ class Nest:
         nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
         pkmn_dict = {}
         embed_value = "No Reports"
+        nest_img_url = ""
         report_count = 0
         nest_report_dict = nest_dict[nest_name]['reports']
         for report in nest_report_dict:
@@ -303,7 +304,7 @@ class Nest:
                 embed_value += f"**{str(pokemon)}** {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))} **({pkmn[1]})**"
                 report_count += 1
                 nest_img_url = pokemon.img_url
-                nest_number = self.bot.pkmn_list.index(pkmn[0]) + 1
+                nest_number = pokemon.id
             else:
                 embed_value += f", {str(pokemon)} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))} ({pkmn[1]})"
         nest_description = f"**Nest**: {nest_name.title()}\n**All Reports**: {embed_value}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
