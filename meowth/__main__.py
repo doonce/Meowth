@@ -5533,10 +5533,10 @@ async def lobby_countdown(ctx):
                     del trainer_dict[trainer]
             start_lobby['trainers'] = trainer_delete_list
             if egg_level == "EX" or egg_level == "5":
-                battle_time = 30
+                battle_time = 300
                 start_lobby['exp'] = start_exp + battle_time
             else:
-                battle_time = 18
+                battle_time = 180
                 start_lobby['exp'] = start_exp + battle_time
             if trainer_delete_list:
                 guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling'].append(start_lobby)
@@ -5626,7 +5626,7 @@ async def starting(ctx, team: str = ''):
             guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['starttime'] = None
         else:
             timestr = ' '
-        guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby'] = {"exp":time.time() + 12, "team":team, "herecount":herecount, "teamcount":teamcount, "lobbycount":lobbycount}
+        guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby'] = {"exp":time.time() + 120, "team":team, "herecount":herecount, "teamcount":teamcount, "lobbycount":lobbycount}
         starting_str = _('Starting - Meowth! The group that was waiting{timestr}is starting the raid! Trainers {trainer_list}, if you are not in this group and are waiting for the next group, please respond with {here_emoji} or **!here**. If you need to ask those that just started to back out of their lobby, use **!backout**').format(timestr=timestr, trainer_list=', '.join(ctx_startinglist), here_emoji=utils.parse_emoji(ctx.guild, config['here_id']))
         if starttime:
             starting_str += '\n\nThe start time has also been cleared, new groups can set a new start time wtih **!starttime HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!).'
