@@ -5500,6 +5500,8 @@ async def lobby_countdown(ctx):
     while True:
         start_lobby = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('lobby', {})
         battling = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('battling', [])
+        if not start_lobby and not battling:
+            return
         completed = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('completed', [])
         egg_level = utils.get_level(Meowth, guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon'])
         start_exp = start_lobby.get('exp', False)
@@ -5509,8 +5511,6 @@ async def lobby_countdown(ctx):
         lobbycount = start_lobby.get('lobbycount', 0)
         team_names = ["mystic", "valor", "instinct", "unknown"]
         trainer_dict = copy.deepcopy(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'])
-        if not start_lobby and not battling:
-            return
         if time.time() < start_exp:
             sleep_time = start_exp - time.time()
             await asyncio.sleep(int(sleep_time))
@@ -5547,8 +5547,11 @@ async def lobby_countdown(ctx):
             await _edit_party(ctx.channel, ctx.author)
             guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'] = trainer_dict
             await asyncio.sleep(battle_time)
-            guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling'].remove(start_lobby)
-            guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['completed'].append(start_lobby)
+            try:
+                guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling'].remove(start_lobby)
+                guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['completed'].append(start_lobby)
+            except ValueError:
+                pass
             return
 
 @Meowth.command()
