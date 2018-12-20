@@ -63,7 +63,7 @@ class Pokemon():
 
     __slots__ = ('name', 'id', 'types', 'bot', 'guild', 'pkmn_list',
                  'pb_raid', 'weather', 'moveset', 'form', 'shiny', 'gender',
-                 'alolan', 'legendary', 'mythical')
+                 'alolan', 'size', 'legendary', 'mythical')
 
     def generate_lists(bot):
         shiny_list = []
@@ -131,6 +131,7 @@ class Pokemon():
         if self.id not in bot.shiny_list:
             self.shiny = False
         self.alolan = attribs.get('alolan', False)
+        self.size = attribs.get('size', None)
         if self.id not in bot.alolan_list:
             self.alolan = False
         if self.id in bot.legendary_list:
@@ -146,6 +147,8 @@ class Pokemon():
 
     def __str__(self):
         name = self.name.title()
+        if self.size:
+            name = f"{self.size} {name}"
         if self.form:
             name = name + f" {self.form.title()}"
         if self.alolan:
@@ -385,6 +388,8 @@ class Pokemon():
         alolan = re.search(r'alolan', argument, re.IGNORECASE)
         male = re.search(r'(?<!fe)male', argument, re.IGNORECASE)
         female = re.search(r'female', argument, re.IGNORECASE)
+        large = re.search(r'large|big|xl', argument, re.IGNORECASE)
+        small = re.search(r'small|tiny|xs', argument, re.IGNORECASE)
         form_list = ctx.bot.form_dict['list']
         one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=ctx.bot.pkmn_list[200], spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not one_char_forms:
@@ -408,6 +413,12 @@ class Pokemon():
             gender = "female"
         else:
             gender = None
+        if large:
+            size = "XL"
+        elif small:
+            size = "XS"
+        else:
+            size = None
 
         for form in form_list:
             form = re.search(form, argument, re.IGNORECASE)
@@ -442,7 +453,7 @@ class Pokemon():
         result = False
         if match:
             if score >= 80:
-                result = cls(ctx.bot, str(match), ctx.guild, shiny=shiny, alolan=alolan, form=form, gender=gender)
+                result = cls(ctx.bot, str(match), ctx.guild, shiny=shiny, alolan=alolan, form=form, gender=gender, size=size)
             else:
                 result = {
                     'suggested' : str(match),
@@ -461,6 +472,8 @@ class Pokemon():
         alolan = re.search(r'alolan', argument, re.IGNORECASE)
         male = re.search(r'(?<!fe)male', argument, re.IGNORECASE)
         female = re.search(r'female', argument, re.IGNORECASE)
+        large = re.search(r'large|big|xl', argument, re.IGNORECASE)
+        small = re.search(r'small|tiny|xs', argument, re.IGNORECASE)
         form_list = bot.form_dict['list']
         one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=bot.pkmn_list[200], spinda=bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not one_char_forms:
@@ -484,6 +497,12 @@ class Pokemon():
             gender = "female"
         else:
             gender = None
+        if large:
+            size = "XL"
+        elif small:
+            size = "XS"
+        else:
+            size = None
 
         for form in form_list:
             form = re.search(form, argument, re.IGNORECASE)
@@ -510,7 +529,7 @@ class Pokemon():
         if not match:
             return None
 
-        pokemon = cls(bot, str(match), None, shiny=shiny, alolan=alolan, form=form, gender=gender)
+        pokemon = cls(bot, str(match), None, shiny=shiny, alolan=alolan, form=form, gender=gender, size=size)
 
         return pokemon
 
@@ -521,6 +540,8 @@ class Pokemon():
         alolan = re.search(r'alolan', argument, re.IGNORECASE)
         male = re.search(r'(?<!fe)male', argument, re.IGNORECASE)
         female = re.search(r'female', argument, re.IGNORECASE)
+        large = re.search(r'large|big|xl', argument, re.IGNORECASE)
+        small = re.search(r'small|tiny|xs', argument, re.IGNORECASE)
         form_list = ctx.bot.form_dict['list']
         one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=ctx.bot.pkmn_list[200], spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not one_char_forms:
@@ -550,6 +571,12 @@ class Pokemon():
             gender = "female"
         else:
             gender = None
+        if large:
+            size = "XL"
+        elif small:
+            size = "XS"
+        else:
+            size = None
 
         for form in form_list:
             form = re.search(form, argument, re.IGNORECASE)
@@ -592,7 +619,7 @@ class Pokemon():
         if not match:
             return None, None
 
-        pokemon = cls(ctx.bot, str(match), None, shiny=shiny, alolan=alolan, form=form, gender=gender)
+        pokemon = cls(ctx.bot, str(match), None, shiny=shiny, alolan=alolan, form=form, gender=gender, size=size)
 
         return pokemon, match_list
 

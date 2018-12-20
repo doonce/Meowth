@@ -5498,7 +5498,7 @@ async def _cancel(channel, author):
 
 async def lobby_countdown(ctx):
     while True:
-        start_lobby = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('lobby', {})
+        start_lobby = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('lobby', {})
         battling = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('battling', [])
         if not start_lobby and not battling:
             return
@@ -5515,7 +5515,7 @@ async def lobby_countdown(ctx):
             sleep_time = start_exp - time.time()
             await asyncio.sleep(int(sleep_time))
             continue
-        if time.time() >= start_exp:
+        elif time.time() >= start_exp:
             ctx_lobbycount = 0
             trainer_delete_list = []
             for trainer in trainer_dict:
@@ -5534,16 +5534,12 @@ async def lobby_countdown(ctx):
             start_lobby['trainers'] = trainer_delete_list
             if egg_level == "EX" or egg_level == "5":
                 battle_time = 300
-                start_lobby['exp'] = start_exp + battle_time
             else:
                 battle_time = 180
-                start_lobby['exp'] = start_exp + battle_time
+            start_lobby['exp'] = start_exp + battle_time
             if trainer_delete_list:
                 guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling'].append(start_lobby)
-            try:
-                del guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby']
-            except KeyError:
-                pass
+            del guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby']
             await _edit_party(ctx.channel, ctx.author)
             guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'] = trainer_dict
             await asyncio.sleep(battle_time)
@@ -5552,7 +5548,14 @@ async def lobby_countdown(ctx):
                 guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['completed'].append(start_lobby)
             except ValueError:
                 pass
-            return
+            break
+    for lobby in guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling']:
+        if time.time() >= lobby['exp']:
+            try:
+                guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling'].remove(lobby)
+                guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['completed'].append(lobby)
+            except ValueError:
+                pass
 
 @Meowth.command()
 @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -5668,14 +5671,13 @@ async def backout(ctx):
         for lobby in battling:
             if ctx.author.id in lobby['trainers']:
                 battle_lobby = lobby
-                battling.remove(lobby)
-                guild_dict[guild.id]['raidchannel_dict'][channel.id]['battling'] = battling
+                guild_dict[guild.id]['raidchannel_dict'][channel.id]['battling'].remove(lobby)
                 break
     if battle_lobby:
         for trainer in battle_lobby['trainers']:
             user = guild.get_member(trainer)
             lobby_list.append(user.mention)
-        await channel.send(_('Backout - Meowth! {author} has indicated that the group consisting of {lobby_list} and the people with them has backed out of the battle!').format(author=author.mention, lobby_list=', '.join(lobby_list)))
+        await channel.send(_('Backout - Meowth! {author} has requested that the group consisting of {lobby_list} and the people with them to back out of the battle!').format(author=author.mention, lobby_list=', '.join(lobby_list)))
     elif (author.id in trainer_dict) and (trainer_dict[author.id]['status']['lobby']):
         count = trainer_dict[author.id]['count']
         trainer_dict[author.id]['status'] = {'maybe':0, 'coming':0, 'here':count, 'lobby':0}
