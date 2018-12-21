@@ -109,7 +109,7 @@ def load_config():
         'locale', '{0}', 'pkmn.json').format(config['pokemon-language'])
     raid_path_source = os.path.join('data', 'raid_info.json')
     # Load Pokemon list and raid info
-    with open(pokemon_path_source, 'r') as fd:
+    with open(pokemon_path_source, 'r', encoding="utf8") as fd:
         pkmn_info = json.load(fd)
     Meowth.pkmn_info = pkmn_info
     with open(raid_path_source, 'r') as fd:

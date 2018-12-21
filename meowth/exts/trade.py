@@ -422,6 +422,26 @@ class Trading:
         preview_embed.set_image(url=sprite.img_url)
         sprite_msg = await ctx.send(embed=preview_embed)
 
+    @commands.command(hidden=True, aliases=['dex'])
+    async def pokedex(self, ctx, *, pokemon: pkmn_class.Pokemon):
+        preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
+        forms = [x.title() for x in ctx.bot.pkmn_info[pokemon.name.lower()]['forms']['list']]
+        if "alolan" in ctx.bot.pkmn_info[pokemon.name.lower()]['forms']:
+            forms.append("Alolan")
+        preview_embed.add_field(name=f"{pokemon.name.title()} - #{pokemon.id}", value=pokemon.pokedex, inline=False)
+        if forms:
+            preview_embed.add_field(name="Forms:", value=", ".join(forms), inline=True)
+        if pokemon.id in ctx.bot.shiny_list:
+            preview_embed.add_field(name="Shiny:", value=pokemon.id in ctx.bot.shiny_list, inline=True)
+        if pokemon.id in ctx.bot.gender_list:
+            preview_embed.add_field(name="Genders:", value=pokemon.id in ctx.bot.gender_list, inline=True)
+        if pokemon.id in ctx.bot.legendary_list:
+            preview_embed.add_field(name="Legendary:", value=pokemon.id in ctx.bot.legendary_list, inline=True)
+        if pokemon.id in ctx.bot.mythical_list:
+            preview_embed.add_field(name="Mythical:", value=pokemon.id in ctx.bot.mythical_list, inline=True)
+        preview_embed.set_thumbnail(url=pokemon.img_url)
+        pokedex_msg = await ctx.send(embed=preview_embed)
+
     @commands.command()
     @checks.allowtrade()
     async def trade(self, ctx, *, offer: pkmn_class.Pokemon):

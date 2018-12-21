@@ -227,6 +227,11 @@ class Pokemon():
 
         return pb_raid
 
+    @property
+    def pokedex(self):
+        """:class:`str` : Pokemon Pokedex Entry"""
+        pkmn_name = str(self.name).lower()
+        return self.bot.pkmn_info[pkmn_name]['pokedex']
 
     @property
     def img_url(self):
@@ -622,6 +627,7 @@ class Pokemon():
         pokemon = cls(ctx.bot, str(match), None, shiny=shiny, alolan=alolan, form=form, gender=gender, size=size)
 
         return pokemon, match_list
+    
 
 def setup(bot):
     bot.add_cog(Pokedex(bot))
