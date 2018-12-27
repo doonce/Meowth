@@ -1102,27 +1102,6 @@ async def on_raw_reaction_add(payload):
 Admin Commands
 """
 
-# @Meowth.command(hidden=True)
-# @checks.is_owner()
-# async def new_dict(ctx):
-#     pkmn_dict = {}
-#     for pkmn in Meowth.pkmn_list:
-#         form_list = []
-#         pkmn_number = pkmn_info['pokemon_list'].index(pkmn)+1
-#         gender = True if pkmn_number in pkmnmod.Pokemon.gender_list else False
-#         shiny = True if pkmn_number in pkmnmod.Pokemon.shiny_list else False
-#         alolan = True if pkmn_number in pkmnmod.Pokemon.alolan_list else False
-#         legendary = True if pkmn_number in pkmnmod.Pokemon.lgnd_list else False
-#         mythical = True if pkmn_number in pkmnmod.Pokemon.mythical_list else False
-#         if pkmn_number in pkmnmod.Pokemon.form_dict:
-#             form_list = pkmnmod.Pokemon.form_dict[pkmn_number]
-#         none_type = type_list[pkmn_number-1]
-#         pkmn_dict[pkmn] = {"number":pkmn_number, "shiny":shiny, "legendary":legendary, "mythical":mythical, "gender":gender, "forms":{"list":form_list, "none":{"type":none_type}}}
-#         if alolan:
-#             pkmn_dict[pkmn]['forms']['alolan'] = {"type":[]}
-#     with open(os.path.join('data', 'new_pokemon.json'), 'w') as fd:
-#         json.dump(pkmn_dict, fd, indent=4, separators=(', ', ': '))
-
 @Meowth.command(hidden=True, name="eval")
 @checks.is_owner()
 async def _eval(ctx, *, body: str):

@@ -66,26 +66,35 @@ class Pokemon():
                  'alolan', 'size', 'legendary', 'mythical')
 
     def generate_lists(bot):
-        shiny_list = []
+        shiny_dict = {}
         alolan_list = []
-        gender_list = []
+        gender_dict = {}
         legendary_list = []
         mythical_list = []
         form_dict = {}
         form_list = []
         two_words = []
         for k, v in bot.pkmn_info.items():
-            if v['shiny'] == True:
-                shiny_list.append(bot.pkmn_info[k]['number'])
+            shiny_forms = []
+            gender_forms = []
+            for form in v["forms"]:
+                if form == "list":
+                    continue
+                if v["forms"][form].get("shiny", False):
+                    shiny_forms.append(form)
+                if v["forms"][form].get("gender", False):
+                    gender_forms.append(form)
+            if shiny_forms:
+                shiny_dict[v["number"]] = shiny_forms
+            if gender_forms:
+                gender_dict[v["number"]] = gender_forms
             if v['forms'].get('alolan', {}):
                 alolan_list.append(bot.pkmn_info[k]['number'])
-            if v['gender']:
-                gender_list.append(bot.pkmn_info[k]['number'])
             if v['legendary']:
                 legendary_list.append(bot.pkmn_info[k]['number'])
             if v['mythical']:
                 mythical_list.append(bot.pkmn_info[k]['number'])
-            if v['forms'].get('list', []):
+            if v['forms'].get('list', []) and v['forms'].get('list', []) != ["none"]:
                 number = v['number']
                 form_dict[number] = v['forms']['list']
             if len(k.split()) > 1:
@@ -101,12 +110,12 @@ class Pokemon():
         form_list.extend(c for c in [' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !'])
         form_dict['list'] = form_list
         form_dict['two_words'] = two_words
-        bot.shiny_list = shiny_list
         bot.alolan_list = alolan_list
-        bot.gender_list = gender_list
+        bot.gender_dict = gender_dict
         bot.legendary_list = legendary_list
         bot.mythical_list = mythical_list
         bot.form_dict = form_dict
+        bot.shiny_dict = shiny_dict
 
     def __init__(self, bot, pkmn, guild=None, **attribs):
         self.bot = bot
@@ -124,16 +133,21 @@ class Pokemon():
         self.pb_raid = None
         self.weather = attribs.get('weather', None)
         self.moveset = attribs.get('moveset', [])
+        self.size = attribs.get('size', None)
         self.form = attribs.get('form', '')
         if self.form not in bot.form_dict.get(self.id, []):
             self.form = None
-        self.shiny = attribs.get('shiny', False)
-        if self.id not in bot.shiny_list:
-            self.shiny = False
         self.alolan = attribs.get('alolan', False)
-        self.size = attribs.get('size', None)
         if self.id not in bot.alolan_list:
             self.alolan = False
+        self.shiny = attribs.get('shiny', False)
+        if self.shiny:
+            if self.id not in bot.shiny_dict:
+                self.shiny = False
+            if self.alolan and "alolan" not in bot.shiny_dict.get(self.id, []):
+                self.shiny = False
+            elif str(self.form).lower() not in bot.shiny_dict.get(self.id, []):
+                self.shiny = False
         if self.id in bot.legendary_list:
             self.legendary = True
         elif self.id in bot.mythical_list:
@@ -142,7 +156,7 @@ class Pokemon():
             self.legendary = False
             self.mythical = False
         self.gender = attribs.get('gender', None)
-        if self.id not in bot.gender_list:
+        if self.id not in bot.gender_dict:
             self.gender = None
 
     def __str__(self):
@@ -231,14 +245,19 @@ class Pokemon():
     def pokedex(self):
         """:class:`str` : Pokemon Pokedex Entry"""
         pkmn_name = str(self.name).lower()
-        return self.bot.pkmn_info[pkmn_name]['pokedex']
+        pkmn_form = str(self.form).lower()
+        if self.alolan:
+            pkmn_form = "alolan"
+        if not pkmn_form:
+            pkmn_form = "none"
+        return self.bot.pkmn_info[pkmn_name]['forms'][pkmn_form]['pokedex']
 
     @property
     def img_url(self):
         """:class:`str` : Pokemon sprite image URL"""
         pkmn_no = str(self.id).zfill(3)
         form_str = ""
-        if self.id in self.bot.gender_list:
+        if self.id in self.bot.gender_dict:
             if self.gender == 'female':
                 form_str = "_01"
             else:
@@ -246,9 +265,11 @@ class Pokemon():
         if self.form and self.id in self.bot.form_dict:
             if self.id in [201, 327, 351, 386, 413, 421, 423, 423, 487, 492]:
                 form_str = form_str + "_" + str(self.bot.form_dict[self.id].index(self.form) + 11)
+            elif self.form == "sunglasses":
+                form_str = form_str + "_00_05"
             else:
                 form_str = form_str + "_" + str(self.bot.form_dict[self.id].index(self.form) + 1).zfill(2)
-        if self.id not in self.bot.gender_list and not self.form:
+        if self.id not in self.bot.gender_dict and not self.form:
             form_str = form_str + "_00"
         if self.alolan:
             form_str = "_61"
@@ -396,6 +417,10 @@ class Pokemon():
         large = re.search(r'large|big|xl', argument, re.IGNORECASE)
         small = re.search(r'small|tiny|xs', argument, re.IGNORECASE)
         form_list = ctx.bot.form_dict['list']
+        try:
+            form_list.remove("none")
+        except ValueError:
+            pass
         one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=ctx.bot.pkmn_list[200], spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not one_char_forms:
             form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
@@ -480,6 +505,10 @@ class Pokemon():
         large = re.search(r'large|big|xl', argument, re.IGNORECASE)
         small = re.search(r'small|tiny|xs', argument, re.IGNORECASE)
         form_list = bot.form_dict['list']
+        try:
+            form_list.remove("none")
+        except ValueError:
+            pass
         one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=bot.pkmn_list[200], spinda=bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not one_char_forms:
             form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
@@ -548,6 +577,10 @@ class Pokemon():
         large = re.search(r'large|big|xl', argument, re.IGNORECASE)
         small = re.search(r'small|tiny|xs', argument, re.IGNORECASE)
         form_list = ctx.bot.form_dict['list']
+        try:
+            form_list.remove("none")
+        except ValueError:
+            pass
         one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=ctx.bot.pkmn_list[200], spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not one_char_forms:
             form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
@@ -627,7 +660,7 @@ class Pokemon():
         pokemon = cls(ctx.bot, str(match), None, shiny=shiny, alolan=alolan, form=form, gender=gender, size=size)
 
         return pokemon, match_list
-    
+
 
 def setup(bot):
     bot.add_cog(Pokedex(bot))
