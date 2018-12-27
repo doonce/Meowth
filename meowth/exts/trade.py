@@ -416,45 +416,6 @@ class Trading:
     #         await asyncio.sleep(1)
     #         await utils.safe_delete(message)
 
-    @commands.command(hidden=True)
-    async def sprite(self, ctx, *, sprite: pkmn_class.Pokemon):
-        preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
-        preview_embed.set_image(url=sprite.img_url)
-        sprite_msg = await ctx.send(embed=preview_embed)
-
-    @commands.command(hidden=True, aliases=['dex'])
-    async def pokedex(self, ctx, *, pokemon: pkmn_class.Pokemon):
-        preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
-        pokemon.gender = False
-        pokemon.size = None
-        key_needed = False
-        forms = [x.title() for x in ctx.bot.pkmn_info[pokemon.name.lower()]['forms']['list']]
-        form_list = []
-        for form in forms:
-            form_str = ""
-            form_key = ""
-            if form.lower() in ctx.bot.shiny_dict.get(pokemon.id, []):
-                key_needed = True
-                form_key += "S"
-            if form.lower() in ctx.bot.gender_dict.get(pokemon.id, []):
-                key_needed = True
-                form_key += "G"
-            if "S" in form_key or "G" in form_key:
-                form_key = f"**({form_key})**"
-            form_str = f"{form} {form_key}"
-            form_list.append(form_str.strip())
-        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {''.join(utils.get_type(self.bot, ctx.guild, pokemon.id, pokemon.form, pokemon.alolan))}", value=pokemon.pokedex, inline=False)
-        if forms:
-            preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
-        if pokemon.id in ctx.bot.legendary_list:
-            preview_embed.add_field(name="Legendary:", value=pokemon.id in ctx.bot.legendary_list, inline=True)
-        if pokemon.id in ctx.bot.mythical_list:
-            preview_embed.add_field(name="Mythical:", value=pokemon.id in ctx.bot.mythical_list, inline=True)
-        preview_embed.set_thumbnail(url=pokemon.img_url)
-        if key_needed:
-            preview_embed.set_footer(text="S = Shiny Available | G = Gender Sprites")
-        pokedex_msg = await ctx.send(embed=preview_embed)
-
     @commands.command()
     @checks.allowtrade()
     async def trade(self, ctx, *, offer: pkmn_class.Pokemon):
