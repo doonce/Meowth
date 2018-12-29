@@ -691,6 +691,8 @@ class Pokedex:
         preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {''.join(utils.get_type(self.bot, ctx.guild, pokemon.id, pokemon.form, pokemon.alolan))}", value=pokemon.pokedex, inline=False)
         if forms:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
+        if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:
+            preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"], inline=False)
         if pokemon.id in ctx.bot.legendary_list:
             preview_embed.add_field(name="Legendary:", value=pokemon.id in ctx.bot.legendary_list, inline=True)
         if pokemon.id in ctx.bot.mythical_list:
