@@ -1280,7 +1280,7 @@ class Configure:
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raid <form> <pkmn>|<gym_name>|<time_left>|<lat>,<lng>|<quick_move> / <charge_move>`'))
         await owner.send(embed=scanner_embed)
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scaners']['autoraid']).set_author(name=_("Current AutoRaid Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scanners']['autoraid']).set_author(name=_("Current AutoRaid Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             autoraidset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if autoraidset.content.lower() == 'y':
@@ -1302,7 +1302,7 @@ class Configure:
             scanner_embed.add_field(name=_('**GymhuntrBot:**'), value=_("For example: `3, 4, 5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created."))
             scanner_embed.add_field(name=_('**NovaBot and PokeAlarm:**'), value=_("For example: `3, 4, 5`\n\nIn this example, only 3+ raids will auto reported. You can customize the other levels manually in your alarm settings. "))
             await owner.send(embed=scanner_embed)
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scaners']['raidlvls'])).set_author(name=_("Current AutoRaid Levels"), icon_url=self.bot.user.avatar_url), delete_after=300)
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['raidlvls'])).set_author(name=_("Current AutoRaid Levels"), icon_url=self.bot.user.avatar_url), delete_after=300)
             raidlevel_list = []
             config_dict_temp['scanners']['raidlvls'] = []
             while True:
@@ -1329,7 +1329,7 @@ class Configure:
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raidegg <level>|<gym_name>|<time_left_start>|<lat>,<lng>`'))
         await owner.send(embed=scanner_embed)
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scaners']['autoegg']).set_author(name=_("Current AutoEgg Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scanners']['autoegg']).set_author(name=_("Current AutoEgg Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             autoeggset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if autoeggset.content.lower() == 'y':
@@ -1351,7 +1351,7 @@ class Configure:
             scanner_embed.add_field(name=_('**GymhuntrBot:**'), value=_("For example: `3, 4, 5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created."))
             scanner_embed.add_field(name=_('**NovaBot and PokeAlarm:**'), value=_("For example: `3, 4, 5`\n\nIn this example, only 3+ raids will auto reported. You can customize the other levels manually in your alarm settings. "))
             await owner.send(embed=scanner_embed)
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scaners']['egglvls'])).set_author(name=_("Current AutoEgg Levels"), icon_url=self.bot.user.avatar_url), delete_after=300)
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['egglvls'])).set_author(name=_("Current AutoEgg Levels"), icon_url=self.bot.user.avatar_url), delete_after=300)
             egglevel_list = []
             config_dict_temp['scanners']['egglvls'] = []
             while True:
@@ -1378,7 +1378,7 @@ class Configure:
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!wild <form> <pkmn>|<lat>,<lng>|<time_left>|Weather: <weather> / IV: <iv>`'))
         await owner.send(embed=scanner_embed)
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scaners']['autowild']).set_author(name=_("Current AutoWild Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scanners']['autowild']).set_author(name=_("Current AutoWild Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if wildconfigset.content.lower() == 'y':
@@ -1398,7 +1398,7 @@ class Configure:
         if config_dict_temp['scanners']['autowild']:
             scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Please enter a list of wild pokemon to block automatic reports of or reply with **N** to disable the fitler.").set_author(name='Automatic Wild Report Filter', icon_url=self.bot.user.avatar_url)
             await owner.send(embed=scanner_embed)
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scaners']['wildfilter']).set_author(name=_("Current AutoWild Filter"), icon_url=self.bot.user.avatar_url), delete_after=300)
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['wildfilter'])).set_author(name=_("Current AutoWild Filter"), icon_url=self.bot.user.avatar_url), delete_after=300)
             wildfilter_list = []
             wildfilter_names = []
             config_dict_temp['scanners']['wildfilter'] = []
