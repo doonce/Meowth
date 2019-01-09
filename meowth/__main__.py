@@ -5770,7 +5770,7 @@ async def _list(ctx):
             async def list_output(r):
                 trainer_dict = rc_d[r]['trainer_dict']
                 rchan = Meowth.get_channel(r)
-                end = now + datetime.timedelta(seconds=rc_d[r]['exp'] - time.time())
+                end = datetime.datetime.utcfromtimestamp(rc_d[r]['exp']) + datetime.timedelta(hours=guild_dict[guild.id]['configure_dict']['settings']['offset'])
                 output = ''
                 start_str = ''
                 ctx_herecount = 0
