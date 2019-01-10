@@ -304,6 +304,7 @@ class Huntr:
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         huntrexpstamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(huntrexp.split()[0]), seconds=int(huntrexp.split()[2]))).strftime('%I:%M %p')
         pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_wild)
+        nearest_stop = False
         if pokemon:
             entered_wild = pokemon.name.lower()
             pokemon.shiny = False
@@ -315,8 +316,13 @@ class Huntr:
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
         if reporter == "huntr":
             wild_gmaps_link = 'https://www.google.com/maps/dir/Current+Location/{0}'.format(wild_details.split("#")[1])
+            wild_coordinates = wild_details.split("#")[1]
         else:
             wild_gmaps_link = 'https://www.google.com/maps/dir/Current+Location/{0}'.format(wild_details)
+            wild_coordinates = wild_details
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        if gym_matching_cog:
+            nearest_stop = gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), message.guild.id)
         wild_embed = discord.Embed(title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), url=wild_gmaps_link, colour=message.guild.me.colour)
         wild_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.title(), pokemonnumber=str(wild_number), type=''.join(utils.get_type(ctx.bot, message.guild, pokemon.id, pokemon.form, pokemon.alolan))), inline=True)
         wild_embed.add_field(name='**Despawns in:**', value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=huntrexp.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
@@ -327,7 +333,10 @@ class Huntr:
         wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=ctx.bot.config['wild_despawn']), inline=True)
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         despawn = (int(huntrexp.split(' ')[0]) * 60) + int(huntrexp.split(' ')[2])
-        wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
+        if nearest_stop:
+            wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Nearest Pokestop: {nearest_stop} | Coordinates: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, nearest_stop=nearest_stop, location_details=wild_coordinates), embed=wild_embed)
+        else:
+            wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Coordinates: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_coordinates), embed=wild_embed)
         dm_dict = {}
         for trainer in ctx.bot.guild_dict[message.guild.id].get('trainers', {}):
             user = message.guild.get_member(trainer)
@@ -336,11 +345,14 @@ class Huntr:
             perms = user.permissions_in(message.channel)
             if not perms.read_messages:
                 continue
-            if wild_number in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', []):
+            if wild_number in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', []) or nearest_stop.lower() in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', []):
                 try:
                     wild_embed.remove_field(2)
                     wild_embed.remove_field(2)
-                    wilddmmsg = await user.send(content=_('Meowth! Wild {pokemon} reported by {member} in {channel}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.display_name, channel=message.channel.mention, location_details=wild_details), embed=wild_embed)
+                    if nearest_stop:
+                        wilddmmsg = await user.send(content=_('Meowth! Wild {pokemon} reported by {member} in {channel}! Nearest Pokestop: {nearest_stop} | Coordinates: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.display_name, nearest_stop=nearest_stop, channel=message.channel.mention, location_details=wild_coordinates), embed=wild_embed)
+                    else:
+                        wilddmmsg = await user.send(content=_('Meowth! Wild {pokemon} reported by {member} in {channel}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.display_name, channel=message.channel.mention, location_details=wild_details), embed=wild_embed)
                     dm_dict[user.id] = wilddmmsg.id
                 except:
                     continue

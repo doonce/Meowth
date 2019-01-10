@@ -438,7 +438,7 @@
     },
     "distance": 1.0,
     "candy": 25,
-    "evolution": "[ Rattata ] → [ Raticate ] → [ Raticate ]"
+    "evolution": "[ Rattata ] → [ Raticate ]"
   },
   "raticate": {
     "number": 20,
@@ -468,7 +468,7 @@
       }
     },
     "distance": 1.0,
-    "evolution": "[ Rattata ] → [ Raticate ] → [ Raticate ]"
+    "evolution": "[ Rattata ] → [ Raticate ]"
   },
   "spearow": {
     "number": 21,
@@ -760,7 +760,7 @@
     },
     "distance": 3.0,
     "candy": 50,
-    "evolution": "[ Sandshrew ] → [ Sandslash ] → [ Sandslash ]"
+    "evolution": "[ Sandshrew ] → [ Sandslash ]"
   },
   "sandslash": {
     "number": 28,
@@ -790,7 +790,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Sandshrew ] → [ Sandslash ] → [ Sandslash ]"
+    "evolution": "[ Sandshrew ] → [ Sandslash ]"
   },
   "nidoran\u00e2\u2122\u20ac": {
     "number": 29,
@@ -808,7 +808,8 @@
         "shiny": true,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Nidoran ] → [ Nidorina ] → [ Nidoqueen ]"
   },
   "nidorina": {
     "number": 30,
@@ -828,7 +829,8 @@
       }
     },
     "distance": 3.0,
-    "candy": 100
+    "candy": 100,
+    "evolution": "[ Nidoran ] → [ Nidorina ] → [ Nidoqueen ]"
   },
   "nidoqueen": {
     "number": 31,
@@ -848,7 +850,8 @@
         "gender": false
       }
     },
-    "distance": 3.0
+    "distance": 3.0,
+    "evolution": "[ Nidoran ] → [ Nidorina ] → [ Nidoqueen ]"
   },
   "nidoran\u00e2\u2122\u201a": {
     "number": 32,
@@ -866,7 +869,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Nidoran ] → [ Nidorina ] → [ Nidoqueen ]"
   },
   "nidorino": {
     "number": 33,
@@ -886,7 +890,8 @@
       }
     },
     "distance": 3.0,
-    "candy": 100
+    "candy": 100,
+    "evolution": "[ Nidoran ] → [ Nidorino ] → [ Nidoking ]"
   },
   "nidoking": {
     "number": 34,
@@ -906,7 +911,8 @@
         "gender": false
       }
     },
-    "distance": 3.0
+    "distance": 3.0,
+    "evolution": "[ Nidoran ] → [ Nidorino ] → [ Nidoking ]"
   },
   "clefairy": {
     "number": 35,
@@ -977,7 +983,7 @@
     },
     "distance": 3.0,
     "candy": 50,
-    "evolution": "[ Vulpix ] → [ Ninetales ] → [ Ninetales ]"
+    "evolution": "[ Vulpix ] → [ Ninetales ]"
   },
   "ninetales": {
     "number": 38,
@@ -1007,7 +1013,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Vulpix ] → [ Ninetales ] → [ Ninetales ]"
+    "evolution": "[ Vulpix ] → [ Ninetales ]"
   },
   "jigglypuff": {
     "number": 39,
@@ -1275,7 +1281,7 @@
     },
     "distance": 3.0,
     "candy": 50,
-    "evolution": "[ Diglett ] → [ Dugtrio ] → [ Dugtrio ]"
+    "evolution": "[ Diglett ] → [ Dugtrio ]"
   },
   "dugtrio": {
     "number": 51,
@@ -1305,7 +1311,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Diglett ] → [ Dugtrio ] → [ Dugtrio ]"
+    "evolution": "[ Diglett ] → [ Dugtrio ]"
   },
   "meowth": {
     "number": 52,
@@ -1335,7 +1341,7 @@
     },
     "distance": 3.0,
     "candy": 50,
-    "evolution": "[ Meowth ] → [ Persian ] → [ Persian ]"
+    "evolution": "[ Meowth ] → [ Persian ]"
   },
   "persian": {
     "number": 53,
@@ -1364,7 +1370,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Meowth ] → [ Persian ] → [ Persian ]"
+    "evolution": "[ Meowth ] → [ Persian ]"
   },
   "psyduck": {
     "number": 54,
@@ -1814,7 +1820,7 @@
     },
     "distance": 1.0,
     "candy": 25,
-    "evolution": "[ Geodude ] → [ Graveler ] → [ Graveler ] → [ Golem ] → [ Golem ]"
+    "evolution": "[ Geodude ] → [ Graveler ] → [ Golem ]"
   },
   "graveler": {
     "number": 75,
@@ -1846,7 +1852,7 @@
     },
     "distance": 1.0,
     "candy": 100,
-    "evolution": "[ Geodude ] → [ Graveler ] → [ Graveler ] → [ Golem ] → [ Golem ]"
+    "evolution": "[ Geodude ] → [ Graveler ] → [ Golem ]"
   },
   "golem": {
     "number": 76,
@@ -1877,7 +1883,7 @@
       }
     },
     "distance": 1.0,
-    "evolution": "[ Geodude ] → [ Graveler ] → [ Graveler ] → [ Golem ] → [ Golem ]"
+    "evolution": "[ Geodude ] → [ Graveler ] → [ Golem ]"
   },
   "ponyta": {
     "number": 77,
@@ -1983,7 +1989,7 @@
     },
     "distance": 3.0,
     "candy": 50,
-    "evolution": "[ Magnemite ] → [ Magneton ]"
+    "evolution": "[ Magnemite ] → [ Magneton  ] → [ Magnezone ]"
   },
   "magneton": {
     "number": 82,
@@ -2004,7 +2010,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Magnemite ] → [ Magneton ]"
+    "evolution": "[ Magnemite ] → [ Magneton  ] → [ Magnezone ]"
   },
   "farfetch'd": {
     "number": 83,
@@ -2023,7 +2029,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Farfetch'd ]"
   },
   "doduo": {
     "number": 84,
@@ -2139,7 +2146,7 @@
     },
     "distance": 3.0,
     "candy": 50,
-    "evolution": "[ Grimer ] → [ Muk ] → [ Muk ]"
+    "evolution": "[ Grimer ] → [ Muk ]"
   },
   "muk": {
     "number": 89,
@@ -2169,7 +2176,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Grimer ] → [ Muk ] → [ Muk ]"
+    "evolution": "[ Grimer ] → [ Muk ]"
   },
   "shellder": {
     "number": 90,
@@ -2584,7 +2591,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Lickitung ]"
+    "evolution": "[ Lickitung ] → [ Lickilicky ]"
   },
   "koffing": {
     "number": 109,
@@ -2708,7 +2715,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Tangela ]"
+    "evolution": "[ Tangela ] → [ Tangrowth ]"
   },
   "kangaskhan": {
     "number": 115,
@@ -2871,7 +2878,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Mime Jr. ] → [ Mr. Mime ]"
   },
   "scyther": {
     "number": 123,
@@ -3097,7 +3105,7 @@
     },
     "distance": 5.0,
     "candy": 25,
-    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon ]"
+    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon, Sylveon ]"
   },
   "vaporeon": {
     "number": 134,
@@ -3117,7 +3125,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon ]"
+    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon, Sylveon ]"
   },
   "jolteon": {
     "number": 135,
@@ -3137,7 +3145,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon ]"
+    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon, Sylveon ]"
   },
   "flareon": {
     "number": 136,
@@ -3157,7 +3165,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon ]"
+    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon, Sylveon ]"
   },
   "porygon": {
     "number": 137,
@@ -4334,7 +4342,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Aipom ]"
+    "evolution": "[ Aipom ] → [ Ambipom ]"
   },
   "sunkern": {
     "number": 191,
@@ -4396,7 +4404,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Yanma ]"
+    "evolution": "[ Yanma ] → [ Yanmega ]"
   },
   "wooper": {
     "number": 194,
@@ -4459,7 +4467,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon ]"
+    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon, Sylveon ]"
   },
   "umbreon": {
     "number": 197,
@@ -4479,7 +4487,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon ]"
+    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon, Sylveon ]"
   },
   "murkrow": {
     "number": 198,
@@ -4832,7 +4840,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Wobbuffet ] → [ Wobbuffet ]"
+    "evolution": "[ Wynaut ] → [ Wobbuffet ]"
   },
   "girafarig": {
     "number": 203,
@@ -5208,7 +5216,7 @@
     },
     "distance": 3.0,
     "candy": 50,
-    "evolution": "[ Swinub ] → [ Piloswine ]"
+    "evolution": "[ Swinub ] → [ Piloswine ] → [ Mamoswine ]"
   },
   "piloswine": {
     "number": 221,
@@ -5229,7 +5237,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Swinub ] → [ Piloswine ]"
+    "evolution": "[ Swinub ] → [ Piloswine ] → [ Mamoswine ]"
   },
   "corsola": {
     "number": 222,
@@ -6197,7 +6205,7 @@
       }
     },
     "distance": 1.0,
-    "evolution": "[ Wurmple ] → [ Silcoon, Cascoon ] → [ Beautifly ] → [ Dustox ]"
+    "evolution": "[ Wurmple ] → [ Silcoon, Cascoon ] → [ Beautifly, Dustox ]"
   },
   "dustox": {
     "number": 269,
@@ -6218,7 +6226,7 @@
       }
     },
     "distance": 1.0,
-    "evolution": "[ Wurmple ] → [ Silcoon, Cascoon ] → [ Beautifly ] → [ Dustox ]"
+    "evolution": "[ Wurmple ] → [ Silcoon, Cascoon ] → [ Beautifly, Dustox ]"
   },
   "lotad": {
     "number": 270,
@@ -6448,7 +6456,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Ralts ] → [ Kirlia ] → [ Gardevoir ]"
+    "evolution": "[ Ralts ] → [ Kirlia ] → [ Gardevoir, Gallade ]"
   },
   "kirlia": {
     "number": 281,
@@ -6469,7 +6477,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Ralts ] → [ Kirlia ] → [ Gardevoir ]"
+    "evolution": "[ Ralts ] → [ Kirlia ] → [ Gardevoir, Gallade ]"
   },
   "gardevoir": {
     "number": 282,
@@ -6490,7 +6498,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Ralts ] → [ Kirlia ] → [ Gardevoir ]"
+    "evolution": "[ Ralts ] → [ Kirlia ] → [ Gardevoir, Gallade ]"
   },
   "surskit": {
     "number": 283,
@@ -6654,7 +6662,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Nincada ] → [ Ninjask ]"
+    "evolution": "[ Nincada ] → [ Ninjask, Shedinja ]"
   },
   "ninjask": {
     "number": 291,
@@ -6675,7 +6683,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Nincada ] → [ Ninjask ]"
+    "evolution": "[ Nincada ] → [ Ninjask, Shedinja ]"
   },
   "shedinja": {
     "number": 292,
@@ -6696,7 +6704,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Nincada ] → [ Ninjask ]"
+    "evolution": "[ Nincada ] → [ Ninjask, Shedinja ]"
   },
   "whismur": {
     "number": 293,
@@ -6837,7 +6845,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Nosepass ]"
+    "evolution": "[ Nosepass ] → [ Probopass ]"
   },
   "skitty": {
     "number": 300,
@@ -7936,7 +7944,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Feebas ] → [ Milotic', 'Kmbuddydistancerequirement': 20.0}]"
+    "evolution": "[ Feebas ] → [ Milotic ]"
   },
   "milotic": {
     "number": 350,
@@ -7956,7 +7964,7 @@
       }
     },
     "distance": 5.0,
-    "evolution": "[ Feebas ] → [ Milotic', 'Kmbuddydistancerequirement': 20.0}]"
+    "evolution": "[ Feebas ] → [ Milotic ]"
   },
   "castform": {
     "number": 351,
@@ -8192,7 +8200,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Wobbuffet ] → [ Wobbuffet ]"
+    "evolution": "[ Wynaut ] → [ Wobbuffet ]"
   },
   "snorunt": {
     "number": 361,
@@ -8212,7 +8220,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Snorunt ] → [ Glalie ]"
+    "evolution": "[ Snorunt ] → [ Glalie, Froslass ]"
   },
   "glalie": {
     "number": 362,
@@ -8232,7 +8240,7 @@
       }
     },
     "distance": 3.0,
-    "evolution": "[ Snorunt ] → [ Glalie ]"
+    "evolution": "[ Snorunt ] → [ Glalie, Froslass ]"
   },
   "spheal": {
     "number": 363,
@@ -9320,7 +9328,7 @@
     },
     "distance": 5.0,
     "candy": 25,
-    "evolution": "[ Burmy ] → [ Wormadam, Wormadam, Wormadam, Mothim ] → [ Wormadam, Wormadam, Wormadam, Mothim ] → [ Wormadam, Wormadam, Wormadam, Mothim ] → [ Wormadam, Wormadam, Wormadam, Mothim ]"
+    "evolution": "[ Burmy ] → [ Wormadam, Mothim ]"
   },
   "wormadam": {
     "number": 413,
@@ -9371,7 +9379,7 @@
     },
     "distance": 1.0,
     "candy": 25,
-    "evolution": "[ Burmy ] → [ Wormadam, Wormadam, Wormadam, Mothim ] → [ Wormadam, Wormadam, Wormadam, Mothim ] → [ Wormadam, Wormadam, Wormadam, Mothim ] → [ Wormadam, Wormadam, Wormadam, Mothim ]"
+    "evolution": "[ Burmy ] → [ Wormadam, Mothim ]"
   },
   "mothim": {
     "number": 414,
@@ -9393,7 +9401,7 @@
     },
     "distance": 1.0,
     "candy": 25,
-    "evolution": "[ Burmy ] → [ Wormadam, Wormadam, Wormadam, Mothim ] → [ Wormadam, Wormadam, Wormadam, Mothim ] → [ Wormadam, Wormadam, Wormadam, Mothim ] → [ Wormadam, Wormadam, Wormadam, Mothim ]"
+    "evolution": "[ Burmy ] → [ Wormadam, Mothim ]"
   },
   "combee": {
     "number": 415,
@@ -9521,7 +9529,7 @@
     },
     "distance": 3.0,
     "candy": 25,
-    "evolution": "[ Cherubi ] → [ Cherrim, Cherrim ]"
+    "evolution": "[ Cherubi ] → [ Cherrim ]"
   },
   "cherrim": {
     "number": 421,
@@ -9559,7 +9567,7 @@
     },
     "distance": 3.0,
     "candy": 25,
-    "evolution": "[ Cherubi ] → [ Cherrim, Cherrim ]"
+    "evolution": "[ Cherubi ] → [ Cherrim ]"
   },
   "shellos": {
     "number": 422,
@@ -9597,7 +9605,7 @@
     },
     "distance": 5.0,
     "candy": 25,
-    "evolution": "[ Shellos ] → [ Gastrodon ] → [ Gastrodon ] → [ Gastrodon ]"
+    "evolution": "[ Shellos ] → [ Gastrodon ]"
   },
   "gastrodon": {
     "number": 423,
@@ -9638,7 +9646,7 @@
     },
     "distance": 5.0,
     "candy": 25,
-    "evolution": "[ Shellos ] → [ Gastrodon ] → [ Gastrodon ] → [ Gastrodon ]"
+    "evolution": "[ Shellos ] → [ Gastrodon ]"
   },
   "ambipom": {
     "number": 424,
@@ -9659,7 +9667,7 @@
     },
     "distance": 3.0,
     "candy": 25,
-    "evolution": "[ Aipom ]"
+    "evolution": "[ Aipom ] → [ Ambipom ]"
   },
   "drifloon": {
     "number": 425,
@@ -9979,7 +9987,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Mime Jr. ] → [ Mr. Mime ]"
   },
   "happiny": {
     "number": 440,
@@ -10473,7 +10482,7 @@
     },
     "distance": 3.0,
     "candy": 25,
-    "evolution": "[ Magnemite ] → [ Magneton ]"
+    "evolution": "[ Magnemite ] → [ Magneton ] → [ Magnezone ]"
   },
   "lickilicky": {
     "number": 463,
@@ -10494,7 +10503,7 @@
     },
     "distance": 3.0,
     "candy": 25,
-    "evolution": "[ Lickitung ]"
+    "evolution": "[ Lickitung ] → [ Lickilicky ]"
   },
   "rhyperior": {
     "number": 464,
@@ -10537,7 +10546,7 @@
     },
     "distance": 3.0,
     "candy": 25,
-    "evolution": "[ Tangela ]"
+    "evolution": "[ Tangela ] → [ Tangrowth ]"
   },
   "electivire": {
     "number": 466,
@@ -10623,7 +10632,7 @@
     },
     "distance": 3.0,
     "candy": 25,
-    "evolution": "[ Yanma ]"
+    "evolution": "[ Yanma ] → [ Yanmega ]"
   },
   "leafeon": {
     "number": 470,
@@ -10644,7 +10653,7 @@
     },
     "distance": 5.0,
     "candy": 25,
-    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon ]"
+    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon, Sylveon ]"
   },
   "glaceon": {
     "number": 471,
@@ -10665,7 +10674,7 @@
     },
     "distance": 5.0,
     "candy": 25,
-    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon ]"
+    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon, Sylveon ]"
   },
   "gliscor": {
     "number": 472,
@@ -10709,7 +10718,7 @@
     },
     "distance": 3.0,
     "candy": 25,
-    "evolution": "[ Swinub ] → [ Piloswine ]"
+    "evolution": "[ Swinub ] → [ Piloswine ] → [ Mamoswine ]"
   },
   "porygon-z": {
     "number": 474,
@@ -10750,7 +10759,7 @@
     },
     "distance": 5.0,
     "candy": 25,
-    "evolution": "[ Ralts ] → [ Kirlia ] → [ Gardevoir ]"
+    "evolution": "[ Ralts ] → [ Kirlia ] → [ Gardevoir, Gallade ]"
   },
   "probopass": {
     "number": 476,
@@ -10772,7 +10781,7 @@
     },
     "distance": 3.0,
     "candy": 25,
-    "evolution": "[ Nosepass ]"
+    "evolution": "[ Nosepass ] → [ Probopass ]"
   },
   "dusknoir": {
     "number": 477,
@@ -10815,7 +10824,7 @@
     },
     "distance": 3.0,
     "candy": 25,
-    "evolution": "[ Snorunt ] → [ Glalie ]"
+    "evolution": "[ Snorunt ] → [ Glalie, Froslass ]"
   },
   "rotom": {
     "number": 479,
@@ -11228,7 +11237,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Victini ]"
   },
   "snivy": {
     "number": 495,
@@ -11244,7 +11254,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Snivy ] → [ Servine ] → [ Serperior ]"
   },
   "servine": {
     "number": 496,
@@ -11260,7 +11271,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Snivy ] → [ Servine ] → [ Serperior ]"
   },
   "serperior": {
     "number": 497,
@@ -11276,7 +11288,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Snivy ] → [ Servine ] → [ Serperior ]"
   },
   "tepig": {
     "number": 498,
@@ -11292,7 +11305,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tepig ] → [ Pignite ] → [ Emboar ]"
   },
   "pignite": {
     "number": 499,
@@ -11309,7 +11323,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tepig ] → [ Pignite ] → [ Emboar ]"
   },
   "emboar": {
     "number": 500,
@@ -11326,7 +11341,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tepig ] → [ Pignite ] → [ Emboar ]"
   },
   "oshawott": {
     "number": 501,
@@ -11342,7 +11358,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Oshawott ] → [ Dewott ] → [ Samurott ]"
   },
   "dewott": {
     "number": 502,
@@ -11358,7 +11375,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Oshawott ] → [ Dewott ] → [ Samurott ]"
   },
   "samurott": {
     "number": 503,
@@ -11374,7 +11392,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Oshawott ] → [ Dewott ] → [ Samurott ]"
   },
   "patrat": {
     "number": 504,
@@ -11390,7 +11409,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Patrat ] → [ Watchog ]"
   },
   "watchog": {
     "number": 505,
@@ -11406,7 +11426,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Patrat ] → [ Watchog ]"
   },
   "lillipup": {
     "number": 506,
@@ -11422,7 +11443,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Lillipup ] → [ Herdier ] → [ Stoutland ]"
   },
   "herdier": {
     "number": 507,
@@ -11438,7 +11460,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Lillipup ] → [ Herdier ] → [ Stoutland ]"
   },
   "stoutland": {
     "number": 508,
@@ -11454,7 +11477,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Lillipup ] → [ Herdier ] → [ Stoutland ]"
   },
   "purrloin": {
     "number": 509,
@@ -11470,7 +11494,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Purrloin ] → [ Liepard ]"
   },
   "liepard": {
     "number": 510,
@@ -11486,7 +11511,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Purrloin ] → [ Liepard ]"
   },
   "pansage": {
     "number": 511,
@@ -11502,7 +11528,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pansage ] → [ Simisage ]"
   },
   "simisage": {
     "number": 512,
@@ -11518,7 +11545,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pansage ] → [ Simisage ]"
   },
   "pansear": {
     "number": 513,
@@ -11534,7 +11562,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pansear ] → [ Simisear ]"
   },
   "simisear": {
     "number": 514,
@@ -11550,7 +11579,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pansear ] → [ Simisear ]"
   },
   "panpour": {
     "number": 515,
@@ -11566,7 +11596,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Panpour ] → [ Simipour ]"
   },
   "simipour": {
     "number": 516,
@@ -11582,7 +11613,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Panpour ] → [ Simipour ]"
   },
   "munna": {
     "number": 517,
@@ -11598,7 +11630,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Munna ] → [ Musharna ]"
   },
   "musharna": {
     "number": 518,
@@ -11614,7 +11647,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Munna ] → [ Musharna ]"
   },
   "pidove": {
     "number": 519,
@@ -11631,7 +11665,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pidove ] → [ Tranquill ] → [ Unfezant ]"
   },
   "tranquill": {
     "number": 520,
@@ -11648,7 +11683,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pidove ] → [ Tranquill ] → [ Unfezant ]"
   },
   "unfezant": {
     "number": 521,
@@ -11665,7 +11701,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pidove ] → [ Tranquill ] → [ Unfezant ]"
   },
   "blitzle": {
     "number": 522,
@@ -11681,7 +11718,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Blitzle ] → [ Zebstrika ]"
   },
   "zebstrika": {
     "number": 523,
@@ -11697,7 +11735,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Snivy ] → [ Servine ] → [ Serperior ]"
   },
   "roggenrola": {
     "number": 524,
@@ -11713,7 +11752,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Roggenrola ] → [ Boldore ] → [ Gigalith ]"
   },
   "boldore": {
     "number": 525,
@@ -11729,7 +11769,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Roggenrola ] → [ Boldore ] → [ Gigalith ]"
   },
   "gigalith": {
     "number": 526,
@@ -11745,7 +11786,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Roggenrola ] → [ Boldore ] → [ Gigalith ]"
   },
   "woobat": {
     "number": 527,
@@ -11762,7 +11804,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Woobat ] → [ Swoobat ]"
   },
   "swoobat": {
     "number": 528,
@@ -11779,7 +11822,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Woobat ] → [ Swoobat ]"
   },
   "drilbur": {
     "number": 529,
@@ -11795,7 +11839,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Drilbur ] → [ Excadrill ]"
   },
   "excadrill": {
     "number": 530,
@@ -11812,7 +11857,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Drilbur ] → [ Excadrill ]"
   },
   "audino": {
     "number": 531,
@@ -11828,7 +11874,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Audino ]"
   },
   "timburr": {
     "number": 532,
@@ -11844,7 +11891,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Timburr ] → [ Gurdurr ] → [ Conkeldurr ]"
   },
   "gurdurr": {
     "number": 533,
@@ -11860,7 +11908,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Timburr ] → [ Gurdurr ] → [ Conkeldurr ]"
   },
   "conkeldurr": {
     "number": 534,
@@ -11876,7 +11925,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Timburr ] → [ Gurdurr ] → [ Conkeldurr ]"
   },
   "tympole": {
     "number": 535,
@@ -11892,7 +11942,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tympole ] → [ Palpitoad ] → [ Seismitoad ]"
   },
   "palpitoad": {
     "number": 536,
@@ -11909,7 +11960,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tympole ] → [ Palpitoad ] → [ Seismitoad ]"
   },
   "seismitoad": {
     "number": 537,
@@ -11926,7 +11978,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tympole ] → [ Palpitoad ] → [ Seismitoad ]"
   },
   "throh": {
     "number": 538,
@@ -11942,7 +11995,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Throh ]"
   },
   "sawk": {
     "number": 539,
@@ -11958,7 +12012,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Sawk ]"
   },
   "sewaddle": {
     "number": 540,
@@ -11975,7 +12030,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Sewaddle ] → [ Swadloon ] → [ Leavanny ]"
   },
   "swadloon": {
     "number": 541,
@@ -11992,7 +12048,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Sewaddle ] → [ Swadloon ] → [ Leavanny ]"
   },
   "leavanny": {
     "number": 542,
@@ -12009,7 +12066,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Sewaddle ] → [ Swadloon ] → [ Leavanny ]"
   },
   "venipede": {
     "number": 543,
@@ -12026,7 +12084,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Venipede ] → [ Whirlipede ] → [ Scolipede ]"
   },
   "whirlipede": {
     "number": 544,
@@ -12043,7 +12102,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Venipede ] → [ Whirlipede ] → [ Scolipede ]"
   },
   "scolipede": {
     "number": 545,
@@ -12060,7 +12120,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Venipede ] → [ Whirlipede ] → [ Scolipede ]"
   },
   "cottonee": {
     "number": 546,
@@ -12077,7 +12138,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cotonee ] → [ Whimsicott ]"
   },
   "whimsicott": {
     "number": 547,
@@ -12094,7 +12156,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cotonee ] → [ Whimsicott ]"
   },
   "petilil": {
     "number": 548,
@@ -12110,7 +12173,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Petilil ] → [ Lilligant ]"
   },
   "lilligant": {
     "number": 549,
@@ -12126,7 +12190,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Petilil ] → [ Lilligant ]"
   },
   "basculin": {
     "number": 550,
@@ -12158,7 +12223,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Basculin ]"
   },
   "sandile": {
     "number": 551,
@@ -12175,7 +12241,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Sandile ] → [ Krokorok ] → [ Krookodile ]"
   },
   "krokorok": {
     "number": 552,
@@ -12192,7 +12259,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Sandile ] → [ Krokorok ] → [ Krookodile ]"
   },
   "krookodile": {
     "number": 553,
@@ -12209,7 +12277,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Sandile ] → [ Krokorok ] → [ Krookodile ]"
   },
   "darumaka": {
     "number": 554,
@@ -12225,7 +12294,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Darumaka ] → [ Darmanitan ]"
   },
   "darmanitan": {
     "number": 555,
@@ -12258,7 +12328,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Darumaka ] → [ Darmanitan ]"
   },
   "maractus": {
     "number": 556,
@@ -12274,7 +12345,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Maractus ]"
   },
   "dwebble": {
     "number": 557,
@@ -12291,7 +12363,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Dwebble ] → [ Crustle ]"
   },
   "crustle": {
     "number": 558,
@@ -12308,7 +12381,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Dwebble ] → [ Crustle ]"
   },
   "scraggy": {
     "number": 559,
@@ -12325,7 +12399,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Scraggy ] → [ Scrafty ]"
   },
   "scrafty": {
     "number": 560,
@@ -12342,7 +12417,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Scraggy ] → [ Scrafty ]"
   },
   "sigilyph": {
     "number": 561,
@@ -12359,7 +12435,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Sigilyph ]"
   },
   "yamask": {
     "number": 562,
@@ -12375,7 +12452,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Yamask ] → [ Cofagrigus ]"
   },
   "cofagrigus": {
     "number": 563,
@@ -12391,7 +12469,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Yamask ] → [ Cofagrigus ]"
   },
   "tirtouga": {
     "number": 564,
@@ -12408,7 +12487,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tirtouga ] → [ Carracosta ]"
   },
   "carracosta": {
     "number": 565,
@@ -12425,7 +12505,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tirtouga ] → [ Carracosta ]"
   },
   "archen": {
     "number": 566,
@@ -12442,7 +12523,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Archen ] → [ Archeops ]"
   },
   "archeops": {
     "number": 567,
@@ -12459,7 +12541,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Archen ] → [ Archeops ]"
   },
   "trubbish": {
     "number": 568,
@@ -12475,7 +12558,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Trubbish ] → [ Garbodor ]"
   },
   "garbodor": {
     "number": 569,
@@ -12491,7 +12575,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Trubbish ] → [ Garbodor ]"
   },
   "zorua": {
     "number": 570,
@@ -12507,7 +12592,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Zorua ] → [ Zoroark ]"
   },
   "zoroark": {
     "number": 571,
@@ -12523,7 +12609,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Zorua ] → [ Zoroark ]"
   },
   "minccino": {
     "number": 572,
@@ -12539,7 +12626,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Minccino ] → [ Cinccino ]"
   },
   "cinccino": {
     "number": 573,
@@ -12555,7 +12643,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Minccino ] → [ Cinccino ]"
   },
   "gothita": {
     "number": 574,
@@ -12571,7 +12660,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Gothita ] → [ Gothorita ] → [ Gothitelle ]"
   },
   "gothorita": {
     "number": 575,
@@ -12587,7 +12677,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Gothita ] → [ Gothorita ] → [ Gothitelle ]"
   },
   "gothitelle": {
     "number": 576,
@@ -12603,7 +12694,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Gothita ] → [ Gothorita ] → [ Gothitelle ]"
   },
   "solosis": {
     "number": 577,
@@ -12619,7 +12711,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Solosis ] → [ Duosion ] → [ Reuniclus ]"
   },
   "duosion": {
     "number": 578,
@@ -12635,7 +12728,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Solosis ] → [ Duosion ] → [ Reuniclus ]"
   },
   "reuniclus": {
     "number": 579,
@@ -12651,7 +12745,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Solosis ] → [ Duosion ] → [ Reuniclus ]"
   },
   "ducklett": {
     "number": 580,
@@ -12668,7 +12763,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Ducklett ] → [ Swanna ]"
   },
   "swanna": {
     "number": 581,
@@ -12685,7 +12781,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Ducklett ] → [ Swanna ]"
   },
   "vanillite": {
     "number": 582,
@@ -12701,7 +12798,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Vanillite ] → [ Vanillish ] → [ Vanilluxe ]"
   },
   "vanillish": {
     "number": 583,
@@ -12717,7 +12815,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Vanillite ] → [ Vanillish ] → [ Vanilluxe ]"
   },
   "vanilluxe": {
     "number": 584,
@@ -12733,7 +12832,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Vanillite ] → [ Vanillish ] → [ Vanilluxe ]"
   },
   "deerling": {
     "number": 585,
@@ -12786,7 +12886,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Deerling ] → [ Sawsbuck ]"
   },
   "sawsbuck": {
     "number": 586,
@@ -12839,7 +12940,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Deerling ] → [ Sawsbuck ]"
   },
   "emolga": {
     "number": 587,
@@ -12856,7 +12958,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Emolga ]"
   },
   "karrablast": {
     "number": 588,
@@ -12872,7 +12975,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Karrablast ] → [ Escavalier ]"
   },
   "escavalier": {
     "number": 589,
@@ -12889,7 +12993,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Karrablast ] → [ Escavalier ]"
   },
   "foongus": {
     "number": 590,
@@ -12906,7 +13011,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Foongus ] → [ Amoonguss ]"
   },
   "amoonguss": {
     "number": 591,
@@ -12923,7 +13029,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Foongus ] → [ Amoonguss ]"
   },
   "frillish": {
     "number": 592,
@@ -12940,7 +13047,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Frillish ] → [ Jellicent ]"
   },
   "jellicent": {
     "number": 593,
@@ -12957,7 +13065,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Frillish ] → [ Jellicent ]"
   },
   "alomomola": {
     "number": 594,
@@ -12973,7 +13082,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Alomomola ]"
   },
   "joltik": {
     "number": 595,
@@ -12990,7 +13100,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Joltik ] → [ Galvantula ]"
   },
   "galvantula": {
     "number": 596,
@@ -13007,7 +13118,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Joltik ] → [ Galvantula ]"
   },
   "ferroseed": {
     "number": 597,
@@ -13024,7 +13136,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Ferroseed ] → [ Ferrothorn ]"
   },
   "ferrothorn": {
     "number": 598,
@@ -13041,7 +13154,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Ferroseed ] → [ Ferrothorn ]"
   },
   "klink": {
     "number": 599,
@@ -13057,7 +13171,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Klink ] → [ Klang ] → [ Klinklang ]"
   },
   "klang": {
     "number": 600,
@@ -13073,7 +13188,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Klink ] → [ Klang ] → [ Klinklang ]"
   },
   "klinklang": {
     "number": 601,
@@ -13089,7 +13205,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Klink ] → [ Klang ] → [ Klinklang ]"
   },
   "tynamo": {
     "number": 602,
@@ -13105,7 +13222,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tynamo ] → [ Eelektrik ] → [ Eelektross ]"
   },
   "eelektrik": {
     "number": 603,
@@ -13121,7 +13239,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tynamo ] → [ Eelektrik ] → [ Eelektross ]"
   },
   "eelektross": {
     "number": 604,
@@ -13137,7 +13256,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tynamo ] → [ Eelektrik ] → [ Eelektross ]"
   },
   "elgyem": {
     "number": 605,
@@ -13153,7 +13273,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Elgyem ] → [ Beheeyem ]"
   },
   "beheeyem": {
     "number": 606,
@@ -13169,7 +13290,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Elgyem ] → [ Beheeyem ]"
   },
   "litwick": {
     "number": 607,
@@ -13186,7 +13308,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Litwick ] → [ Lampent ] → [ Chandelure ]"
   },
   "lampent": {
     "number": 608,
@@ -13203,7 +13326,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Litwick ] → [ Lampent ] → [ Chandelure ]"
   },
   "chandelure": {
     "number": 609,
@@ -13220,7 +13344,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Litwick ] → [ Lampent ] → [ Chandelure ]"
   },
   "axew": {
     "number": 610,
@@ -13236,7 +13361,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Axew ] → [ Frxure ] → [ Haxorus ]"
   },
   "fraxure": {
     "number": 611,
@@ -13252,7 +13378,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Axew ] → [ Frxure ] → [ Haxorus ]"
   },
   "haxorus": {
     "number": 612,
@@ -13268,7 +13395,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Axew ] → [ Frxure ] → [ Haxorus ]"
   },
   "cubchoo": {
     "number": 613,
@@ -13284,7 +13412,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cubchoo ] → [ Beartic ]"
   },
   "beartic": {
     "number": 614,
@@ -13300,7 +13429,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cubchoo ] → [ Beartic ]"
   },
   "cryogonal": {
     "number": 615,
@@ -13316,7 +13446,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cryogonal ]"
   },
   "shelmet": {
     "number": 616,
@@ -13332,7 +13463,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Shelmet ] → [ Accelgor ]"
   },
   "accelgor": {
     "number": 617,
@@ -13348,7 +13480,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Shelmet ] → [ Accelgor ]"
   },
   "stunfisk": {
     "number": 618,
@@ -13365,7 +13498,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Stunfisk ]"
   },
   "mienfoo": {
     "number": 619,
@@ -13381,7 +13515,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Mienfoo ] → [ Mienshao ]"
   },
   "mienshao": {
     "number": 620,
@@ -13397,7 +13532,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Mienfoo ] → [ Mienshao ]"
   },
   "druddigon": {
     "number": 621,
@@ -13413,7 +13549,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Druddigon ]"
   },
   "golett": {
     "number": 622,
@@ -13430,7 +13567,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Golett ] → [ Golurk ]"
   },
   "golurk": {
     "number": 623,
@@ -13447,7 +13585,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Golett ] → [ Golurk ]"
   },
   "pawniard": {
     "number": 624,
@@ -13464,7 +13603,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pawniard ] → [ Bisharp ]"
   },
   "bisharp": {
     "number": 625,
@@ -13481,7 +13621,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pawniard ] → [ Bisharp ]"
   },
   "bouffalant": {
     "number": 626,
@@ -13497,7 +13638,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Bouffalant ]"
   },
   "rufflet": {
     "number": 627,
@@ -13514,7 +13656,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Rufflet ] → [ Braviary ]"
   },
   "braviary": {
     "number": 628,
@@ -13531,7 +13674,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Rufflet ] → [ Braviary ]"
   },
   "vullaby": {
     "number": 629,
@@ -13548,7 +13692,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Vullaby ] → [ Mandibuzz ]"
   },
   "mandibuzz": {
     "number": 630,
@@ -13565,7 +13710,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Vullaby ] → [ Mandibuzz ]"
   },
   "heatmor": {
     "number": 631,
@@ -13581,7 +13727,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Heatmor ]"
   },
   "durant": {
     "number": 632,
@@ -13598,7 +13745,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Durant ]"
   },
   "deino": {
     "number": 633,
@@ -13615,7 +13763,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Deino ] → [ Zweilous ] → [ Hydreigon ]"
   },
   "zweilous": {
     "number": 634,
@@ -13632,7 +13781,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Deino ] → [ Zweilous ] → [ Hydreigon ]"
   },
   "hydreigon": {
     "number": 635,
@@ -13649,7 +13799,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Deino ] → [ Zweilous ] → [ Hydreigon ]"
   },
   "larvesta": {
     "number": 636,
@@ -13666,7 +13817,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Larvesta ] → [ Volcarona ]"
   },
   "volcarona": {
     "number": 637,
@@ -13683,7 +13835,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Larvesta ] → [ Volcarona ]"
   },
   "cobalion": {
     "number": 638,
@@ -13700,7 +13853,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cobalion ]"
   },
   "terrakion": {
     "number": 639,
@@ -13717,7 +13871,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Terrakion ]"
   },
   "virizion": {
     "number": 640,
@@ -13734,7 +13889,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Virizion ]"
   },
   "tornadus": {
     "number": 641,
@@ -13766,7 +13922,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tornadus ]"
   },
   "thundurus": {
     "number": 642,
@@ -13801,7 +13958,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Thundurus ]"
   },
   "reshiram": {
     "number": 643,
@@ -13818,7 +13976,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Reshiram ]"
   },
   "zekrom": {
     "number": 644,
@@ -13835,7 +13994,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Zekrom ]"
   },
   "landorus": {
     "number": 645,
@@ -13870,7 +14030,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Landorus ]"
   },
   "kyurem": {
     "number": 646,
@@ -13905,7 +14066,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Kyurem ]"
   },
   "keldeo": {
     "number": 647,
@@ -13940,7 +14102,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Kaldeo ]"
   },
   "meloetta": {
     "number": 648,
@@ -13975,7 +14138,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Meloetta ]"
   },
   "genesect": {
     "number": 649,
@@ -13992,7 +14156,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Genesect ]"
   },
   "chespin": {
     "number": 650,
@@ -14008,7 +14173,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Chespin ] → [ Quilladin ] → [ Chesnaught ]"
   },
   "quilladin": {
     "number": 651,
@@ -14024,7 +14190,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Chespin ] → [ Quilladin ] → [ Chesnaught ]"
   },
   "chesnaught": {
     "number": 652,
@@ -14041,7 +14208,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Chespin ] → [ Quilladin ] → [ Chesnaught ]"
   },
   "fennekin": {
     "number": 653,
@@ -14057,7 +14225,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Fennekin ] → [ Braixen ] → [ Delphox ]"
   },
   "braixen": {
     "number": 654,
@@ -14073,7 +14242,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Fennekin ] → [ Braixen ] → [ Delphox ]"
   },
   "delphox": {
     "number": 655,
@@ -14090,7 +14260,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Fennekin ] → [ Braixen ] → [ Delphox ]"
   },
   "froakie": {
     "number": 656,
@@ -14106,7 +14277,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Froakie ] → [ Frogadier ] → [ Greninja ]"
   },
   "frogadier": {
     "number": 657,
@@ -14122,7 +14294,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Froakie ] → [ Frogadier ] → [ Greninja ]"
   },
   "greninja": {
     "number": 658,
@@ -14148,7 +14321,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Froakie ] → [ Frogadier ] → [ Greninja ]"
   },
   "bunnelby": {
     "number": 659,
@@ -14164,7 +14338,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Bunnelby ] → [ Diggersby ]"
   },
   "diggersby": {
     "number": 660,
@@ -14181,7 +14356,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Bunnelby ] → [ Diggersby ]"
   },
   "fletchling": {
     "number": 661,
@@ -14198,7 +14374,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Fletchling ] → [ Fletchinder ] → [ Talonflame ]"
   },
   "fletchinder": {
     "number": 662,
@@ -14215,7 +14392,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Fletchling ] → [ Fletchinder ] → [ Talonflame ]"
   },
   "talonflame": {
     "number": 663,
@@ -14232,7 +14410,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Fletchling ] → [ Fletchinder ] → [ Talonflame ]"
   },
   "scatterbug": {
     "number": 664,
@@ -14248,7 +14427,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Scatterbug ] → [ Spewpa ] → [ Vivillon ]"
   },
   "spewpa": {
     "number": 665,
@@ -14264,7 +14444,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Scatterbug ] → [ Spewpa ] → [ Vivillon ]"
   },
   "vivillon": {
     "number": 666,
@@ -14281,7 +14462,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Scatterbug ] → [ Spewpa ] → [ Vivillon ]"
   },
   "litleo": {
     "number": 667,
@@ -14298,7 +14480,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Litleo ] → [ Pyroar ]"
   },
   "pyroar": {
     "number": 668,
@@ -14315,7 +14498,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Litleo ] → [ Pyroar ]"
   },
   "flab\u00c3\u00a9b\u00c3\u00a9": {
     "number": 669,
@@ -14371,7 +14555,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Flabébé ] → [ Floette ] → [ Florges ]"
   },
   "floette": {
     "number": 670,
@@ -14427,7 +14612,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Flabébé ] → [ Floette ] → [ Florges ]"
   },
   "florges": {
     "number": 671,
@@ -14483,7 +14669,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Flabébé ] → [ Floette ] → [ Florges ]"
   },
   "skiddo": {
     "number": 672,
@@ -14499,7 +14686,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Skiddo ] → [ Gogoat ]"
   },
   "gogoat": {
     "number": 673,
@@ -14515,7 +14703,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Skiddo ] → [ Gogoat ]"
   },
   "pancham": {
     "number": 674,
@@ -14531,7 +14720,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pancham ] → [ Pangoro ]"
   },
   "pangoro": {
     "number": 675,
@@ -14548,7 +14738,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pancham ] → [ Pangoro ]"
   },
   "furfrou": {
     "number": 676,
@@ -14644,7 +14835,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Furfrou ]"
   },
   "espurr": {
     "number": 677,
@@ -14660,7 +14852,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Espurr ] → [ Meowstic ]"
   },
   "meowstic": {
     "number": 678,
@@ -14676,7 +14869,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Espurr ] → [ Meowstic ]"
   },
   "honedge": {
     "number": 679,
@@ -14693,7 +14887,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Honedge ] → [ Doublade ] → [ Aegislash ]"
   },
   "doublade": {
     "number": 680,
@@ -14710,7 +14905,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Honedge ] → [ Doublade ] → [ Aegislash ]"
   },
   "aegislash": {
     "number": 681,
@@ -14745,7 +14941,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Honedge ] → [ Doublade ] → [ Aegislash ]"
   },
   "spritzee": {
     "number": 682,
@@ -14761,7 +14958,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Spritzee ] → [ Aromatisse ]"
   },
   "aromatisse": {
     "number": 683,
@@ -14777,7 +14975,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Spritzee ] → [ Aromatisse ]"
   },
   "swirlix": {
     "number": 684,
@@ -14793,7 +14992,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Swirlix ] → [ Slurpuff ]"
   },
   "slurpuff": {
     "number": 685,
@@ -14809,7 +15009,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Swirlix ] → [ Slurpuff ]"
   },
   "inkay": {
     "number": 686,
@@ -14826,7 +15027,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Inkay ] → [ Malamar ]"
   },
   "malamar": {
     "number": 687,
@@ -14843,7 +15045,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Inkay ] → [ Malamar ]"
   },
   "binacle": {
     "number": 688,
@@ -14860,7 +15063,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Binacle ] → [ Barbaracle ]"
   },
   "barbaracle": {
     "number": 689,
@@ -14877,7 +15081,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Binacle ] → [ Barbaracle ]"
   },
   "skrelp": {
     "number": 690,
@@ -14894,7 +15099,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Skrelp ] → [ Dragalge ]"
   },
   "dragalge": {
     "number": 691,
@@ -14911,7 +15117,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Skrelp ] → [ Dragalge ]"
   },
   "clauncher": {
     "number": 692,
@@ -14927,7 +15134,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Clauncher ] → [ Clawitzer ]"
   },
   "clawitzer": {
     "number": 693,
@@ -14943,7 +15151,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Clauncher ] → [ Clawitzer ]"
   },
   "helioptile": {
     "number": 694,
@@ -14960,7 +15169,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Helioptile ] → [ Heliolisk ]"
   },
   "heliolisk": {
     "number": 695,
@@ -14977,7 +15187,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Helioptile ] → [ Heliolisk ]"
   },
   "tyrunt": {
     "number": 696,
@@ -14994,7 +15205,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tyrunt ] → [ Tyrantrum ]"
   },
   "tyrantrum": {
     "number": 697,
@@ -15011,7 +15223,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tyrunt ] → [ Tyrantrum ]"
   },
   "amaura": {
     "number": 698,
@@ -15028,7 +15241,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Amaura ] → [ Aurorus ]"
   },
   "aurorus": {
     "number": 699,
@@ -15045,7 +15259,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Amaura ] → [ Aurorus ]"
   },
   "sylveon": {
     "number": 700,
@@ -15061,7 +15276,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Eevee ] → [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon, Sylveon ]"
   },
   "hawlucha": {
     "number": 701,
@@ -15078,7 +15294,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Hawlucha ]"
   },
   "dedenne": {
     "number": 702,
@@ -15095,7 +15312,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Dedenne ]"
   },
   "carbink": {
     "number": 703,
@@ -15112,7 +15330,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Carbink ]"
   },
   "goomy": {
     "number": 704,
@@ -15128,7 +15347,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Goomy ] → [ Sliggoo ] → [ Goodra ]"
   },
   "sliggoo": {
     "number": 705,
@@ -15144,7 +15364,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Goomy ] → [ Sliggoo ] → [ Goodra ]"
   },
   "goodra": {
     "number": 706,
@@ -15160,7 +15381,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Goomy ] → [ Sliggoo ] → [ Goodra ]"
   },
   "klefki": {
     "number": 707,
@@ -15177,7 +15399,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Klefkir ]"
   },
   "phantump": {
     "number": 708,
@@ -15194,7 +15417,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Phantump ] → [ Trevenant ]"
   },
   "trevenant": {
     "number": 709,
@@ -15211,7 +15435,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Phantump ] → [ Trevenant ]"
   },
   "pumpkaboo": {
     "number": 710,
@@ -15228,7 +15453,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pumpkaboo ] → [ Gourgeist ]"
   },
   "gourgeist": {
     "number": 711,
@@ -15245,7 +15471,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pumpkaboo ] → [ Gourgeist ]"
   },
   "bergmite": {
     "number": 712,
@@ -15261,7 +15488,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Bergmite ] → [ Avalugg ]"
   },
   "avalugg": {
     "number": 713,
@@ -15277,7 +15505,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Bergmite ] → [ Avalugg ]"
   },
   "noibat": {
     "number": 714,
@@ -15294,7 +15523,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Noibat ] → [ Noivern ]"
   },
   "noivern": {
     "number": 715,
@@ -15311,7 +15541,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Noibat ] → [ Noivern ]"
   },
   "xerneas": {
     "number": 716,
@@ -15343,7 +15574,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Xerneas ]"
   },
   "yveltal": {
     "number": 717,
@@ -15360,7 +15592,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Yveltal ]"
   },
   "zygarde": {
     "number": 718,
@@ -15404,7 +15637,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Zygarde ]"
   },
   "diancie": {
     "number": 719,
@@ -15421,7 +15655,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Diancie ]"
   },
   "hoopa": {
     "number": 720,
@@ -15456,7 +15691,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Hoopa ]"
   },
   "volcanion": {
     "number": 721,
@@ -15473,7 +15709,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Volcanion ]"
   },
   "rowlet": {
     "number": 722,
@@ -15490,7 +15727,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Rowlet ] → [ Dartrix ] → [ Decidueye ]"
   },
   "dartrix": {
     "number": 723,
@@ -15507,7 +15745,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Rowlet ] → [ Dartrix ] → [ Decidueye ]"
   },
   "decidueye": {
     "number": 724,
@@ -15524,7 +15763,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Rowlet ] → [ Dartrix ] → [ Decidueye ]"
   },
   "litten": {
     "number": 725,
@@ -15540,7 +15780,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Litten ] → [ Torracat ] → [ Incineroar ]"
   },
   "torracat": {
     "number": 726,
@@ -15556,7 +15797,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Litten ] → [ Torracat ] → [ Incineroar ]"
   },
   "incineroar": {
     "number": 727,
@@ -15573,7 +15815,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Litten ] → [ Torracat ] → [ Incineroar ]"
   },
   "popplio": {
     "number": 728,
@@ -15589,7 +15832,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Popplio ] → [ Brionne ] → [ Primarina ]"
   },
   "brionne": {
     "number": 729,
@@ -15605,7 +15849,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Popplio ] → [ Brionne ] → [ Primarina ]"
   },
   "primarina": {
     "number": 730,
@@ -15622,7 +15867,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Popplio ] → [ Brionne ] → [ Primarina ]"
   },
   "pikipek": {
     "number": 731,
@@ -15639,7 +15885,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pipipek ] → [ Trumbeak ] → [ Toucannon ]"
   },
   "trumbeak": {
     "number": 732,
@@ -15656,7 +15903,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pipipek ] → [ Trumbeak ] → [ Toucannon ]"
   },
   "toucannon": {
     "number": 733,
@@ -15673,7 +15921,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pipipek ] → [ Trumbeak ] → [ Toucannon ]"
   },
   "yungoos": {
     "number": 734,
@@ -15689,7 +15938,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Yungoos ] → [ Gumshoos ]"
   },
   "gumshoos": {
     "number": 735,
@@ -15705,7 +15955,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Yungoos ] → [ Gumshoos ]"
   },
   "grubbin": {
     "number": 736,
@@ -15721,7 +15972,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Grubbin ] → [ Charjabug ] → [ Vikavolt ]"
   },
   "charjabug": {
     "number": 737,
@@ -15738,7 +15990,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Grubbin ] → [ Charjabug ] → [ Vikavolt ]"
   },
   "vikavolt": {
     "number": 738,
@@ -15755,7 +16008,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Grubbin ] → [ Charjabug ] → [ Vikavolt ]"
   },
   "crabrawler": {
     "number": 739,
@@ -15771,7 +16025,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Crabrawler ] → [ Crabominable ]"
   },
   "crabominable": {
     "number": 740,
@@ -15788,7 +16043,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Crabrawler ] → [ Crabominable ]"
   },
   "oricorio": {
     "number": 741,
@@ -15841,7 +16097,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Oricorio ]"
   },
   "cutiefly": {
     "number": 742,
@@ -15858,7 +16115,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cutiefly ] → [ Ribombee ]"
   },
   "ribombee": {
     "number": 743,
@@ -15875,7 +16133,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cutiefly ] → [ Ribombee ]"
   },
   "rockruff": {
     "number": 744,
@@ -15891,7 +16150,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Rockruff ] → [ Lycanroc ]"
   },
   "lycanroc": {
     "number": 745,
@@ -15931,7 +16191,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Rockruff ] → [ Lycanroc ]"
   },
   "wishiwashi": {
     "number": 746,
@@ -15963,7 +16224,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Wishiwashi ]"
   },
   "mareanie": {
     "number": 747,
@@ -15980,7 +16242,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Mareanie ] → [ Toxapex ]"
   },
   "toxapex": {
     "number": 748,
@@ -15997,7 +16260,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Mareanie ] → [ Toxapex ]"
   },
   "mudbray": {
     "number": 749,
@@ -16013,7 +16277,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Mudbray ] → [ Mudsdale ]"
   },
   "mudsdale": {
     "number": 750,
@@ -16029,7 +16294,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Mudbray ] → [ Mudsdale ]"
   },
   "dewpider": {
     "number": 751,
@@ -16046,7 +16312,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Dewpider ] → [ Araquanid ]"
   },
   "araquanid": {
     "number": 752,
@@ -16063,7 +16330,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Dewpider ] → [ Araquanid ]"
   },
   "fomantis": {
     "number": 753,
@@ -16079,7 +16347,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Fomantis ] → [ Lurantis ]"
   },
   "lurantis": {
     "number": 754,
@@ -16095,7 +16364,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Fomantis ] → [ Lurantis ]"
   },
   "morelull": {
     "number": 755,
@@ -16112,7 +16382,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Morelull ] → [ Shiinotic ]"
   },
   "shiinotic": {
     "number": 756,
@@ -16129,7 +16400,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Morelull ] → [ Shiinotic ]"
   },
   "salandit": {
     "number": 757,
@@ -16146,7 +16418,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Salandit ] → [ Salazzle ]"
   },
   "salazzle": {
     "number": 758,
@@ -16163,7 +16436,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Salandit ] → [ Salazzle ]"
   },
   "stufful": {
     "number": 759,
@@ -16180,7 +16454,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Stufful ] → [ Bewear ]"
   },
   "bewear": {
     "number": 760,
@@ -16197,7 +16472,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Stufful ] → [ Bewear ]"
   },
   "bounsweet": {
     "number": 761,
@@ -16213,7 +16489,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Bounsweet ] → [ Steenee ] → [ Tsareena ]"
   },
   "steenee": {
     "number": 762,
@@ -16229,7 +16506,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Bounsweet ] → [ Steenee ] → [ Tsareena ]"
   },
   "tsareena": {
     "number": 763,
@@ -16245,7 +16523,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Bounsweet ] → [ Steenee ] → [ Tsareena ]"
   },
   "comfey": {
     "number": 764,
@@ -16261,7 +16540,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Comfey ]"
   },
   "oranguru": {
     "number": 765,
@@ -16278,7 +16558,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Oranguru ]"
   },
   "passimian": {
     "number": 766,
@@ -16294,7 +16575,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Passimian ]"
   },
   "wimpod": {
     "number": 767,
@@ -16311,7 +16593,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Wimpod ] → [ Golisopod ]"
   },
   "golisopod": {
     "number": 768,
@@ -16328,7 +16611,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Wimpod ] → [ Golisopod ]"
   },
   "sandygast": {
     "number": 769,
@@ -16345,7 +16629,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Sandygast ] → [ Palossand ]"
   },
   "palossand": {
     "number": 770,
@@ -16362,7 +16647,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Sandygast ] → [ Palossand ]"
   },
   "pyukumuku": {
     "number": 771,
@@ -16378,7 +16664,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pyukumuku ]"
   },
   "type: null": {
     "number": 772,
@@ -16394,7 +16681,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Type: Null ] → [ Silvally ]"
   },
   "silvally": {
     "number": 773,
@@ -16410,7 +16698,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Type: Null ] → [ Silvally ]"
   },
   "minior": {
     "number": 774,
@@ -16445,7 +16734,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Minior ]"
   },
   "komala": {
     "number": 775,
@@ -16461,7 +16751,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Komala ]"
   },
   "turtonator": {
     "number": 776,
@@ -16478,7 +16769,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Turtonator ]"
   },
   "togedemaru": {
     "number": 777,
@@ -16495,7 +16787,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Togedemaru ]"
   },
   "mimikyu": {
     "number": 778,
@@ -16530,7 +16823,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Mimikyu ]"
   },
   "bruxish": {
     "number": 779,
@@ -16547,7 +16841,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Bruxish ]"
   },
   "drampa": {
     "number": 780,
@@ -16564,7 +16859,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Drampa ]"
   },
   "dhelmise": {
     "number": 781,
@@ -16581,7 +16877,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Dhelmise ]"
   },
   "jangmo-o": {
     "number": 782,
@@ -16597,7 +16894,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Jangmo-o ] → [ Hakamo-o ] → [ Kommo-o ]"
   },
   "hakamo-o": {
     "number": 783,
@@ -16614,7 +16912,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Jangmo-o ] → [ Hakamo-o ] → [ Kommo-o ]"
   },
   "kommo-o": {
     "number": 784,
@@ -16631,7 +16930,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Jangmo-o ] → [ Hakamo-o ] → [ Kommo-o ]"
   },
   "tapu koko": {
     "number": 785,
@@ -16648,7 +16948,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tapu Koko ]"
   },
   "tapu lele": {
     "number": 786,
@@ -16665,7 +16966,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tapu Lele ]"
   },
   "tapu bulu": {
     "number": 787,
@@ -16682,7 +16984,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tapu Bulu ]"
   },
   "tapu fini": {
     "number": 788,
@@ -16699,7 +17002,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Tapu Fini ]"
   },
   "cosmog": {
     "number": 789,
@@ -16715,7 +17019,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cosmog ] → [ Cosmoem ] → [ Salgaleo, Lunala ]"
   },
   "cosmoem": {
     "number": 790,
@@ -16731,7 +17036,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cosmog ] → [ Cosmoem ] → [ Salgaleo, Lunala ]"
   },
   "solgaleo": {
     "number": 791,
@@ -16748,7 +17054,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cosmog ] → [ Cosmoem ] → [ Salgaleo, Lunala ]"
   },
   "lunala": {
     "number": 792,
@@ -16765,7 +17072,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Cosmog ] → [ Cosmoem ] → [ Salgaleo, Lunala ]"
   },
   "nihilego": {
     "number": 793,
@@ -16782,7 +17090,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Nihilego ]"
   },
   "buzzwole": {
     "number": 794,
@@ -16799,7 +17108,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Buzzwole ]"
   },
   "pheromosa": {
     "number": 795,
@@ -16816,7 +17126,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Pheromosa ]"
   },
   "xurkitree": {
     "number": 796,
@@ -16832,7 +17143,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Xurkitree ]"
   },
   "celesteela": {
     "number": 797,
@@ -16849,7 +17161,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Celesteela ]"
   },
   "kartana": {
     "number": 798,
@@ -16866,7 +17179,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Kartana ]"
   },
   "guzzlord": {
     "number": 799,
@@ -16883,7 +17197,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Guzzlord ]"
   },
   "necrozma": {
     "number": 800,
@@ -16923,7 +17238,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Necrozma ]"
   },
   "magearna": {
     "number": 801,
@@ -16949,7 +17265,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Magearna ]"
   },
   "marshadow": {
     "number": 802,
@@ -16966,7 +17283,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Marshadow ]"
   },
   "poipole": {
     "number": 803,
@@ -16982,7 +17300,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Poipole ] → [ Naganadel ]"
   },
   "naganadel": {
     "number": 804,
@@ -16999,7 +17318,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Poipole ] → [ Naganadel ]"
   },
   "stakataka": {
     "number": 805,
@@ -17016,7 +17336,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Stakataka ]"
   },
   "blacephalon": {
     "number": 806,
@@ -17033,7 +17354,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Blacephalon ]"
   },
   "zeraora": {
     "number": 807,
@@ -17049,7 +17371,8 @@
         "shiny": false,
         "gender": false
       }
-    }
+    },
+    "evolution": "[ Zeraora ]"
   },
   "meltan": {
     "number": 808,

@@ -1,6 +1,7 @@
 import os
 import json
 import asyncio
+import functools
 
 from discord.ext import commands
 
@@ -37,6 +38,15 @@ class GymMatching:
         if match:
             match = stops[match].get('alias', match)
         return (match, score)
+
+    def find_nearest_stop(self, coord, guild_id):
+        stops = self.get_stops(guild_id)
+        if not stops:
+            return None
+        stops = {k: (float(stops[k]["coordinates"].split(",")[0]), float(stops[k]["coordinates"].split(",")[1])) for k,v in stops.items()}
+        dist = lambda s, key: (float(s[0]) - float(stops[key][0])) ** 2 + \
+                              (float(s[1]) - float(stops[key][1])) ** 2
+        return min(stops, key=functools.partial(dist, coord))
 
     @commands.command(hidden=True)
     async def gym_match_test(self, ctx, gym_name):

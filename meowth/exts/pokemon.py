@@ -573,6 +573,7 @@ class Pokemon():
         large = re.search(r'large|big|xl', argument, re.IGNORECASE)
         small = re.search(r'small|tiny|xs', argument, re.IGNORECASE)
         form_list = ctx.bot.form_dict['list']
+        pokemon = False
         try:
             form_list.remove("none")
         except ValueError:
@@ -624,9 +625,12 @@ class Pokemon():
 
         for word in argument.split():
             if word.lower() in ctx.bot.pkmn_list:
-                pokemon = word
-                match_list.append(word)
-                continue
+                if pokemon:
+                    argument = argument.replace(word, '').strip()
+                else:
+                    pokemon = word
+                    match_list.append(word)
+                    continue
             if word.lower() not in ctx.bot.pkmn_list and not word.isdigit() and word.lower() not in ctx.bot.form_dict['two_words']:
                 if pokemon:
                     argument = argument.replace(word, '').strip()
@@ -648,7 +652,7 @@ class Pokemon():
         if argument.isdigit() and allow_digits:
             match = utils.get_name(ctx.bot, int(argument))
         else:
-            match = utils.get_match(ctx.bot.pkmn_list, argument)[0]
+            match = utils.get_match(ctx.bot.pkmn_list, argument.split()[0])[0]
 
         if not match:
             return None, None

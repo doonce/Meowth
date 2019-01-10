@@ -961,6 +961,8 @@ async def on_member_join(member):
 
 @Meowth.event
 async def on_message(message):
+    if "niandick" in message.content.lower():
+        await message.add_reaction("\U0001F346")
     if message.guild != None:
         raid_status = guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, None)
         if raid_status:
@@ -3479,22 +3481,20 @@ async def _exraid(ctx, location):
 
 @Meowth.command()
 @checks.allowinvite()
-async def invite(ctx):
+async def invite(ctx, *, exraid_choice: int=None):
     """Join an EX Raid.
 
     Usage: !invite"""
-    await _invite(ctx)
+    await _invite(ctx, exraid_choice)
 
-async def _invite(ctx):
+async def _invite(ctx, exraid_choice):
     bot = ctx.bot
     channel = ctx.channel
     author = ctx.author
     guild = ctx.guild
     await channel.trigger_typing()
     exraidlist = ''
-    exraid_dict = {
-
-    }
+    exraid_dict = {}
     exraidcount = 0
     rc_dict = bot.guild_dict[guild.id]['raidchannel_dict']
     for channelid in rc_dict:
