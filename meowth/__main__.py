@@ -4902,15 +4902,17 @@ async def interested(ctx, *, teamcounts: str=None):
     trainer_dict = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']
     entered_interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
     pokemon = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('pkmn_obj', None)
+    meetup = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('meetup', None)
     boss_list = []
     egglevel = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egglevel']
-    if not pokemon:
-        for boss in raid_info['raid_eggs'][egglevel]['pokemon']:
-            pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
+    if not meetup:
+        if not pokemon:
+            for boss in raid_info['raid_eggs'][egglevel]['pokemon']:
+                pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
+                boss_list.append(pokemon.name.lower())
+        else:
+            pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, pokemon)
             boss_list.append(pokemon.name.lower())
-    else:
-        pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, pokemon)
-        boss_list.append(pokemon.name.lower())
     if (not teamcounts):
         if ctx.author.id in trainer_dict:
             bluecount = str(trainer_dict[ctx.author.id]['party']['mystic']) + 'm '
@@ -5010,14 +5012,16 @@ async def coming(ctx, *, teamcounts: str=None):
     entered_interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
     egglevel = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egglevel']
     pokemon = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('pkmn_obj', None)
+    meetup = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('meetup', None)
     boss_list = []
-    if not pokemon:
-        for boss in raid_info['raid_eggs'][egglevel]['pokemon']:
-            pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
+    if not meetup:
+        if not pokemon:
+            for boss in raid_info['raid_eggs'][egglevel]['pokemon']:
+                pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
+                boss_list.append(pokemon.name.lower())
+        else:
+            pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, pokemon)
             boss_list.append(pokemon.name.lower())
-    else:
-        pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, pokemon)
-        boss_list.append(pokemon.name.lower())
     pkmn_match = None
     if teamcounts:
         if "all" in teamcounts.lower():
@@ -5122,14 +5126,16 @@ async def here(ctx, *, teamcounts: str=None):
     entered_interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
     egglevel = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egglevel']
     pokemon = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('pkmn_obj', None)
+    meetup = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('meetup', None)
     boss_list = []
-    if not pokemon:
-        for boss in raid_info['raid_eggs'][egglevel]['pokemon']:
-            pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
+    if not meetup:
+        if not pokemon:
+            for boss in raid_info['raid_eggs'][egglevel]['pokemon']:
+                pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
+                boss_list.append(pokemon.name.lower())
+        else:
+            pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, pokemon)
             boss_list.append(pokemon.name.lower())
-    else:
-        pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, pokemon)
-        boss_list.append(pokemon.name.lower())
     pkmn_match = None
     if teamcounts:
         if "all" in teamcounts.lower():
