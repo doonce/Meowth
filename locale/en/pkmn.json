@@ -3617,7 +3617,7 @@
           "Water"
         ],
         "pokedex": "Despite the smallness of its body, Totodile's jaws are very powerful. While the Pokemon may think it is just playfully nipping, its bite has enough power to cause serious injury.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -3638,7 +3638,7 @@
           "Water"
         ],
         "pokedex": "Once Croconaw has clamped its jaws on its foe, it will absolutely not let go. Because the tips of its fangs are forked back like barbed fishhooks, they become impossible to remove when they have sunk in.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -3659,7 +3659,7 @@
           "Water"
         ],
         "pokedex": "Feraligatr intimidates its foes by opening its huge mouth. In battle, it will kick the ground hard with its thick and powerful hind legs to charge at the foe at an incredible speed.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -6099,7 +6099,7 @@
           "Normal"
         ],
         "pokedex": "The hair on Zigzagoon's back is bristly. It rubs the hard back hair against trees to leave its territorial markings. This Pokemon may play dead to fool foes in battle.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -6119,7 +6119,7 @@
           "Normal"
         ],
         "pokedex": "When hunting, Linoone will make a beeline straight for the prey at a full run. While this Pokemon is capable of topping 60 mph, it has to come to a screeching halt before it can turn.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -6367,7 +6367,7 @@
           "Flying"
         ],
         "pokedex": "Taillow is young\u2014it has only just left its nest. As a result, it sometimes becomes lonesome and cries at night. This Pokemon feeds on Wurmple that live in forests.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -6388,7 +6388,7 @@
           "Flying"
         ],
         "pokedex": "Swellow is very conscientious about the upkeep of its glossy wings. Once two Swellow are gathered, they diligently take care of cleaning each other's wings.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -7939,7 +7939,7 @@
           "Water"
         ],
         "pokedex": "While Feebas's body is in tatters, it has a hardy and tenacious life force that enables it to live anywhere. However, this Pokemon is also slow and dimwitted, making it an easy catch.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -7959,7 +7959,7 @@
           "Water"
         ],
         "pokedex": "Milotic live at the bottom of large lakes. When this Pokemon's body glows a vivid pink, it releases a pulsing wave of energy that brings soothing calm to troubled hearts.",
-        "shiny": false,
+        "shiny": true,
         "gender": true
       }
     },
