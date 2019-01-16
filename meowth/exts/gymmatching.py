@@ -145,7 +145,7 @@ class GymMatching:
                 gym_note = f"**Notes:** {gym_note}"
             if gym_alias:
                 raid_details = gym_alias
-            raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gym_coords)
+            raid_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={gym_coords}"
             gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
             duplicate_raids = []
             for raid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
@@ -204,7 +204,7 @@ class GymMatching:
                 stop_note = f"**Notes:** {stop_note}"
             if stop_alias:
                 stop_details = stop_alias
-            stop_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(stop_coords)
+            stop_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={stop_coords}"
             stop_info = _("**Stop:** {0}\n{1}").format(stop_details, stop_note)
             duplicate_research = []
             for quest in self.bot.guild_dict[message.guild.id]['questreport_dict']:

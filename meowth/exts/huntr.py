@@ -217,7 +217,7 @@ class Huntr:
                 huntrweather = painfo[3]
                 entered_wild = painfo[0].replace("!wild", "").strip().lower()
                 wild_details = painfo[1]
-                location = "https://www.google.com/maps/dir/Current+Location/{location}".format(location=wild_details)
+                location = f"https://www.google.com/maps/search/?api=1&query={wild_details}"
                 despawn = (int(minutes) * 60) + int(seconds)
             await utils.safe_delete(message)
             if reporttype == "wild":
@@ -315,11 +315,10 @@ class Huntr:
         wild_number = pokemon.id
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
         if reporter == "huntr":
-            wild_gmaps_link = 'https://www.google.com/maps/dir/Current+Location/{0}'.format(wild_details.split("#")[1])
             wild_coordinates = wild_details.split("#")[1]
         else:
-            wild_gmaps_link = 'https://www.google.com/maps/dir/Current+Location/{0}'.format(wild_details)
             wild_coordinates = wild_details
+        wild_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={wild_coordinates}"
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
             nearest_stop = gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), message.guild.id)
@@ -401,7 +400,7 @@ class Huntr:
                 pokemon = boss
                 entered_raid = boss.name.lower()
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
-        raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gymhuntrgps)
+        raid_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={gymhuntrgps}"
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog:
@@ -538,7 +537,7 @@ class Huntr:
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
-        raid_gmaps_link = "https://www.google.com/maps/dir/Current+Location/{0}".format(gymhuntrgps)
+        raid_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={gymhuntrgps}"
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog:

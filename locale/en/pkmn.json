@@ -8665,7 +8665,7 @@
           "Ground"
         ],
         "pokedex": "Through Primal Reversion and with nature's full power, it will take back its true form. It can cause magma to erupt and expand the landmass of the world.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },

@@ -809,6 +809,7 @@ async def maint_start():
         event_loop.create_task(channel_cleanup())
         event_loop.create_task(message_cleanup())
         await reset_raid_roles(Meowth)
+        await lobby_cleanup()
         logger.info('Maintenance Tasks Started')
     except KeyboardInterrupt as e:
         tasks.cancel()
@@ -5475,6 +5476,22 @@ async def _cancel(channel, author):
     t_dict['count'] = 1
     await _edit_party(channel, author)
 
+async def lobby_cleanup():
+    for guild in Meowth.guilds:
+        for raid in guild_dict[guild.id]['raidchannel_dict']:
+            lobby = guild_dict[guild.id]['raidchannel_dict'][raid].get("lobby", False)
+            battling = guild_dict[guild.id]['raidchannel_dict'][raid].get("battling", False)
+            if not lobby and not battling:
+                continue
+            first_message = guild_dict[guild.id]['raidchannel_dict'][raid].get("raidmessage", False)
+            raid_channel = Meowth.get_channel(raid)
+            try:
+                raid_message = await raid_channel.get_message(first_message)
+            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                continue
+            ctx = await Meowth.get_context(raid_message)
+            Meowth.loop.create_task(lobby_countdown(ctx))
+
 async def lobby_countdown(ctx):
     while True:
         start_lobby = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('lobby', {})
@@ -5611,7 +5628,7 @@ async def starting(ctx, team: str = ''):
             guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['starttime'] = None
         else:
             timestr = ' '
-        guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby'] = {"exp":time.time() + 120, "team":team, "herecount":herecount, "teamcount":teamcount, "lobbycount":lobbycount}
+        guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby'] = {"exp":time.time() + 120, "team":team, "herecount":herecount, "teamcount":teamcount, "lobbycount":lobbycount, "trainers":id_startinglist}
         starting_str = _('Starting - Meowth! The group that was waiting{timestr}is starting the raid! Trainers {trainer_list}, if you are not in this group and are waiting for the next group, please respond with {here_emoji} or **!here**. If you need to ask those that just started to back out of their lobby, use **!backout**').format(timestr=timestr, trainer_list=', '.join(ctx_startinglist), here_emoji=utils.parse_emoji(ctx.guild, config['here_id']))
         if starttime:
             starting_str += '\n\nThe start time has also been cleared, new groups can set a new start time wtih **!starttime HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!).'
@@ -6163,6 +6180,62 @@ async def _lobbylist(ctx, tag=False, team=False):
             lobby_exstr = _(' including {trainer_list} and the people with them! Use **!lobby** if you are joining them or **!backout** to request a backout').format(trainer_list=', '.join(name_list))
     listmsg = _(' {trainer_count} in the lobby{including_string}!').format(trainer_count=str(ctx_lobbycount), including_string=lobby_exstr)
     return listmsg
+
+@_list.command()
+@checks.activeraidchannel()
+async def groups(ctx, tags: str = ''):
+    """List the users in lobby, active raids, completed raids.
+
+    Usage: !list groups
+    Works only in raid channels."""
+    listmsg = await _raidgroups(ctx)
+    await ctx.channel.send(embed=listmsg)
+
+async def _raidgroups(ctx):
+    ctx_lobbycount = 0
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
+    raid_dict = copy.deepcopy(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id])
+    raid_lobby = raid_dict.get("lobby", None)
+    raid_active = raid_dict.get("battling", None)
+    raid_complete = raid_dict.get("completed", None)
+    list_embed = discord.Embed(colour=ctx.guild.me.colour)
+    lobby_str = ""
+    active_str = ""
+    complete_str = ""
+    index = 0
+    if raid_lobby:
+        lobby_str = f"{index} - "
+        for trainer in raid_lobby['trainers']:
+            user = ctx.guild.get_member(trainer)
+            if not user:
+                continue
+            lobby_str += user.mention
+        list_embed.add_field(name="**Lobby**", value=lobby_str, inline=False)
+    if raid_active:
+        for lobby in raid_active:
+            index += 1
+            active_str += f"{index} - "
+            for trainer in lobby['trainers']:
+                user = ctx.guild.get_member(trainer)
+                if not user:
+                    continue
+                active_str += user.mention
+            active_str += "\n"
+        list_embed.add_field(name="**Battling**", value=active_str, inline=False)
+    if raid_complete:
+        for lobby in raid_complete:
+            index += 1
+            complete_str += f"{index} - "
+            for trainer in lobby['trainers']:
+                user = ctx.guild.get_member(trainer)
+                if not user:
+                    continue
+                complete_str += user.mention
+            complete_str += "\n"
+        list_embed.add_field(name="**Completed**", value=complete_str, inline=False)
+    if not raid_lobby and not raid_active and not raid_complete:
+        list_embed.description = "Nobody has started this raid."
+    return list_embed
 
 @_list.command(aliases=['boss'])
 @checks.activeraidchannel()
