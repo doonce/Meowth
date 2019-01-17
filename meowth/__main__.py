@@ -1499,7 +1499,7 @@ async def outputlog(ctx):
     try:
         await ctx.channel.send(hastebin.post(logdata))
     except:
-        pass
+        await ctx.channel.send("Hastebin Error", delete_after=10)
 
 @Meowth.command(aliases=['say'])
 @commands.has_permissions(manage_guild=True)
@@ -2079,7 +2079,8 @@ async def profile(ctx, member: discord.Member = None):
     embed.add_field(name=_("Reports"), value=field_value[:-3], inline=False)
     if guild_dict[ctx.guild.id]['configure_dict']['want']['enabled'] and wants:
         embed.add_field(name=_("Want List"), value=f"{(', ').join(wants)[:2000]}", inline=False)
-    embed.add_field(name=_("Roles"), value=f"{(' ').join(roles)[:2000]}", inline=False)
+    if roles:
+        embed.add_field(name=_("Roles"), value=f"{(' ').join(roles)[:2000]}", inline=False)
 
     await ctx.send(embed=embed)
 
@@ -6211,13 +6212,16 @@ async def _raidgroups(ctx):
     index = 0
     if raid_lobby:
         lobby_str = f"{index} - "
+        lobby_list = []
         for trainer in raid_lobby['trainers']:
             user = ctx.guild.get_member(trainer)
             if not user:
                 continue
-            lobby_str += user.mention
+            lobby_list.append(user.mention)
+        lobby_str += ", ".join(lobby_list)
         list_embed.add_field(name="**Lobby**", value=lobby_str, inline=False)
     if raid_active:
+        active_list = []
         for lobby in raid_active:
             index += 1
             active_str += f"{index} - "
@@ -6225,10 +6229,12 @@ async def _raidgroups(ctx):
                 user = ctx.guild.get_member(trainer)
                 if not user:
                     continue
-                active_str += user.mention
+                active_list.append(user.mention)
+            active_str += ", ".join(active_list)
             active_str += "\n"
         list_embed.add_field(name="**Battling**", value=active_str, inline=False)
     if raid_complete:
+        complete_list = []
         for lobby in raid_complete:
             index += 1
             complete_str += f"{index} - "
@@ -6236,7 +6242,8 @@ async def _raidgroups(ctx):
                 user = ctx.guild.get_member(trainer)
                 if not user:
                     continue
-                complete_str += user.mention
+                complete_list.append(user.mention)
+            complete_str += ", ".join(complete_list)
             complete_str += "\n"
         list_embed.add_field(name="**Completed**", value=complete_str, inline=False)
     if not raid_lobby and not raid_active and not raid_complete:
