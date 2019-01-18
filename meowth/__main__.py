@@ -4935,15 +4935,15 @@ async def interested(ctx, *, teamcounts: str=None):
                 teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
     elif not pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
         entered_interest = boss_list
+    interest = trainer_dict[ctx.author.id].get('interest', [])
+    if interest and not pkmn_match:
+        entered_interest = interest
     if (not teamcounts):
         if ctx.author.id in trainer_dict:
             bluecount = str(trainer_dict[ctx.author.id]['party']['mystic']) + 'm '
             redcount = str(trainer_dict[ctx.author.id]['party']['valor']) + 'v '
             yellowcount = str(trainer_dict[ctx.author.id]['party']['instinct']) + 'i '
             unknowncount = str(trainer_dict[ctx.author.id]['party']['unknown']) + 'u '
-            interest = trainer_dict[ctx.author.id].get('interest', [])
-            if interest and not pkmn_match:
-                entered_interest = interest
             teamcounts = ((((str(trainer_dict[ctx.author.id]['count']) + ' ') + bluecount) + redcount) + yellowcount) + unknowncount
         else:
             teamcounts = '1'
@@ -5053,16 +5053,15 @@ async def coming(ctx, *, teamcounts: str=None):
             return
     elif not pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
         entered_interest = boss_list
-    trainer_dict = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']
+    interest = trainer_dict[ctx.author.id].get('interest', [])
+    if interest and not pkmn_match:
+        entered_interest = interest
     if (not teamcounts):
         if ctx.author.id in trainer_dict:
             bluecount = str(trainer_dict[ctx.author.id]['party']['mystic']) + 'm '
             redcount = str(trainer_dict[ctx.author.id]['party']['valor']) + 'v '
             yellowcount = str(trainer_dict[ctx.author.id]['party']['instinct']) + 'i '
             unknowncount = str(trainer_dict[ctx.author.id]['party']['unknown']) + 'u '
-            interest = trainer_dict[ctx.author.id].get('interest', [])
-            if interest and not pkmn_match:
-                entered_interest = interest
             teamcounts = ((((str(trainer_dict[ctx.author.id]['count']) + ' ') + bluecount) + redcount) + yellowcount) + unknowncount
         else:
             teamcounts = '1'
@@ -5170,16 +5169,15 @@ async def here(ctx, *, teamcounts: str=None):
                 teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
     elif not pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
         entered_interest = boss_list
-
+    interest = trainer_dict[ctx.author.id].get('interest', [])
+    if interest and not pkmn_match:
+        entered_interest = interest
     if (not teamcounts):
         if ctx.author.id in trainer_dict:
             bluecount = str(trainer_dict[ctx.author.id]['party']['mystic']) + 'm '
             redcount = str(trainer_dict[ctx.author.id]['party']['valor']) + 'v '
             yellowcount = str(trainer_dict[ctx.author.id]['party']['instinct']) + 'i '
             unknowncount = str(trainer_dict[ctx.author.id]['party']['unknown']) + 'u '
-            interest = trainer_dict[ctx.author.id].get('interest', [])
-            if interest and not pkmn_match:
-                entered_interest = interest
             teamcounts = ((((str(trainer_dict[ctx.author.id]['count']) + ' ') + bluecount) + redcount) + yellowcount) + unknowncount
         else:
             teamcounts = '1'
