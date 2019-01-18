@@ -4935,7 +4935,7 @@ async def interested(ctx, *, teamcounts: str=None):
                 teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
     elif not pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
         entered_interest = boss_list
-    interest = trainer_dict[ctx.author.id].get('interest', [])
+    interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
     if interest and not pkmn_match:
         entered_interest = interest
     if (not teamcounts):
@@ -5053,7 +5053,7 @@ async def coming(ctx, *, teamcounts: str=None):
             return
     elif not pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
         entered_interest = boss_list
-    interest = trainer_dict[ctx.author.id].get('interest', [])
+    interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
     if interest and not pkmn_match:
         entered_interest = interest
     if (not teamcounts):
@@ -5169,7 +5169,7 @@ async def here(ctx, *, teamcounts: str=None):
                 teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
     elif not pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
         entered_interest = boss_list
-    interest = trainer_dict[ctx.author.id].get('interest', [])
+    interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
     if interest and not pkmn_match:
         entered_interest = interest
     if (not teamcounts):
