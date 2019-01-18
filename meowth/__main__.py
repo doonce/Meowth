@@ -4935,9 +4935,9 @@ async def interested(ctx, *, teamcounts: str=None):
                 teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
     elif not pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
         entered_interest = boss_list
-    interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
-    if interest and not pkmn_match:
-        entered_interest = interest
+        interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
+        if interest:
+            entered_interest = interest
     if (not teamcounts):
         if ctx.author.id in trainer_dict:
             bluecount = str(trainer_dict[ctx.author.id]['party']['mystic']) + 'm '
@@ -4983,7 +4983,7 @@ async def _maybe(channel, author, count, party, entered_interest=None, boss_list
         else:
             allunknown = count
         party = {'mystic':allblue, 'valor':allred, 'instinct':allyellow, 'unknown':allunknown}
-    if len(entered_interest) != len(boss_list):
+    if entered_interest and len(entered_interest) != len(boss_list):
         interest_str = f" in {(', ').join([x.title() for x in entered_interest])}"
     if count == 1:
         team_emoji = max(party, key=lambda key: party[key])
@@ -5053,9 +5053,9 @@ async def coming(ctx, *, teamcounts: str=None):
             return
     elif not pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
         entered_interest = boss_list
-    interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
-    if interest and not pkmn_match:
-        entered_interest = interest
+        interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
+        if interest:
+            entered_interest = interest
     if (not teamcounts):
         if ctx.author.id in trainer_dict:
             bluecount = str(trainer_dict[ctx.author.id]['party']['mystic']) + 'm '
@@ -5102,7 +5102,7 @@ async def _coming(channel, author, count, party, entered_interest=None, boss_lis
         else:
             allunknown = count
         party = {'mystic':allblue, 'valor':allred, 'instinct':allyellow, 'unknown':allunknown}
-    if len(entered_interest) != len(boss_list):
+    if entered_interest and len(entered_interest) != len(boss_list):
         interest_str = f" for {(', ').join([x.title() for x in entered_interest])}"
     if count == 1:
         team_emoji = max(party, key=lambda key: party[key])
@@ -5169,9 +5169,9 @@ async def here(ctx, *, teamcounts: str=None):
                 teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
     elif not pkmn_match and guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
         entered_interest = boss_list
-    interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
-    if interest and not pkmn_match:
-        entered_interest = interest
+        interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
+        if interest:
+            entered_interest = interest
     if (not teamcounts):
         if ctx.author.id in trainer_dict:
             bluecount = str(trainer_dict[ctx.author.id]['party']['mystic']) + 'm '
@@ -5221,7 +5221,7 @@ async def _here(channel, author, count, party, entered_interest=None, boss_list=
         else:
             allunknown = count
         party = {'mystic':allblue, 'valor':allred, 'instinct':allyellow, 'unknown':allunknown}
-    if len(entered_interest) != len(boss_list):
+    if entered_interest and len(entered_interest) != len(boss_list):
         interest_str = f" for {(', ').join([x.title() for x in entered_interest])}"
     if count == 1:
         team_emoji = max(party, key=lambda key: party[key])
