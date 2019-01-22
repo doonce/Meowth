@@ -426,11 +426,11 @@ async def expire_channel(channel):
     if (channel_exists == None) and (not Meowth.is_closed()):
         try:
             del guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]
-        except KeyError:
+        except (KeyError, AttributeError):
             pass
         try:
             del guild_dict[channel.guild.id]['list_dict']['raid'][channel.id]
-        except KeyError:
+        except (KeyError, AttributeError):
             pass
         return
     elif (channel_exists):
@@ -2293,7 +2293,8 @@ async def want(ctx, *, pokemon):
                 spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
         confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
     want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-    await asyncio.sleep(90)
+    if "tutorial" not in ctx.channel.name.lower():
+        await asyncio.sleep(90)
     await utils.safe_delete(want_confirmation)
     await ctx.message.add_reaction(config['command_done'])
 
@@ -3299,6 +3300,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         egg_report = egg_report.id
     except (discord.errors.NotFound, AttributeError):
         egg_report = None
+    guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['active'] = True
     if str(egglevel) in guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and not eggdetails.get('pokemon', None):
         ctrs_dict = await _get_generic_counters(raid_channel.guild, str(pokemon), weather)
         ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
@@ -5502,25 +5504,37 @@ async def _cancel(channel, author):
 
 async def lobby_cleanup():
     for guild in Meowth.guilds:
-        for raid in guild_dict[guild.id]['raidchannel_dict']:
-            lobby = guild_dict[guild.id]['raidchannel_dict'][raid].get("lobby", False)
-            battling = guild_dict[guild.id]['raidchannel_dict'][raid].get("battling", False)
+        guild_raids = copy.deepcopy(guild_dict[guild.id]['raidchannel_dict'])
+        for raid in guild_raids:
+            lobby = guild_raids[raid].get("lobby", False)
+            battling = guild_raids[raid].get("battling", False)
             if not lobby and not battling:
                 continue
-            first_message = guild_dict[guild.id]['raidchannel_dict'][raid].get("raidmessage", False)
+            first_message = guild_raids[raid].get("raidmessage", False)
             raid_channel = Meowth.get_channel(raid)
             try:
                 raid_message = await raid_channel.get_message(first_message)
             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                 continue
             ctx = await Meowth.get_context(raid_message)
-            Meowth.loop.create_task(lobby_countdown(ctx))
+            await lobby_countdown(ctx)
 
 async def lobby_countdown(ctx):
+    def check_battling():
+        for lobby in guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('battling', []):
+            if lobby and time.time() >= lobby['exp']:
+                try:
+                    guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling'].remove(lobby)
+                    guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['completed'].append(lobby)
+                except ValueError:
+                    pass
     while True:
+        check_battling()
         start_lobby = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('lobby', {})
         battling = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('battling', [])
         if not start_lobby and not battling:
+            return
+        if "tutorial" in ctx.channel.name.lower():
             return
         completed = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('completed', [])
         egg_level = utils.get_level(Meowth, guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon'])
@@ -5542,8 +5556,6 @@ async def lobby_countdown(ctx):
                 if trainer_dict[trainer]['status']['lobby']:
                     ctx_lobbycount += trainer_dict[trainer]['status']['lobby']
                     trainer_delete_list.append(trainer)
-            if ctx_lobbycount > 0:
-                await ctx.channel.send(_('Meowth! The group of {count} in the lobby has entered the raid! Wish them luck!').format(count=str(ctx_lobbycount)))
             for trainer in trainer_delete_list:
                 if start_team in team_names:
                     trainer_dict[trainer]['status'] = {'maybe':0, 'coming':0, 'here':herecount - teamcount, 'lobby': lobbycount}
@@ -5558,10 +5570,14 @@ async def lobby_countdown(ctx):
                 battle_time = 180
             start_lobby['exp'] = start_exp + battle_time
             if trainer_delete_list:
-                guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling'].append(start_lobby)
+                if start_lobby not in battling:
+                    guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling'].append(start_lobby)
+                if ctx_lobbycount > 0:
+                    await ctx.channel.send(_('Meowth! The group of {count} in the lobby has entered the raid! Wish them luck!').format(count=str(ctx_lobbycount)))
             del guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby']
             await _edit_party(ctx.channel, ctx.author)
             guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'] = trainer_dict
+            check_battling()
             await asyncio.sleep(battle_time)
             try:
                 guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling'].remove(start_lobby)
@@ -5569,13 +5585,7 @@ async def lobby_countdown(ctx):
             except ValueError:
                 pass
             break
-    for lobby in guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling']:
-        if time.time() >= lobby['exp']:
-            try:
-                guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['battling'].remove(lobby)
-                guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['completed'].append(lobby)
-            except ValueError:
-                pass
+    check_battling()
 
 @Meowth.command()
 @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -5603,7 +5613,7 @@ async def starting(ctx, team: str = ''):
     if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('lobby', False):
         starting_str = _("Meowth! Please wait for the group in the lobby to enter the raid.")
         await ctx.channel.send(starting_str, delete_after=10)
-        ctx.bot.loop.create_task(lobby_countdown(ctx))
+        await lobby_countdown(ctx)
         return
     for trainer in trainer_dict:
         ctx.count = trainer_dict[trainer].get('count', 1)
@@ -5670,7 +5680,7 @@ async def starting(ctx, team: str = ''):
             except discord.errors.NotFound:
                 pass
         await ctx.channel.send(starting_str)
-        ctx.bot.loop.create_task(lobby_countdown(ctx))
+        await lobby_countdown(ctx)
 
 @Meowth.command()
 @checks.activeraidchannel()
@@ -6238,8 +6248,8 @@ async def _raidgroups(ctx):
         lobby_str += ", ".join(lobby_list)
         list_embed.add_field(name="**Lobby**", value=lobby_str, inline=False)
     if raid_active:
-        active_list = []
         for lobby in raid_active:
+            active_list = []
             index += 1
             active_str += f"**{index}.** "
             for trainer in lobby['trainers']:
@@ -6251,13 +6261,14 @@ async def _raidgroups(ctx):
             active_str += "\n"
         list_embed.add_field(name="**Battling**", value=active_str, inline=False)
     if raid_complete:
-        complete_list = []
         for lobby in raid_complete:
+            complete_list = []
             for trainer in lobby['trainers']:
                 user = ctx.guild.get_member(trainer)
                 if not user:
                     continue
                 complete_list.append(user.mention)
+            complete_str += utils.parse_emoji(ctx.guild, config['bullet'])
             complete_str += ", ".join(complete_list)
             complete_str += "\n"
         list_embed.add_field(name="**Completed**", value=complete_str, inline=False)

@@ -87,11 +87,10 @@ class Tutorial:
             f"This server utilizes the **{ctx.prefix}wild** command to "
             "report wild spawns! When you use it, I will send a message "
             "summarizing the report and containing a link to my best "
-            "guess of the spawn location. If the reported Pokemon has "
-            "an associated role on the server, I will @mention the role "
-            "in my message! Your report must contain the name of the "
-            "Pokemon followed by its location.\n\n"
-            "Try reporting a wild spawn!\n"
+            "guess of the spawn location. If users have **!want**ed your "
+            " reported pokemon, I will DM them details! Your report must "
+            "contain the name of the Pokemon followed by its location like "
+            "**!wild <pokemon> <location>**.\n\nTry reporting a wild spawn!\n"
             f"Ex: `{ctx.prefix}wild magikarp some park`")
 
         try:
@@ -102,7 +101,7 @@ class Tutorial:
             await ctx.tutorial_channel.send("Great job!")
             await ctx.tutorial_channel.send(
             "The {omw} emoji adds you to a list of trainers chasing the wild "
-            "spawn and the {despawn} emoji alerts others that it has despawned.").format(omw=ctx.bot.config['wild_omw'], despawn=ctx.bot.config['wild_despawn'])
+            "spawn and the {despawn} emoji alerts others that it has despawned.".format(omw=ctx.bot.config['wild_omw'], despawn=ctx.bot.config['wild_despawn']))
 
             wild_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports']
             ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports'] = wild_reports - 1
@@ -136,6 +135,7 @@ class Tutorial:
         tutorial_channel = ctx.tutorial_channel
         prefix = ctx.prefix
         raid_channel = None
+        tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
 
         # add tutorial channel to valid want report channels
         report_channels[tutorial_channel.id] = 'test'
@@ -168,7 +168,7 @@ class Tutorial:
             "minutes remaining until hatch or expiry (at the end of the "
             "report) \n\n"
             "Try reporting a raid!\n"
-            f"Ex: `{prefix}raid magikarp local church cloudy 42`")
+            f"Ex: `{prefix}raid {tier5} local church cloudy 42`")
 
         try:
             while True:

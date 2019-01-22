@@ -149,8 +149,14 @@ def missing_arg_msg(ctx):
         if varargs != 'args':
             rqargs.append(varargs)
     arg_num = len(ctx.args) - 1
-    sig.remove('ctx')
-    sig.remove('self')
+    try:
+        sig.remove('ctx')
+    except ValueError:
+        pass
+    try:
+        sig.remove('self')
+    except ValueError:
+        pass
     args_missing = sig[arg_num:]
     msg = _("Meowth! I'm missing some details! Usage: {prefix}{command}").format(prefix=prefix, command=command)
     for a in sig:
