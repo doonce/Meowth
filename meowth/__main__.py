@@ -5209,9 +5209,8 @@ async def _here(channel, author, count, party, entered_interest=None, boss_list=
     lobby = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('lobby', {})
     raidtype = _("event") if guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('meetup', False) else _("raid")
     if lobby:
-        if author.id in lobby.get('trainers', []):
+        if author.id in lobby.get('starting_dict', {}).keys():
             try:
-                guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['lobby']['trainers'].remove(author.id)
                 del guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['lobby']['starting_dict'][author.id]
             except (IndexError, KeyError):
                 pass
@@ -5465,7 +5464,6 @@ async def _lobby(message, count):
     trainer_dict['status'] = {'maybe':0, 'coming':0, 'here':0, 'lobby':count}
     trainer_dict['count'] = count
     guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['trainer_dict'][message.author.id] = trainer_dict
-    guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['lobby']['trainers'].append(message.author.id)
     guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['lobby']['starting_dict'][message.author.id] = {"count":trainer_dict['count'], "status":trainer_dict['status'], "party":trainer_dict['party']}
 
 @Meowth.command(aliases=['x'])
@@ -5575,7 +5573,7 @@ async def lobby_countdown(ctx):
                     trainer_dict[trainer]['count'] = trainer_dict[trainer]['count'] - teamcount
                 else:
                     del trainer_dict[trainer]
-            start_lobby['trainers'] = trainer_delete_list
+            start_lobby['starting_dict'].keys() = trainer_delete_list
             if egg_level == "EX" or egg_level == "5":
                 battle_time = 300
             else:
@@ -5676,7 +5674,7 @@ async def starting(ctx, team: str = ''):
             guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['starttime'] = None
         else:
             timestr = ' '
-        guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby'] = {"exp":time.time() + 120, "team":team, "trainers":id_startinglist, "starting_dict":starting_dict}
+        guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby'] = {"exp":time.time() + 120, "team":team, "starting_dict":starting_dict}
         starting_str = _('Starting - Meowth! The group that was waiting{timestr}is starting the raid! Trainers {trainer_list}, if you are not in this group and are waiting for the next group, please respond with {here_emoji} or **!here**. If you need to ask those that just started to back out of their lobby, use **!backout**').format(timestr=timestr, trainer_list=', '.join(ctx_startinglist), here_emoji=utils.parse_emoji(ctx.guild, config['here_id']))
         if starttime:
             starting_str += '\n\nThe start time has also been cleared, new groups can set a new start time wtih **!starttime HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!).'
@@ -5713,15 +5711,18 @@ async def backout(ctx):
     lobby_list = []
     if battling:
         for lobby in battling:
-            if ctx.author.id in lobby['trainers']:
+            if ctx.author.id in lobby['starting_dict'].keys():
                 battle_lobby = lobby
                 guild_dict[guild.id]['raidchannel_dict'][channel.id]['battling'].remove(lobby)
                 break
     if battle_lobby:
-        for trainer in battle_lobby['trainers']:
+        for trainer in battle_lobby['starting_dict'].keys():
             user = guild.get_member(trainer)
             lobby_list.append(user.mention)
-        await channel.send(_('Backout - Meowth! {author} has requested that the group consisting of {lobby_list} and the people with them to back out of the battle! Since you were already battling, please reply with **!here** again before you start.').format(author=author.mention, lobby_list=', '.join(lobby_list)))
+            count = battle_lobby['starting_dict'][trainer]['status']['lobby']
+            battle_lobby['starting_dict'][trainer]['status'] = {'maybe':0, 'coming':0, 'here':count, 'lobby':0}
+        guild_dict[guild.id]['raidchannel_dict'][channel.id]['trainer_dict'] = {**trainer_dict, **battle_lobby['starting_dict']}
+        await channel.send(_('Backout - Meowth! {author} has requested that the group consisting of {lobby_list} and the people with them to back out of the battle!').format(author=author.mention, lobby_list=', '.join(lobby_list)))
     elif (author.id in trainer_dict) and (trainer_dict[author.id]['status']['lobby']):
         count = trainer_dict[author.id]['count']
         trainer_dict[author.id]['status'] = {'maybe':0, 'coming':0, 'here':count, 'lobby':0}
@@ -6254,7 +6255,7 @@ async def _raidgroups(ctx):
     if raid_lobby:
         lobby_str = f"**{index}.** "
         lobby_list = []
-        for trainer in raid_lobby['trainers']:
+        for trainer in raid_lobby['starting_dict'].keys():
             user = ctx.guild.get_member(trainer)
             if not user:
                 continue
@@ -6266,7 +6267,7 @@ async def _raidgroups(ctx):
             active_list = []
             index += 1
             active_str += f"**{index}.** "
-            for trainer in lobby['trainers']:
+            for trainer in lobby['starting_dict'].keys():
                 user = ctx.guild.get_member(trainer)
                 if not user:
                     continue
@@ -6277,7 +6278,7 @@ async def _raidgroups(ctx):
     if raid_complete:
         for lobby in raid_complete:
             complete_list = []
-            for trainer in lobby['trainers']:
+            for trainer in lobby['starting_dict'].keys():
                 user = ctx.guild.get_member(trainer)
                 if not user:
                     continue
