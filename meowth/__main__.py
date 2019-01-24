@@ -5423,48 +5423,83 @@ async def _edit_party(channel, author=None):
 
 @Meowth.command()
 @checks.activeraidchannel()
-async def lobby(ctx, *, count: str=None):
+async def lobby(ctx, *, teamcounts: str=None):
     """Indicate you are entering the raid lobby.
 
-    Usage: !lobby [message]
+    Usage: !lobby [count] [party]
     Works only in raid channels. If message is omitted, and
     you have previously issued !coming, then preserves the count
     from that command. Otherwise, assumes you are a group of 1.
     Otherwise, this command expects at least one word in your message to be a number,
-    and will assume you are a group with that many people."""
-    try:
-        if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
-            if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon'] == '':
-                await ctx.channel.send(_("Meowth! Please wait until the raid egg has hatched before announcing you're coming or present."), delete_after=10)
-                return
-    except:
-        pass
-    trainer_dict = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']
-    if count:
-        if count.isdigit():
-            count = int(count)
-        else:
-            await ctx.channel.send(_("Meowth! I can't understand how many are in your group. Just say **!here** if you're by yourself, or **!coming 5** for example if there are 5 in your group."), delete_after=10)
-            return
-    elif (ctx.author.id in trainer_dict) and (sum(trainer_dict[ctx.author.id]['status'].values()) > 0):
-        count = trainer_dict[ctx.author.id]['count']
-    else:
-        count = 1
-    await _lobby(ctx.message, count)
+    and will assume you are a group with that many people.
 
-async def _lobby(message, count):
-    if not guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id].get('lobby', {}):
+    Party is also optional. Format is #m #v #i #u to tell your party's teams."""
+    trainer_dict = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']
+    if (not teamcounts):
+        if ctx.author.id in trainer_dict:
+            bluecount = str(trainer_dict[ctx.author.id]['party']['mystic']) + 'm '
+            redcount = str(trainer_dict[ctx.author.id]['party']['valor']) + 'v '
+            yellowcount = str(trainer_dict[ctx.author.id]['party']['instinct']) + 'i '
+            unknowncount = str(trainer_dict[ctx.author.id]['party']['unknown']) + 'u '
+            teamcounts = ((((str(trainer_dict[ctx.author.id]['count']) + ' ') + bluecount) + redcount) + yellowcount) + unknowncount
+        else:
+            teamcounts = '1'
+    if teamcounts and teamcounts.split()[0].isdigit():
+        total = int(teamcounts.split()[0])
+    elif (ctx.author.id in trainer_dict) and (sum(trainer_dict[ctx.author.id]['status'].values()) > 0):
+        total = trainer_dict[ctx.author.id]['count']
+    elif teamcounts:
+        total = re.sub('[^0-9 ]', '', teamcounts)
+        total = sum([int(x) for x in total.split()])
+    else:
+        total = 1
+    result = await _party_status(ctx, total, teamcounts)
+    if isinstance(result, __builtins__.list):
+        count = result[0]
+        partylist = result[1]
+        await _lobby(ctx.channel, ctx.author, count, partylist)
+
+async def _lobby(channel, author, count, party):
+    allblue = 0
+    allred = 0
+    allyellow = 0
+    allunknown = 0
+    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].setdefault(author.id, {})
+    if not guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('lobby', {}):
         await message.channel.send(_('Meowth! There is no group in the lobby for you to join! Use **!starting** if the group waiting at the raid is entering the lobby!'), delete_after=10)
         return
-    trainer_dict = guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['trainer_dict'].setdefault(message.author.id, {})
+    if (not party):
+        for role in author.roles:
+            if role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['mystic']:
+                allblue = count
+                break
+            elif role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['valor']:
+                allred = count
+                break
+            elif role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['instinct']:
+                allyellow = count
+                break
+        else:
+            allunknown = count
+        party = {'mystic':allblue, 'valor':allred, 'instinct':allyellow, 'unknown':allunknown}
     if count == 1:
-        await message.channel.send(_('Meowth! {member} is entering the lobby!').format(member=message.author.mention))
+        team_emoji = max(party, key=lambda key: party[key])
+        if team_emoji == "unknown":
+            team_emoji = utils.parse_emoji(channel.guild, config['unknown'])
+        else:
+            team_emoji = utils.parse_emoji(channel.guild, config['team_dict'][team_emoji])
+        msg = _('Meowth! {member} is entering the lobby! {emoji}: 1').format(member=author.mention, emoji=team_emoji)
+        await channel.send(msg)
     else:
-        await message.channel.send(_('Meowth! {member} is entering the lobby with a total of {trainer_count} trainers!').format(member=message.author.mention, trainer_count=count))
+        msg = _('Meowth! {member} is entering the lobby with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count)
+        msg += ' {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(blue_emoji=utils.parse_emoji(channel.guild, config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, config['unknown']), unknown=party['unknown'])
+        await channel.send(msg)
     trainer_dict['status'] = {'maybe':0, 'coming':0, 'here':0, 'lobby':count}
     trainer_dict['count'] = count
-    guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['trainer_dict'][message.author.id] = trainer_dict
-    guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['lobby']['starting_dict'][message.author.id] = {"count":trainer_dict['count'], "status":trainer_dict['status'], "party":trainer_dict['party']}
+    trainer_dict['party'] = party
+    await _edit_party(channel, author)
+    guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'][author.id] = trainer_dict
+    guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['lobby']['starting_dict'][author.id] = {"count":trainer_dict['count'], "status":trainer_dict['status'], "party":trainer_dict['party']}
 
 @Meowth.command(aliases=['x'])
 @checks.raidchannel()
