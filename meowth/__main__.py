@@ -5573,7 +5573,6 @@ async def lobby_countdown(ctx):
                     trainer_dict[trainer]['count'] = trainer_dict[trainer]['count'] - teamcount
                 else:
                     del trainer_dict[trainer]
-            start_lobby['starting_dict'].keys() = trainer_delete_list
             if egg_level == "EX" or egg_level == "5":
                 battle_time = 300
             else:
