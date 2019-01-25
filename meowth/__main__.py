@@ -5642,7 +5642,10 @@ async def starting(ctx, team: str = ''):
     for a second group must reannounce with the :here: emoji or !here."""
     starting_dict = {}
     ctx_startinglist = []
-    id_startinglist = config.get('managers', [])
+    id_startinglist = []
+    for manager in config.get('managers', []):
+        id_startinglist.append(manager)
+    id_startinglist.append(config['master'])
     name_startinglist = []
     team_list = []
     team_names = ["mystic", "valor", "instinct", "unknown"]
