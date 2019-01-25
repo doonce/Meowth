@@ -5642,15 +5642,15 @@ async def starting(ctx, team: str = ''):
     for a second group must reannounce with the :here: emoji or !here."""
     starting_dict = {}
     ctx_startinglist = []
-    id_startinglist = []
+    id_startinglist = config.get('managers', [])
     name_startinglist = []
     team_list = []
     team_names = ["mystic", "valor", "instinct", "unknown"]
     team = team if team and team.lower() in team_names else "all"
     trainer_dict = copy.deepcopy(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'])
-    teamcount = 0
-    herecount = 0
-    lobbycount = 0
+    can_manage = ctx.channel.permissions_for(ctx.author).manage_channels
+    if can_manage and ctx.author.id not in id_startinglist:
+        id_startinglist.append(ctx.author.id)
     if guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('type', None) == 'egg':
         starting_str = _("Meowth! How can you start when the egg hasn't hatched!?", delete_after=10)
         await ctx.channel.send(starting_str)
@@ -5663,12 +5663,15 @@ async def starting(ctx, team: str = ''):
     for trainer in trainer_dict:
         ctx.count = trainer_dict[trainer].get('count', 1)
         user = ctx.guild.get_member(trainer)
+        if not user:
+            continue
+        herecount = trainer_dict[trainer]['status']['here']
+        lobbycount = trainer_dict[trainer]['status']['lobby']
+        teamcount = herecount
         if team in team_names:
             if trainer_dict[trainer]['party'][team]:
                 team_list.append(user.id)
             teamcount = trainer_dict[trainer]['party'][team]
-            herecount = trainer_dict[trainer]['status']['here']
-            lobbycount = trainer_dict[trainer]['status']['lobby']
             if trainer_dict[trainer]['status']['here'] and (user.id in team_list):
                 trainer_dict[trainer]['status'] = {'maybe':0, 'coming':0, 'here':herecount - teamcount, 'lobby':lobbycount + teamcount}
                 ctx_startinglist.append(user.mention)
@@ -5754,9 +5757,9 @@ async def backout(ctx):
             user = guild.get_member(trainer)
             lobby_list.append(user.mention)
             count = battle_lobby['starting_dict'][trainer]['status']['lobby']
-            battle_lobby['starting_dict'][trainer]['status'] = {'maybe':0, 'coming':0, 'here':count, 'lobby':0}
+            battle_lobby['starting_dict'][trainer]['status'] = {'maybe':0, 'coming':count, 'here':0, 'lobby':0}
         guild_dict[guild.id]['raidchannel_dict'][channel.id]['trainer_dict'] = {**trainer_dict, **battle_lobby['starting_dict']}
-        await channel.send(_('Backout - Meowth! {author} has requested that the group consisting of {lobby_list} and the people with them to back out of the battle!').format(author=author.mention, lobby_list=', '.join(lobby_list)))
+        await channel.send(_('Backout - Meowth! {author} has requested that the group consisting of {lobby_list} and the people with them to back out of the battle! Please confirm that you have backed out with **!here**. The lobby will have to be started again using **!starting**.').format(author=author.mention, lobby_list=', '.join(lobby_list)))
     elif (author.id in trainer_dict) and (trainer_dict[author.id]['status']['lobby']):
         count = trainer_dict[author.id]['count']
         trainer_dict[author.id]['status'] = {'maybe':0, 'coming':0, 'here':count, 'lobby':0}
@@ -6266,15 +6269,11 @@ async def _lobbylist(ctx, tag=False, team=False):
 
 @_list.command()
 @checks.activeraidchannel()
-async def groups(ctx, tags: str = ''):
+async def groups(ctx):
     """List the users in lobby, active raids, completed raids.
 
     Usage: !list groups
     Works only in raid channels."""
-    listmsg = await _raidgroups(ctx)
-    await ctx.channel.send(embed=listmsg)
-
-async def _raidgroups(ctx):
     ctx_lobbycount = 0
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
     raid_dict = copy.deepcopy(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id])
@@ -6285,7 +6284,9 @@ async def _raidgroups(ctx):
     lobby_str = ""
     active_str = ""
     complete_str = ""
+    all_lobbies = []
     index = 0
+    await utils.safe_delete(ctx.message)
     if raid_lobby:
         lobby_str = f"**{index}.** "
         lobby_list = []
@@ -6296,6 +6297,9 @@ async def _raidgroups(ctx):
             lobby_list.append(user.mention)
         lobby_str += ", ".join(lobby_list)
         list_embed.add_field(name="**Lobby**", value=lobby_str, inline=False)
+        all_lobbies.append(raid_lobby)
+    else:
+        all_lobbies.append([])
     if raid_active:
         for lobby in raid_active:
             active_list = []
@@ -6308,6 +6312,7 @@ async def _raidgroups(ctx):
                 active_list.append(user.mention)
             active_str += ", ".join(active_list)
             active_str += "\n"
+            all_lobbies.append(lobby)
         list_embed.add_field(name="**Battling**", value=active_str, inline=False)
     if raid_complete:
         for lobby in raid_complete:
@@ -6323,7 +6328,26 @@ async def _raidgroups(ctx):
         list_embed.add_field(name="**Completed**", value=complete_str, inline=False)
     if not raid_lobby and not raid_active and not raid_complete:
         list_embed.description = "Nobody has started this raid."
-    return list_embed
+    if not raid_active and not raid_lobby:
+        await ctx.channel.send(embed=list_embed, delete_after=30)
+        return
+    else:
+        await ctx.channel.send("Reply with the number next to a group to tag that group.", embed=list_embed, delete_after=30)
+    try:
+        lobby_mention = await Meowth.wait_for('message', timeout=30, check=(lambda message: (message.author == ctx.author)))
+    except asyncio.TimeoutError:
+        return
+    if not lobby_mention.content.isdigit():
+        return
+    await utils.safe_delete(lobby_mention)
+    mention_list = []
+    for trainer in all_lobbies[int(lobby_mention.content)]['starting_dict'].keys():
+        user = ctx.guild.get_member(trainer)
+        if not user:
+            continue
+        mention_list.append(user.mention)
+    await ctx.send(f"Hey {', '.join(mention_list)}! {ctx.author.mention} is trying to get your attention!")
+
 
 @_list.command(aliases=['boss'])
 @checks.activeraidchannel()
