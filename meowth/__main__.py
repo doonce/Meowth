@@ -3195,6 +3195,8 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     archive = eggdetails.get('archive', False)
     meetup = eggdetails.get('meetup', {})
     dm_dict = eggdetails.get('dm_dict', {})
+    ctrs_dict = eggdetails.get('ctrs_dict', {})
+    ctrsmessage_id = eggdetails.get('ctrsmessage', None)      
     if not author:
         try:
             raid_messageauthor = raid_message.mentions[0]
@@ -3301,18 +3303,6 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     except (discord.errors.NotFound, AttributeError):
         egg_report = None
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['active'] = True
-    if str(egglevel) in guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and not eggdetails.get('pokemon', None):
-        ctrs_dict = await _get_generic_counters(raid_channel.guild, str(pokemon), weather)
-        ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
-        ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
-        ctrsmessage_id = ctrsmessage.id
-        await ctrsmessage.pin()
-        for moveset in ctrs_dict:
-            await ctrsmessage.add_reaction(ctrs_dict[moveset]['emoji'])
-            await asyncio.sleep(0.25)
-    else:
-        ctrs_dict = eggdetails.get('ctrs_dict', {})
-        ctrsmessage_id = eggdetails.get('ctrsmessage', None)
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id] = {
         'reportcity': reportcitychannel.id,
         'trainer_dict': trainer_dict,
@@ -3327,8 +3317,6 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         'pokemon': entered_raid,
         'pkmn_obj':str(pokemon),
         'egglevel': '0',
-        'ctrs_dict': ctrs_dict,
-        'ctrsmessage': ctrsmessage_id,
         'moveset': 0
     }
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['starttime'] = starttime
@@ -3336,6 +3324,17 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['gymhuntrgps'] = gymhuntrgps
+    if str(egglevel) in guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and not eggdetails.get('pokemon', None):
+        ctrs_dict = await _get_generic_counters(raid_channel.guild, str(pokemon), weather)
+        ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
+        ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
+        ctrsmessage_id = ctrsmessage.id
+        await ctrsmessage.pin()
+        for moveset in ctrs_dict:
+            await ctrsmessage.add_reaction(ctrs_dict[moveset]['emoji'])
+            await asyncio.sleep(0.25)
+    guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['ctrs_dict'] = ctrs_dict
+    guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['ctrsmessage'] = ctrsmessage_id
     if author and not author.bot:
         raid_reports = guild_dict[raid_channel.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('raid_reports', 0) + 1
         guild_dict[raid_channel.guild.id]['trainers'][author.id]['raid_reports'] = raid_reports
