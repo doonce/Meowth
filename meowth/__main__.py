@@ -3196,7 +3196,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     meetup = eggdetails.get('meetup', {})
     dm_dict = eggdetails.get('dm_dict', {})
     ctrs_dict = eggdetails.get('ctrs_dict', {})
-    ctrsmessage_id = eggdetails.get('ctrsmessage', None)      
+    ctrsmessage_id = eggdetails.get('ctrsmessage', None)
     if not author:
         try:
             raid_messageauthor = raid_message.mentions[0]
@@ -5576,9 +5576,10 @@ async def lobby_countdown(ctx):
         check_battling()
         start_lobby = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('lobby', {})
         battling = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('battling', [])
+        report_channel = Meowth.get_channel(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('reportcity', None))
         if not start_lobby and not battling:
             return
-        if "tutorial" in ctx.channel.name.lower():
+        if report_channel and "tutorial" in report_channel.name.lower():
             return
         completed = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('completed', [])
         egg_level = utils.get_level(Meowth, guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon'])
