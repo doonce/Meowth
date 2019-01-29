@@ -4809,7 +4809,7 @@ async def _get_generic_counters(guild, pkmn, weather=None):
     ctrs = data['randomMove']['defenders'][-6:]
     def clean(txt):
         return txt.replace('_', ' ').title()
-    title = _('{form}{pkmn} | {weather} | Unknown Moveset').format(form=f"{form.replace('_', ' ').title()} ", pkmn=pkmn.title(), weather=weather_list[index].title())
+    title = _('{form}{pkmn} | {weather} | Unknown Moveset').format(form=f"{form.replace('_', ' ').title()} ", pkmn=pkmn.title(), weather=weather.title())
     stats_msg = _("**CP:** {raid_cp}\n").format(raid_cp=raid_cp)
     stats_msg += _("**Weather:** {weather}\n").format(weather=clean(weather))
     stats_msg += _("**Attacker Level:** {atk_levels}").format(atk_levels=atk_levels)
@@ -4834,7 +4834,7 @@ async def _get_generic_counters(guild, pkmn, weather=None):
         move2 = moveset['move2'].lower().title().replace('_', ' ')
         movesetstr = f'{move1} | {move2}'
         ctrs = moveset['defenders'][-6:]
-        title = _('{form}{pkmn} | {weather} | {movesetstr}').format(form=form.title(), pkmn=pkmn.title(), weather=weather_list[index].title(), movesetstr=movesetstr)
+        title = _('{form}{pkmn} | {weather} | {movesetstr}').format(form=form.title(), pkmn=pkmn.title(), weather=weather.title(), movesetstr=movesetstr)
         ctrs_embed = discord.Embed(colour=guild.me.colour)
         ctrs_embed.set_author(name=title, url=title_url, icon_url=hyperlink_icon)
         ctrs_embed.set_thumbnail(url=img_url)

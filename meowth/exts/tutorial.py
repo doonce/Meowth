@@ -63,7 +63,6 @@ class Tutorial:
                 colour=discord.Colour.red(),
                 description=f"You took too long to complete the **{ctx.prefix}want** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
-            await ctx.tutorial_channel.delete()
 
             return False
 
@@ -106,7 +105,6 @@ class Tutorial:
         except asyncio.TimeoutError:
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}wild** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
-            await ctx.tutorial_channel.delete()
             return False
 
         # clean up by removing tutorial from report channel config
@@ -132,7 +130,6 @@ class Tutorial:
         async def timeout_raid(cmd):
             await tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
-            await tutorial_channel.delete()
             del report_channels[tutorial_channel.id]
             del category_dict[tutorial_channel.id]
             if raid_channel:
@@ -289,6 +286,8 @@ class Tutorial:
         await raid_channel.delete()
         raid_channel = None
         del report_channels[tutorial_channel.id]
+        if config['raid']['categories'] == "region":
+            del category_dict[tutorial_channel.id]
 
         return True
 
@@ -321,7 +320,6 @@ class Tutorial:
         except asyncio.TimeoutError:
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}research** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
-            await ctx.tutorial_channel.delete()
             return False
 
         # clean up by removing tutorial from report channel config
@@ -346,7 +344,6 @@ class Tutorial:
         except asyncio.TimeoutError:
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}team** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
-            await ctx.tutorial_channel.delete()
             return False
 
         return True
@@ -373,7 +370,6 @@ class Tutorial:
         except asyncio.TimeoutError:
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}research** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
-            await ctx.tutorial_channel.delete()
             return False
 
         # clean up by removing tutorial from report channel config
@@ -401,7 +397,6 @@ class Tutorial:
         except asyncio.TimeoutError:
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}nest** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
-            await ctx.tutorial_channel.delete()
 
             return False
 
@@ -444,7 +439,7 @@ class Tutorial:
         await ctx.tutorial_channel.send(
             f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
             "Pokemon Go communities! I created this channel to teach you "
-            "about the want command! You can abandon this tutorial at any time "
+            "about the server commands! You can abandon this tutorial at any time "
             "and I'll delete this channel after five minutes. "
             "Let's get started!\n\n"
             "Just so you know, across all of Meowth, **<> denote required arguments"
@@ -589,7 +584,7 @@ class Tutorial:
         await ctx.tutorial_channel.send(
             f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
             "Pokemon Go communities! I created this channel to teach you "
-            "about the want command! You can abandon this tutorial at any time "
+            "about the wild command! You can abandon this tutorial at any time "
             "and I'll delete this channel after five minutes. "
             "Let's get started!\n\n"
             "Just so you know, across all of Meowth, **<> denote required arguments"
@@ -633,7 +628,7 @@ class Tutorial:
         await ctx.tutorial_channel.send(
             f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
             "Pokemon Go communities! I created this channel to teach you "
-            "about the want command! You can abandon this tutorial at any time "
+            "about the raid command! You can abandon this tutorial at any time "
             "and I'll delete this channel after five minutes. "
             "Let's get started!\n\n"
             "Just so you know, across all of Meowth, **<> denote required arguments"
@@ -677,7 +672,7 @@ class Tutorial:
         await ctx.tutorial_channel.send(
             f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
             "Pokemon Go communities! I created this channel to teach you "
-            "about the want command! You can abandon this tutorial at any time "
+            "about the research command! You can abandon this tutorial at any time "
             "and I'll delete this channel after five minutes. "
             "Let's get started!\n\n"
             "Just so you know, across all of Meowth, **<> denote required arguments"
@@ -721,7 +716,7 @@ class Tutorial:
         await ctx.tutorial_channel.send(
             f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
             "Pokemon Go communities! I created this channel to teach you "
-            "about the want command! You can abandon this tutorial at any time "
+            "about the trade command! You can abandon this tutorial at any time "
             "and I'll delete this channel after five minutes. "
             "Let's get started!\n\n"
             "Just so you know, across all of Meowth, **<> denote required arguments"
@@ -762,7 +757,7 @@ class Tutorial:
         await ctx.tutorial_channel.send(
             f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
             "Pokemon Go communities! I created this channel to teach you "
-            "about the want command! You can abandon this tutorial at any time "
+            "about the team command! You can abandon this tutorial at any time "
             "and I'll delete this channel after five minutes. "
             "Let's get started!\n\n"
             "Just so you know, across all of Meowth, **<> denote required arguments"
@@ -777,7 +772,7 @@ class Tutorial:
             await ctx.tutorial_channel.delete()
 
     @tutorial.command()
-    @checks.feature_enabled('want')
+    @checks.feature_enabled('nest')
     async def nest(self, ctx):
         """Launches an tutorial session for the nest feature.
 
@@ -807,7 +802,7 @@ class Tutorial:
         await ctx.tutorial_channel.send(
             f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
             "Pokemon Go communities! I created this channel to teach you "
-            "about the want command! You can abandon this tutorial at any time "
+            "about the nest command! You can abandon this tutorial at any time "
             "and I'll delete this channel after five minutes. "
             "Let's get started!\n\n"
             "Just so you know, across all of Meowth, **<> denote required arguments"
