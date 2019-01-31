@@ -4706,11 +4706,19 @@ async def _counters(ctx, pkmn, user = None, weather = None, form = None, moveset
         async with aiohttp.ClientSession() as sess:
             async with sess.get(url) as resp:
                 data = await resp.json()
-
         title_url = url.replace('https://fight', 'https://www')
         colour = ctx.guild.me.colour
         hyperlink_icon = 'https://i.imgur.com/fn9E5nb.png'
         pbtlr_icon = 'https://www.pokebattler.com/favicon-32x32.png'
+        if user:
+            try:
+                data = data['attackers'][0]
+            except KeyError:
+                await ctx.send(f"{ctx.author.mention} it looks like you haven't set up your pokebox yet! Sending you generic level 30 counters.")
+                url = url.replace(f"users/{user}", 'levels/30')
+                async with aiohttp.ClientSession() as sess:
+                    async with sess.get(url) as resp:
+                        data = await resp.json()
         data = data['attackers'][0]
         raid_cp = data['cp']
         atk_levels = '30'
@@ -4964,7 +4972,7 @@ async def interested(ctx, *, teamcounts: str=None):
         await _maybe(ctx.channel, ctx.author, count, partylist, entered_interest, boss_list)
 
 async def _maybe(channel, author, count, party, entered_interest=None, boss_list=None):
-    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].setdefault(author.id, {})
+    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].get(author.id, {})
     allblue = 0
     allred = 0
     allyellow = 0
@@ -5088,7 +5096,7 @@ async def _coming(channel, author, count, party, entered_interest=None, boss_lis
     allyellow = 0
     allunknown = 0
     interest_str = ""
-    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].setdefault(author.id, {})
+    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].get(author.id, {})
     if (not party):
         for role in author.roles:
             if role.id == guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['mystic']:
@@ -5204,7 +5212,7 @@ async def _here(channel, author, count, party, entered_interest=None, boss_list=
     allyellow = 0
     allunknown = 0
     interest_str = ""
-    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].setdefault(author.id, {})
+    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].get(author.id, {})
     lobby = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('lobby', {})
     raidtype = _("event") if guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('meetup', False) else _("raid")
     if lobby:
@@ -5463,7 +5471,7 @@ async def _lobby(channel, author, count, party):
     allred = 0
     allyellow = 0
     allunknown = 0
-    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].setdefault(author.id, {})
+    trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].get(author.id, {})
     if not guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('lobby', {}):
         await message.channel.send(_('Meowth! There is no group in the lobby for you to join! Use **!starting** if the group waiting at the raid is entering the lobby!'), delete_after=10)
         return
