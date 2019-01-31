@@ -3260,7 +3260,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
         gymhuntrmoves = "\u200b"
         if huntr:
             gymhuntrmoves = huntr
-        raid_embed.add_field(name=_("**Moveset:**"), value=gymhuntrmoves)
+            raid_embed.add_field(name=_("**Moveset:**"), value=gymhuntrmoves)
     raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
     raid_embed.set_thumbnail(url=pokemon.img_url)
     await raid_channel.edit(name=raid_channel_name, topic=end.strftime(_('Ends on %B %d at %I:%M %p (%H:%M)')))
@@ -4767,7 +4767,7 @@ async def _counters(ctx, pkmn, user = None, weather = None, form = None, moveset
         ctrs_embed.add_field(name=_("Results with {userstr} attackers").format(userstr=userstr), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pkmn.replace('-', '_').upper()))
         if user:
             ctrs_embed.add_field(name=_("Pokebattler Estimator:"), value=_("Difficulty rating: {est}").format(est=est))
-            await ctx.author.send(embed=ctrs_embed)
+            await ctx.author.send(embed=ctrs_embed, delete_after=600)
             return
         await ctx.channel.send(embed=ctrs_embed)
 
@@ -5009,8 +5009,8 @@ async def _maybe(channel, author, count, party, entered_interest=None, boss_list
         trainer_dict['interest'] = entered_interest
     trainer_dict['count'] = count
     trainer_dict['party'] = party
-    await _edit_party(channel, author)
     guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'][author.id] = trainer_dict
+    await _edit_party(channel, author)
 
 @Meowth.command(aliases=['c'])
 @checks.activechannel()
@@ -5128,8 +5128,8 @@ async def _coming(channel, author, count, party, entered_interest=None, boss_lis
     trainer_dict['party'] = party
     if entered_interest:
         trainer_dict['interest'] = entered_interest
-    await _edit_party(channel, author)
     guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'][author.id] = trainer_dict
+    await _edit_party(channel, author)
 
 @Meowth.command(aliases=['h'])
 @checks.activechannel()
@@ -5256,8 +5256,8 @@ async def _here(channel, author, count, party, entered_interest=None, boss_list=
     trainer_dict['party'] = party
     if entered_interest:
         trainer_dict['interest'] = entered_interest
-    await _edit_party(channel, author)
     guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'][author.id] = trainer_dict
+    await _edit_party(channel, author)
 
 async def _party_status(ctx, total, teamcounts):
     channel = ctx.channel
@@ -5504,9 +5504,9 @@ async def _lobby(channel, author, count, party):
     trainer_dict['status'] = {'maybe':0, 'coming':0, 'here':0, 'lobby':count}
     trainer_dict['count'] = count
     trainer_dict['party'] = party
-    await _edit_party(channel, author)
     guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'][author.id] = trainer_dict
     guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['lobby']['starting_dict'][author.id] = {"count":trainer_dict['count'], "status":trainer_dict['status'], "party":trainer_dict['party']}
+    await _edit_party(channel, author)
 
 @Meowth.command(aliases=['x'])
 @checks.raidchannel()
@@ -5627,8 +5627,8 @@ async def lobby_countdown(ctx):
                 if ctx_lobbycount > 0:
                     await ctx.channel.send(_('Meowth! The group of {count} in the lobby has entered the raid! Wish them luck!').format(count=str(ctx_lobbycount)))
             del guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby']
-            await _edit_party(ctx.channel, ctx.author)
             guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'] = trainer_dict
+            await _edit_party(ctx.channel, ctx.author)
             check_battling()
             await asyncio.sleep(battle_time)
             try:
