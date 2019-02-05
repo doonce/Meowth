@@ -1385,7 +1385,7 @@
           "Water"
         ],
         "pokedex": "Psyduck uses a mysterious power. When it does so, this Pokemon generates brain waves that are supposedly only seen in sleepers. This discovery spurred controversy among scholars.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -1406,7 +1406,7 @@
           "Water"
         ],
         "pokedex": "The webbed flippers on its forelegs and hind legs and the streamlined body of Golduck give it frightening speed. The Pokemon is definitely much faster than even the most athletic swimmer.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -7372,7 +7372,7 @@
           "Psychic"
         ],
         "pokedex": "Spoink keeps a pearl on top of its head. The pearl functions to amplify this Pokemon's psychokinetic powers. It is therefore on a constant search for a bigger pearl.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -7392,7 +7392,7 @@
           "Psychic"
         ],
         "pokedex": "Grumpig uses the black pearls on its body to wield its fantastic powers. When it is doing so, it dances bizarrely. This Pokemon's black pearls are valuable as works of art.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -17385,7 +17385,7 @@
           "Steel"
         ],
         "pokedex": "It melts particles of iron and other metals found in the subsoil, so it can absorb them into its body of molten steel.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -17404,7 +17404,7 @@
           "Steel"
         ],
         "pokedex": "Revered long ago for its capacity to create iron from nothing, for some reason it has come back to life after 3,000 years.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },

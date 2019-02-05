@@ -464,6 +464,8 @@ async def expire_channel(channel):
                 for trainer in trainer_dict.keys():
                     if trainer_dict[trainer]['status']['maybe'] or trainer_dict[trainer]['status']['coming'] or trainer_dict[trainer]['status']['here']:
                         user = channel.guild.get_member(trainer)
+                        if not user:
+                            continue
                         maybe_list.append(user.mention)
                 h = _('hatched-')
                 new_name = h if h not in channel.name else ''
@@ -1032,6 +1034,8 @@ async def on_message(message):
                     for trainer in trainer_dict.keys():
                         if trainer_dict[trainer]['status']['coming']:
                             user = message.guild.get_member(trainer)
+                            if not user:
+                                continue
                             otw_list.append(user.mention)
                     await message.channel.send(content=_('Meowth! Someone has suggested a different location for the raid! Trainers {trainer_list}: make sure you are headed to the right place!').format(trainer_list=', '.join(otw_list)), embed=newembed)
                     return
@@ -3267,9 +3271,8 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     trainer_list = []
     trainer_dict = copy.deepcopy(guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'])
     for trainer in trainer_dict.keys():
-        try:
-            user = raid_channel.guild.get_member(trainer)
-        except (discord.errors.NotFound, AttributeError):
+        user = raid_channel.guild.get_member(trainer)
+        if not user:
             continue
         if (trainer_dict[trainer].get('interest', None)) and (entered_raid not in trainer_dict[trainer]['interest']):
             guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'][trainer]['status'] = {'maybe':0, 'coming':0, 'here':0, 'lobby':0}
@@ -3281,11 +3284,10 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     trainer_dict = copy.deepcopy(guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'])
     for trainer in trainer_dict.keys():
         if (trainer_dict[trainer]['status']['maybe']) or (trainer_dict[trainer]['status']['coming']) or (trainer_dict[trainer]['status']['here']):
-            try:
-                user = raid_channel.guild.get_member(trainer)
-                trainer_list.append(user.mention)
-            except (discord.errors.NotFound, AttributeError):
+            user = raid_channel.guild.get_member(trainer)
+            if not user:
                 continue
+            trainer_list.append(user.mention)
     await raid_channel.send(content=_("{roletest}Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!\nIf you couldn't before, you're now able to update your status with **!coming** or **!here**. If you've changed your plans, use **!cancel**.").format(roletest=roletest, trainer_list=', '.join(trainer_list), pokemon=entered_raid.title()), embed=raid_embed)
     for field in oldembed.fields:
         t = _('team')
@@ -4232,6 +4234,8 @@ async def new(ctx, *, content):
         for trainer in trainer_dict.keys():
             if trainer_dict[trainer]['status']['coming']:
                 user = message.guild.get_member(trainer)
+                if not user:
+                    continue
                 otw_list.append(user.mention)
         await message.channel.send(content=_('Meowth! Someone has suggested a different location for the raid! Trainers {trainer_list}: make sure you are headed to the right place!').format(trainer_list=', '.join(otw_list)), embed=newembed)
         for field in oldembed.fields:
@@ -4387,6 +4391,8 @@ async def recover(ctx):
                             elif trainerstatus:
                                 count = 1
                                 user = ctx.guild.get_member(trainerid)
+                                if not user:
+                                    continue
                                 for role in user.roles:
                                     if role.id == guild_dict[guild.id]['configure_dict']['team']['team_roles']['mystic']:
                                         party = {'mystic':1, 'valor':0, 'instinct':0, 'unknown':0}
@@ -5357,6 +5363,9 @@ async def _get_party(channel, author=None):
     status_list = ["maybe", "coming", "here", "lobby"]
     trainer_dict = copy.deepcopy(guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'])
     for trainer in trainer_dict:
+        user = channel.guild.get_member(trainer)
+        if not user:
+            continue
         for team in team_list:
             channel_dict[team] += int(trainer_dict[trainer].get('party', {}).get(team, 0))
         for status in status_list:
@@ -5473,7 +5482,7 @@ async def _lobby(channel, author, count, party):
     allunknown = 0
     trainer_dict = guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].get(author.id, {})
     if not guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('lobby', {}):
-        await message.channel.send(_('Meowth! There is no group in the lobby for you to join! Use **!starting** if the group waiting at the raid is entering the lobby!'), delete_after=10)
+        await channel.send(_('Meowth! There is no group in the lobby for you to join! Use **!starting** if the group waiting at the raid is entering the lobby!'), delete_after=10)
         return
     if (not party):
         for role in author.roles:
@@ -5766,6 +5775,8 @@ async def backout(ctx):
     if battle_lobby:
         for trainer in battle_lobby['starting_dict'].keys():
             user = guild.get_member(trainer)
+            if not user:
+                continue
             lobby_list.append(user.mention)
             count = battle_lobby['starting_dict'][trainer]['status']['lobby']
             battle_lobby['starting_dict'][trainer]['status'] = {'maybe':0, 'coming':count, 'here':0, 'lobby':0}
@@ -5778,6 +5789,8 @@ async def backout(ctx):
             count = trainer_dict[trainer]['count']
             if trainer_dict[trainer]['status']['lobby']:
                 user = guild.get_member(trainer)
+                if not user:
+                    continue
                 lobby_list.append(user.mention)
                 trainer_dict[trainer]['status'] = {'maybe':0, 'coming':0, 'here':count, 'lobby':0}
         if (not lobby_list):
@@ -5797,6 +5810,8 @@ async def backout(ctx):
         for trainer in trainer_dict:
             if trainer_dict[trainer]['status']['lobby']:
                 user = guild.get_member(trainer)
+                if not user:
+                    continue
                 lobby_list.append(user.mention)
                 trainer_list.append(trainer)
         if (not lobby_list):
@@ -6610,7 +6625,9 @@ async def _tradelist(ctx, search):
             except:
                 continue
             lister = ctx.guild.get_member(target_trades[offer_id]['lister_id'])
-            if lister and tgt_pokemon_trades:
+            if not lister:
+                continue
+            if tgt_pokemon_trades:
                 lister_str = f"**Lister**: {lister.display_name} | "
             wanted_pokemon = target_trades[offer_id]['wanted_pokemon']
             if "Open Trade" in wanted_pokemon:
