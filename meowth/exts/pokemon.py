@@ -420,6 +420,9 @@ class Pokemon():
         one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=ctx.bot.pkmn_list[200], spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not one_char_forms:
             form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
+        ash_forms = re.search(r'{pichu}|172|{pikachu}|25|{raichu}|26|{greninja}|658'.format(pichu=ctx.bot.pkmn_list[171], pikachu=ctx.bot.pkmn_list[24], raichu=ctx.bot.pkmn_list[25], greninja=ctx.bot.pkmn_list[657]), argument, re.IGNORECASE)
+        if not ash_forms:
+            form_list = list(set(form_list) - set(['ash']))
 
         if shiny:
             argument = argument.replace(shiny.group(0), '').strip()
@@ -508,6 +511,9 @@ class Pokemon():
         one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=bot.pkmn_list[200], spinda=bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not one_char_forms:
             form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
+        ash_forms = re.search(r'{pichu}|172|{pikachu}|25|{raichu}|26|{greninja}|658'.format(pichu=bot.pkmn_list[171], pikachu=bot.pkmn_list[24], raichu=bot.pkmn_list[25], greninja=bot.pkmn_list[657]), argument, re.IGNORECASE)
+        if not ash_forms:
+            form_list = list(set(form_list) - set(['ash']))
 
         if shiny:
             argument = argument.replace(shiny.group(0), '').strip()
@@ -542,7 +548,7 @@ class Pokemon():
                 break
             else:
                 form = None
-
+            
         for word in argument.split():
             if word.lower() not in bot.pkmn_list and not word.isdigit() and word.lower() not in bot.form_dict['two_words']:
                 match, score = utils.get_match(bot.pkmn_list, word)
@@ -581,6 +587,9 @@ class Pokemon():
         one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=ctx.bot.pkmn_list[200], spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not one_char_forms:
             form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
+        ash_forms = re.search(r'{pichu}|172|{pikachu}|25|{raichu}|26|{greninja}|658'.format(pichu=ctx.bot.pkmn_list[171], pikachu=ctx.bot.pkmn_list[24], raichu=ctx.bot.pkmn_list[25], greninja=ctx.bot.pkmn_list[657]), argument, re.IGNORECASE)
+        if not ash_forms:
+            form_list = list(set(form_list) - set(['ash']))
         pokemon = False
         match_list = []
 
