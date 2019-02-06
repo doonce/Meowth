@@ -444,8 +444,10 @@ class Pokemon():
             gender = None
         if large:
             size = "XL"
+            argument = argument.replace(large.group(0), '').strip()
         elif small:
             size = "XS"
+            argument = argument.replace(small.group(0), '').strip()
         else:
             size = None
 
@@ -535,8 +537,10 @@ class Pokemon():
             gender = None
         if large:
             size = "XL"
+            argument = argument.replace(large.group(0), '').strip()
         elif small:
             size = "XS"
+            argument = argument.replace(small.group(0), '').strip()
         else:
             size = None
 
@@ -548,7 +552,7 @@ class Pokemon():
                 break
             else:
                 form = None
-            
+
         for word in argument.split():
             if word.lower() not in bot.pkmn_list and not word.isdigit() and word.lower() not in bot.form_dict['two_words']:
                 match, score = utils.get_match(bot.pkmn_list, word)
@@ -617,8 +621,12 @@ class Pokemon():
             gender = None
         if large:
             size = "XL"
+            match_list.append(large.group(0))
+            argument = argument.replace(large.group(0), '').strip()
         elif small:
             size = "XS"
+            match_list.append(small.group(0))
+            argument = argument.replace(small.group(0), '').strip()
         else:
             size = None
 
@@ -687,6 +695,8 @@ class Pokedex:
         pokemon.size = None
         key_needed = False
         forms = [x.title() for x in ctx.bot.pkmn_info[pokemon.name.lower()]['forms']['list']]
+        if not forms:
+            forms = ["None"]
         form_list = []
         for form in forms:
             form_str = ""
@@ -699,10 +709,12 @@ class Pokedex:
                 form_key += "G"
             if "S" in form_key or "G" in form_key:
                 form_key = f"**({form_key})**"
+            if form == "None":
+                form = "Normal"
             form_str = f"{form} {form_key}"
             form_list.append(form_str.strip())
         preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {''.join(utils.get_type(self.bot, ctx.guild, pokemon.id, pokemon.form, pokemon.alolan))}", value=pokemon.pokedex, inline=False)
-        if forms:
+        if len(forms) > 1 or key_needed:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
         if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:
             preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"], inline=False)
