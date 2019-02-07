@@ -2742,13 +2742,13 @@ async def _raid(ctx, content):
                 await message.channel.send(_('Meowth! **!raid assume** is not allowed in this level egg.'), delete_after=10)
                 return
             if guild_dict[message.channel.guild.id]['raidchannel_dict'][message.channel.id]['active'] == False:
-                await _eggtoraid(entered_raid, message.channel, message.author)
+                await _eggtoraid(str(pokemon), message.channel, message.author)
                 return
             else:
                 await _eggassume(ctx, " ".join(raid_split), message.channel, message.author)
                 return
         elif guild_dict[message.channel.guild.id]['raidchannel_dict'][message.channel.id]['active'] == False:
-            await _eggtoraid(entered_raid, message.channel, message.author)
+            await _eggtoraid(str(pokemon), message.channel, message.author)
             return
         else:
             await message.channel.send(_('Meowth! Please wait until the egg has hatched before changing it to an open raid!'), delete_after=10)
@@ -2837,9 +2837,9 @@ async def _raid(ctx, content):
         await _timerset(raid_channel, raidexp)
     else:
         await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left on the raid using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
+    ctrs_dict = await _get_generic_counters(message.guild, str(pokemon), weather)
     if str(level) in guild_dict[message.guild.id]['configure_dict']['counters']['auto_levels']:
         try:
-            ctrs_dict = await _get_generic_counters(message.guild, str(pokemon), weather)
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
             ctrsmessage_id = ctrsmessage.id
@@ -2848,10 +2848,8 @@ async def _raid(ctx, content):
                 await ctrsmessage.add_reaction(ctrs_dict[moveset]['emoji'])
                 await asyncio.sleep(0.25)
         except:
-            ctrs_dict = {}
             ctrsmessage_id = None
     else:
-        ctrs_dict = {}
         ctrsmessage_id = None
     guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrsmessage'] = ctrsmessage_id
     guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrs_dict'] = ctrs_dict
@@ -3127,8 +3125,8 @@ async def _eggassume(ctx, args, raid_channel, author=None):
     except discord.errors.NotFound:
         egg_report = None
     await raid_channel.send(_('{roletest}Meowth! This egg will be assumed to be {pokemon} when it hatches!').format(roletest=roletest, pokemon=str(pokemon).title()))
+    ctrs_dict = await _get_generic_counters(raid_channel.guild, str(pokemon), weather)
     if str(egglevel) in guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels']:
-        ctrs_dict = await _get_generic_counters(raid_channel.guild, str(pokemon), weather)
         ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
         ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
         ctrsmessage_id = ctrsmessage.id
@@ -3137,7 +3135,6 @@ async def _eggassume(ctx, args, raid_channel, author=None):
             await ctrsmessage.add_reaction(ctrs_dict[moveset]['emoji'])
             await asyncio.sleep(0.25)
     else:
-        ctrs_dict = {}
         ctrsmessage_id = eggdetails.get('ctrsmessage', None)
     eggdetails['ctrs_dict'] = ctrs_dict
     eggdetails['ctrsmessage'] = ctrsmessage_id
@@ -3326,8 +3323,8 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['gymhuntrgps'] = gymhuntrgps
+    ctrs_dict = await _get_generic_counters(raid_channel.guild, str(pokemon), weather)
     if str(egglevel) in guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and not eggdetails.get('pokemon', None):
-        ctrs_dict = await _get_generic_counters(raid_channel.guild, str(pokemon), weather)
         ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
         ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
         ctrsmessage_id = ctrsmessage.id
@@ -4889,8 +4886,9 @@ async def weather(ctx, *, weather):
         guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['weather'] = weather.lower()
         pkmn = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('pkmn_obj', None)
         if pkmn:
+            ctrs_dict = await _get_generic_counters(ctx.guild, pkmn, weather.lower())
+            guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrs_dict'] = ctrs_dict
             if str(utils.get_level(Meowth, pkmn)) in guild_dict[ctx.guild.id]['configure_dict']['counters']['auto_levels']:
-                ctrs_dict = await _get_generic_counters(ctx.guild, pkmn, weather.lower())
                 try:
                     ctrsmessage = await ctx.channel.get_message(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrsmessage'])
                     moveset = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['moveset']
@@ -4898,7 +4896,6 @@ async def weather(ctx, *, weather):
                     await ctrsmessage.edit(embed=newembed)
                 except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                     pass
-                guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrs_dict'] = ctrs_dict
         return await ctx.channel.send(_("Meowth! Weather set to {}!").format(weather.lower()))
 
 """
