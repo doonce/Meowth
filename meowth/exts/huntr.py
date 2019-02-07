@@ -244,7 +244,7 @@ class Huntr:
                                 if "moveset" in field.name.lower():
                                     return
                             raid_embed.add_field(name="**Moveset**:", value=moves, inline=True)
-                            raid_msg.edit(embed=raid_embed)
+                            await raid_msg.edit(embed=raid_embed)
                         await self.auto_counters(channel, moves)
                         return
                 if reporttype == "egg":
