@@ -309,22 +309,24 @@ class Huntr:
     """Helpers"""
 
     async def auto_counters(self, channel, moves):
-        channelid = channel.id
-        moves = moves.replace("/", "|")
         try:
-            ctrs_message = await channel.get_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channelid]['ctrsmessage'])
+            ctrs_message = await channel.get_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrsmessage'])
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-            return
-        ctrs_dict = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channelid].get('ctrs_dict', {})
+            ctrs_message = None
+        ctrs_dict = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('ctrs_dict', {})
+        entered_raid = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('pokemon', "")
+        weather =  self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('weather', None)
         if not ctrs_dict:
-            return
+            ctrs_dict = await self.bot.get_generic_counters(channel.guild, entered_raid, weather)
+            self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrs_dict'] = ctrs_dict
         for i in ctrs_dict:
-            if ctrs_dict[i]['moveset'] == moves:
+            if ctrs_dict[i]['moveset'] == moves.replace("/", "|"):
                 newembed = ctrs_dict[i]['embed']
                 moveset = i
                 break
-        await ctrs_message.edit(embed=newembed)
-        self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channelid]['moveset'] = moveset
+        if ctrs_message:
+            await ctrs_message.edit(embed=newembed)
+        self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['moveset'] = moveset
 
     """Reporting"""
 

@@ -192,62 +192,6 @@ def raise_admin_violation(message):
     raise Exception(_('Received admin command {command} from unauthorized user, {user}!').format(
         command=message.content, user=message.author))
 
-def get_raidtext(type, pkmn, level, member, channel):
-    if type == "raid":
-        roletest = ""
-        role = discord.utils.get(channel.guild.roles, name=pkmn)
-        if role:
-            roletest = _("{pokemon} - ").format(pokemon=role.mention)
-            raidtext = _("{roletest}Meowth! {pkmn} raid reported by {member} in {channel}! Coordinate here!\n\nFor help, react to this message with the question mark and I will DM you a list of commands you can use!").format(roletest=roletest, pkmn=pkmn.title(), member=member.mention, channel=channel.mention)
-    elif type == "egg":
-        raidtext = _("Meowth! Level {level} raid egg reported by {member} in {channel}! Coordinate here!\n\nFor help, react to this message with the question mark and I will DM you a list of commands you can use!").format(level=level, member=member.mention, channel=channel.mention)
-    elif type == "exraid":
-        raidtext = _("Meowth! EX raid reported by {member} in {channel}! Coordinate here!\n\nFor help, react to this message with the question mark and I will DM you a list of commands you can use!").format(member=member.mention, channel=channel.mention)
-    return raidtext
-
-async def create_raid_channel(type, pkmn, level, details, report_channel):
-    guild = report_channel.guild
-    if type == "exraid":
-        name = _("exraid-egg-")
-        raid_channel_overwrite_list = channel.overwrites
-        if guild_dict[guild.id]['configure_dict']['invite']['enabled']:
-            if guild_dict[guild.id]['configure_dict']['exraid']['permissions'] == "everyone":
-                everyone_overwrite = (guild.default_role, discord.PermissionOverwrite(send_messages=False))
-                raid_channel_overwrite_list.append(everyone_overwrite)
-            for overwrite in raid_channel_overwrite_list:
-                if isinstance(overwrite[0], discord.Role):
-                    if overwrite[0].permissions.manage_guild or overwrite[0].permissions.manage_channels or overwrite[0].permissions.manage_messages:
-                        continue
-                    overwrite[1].send_messages = False
-                elif isinstance(overwrite[0], discord.Member):
-                    if channel.permissions_for(overwrite[0]).manage_guild or channel.permissions_for(overwrite[0]).manage_channels or channel.permissions_for(overwrite[0]).manage_messages:
-                        continue
-                    overwrite[1].send_messages = False
-                if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
-                    overwrite[1].send_messages = False
-        else:
-            if guild_dict[guild.id]['configure_dict']['exraid']['permissions'] == "everyone":
-                everyone_overwrite = (guild.default_role, discord.PermissionOverwrite(send_messages=True))
-                raid_channel_overwrite_list.append(everyone_overwrite)
-        meowth_overwrite = (Meowth.user, discord.PermissionOverwrite(send_messages=True, read_messages=True, manage_roles=True))
-        raid_channel_overwrite_list.append(meowth_overwrite)
-        raid_channel = await guild.create_text_channel(raid_channel_name, overwrites=raid_channel_overwrites, category=raid_channel_category)
-        if guild_dict[guild.id]['configure_dict']['invite']['enabled']:
-            for role in guild.roles:
-                if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
-                    raid_channel_overwrite_list.append((role, discord.PermissionOverwrite(send_messages=True)))
-    elif type == "raid":
-        name = pkmn + "-"
-        raid_channel_overwrite_list = report_channel.overwrites
-        level = utils.get_level(Meowth, pkmn)
-    elif type == "egg":
-        name = _("level-{level}-egg-").format(level=str(level))
-        raid_channel_overwrite_list = report_channel.overwrites
-    name += utils.sanitize_channel_name(details)
-    cat = utils.get_category(Meowth, report_channel, str(level), category_type=type)
-    ow = dict(raid_channel_overwrite_list)
-    return await guild.create_text_channel(name, overwrites=ow, category=cat)
-
 @Meowth.command(hidden=True)
 async def template(ctx, *, sample_message):
     """Sample template messages to see how they would appear."""
@@ -2837,9 +2781,9 @@ async def _raid(ctx, content):
         await _timerset(raid_channel, raidexp)
     else:
         await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left on the raid using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
-    ctrs_dict = await _get_generic_counters(message.guild, str(pokemon), weather)
     if str(level) in guild_dict[message.guild.id]['configure_dict']['counters']['auto_levels']:
         try:
+            ctrs_dict = await _get_generic_counters(message.guild, str(pokemon), weather)
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
             ctrsmessage_id = ctrsmessage.id
@@ -2848,8 +2792,10 @@ async def _raid(ctx, content):
                 await ctrsmessage.add_reaction(ctrs_dict[moveset]['emoji'])
                 await asyncio.sleep(0.25)
         except:
+            ctrs_dict = {}
             ctrsmessage_id = None
     else:
+        ctrs_dict = {}
         ctrsmessage_id = None
     guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrsmessage'] = ctrsmessage_id
     guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrs_dict'] = ctrs_dict
@@ -3125,8 +3071,8 @@ async def _eggassume(ctx, args, raid_channel, author=None):
     except discord.errors.NotFound:
         egg_report = None
     await raid_channel.send(_('{roletest}Meowth! This egg will be assumed to be {pokemon} when it hatches!').format(roletest=roletest, pokemon=str(pokemon).title()))
-    ctrs_dict = await _get_generic_counters(raid_channel.guild, str(pokemon), weather)
     if str(egglevel) in guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels']:
+        ctrs_dict = await _get_generic_counters(raid_channel.guild, str(pokemon), weather)
         ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
         ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
         ctrsmessage_id = ctrsmessage.id
@@ -3135,6 +3081,7 @@ async def _eggassume(ctx, args, raid_channel, author=None):
             await ctrsmessage.add_reaction(ctrs_dict[moveset]['emoji'])
             await asyncio.sleep(0.25)
     else:
+        ctrs_dict = {}
         ctrsmessage_id = eggdetails.get('ctrsmessage', None)
     eggdetails['ctrs_dict'] = ctrs_dict
     eggdetails['ctrsmessage'] = ctrsmessage_id
@@ -3323,8 +3270,8 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
     guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['gymhuntrgps'] = gymhuntrgps
-    ctrs_dict = await _get_generic_counters(raid_channel.guild, str(pokemon), weather)
     if str(egglevel) in guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and not eggdetails.get('pokemon', None):
+        ctrs_dict = await _get_generic_counters(raid_channel.guild, str(pokemon), weather)
         ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
         ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
         ctrsmessage_id = ctrsmessage.id
@@ -4886,9 +4833,8 @@ async def weather(ctx, *, weather):
         guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['weather'] = weather.lower()
         pkmn = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('pkmn_obj', None)
         if pkmn:
-            ctrs_dict = await _get_generic_counters(ctx.guild, pkmn, weather.lower())
-            guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrs_dict'] = ctrs_dict
             if str(utils.get_level(Meowth, pkmn)) in guild_dict[ctx.guild.id]['configure_dict']['counters']['auto_levels']:
+                ctrs_dict = await _get_generic_counters(ctx.guild, pkmn, weather.lower())
                 try:
                     ctrsmessage = await ctx.channel.get_message(guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrsmessage'])
                     moveset = guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['moveset']
@@ -4896,6 +4842,7 @@ async def weather(ctx, *, weather):
                     await ctrsmessage.edit(embed=newembed)
                 except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                     pass
+                guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrs_dict'] = ctrs_dict
         return await ctx.channel.send(_("Meowth! Weather set to {}!").format(weather.lower()))
 
 """
