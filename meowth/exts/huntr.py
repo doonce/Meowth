@@ -229,10 +229,23 @@ class Huntr:
                     channel_address = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('address', None)
                     if channel_gps == gps or channel_address == raid_details:
                         channel = self.bot.get_channel(channelid)
-                        if self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('type', None) == 'egg':
-                            await self.bot.eggtoraid(entered_raid.strip(), channel, message.author, huntr=moves)
                         if embed and channel:
                             await channel.send(embed=embed)
+                        if self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('type', None) == 'egg':
+                            await self.bot.eggtoraid(entered_raid.strip(), channel, message.author, huntr=moves)
+                        elif channel and moves:
+                            await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=entered_raid.title(), moves=moves))
+                            try:
+                                raid_msg = await channel.get_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
+                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                return
+                            raid_embed = raid_msg.embeds[0]
+                            for field in raid_embed.fields:
+                                if "moveset" in field.name.lower():
+                                    return
+                            raid_embed.add_field(name="**Moveset**:", value=moves, inline=True)
+                            raid_msg.edit(embed=raid_embed)
+                        await self.auto_counters(channel, moves)
                         return
                 if reporttype == "egg":
                     if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('egglvls', False):
@@ -292,6 +305,26 @@ class Huntr:
                 raid_channel = await self.huntr_raid(ctx, alarm_details['pokemon'], alarm_details['gym'], exptime, alarm_details['gps'], alarm_details['moves'], auto_report = True, reporter="alarm", report_user=reactuser)
             if embed and raid_channel:
                 await raid_channel.send(embed=embed)
+
+    """Helpers"""
+
+    async def auto_counters(self, channel, moves):
+        channelid = channel.id
+        moves = moves.replace("/", "|")
+        try:
+            ctrs_message = await channel.get_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channelid]['ctrsmessage'])
+        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+            return
+        ctrs_dict = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channelid].get('ctrs_dict', {})
+        if not ctrs_dict:
+            return
+        for i in ctrs_dict:
+            if ctrs_dict[i]['moveset'] == moves:
+                newembed = ctrs_dict[i]['embed']
+                moveset = i
+                break
+        await ctrs_message.edit(embed=newembed)
+        self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channelid]['moveset'] = moveset
 
     """Reporting"""
 
@@ -510,6 +543,7 @@ class Huntr:
             if report_user:
                 raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(report_user.id, {}).setdefault('raid_reports', 0) + 1
                 self.bot.guild_dict[message.guild.id]['trainers'][report_user.id]['raid_reports'] = raid_reports
+            await self.auto_counters(raid_channel, gymhuntrmoves)
             return raid_channel
         elif reporter == "huntr":
             pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})

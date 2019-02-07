@@ -143,7 +143,7 @@ Meowth.config = config
 Meowth.pkmn_info_path = pkmn_path
 Meowth.raid_json_path = raid_path
 
-default_exts = ['datahandler', 'tutorial', 'silph', 'utilities', 'pokemon', 'trade', 'configure', 'gymmatching', 'nest', 'huntr']
+default_exts = ['tutorial', 'silph', 'utilities', 'pokemon', 'trade', 'configure', 'gymmatching', 'nest', 'huntr']
 
 for ext in default_exts:
     try:
