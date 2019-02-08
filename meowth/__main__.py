@@ -443,12 +443,11 @@ async def expire_channel(channel):
                 if channel_dict.get('battling', []):
                     for lobby in channel_dict.get('battling', []):
                         for trainer in lobby['starting_dict']:
-                            trainer += lobby['starting_dict'][trainer]['count']
+                            trainers += lobby['starting_dict'][trainer]['count']
                 if channel_dict.get('completed', []):
                     for lobby in channel_dict.get('completed', []):
                         for trainer in lobby['starting_dict']:
-                            trainer += lobby['starting_dict'][trainer]['count']
-                        trainers += len(lobby['starting_dict'])
+                            trainers += lobby['starting_dict'][trainer]['count']
                 if channel_dict.get('lobby', False):
                     for trainer in channel_dict['lobby']['starting_dict']:
                         trainers += channel_dict['lobby']['starting_dict'][trainer]['count']
