@@ -492,10 +492,13 @@ async def expire_channel(channel):
             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                 pass
                 # channel doesn't exist anymore in serverdict
-            archive = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive', False)
-            logs = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('logs', {})
+            try:
+                archive = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive', False)
+                logs = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('logs', {})
+                await utils.expire_dm_reports(Meowth, guild_dict[guild.id]['raidchannel_dict'][channel.id].get('dm_dict', {}))
+            except KeyError:
+                return
             channel_exists = Meowth.get_channel(channel.id)
-            await utils.expire_dm_reports(Meowth, guild_dict[guild.id]['raidchannel_dict'][channel.id].get('dm_dict', {}))
             if channel_exists == None:
                 return
             elif not gymhuntrdupe and not archive and not logs:
