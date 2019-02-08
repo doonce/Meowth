@@ -506,7 +506,7 @@ class Huntr:
             }
             await self.bot.timerset(raid_channel, raidexp)
             await raid_channel.send("This raid was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
-            ctrs_dict = await ctx.bot._get_generic_counters(message.guild, entered_raid, weather)
+            ctrs_dict = await ctx.bot.get_generic_counters(message.guild, entered_raid, weather)
             if str(level) in ctx.bot.guild_dict[message.guild.id]['configure_dict']['counters']['auto_levels']:
                 try:
                     ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
