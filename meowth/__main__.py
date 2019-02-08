@@ -427,12 +427,12 @@ async def expire_channel(channel):
             raidtype = _("event") if guild_dict[guild.id]['raidchannel_dict'][channel.id].get('meetup', False) else _(" raid")
             expiremsg = _('**This {pokemon}{raidtype} has expired!**').format(
                 pokemon=guild_dict[guild.id]['raidchannel_dict'][channel.id]['pokemon'].capitalize(), raidtype=raidtype)
-        delete_time = 2
         await asyncio.sleep(delete_time)
         #begin stats
         channel_dict = copy.deepcopy(guild_dict[guild.id]['raidchannel_dict'][channel.id])
         gym_matching_cog = Meowth.cogs.get('GymMatching')
         if gym_matching_cog and not dupechannel:
+            trainers = 0
             address = channel_dict.get('address', None)
             gyms = gym_matching_cog.get_gyms(guild.id)
             if address in gyms:
@@ -440,9 +440,18 @@ async def expire_channel(channel):
                 pokemon = channel_dict.get('pokemon', "")
                 if egglevel == "0":
                     egglevel = utils.get_level(Meowth, pokemon)
-                trainers = len(channel_dict.get('completed', [])) + len(channel_dict.get('battling', []))
+                if channel_dict.get('battling', []):
+                    for lobby in channel_dict.get('battling', []):
+                        for trainer in lobby['starting_dict']:
+                            trainer += lobby['starting_dict'][trainer]['count']
+                if channel_dict.get('completed', []):
+                    for lobby in channel_dict.get('completed', []):
+                        for trainer in lobby['starting_dict']:
+                            trainer += lobby['starting_dict'][trainer]['count']
+                        trainers += len(lobby['starting_dict'])
                 if channel_dict.get('lobby', False):
-                    trainers = trainers + 1
+                    for trainer in channel_dict['lobby']['starting_dict']:
+                        trainers += channel_dict['lobby']['starting_dict'][trainer]['count']
                 try:
                     with open(os.path.join('data', 'gym_stats.json'), 'r') as fd:
                         data = json.load(fd)
