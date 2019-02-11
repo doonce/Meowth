@@ -290,14 +290,14 @@ async def expire_wild(message):
     del guild_dict[guild.id]['wildreport_dict'][message.id]
 
 async def expiry_check(channel):
-    logger.info('Expiry_Check - ' + channel.name)
+    logger.info(channel.name)
     guild = channel.guild
     global active_raids
     channel = Meowth.get_channel(channel.id)
     if channel not in active_raids:
         active_raids.append(channel)
         logger.info(
-            'Expire_Channel - Channel Added To Watchlist - ' + channel.name)
+            'Channel Added To Watchlist - ' + channel.name)
         await asyncio.sleep(0.5)
         while True:
             try:
@@ -316,12 +316,12 @@ async def expiry_check(channel):
                             active_raids.remove(channel)
                         except ValueError:
                             logger.info(
-                                'Expire_Channel - Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
+                                'Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
                         logger.info(
-                            'Expire_Channel - Channel Expired And Removed From Watchlist - ' + channel.name)
+                            'Channel Expired And Removed From Watchlist - ' + channel.name)
                         break
-                elif guild_dict[guild.id]['raidchannel_dict'][channel.id]['active']:
-                    if guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp']:
+                else:
+                    if guild_dict[guild.id]['raidchannel_dict'][channel.id]['active']:
                         if guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] <= time.time():
                             if guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg':
                                 pokemon = guild_dict[guild.id]['raidchannel_dict'][channel.id]['pokemon']
@@ -334,12 +334,12 @@ async def expiry_check(channel):
                                     pokemon = pokemon.name.lower()
                                 if pokemon:
                                     logger.info(
-                                        'Expire_Channel - Egg Auto Hatched - ' + channel.name)
+                                        'Egg Auto Hatched - ' + channel.name)
                                     try:
                                         active_raids.remove(channel)
                                     except ValueError:
                                         logger.info(
-                                            'Expire_Channel - Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
+                                            'Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
                                     await _eggtoraid(pokemon.lower(), channel, author=None)
                                     break
                             event_loop.create_task(expire_channel(channel))
@@ -347,10 +347,13 @@ async def expiry_check(channel):
                                 active_raids.remove(channel)
                             except ValueError:
                                 logger.info(
-                                    'Expire_Channel - Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
+                                    'Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
                             logger.info(
-                                'Expire_Channel - Channel Expired And Removed From Watchlist - ' + channel.name)
+                                'Channel Expired And Removed From Watchlist - ' + channel.name)
                             break
+                    else:
+                        event_loop.create_task(expire_channel(channel))
+                        break
             except:
                 pass
             await asyncio.sleep(30)
@@ -363,9 +366,12 @@ async def expire_channel(channel):
     alreadyexpired = False
     dupechannel = False
     gymhuntrdupe = False
+    channel_dict = copy.deepcopy(guild_dict[guild.id]['raidchannel_dict'][channel.id])
+    gym_matching_cog = Meowth.cogs.get('GymMatching')
     logger.info(channel.name)
     channel_exists = Meowth.get_channel(channel.id)
     channel = channel_exists
+    global active_raids
     if (not channel_exists) and (not Meowth.is_closed()):
         try:
             del guild_dict[guild.id]['raidchannel_dict'][channel.id]
@@ -375,6 +381,12 @@ async def expire_channel(channel):
             del guild_dict[guild.id]['list_dict']['raid'][channel.id]
         except (KeyError, AttributeError):
             pass
+        try:
+            active_raids.remove(channel)
+        except ValueError:
+            pass
+        if gym_matching_cog:
+            gym_matching_cog.do_gym_stats(guild.id, channel_dict)
         return
     elif (channel_exists):
         if guild_dict[guild.id]['raidchannel_dict'][channel.id]['active'] == False:
@@ -428,78 +440,111 @@ async def expire_channel(channel):
             expiremsg = _('**This {pokemon}{raidtype} has expired!**').format(
                 pokemon=guild_dict[guild.id]['raidchannel_dict'][channel.id]['pokemon'].capitalize(), raidtype=raidtype)
         await asyncio.sleep(delete_time)
-        #begin stats
-        channel_dict = copy.deepcopy(guild_dict[guild.id]['raidchannel_dict'][channel.id])
-        gym_matching_cog = Meowth.cogs.get('GymMatching')
-        if gym_matching_cog and not dupechannel:
-            trainers = 0
-            address = channel_dict.get('address', None)
-            gyms = gym_matching_cog.get_gyms(guild.id)
-            if address in gyms:
-                egglevel = channel_dict.get('egglevel', 0)
-                pokemon = channel_dict.get('pokemon', "")
-                if egglevel == "0":
-                    egglevel = utils.get_level(Meowth, pokemon)
-                if channel_dict.get('battling', []):
-                    for lobby in channel_dict.get('battling', []):
-                        for trainer in lobby['starting_dict']:
-                            trainers += lobby['starting_dict'][trainer]['count']
-                if channel_dict.get('completed', []):
-                    for lobby in channel_dict.get('completed', []):
-                        for trainer in lobby['starting_dict']:
-                            trainers += lobby['starting_dict'][trainer]['count']
-                if channel_dict.get('lobby', False):
-                    for trainer in channel_dict['lobby']['starting_dict']:
-                        trainers += channel_dict['lobby']['starting_dict'][trainer]['count']
-                try:
-                    with open(os.path.join('data', 'gym_stats.json'), 'r') as fd:
-                        data = json.load(fd)
-                except:
-                        data = {}
-                test_var = data.setdefault(str(guild.id), {}).setdefault(address, {}).setdefault(egglevel, {"total_raids":0, "completed_raids":0, "completed_trainers":0})
-                gym_raids = data[str(guild.id)][address][egglevel]['total_raids'] + 1
-                gym_trainers = data[str(guild.id)][address][egglevel]['completed_trainers'] + trainers
-                if trainers:
-                    gym_completed = data[str(guild.id)][address][egglevel]['completed_raids'] + 1
-                    data[str(guild.id)][address][egglevel]['completed_raids'] = gym_completed
-                data[str(guild.id)][address][egglevel]['total_raids'] = gym_raids
-                data[str(guild.id)][address][egglevel]['completed_trainers'] = gym_trainers
-                with open(os.path.join('data', 'gym_stats.json'), 'w') as fd:
-                    json.dump(data, fd, indent=2, separators=(', ', ': '))
-
-        #end stats
         # If the channel has already been deleted from the dict, someone
         # else got to it before us, so don't do anything.
         # Also, if the channel got reactivated, don't do anything either.
-        try:
-            if (guild_dict[guild.id]['raidchannel_dict'][channel.id]['active'] == False) and (not Meowth.is_closed()):
-                report_channel = Meowth.get_channel(
-                    guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportcity'])
-                if dupechannel:
-                    try:
-                        reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
-                        await utils.safe_delete(reportmsg)
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                        pass
-                else:
-                    try:
-                        reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
-                        await reportmsg.edit(embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                        pass
+        if (guild_dict[guild.id]['raidchannel_dict'][channel.id]['active'] == False) and (not Meowth.is_closed()):
+            report_channel = Meowth.get_channel(
+                guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportcity'])
+            if dupechannel:
                 try:
-                    user_message = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportmessage'])
-                    await utils.safe_delete(user_message)
+                    reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
+                    await utils.safe_delete(reportmsg)
                 except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                     pass
-                    # channel doesn't exist anymore in serverdict
-                archive = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive', False)
-                logs = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('logs', {})
-                await utils.expire_dm_reports(Meowth, guild_dict[guild.id]['raidchannel_dict'][channel.id].get('dm_dict', {}))
-                channel_exists = Meowth.get_channel(channel.id)
-                if channel_exists == None:
-                    return
-                elif not gymhuntrdupe and not archive and not logs:
+            else:
+                try:
+                    reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
+                    await reportmsg.edit(embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
+                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                    pass
+            try:
+                user_message = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportmessage'])
+                await utils.safe_delete(user_message)
+            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                pass
+                # channel doesn't exist anymore in serverdict
+            archive = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive', False)
+            logs = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('logs', {})
+            await utils.expire_dm_reports(Meowth, guild_dict[guild.id]['raidchannel_dict'][channel.id].get('dm_dict', {}))
+            channel_exists = Meowth.get_channel(channel.id)
+            if channel_exists == None:
+                return
+            elif not gymhuntrdupe and not archive and not logs:
+                try:
+                    del guild_dict[guild.id]['raidchannel_dict'][channel.id]
+                except KeyError:
+                    pass
+                try:
+                    del guild_dict[guild.id]['list_dict']['raid'][channel.id]
+                except KeyError:
+                    pass
+                try:
+                    await channel_exists.delete()
+                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                    pass
+                try:
+                    active_raids.remove(channel)
+                except ValueError:
+                    pass
+                logger.info(
+                    'Channel Deleted - ' + channel.name)
+                if gym_matching_cog:
+                    gym_matching_cog.do_gym_stats(guild.id, channel_dict)
+            elif gymhuntrdupe and not archive:
+                for overwrite in channel.overwrites:
+                    try:
+                        await channel.set_permissions(guild.default_role, overwrite=discord.PermissionOverwrite(read_messages=False))
+                    except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                        pass
+                    if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
+                        try:
+                            await channel.set_permissions(overwrite[0], read_messages=False)
+                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                            pass
+                await channel.send(_('-----------------------------------------------\n**The channel has been removed from view for everybody but Meowth and server owner to protect from future GymHuntr duplicates. It will be removed on its own, please do not remove it. Just ignore what happens in this channel.**\n-----------------------------------------------'))
+                deltime = ((gymhuntrexp - time.time()) / 60) + 10
+                await _timerset(channel, deltime)
+            elif archive or logs:
+                try:
+                    for overwrite in channel.overwrites:
+                        ow = channel.overwrites_for(overwrite[0])
+                        if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
+                            ow.read_messages = False
+                        if channel.overwrites_for(overwrite[0]).manage_guild or channel.overwrites_for(overwrite[0]).manage_channels:
+                            ow.read_messages = True
+                        await channel.set_permissions(overwrite[0], overwrite = ow)
+                    for role in guild.roles:
+                        ow = channel.overwrites_for(role)
+                        if role.permissions.manage_guild or role.permissions.manage_channels:
+                            ow.read_messages = True
+                            await channel.set_permissions(role, overwrite = ow)
+                    await channel.set_permissions(guild.default_role, read_messages=False)
+                except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                    pass
+                new_name = _('archived-')
+                if new_name not in channel.name:
+                    new_name += channel.name
+                    category = guild_dict[guild.id]['configure_dict'].get('archive', {}).get('category', 'same')
+                    if category == 'same':
+                        newcat = channel.category
+                    else:
+                        newcat = guild.get_channel(category)
+                    try:
+                        await channel.edit(name=new_name, category=newcat)
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                        pass
+                    await channel.send(_('-----------------------------------------------\n**The channel has been archived and removed from view for everybody but Meowth and those with Manage Channel permissions. Any messages that were deleted after the channel was marked for archival will be posted below. You will need to delete this channel manually.**\n-----------------------------------------------'))
+                    while logs:
+                        earliest = min(logs)
+                        embed = discord.Embed(colour=logs[earliest]['color_int'], description=logs[earliest]['content'], timestamp=logs[earliest]['created_at'])
+                        if logs[earliest]['author_nick']:
+                            embed.set_author(name="{name} [{nick}]".format(name=logs[earliest]['author_str'], nick=logs[earliest]['author_nick']), icon_url = logs[earliest]['author_avy'])
+                        else:
+                            embed.set_author(name=logs[earliest]['author_str'], icon_url = logs[earliest]['author_avy'])
+                        await channel.send(embed=embed)
+                        del logs[earliest]
+                        await asyncio.sleep(.25)
                     try:
                         del guild_dict[guild.id]['raidchannel_dict'][channel.id]
                     except KeyError:
@@ -509,75 +554,11 @@ async def expire_channel(channel):
                     except KeyError:
                         pass
                     try:
-                        await channel_exists.delete()
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                        active_raids.remove(channel)
+                    except ValueError:
                         pass
-                    logger.info(
-                        'Channel Deleted - ' + channel.name)
-                elif gymhuntrdupe and not archive:
-                    for overwrite in channel.overwrites:
-                        try:
-                            await channel.set_permissions(guild.default_role, overwrite=discord.PermissionOverwrite(read_messages=False))
-                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            pass
-                        if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
-                            try:
-                                await channel.set_permissions(overwrite[0], read_messages=False)
-                            except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                                pass
-                    await channel.send(_('-----------------------------------------------\n**The channel has been removed from view for everybody but Meowth and server owner to protect from future GymHuntr duplicates. It will be removed on its own, please do not remove it. Just ignore what happens in this channel.**\n-----------------------------------------------'))
-                    deltime = ((gymhuntrexp - time.time()) / 60) + 10
-                    await _timerset(channel, deltime)
-                elif archive or logs:
-                    try:
-                        for overwrite in channel.overwrites:
-                            ow = channel.overwrites_for(overwrite[0])
-                            if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
-                                ow.read_messages = False
-                            if channel.overwrites_for(overwrite[0]).manage_guild or channel.overwrites_for(overwrite[0]).manage_channels:
-                                ow.read_messages = True
-                            await channel.set_permissions(overwrite[0], overwrite = ow)
-                        for role in guild.roles:
-                            ow = channel.overwrites_for(role)
-                            if role.permissions.manage_guild or role.permissions.manage_channels:
-                                ow.read_messages = True
-                                await channel.set_permissions(role, overwrite = ow)
-                        await channel.set_permissions(guild.default_role, read_messages=False)
-                    except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                        pass
-                    new_name = _('archived-')
-                    if new_name not in channel.name:
-                        new_name += channel.name
-                        category = guild_dict[guild.id]['configure_dict'].get('archive', {}).get('category', 'same')
-                        if category == 'same':
-                            newcat = channel.category
-                        else:
-                            newcat = guild.get_channel(category)
-                        try:
-                            await channel.edit(name=new_name, category=newcat)
-                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
-                        await channel.send(_('-----------------------------------------------\n**The channel has been archived and removed from view for everybody but Meowth and those with Manage Channel permissions. Any messages that were deleted after the channel was marked for archival will be posted below. You will need to delete this channel manually.**\n-----------------------------------------------'))
-                        while logs:
-                            earliest = min(logs)
-                            embed = discord.Embed(colour=logs[earliest]['color_int'], description=logs[earliest]['content'], timestamp=logs[earliest]['created_at'])
-                            if logs[earliest]['author_nick']:
-                                embed.set_author(name="{name} [{nick}]".format(name=logs[earliest]['author_str'], nick=logs[earliest]['author_nick']), icon_url = logs[earliest]['author_avy'])
-                            else:
-                                embed.set_author(name=logs[earliest]['author_str'], icon_url = logs[earliest]['author_avy'])
-                            await channel.send(embed=embed)
-                            del logs[earliest]
-                            await asyncio.sleep(.25)
-                        try:
-                            del guild_dict[guild.id]['raidchannel_dict'][channel.id]
-                        except KeyError:
-                            pass
-                        try:
-                            del guild_dict[guild.id]['list_dict']['raid'][channel.id]
-                        except KeyError:
-                            pass
-        except:
-            pass
+                    if gym_matching_cog:
+                        gym_matching_cog.do_gym_stats(guild.id, channel_dict)
 
 
 Meowth.expire_channel = expire_channel
@@ -586,7 +567,16 @@ async def channel_cleanup(loop=True):
     while (not Meowth.is_closed()):
         global active_raids
         guilddict_chtemp = copy.deepcopy(guild_dict)
-        logger.info('Channel_Cleanup ------ BEGIN ------')
+        logger.info('------ BEGIN ------')
+        gym_matching_cog = Meowth.cogs.get('GymMatching')
+        # clean up active_raids
+        for channel in active_raids:
+            channelmatch = Meowth.get_channel(channel.id)
+            if not channelmatch:
+                try:
+                    active_raids.remove(channel)
+                except ValueError:
+                    pass
         # for every server in save data
         for guildid in guilddict_chtemp.keys():
             guild = Meowth.get_guild(guildid)
@@ -602,14 +592,17 @@ async def channel_cleanup(loop=True):
             # check every raid channel data for each server
             for channelid in guilddict_chtemp[guildid]['raidchannel_dict']:
                 channel = Meowth.get_channel(channelid)
-                log_str = 'Channel_Cleanup - Server: ' + guild.name
+                log_str = 'Server: ' + guild.name
                 log_str = (log_str + ': Channel:') + str(channelid)
                 logger.info(log_str + ' - CHECKING')
                 channelmatch = Meowth.get_channel(channelid)
+                channel_dict = guilddict_chtemp[guildid]['raidchannel_dict'][channelid]
                 if channelmatch == None:
                     # list channel for deletion from save data
                     dict_channel_delete.append(channelid)
-                    logger.info(log_str + " - DOESN'T EXIST IN DISCORD")
+                    if gym_matching_cog:
+                        gym_matching_cog.do_gym_stats(guildid, channel_dict)
+                    logger.info(log_str + " - DOESN'T EXIST IN DISCORD -> DELETING")
                 # otherwise, if meowth can still see the channel in discord
                 else:
                     logger.info(
@@ -626,25 +619,15 @@ async def channel_cleanup(loop=True):
                                 #list the channel to be deleted
                             logger.info(
                                 log_str + ' - 5+ MIN EXPIRY NONACTIVE RAID -> Expire_Channel')
-                        event_loop.create_task(expire_channel(channel))
                         logger.info(
                             log_str + ' - = RECENTLY EXPIRED NONACTIVE RAID -> Expire_Channel')
-                        continue
                     # if the channel save data shows it as an active raid still
                     elif guilddict_chtemp[guildid]['raidchannel_dict'][channelid]['active'] == True:
-                        # if it's an exraid
-                        if guilddict_chtemp[guildid]['raidchannel_dict'][channelid]['type'] == 'exraid':
-                            logger.info(log_str + ' - EXRAID')
-                        # or if the expiry time for the channel has already passed within 5 minutes
-                        elif guilddict_chtemp[guildid]['raidchannel_dict'][channelid]['exp'] <= time.time():
-                            # list the channel to be sent to the channel expiry function
-                            event_loop.create_task(expire_channel(channel))
-                            logger.info(log_str + ' - RECENTLY EXPIRED -> Expire_Channel')
+                        # if channel is still active, make sure it's expiry is being monitored
                         if channel not in active_raids:
-                            # if channel is still active, make sure it's expiry is being monitored
-                            event_loop.create_task(expiry_check(channel))
                             logger.info(
                                 log_str + ' - MISSING FROM EXPIRY CHECK -> Expiry_Check')
+                    event_loop.create_task(expiry_check(channel))
             # for every channel listed to have save data deleted
             for c in dict_channel_delete:
                 try:
@@ -664,14 +647,14 @@ async def channel_cleanup(loop=True):
             await _save()
         except Exception as err:
             logger.info('SAVING FAILED' + err)
-        logger.info('Channel_Cleanup ------ END ------')
+        logger.info('------ END ------')
         await asyncio.sleep(600)
         continue
 
 async def guild_cleanup(loop=True):
     while (not Meowth.is_closed()):
         guilddict_srvtemp = copy.deepcopy(guild_dict)
-        logger.info('Server_Cleanup ------ BEGIN ------')
+        logger.info('------ BEGIN ------')
         guilddict_srvtemp = guild_dict
         dict_guild_list = []
         bot_guild_list = []
@@ -686,11 +669,11 @@ async def guild_cleanup(loop=True):
         for s in dict_guild_delete:
             try:
                 del guild_dict[s]
-                logger.info(('Server_Cleanup - Cleared ' + str(s)) +
+                logger.info(('Cleared ' + str(s)) +
                             ' from save data')
             except KeyError:
                 pass
-        logger.info('Server_Cleanup - SAVING CHANGES')
+        logger.info('SAVING CHANGES')
         try:
             await _save()
         except Exception as err:
@@ -702,7 +685,7 @@ async def guild_cleanup(loop=True):
 
 async def message_cleanup(loop=True):
     while (not Meowth.is_closed()):
-        logger.info('message_cleanup ------ BEGIN ------')
+        logger.info('------ BEGIN ------')
         guilddict_temp = copy.deepcopy(guild_dict)
         for guildid in guilddict_temp.keys():
             report_edit_dict = {}
@@ -749,12 +732,12 @@ async def message_cleanup(loop=True):
                 except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError, KeyError):
                     pass
         # save server_dict changes after cleanup
-        logger.info('message_cleanup - SAVING CHANGES')
+        logger.info('SAVING CHANGES')
         try:
             await _save()
         except Exception as err:
-            logger.info('message_cleanup - SAVING FAILED' + err)
-        logger.info('message_cleanup ------ END ------')
+            logger.info('SAVING FAILED' + err)
+        logger.info('------ END ------')
         await asyncio.sleep(600)
         continue
 

@@ -48,6 +48,55 @@ class GymMatching:
                               (float(s[1]) - float(stops[key][1])) ** 2
         return min(stops, key=functools.partial(dist, coord))
 
+    def do_gym_stats(self, guild_id, channel_dict):
+        trainers = 0
+        address = channel_dict.get('address', None)
+        gyms = self.get_gyms(guild_id)
+        if address in gyms:
+            egglevel = channel_dict.get('egglevel', 0)
+            pokemon = channel_dict.get('pokemon', "")
+            boss = channel_dict.get('pkmn_obj', "Egg")
+            if egglevel == "0":
+                egglevel = utils.get_level(self.bot, pokemon)
+            if channel_dict.get('battling', []):
+                for lobby in channel_dict.get('battling', []):
+                    for trainer in lobby['starting_dict']:
+                        trainers += lobby['starting_dict'][trainer]['count']
+            if channel_dict.get('completed', []):
+                for lobby in channel_dict.get('completed', []):
+                    for trainer in lobby['starting_dict']:
+                        trainers += lobby['starting_dict'][trainer]['count']
+            if channel_dict.get('lobby', False):
+                for trainer in channel_dict['lobby']['starting_dict']:
+                    trainers += channel_dict['lobby']['starting_dict'][trainer]['count']
+            try:
+                with open(os.path.join('data', 'gym_stats.json'), 'r') as fd:
+                    data = json.load(fd)
+            except:
+                    data = {}
+            test_var = data.setdefault(str(guild_id), {}).setdefault(address, {"total_raids":0, "completed_raids":0, "completed_trainers":0}).setdefault(egglevel, {"total_raids":0, "completed_raids":0, "completed_trainers":0}).setdefault(boss, {"total_raids":0, "completed_raids":0, "completed_trainers":0})
+            gym_total = data[str(guild_id)][address]['total_raids'] + 1
+            level_total = data[str(guild_id)][address][egglevel]['total_raids'] + 1
+            boss_total = data[str(guild_id)][address][egglevel][boss]['total_raids'] + 1
+            gym_trainers = data[str(guild_id)][address]['completed_trainers'] + trainers
+            level_trainers = data[str(guild_id)][address][egglevel]['completed_trainers'] + trainers
+            boss_trainers = data[str(guild_id)][address][egglevel][boss]['completed_trainers'] + trainers
+            if trainers:
+                gym_complete = data[str(guild_id)][address]['completed_raids'] + 1
+                level_complete = data[str(guild_id)][address][egglevel]['completed_raids'] + 1
+                boss_complete = data[str(guild_id)][address][egglevel][boss]['completed_raids'] + 1
+                data[str(guild_id)][address]['completed_raids'] = gym_complete
+                data[str(guild_id)][address][egglevel]['completed_raids'] = level_complete
+                data[str(guild_id)][address][egglevel][boss]['completed_raids'] = boss_complete
+            data[str(guild_id)][address]['total_raids'] = gym_total
+            data[str(guild_id)][address][egglevel]['total_raids'] = level_total
+            data[str(guild_id)][address][egglevel][boss]['total_raids'] = boss_total
+            data[str(guild_id)][address]['completed_trainers'] = gym_trainers
+            data[str(guild_id)][address][egglevel]['completed_trainers'] = level_trainers
+            data[str(guild_id)][address][egglevel][boss]['completed_trainers'] = boss_trainers
+            with open(os.path.join('data', 'gym_stats.json'), 'w') as fd:
+                json.dump(data, fd, indent=2, separators=(', ', ': '))
+
     @commands.command(hidden=True)
     async def gym_match_test(self, ctx, gym_name):
         gyms = self.get_gyms(ctx.guild.id)
