@@ -3962,17 +3962,17 @@ async def _timerset(raidchannel, exptime):
     await raidchannel.send(timerstr)
     await raidchannel.edit(topic=topicstr)
     report_channel = Meowth.get_channel(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['reportcity'])
-    raidmsg = await raidchannel.get_message(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['raidmessage'])
-    reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['raidreport'])
-    embed = raidmsg.embeds[0]
-    embed.set_field_at(3, name=embed.fields[3].name, value=endtime, inline=True)
     try:
+        raidmsg = await raidchannel.get_message(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['raidmessage'])
+        embed = raidmsg.embeds[0]
+        embed.set_field_at(3, name=embed.fields[3].name, value=endtime, inline=True)
         await raidmsg.edit(content=raidmsg.content, embed=embed)
-    except discord.errors.NotFound:
+    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError):
         pass
     try:
+        reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['raidreport'])
         await reportmsg.edit(content=reportmsg.content, embed=embed)
-    except discord.errors.NotFound:
+    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
         pass
     raidchannel = Meowth.get_channel(raidchannel.id)
     event_loop.create_task(expiry_check(raidchannel))

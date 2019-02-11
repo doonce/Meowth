@@ -232,7 +232,7 @@ class Huntr:
                         if embed and channel:
                             await channel.send(embed=embed)
                         if self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('type', None) == 'egg':
-                            await self.bot.eggtoraid(entered_raid.strip(), channel, message.author, huntr=moves)
+                            await self.bot.eggtoraid(entered_raid, channel, message.author, huntr=moves)
                         elif channel and moves:
                             await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=entered_raid.title(), moves=moves))
                             try:
@@ -309,6 +309,7 @@ class Huntr:
     """Helpers"""
 
     async def auto_counters(self, channel, moves):
+        moveset = 0
         try:
             ctrs_message = await channel.get_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrsmessage'])
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):

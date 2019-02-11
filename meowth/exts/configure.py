@@ -1090,7 +1090,6 @@ class Configure:
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!archive** command marks temporary raid channels for archival rather than deletion. This can be useful for investigating potential violations of your server's rules in these channels.\n\nIf you would like to disable this feature, reply with **N**. Otherwise send the category you would like me to place archived channels in. You can say **same** to keep them in the same category, or type the name or ID of a category in your server.")).set_author(name=_('Archive Configuration'), icon_url=self.bot.user.avatar_url))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp['archive']['enabled']}\nCategory: {config_dict_temp['archive']['category']}").set_author(name=_("Current Archive Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
-        config_dict_temp['archive'] = {}
         while True:
             archivemsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if archivemsg.content.lower() == 'cancel':
@@ -1122,7 +1121,7 @@ class Configure:
                 break
         if config_dict_temp['archive']['enabled']:
             await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("I can also listen in your raid channels for words or phrases that you want to trigger an automatic archival. For example, if discussion of spoofing is against your server rules, you might tell me to listen for the word 'spoofing'.\n\nReply with **none** to disable this feature, or reply with a comma separated list of phrases you want me to listen in raid channels for.")).set_author(name=_('Archive Configuration'), icon_url=self.bot.user.avatar_url))
-            if config_dict_temp['archive']['list']:
+            if config_dict_temp['archive'].get('list', []):
                 await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['archive']['list']).set_author(name=_("Current Archive Phrases"), icon_url=self.bot.user.avatar_url), delete_after=300)
             phrasemsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if phrasemsg.content.lower() == 'none':
