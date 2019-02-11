@@ -310,6 +310,7 @@ class Huntr:
 
     async def auto_counters(self, channel, moves):
         moveset = 0
+        newembed = False
         try:
             ctrs_message = await channel.get_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrsmessage'])
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):

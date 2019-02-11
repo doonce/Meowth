@@ -4584,7 +4584,6 @@ async def counters(ctx, *, args = None):
             form = pkmn.form
             if pkmn.alolan:
                 form = "alolan"
-            pkmn = pkmn.name.lower()
         else:
             pkmn = next((str(p) for p in Meowth.raid_list if not str(p).isdigit() and re.sub(rgx, '', str(p)) in re.sub(rgx, '', args.lower())), None)
             if not pkmn:
@@ -4593,7 +4592,7 @@ async def counters(ctx, *, args = None):
         if not weather:
             if args:
                 weather = next((w for w in weather_list if re.sub(rgx, '', w) in re.sub(rgx, '', args.lower())), None)
-        return await _counters(ctx, pkmn, user, weather, form, movesetstr)
+        return await _counters(ctx, str(pkmn), user, weather, form, movesetstr)
 
     if args:
         args_split = args.split()
@@ -4620,14 +4619,14 @@ async def counters(ctx, *, args = None):
         pkmn = pkmn_class.Pokemon.get_pokemon(Meowth, pkmn)
         weather = guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('weather', None)
         form = guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('form', None)
-    if pkmn:
-        pkmn = pkmn.name.lower()
-    else:
+    if not pkmn:
         await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon that appears in raids! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
         return
-    await _counters(ctx, pkmn, user, weather, form, "Unknown Moveset")
+    await _counters(ctx, str(pkmn), user, weather, form, "Unknown Moveset")
 
 async def _counters(ctx, pkmn, user = None, weather = None, form = None, movesetstr = "Unknown Moveset"):
+    pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, pkmn)
+    pkmn = pokemon.name.lower()
     level = utils.get_level(Meowth, pkmn) if utils.get_level(Meowth, pkmn).isdigit() else "5"
     form_list = [_('none'), _('alolan'), _('origin'), _('attack'), _('defense'), _('speed')]
     match_list = ['', '_ALOLA_FORM', '_ORIGIN_FORM', '_ATTACK_FORM', '_DEFENSE_FORM', '_SPEED_FORM']
@@ -4700,7 +4699,7 @@ async def _counters(ctx, pkmn, user = None, weather = None, form = None, moveset
             form_url = "a"
         else:
             form_url = ""
-        img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/{number}_{form}.png?cache=1'.format(number=str(utils.get_number(Meowth, pkmn)).zfill(3), form=form_url)
+        img_url = pokemon.img_url
         ctrs_embed = discord.Embed(colour=colour)
         ctrs_embed.set_author(name=title, url=title_url, icon_url=hyperlink_icon)
         ctrs_embed.set_thumbnail(url=img_url)
@@ -4745,8 +4744,10 @@ async def _get_generic_counters(guild, pkmn, weather=None):
     weather = match_list[index]
     form_list = [_('none'), _('alolan'), _('origin'), _('attack'), _('defense'), _('speed')]
     match_list = ['', '_ALOLA_FORM', '_ORIGIN_FORM', '_ATTACK_FORM', '_DEFENSE_FORM', '_SPEED_FORM']
-    if not pokemon.form:
+    if not pokemon.form and not pokemon.alolan:
         index = 0
+    elif pokemon.alolan:
+        index = form_list.index("alolan")
     else:
         try:
             index = form_list.index(pokemon.form)
