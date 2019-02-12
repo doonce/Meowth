@@ -321,12 +321,14 @@ class Huntr:
         if not ctrs_dict:
             ctrs_dict = await self.bot.get_generic_counters(channel.guild, entered_raid, weather)
             self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrs_dict'] = ctrs_dict
+        if not moves or not ctrs_dict:
+            return
         for i in ctrs_dict:
             if ctrs_dict[i]['moveset'] == moves.replace("/", "|"):
                 newembed = ctrs_dict[i]['embed']
                 moveset = i
                 break
-        if ctrs_message:
+        if ctrs_message and newembed:
             await ctrs_message.edit(embed=newembed)
         self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['moveset'] = moveset
 

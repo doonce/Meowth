@@ -82,7 +82,6 @@ type_chart = {}
 raid_info = {}
 
 active_raids = []
-active_wilds = []
 # Append path of this script to the path of
 # config files which we're loading.
 # Assumes that config files will always live in the same directory.
@@ -290,7 +289,6 @@ async def expire_wild(message):
     del guild_dict[guild.id]['wildreport_dict'][message.id]
 
 async def expiry_check(channel):
-    logger.info(channel.name)
     guild = channel.guild
     global active_raids
     channel = Meowth.get_channel(channel.id)
@@ -338,21 +336,25 @@ async def expiry_check(channel):
                                     try:
                                         active_raids.remove(channel)
                                     except ValueError:
-                                        logger.info(
-                                            'Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
+                                        pass
                                     await _eggtoraid(pokemon.lower(), channel, author=None)
                                     break
                             event_loop.create_task(expire_channel(channel))
                             try:
                                 active_raids.remove(channel)
                             except ValueError:
-                                logger.info(
-                                    'Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
+                                pass
                             logger.info(
                                 'Channel Expired And Removed From Watchlist - ' + channel.name)
                             break
                     else:
                         event_loop.create_task(expire_channel(channel))
+                        try:
+                            active_raids.remove(channel)
+                        except ValueError:
+                            pass
+                        logger.info(
+                                'Channel Expired And Removed From Watchlist - ' + channel.name)
                         break
             except:
                 pass
@@ -372,6 +374,10 @@ async def expire_channel(channel):
     channel_exists = Meowth.get_channel(channel.id)
     channel = channel_exists
     global active_raids
+    try:
+        active_raids.remove(channel)
+    except ValueError:
+        pass
     if (not channel_exists) and (not Meowth.is_closed()):
         try:
             del guild_dict[guild.id]['raidchannel_dict'][channel.id]
@@ -380,10 +386,6 @@ async def expire_channel(channel):
         try:
             del guild_dict[guild.id]['list_dict']['raid'][channel.id]
         except (KeyError, AttributeError):
-            pass
-        try:
-            active_raids.remove(channel)
-        except ValueError:
             pass
         if gym_matching_cog:
             gym_matching_cog.do_gym_stats(guild.id, channel_dict)
@@ -444,6 +446,8 @@ async def expire_channel(channel):
         # else got to it before us, so don't do anything.
         # Also, if the channel got reactivated, don't do anything either.
         try:
+            if guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('active', False):
+                return
             if (guild_dict[guild.id]['raidchannel_dict'][channel.id]['active'] == False) and (not Meowth.is_closed()):
                 report_channel = Meowth.get_channel(
                     guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportcity'])
@@ -483,10 +487,6 @@ async def expire_channel(channel):
                     try:
                         await channel_exists.delete()
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                        pass
-                    try:
-                        active_raids.remove(channel)
-                    except ValueError:
                         pass
                     logger.info(
                         'Channel Deleted - ' + channel.name)
@@ -553,10 +553,6 @@ async def expire_channel(channel):
                         try:
                             del guild_dict[guild.id]['list_dict']['raid'][channel.id]
                         except KeyError:
-                            pass
-                        try:
-                            active_raids.remove(channel)
-                        except ValueError:
                             pass
                         if gym_matching_cog:
                             gym_matching_cog.do_gym_stats(guild.id, channel_dict)
