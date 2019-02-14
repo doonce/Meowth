@@ -313,7 +313,7 @@ class Huntr:
         newembed = False
         try:
             ctrs_message = await channel.get_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrsmessage'])
-        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             ctrs_message = None
         ctrs_dict = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('ctrs_dict', {})
         entered_raid = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('pokemon', "")

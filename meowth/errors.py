@@ -6,6 +6,7 @@ from inspect import signature, getfullargspec
 import asyncio
 import sys
 import traceback
+import time
 
 class TeamSetCheckFail(CommandError):
     'Exception raised checks.teamset fails'
@@ -175,7 +176,8 @@ def custom_error_handling(bot, logger):
     @bot.event
     async def on_error(event, *args, **kwargs):
         """Called when an event raises an uncaught exception"""
-        print(f"--------------------\nEXCEPTION: A {sys.exc_info()[0].__name__} exception has occured in {event}. Check outputlog for details.\n{sys.exc_info()[1]}\n--------------------")
+        timestr = time.strftime("%d/%m/%Y %H:%M", time.localtime())
+        print(f"--------------------\nEXCEPTION: A {sys.exc_info()[0].__name__} exception has occured in {event}. Check outputlog for details.\n[{timestr}]: {sys.exc_info()[1]}\n--------------------")
         logger.exception(f'{traceback.format_exc()}')
 
     @bot.event
@@ -545,5 +547,6 @@ def custom_error_handling(bot, logger):
             await asyncio.sleep(10)
             await delete_error(ctx.message, error)
         else:
-            print(f"--------------------\nEXCEPTION: A {type(error).__name__} exception has occured in {ctx.command}. Check outputlog for details.\n{error}\n--------------------")
+            timestr = time.strftime("%d/%m/%Y %H:%M", time.localtime())
+            print(f"--------------------\nEXCEPTION: A {type(error).__name__} exception has occured in {ctx.command}. Check outputlog for details.\n[{timestr}]: {error}\n--------------------")
             logger.exception(type(error).__name__, exc_info=error)

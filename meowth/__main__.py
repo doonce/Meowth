@@ -451,23 +451,24 @@ async def expire_channel(channel):
             if (guild_dict[guild.id]['raidchannel_dict'][channel.id]['active'] == False) and (not Meowth.is_closed()):
                 report_channel = Meowth.get_channel(
                     guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportcity'])
-                if dupechannel:
+                if report_channel:
+                    if dupechannel:
+                        try:
+                            reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
+                            await utils.safe_delete(reportmsg)
+                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                            pass
+                    else:
+                        try:
+                            reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
+                            await reportmsg.edit(embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
+                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                            pass
                     try:
-                        reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
-                        await utils.safe_delete(reportmsg)
+                        user_message = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportmessage'])
+                        await utils.safe_delete(user_message)
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                         pass
-                else:
-                    try:
-                        reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
-                        await reportmsg.edit(embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                        pass
-                try:
-                    user_message = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportmessage'])
-                    await utils.safe_delete(user_message)
-                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                    pass
                     # channel doesn't exist anymore in serverdict
                 archive = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive', False)
                 logs = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('logs', {})
@@ -4205,8 +4206,12 @@ async def recover(ctx):
 
     Usage: !recover
     Only necessary after a crash."""
+    global active_raids
     if (checks.check_wantchannel(ctx) or checks.check_citychannel(ctx) or checks.check_raidchannel(ctx) or checks.check_eggchannel(ctx) or checks.check_exraidchannel(ctx)):
         await ctx.channel.send(_("Meowth! I can't recover this channel because I know about it already!"), delete_after=10)
+        if ctx.channel in active_raids:
+            active_raids.remove(ctx.channel)
+            event_loop.create_task(expiry_check(ctx.channel))
     else:
         channel = ctx.channel
         guild = channel.guild

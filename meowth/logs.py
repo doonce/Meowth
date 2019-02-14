@@ -27,7 +27,7 @@ def init_loggers():
     logfile_path = 'logs/meowth.log'
     fhandler = logging.handlers.RotatingFileHandler(
         filename=str(logfile_path), encoding='utf-8', mode='a',
-        maxBytes=400000, backupCount=20)
+        maxBytes=1000000, backupCount=20)
     fhandler.setFormatter(meowth_format)
 
     logger.addHandler(fhandler)

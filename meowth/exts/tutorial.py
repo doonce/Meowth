@@ -90,8 +90,11 @@ class Tutorial:
 
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"The {ctx.bot.config['wild_omw']} emoji adds you to a list of trainers chasing the wild spawn and the {ctx.bot.config['wild_despawn']} emoji alerts others that it has despawned."))
 
-            wild_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports']
-            ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports'] = wild_reports - 1
+            try:
+                wild_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports']
+                ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports'] = wild_reports - 1
+            except KeyError:
+                pass
 
             await asyncio.sleep(1)
 
@@ -170,12 +173,15 @@ class Tutorial:
             f"This is an example of a raid channel. Here is a list of "
             "commands that can be used in here:", embed=helpembed)
 
-        if raid_ctx.message.content.split()[1].isdigit():
-            egg_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['egg_reports']
-            ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['egg_reports'] = egg_reports - 1
-        else:
-            raid_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['raid_reports']
-            ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['raid_reports'] = raid_reports - 1
+        try:
+            if raid_ctx.message.content.split()[1].isdigit():
+                egg_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['egg_reports']
+                ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['egg_reports'] = egg_reports - 1
+            else:
+                raid_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['raid_reports']
+                ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['raid_reports'] = raid_reports - 1
+        except KeyError:
+            pass
 
 
         await raid_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Try expressing interest in this raid!\n\nEx: `{prefix}interested 5 m3 i1 v1` would mean 5 trainers: 3 Mystic, 1 Instinct, 1 Valor"))
@@ -304,9 +310,11 @@ class Tutorial:
 
             # acknowledge and wait a second before continuing
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Great job!"))
-
-            research_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['research_reports']
-            ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['research_reports'] = research_reports - 1
+            try:
+                research_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['research_reports']
+                ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['research_reports'] = research_reports - 1
+            except KeyError:
+                pass
 
             await asyncio.sleep(1)
 
