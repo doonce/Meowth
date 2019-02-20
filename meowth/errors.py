@@ -124,6 +124,10 @@ class TradeSetCheckFail(CommandError):
     'Exception raised checks.tradeset fails'
     pass
 
+class GuildCheckFail(CommandError):
+    'Exception raised checks.check_guild fails'
+    pass
+
 async def delete_error(message, error):
     try:
         await message.delete()
@@ -206,6 +210,11 @@ def custom_error_handling(bot, logger):
             if error:
                 await asyncio.sleep(10)
                 await delete_error(ctx.message, error)
+        elif isinstance(error, GuildCheckFail):
+            msg = _('Meowth! Commands are not allowed in DM Channels. Please use **{prefix}{cmd_name}** in a server channel.').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
+            error = await ctx.channel.send(msg)
+            await asyncio.sleep(10)
+            await delete_error(ctx.message, error)
         elif isinstance(error, TeamSetCheckFail):
             msg = _('Meowth! Team Management is not enabled on this server. **{prefix}{cmd_name}** is unable to be used.').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             error = await ctx.channel.send(msg)

@@ -57,6 +57,8 @@ def role_or_permissions(ctx, check, **perms):
 
 def serverowner_or_permissions(**perms):
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         owner = ctx.guild.owner
         if ctx.author.id == owner.id:
             return True
@@ -255,9 +257,23 @@ def check_nestreport(ctx):
     channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).get('report_channels', [])]
     return channel.id in channel_list
 
+def check_guild(ctx):
+    if not ctx.guild:
+        return False
+    return True
+
 #Decorators
+def guildchannel():
+    def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
+        return True
+    return commands.check(predicate)
+
 def allowreports():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_raidreport(ctx) or (check_eggchannel(ctx) and check_raidchannel(ctx)):
             return True
         elif check_exraidreport(ctx) or check_exraidchannel(ctx):
@@ -272,6 +288,8 @@ def allowreports():
 
 def allowraidreport():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_raidset(ctx):
             if check_raidreport(ctx) or (check_eggchannel(ctx) and check_raidchannel(ctx)):
                 return True
@@ -283,6 +301,8 @@ def allowraidreport():
 
 def allowexraidreport():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_exraidset(ctx):
             if check_exraidreport(ctx) or check_exraidchannel(ctx):
                 return True
@@ -294,6 +314,8 @@ def allowexraidreport():
 
 def allowwildreport():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_wildset(ctx):
             if check_wildreport(ctx):
                 return True
@@ -305,6 +327,8 @@ def allowwildreport():
 
 def allowresearchreport():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_researchset(ctx):
             if check_researchreport(ctx):
                 return True
@@ -316,6 +340,8 @@ def allowresearchreport():
 
 def allownestreport():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_nestset(ctx):
             if check_nestreport(ctx):
                 return True
@@ -327,6 +353,8 @@ def allownestreport():
 
 def allowmeetupreport():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_meetupset(ctx):
             if check_meetupreport(ctx):
                 return True
@@ -338,6 +366,8 @@ def allowmeetupreport():
 
 def allowinvite():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_inviteset(ctx):
             if check_citychannel(ctx):
                 return True
@@ -349,6 +379,8 @@ def allowinvite():
 
 def allowteam():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_teamset(ctx):
             if not check_raidchannel(ctx):
                 return True
@@ -360,6 +392,8 @@ def allowteam():
 
 def allowwant():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_wantset(ctx):
             if check_wantchannel(ctx):
                 return True
@@ -370,6 +404,8 @@ def allowwant():
 
 def allowtrade():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_tradeset(ctx):
             if check_tradereport(ctx):
                 return True
@@ -381,6 +417,8 @@ def allowtrade():
 
 def allowarchive():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_archiveset(ctx):
             if check_raidchannel(ctx):
                 return True
@@ -389,6 +427,8 @@ def allowarchive():
 
 def citychannel():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_citychannel(ctx):
             return True
         raise errors.CityChannelCheckFail()
@@ -396,6 +436,8 @@ def citychannel():
 
 def raidchannel():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_raidchannel(ctx):
             return True
         raise errors.RaidChannelCheckFail()
@@ -403,6 +445,8 @@ def raidchannel():
 
 def exraidchannel():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_exraidchannel(ctx):
             return True
         raise errors.ExRaidChannelCheckFail()
@@ -410,6 +454,8 @@ def exraidchannel():
 
 def nonraidchannel():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if (not check_raidchannel(ctx)):
             return True
         raise errors.NonRaidChannelCheckFail()
@@ -417,6 +463,8 @@ def nonraidchannel():
 
 def activeraidchannel():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_raidchannel(ctx) and not check_meetupchannel(ctx):
             if check_raidactive(ctx):
                 return True
@@ -425,6 +473,8 @@ def activeraidchannel():
 
 def activechannel():
     def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
         if check_raidchannel(ctx):
             if check_raidactive(ctx):
                 return True

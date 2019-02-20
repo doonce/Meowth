@@ -14,6 +14,8 @@ def get_match(word_list: list, word: str, score_cutoff: int = 60):
 
     Returns a tuple of (MATCH, SCORE)
     """
+    if not word:
+        return (None, None)
     result = process.extractOne(
         word, word_list, scorer=fuzz.ratio, score_cutoff=score_cutoff)
     if not result:

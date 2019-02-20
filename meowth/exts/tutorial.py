@@ -416,6 +416,7 @@ class Tutorial:
         return True
 
     @commands.group(invoke_without_command=True)
+    @checks.guildchannel()
     async def tutorial(self, ctx):
         """Launches an interactive tutorial session for Meowth.
 

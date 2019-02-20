@@ -5,6 +5,7 @@ import aiohttp
 import discord
 from discord.ext import commands
 from meowth import utils
+from meowth import checks
 
 class SilphBadge:
 
@@ -290,6 +291,7 @@ class Silph:
         return await SilphCard.get_trainer_card(silph_user)
 
     @commands.command()
+    @checks.guildchannel()
     async def silphcard(self, ctx, silph_user: str = None):
         """Displays a user's Silph Road Trainer Card."""
         guild_data = ctx.bot.guild_dict[ctx.guild.id]

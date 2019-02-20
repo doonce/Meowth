@@ -1234,6 +1234,7 @@ def _set_regional(bot, guild, regional):
     bot.guild_dict[guild.id]['configure_dict']['settings']['regional'] = regional
 
 @_set.command()
+@checks.guildchannel()
 async def timezone(ctx, *, timezone: str = ''):
     """Changes server timezone."""
     if not ctx.author.guild_permissions.manage_guild:
@@ -1255,6 +1256,7 @@ def _set_timezone(bot, guild, timezone):
     bot.guild_dict[guild.id]['configure_dict']['settings']['offset'] = timezone
 
 @_set.command()
+@checks.guildchannel()
 @commands.has_permissions(manage_guild=True)
 async def prefix(ctx, prefix=None):
     """Changes server prefix."""
@@ -1272,6 +1274,7 @@ def _set_prefix(bot, guild, prefix):
     bot.guild_dict[guild.id]['configure_dict']['settings']['prefix'] = prefix
 
 @_set.command()
+@checks.guildchannel()
 async def silph(ctx, silph_user: str = None):
     """Links a server member to a Silph Road Travelers Card."""
     if not silph_user:
@@ -1316,6 +1319,7 @@ async def silph(ctx, silph_user: str = None):
         embed=card.embed(offset), delete_after=10)
 
 @_set.command()
+@checks.guildchannel()
 async def pokebattler(ctx, pbid: int = 0):
     """Links a server member to a PokeBattler ID."""
     if not pbid:
@@ -1333,6 +1337,7 @@ async def pokebattler(ctx, pbid: int = 0):
     await ctx.send(_('Pokebattler ID set to {pbid}!').format(pbid=pbid), delete_after=10)
 
 @_set.command()
+@checks.guildchannel()
 async def trainercode(ctx, *, trainercode: str = None):
     if not trainercode:
         await ctx.send(_('Trainer code cleared!'), delete_after=10)
@@ -1612,6 +1617,7 @@ async def raid_json(ctx, level=None, *, newlist=None):
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
             await question.clear_reactions()
+            await asyncio.sleep(0.25)
             await question.add_reaction(config['command_done'])
             await ctx.channel.send(_("Meowth! Configuration successful!"), delete_after=10)
             load_config()
@@ -1847,6 +1853,7 @@ Miscellaneous
 """
 
 @Meowth.command(name='uptime')
+@checks.guildchannel()
 async def cmd_uptime(ctx):
     "Shows Meowth's uptime"
     guild = ctx.guild
@@ -1879,6 +1886,7 @@ async def _uptime(bot):
     return uptime
 
 @Meowth.command()
+@checks.guildchannel()
 async def about(ctx):
     'Shows info about Meowth'
     huntr_repo = 'https://github.com/doonce/Meowth'
@@ -2034,6 +2042,7 @@ async def profile(ctx, member: discord.Member = None):
     await ctx.send(embed=embed)
 
 @Meowth.group(case_insensitive=True, invoke_without_command=True)
+@checks.guildchannel()
 async def leaderboard(ctx, type="total", range="1"):
     """Displays the top ten reporters of a server.
 
@@ -2674,7 +2683,7 @@ async def _raid(ctx, content):
     if not matched_boss:
         for boss in raid_info['raid_eggs'][str(level)]['pokemon']:
             boss = pkmn_class.Pokemon.get_pokemon(ctx.bot, boss)
-            if boss.id == pokemon.id:
+            if boss and boss.id == pokemon.id:
                 pokemon = boss
                 entered_raid = boss.name.lower()
                 break
@@ -3028,7 +3037,7 @@ async def _eggassume(ctx, args, raid_channel, author=None):
     if not matched_boss:
         for boss in raid_info['raid_eggs'][str(egglevel)]['pokemon']:
             boss = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
-            if boss.id == pokemon.id:
+            if boss and boss.id == pokemon.id:
                 pokemon = boss
                 entered_raid = boss.name.lower()
                 break
@@ -3112,7 +3121,7 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     if not matched_boss:
         for boss in raid_info['raid_eggs'][str(egglevel)]['pokemon']:
             boss = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
-            if boss.id == pokemon.id:
+            if boss and boss.id == pokemon.id:
                 pokemon = boss
                 entered_raid = boss.name.lower()
                 break
@@ -4201,6 +4210,7 @@ async def new(ctx, *, content):
         return
 
 @Meowth.command()
+@checks.guildchannel()
 async def recover(ctx):
     """Recover a raid channel if it is no longer responding to commands
 
@@ -4540,6 +4550,7 @@ async def duplicate(ctx):
         return
 
 @Meowth.command()
+@checks.guildchannel()
 async def counters(ctx, *, args = None):
     """Simulate a Raid battle with Pokebattler.
 
@@ -4582,7 +4593,7 @@ async def counters(ctx, *, args = None):
                 except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                     pass
             moveset = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('moveset', 0)
-            movesetstr = guild_dict[guild.id]['raidchannel_dict'][channel.id]['ctrs_dict'].get(moveset, {}).get('moveset', "Unknown Moveset")
+            movesetstr = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('ctrs_dict', {}).get(moveset, {}).get('moveset', "Unknown Moveset")
             weather = guild_dict[guild.id]['raidchannel_dict'][channel.id].get('weather', None)
             form = pkmn.form
             if pkmn.alolan:
@@ -5792,6 +5803,7 @@ List Commands
 """
 
 @Meowth.group(name="list", aliases=['lists', 'tag', 'l'], case_insensitive=True)
+@checks.guildchannel()
 @commands.cooldown(1, 5, commands.BucketType.channel)
 async def _list(ctx):
     """Lists all raid info for the current channel.
