@@ -257,10 +257,13 @@ def check_nestreport(ctx):
     channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).get('report_channels', [])]
     return channel.id in channel_list
 
-def check_guild(ctx):
-    if not ctx.guild:
+def check_tutorialchannel(ctx):
+    if ctx.guild is None:
         return False
-    return True
+    channel = ctx.channel
+    guild = ctx.guild
+    channel_dict = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('tutorial', {}).get('report_channels', {})]
+    return channel.id in channel_dict
 
 #Decorators
 def guildchannel():
@@ -282,6 +285,10 @@ def allowreports():
             return True
         elif check_researchreport(ctx):
             return True
+        elif check_tradereport(ctx):
+            return True
+        elif check_nestreport(ctx):
+            return True
         else:
             raise errors.ReportCheckFail()
     return commands.check(predicate)
@@ -291,7 +298,7 @@ def allowraidreport():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_raidset(ctx):
-            if check_raidreport(ctx) or (check_eggchannel(ctx) and check_raidchannel(ctx)):
+            if check_raidreport(ctx) or check_tutorialchannel(ctx) or (check_eggchannel(ctx) and check_raidchannel(ctx)):
                 return True
             else:
                 raise errors.RegionEggChannelCheckFail()
@@ -317,7 +324,7 @@ def allowwildreport():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_wildset(ctx):
-            if check_wildreport(ctx):
+            if check_wildreport(ctx) or check_tutorialchannel(ctx):
                 return True
             else:
                 raise errors.WildReportChannelCheckFail()
@@ -330,7 +337,7 @@ def allowresearchreport():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_researchset(ctx):
-            if check_researchreport(ctx):
+            if check_researchreport(ctx) or check_tutorialchannel(ctx):
                 return True
             else:
                 raise errors.ResearchReportChannelCheckFail()
@@ -343,7 +350,7 @@ def allownestreport():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_nestset(ctx):
-            if check_nestreport(ctx):
+            if check_nestreport(ctx) or check_tutorialchannel(ctx):
                 return True
             else:
                 raise errors.NestChannelCheckFail()
@@ -395,7 +402,7 @@ def allowwant():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_wantset(ctx):
-            if check_wantchannel(ctx):
+            if check_wantchannel(ctx) or check_tutorialchannel(ctx):
                 return True
             else:
                 raise errors.WantChannelCheckFail()
@@ -407,7 +414,7 @@ def allowtrade():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_tradeset(ctx):
-            if check_tradereport(ctx):
+            if check_tradereport(ctx) or check_tutorialchannel(ctx):
                 return True
             else:
                 raise errors.TradeChannelCheckFail()

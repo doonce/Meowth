@@ -54,6 +54,8 @@ Meowth = MeowthBot(
     command_prefix=_get_prefix, case_insensitive=True,
     activity=discord.Game(name="Pokemon Go"))
 
+Meowth._get_prefix = _get_prefix
+
 custom_error_handling(Meowth, logger)
 try:
     with open(os.path.join('data', 'serverdict'), 'rb') as fd:
@@ -752,6 +754,9 @@ async def maint_start():
         Nest = Meowth.cogs.get('Nest')
         if Nest:
             event_loop.create_task(Nest.nest_cleanup())
+        Tutorial = Meowth.cogs.get('Tutorial')
+        if Tutorial:
+            await Tutorial.tutorial_cleanup()
         event_loop.create_task(guild_cleanup())
         event_loop.create_task(channel_cleanup())
         event_loop.create_task(message_cleanup())
@@ -788,6 +793,7 @@ async def on_ready():
                         'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}, 'permissions':'everyone'},
                         'wild': {'enabled':False, 'report_channels': {}},
                         'meetup': {'enabled':False, 'report_channels': {}},
+                        'tutorial': {'enabled':True, 'report_channels': {}},
                         'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
                         'trade': {'enabled':False, 'report_channels': []},
                         'counters': {'enabled':False, 'auto_levels': []},
@@ -816,6 +822,7 @@ async def on_ready():
                     'counters': {'enabled':False, 'auto_levels': []},
                     'wild': {'enabled':False, 'report_channels': {}},
                     'meetup': {'enabled':False, 'report_channels': {}},
+                    'tutorial': {'enabled':True, 'report_channels': {}},
                     'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
                     'trade': {'enabled':False, 'report_channels': []},
                     'research': {'enabled':False, 'report_channels': {}},
@@ -846,6 +853,7 @@ async def on_guild_join(guild):
             'counters': {'enabled':False, 'auto_levels': []},
             'wild': {'enabled':False, 'report_channels': {}},
             'meetup': {'enabled':False, 'report_channels': {}},
+            'tutorial': {'enabled':True, 'report_channels': {}},
             'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
             'trade': {'enabled':False, 'report_channels': []},
             'research': {'enabled':False, 'report_channels': {}},
@@ -3975,12 +3983,12 @@ async def _timerset(raidchannel, exptime):
         embed = raidmsg.embeds[0]
         embed.set_field_at(3, name=embed.fields[3].name, value=endtime, inline=True)
         await raidmsg.edit(content=raidmsg.content, embed=embed)
-    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError):
+    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError, AttributeError):
         pass
     try:
         reportmsg = await report_channel.get_message(guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['raidreport'])
         await reportmsg.edit(content=reportmsg.content, embed=embed)
-    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, AttributeError):
         pass
     raidchannel = Meowth.get_channel(raidchannel.id)
     event_loop.create_task(expiry_check(raidchannel))

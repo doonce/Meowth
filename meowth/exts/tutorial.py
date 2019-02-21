@@ -1,4 +1,5 @@
 import asyncio
+import copy
 
 import discord
 from discord.ext import commands
@@ -42,11 +43,49 @@ class Tutorial:
                 read_messages=True)
             }
 
-    async def want_tutorial(self, ctx, config):
-        report_channels = config['want']['report_channels']
-        report_channels.append(ctx.tutorial_channel.id)
+    async def tutorial_cleanup(self):
+        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+        for guildid in guilddict_temp.keys():
+            tutorial_dict = guilddict_temp[guildid]['configure_dict'].setdefault('tutorial', {}).setdefault('report_channels', {})
+            for channelid in tutorial_dict:
+                channel_exists = self.bot.get_channel(channelid)
+                if not channel_exists:
+                    try:
+                        del guild_dict[guildid]['configure_dict']['tutorial']['report_channels'][channelid]
+                    except KeyError:
+                        pass
+                    try:
+                        del guild_dict[guildid]['configure_dict']['raid']['category_dict'][channelid]
+                    except KeyError:
+                        pass
+                else:
+                    newbie = False
+                    ctx = False
+                    for overwrite in channel_exists.overwrites:
+                        if isinstance(overwrite[0], discord.Member):
+                            if not overwrite[0].bot:
+                                newbie = overwrite[0]
+                    try:
+                        tutorial_message = await channel_exists.get_message(tutorial_dict[channelid])
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                        pass
+                    if tutorial_message:
+                        ctx = await self.bot.get_context(tutorial_message)
+                    if ctx and newbie:
+                        ctx.author = newbie
+                        ctx.tutorial_channel = channel_exists
+                        if not ctx.prefix:
+                            prefix = self.bot._get_prefix(self.bot, ctx.message)
+                            ctx.prefix = prefix[-1]
+                        await ctx.tutorial_channel.send(f"Hey {newbie.mention} I think we were cut off due to a disconnection, let's try to start over.")
+                        ctx.bot.loop.create_task(self._tutorial(ctx))
 
-        await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=f"This server utilizes the **{ctx.prefix}want** command to help members receive push notifications about Pokemon they want! I keep your list saved and then send you a DM for wild spawns, nest spawns, and research reports. For raid bosses I will @mention you. Please make sure you have DMs enabled in order to receive alerts!\n\nTry the {ctx.prefix}want command!\nEx: `{ctx.prefix}want unown`").set_author(name="Want Tutorial", icon_url=ctx.bot.user.avatar_url))
+    async def want_tutorial(self, ctx, config):
+        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+
+        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=f"This server utilizes the **{ctx.prefix}want** command to help members receive push notifications about Pokemon they want! I keep your list saved and then send you a DM for wild spawns, nest spawns, and research reports. For raid bosses I will @mention you. Please make sure you have DMs enabled in order to receive alerts!\n\nTry the {ctx.prefix}want command!\nEx: `{ctx.prefix}want unown`").set_author(name="Want Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+        report_channels[ctx.tutorial_channel.id] = msg.id
 
         try:
             await self.wait_for_cmd(ctx.tutorial_channel, ctx.author, 'want')
@@ -68,17 +107,19 @@ class Tutorial:
 
         # clean up by removing tutorial from report channel config
         finally:
-            report_channels.remove(ctx.tutorial_channel.id)
+            del report_channels[ctx.tutorial_channel.id]
 
         return True
 
     async def wild_tutorial(self, ctx, config):
-        report_channels = config['wild']['report_channels']
-        report_channels[ctx.tutorial_channel.id] = 'test'
+        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
 
-        await ctx.tutorial_channel.send(embed=discord.Embed(
+        msg = await ctx.tutorial_channel.send(embed=discord.Embed(
             colour=discord.Colour.lighter_grey(),
             description=f"This server utilizes the **{ctx.prefix}wild** command to report wild spawns! When you use it, I will send a message summarizing the report and containing a link to my best guess of the spawn location. If users have **!want**ed your reported pokemon, I will DM them details! Your report must contain the name of the Pokemon followed by its location like **!wild <pokemon> <location>**.\n\nTry reporting a wild spawn!\n Ex: `{ctx.prefix}wild magikarp some park`").set_author(name="Wild Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+        report_channels[ctx.tutorial_channel.id] = msg.id
+
         try:
             wild_ctx = await self.wait_for_cmd(
                 ctx.tutorial_channel, ctx.author, 'wild')
@@ -117,30 +158,30 @@ class Tutorial:
         return True
 
     async def raid_tutorial(self, ctx, config):
-        report_channels = config['raid']['report_channels']
-        category_dict = config['raid']['category_dict']
+        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+        if config['raid']['categories'] == "region":
+            category_dict = config['raid']['category_dict']
+            category_dict[tutorial_channel.id] = tutorial_channel.category_id
         tutorial_channel = ctx.tutorial_channel
         prefix = ctx.prefix
         raid_channel = None
         tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
 
-        # add tutorial channel to valid want report channels
-        report_channels[tutorial_channel.id] = 'test'
-
-        if config['raid']['categories'] == "region":
-            category_dict[tutorial_channel.id] = tutorial_channel.category_id
-
         async def timeout_raid(cmd):
+            if raid_channel:
+                await raid_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
             await tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
             del report_channels[tutorial_channel.id]
-            del category_dict[tutorial_channel.id]
+            if config['raid']['categories'] == "region":
+                del category_dict[tutorial_channel.id]
             if raid_channel:
                 await raid_channel.delete()
-                ctx.bot.loop.create_task(self.bot.expire_channel(raid_channel))
             return
 
-        await tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{prefix}raid** command to report raids! When you use it, I will send a message summarizing the report and create a text channel for coordination. \nThe report must contain, in this order: The Pokemon (if an active raid) or raid level (if an egg), and the location;\nthe report may optionally contain the weather (see **{prefix}help weather** for accepted options) and the minutes remaining until hatch or expiry (at the end of the report) \n\nTry reporting a raid!\nEx: `{prefix}raid {tier5} local church cloudy 42`").set_author(name="Raid Tutorial", icon_url=ctx.bot.user.avatar_url))
+        msg = await tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{prefix}raid** command to report raids! When you use it, I will send a message summarizing the report and create a text channel for coordination. \nThe report must contain, in this order: The Pokemon (if an active raid) or raid level (if an egg), and the location;\nthe report may optionally contain the weather (see **{prefix}help weather** for accepted options) and the minutes remaining until hatch or expiry (at the end of the report) \n\nTry reporting a raid!\nEx: `{prefix}raid {tier5} local church cloudy 42`").set_author(name="Raid Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+        report_channels[ctx.tutorial_channel.id] = msg.id
 
         try:
             while True:
@@ -298,10 +339,11 @@ class Tutorial:
         return True
 
     async def research_tutorial(self, ctx, config):
-        report_channels = config['research']['report_channels']
-        report_channels[ctx.tutorial_channel.id] = 'test'
+        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
 
-        await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}research** command to report field research tasks! There are two ways to use this command: **{ctx.prefix}research** will start an interactive session where I will prompt you for the task, location, and reward of the research task. You can also use **{ctx.prefix}research <pokestop>, <task>, <reward>** to submit the report all at once.\n\nTry it out by typing `{ctx.prefix}research` and then a random pokestop, task, and reward.").set_author(name="Research Tutorial", icon_url=ctx.bot.user.avatar_url))
+        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}research** command to report field research tasks! There are two ways to use this command: **{ctx.prefix}research** will start an interactive session where I will prompt you for the task, location, and reward of the research task. You can also use **{ctx.prefix}research <pokestop>, <task>, <reward>** to submit the report all at once.\n\nTry it out by typing `{ctx.prefix}research` and then a random pokestop, task, and reward.").set_author(name="Research Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+        report_channels[ctx.tutorial_channel.id] = msg.id
 
         # wait for research command completion
         try:
@@ -337,8 +379,12 @@ class Tutorial:
         return True
 
     async def team_tutorial(self, ctx):
+
+        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+
         await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}team** command to allow members to select which Pokemon Go team they belong to! Type `{ctx.prefix}team mystic` for example if you are in Team Mystic.").set_author(name="Team Tutorial", icon_url=ctx.bot.user.avatar_url))
 
+        report_channels[ctx.tutorial_channel.id] = msg.id
         # wait for team command completion
         try:
             await self.wait_for_cmd(
@@ -357,10 +403,12 @@ class Tutorial:
         return True
 
     async def trade_tutorial(self, ctx, config):
-        report_channels = config['trade']['report_channels']
-        report_channels.append(ctx.tutorial_channel.id)
+        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+        trade_msg = False
 
-        await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}trade** command to list your pokemon up for trade. You can list one at a time using command: **{ctx.prefix}trade <pokemon>**. You can also use forms of pokemon such as `alolan vulpix`, `unown y`, or `shiny absol`.\nEx: `{ctx.prefix}trade unown y`").set_author(name="Trade Tutorial", icon_url=ctx.bot.user.avatar_url))
+        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}trade** command to list your pokemon up for trade. You can list one at a time using command: **{ctx.prefix}trade <pokemon>**. You can also use forms of pokemon such as `alolan vulpix`, `unown y`, or `shiny absol`.\nEx: `{ctx.prefix}trade unown y`").set_author(name="Trade Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+        report_channels[ctx.tutorial_channel.id] = msg.id
 
         # wait for trade command completion
         try:
@@ -382,17 +430,19 @@ class Tutorial:
 
         # clean up by removing tutorial from report channel config
         finally:
-            report_channels.remove(ctx.tutorial_channel.id)
-            del ctx.bot.guild_dict[ctx.guild.id]['trade_dict'][trade_msg.channel.id]
+            del report_channels[ctx.tutorial_channel.id]
+            if trade_msg:
+                del ctx.bot.guild_dict[ctx.guild.id]['trade_dict'][trade_msg.channel.id]
 
         return True
 
     async def nest_tutorial(self, ctx, config):
-        report_channels = config['nest']['report_channels']
-        report_channels.append(ctx.tutorial_channel.id)
+        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
         ctx.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.tutorial_channel.id] = {'list': ['hershey park'], 'hershey park': {'location':'40.28784,-76.65547', 'reports':{}}}
 
-        await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}nest** command to keep track of nesting pokemon. You can report one using command: **{ctx.prefix}nest <pokemon>**.\nEx: `{ctx.prefix}nest magikarp`").set_author(name="Nest Tutorial", icon_url=ctx.bot.user.avatar_url))
+        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}nest** command to keep track of nesting pokemon. You can report one using command: **{ctx.prefix}nest <pokemon>**.\nEx: `{ctx.prefix}nest magikarp`").set_author(name="Nest Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+        report_channels[ctx.tutorial_channel.id] = msg.id
 
         try:
             await self.wait_for_cmd(ctx.tutorial_channel, ctx.author, 'nest')
@@ -410,7 +460,7 @@ class Tutorial:
 
         # clean up by removing tutorial from report channel config
         finally:
-            report_channels.remove(ctx.tutorial_channel.id)
+            del report_channels[ctx.tutorial_channel.id]
             del ctx.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.tutorial_channel.id]
 
         return True
@@ -440,9 +490,11 @@ class Tutorial:
             ("Meowth! I've created a private tutorial channel for "
              f"you! Continue in {ctx.tutorial_channel.mention}"),
             delete_after=20.0)
+        await self._tutorial(ctx)
 
+    async def _tutorial(self, ctx):
         # get tutorial settings
-        cfg = self.bot.guild_dict[guild.id]['configure_dict']
+        cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
         enabled = [k for k, v in cfg.items() if v.get('enabled', False)]
 
         await ctx.tutorial_channel.send(
@@ -484,7 +536,7 @@ class Tutorial:
                         f"are read-only until members use the **{prefix}invite** "
                         "command.")
 
-                await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{prefix}exraid** command to report EX raids! When you use it, I will send a message summarizing the report and create a text channel for coordination. {invitestr}\nThe report must contain only the location of the EX raid.\n\nDue to the longer-term nature of EX raid channels, we won't try this command out right now.").set_author(name="EX Raid Tutorial", icon_url=ctx.bot.user.avatar_url))
+                await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{prefix}exraid** command to report EX raids! When you use it, I will send a message summarizing the report and create a text channel for coordination. {invitestr}\nThe report must contain only the location of the EX raid.\n\nDue to the longer-term nature of EX raid channels, we won't try this command out right now.").set_author(name="EX Raid Tutorial", icon_url=self.bot.user.avatar_url))
 
             # start research
             if 'research' in enabled:
