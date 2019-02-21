@@ -378,11 +378,10 @@ class Tutorial:
 
         return True
 
-    async def team_tutorial(self, ctx):
-
+    async def team_tutorial(self, ctx, config):
         report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
 
-        await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}team** command to allow members to select which Pokemon Go team they belong to! Type `{ctx.prefix}team mystic` for example if you are in Team Mystic.").set_author(name="Team Tutorial", icon_url=ctx.bot.user.avatar_url))
+        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}team** command to allow members to select which Pokemon Go team they belong to! Type `{ctx.prefix}team mystic` for example if you are in Team Mystic.").set_author(name="Team Tutorial", icon_url=ctx.bot.user.avatar_url))
 
         report_channels[ctx.tutorial_channel.id] = msg.id
         # wait for team command completion
@@ -558,7 +557,7 @@ class Tutorial:
 
             # start team
             if 'team' in enabled:
-                completed = await self.team_tutorial(ctx)
+                completed = await self.team_tutorial(ctx, cfg)
                 if not completed:
                     return
 
@@ -815,6 +814,9 @@ class Tutorial:
              f"you! Continue in {ctx.tutorial_channel.mention}"),
             delete_after=20.0)
 
+        # get tutorial settings
+        cfg = self.bot.guild_dict[guild.id]['configure_dict']
+
         await ctx.tutorial_channel.send(
             f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
             "Pokemon Go communities! I created this channel to teach you "
@@ -825,7 +827,7 @@ class Tutorial:
             ", [] denote optional arguments** and you don't type the <>s or []s.")
 
         try:
-            await self.team_tutorial(ctx)
+            await self.team_tutorial(ctx, cfg)
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
 
             await asyncio.sleep(10)
