@@ -1,4 +1,5 @@
 
+import datetime
 from discord.ext import commands
 import discord.utils
 from meowth import errors
@@ -264,6 +265,21 @@ def check_tutorialchannel(ctx):
     guild = ctx.guild
     channel_dict = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('tutorial', {}).get('report_channels', {})]
     return channel.id in channel_dict
+
+def dm_check(ctx, trainer):
+    user = ctx.guild.get_member(trainer)
+    if not user:
+        return False
+    perms = user.permissions_in(ctx.channel)
+    if not perms.read_messages:
+        return False
+    mute = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('mute', False)
+    start_time = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('active_start', False)
+    end_time = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('active_end', False)
+    report_time = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])).time()
+    if start_time and end_time and (report_time > end_time or report_time < start_time) or mute:
+        return False
+    return True
 
 #Decorators
 def guildchannel():

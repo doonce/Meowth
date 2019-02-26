@@ -2366,6 +2366,64 @@ async def want_stop(ctx, *, stops):
     await utils.safe_delete(want_confirmation)
     await ctx.message.add_reaction(config['command_done'])
 
+@want.command()
+@checks.allowwant()
+async def settings(ctx):
+    mute = guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('mute', False)
+    start_time = guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('active_start', None)
+    end_time = guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('active_end', None)
+    settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:\n**mute** - Will globally mute all Meowth DMs\n**unmute** - Will unmute if you have previously muted. Will then use active hours.\n**time** - Set your active times to receive DMs\n**cancel** - Stop changing settings\n\n**Current Settings**\nMuted: {mute}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}", delete_after=120)
+    try:
+        reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author)))
+    except asyncio.TimeoutError:
+        await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=120)
+        return
+    await utils.safe_delete(reply)
+    if reply.content.lower() == "cancel":
+        await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed.")
+        return
+    elif reply.content.lower() == "mute":
+        await ctx.send(f"{ctx.author.mention} - Your DM alerts are now muted.")
+        guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['mute'] = True
+    elif reply.content.lower() == "unmute":
+        await ctx.send(f"{ctx.author.mention} - Your DM alerts are now unmuted.")
+        guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['mute'] = False
+    elif reply.content.lower() == "time":
+        await ctx.send(f"Please enter the time you would like to **start receiving** DMs each day. *Ex: 8:00 AM*. You can reply with **none** to turn off active hours and receive all DMs regardless of time.", delete_after=120)
+        try:
+            time_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
+        except asyncio.TimeoutError:
+            await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+            return
+        await utils.safe_delete(time_reply)
+        if time_reply.content.lower() == "none":
+            await ctx.send(f"{ctx.author.mention} - You will now receive all DMs you are subscribed to, regardless of time.")
+            guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['active_start'] = None
+            guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['active_end'] = None
+            return
+        try:
+            start_set = dateparser.parse(time_reply.content.lower())
+        except ValueError:
+            await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+            return
+        await ctx.send(f"Please enter the time you would like to **stop receiving** DMs each day. *Ex: 9:00 PM*", delete_after=120)
+        try:
+            time_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
+        except asyncio.TimeoutError:
+            await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+            return
+        await utils.safe_delete(time_reply)
+        try:
+            end_set = dateparser.parse(time_reply.content.lower())
+        except ValueError:
+            await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+            return
+        await ctx.send(f"{ctx.author.mention} - Your DM alerts will start at {start_set.time().strftime('%I:%M %p')} and stop at {end_set.time().strftime('%I:%M %p')} each day.")
+        guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['active_start'] = start_set.time()
+        guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['active_end'] = end_set.time()
+    else:
+        await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+
 @Meowth.group(case_insensitive=True, invoke_without_command=True)
 @checks.allowwant()
 async def unwant(ctx, *, pokemon):
@@ -2533,14 +2591,11 @@ async def _wild(ctx, content):
     wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
     dm_dict = {}
     for trainer in guild_dict[message.guild.id].get('trainers', {}):
-        user = message.guild.get_member(trainer)
-        if not user:
-            continue
-        perms = user.permissions_in(message.channel)
-        if not perms.read_messages:
+        if not checks.dm_check(ctx, trainer):
             continue
         if wild_number in guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', []):
             try:
+                user = ctx.guild.get_member(trainer)
                 wild_embed.remove_field(1)
                 wild_embed.remove_field(1)
                 wilddmmsg = await user.send(content=_('Meowth! Wild {pokemon} reported by {member} in {channel}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.display_name, channel=message.channel.mention, location_details=wild_details), embed=wild_embed)
@@ -2824,14 +2879,11 @@ async def _raid(ctx, content):
     raid_embed.remove_field(2)
     raid_embed.remove_field(2)
     for trainer in guild_dict[message.guild.id].get('trainers', {}):
-        user = message.guild.get_member(trainer)
-        if not user:
-            continue
-        perms = user.permissions_in(message.channel)
-        if not perms.read_messages:
+        if not checks.dm_check(ctx, trainer):
             continue
         if raid_details.lower() in guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', []):
             try:
+                user = ctx.guild.get_member(trainer)
                 raiddmmsg = await user.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=report_embed)
                 dm_dict[user.id] = raiddmmsg.id
             except:
@@ -3006,14 +3058,11 @@ async def _raidegg(ctx, content):
         guild_dict[message.guild.id]['trainers'][message.author.id]['egg_reports'] = egg_reports
         dm_dict = {}
         for trainer in guild_dict[message.guild.id].get('trainers', {}):
-            user = message.guild.get_member(trainer)
-            if not user:
-                continue
-            perms = user.permissions_in(message.channel)
-            if not perms.read_messages:
+            if not checks.dm_check(ctx, trainer):
                 continue
             if raid_details.lower() in guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', []):
                 try:
+                    user = ctx.guild.get_member(trainer)
                     raiddmmsg = await user.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
                     dm_dict[user.id] = raiddmmsg.id
                 except:
@@ -3633,22 +3682,62 @@ async def research(ctx, *, details = None):
             research_embed.remove_field(0)
             break
     if not error:
-        pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, reward, allow_digits=False)
+        pokemon = pkmn_class.Pokemon.get_pokemon(Meowth, reward.strip(), allow_digits=False)
         dust = re.search(r'(?i)dust', reward)
         candy = re.search(r'(?i)candy|(?i)candies', reward)
+        pinap = re.search(r'(?i)pinap', reward)
+        silverpinap = re.search(r'(?i)silver pinap', reward)
+        razz = re.search(r'(?i)razz', reward)
+        goldenrazz = re.search(r'(?i)golde?n? razz', reward)
+        nanab = re.search(r'(?i)nanab', reward)
+        pokeball = re.search(r'(?i)ball', reward)
+        greatball = re.search(r'(?i)great ball', reward)
+        ultraball = re.search(r'(?i)ultra ball', reward)
+        potion = re.search(r'(?i)potion', reward)
+        superpotion = re.search(r'(?i)super potion', reward)
+        hyperpotion = re.search(r'(?i)hyper potion', reward)
+        maxpotion = re.search(r'(?i)max potion', reward)
+        revive = re.search(r'(?i)revive', reward)
+        maxrevive = re.search(r'(?i)max revive', reward)
         research_msg = _("Field Research reported by {author}").format(author=author.mention)
         research_embed.title = _('Meowth! Click here for my directions to the research!')
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=author.name)
         research_embed.url = loc_url
-        if dust:
+        if pokemon and not other_reward:
+            research_embed.set_thumbnail(url=pokemon.img_url)
+        elif dust:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png")
-            research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
         elif candy:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1301.png")
-            research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
-        elif pokemon and not other_reward:
-            research_embed.set_thumbnail(url=pokemon.img_url)
-            research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
+        elif pinap and not silverpinap:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0705.png")
+        elif pinap and silverpinap:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0707.png")
+        elif razz and not goldenrazz:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0701.png")
+        elif razz and goldenrazz:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0706.png")
+        elif nanab:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0703.png")
+        elif pokeball and not ultraball and not greatball:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0001.png")
+        elif pokeball and greatball:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0002.png")
+        elif pokeball and ultraball:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0003.png")
+        elif potion and not superpotion and not hyperpotion and not maxpotion:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0101.png")
+        elif potion and superpotion:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0102.png")
+        elif potion and hyperpotion:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0103.png")
+        elif potion and maxpotion:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0104.png")
+        elif revive and not maxrevive:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0201.png")
+        elif revive and maxrevive:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0202.png")
+        research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
         confirmation = await channel.send(research_msg, embed=research_embed)
         guild_dict[guild.id]['questreport_dict'][confirmation.id] = {
             'exp':time.time() + to_midnight,
@@ -3665,14 +3754,11 @@ async def research(ctx, *, details = None):
         research_reports = guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('research_reports', 0) + 1
         guild_dict[ctx.guild.id]['trainers'][author.id]['research_reports'] = research_reports
         for trainer in guild_dict[guild.id].get('trainers', {}):
-            user = guild.get_member(trainer)
-            if not user:
-                continue
-            perms = user.permissions_in(channel)
-            if not perms.read_messages:
+            if not checks.dm_check(ctx, trainer):
                 continue
             if (pokemon and pokemon.id in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])) or location.lower() in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', []):
                 try:
+                    user = ctx.guild.get_member(trainer)
                     if pokemon:
                         resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pokemon.name.title(), author=author.mention, channel=channel.mention), embed=research_embed)
                     else:
@@ -5745,6 +5831,8 @@ async def backout(ctx):
         for trainer in battle_lobby['starting_dict'].keys():
             user = guild.get_member(trainer)
             if not user:
+                continue
+            if battle_lobby['starting_dict'][trainer]['status'] == {'maybe':0, 'coming':0, 'here':0, 'lobby':0}:
                 continue
             lobby_list.append(user.mention)
             count = battle_lobby['starting_dict'][trainer]['status']['lobby']

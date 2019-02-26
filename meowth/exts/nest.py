@@ -207,14 +207,11 @@ class Nest:
         pokemon.shiny = False
         dm_dict = {}
         for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
-            user = message.guild.get_member(trainer)
-            if not user:
-                continue
-            perms = user.permissions_in(message.channel)
-            if not perms.read_messages:
+            if not checks.dm_check(ctx, trainer):
                 continue
             if nest_number in self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', []):
                 try:
+                    user = ctx.guild.get_member(trainer)
                     nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest in {channel.mention}!", embed=nest_embed)
                     dm_dict[user.id] = nestdmmsg.id
                 except:
