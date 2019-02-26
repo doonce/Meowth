@@ -358,7 +358,7 @@
           "Flying"
         ],
         "pokedex": "Pidgey has an extremely sharp sense of direction. It is capable of unerringly returning home to its nest, however far it may be removed from its familiar surroundings.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -380,7 +380,7 @@
           "Flying"
         ],
         "pokedex": "Pidgeotto claims a large area as its own territory. This Pokemon flies around, patrolling its living space. If its territory is violated, it shows no mercy in thoroughly punishing the foe with its sharp claws.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -402,7 +402,7 @@
           "Flying"
         ],
         "pokedex": "This Pokemon has a dazzling plumage of beautifully glossy feathers. Many Trainers are captivated by the striking beauty of the feathers on its head, compelling them to choose Pidgeot as their Pokemon.",
-        "shiny": false,
+        "shiny": true,
         "gender": true
       }
     },
@@ -423,7 +423,7 @@
           "Normal"
         ],
         "pokedex": "Rattata is cautious in the extreme. Even while it is asleep, it constantly listens by moving its ears around. It is not picky about where it lives\u2014it will make its nest anywhere.",
-        "shiny": false,
+        "shiny": true,
         "gender": true
       },
       "alolan": {
@@ -454,7 +454,7 @@
           "Normal"
         ],
         "pokedex": "Raticate's sturdy fangs grow steadily. To keep them ground down, it gnaws on rocks and logs. It may even chew on the walls of houses.",
-        "shiny": false,
+        "shiny": true,
         "gender": true
       },
       "alolan": {
@@ -566,7 +566,8 @@
         "ash",
         "witch",
         "summer",
-        "thunderbolt"
+        "thunderbolt",
+        "flower"
       ],
       "none": {
         "type": [
@@ -617,6 +618,14 @@
         "gender": true
       },
       "thunderbolt": {
+        "type": [
+          "Electric"
+        ],
+        "pokedex": "Whenever Pikachu comes across something new, it blasts it with a jolt of electricity. If you come across a blackened berry, it's evidence that this Pokemon mistook the intensity of its charge.",
+        "shiny": true,
+        "gender": true
+      },
+      "flower": {
         "type": [
           "Electric"
         ],
@@ -3092,9 +3101,18 @@
     "mythical": false,
     "forms": {
       "list": [
-        "none"
+        "none",
+        "flower"
       ],
       "none": {
+        "type": [
+          "Normal"
+        ],
+        "pokedex": "Eevee has an unstable genetic makeup that suddenly mutates due to the environment in which it lives. Radiation from various stones causes this Pokemon to evolve.",
+        "shiny": true,
+        "gender": false
+      },
+      "flower": {
         "type": [
           "Normal"
         ],
@@ -3113,9 +3131,18 @@
     "mythical": false,
     "forms": {
       "list": [
-        "none"
+        "none",
+        "flower"
       ],
       "none": {
+        "type": [
+          "Water"
+        ],
+        "pokedex": "Vaporeon underwent a spontaneous mutation and grew fins and gills that allow it to live underwater. This Pokemon has the ability to freely control water.",
+        "shiny": true,
+        "gender": false
+      },
+      "flower": {
         "type": [
           "Water"
         ],
@@ -3133,9 +3160,18 @@
     "mythical": false,
     "forms": {
       "list": [
-        "none"
+        "none",
+        "flower"
       ],
       "none": {
+        "type": [
+          "Electric"
+        ],
+        "pokedex": "Jolteon's cells generate a low level of electricity. This power is amplified by the static electricity of its fur, enabling the Pokemon to drop thunderbolts. The bristling fur is made of electrically charged needles.",
+        "shiny": true,
+        "gender": false
+      },
+      "flower": {
         "type": [
           "Electric"
         ],
@@ -3153,9 +3189,18 @@
     "mythical": false,
     "forms": {
       "list": [
-        "none"
+        "none",
+        "flower"
       ],
       "none": {
+        "type": [
+          "Fire"
+        ],
+        "pokedex": "Flareon's fluffy fur has a functional purpose-it releases heat into the air so that its body does not get excessively hot. This Pokemon's body temperature can rise to a maximum of 1,650 degrees Fahrenheit.",
+        "shiny": true,
+        "gender": false
+      },
+      "flower": {
         "type": [
           "Fire"
         ],
@@ -4455,8 +4500,17 @@
     "mythical": false,
     "forms": {
       "list": [
-        "none"
+        "none",
+        "flower"
       ],
+      "none": {
+        "type": [
+          "Psychic"
+        ],
+        "pokedex": "Espeon is extremely loyal to any Trainer it considers to be worthy. It is said that this Pokemon developed its precognitive powers to protect its Trainer from harm.",
+        "shiny": true,
+        "gender": false
+      },
       "none": {
         "type": [
           "Psychic"
@@ -4475,9 +4529,18 @@
     "mythical": false,
     "forms": {
       "list": [
-        "none"
+        "none",
+        "flower"
       ],
       "none": {
+        "type": [
+          "Dark"
+        ],
+        "pokedex": "Umbreon evolved as a result of exposure to the moon's waves. It hides silently in darkness and waits for its foes to make a move. The rings on its body glow when it leaps to attack.",
+        "shiny": true,
+        "gender": false
+      },
+      "flower": {
         "type": [
           "Dark"
         ],
@@ -8318,7 +8381,7 @@
           "Water"
         ],
         "pokedex": "Clamperl grows while being protected by its rock-hard shell. When its body becomes too large to fit inside the shell, it is sure evidence that this Pokemon is getting close to evolution.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -8338,7 +8401,7 @@
           "Water"
         ],
         "pokedex": "Huntail's tail is shaped like a fish. It uses the tail to attract prey, then swallows the prey whole with its large, gaping mouth. This Pokemon swims by wiggling its slender body like a snake.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -8358,7 +8421,7 @@
           "Water"
         ],
         "pokedex": "Although Gorebyss is the very picture of elegance and beauty while swimming, it is also cruel. When it spots prey, this Pokemon inserts its thin mouth into the prey's body and drains the prey of its body fluids.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -8604,7 +8667,7 @@
           "Psychic"
         ],
         "pokedex": "Latias is highly intelligent and capable of understanding human speech. It is covered with a glass-like down. The Pokemon enfolds its body with its down and refracts light to alter its appearance.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },

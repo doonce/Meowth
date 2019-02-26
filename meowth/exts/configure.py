@@ -1423,8 +1423,29 @@ class Configure:
                     else:
                         await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one pokemon or **N** to turn off automatic wild filter."))
                         continue
+        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!research** reports using supported bots enabled?\n\nAny quest that a bot posts in a channel that Meowth also has access to will be converted to a **!research** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Research Reports', icon_url=self.bot.user.avatar_url)
+        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('NovaBot, PokeAlarm'))
+        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!res <pokestop>|<lat>,<lng>|<task>|<reward>`'))
+        await owner.send(embed=scanner_embed)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scanners'].get('autoquest', False)).set_author(name=_("Current AutoQuest Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        while True:
+            wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
+            if wildconfigset.content.lower() == 'y':
+                config_dict_temp['scanners']['autoquest'] = True
+                await owner.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Quest Reports enabled'))
+                break
+            elif wildconfigset.content.lower() == 'n':
+                config_dict_temp['scanners']['autoquest'] = False
+                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Quest Reports disabled'))
+                break
+            elif wildconfigset.content.lower() == 'cancel':
+                await owner.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
+                return None
+            else:
+                await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
+                continue
+
         ctx.config_dict_temp = config_dict_temp
         return ctx
-
 def setup(bot):
     bot.add_cog(Configure(bot))

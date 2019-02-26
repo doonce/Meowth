@@ -6,6 +6,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import dateparser
 import urllib
+import textwrap
 
 import discord
 from discord.ext import commands
@@ -25,7 +26,7 @@ class Huntr:
         ctx = await self.bot.get_context(message)
         if not ctx.guild:
             return
-        if message.guild and (message.author.bot or message.webhook_id) and message.author != ctx.guild.me and ("!raid" in message.content or "!raidegg" in message.content or "!wild" in message.content):
+        if message.guild and (message.author.bot or message.webhook_id) and message.author != ctx.guild.me and ("!raid" in message.content or "!raidegg" in message.content or "!wild" in message.content or "!research" in message.content):
             await self.on_pokealarm(ctx)
         if (str(message.author) == 'GymHuntrBot#7279') or (str(message.author) == 'HuntrBot#1845'):
             await self.on_huntr(ctx)
@@ -219,9 +220,20 @@ class Huntr:
                 wild_details = painfo[1]
                 location = f"https://www.google.com/maps/search/?api=1&query={wild_details}"
                 despawn = (int(minutes) * 60) + int(seconds)
+            elif "!research" in message.content.lower():
+                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoquest', True):
+                    return
+                reporttype = "quest"
+                pokestop = painfo[0]
+                gps = painfo[1]
+                quest = painfo[2]
+                reward = painfo[3]
             await utils.safe_delete(message)
             if reporttype == "wild":
                 await self.huntr_wild(ctx, entered_wild, wild_details, huntrexp, huntrweather, reporter="alarm")
+                return
+            elif reporttype == "quest":
+                await self.huntr_research(ctx, pokestop, gps, quest, reward)
                 return
             else:
                 for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
@@ -703,6 +715,120 @@ class Huntr:
                 "gps":gymhuntrgps,
                 "embed":raid_embed
             }
+
+    async def huntr_research(self, ctx, location, gps, quest, reward):
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        to_midnight = 24*60*60 - ((timestamp-timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+        loc_url = f"https://www.google.com/maps/search/?api=1&query={gps}"
+        research_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
+        research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        dm_dict = {}
+        pokemon = False
+        reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        stop_info = ""
+        if gym_matching_cog:
+            stop_info, location, stop_url = await gym_matching_cog.get_stop_info(ctx, location)
+            if stop_url:
+                loc_url = stop_url
+        if not location:
+            return
+        research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(location.title(), width=30)), inline=True)
+        research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(quest.title(), width=30)), inline=True)
+        other_reward = any(x in reward.lower() for x in reward_list)
+        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
+        if pokemon and not other_reward:
+            reward = f"{reward.title()} {''.join(utils.get_type(Meowth, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
+            research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
+        else:
+            research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(reward.title(), width=30)), inline=True)
+        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward.strip(), allow_digits=False)
+        dust = re.search(r'(?i)dust', reward)
+        candy = re.search(r'(?i)candy|(?i)candies', reward)
+        pinap = re.search(r'(?i)pinap', reward)
+        silverpinap = re.search(r'(?i)silver pinap', reward)
+        razz = re.search(r'(?i)razz', reward)
+        goldenrazz = re.search(r'(?i)golde?n? razz', reward)
+        nanab = re.search(r'(?i)nanab', reward)
+        pokeball = re.search(r'(?i)ball', reward)
+        greatball = re.search(r'(?i)great ball', reward)
+        ultraball = re.search(r'(?i)ultra ball', reward)
+        potion = re.search(r'(?i)potion', reward)
+        superpotion = re.search(r'(?i)super potion', reward)
+        hyperpotion = re.search(r'(?i)hyper potion', reward)
+        maxpotion = re.search(r'(?i)max potion', reward)
+        revive = re.search(r'(?i)revive', reward)
+        maxrevive = re.search(r'(?i)max revive', reward)
+        research_msg = _("Field Research reported by {author}").format(author=author.mention)
+        research_embed.title = _('Meowth! Click here for my directions to the research!')
+        research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=author.name)
+        research_embed.url = loc_url
+        if pokemon and not other_reward:
+            research_embed.set_thumbnail(url=pokemon.img_url)
+        elif dust:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png")
+        elif candy:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1301.png")
+        elif pinap and not silverpinap:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0705.png")
+        elif pinap and silverpinap:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0707.png")
+        elif razz and not goldenrazz:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0701.png")
+        elif razz and goldenrazz:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0706.png")
+        elif nanab:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0703.png")
+        elif pokeball and not ultraball and not greatball:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0001.png")
+        elif pokeball and greatball:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0002.png")
+        elif pokeball and ultraball:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0003.png")
+        elif potion and not superpotion and not hyperpotion and not maxpotion:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0101.png")
+        elif potion and superpotion:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0102.png")
+        elif potion and hyperpotion:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0103.png")
+        elif potion and maxpotion:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0104.png")
+        elif revive and not maxrevive:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0201.png")
+        elif revive and maxrevive:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0202.png")
+        research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
+        confirmation = await channel.send(research_msg, embed=research_embed)
+        self.bot.guild_dict[guild.id]['questreport_dict'][confirmation.id] = {
+            'exp':time.time() + to_midnight,
+            'expedit':"delete",
+            'reportmessage':message.id,
+            'reportchannel':channel.id,
+            'reportauthor':author.id,
+            'dm_dict':dm_dict,
+            'location':location,
+            'url':loc_url,
+            'quest':quest,
+            'reward':reward
+        }
+        for trainer in self.bot.guild_dict[guild.id].get('trainers', {}):
+            if not checks.dm_check(ctx, trainer):
+                continue
+            if (pokemon and pokemon.id in self.bot.guild_dict[guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])) or location.lower() in self.bot.guild_dict[guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', []):
+                try:
+                    user = ctx.guild.get_member(trainer)
+                    if pokemon:
+                        resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pokemon.name.title(), author=author.mention, channel=channel.mention), embed=research_embed)
+                    else:
+                        resdmmsg = await user.send(_("Field Research reported by {author} in {channel}").format(author=author.mention, channel=channel.mention), embed=research_embed)
+                    dm_dict[user.id] = resdmmsg.id
+                except:
+                    continue
+        self.bot.guild_dict[guild.id]['questreport_dict'][confirmation.id]['dm_dict'] = dm_dict
 
     @commands.command()
     @commands.has_permissions(manage_guild=True)
