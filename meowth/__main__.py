@@ -223,6 +223,8 @@ async def reset_raid_roles(bot):
             boss_names.append(boss)
     for guild_id in guild_dict:
         guild = Meowth.get_guild(guild_id)
+        if not guild:
+            continue
         for member in guild.members:
             user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('wants', [])
             for role in member.roles:
@@ -783,54 +785,25 @@ async def on_ready():
     users = 0
     for guild in Meowth.guilds:
         users += guild.member_count
-        try:
-            if guild.id not in guild_dict:
-                guild_dict[guild.id] = {
-                    'configure_dict':{
-                        'welcome': {'enabled':False, 'welcomechan':'', 'welcomemsg':''},
-                        'want': {'enabled':False, 'report_channels': []},
-                        'raid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}},
-                        'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}, 'permissions':'everyone'},
-                        'wild': {'enabled':False, 'report_channels': {}},
-                        'meetup': {'enabled':False, 'report_channels': {}},
-                        'tutorial': {'enabled':True, 'report_channels': {}},
-                        'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
-                        'trade': {'enabled':False, 'report_channels': []},
-                        'counters': {'enabled':False, 'auto_levels': []},
-                        'research': {'enabled':False, 'report_channels': {}},
-                        'archive': {'enabled':False, 'category':'same', 'list':None},
-                        'invite': {'enabled':False},
-                        'team':{'enabled':False, 'team_roles':{}},
-                        'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':Meowth.config['default_prefix'], 'config_sessions':{}},
-                        'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'alarmaction':False}
-                    },
-                    'wildreport_dict:':{},
-                    'questreport_dict':{},
-                    'raidchannel_dict':{},
-                    'trainers':{},
-                    'trade_dict': {}
-                }
-            else:
-                guild_dict[guild.id]['configure_dict'].setdefault('trade', {})
-        except KeyError:
+        if guild.id not in guild_dict:
             guild_dict[guild.id] = {
                 'configure_dict':{
-                    'welcome': {'enabled':False, 'welcomechan':'', 'welcomemsg':''},
+                    'welcome': {'enabled':False, 'welcomechan':'', 'welcomemsg':'default'},
                     'want': {'enabled':False, 'report_channels': []},
                     'raid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}},
                     'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}, 'permissions':'everyone'},
-                    'counters': {'enabled':False, 'auto_levels': []},
                     'wild': {'enabled':False, 'report_channels': {}},
                     'meetup': {'enabled':False, 'report_channels': {}},
                     'tutorial': {'enabled':True, 'report_channels': {}},
                     'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
                     'trade': {'enabled':False, 'report_channels': []},
+                    'counters': {'enabled':False, 'auto_levels': []},
                     'research': {'enabled':False, 'report_channels': {}},
                     'archive': {'enabled':False, 'category':'same', 'list':None},
                     'invite': {'enabled':False},
                     'team':{'enabled':False, 'team_roles':{}},
                     'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':Meowth.config['default_prefix'], 'config_sessions':{}},
-                    'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'alarmaction':False}
+                    'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'wildfilter':[], 'autoquest':False, 'alarmaction':False}
                 },
                 'wildreport_dict:':{},
                 'questreport_dict':{},
@@ -846,22 +819,22 @@ async def on_guild_join(guild):
     owner = guild.owner
     guild_dict[guild.id] = {
         'configure_dict':{
-            'welcome': {'enabled':False, 'welcomechan':'', 'welcomemsg':''},
+            'welcome': {'enabled':False, 'welcomechan':'', 'welcomemsg':'default'},
             'want': {'enabled':False, 'report_channels': []},
             'raid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}},
             'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}, 'permissions':'everyone'},
-            'counters': {'enabled':False, 'auto_levels': []},
             'wild': {'enabled':False, 'report_channels': {}},
-            'meetup': {'enabled':False, 'report_channels': {}},
+            'meetup': {'enabled':False, 'report_channels': {}, 'categories':'same', 'catgory_dict':{}},
             'tutorial': {'enabled':True, 'report_channels': {}},
             'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
             'trade': {'enabled':False, 'report_channels': []},
+            'counters': {'enabled':False, 'auto_levels': []},
             'research': {'enabled':False, 'report_channels': {}},
             'archive': {'enabled':False, 'category':'same', 'list':None},
             'invite': {'enabled':False},
             'team':{'enabled':False, 'team_roles':{}},
             'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':Meowth.config['default_prefix'], 'config_sessions':{}},
-            'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'alarmaction':False}
+            'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'wildfilter':[], 'autoquest':False, 'alarmaction':False}
         },
         'wildreport_dict:':{},
         'questreport_dict':{},

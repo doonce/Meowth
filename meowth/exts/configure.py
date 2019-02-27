@@ -19,15 +19,15 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         citychannel_dict = {}
-        channels = ""
-        if config_dict_temp[type]['report_channels']:
+        channels = None
+        if config_dict_temp[type].get('report_channels'):
             if output == "list":
                 channels = [ctx.bot.get_channel(x) for x in config_dict_temp[type]['report_channels']]
                 channels = [x.name for x in channels if x]
             else:
                 channels = [ctx.bot.get_channel(x) for x in config_dict_temp[type]['report_channels'].keys()]
                 channels = [x.name for x in channels if x]
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp[type]['enabled']}\nChannels: {channels}").set_author(name=_("Current {type} Setting").format(type=type.title()), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp[type]['enabled']}\nChannels: {str(channels)}").set_author(name=_("Current {type} Setting").format(type=type.title()), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             citychannels = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if citychannels.content.lower() == 'n':
@@ -495,7 +495,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Team assignment allows users to assign their Pokemon Go team role using the **!team** command. If you have a bot that handles this already, you may want to disable this feature.\n\nIf you are to use this feature, ensure existing team roles are as follows: mystic, valor, instinct. These must be all lowercase letters. If they don't exist yet, I'll make some for you instead.\n\nRespond here with: **N** to disable, **Y** to enable:")).set_author(name=_('Team Assignments'), icon_url=self.bot.user.avatar_url))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['team']['enabled']).set_author(name=_("Current Team Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['team']['enabled'])).set_author(name=_("Current Team Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             teamreply = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if teamreply.content.lower() == 'y':
@@ -604,7 +604,7 @@ class Configure:
             welcomeconfig += _('Meowth! Welcome to {server_name}, {owner_name.mention}! If you have any questions just ask an admin.').format(server_name=guild, owner_name=owner)
         welcomeconfig += _('\n\nThis welcome message can be in a specific channel or a direct message. If you have a bot that handles this already, you may want to disable this feature.\n\nRespond with: **N** to disable, **Y** to enable:')
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=welcomeconfig).set_author(name=_('Welcome Message'), icon_url=self.bot.user.avatar_url))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['welcome']['enabled']).set_author(name=_("Current Welcome Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['welcome']['enabled'])).set_author(name=_("Current Welcome Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             welcomereply = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if welcomereply.content.lower() == 'y':
@@ -622,8 +622,8 @@ class Configure:
                                  "**{user}** - Will mention the new user\n"
                                  "**{server}** - Will print your server's name\n"
                                  "Surround your message with [] to send it as an embed. **Warning:** Mentions within embeds may be broken on mobile, this is a Discord bug."))).set_author(name=_("Welcome Message"), icon_url=self.bot.user.avatar_url))
-                if config_dict_temp['welcome']['welcomemsg'] != 'default':
-                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['welcome']['welcomemsg']).set_author(name=_("Current Welcome Message"), icon_url=self.bot.user.avatar_url), delete_after=300)
+                if config_dict_temp['welcome'].get('welcomemsg', 'default') != 'default':
+                    await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['welcome']['welcomemsg'])).set_author(name=_("Current Welcome Message"), icon_url=self.bot.user.avatar_url), delete_after=300)
                 while True:
                     welcomemsgreply = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and (message.author == owner)))
                     if welcomemsgreply.content.lower() == 'n':
@@ -798,13 +798,12 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("EX Raid Reporting allows users to report EX raids with **!exraid**. Pokemon EX raid reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-raids, hull-raids, sydney-raids`\n\nIf you do not require EX raid reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('EX Raid Reporting Channels'), icon_url=self.bot.user.avatar_url))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['exraid']['enabled']).set_author(name=_("Current Exraid Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "exraid", ["none", "same", "other"], output="category_dict")
         if not config_dict_temp:
             return None
         if config_dict_temp['exraid']['enabled']:
             await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Who do you want to be able to **see** the EX Raid channels? Your options are:\n\n**everyone** - To have everyone be able to see all reported EX Raids\n**same** - To only allow those with access to the reporting channel.")).set_author(name=_('EX Raid Channel Read Permissions'), icon_url=self.bot.user.avatar_url))
-            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['exraid']['permissions']).set_author(name=_("Current Exraid Permissions"), icon_url=self.bot.user.avatar_url), delete_after=300)
+            await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['exraid']['permissions'])).set_author(name=_("Current Exraid Permissions"), icon_url=self.bot.user.avatar_url), delete_after=300)
             while True:
                 permsconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
                 if permsconfigset.content.lower() == 'everyone':
@@ -853,7 +852,7 @@ class Configure:
         if not config_dict_temp['exraid']['enabled']:
             return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want access to EX raids controlled through members using the **!invite** command?\nIf enabled, members will have read-only permissions for all EX Raids until they use **!invite** to gain access. If disabled, EX Raids will inherit the permissions from their reporting channels.\n\nRespond with: **N** to disable, or **Y** to enable:')).set_author(name=_('Invite Configuration'), icon_url=self.bot.user.avatar_url))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['invite']['enabled']).set_author(name=_("Current Invite Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['invite']['enabled'])).set_author(name=_("Current Invite Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             inviteconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if inviteconfigset.content.lower() == 'y':
@@ -1021,7 +1020,7 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
-        config_dict_temp['meetup'] = {}
+        config_dict_temp['meetup'] = {'enabled':False, 'report_channels': {}, 'categories':'same', 'catgory_dict':{}}
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meetup Reporting allows users to report meetups with **!meetup** or **!event**. Meetup reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-meetups, hull-meetups, sydney-meetups`\n\nIf you do not require meetup reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Meetup Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "meetup", ["none", "same", "other"], output="category_dict")
         if not config_dict_temp:
@@ -1122,7 +1121,7 @@ class Configure:
         if config_dict_temp['archive']['enabled']:
             await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("I can also listen in your raid channels for words or phrases that you want to trigger an automatic archival. For example, if discussion of spoofing is against your server rules, you might tell me to listen for the word 'spoofing'.\n\nReply with **none** to disable this feature, or reply with a comma separated list of phrases you want me to listen in raid channels for.")).set_author(name=_('Archive Configuration'), icon_url=self.bot.user.avatar_url))
             if config_dict_temp['archive'].get('list', []):
-                await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['archive']['list']).set_author(name=_("Current Archive Phrases"), icon_url=self.bot.user.avatar_url), delete_after=300)
+                await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['archive']['list'])).set_author(name=_("Current Archive Phrases"), icon_url=self.bot.user.avatar_url), delete_after=300)
             phrasemsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if phrasemsg.content.lower() == 'none':
                 config_dict_temp['archive']['list'] = None
@@ -1166,7 +1165,7 @@ class Configure:
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("There are a few settings available that are not within **!configure**. To set these, use **!set <setting>** in any channel to set that setting.\n\nThese include:\n**!set regional <name or number>** - To set a server's regional raid boss\n**!set prefix <prefix>** - To set my command prefix\n**!set timezone <offset>** - To set offset outside of **!configure**\n**!set silph <trainer>** - To set a trainer's SilphRoad card (usable by members)\n**!set pokebattler <ID>** - To set a trainer's pokebattler ID (usable by members)\n\nHowever, we can do your timezone now to help coordinate reports for you. For others, use the **!set** command.\n\nThe current 24-hr time UTC is {utctime}. How many hours off from that are you?\n\nRespond with: A number from **-12** to **12**:").format(utctime=strftime('%H:%M', time.gmtime()))).set_author(name=_('Timezone Configuration and Other Settings'), icon_url=self.bot.user.avatar_url))
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['settings']['offset']).set_author(name=_("Current Timezone Offset"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['settings']['offset'])).set_author(name=_("Current Timezone Offset"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             offsetmsg = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if offsetmsg.content.lower() == 'cancel':
@@ -1279,7 +1278,7 @@ class Configure:
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raid <form> <pkmn>|<gym_name>|<time_left>|<lat>,<lng>|<quick_move> / <charge_move>`'))
         await owner.send(embed=scanner_embed)
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scanners']['autoraid']).set_author(name=_("Current AutoRaid Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['autoraid'])).set_author(name=_("Current AutoRaid Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             autoraidset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if autoraidset.content.lower() == 'y':
@@ -1328,7 +1327,7 @@ class Configure:
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raidegg <level>|<gym_name>|<time_left_start>|<lat>,<lng>`'))
         await owner.send(embed=scanner_embed)
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scanners']['autoegg']).set_author(name=_("Current AutoEgg Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['autoegg'])).set_author(name=_("Current AutoEgg Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             autoeggset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if autoeggset.content.lower() == 'y':
@@ -1377,7 +1376,7 @@ class Configure:
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!wild <form> <pkmn>|<lat>,<lng>|<time_left>|Weather: <weather> / IV: <iv>`'))
         await owner.send(embed=scanner_embed)
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scanners']['autowild']).set_author(name=_("Current AutoWild Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('autowild', False))).set_author(name=_("Current AutoWild Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if wildconfigset.content.lower() == 'y':
@@ -1427,7 +1426,7 @@ class Configure:
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('NovaBot, PokeAlarm'))
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!res <pokestop>|<lat>,<lng>|<task>|<reward>`'))
         await owner.send(embed=scanner_embed)
-        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=config_dict_temp['scanners'].get('autoquest', False)).set_author(name=_("Current AutoQuest Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('autoquest', False))).set_author(name=_("Current AutoQuest Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             wildconfigset = await self.bot.wait_for('message', check=(lambda message: (message.guild == None) and message.author == owner))
             if wildconfigset.content.lower() == 'y':
@@ -1444,8 +1443,8 @@ class Configure:
             else:
                 await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
                 continue
-
         ctx.config_dict_temp = config_dict_temp
         return ctx
+
 def setup(bot):
     bot.add_cog(Configure(bot))
