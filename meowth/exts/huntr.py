@@ -742,7 +742,7 @@ class Huntr:
         other_reward = any(x in reward.lower() for x in reward_list)
         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
         if pokemon and not other_reward:
-            reward = f"{reward.title()} {''.join(utils.get_type(Meowth, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
+            reward = f"{reward.title()} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
             research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
         else:
             research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(reward.title(), width=30)), inline=True)
