@@ -175,10 +175,10 @@ class Huntr:
             report = None
             embed = message.embeds[0] if message.embeds else None
             now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
-            painfo = message.content.split("|")
             if "!raidegg" in message.content.lower():
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoegg', False):
                     return
+                painfo = message.content.replace("!raidegg", "").strip().split("|")
                 reporttype = "egg"
                 gps = painfo[3]
                 moves = None
@@ -191,6 +191,7 @@ class Huntr:
             elif "!raid" in message.content.lower():
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoraid', False):
                     return
+                painfo = message.content.replace("!raid", "").strip().split("|")
                 reporttype = "raid"
                 gps = painfo[3]
                 moves = painfo[4]
@@ -209,6 +210,7 @@ class Huntr:
             elif "!wild" in message.content.lower():
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autowild', False):
                     return
+                painfo = message.content.replace("!wild", "").strip().split("|")
                 reporttype = "wild"
                 exptime = painfo[2]
                 #minutes = exptime.split()[0][:-1]
@@ -223,6 +225,7 @@ class Huntr:
             elif "!research" in message.content.lower():
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoquest', True):
                     return
+                painfo = message.content.replace("!research", "").strip().split("|")
                 reporttype = "quest"
                 pokestop = painfo[0]
                 gps = painfo[1]
