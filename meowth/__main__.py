@@ -2339,6 +2339,58 @@ async def want_stop(ctx, *, stops):
     await utils.safe_delete(want_confirmation)
     await ctx.message.add_reaction(config['command_done'])
 
+@want.command(name='item')
+@checks.allowwant()
+async def want_item(ctx, *, items):
+    """
+    Item List = incense, poke ball, great ball, ultra ball, master ball, potion, super potion, hyper potion, max potion, revive, max revive, razz berry, golden razz berry, nanab berry, pinap berry, silver pinap berry, fast tm, charged tm, rare candy, lucky egg, stardust, lure module, star piece, premium raid pass, egg incubator, super incubator, team medallion, sun stone, metal coat, dragon scale, up-grade, sinnoh stone
+    """
+    message = ctx.message
+    guild = message.guild
+    channel = message.channel
+    want_split = items.lower().split(',')
+    want_list = []
+    added_count = 0
+    spellcheck_dict = {}
+    spellcheck_list = []
+    already_want_count = 0
+    already_want_list = []
+    added_list = []
+    item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
+    for entered_want in want_split:
+        if entered_want.lower() in item_list:
+            want_list.append(entered_want.lower())
+        else:
+            spellcheck_list.append(entered_want)
+            match, score = utils.get_match(item_list, entered_want)
+            spellcheck_dict[entered_want] = match
+    for entered_want in want_list:
+        if entered_want.lower() in user_wants:
+            already_want_list.append(entered_want.title())
+            already_want_count += 1
+        else:
+            user_wants.append(entered_want.lower())
+            added_list.append(f"{entered_want.title()}")
+            added_count += 1
+    want_count = added_count + already_want_count + len(spellcheck_dict)
+    confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
+    if added_count > 0:
+        confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+    if already_want_count > 0:
+        confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+    if spellcheck_dict:
+        spellcheckmsg = ''
+        for word in spellcheck_dict:
+            spellcheckmsg += _('\n\t{word}').format(word=word)
+            if spellcheck_dict[word]:
+                spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
+        confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+    want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+    await asyncio.sleep(90)
+    await utils.safe_delete(want_confirmation)
+    await ctx.message.add_reaction(config['command_done'])
+
 @want.command()
 @checks.allowwant()
 async def settings(ctx):
@@ -2450,9 +2502,11 @@ async def unwant_all(ctx):
     gym_count = len(user_gyms)
     user_stops = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
     stop_count = len(user_stops)
+    user_items = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
+    stop_count = len(user_items)
     unwant_msg = ""
-    if count == 0 and gym_count == 0 and stop_count == 0:
-        await channel.send(content=_('{0}, you have no pokemon or gyms in your want list.').format(author.mention), delete_after=10)
+    if count == 0 and gym_count == 0 and stop_count == 0 and item_count == 0:
+        await channel.send(content=_('{0}, you have no pokemon, stops, gyms, or items in your want list.').format(author.mention), delete_after=10)
         return
     unwant_msg = f"{author.mention}"
     if count > 0:
@@ -2473,6 +2527,10 @@ async def unwant_all(ctx):
         await channel.trigger_typing()
         guild_dict[guild.id]['trainers'][message.author.id]['alerts']['stops'] = []
         unwant_msg += _(" I've removed {0} stops from your want list.").format(stop_count)
+    if items_count > 0:
+        await channel.trigger_typing()
+        guild_dict[guild.id]['trainers'][message.author.id]['alerts']['itemss'] = []
+        unwant_msg += _(" I've removed {0} itemss from your want list.").format(items_count)
     await channel.send(unwant_msg)
 
 @unwant.command(name='gym')
@@ -2510,6 +2568,24 @@ async def unwant_stop(ctx, *, stops):
         stop = await gym_matching_cog.stop_match_prompt(ctx, entered_unwant, stops)
         if stop:
             unwant_list.append(stop.lower())
+    for entered_unwant in unwant_list:
+        if entered_unwant.lower() in user_wants:
+            user_wants.remove(entered_unwant.lower())
+    await message.add_reaction(config['command_done'])
+
+@unwant.command(name='item')
+@checks.allowwant()
+async def unwant_item(ctx, *, items):
+    message = ctx.message
+    guild = message.guild
+    channel = message.channel
+    user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
+    item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
+    unwant_list = []
+    unwant_split = items.lower().split(',')
+    for entered_unwant in unwant_split:
+        if entered_unwant in item_list:
+            unwant_list.append(entered_unwant.lower())
     for entered_unwant in unwant_list:
         if entered_unwant.lower() in user_wants:
             user_wants.remove(entered_unwant.lower())
@@ -3151,6 +3227,11 @@ async def _eggtoraid(entered_raid, raid_channel, author=None, huntr=None):
     if not matched_boss:
         for boss in raid_info['raid_eggs'][str(egglevel)]['pokemon']:
             boss = pkmn_class.Pokemon.get_pokemon(Meowth, boss)
+            if not boss or not pokemon:
+                print("boss: "+boss)
+                print("pokemon: "+pokemon)
+                eggdetails['archive'] = True
+                continue
             if boss and boss.id == pokemon.id:
                 pokemon = boss
                 entered_raid = boss.name.lower()
@@ -3672,43 +3753,73 @@ async def research(ctx, *, details = None):
         maxpotion = re.search(r'(?i)max potion', reward)
         revive = re.search(r'(?i)revive', reward)
         maxrevive = re.search(r'(?i)max revive', reward)
+        fasttm = re.search(r'(?i)fast tm', reward)
+        chargetm = re.search(r'(?i)charged? tm', reward)
+        starpiece = re.search(r'(?i)star piece', reward)
         research_msg = _("Field Research reported by {author}").format(author=author.mention)
         research_embed.title = _('Meowth! Click here for my directions to the research!')
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=author.name)
         research_embed.url = loc_url
         if pokemon and not other_reward:
             research_embed.set_thumbnail(url=pokemon.img_url)
+            item = None
         elif dust:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png")
+            item = "stardust"
         elif candy:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1301.png")
+            item = "rare candy"
         elif pinap and not silverpinap:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0705.png")
+            item = "pinap berry"
         elif pinap and silverpinap:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0707.png")
+            item = "silver pinap berry"
         elif razz and not goldenrazz:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0701.png")
+            item = "razz berry"
         elif razz and goldenrazz:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0706.png")
+            item = "golden razz berry"
         elif nanab:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0703.png")
+            item = "nanab berry"
         elif pokeball and not ultraball and not greatball:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0001.png")
+            item = "poke ball"
         elif pokeball and greatball:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0002.png")
+            item = "great ball"
         elif pokeball and ultraball:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0003.png")
+            item = "ultra ball"
         elif potion and not superpotion and not hyperpotion and not maxpotion:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0101.png")
+            item = "potion"
         elif potion and superpotion:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0102.png")
+            item = "super potion"
         elif potion and hyperpotion:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0103.png")
+            item = "hyper potion"
         elif potion and maxpotion:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0104.png")
+            item = "max potion"
         elif revive and not maxrevive:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0201.png")
+            item = "revive"
         elif revive and maxrevive:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0202.png")
+            item = "max revive"
+        elif fasttm:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1201.png")
+            item = "fast tm"
+        elif chargetm:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1202.png")
+            item = "charged tm"
+        elif starpiece:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/starpiece.png")
+            item = "star piece"
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0202.png")
         research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
         confirmation = await channel.send(research_msg, embed=research_embed)
@@ -3726,20 +3837,23 @@ async def research(ctx, *, details = None):
         }
         research_reports = guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('research_reports', 0) + 1
         guild_dict[ctx.guild.id]['trainers'][author.id]['research_reports'] = research_reports
-        for trainer in guild_dict[guild.id].get('trainers', {}):
+        for trainer in guild_dict[ctx.guild.id].get('trainers', {}):
+            user_wants = guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+            user_stops = guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
+            user_items = guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('items', [])
             if not checks.dm_check(ctx, trainer):
                 continue
-            if (pokemon and pokemon.id in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])) or location.lower() in guild_dict[guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', []):
+            if (pokemon and pokemon.id in user_wants) or location.lower() in user_stops or item in user_items:
                 try:
                     user = ctx.guild.get_member(trainer)
                     if pokemon:
-                        resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pokemon.name.title(), author=author.mention, channel=channel.mention), embed=research_embed)
+                        resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pokemon.name.title(), author=ctx.author.mention, channel=ctx.channel.mention), embed=research_embed)
                     else:
-                        resdmmsg = await user.send(_("Field Research reported by {author} in {channel}").format(author=author.mention, channel=channel.mention), embed=research_embed)
+                        resdmmsg = await user.send(_("Field Research reported by {author} in {channel}").format(author=ctx.author.mention, channel=ctx.channel.mention), embed=research_embed)
                     dm_dict[user.id] = resdmmsg.id
                 except:
                     continue
-        guild_dict[guild.id]['questreport_dict'][confirmation.id]['dm_dict'] = dm_dict
+        guild_dict[ctx.guild.id]['questreport_dict'][confirmation.id]['dm_dict'] = dm_dict
     else:
         research_embed.clear_fields()
         research_embed.add_field(name=_('**Research Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
@@ -6536,6 +6650,8 @@ async def _wantlist(ctx):
     user_gyms = [x.title() for x in user_gyms]
     user_stops = guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
     user_stops = [x.title() for x in user_stops]
+    user_items = guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
+    user_items = [x.title() for x in user_items]
     wantmsg = ""
     if len(wantlist) > 0 or len(user_gyms) > 0:
         if wantlist:
@@ -6544,6 +6660,8 @@ async def _wantlist(ctx):
             wantmsg += _('\n\n**Gyms:**\n{user_gyms}').format(user_gyms = '\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
         if user_stops:
             wantmsg += _('\n\n**Stops:**\n{user_stops}').format(user_stops = '\n'.join(textwrap.wrap(', '.join(user_stops), width=80)))
+        if user_items:
+            wantmsg += _('\n\n**Items:**\n{user_items}').format(user_items = '\n'.join(textwrap.wrap(', '.join(user_items), width=80)))
     if wantmsg:
         listmsg = _('Meowth! {author}, your current **!want** list is:').format(author=ctx.author.display_name)
         paginator = commands.Paginator(prefix="", suffix="")
