@@ -6653,7 +6653,7 @@ async def _wantlist(ctx):
     user_items = guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
     user_items = [x.title() for x in user_items]
     wantmsg = ""
-    if len(wantlist) > 0 or len(user_gyms) > 0:
+    if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0:
         if wantlist:
             wantmsg += _('**Pokemon:**\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(wantlist), width=80)))
         if user_gyms:
