@@ -500,7 +500,7 @@ class Pokemon():
 
     @classmethod
     def get_pokemon(cls, bot, argument, allow_digits = True):
-        argument = str(argument)
+        argument = str(argument).strip()
         shiny = re.search(r'shiny', argument, re.IGNORECASE)
         alolan = re.search(r'alolan', argument, re.IGNORECASE)
         male = re.search(r'(?<!fe)male', argument, re.IGNORECASE)
@@ -512,9 +512,14 @@ class Pokemon():
             form_list.remove("none")
         except ValueError:
             pass
-        one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=bot.pkmn_list[200], spinda=bot.pkmn_list[326]), argument, re.IGNORECASE)
-        if not one_char_forms:
+        unown_form = re.search(r'{unown}|201'.format(unown=bot.pkmn_list[200]), argument, re.IGNORECASE)
+        spinda_form = re.search(r'{spinda}|327'.format(spinda=bot.pkmn_list[326]), argument, re.IGNORECASE)
+        if not spinda_form and not unown_form:
             form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
+        elif spinda_form:
+            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' ?', ' !']))
+        elif unown_form:
+            form_list = list(set(form_list) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8']))
         ash_forms = re.search(r'{pichu}|172|{pikachu}|25|{raichu}|26|{greninja}|658'.format(pichu=bot.pkmn_list[171], pikachu=bot.pkmn_list[24], raichu=bot.pkmn_list[25], greninja=bot.pkmn_list[657]), argument, re.IGNORECASE)
         if not ash_forms:
             form_list = list(set(form_list) - set(['ash']))
@@ -551,6 +556,8 @@ class Pokemon():
             if form:
                 argument = argument.replace(form.group(0), '').strip()
                 form = form.group(0).lower().strip()
+                argument = re.sub("(?i)spinda","spinda ", argument)
+                argument = re.sub("(?i)unown","unown ", argument)
                 break
             else:
                 form = None
@@ -590,9 +597,14 @@ class Pokemon():
             form_list.remove("none")
         except ValueError:
             pass
-        one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=ctx.bot.pkmn_list[200], spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
-        if not one_char_forms:
+        unown_form = re.search(r'{unown}|201'.format(unown=bot.pkmn_list[200]), argument, re.IGNORECASE)
+        spinda_form = re.search(r'{spinda}|327'.format(spinda=bot.pkmn_list[326]), argument, re.IGNORECASE)
+        if not spinda_form and not unown_form:
             form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
+        elif spinda_form:
+            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' ?', ' !']))
+        elif unown_form:
+            form_list = list(set(form_list) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8']))
         ash_forms = re.search(r'{pichu}|172|{pikachu}|25|{raichu}|26|{greninja}|658'.format(pichu=ctx.bot.pkmn_list[171], pikachu=ctx.bot.pkmn_list[24], raichu=ctx.bot.pkmn_list[25], greninja=ctx.bot.pkmn_list[657]), argument, re.IGNORECASE)
         if not ash_forms:
             form_list = list(set(form_list) - set(['ash']))
@@ -638,6 +650,8 @@ class Pokemon():
                 match_list.append(form.group(0))
                 argument = argument.replace(form.group(0), '').strip()
                 form = form.group(0).lower().strip()
+                argument = re.sub("(?i)spinda","spinda ", argument)
+                argument = re.sub("(?i)unown","unown ", argument)
                 break
             else:
                 form = None
