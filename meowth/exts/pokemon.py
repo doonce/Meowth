@@ -597,8 +597,8 @@ class Pokemon():
             form_list.remove("none")
         except ValueError:
             pass
-        unown_form = re.search(r'{unown}|201'.format(unown=bot.pkmn_list[200]), argument, re.IGNORECASE)
-        spinda_form = re.search(r'{spinda}|327'.format(spinda=bot.pkmn_list[326]), argument, re.IGNORECASE)
+        unown_form = re.search(r'{unown}|201'.format(unown=ctx.bot.pkmn_list[200]), argument, re.IGNORECASE)
+        spinda_form = re.search(r'{spinda}|327'.format(spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
         if not spinda_form and not unown_form:
             form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
         elif spinda_form:
