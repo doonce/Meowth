@@ -417,7 +417,7 @@ class Huntr:
     async def auto_counters(self, channel, moves):
         moveset = 0
         newembed = False
-        raid_cog = ctx.bot.cogs.get('Raid')
+        raid_cog = self.bot.cogs.get('Raid')
         if not raid_cog:
             logger.error("Raid Cog not loaded")
             return
