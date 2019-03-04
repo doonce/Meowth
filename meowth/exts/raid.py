@@ -1638,7 +1638,7 @@ class Raid:
         exraidlist = ''
         exraid_dict = {}
         exraidcount = 0
-        rc_dict = bot.self.bot.guild_dict[guild.id]['raidchannel_dict']
+        rc_dict = self.bot.guild_dict[guild.id]['raidchannel_dict']
         for channelid in rc_dict:
             if (not discord.utils.get(guild.text_channels, id=channelid)) or rc_dict[channelid].get('meetup', {}):
                 continue
@@ -3589,7 +3589,7 @@ class Raid:
         if self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('lobby', False):
             starting_str = _("Meowth! Please wait for the group in the lobby to enter the raid.")
             await ctx.channel.send(starting_str, delete_after=10)
-            await lobby_countdown(ctx)
+            await self.lobby_countdown(ctx)
             return
         for trainer in trainer_dict:
             ctx.count = trainer_dict[trainer].get('count', 1)
@@ -3660,7 +3660,7 @@ class Raid:
                 except discord.errors.NotFound:
                     pass
             await ctx.channel.send(starting_str)
-            await lobby_countdown(ctx)
+            await self.lobby_countdown(ctx)
 
     @commands.command()
     @checks.activeraidchannel()

@@ -451,9 +451,9 @@ class Want:
                 await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
                 return
             if self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link']:
-                user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['wants']
+                user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('wants', [])
             else:
-                user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['bosses']
+                user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('bosses', [])
             want_names = [utils.get_name(self.bot, x) for x in user_wants]
             want_names = [x.lower() for x in want_names]
             for role in ctx.author.roles:
