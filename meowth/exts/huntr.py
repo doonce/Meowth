@@ -7,6 +7,7 @@ from dateutil.relativedelta import relativedelta
 import dateparser
 import urllib
 import textwrap
+import logging
 
 import discord
 from discord.ext import commands
@@ -15,10 +16,68 @@ import meowth
 from meowth import utils, checks
 from meowth.exts import pokemon as pkmn_class
 
+logger = logging.getLogger("meowth")
+
 class Huntr:
     def __init__(self, bot):
         self.bot = bot
         self.event_loop = asyncio.get_event_loop()
+        bot.loop.create_task(self.huntr_cleanup())
+
+    async def huntr_cleanup(self, loop=True):
+        while (not self.bot.is_closed()):
+            await self.bot.wait_until_ready()
+            logger.info('------ BEGIN ------')
+            guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+            for guildid in guilddict_temp.keys():
+                report_edit_dict = {}
+                report_delete_dict = {}
+                pokealarm_dict = guilddict_temp[guildid].get('pokealarm_dict', {})
+                pokehuntr_dict = guilddict_temp[guildid].get('pokehuntr_dict', {})
+                report_dict_dict = {
+                    'pokealarm_dict':pokealarm_dict,
+                    'pokehuntr_dict':pokehuntr_dict
+                }
+                for report_dict in report_dict_dict:
+                    for reportid in report_dict_dict[report_dict].keys():
+                        if report_dict_dict[report_dict][reportid].get('exp', 0) <= time.time():
+                            report_channel = self.bot.get_channel(report_dict_dict[report_dict][reportid].get('reportchannel'))
+                            if report_channel:
+                                user_report = report_dict_dict[report_dict][reportid].get('reportmessage', None)
+                                if user_report:
+                                    report_delete_dict[user_report] = {"action":"delete", "channel":report_channel}
+                                if report_dict_dict[report_dict][reportid].get('expedit') == "delete":
+                                    report_delete_dict[reportid] = {"action":"delete", "channel":report_channel}
+                                else:
+                                    report_edit_dict[reportid] = {"action":report_dict_dict[report_dict][reportid]['expedit'], "channel":report_channel}
+                                if report_dict_dict[report_dict][reportid].get('dm_dict', False):
+                                    await utils.expire_dm_reports(self.bot, report_dict_dict[report_dict][reportid]['dm_dict'])
+                            try:
+                                del self.bot.guild_dict[guildid][report_dict][reportid]
+                            except KeyError:
+                                pass
+                for messageid in report_delete_dict.keys():
+                    try:
+                        report_message = await report_delete_dict[messageid]['channel'].get_message(messageid)
+                        await utils.safe_delete(report_message)
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
+                        pass
+                for messageid in report_edit_dict.keys():
+                    try:
+                        report_message = await report_edit_dict[messageid]['channel'].get_message(messageid)
+                        await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=report_message.embeds[0].colour.value))
+                        await report_message.clear_reactions()
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError, KeyError):
+                        pass
+            # save server_dict changes after cleanup
+            logger.info('SAVING CHANGES')
+            try:
+                await self.bot.save()
+            except Exception as err:
+                logger.info('SAVING FAILED' + err)
+            logger.info('------ END ------')
+            await asyncio.sleep(600)
+            continue
 
     """Handlers"""
 
@@ -62,6 +121,10 @@ class Huntr:
         if not reactuser:
             #get gps
             if message.embeds and (message.author.id == 329412230481444886 or message.author.id == 295116861920772098 or message.author.id == message.guild.me.id):
+                raid_cog = self.bot.cogs.get('Raid')
+                if not raid_cog:
+                    logger.error("Raid Cog not loaded")
+                    return
                 huntrgps = ""
                 try:
                     huntrgps = message.embeds[0].url.split('#')[1]
@@ -110,7 +173,7 @@ class Huntr:
                     if channel_gps == huntrgps or channel_address == raid_details:
                         channel = self.bot.get_channel(channelid)
                         if self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['type'] == 'egg':
-                            await self.bot.eggtoraid(ghpokeid.lower().strip(), channel, author=message.author, huntr=moveset)
+                            await raid_cog._eggtoraid(ghpokeid.lower().strip(), channel, author=message.author, huntr=moveset)
                         raidmsg = await channel.get_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
                         if moveset and raidmsg.embeds[0].fields[2].name != moveset:
                             await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=entered_raid.title(), moves=moveset))
@@ -120,6 +183,10 @@ class Huntr:
                 elif auto_report and reporttype == "egg":
                     await self.huntr_raidegg(ctx, egg_level, raid_details, raidexp, huntrgps, auto_report)
             if (message.author.id == 295116861920772098) and message.embeds and auto_wild:
+                wild_cog = self.bot.cogs.get('Wild')
+                if not wild_cog:
+                    logger.error("Wild Cog not loaded")
+                    return
                 reporttype = "wild"
                 hpokeid = message.embeds[0].title.split(' ')[2].lower()
                 hdesc = message.embeds[0].description.splitlines()
@@ -142,6 +209,10 @@ class Huntr:
                 await self.huntr_wild(ctx, hpokeid, huntrgps, hexpire, hextra, reporter="huntr")
                 return
         else:
+            raid_cog = self.bot.cogs.get('Raid')
+            if not raid_cog:
+                logger.error("Raid Cog not loaded")
+                return
             await utils.safe_delete(message)
             pokehuntr_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id].get('pokehuntr_dict', {}))
             reporttime = pokehuntr_dict[message.id]['reporttime']
@@ -178,6 +249,10 @@ class Huntr:
             if "!raidegg" in message.content.lower():
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoegg', False):
                     return
+                raid_cog = self.bot.cogs.get('Raid')
+                if not raid_cog:
+                    logger.error("Raid Cog not loaded")
+                    return
                 painfo = message.content.replace("!raidegg", "").strip().split("|")
                 reporttype = "egg"
                 gps = painfo[3]
@@ -191,11 +266,15 @@ class Huntr:
             elif "!raid" in message.content.lower():
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoraid', False):
                     return
+                raid_cog = self.bot.cogs.get('Raid')
+                if not raid_cog:
+                    logger.error("Raid Cog not loaded")
+                    return
                 painfo = message.content.replace("!raid", "").strip().split("|")
                 reporttype = "raid"
                 gps = painfo[3]
                 moves = painfo[4]
-                entered_raid = painfo[0].replace("!raid", "").strip()
+                entered_raid = painfo[0].lower().strip()
                 pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_raid)
                 if not pokemon:
                     return
@@ -210,6 +289,10 @@ class Huntr:
             elif "!wild" in message.content.lower():
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autowild', False):
                     return
+                wild_cog = self.bot.cogs.get('Wild')
+                if not wild_cog:
+                    logger.error("Wild Cog not loaded")
+                    return
                 painfo = message.content.replace("!wild", "").strip().split("|")
                 reporttype = "wild"
                 exptime = painfo[2]
@@ -218,12 +301,16 @@ class Huntr:
                 seconds = exptime.split()[1][:-1]
                 huntrexp = "{min} min {sec} sec".format(min=minutes, sec=seconds)
                 huntrweather = painfo[3]
-                entered_wild = painfo[0].replace("!wild", "").strip().lower()
+                entered_wild = painfo[0].lower().strip()
                 wild_details = painfo[1]
                 location = f"https://www.google.com/maps/search/?api=1&query={wild_details}"
                 despawn = (int(minutes) * 60) + int(seconds)
             elif "!research" in message.content.lower():
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoquest', True):
+                    return
+                research_cog = self.bot.cogs.get('Research')
+                if not research_cog:
+                    logger.error("Research Cog not loaded")
                     return
                 painfo = message.content.replace("!research", "").strip().split("|")
                 reporttype = "quest"
@@ -247,7 +334,10 @@ class Huntr:
                         if embed and channel:
                             await channel.send(embed=embed)
                         if self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('type', None) == 'egg':
-                            await self.bot.eggtoraid(entered_raid, channel, message.author, huntr=moves)
+                            if not utils.get_level(self.bot, entered_raid):
+                                logger.error(f"{entered_raid} not in raid_json")
+                                return
+                            await raid_cog._eggtoraid(entered_raid, channel, message.author, huntr=moves)
                         elif channel and moves:
                             await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=entered_raid.title(), moves=moves))
                             try:
@@ -273,8 +363,9 @@ class Huntr:
                         pamsg = await message.channel.send(raidmsg, embed=embed)
                 elif reporttype == "raid":
                     if not utils.get_level(self.bot, entered_raid):
+                        logger.error(f"{entered_raid} not in raid_json")
                         return
-                    if int(utils.get_level(self.bot, entered_raid)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('raidlvls', False):
+                    if int(utils.get_level(self.bot, entered_raid)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('raidlvls', []):
                         raid_channel = await self.huntr_raid(ctx, entered_raid, raid_details, raidexp, gps, moves, auto_report = True, reporter="alarm")
                         if embed and raid_channel:
                             await raid_channel.send(embed=embed)
@@ -326,6 +417,10 @@ class Huntr:
     async def auto_counters(self, channel, moves):
         moveset = 0
         newembed = False
+        raid_cog = ctx.bot.cogs.get('Raid')
+        if not raid_cog:
+            logger.error("Raid Cog not loaded")
+            return
         try:
             ctrs_message = await channel.get_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrsmessage'])
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
@@ -334,7 +429,7 @@ class Huntr:
         entered_raid = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('pokemon', "")
         weather =  self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('weather', None)
         if not ctrs_dict:
-            ctrs_dict = await self.bot.get_generic_counters(channel.guild, entered_raid, weather)
+            ctrs_dict = await raid_cog._get_generic_counters(channel.guild, entered_raid, weather)
             self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrs_dict'] = ctrs_dict
         if not moves or not ctrs_dict:
             return
@@ -356,7 +451,7 @@ class Huntr:
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         huntrexpstamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(huntrexp.split()[0]), seconds=int(huntrexp.split()[2]))).strftime('%I:%M %p')
         pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_wild)
-        nearest_stop = False
+        nearest_stop = ""
         if pokemon:
             entered_wild = pokemon.name.lower()
             pokemon.shiny = False
@@ -364,6 +459,8 @@ class Huntr:
             return
         if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['scanners'].setdefault('wildfilter', []):
             return
+        wild_types = copy.copy(pokemon.types)
+        wild_types.append('None')
         wild_number = pokemon.id
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
         if reporter == "huntr":
@@ -398,7 +495,10 @@ class Huntr:
             perms = user.permissions_in(message.channel)
             if not perms.read_messages:
                 continue
-            if wild_number in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', []) or nearest_stop.lower() in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', []):
+            user_wants = ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+            user_stops = ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
+            user_types = ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
+            if wild_number in user_wants or nearest_stop.lower() in user_stops or wild_types[0] in user_types or wild_types[1] in user_types:
                 try:
                     wild_embed.remove_field(2)
                     wild_embed.remove_field(2)
@@ -429,6 +529,7 @@ class Huntr:
         }
 
     async def huntr_raid(self, ctx, entered_raid, raid_details, raidexp, gymhuntrgps, gymhuntrmoves, auto_report = True, reporter="huntr", report_user=None):
+        raid_cog = self.bot.cogs.get('Raid')
         if report_user:
             ctx.message.author = report_user
         message = ctx.message
@@ -523,9 +624,9 @@ class Huntr:
                 'weather': weather,
                 'gymhuntrgps' : gymhuntrgps
             }
-            await self.bot.timerset(raid_channel, raidexp)
+            await raid_cog._timerset(raid_channel, raidexp)
             await raid_channel.send("This raid was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
-            ctrs_dict = await ctx.bot.get_generic_counters(message.guild, entered_raid, weather)
+            ctrs_dict = await raid_cog._get_generic_counters(message.guild, entered_raid, weather)
             if str(level) in ctx.bot.guild_dict[message.guild.id]['configure_dict']['counters']['auto_levels']:
                 try:
                     ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
@@ -541,7 +642,7 @@ class Huntr:
                 ctrsmessage_id = None
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrsmessage'] = ctrsmessage_id
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrs_dict'] = ctrs_dict
-            self.event_loop.create_task(self.bot.expiry_check(raid_channel))
+            self.event_loop.create_task(raid_cog.expiry_check(raid_channel))
             dm_dict = {}
             raid_embed.remove_field(2)
             raid_embed.remove_field(2)
@@ -552,7 +653,8 @@ class Huntr:
                 perms = user.permissions_in(message.channel)
                 if not perms.read_messages:
                     continue
-                if raid_details.lower() in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', []):
+                user_gyms = ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', [])
+                if raid_details.lower() in user_gyms:
                     try:
                         raiddmmsg = await user.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
                         dm_dict[user.id] = raiddmmsg.id
@@ -584,6 +686,7 @@ class Huntr:
             }
 
     async def huntr_raidegg(self, ctx, egg_level, raid_details, raidexp, gymhuntrgps, auto_report=True, reporter="huntr", report_user=None):
+        raid_cog = self.bot.cogs.get('Raid')
         if report_user:
             ctx.message.author = report_user
         message = ctx.message
@@ -667,19 +770,19 @@ class Huntr:
                 'gymhuntrgps' : gymhuntrgps
             }
             if raidexp is not False:
-                await ctx.bot.timerset(raid_channel, raidexp)
+                await raid_cog._timerset(raid_channel, raidexp)
             else:
                 await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
             await raid_channel.send("This egg was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
             if len(ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
                 pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
                 pokemon = pokemon.name.lower()
-                await ctx.bot.eggassume(ctx, 'assume ' + pokemon, raid_channel)
+                await raid_cog._eggassume(ctx, 'assume ' + pokemon, raid_channel)
             elif egg_level == "5" and ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings'].get('regional', None) in ctx.bot.raid_list:
                 pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
                 pokemon = pokemon.name.lower()
-                await ctx.bot.eggassume(ctx, 'assume ' + pokemon, raid_channel)
-            self.event_loop.create_task(self.bot.expiry_check(raid_channel))
+                await raid_cog._eggassume(ctx, 'assume ' + pokemon, raid_channel)
+            self.event_loop.create_task(raid_cog.expiry_check(raid_channel))
             dm_dict = {}
             raid_embed.remove_field(2)
             raid_embed.remove_field(2)
@@ -690,7 +793,8 @@ class Huntr:
                 perms = user.permissions_in(message.channel)
                 if not perms.read_messages:
                     continue
-                if raid_details.lower() in ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', []):
+                user_gyms = ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', [])
+                if raid_details.lower() in user_gyms:
                     try:
                         raiddmmsg = await user.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
                         dm_dict[user.id] = raiddmmsg.id
@@ -729,7 +833,6 @@ class Huntr:
         loc_url = f"https://www.google.com/maps/search/?api=1&query={gps}"
         research_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
         research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
-        dm_dict = {}
         pokemon = False
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
         gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -749,123 +852,9 @@ class Huntr:
             research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
         else:
             research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(reward.title(), width=30)), inline=True)
-        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward.strip(), allow_digits=False)
-        dust = re.search(r'(?i)dust', reward)
-        candy = re.search(r'(?i)candy|(?i)candies', reward)
-        pinap = re.search(r'(?i)pinap', reward)
-        silverpinap = re.search(r'(?i)silver pinap', reward)
-        razz = re.search(r'(?i)razz', reward)
-        goldenrazz = re.search(r'(?i)golde?n? razz', reward)
-        nanab = re.search(r'(?i)nanab', reward)
-        pokeball = re.search(r'(?i)ball', reward)
-        greatball = re.search(r'(?i)great ball', reward)
-        ultraball = re.search(r'(?i)ultra ball', reward)
-        potion = re.search(r'(?i)potion', reward)
-        superpotion = re.search(r'(?i)super potion', reward)
-        hyperpotion = re.search(r'(?i)hyper potion', reward)
-        maxpotion = re.search(r'(?i)max potion', reward)
-        revive = re.search(r'(?i)revive', reward)
-        maxrevive = re.search(r'(?i)max revive', reward)
-        fasttm = re.search(r'(?i)fast tm', reward)
-        chargetm = re.search(r'(?i)charged? tm', reward)
-        starpiece = re.search(r'(?i)star piece', reward)
-        research_msg = _("Field Research reported by {author}").format(author=author.mention)
-        research_embed.title = _('Meowth! Click here for my directions to the research!')
-        research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=author.name)
-        research_embed.url = loc_url
-        if pokemon and not other_reward:
-            research_embed.set_thumbnail(url=pokemon.img_url)
-            item = None
-        elif dust:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png")
-            item = "stardust"
-        elif candy:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1301.png")
-            item = "rare candy"
-        elif pinap and not silverpinap:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0705.png")
-            item = "pinap berry"
-        elif pinap and silverpinap:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0707.png")
-            item = "silver pinap berry"
-        elif razz and not goldenrazz:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0701.png")
-            item = "razz berry"
-        elif razz and goldenrazz:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0706.png")
-            item = "golden razz berry"
-        elif nanab:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0703.png")
-            item = "nanab berry"
-        elif pokeball and not ultraball and not greatball:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0001.png")
-            item = "poke ball"
-        elif pokeball and greatball:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0002.png")
-            item = "great ball"
-        elif pokeball and ultraball:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0003.png")
-            item = "ultra ball"
-        elif potion and not superpotion and not hyperpotion and not maxpotion:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0101.png")
-            item = "potion"
-        elif potion and superpotion:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0102.png")
-            item = "super potion"
-        elif potion and hyperpotion:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0103.png")
-            item = "hyper potion"
-        elif potion and maxpotion:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0104.png")
-            item = "max potion"
-        elif revive and not maxrevive:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0201.png")
-            item = "revive"
-        elif revive and maxrevive:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0202.png")
-            item = "max revive"
-        elif fasttm:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1201.png")
-            item = "fast tm"
-        elif chargetm:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1202.png")
-            item = "charged tm"
-        elif starpiece:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/starpiece.png")
-            item = "star piece"
-        research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
-        confirmation = await channel.send(research_msg, embed=research_embed)
-        self.bot.guild_dict[guild.id]['questreport_dict'][confirmation.id] = {
-            'exp':time.time() + to_midnight,
-            'expedit':"delete",
-            'reportmessage':message.id,
-            'reportchannel':channel.id,
-            'reportauthor':author.id,
-            'dm_dict':dm_dict,
-            'location':location,
-            'url':loc_url,
-            'quest':quest,
-            'reward':reward
-        }
-        for trainer in self.bot.guild_dict[guild.id].get('trainers', {}):
-            user_wants = self.bot.guild_dict[guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
-            user_stops = self.bot.guild_dict[guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
-            user_items = self.bot.guild_dict[guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('items', [])
-            if not checks.dm_check(ctx, trainer):
-                continue
-            if (pokemon and pokemon.id in user_wants) or location.lower() in user_stops or item in user_items:
-                try:
-                    user = ctx.guild.get_member(trainer)
-                    if pokemon:
-                        resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pokemon.name.title(), author=author.mention, channel=channel.mention), embed=research_embed)
-                    else:
-                        resdmmsg = await user.send(_("Field Research reported by {author} in {channel}").format(author=author.mention, channel=ctx.channel.mention), embed=research_embed)
-                    dm_dict[user.id] = resdmmsg.id
-                except:
-                    continue
-        self.bot.guild_dict[ctx.guild.id]['questreport_dict'][confirmation.id]['dm_dict'] = dm_dict
+        await research_cog.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def huntrraid(self, ctx):
         author = ctx.author
@@ -882,7 +871,7 @@ class Huntr:
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_huntr(ctx)
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def huntregg(self, ctx):
         author = ctx.author
@@ -899,7 +888,7 @@ class Huntr:
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_huntr(ctx)
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def huntrwild(self, ctx):
         author = ctx.author

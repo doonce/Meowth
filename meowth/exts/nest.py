@@ -4,6 +4,7 @@ import re
 import time
 import datetime
 import dateparser
+import logging
 
 import discord
 from discord.ext import commands
@@ -11,9 +12,12 @@ from discord.ext import commands
 from meowth import utils, checks
 from meowth.exts import pokemon as pkmn_class
 
+logger = logging.getLogger("meowth")
+
 class Nest:
     def __init__(self, bot):
         self.bot = bot
+        bot.loop.create_task(self.nest_cleanup(self))
 
     # nest_dict:{
     #     nestrepotchannel_id: {
@@ -39,7 +43,10 @@ class Nest:
 
     async def nest_cleanup(self, loop=True):
         while (not self.bot.is_closed()):
+            await self.bot.wait_until_ready()
+            logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+            migration_list = []
             for guildid in guilddict_temp.keys():
                 nest_dict = guilddict_temp[guildid].setdefault('nest_dict', {})
                 utcnow = datetime.datetime.utcnow()
@@ -49,6 +56,8 @@ class Nest:
                     new_migration = migration_utc + datetime.timedelta(days=14)
                     migration_local = new_migration + datetime.timedelta(hours=self.bot.guild_dict[guildid]['configure_dict']['settings']['offset'])
                     self.bot.guild_dict[guildid]['configure_dict']['nest']['migration'] = new_migration
+                to_migration = migration_utc.timestamp() - utcnow.timestamp()
+                migration_list.append(to_migration)
                 for channel in nest_dict:
                     report_channel = self.bot.get_channel(channel)
                     if not report_channel:
@@ -73,7 +82,10 @@ class Nest:
                                     del self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]
                                 except:
                                     pass
-            await asyncio.sleep(600)
+            logger.info('------ END ------')
+            if not migration_list:
+                migration_list = [600]
+            await asyncio.sleep(min(migration_list))
             continue
 
     async def edit_nest_reports(self, report_message, migration_local, dm_dict):
@@ -170,6 +182,8 @@ class Nest:
         pokemon.alolan = False
         pokemon.gender = None
         pokemon.form = None
+        nest_types = copy.copy(pokemon.types)
+        nest_types.append('None')
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
         nest_embed, nest_pages = await self.get_nest_reports(ctx)
         nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a **{pokemon}** report to?\n\nIf you want to stop your report, reply with **cancel**.".format(mention=author.mention, pokemon=pokemon.name.title()))
@@ -209,7 +223,9 @@ class Nest:
         for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
             if not checks.dm_check(ctx, trainer):
                 continue
-            if nest_number in self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', []):
+            user_wants = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+            user_types = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
+            if nest_number in user_wants or nest_types[0].lower() in user_types or nest_types[1].lower() in user_types:
                 try:
                     user = ctx.guild.get_member(trainer)
                     nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest in {channel.mention}!", embed=nest_embed)

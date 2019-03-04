@@ -672,7 +672,7 @@ class Pokemon():
                     if not score or score < 60:
                         argument = argument.replace(word, '').strip()
                     else:
-                        match = await utils.autocorrect(ctx.bot, word, ctx.channel, ctx.author)
+                        match = await utils.autocorrect(ctx.bot, word, ctx.bot.pkmn_list, ctx.channel, ctx.author)
                         if not match:
                             return None, None
                         match_list.append(word)

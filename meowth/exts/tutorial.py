@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import logging
 
 import discord
 from discord.ext import commands
@@ -9,9 +10,12 @@ from meowth import utils
 from meowth import checks
 from meowth.exts import trade
 
+logger = logging.getLogger("meowth")
+
 class Tutorial:
     def __init__(self, bot):
         self.bot = bot
+        bot.loop.create_task(self.tutorial_cleanup())
 
     async def wait_for_cmd(self, tutorial_channel, newbie, command_name):
 
@@ -44,6 +48,8 @@ class Tutorial:
             }
 
     async def tutorial_cleanup(self):
+        await self.bot.wait_until_ready()
+        logger.info('------ BEGIN ------')
         guilddict_temp = copy.deepcopy(self.bot.guild_dict)
         for guildid in guilddict_temp.keys():
             tutorial_dict = guilddict_temp[guildid]['configure_dict'].setdefault('tutorial', {}).setdefault('report_channels', {})

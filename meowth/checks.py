@@ -273,10 +273,10 @@ def dm_check(ctx, trainer):
     perms = user.permissions_in(ctx.channel)
     if not perms.read_messages:
         return False
-    mute = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('mute', False)
+    mute = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('settings', {}).get('mute', False)
     report_time = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))
-    start_time = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('active_start', False)
-    end_time = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('active_end', False)
+    start_time = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('settings', {}).get('active_start', False)
+    end_time = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('settings', {}).get('active_end', False)
     if not start_time or not end_time:
         return True
     start_time = datetime.datetime.combine(report_time.date(), start_time)

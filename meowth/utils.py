@@ -6,7 +6,6 @@ from fuzzywuzzy import process
 import discord
 import asyncio
 
-from meowth import pkmn_match
 from meowth.exts import pokemon as pkmn_class
 
 def get_match(word_list: list, word: str, score_cutoff: int = 60):
@@ -233,7 +232,7 @@ def get_level(bot, pkmn):
         for level, pkmn_list in bot.raid_info['raid_eggs'].items():
             for pokemon in pkmn_list['pokemon']:
                 pokemon = pkmn_class.Pokemon.get_pokemon(bot, pokemon)
-                if pokemon.id == entered_pkmn.id:
+                if pokemon and entered_pkmn and pokemon.id == entered_pkmn.id:
                     return level
 
 async def ask(bot, message, user_list=None, timeout=60, *, react_list=[]):
@@ -317,16 +316,9 @@ def do_template(message, author, guild):
     msg = re.sub(template_pattern, template_replace, message)
     return (msg, not_found)
 
-def spellcheck(bot, word):
-    suggestion = pkmn_match.get_pkmn(re.sub(r"[^A-Za-z0-9 ]+", '', word))
-    # If we have a spellcheck suggestion
-    if suggestion and suggestion != word:
-        result = bot.pkmn_list[suggestion]
-        return result
-
-async def autocorrect(bot, entered_word, destination, author):
+async def autocorrect(bot, entered_word, word_list, destination, author):
     msg = _("Meowth! **{word}** isn't a Pokemon!").format(word=entered_word.title())
-    match, score = get_match(bot.pkmn_list, entered_word)
+    match, score = get_match(word_list, entered_word)
     if match:
         msg += _(' Did you mean **{correction}**?').format(correction=match.title())
         question = await destination.send(msg)

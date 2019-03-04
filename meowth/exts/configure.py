@@ -421,6 +421,10 @@ class Configure:
                 ctx = await self._configure_counters(ctx)
                 if not ctx:
                     return None
+            if "archive" in configreplylist:
+                ctx = await self._configure_archive(ctx)
+                if not ctx:
+                    return None
             if "wild" in configreplylist:
                 ctx = await self._configure_wild(ctx)
                 if not ctx:
@@ -431,10 +435,6 @@ class Configure:
                     return None
             if "want" in configreplylist:
                 ctx = await self._configure_want(ctx)
-                if not ctx:
-                    return None
-            if "archive" in configreplylist:
-                ctx = await self._configure_archive(ctx)
                 if not ctx:
                     return None
             if "trade" in configreplylist:
@@ -764,6 +764,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        raid_cog = self.bot.cogs.get('Raid')
+        if not raid_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Raid Cog is not loaded. Raid cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Raid Reporting allows users to report active raids with **!raid** or raid eggs with **!raidegg**. Pokemon raid reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-raids, hull-raids, sydney-raids`\n\nIf you do not require raid or raid egg reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Raid Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "raid", ["none", "same", "region", "level"], output="category_dict")
         if not config_dict_temp:
@@ -797,6 +802,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        raid_cog = self.bot.cogs.get('Raid')
+        if not raid_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Raid Cog is not loaded. Exraid cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("EX Raid Reporting allows users to report EX raids with **!exraid**. Pokemon EX raid reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-raids, hull-raids, sydney-raids`\n\nIf you do not require EX raid reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('EX Raid Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "exraid", ["none", "same", "other"], output="category_dict")
         if not config_dict_temp:
@@ -849,6 +859,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        raid_cog = self.bot.cogs.get('Raid')
+        if not raid_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Raid Cog is not loaded. Invite cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         if not config_dict_temp['exraid']['enabled']:
             return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want access to EX raids controlled through members using the **!invite** command?\nIf enabled, members will have read-only permissions for all EX Raids until they use **!invite** to gain access. If disabled, EX Raids will inherit the permissions from their reporting channels.\n\nRespond with: **N** to disable, or **Y** to enable:')).set_author(name=_('Invite Configuration'), icon_url=self.bot.user.avatar_url))
@@ -896,6 +911,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        raid_cog = self.bot.cogs.get('Raid')
+        if not raid_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Raid Cog is not loaded. Counters cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want to generate an automatic counters list in newly created raid channels using PokeBattler?\nIf enabled, I will post a message containing the best counters for the raid boss in new raid channels. Users will still be able to use **!counters** to generate this list.\n\nRespond with: **N** to disable, or enable with a comma separated list of boss levels that you would like me to generate counters for. Example:`3, 4, 5, EX`')).set_author(name=_('Automatic Counters Configuration'), icon_url=self.bot.user.avatar_url))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp['counters']['enabled']}\nLevels: {config_dict_temp['counters']['auto_levels']}").set_author(name=_("Current Counters Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
@@ -954,6 +974,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        wild_cog = self.bot.cogs.get('Wild')
+        if not wild_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Wild Cog is not loaded. Wild cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Wild Reporting allows users to report wild spawns with **!wild**. Pokemon **wild** reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-wilds, hull-wilds, sydney-wilds`\n\nIf you do not require **wild** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Wild Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "wild", [], output="dict")
         if not config_dict_temp:
@@ -987,6 +1012,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        research_cog = self.bot.cogs.get('Research')
+        if not research_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Research Cog is not loaded. Research cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Research Reporting allows users to report field research with **!research**. Pokemon **research** reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-research, hull-research, sydney-research`\n\nIf you do not require **research** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Research Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "research", [], output="dict")
         if not config_dict_temp:
@@ -1020,6 +1050,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        raid_cog = self.bot.cogs.get('Raid')
+        if not raid_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Raid Cog is not loaded. Meetup cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         config_dict_temp['meetup'] = {'enabled':False, 'report_channels': {}, 'categories':'same', 'catgory_dict':{}}
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meetup Reporting allows users to report meetups with **!meetup** or **!event**. Meetup reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-meetups, hull-meetups, sydney-meetups`\n\nIf you do not require meetup reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Meetup Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "meetup", ["none", "same", "other"], output="category_dict")
@@ -1054,6 +1089,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        want_cog = self.bot.cogs.get('Want')
+        if not want_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Want Cog is not loaded. Want cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!want** and **!unwant** commands let you add or remove roles for Pokemon that will be mentioned in reports. This let you get notifications on the Pokemon you want to track. I just need to know what channels you want to allow people to manage their pokemon with the **!want** and **!unwant** command.\n\nIf you don't want to allow the management of tracked Pokemon roles, then you may want to disable this feature.\n\nRepond with: **N** to disable, or the **channel-name** list to enable, each seperated by a comma and space.")).set_author(name=_('Pokemon Notifications'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "want", [], output="list")
         if not config_dict_temp:
@@ -1087,6 +1127,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        raid_cog = self.bot.cogs.get('Raid')
+        if not raid_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Raid Cog is not loaded. Archive cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!archive** command marks temporary raid channels for archival rather than deletion. This can be useful for investigating potential violations of your server's rules in these channels.\n\nIf you would like to disable this feature, reply with **N**. Otherwise send the category you would like me to place archived channels in. You can say **same** to keep them in the same category, or type the name or ID of a category in your server.")).set_author(name=_('Archive Configuration'), icon_url=self.bot.user.avatar_url))
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp['archive']['enabled']}\nCategory: {config_dict_temp['archive']['category']}").set_author(name=_("Current Archive Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
@@ -1213,6 +1258,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        trade_cog = self.bot.cogs.get('Trading')
+        if not trade_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Trade Cog is not loaded. Trade cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!trade** command allows your users to organize and coordinate trades. This command requires at least one channel specifically for trades.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!trade** command in, separated by commas.")).set_author(name=_('Trade Configuration'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "trade", [], output="list")
         if not config_dict_temp:
@@ -1246,6 +1296,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        nest_cog = self.bot.cogs.get('Nest')
+        if not nest_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Nest Cog is not loaded. Nest cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         await owner.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!nest** command allows your users to report nests. This command requires at least one channel specifically for nests.\n\nIf you would like to disable this feature, reply with **N**. Otherwise, just send the names or IDs of the channels you want to allow the **!nest** command in, separated by commas.")).set_author(name=_('Nest Configuration'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "nest", [], output="list")
         if not config_dict_temp:
@@ -1274,6 +1329,11 @@ class Configure:
         guild = ctx.message.guild
         owner = ctx.message.author
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        huntr_cog = self.bot.cogs.get('Huntr')
+        if not huntr_cog:
+            await owner.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Huntr Cog is not loaded. Scanners cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
         scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raid** reports using supported bots enabled?\n\nAny raid that a bot posts in a channel that Meowth also has access to will be converted to a **!raid** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Raid Reports', icon_url=self.bot.user.avatar_url)
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
         scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raid <form> <pkmn>|<gym_name>|<time_left>|<lat>,<lng>|<quick_move> / <charge_move>`'))
