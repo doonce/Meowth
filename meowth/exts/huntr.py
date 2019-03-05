@@ -433,8 +433,10 @@ class Huntr:
             self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrs_dict'] = ctrs_dict
         if not moves or not ctrs_dict:
             return
+        moves = re.split('\\||/|,', moves)
+        moves = [x.strip() for x in moves]
         for i in ctrs_dict:
-            if ctrs_dict[i]['moveset'] == moves.replace("/", "|"):
+            if ctrs_dict[i]['moveset'] == (' | ').join(moves):
                 newembed = ctrs_dict[i]['embed']
                 moveset = i
                 break
@@ -828,6 +830,7 @@ class Huntr:
         channel = message.channel
         author = message.author
         guild = message.guild
+        research_cog = self.bot.cogs.get('Research')
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         to_midnight = 24*60*60 - ((timestamp-timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
         loc_url = f"https://www.google.com/maps/search/?api=1&query={gps}"

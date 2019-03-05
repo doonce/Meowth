@@ -98,7 +98,10 @@ class Wild:
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
             pass
         await utils.expire_dm_reports(self.bot, wild_dict[message.id].get('dm_dict', {}))
-        del self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
+        try:
+            del self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
+        except KeyError:
+            pass
 
     @commands.group(aliases=['w'], invoke_without_command=True, case_insensitive=True)
     @checks.allowwildreport()

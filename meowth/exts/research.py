@@ -234,7 +234,7 @@ class Research:
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=ctx.author.name)
         research_embed.url = loc_url
         item = None
-        pkmn_types = []
+        pkmn_types = ["None", "None"]
         if pokemon and not other_reward:
             research_embed.set_thumbnail(url=pokemon.img_url)
             pkmn_types = copy.copy(pokemon.types)
