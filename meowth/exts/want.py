@@ -294,8 +294,8 @@ class Want:
         item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
         for entered_want in want_split:
-            if entered_want.lower() in item_list:
-                want_list.append(entered_want.lower())
+            if entered_want.strip().lower() in item_list:
+                want_list.append(entered_want.strip().lower())
             else:
                 spellcheck_list.append(entered_want)
                 match, score = utils.get_match(item_list, entered_want)
@@ -343,8 +343,8 @@ class Want:
         type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
         for entered_want in want_split:
-            if entered_want.lower() in type_list:
-                want_list.append(entered_want.lower())
+            if entered_want.strip().lower() in type_list:
+                want_list.append(entered_want.strip().lower())
             else:
                 spellcheck_list.append(entered_want)
                 match, score = utils.get_match(type_list, entered_want)
