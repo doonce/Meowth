@@ -133,13 +133,18 @@ class Wild:
         if not wild_details:
             await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**'), delete_after=10)
             return
-
         wild_number = pokemon.id
         wild_img_url = pokemon.img_url
         wild_types = copy.copy(pokemon.types)
         wild_types.append('None')
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
         wild_gmaps_link = utils.create_gmaps_query(self.bot, wild_details, message.channel, type="wild")
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        stop_info = ""
+        if gym_matching_cog:
+            stop_info, wild_details, stop_url = await gym_matching_cog.get_stop_info(ctx, wild_details)
+            if stop_url:
+                wild_gmaps_link = stop_url
         wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
         wild_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.capitalize(), pokemonnumber=str(wild_number), type=''.join(utils.get_type(self.bot, message.guild, pokemon.id, pokemon.form, pokemon.alolan))), inline=False)
         wild_embed.set_thumbnail(url=wild_img_url)
@@ -153,8 +158,9 @@ class Wild:
             if not checks.dm_check(ctx, trainer):
                 continue
             user_wants = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+            user_stops = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
             user_types = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
-            if wild_number in user_wants or wild_types[0].lower() in user_types or wild_types[1].lower() in user_types:
+            if wild_number in user_wants or wild_types[0].lower() in user_types or wild_types[1].lower() in user_types or wild_details.lower() in user_stops:
                 try:
                     user = ctx.guild.get_member(trainer)
                     wild_embed.remove_field(1)

@@ -706,19 +706,19 @@ class Listing:
         wantmsg = ""
         if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0:
             if wantlist:
-                wantmsg += _('**Pokemon:**\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(wantlist), width=80)))
+                wantmsg += _('**Pokemon:** (wilds, research, nests{raid_link})\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids" if user_link else "")
             if bosslist and not user_link:
-                wantmsg += _('\n\n**Bosses:**\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
+                wantmsg += _('\n\n**Bosses:** (raids)\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
             if user_gyms:
-                wantmsg += _('\n\n**Gyms:**\n{user_gyms}').format(user_gyms = '\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
+                wantmsg += _('\n\n**Gyms:** (raids)\n{user_gyms}').format(user_gyms = '\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
             if user_stops:
-                wantmsg += _('\n\n**Stops:**\n{user_stops}').format(user_stops = '\n'.join(textwrap.wrap(', '.join(user_stops), width=80)))
+                wantmsg += _('\n\n**Stops:** (research, wilds)\n{user_stops}').format(user_stops = '\n'.join(textwrap.wrap(', '.join(user_stops), width=80)))
             if user_items:
-                wantmsg += _('\n\n**Items:**\n{user_items}').format(user_items = '\n'.join(textwrap.wrap(', '.join(user_items), width=80)))
+                wantmsg += _('\n\n**Items: (research)**\n{user_items}').format(user_items = '\n'.join(textwrap.wrap(', '.join(user_items), width=80)))
             if user_types:
-                wantmsg += _('\n\n**Types:**\n{user_types}').format(user_types = '\n'.join(textwrap.wrap(', '.join(user_types), width=80)))
+                wantmsg += _('\n\n**Types:** (wilds, research, nests)\n{user_types}').format(user_types = '\n'.join(textwrap.wrap(', '.join(user_types), width=80)))
         if wantmsg:
-            listmsg = _('Meowth! {author}, your current **!want** list is:').format(author=ctx.author.display_name)
+            listmsg = _('Meowth! {author}, you will receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
             paginator = commands.Paginator(prefix="", suffix="")
             for line in wantmsg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
@@ -735,30 +735,80 @@ class Listing:
 
         Usage: !list wants
         Works only in the want channel."""
-        listmsg = _('**Meowth!**')
-        listmsg += await self._allwantlist(ctx)
-        await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+        listmsg, res_pages = await self._allwantlist(ctx)
+        list_messages = []
+        if res_pages:
+            index = 0
+            for p in res_pages:
+                if index == 0:
+                    listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                else:
+                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                list_messages.append(listmsg.id)
+                index += 1
+        elif listmsg:
+            listmsg = await ctx.channel.send(listmsg)
+            list_messages.append(listmsg.id)
+        else:
+            return
 
     async def _allwantlist(self, ctx):
-        wantlist = []
+        want_list = []
+        stop_list = []
+        gym_list = []
+        boss_list = []
+        item_list = []
+        type_list = []
         for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('wants', []):
-                if want not in wantlist:
-                    wantlist.append(want)
-        wantlist = sorted(wantlist)
-        wantlist = [utils.get_name(self.bot, x).title() for x in wantlist]
-        if len(wantlist) > 0:
+                if want not in want_list:
+                    want_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('stops', []):
+                if want not in stop_list:
+                    stop_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('gyms', []):
+                if want not in gym_list:
+                    gym_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('bosses', []):
+                if want not in boss_list:
+                    boss_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('items', []):
+                if want not in item_list:
+                    item_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('types', []):
+                if want not in type_list:
+                    type_list.append(want)
+        want_list = sorted(want_list)
+        want_list = [utils.get_name(self.bot, x).title() for x in want_list]
+        stop_list = [x.title() for x in stop_list]
+        gym_list = [x.title() for x in gym_list]
+        boss_list = sorted(boss_list)
+        boss_list = [utils.get_name(self.bot, x).title() for x in boss_list]
+        item_list = [x.title() for x in item_list]
+        type_list = [x.title() for x in type_list]
+        wantmsg = ""
+        if len(want_list) > 0 or len(gym_list) > 0 or len(stop_list) > 0 or len(item_list) > 0 or len(boss_list) > 0 or len(type_list) > 0:
+            if want_list:
+                wantmsg += _('**Pokemon:**\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(want_list), width=80)))
+            if boss_list:
+                wantmsg += _('\n\n**Bosses:**\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(boss_list), width=80)))
+            if gym_list:
+                wantmsg += _('\n\n**Gyms:**\n{user_gyms}').format(user_gyms = '\n'.join(textwrap.wrap(', '.join(gym_list), width=80)))
+            if stop_list:
+                wantmsg += _('\n\n**Stops:**\n{user_stops}').format(user_stops = '\n'.join(textwrap.wrap(', '.join(stop_list), width=80)))
+            if item_list:
+                wantmsg += _('\n\n**Items:**\n{user_items}').format(user_items = '\n'.join(textwrap.wrap(', '.join(item_list), width=80)))
+            if type_list:
+                wantmsg += _('\n\n**Types:**\n{user_types}').format(user_types = '\n'.join(textwrap.wrap(', '.join(type_list), width=80)))
+        if wantmsg:
             listmsg = _('**Meowth!** The server **!want** list is:')
             paginator = commands.Paginator(prefix="", suffix="")
-            await ctx.send(listmsg)
-            for line in textwrap.wrap(", ".join(wantlist), 80):
+            for line in wantmsg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
-            for p in paginator.pages:
-                await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
-            return
+            return listmsg, paginator.pages
         else:
-            listmsg = _("Nobody has any wants! use **!want** to add some.")
-        return listmsg
+            listmsg = _("**Meowth!** Nobody has any wants! use **!want** to add some.")
+        return listmsg, None
 
     @_list.command(aliases=['trade'])
     @checks.allowtrade()

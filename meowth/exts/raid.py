@@ -498,6 +498,20 @@ class Raid:
             await asyncio.sleep(600)
             continue
 
+    async def edit_dm_messages(self, content, embed, dm_dict):
+        for dm_user, dm_message in dm_dict.items():
+            try:
+                dm_user = self.bot.get_user(dm_user)
+                dm_channel = dm_user.dm_channel
+                if not dm_channel:
+                    dm_channel = await dm_user.create_dm()
+                if not dm_user or not dm_channel:
+                    continue
+                dm_message = await dm_channel.get_message(dm_message)
+                await dm_message.edit(content=content, embed=embed)
+            except:
+                pass
+
     """
     Admin Commands
     """
@@ -1394,6 +1408,9 @@ class Raid:
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=str(raid_number), type=''.join(utils.get_type(self.bot, raid_channel.guild, raid_number, pokemon.form, pokemon.alolan)), inline=True))
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
+        raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
+        raid_embed.set_thumbnail(url=pokemon.img_url)
+        self.bot.loop.create_task(self.edit_dm_messages(raidreportcontent, raid_embed, dm_dict))
         raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
         if meetup:
             raid_embed.add_field(name=oldembed.fields[3].name, value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
@@ -1404,8 +1421,6 @@ class Raid:
             if huntr:
                 gymhuntrmoves = huntr
                 raid_embed.add_field(name=_("**Moveset:**"), value=gymhuntrmoves)
-        raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
-        raid_embed.set_thumbnail(url=pokemon.img_url)
         await raid_channel.edit(name=raid_channel_name, topic=end.strftime(_('Ends on %B %d at %I:%M %p (%H:%M)')))
         trainer_list = []
         trainer_dict = copy.deepcopy(self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'])

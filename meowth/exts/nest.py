@@ -72,13 +72,13 @@ class Nest:
                                     report_message = await report_channel.get_message(report)
                                     if new_migration and nest_dict[channel][nest]['reports'][report]['reporttime'] > migration_utc:
                                         self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
-                                        await self.edit_nest_reports(report_message, migration_local, nest_dict[channel][nest]['reports'][report]['dm_dict'])
+                                        self.bot.loop.create_task(self.edit_nest_reports(report_message, migration_local, nest_dict[channel][nest]['reports'][report]['dm_dict']))
                                         continue
                                     await utils.safe_delete(report_message)
                                 except:
                                     pass
                                 try:
-                                    await utils.expire_dm_reports(self.bot, nest_dict[channel][nest]['reports'][report].get('dm_dict', {}))
+                                    self.bot.loop.create_task(utils.expire_dm_reports(self.bot, nest_dict[channel][nest]['reports'][report].get('dm_dict', {})))
                                     del self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]
                                 except:
                                     pass
