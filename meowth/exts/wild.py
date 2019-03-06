@@ -135,7 +135,7 @@ class Wild:
             return
         wild_number = pokemon.id
         wild_img_url = pokemon.img_url
-        wild_types = copy.copy(pokemon.types)
+        wild_types = copy.deepcopy(pokemon.types)
         wild_types.append('None')
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
         wild_gmaps_link = utils.create_gmaps_query(self.bot, wild_details, message.channel, type="wild")

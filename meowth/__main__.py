@@ -1057,7 +1057,7 @@ async def team(ctx, *, team):
     team_colors = [discord.Colour.blue(), discord.Colour.red(), discord.Colour.gold(), discord.Colour.default()]
     team_msg = _(' or ').join(['**!team {0}**'.format(team) for team in guild_roles.keys()])
     index = 0
-    for teamrole in copy.copy(guild_roles).keys():
+    for teamrole in copy.deepcopy(guild_roles).keys():
         role = team_roles.get(teamrole, None)
         if not role:
             rolename = f"Meowth{teamrole.capitalize()}"

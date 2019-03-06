@@ -1410,7 +1410,6 @@ class Raid:
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=pokemon.img_url)
-        self.bot.loop.create_task(self.edit_dm_messages(raidreportcontent, raid_embed, dm_dict))
         raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
         if meetup:
             raid_embed.add_field(name=oldembed.fields[3].name, value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
@@ -1443,6 +1442,7 @@ class Raid:
                     continue
                 trainer_list.append(user.mention)
         await raid_channel.send(content=_("{roletest}Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!\nIf you couldn't before, you're now able to update your status with **!coming** or **!here**. If you've changed your plans, use **!cancel**.").format(roletest=roletest, trainer_list=', '.join(trainer_list), pokemon=entered_raid.title()), embed=raid_embed)
+        self.bot.loop.create_task(self.edit_dm_messages(raidreportcontent, copy.deepcopy(raid_embed), dm_dict))
         for field in oldembed.fields:
             t = _('team')
             s = _('status')

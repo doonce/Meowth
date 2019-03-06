@@ -461,7 +461,7 @@ class Huntr:
             return
         if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['scanners'].setdefault('wildfilter', []):
             return
-        wild_types = copy.copy(pokemon.types)
+        wild_types = copy.deepcopy(pokemon.types)
         wild_types.append('None')
         wild_number = pokemon.id
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())

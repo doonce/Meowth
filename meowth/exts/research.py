@@ -241,7 +241,7 @@ class Research:
         pkmn_types = ["None", "None"]
         if pokemon and not other_reward:
             research_embed.set_thumbnail(url=pokemon.img_url)
-            pkmn_types = copy.copy(pokemon.types)
+            pkmn_types = copy.deepcopy(pokemon.types)
             pkmn_types.append('None')
         elif dust:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png")
