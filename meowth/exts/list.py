@@ -6,6 +6,7 @@ import datetime
 import dateparser
 import textwrap
 import logging
+import string
 from operator import itemgetter
 
 import discord
@@ -939,6 +940,10 @@ class Listing:
         encounter_quests = []
         dust_quests = []
         candy_quests = []
+        berry_quests = []
+        potion_quests = []
+        revive_quests = []
+        ball_quests = []
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
         for questid in research_dict:
             pokemon = None
@@ -947,22 +952,42 @@ class Listing:
                     questreportmsg = await ctx.message.channel.get_message(questid)
                     questauthor = ctx.channel.guild.get_member(research_dict[questid]['reportauthor'])
                     if questauthor:
-                        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, research_dict[questid]['reward'], allow_digits = False)
-                        other_reward = any(x in research_dict[questid]['reward'] for x in reward_list)
-                        if "candy" in research_dict[questid]['reward'].lower() or "candies" in research_dict[questid]['reward'].lower():
-                            candy_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_candy']), location=research_dict[questid]['location'].title(), quest=research_dict[questid]['quest'].title(), reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url', None)))
-                        elif "dust" in research_dict[questid]['reward'].lower():
-                            dust_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_dust']), location=research_dict[questid]['location'].title(), quest=research_dict[questid]['quest'].title(), reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url', None)))
-                        elif pokemon and not other_reward:
-                            encounter_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_encounter']), location=research_dict[questid]['location'].title(), quest=research_dict[questid]['quest'].title(), reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url', None)))
+                        quest = research_dict[questid]['quest']
+                        reward = research_dict[questid]['reward']
+                        location = research_dict[questid]['location']
+                        url = research_dict[questid].get('url', None)
+                        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits = False)
+                        other_reward = any(x in reward for x in reward_list)
+                        if pokemon and not other_reward:
+                            encounter_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_encounter']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                        elif "candy" in reward.lower() or "candies" in reward.lower():
+                            candy_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_candy']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                        elif "dust" in reward.lower():
+                            dust_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_dust']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                        elif "berry" in reward.lower() or "berries" in reward.lower() or "razz" in reward.lower() or "pinap" in reward.lower() or "nanab" in reward.lower():
+                            berry_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_berry']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                        elif "potion" in reward.lower():
+                            potion_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_potionr']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                        elif "revive" in reward.lower():
+                            revive_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_revive']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                        elif "ball" in reward.lower():
+                            ball_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_ball']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
                         else:
-                            item_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_other']), location=research_dict[questid]['location'].title(), quest=research_dict[questid]['quest'].title(), reward=research_dict[questid]['reward'].title(), author=questauthor.display_name, url=research_dict[questid].get('url', None)))
+                            item_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_other']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
                 except:
                     continue
         if encounter_quests:
             questmsg += "\n\n**Pokemon Encounters**\n{encounterlist}".format(encounterlist="\n".join(encounter_quests))
         if candy_quests:
             questmsg += "\n\n**Rare Candy**\n{candylist}".format(candylist="\n".join(candy_quests))
+        if berry_quests:
+            questmsg += "\n\n**Berries**\n{itemlist}".format(itemlist="\n".join(berry_quests))
+        if potion_quests:
+            questmsg += "\n\n**Potions**\n{itemlist}".format(itemlist="\n".join(potion_quests))
+        if revive_quests:
+            questmsg += "\n\n**Revives**\n{itemlist}".format(itemlist="\n".join(revive_quests))
+        if ball_quests:
+            questmsg += "\n\n**Poke Balls**\n{itemlist}".format(itemlist="\n".join(ball_quests))
         if item_quests:
             questmsg += "\n\n**Other Rewards**\n{itemlist}".format(itemlist="\n".join(item_quests))
         if dust_quests:

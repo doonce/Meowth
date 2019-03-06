@@ -6,6 +6,7 @@ import datetime
 import dateparser
 import textwrap
 import logging
+import string
 
 import discord
 from discord.ext import commands
@@ -66,7 +67,10 @@ class Research:
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
             pass
         await utils.expire_dm_reports(self.bot, research_dict[message.id].get('dm_dict', {}))
-        del self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
+        try:
+            del self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
+        except KeyError:
+            pass
 
     @commands.group(aliases=['res'], invoke_without_command=True, case_insensitive=True)
     @checks.allowresearchreport()
@@ -106,15 +110,15 @@ class Research:
                         loc_url = stop_url
                 if not location:
                     return
-                research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(location.title(), width=30)), inline=True)
-                research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(quest.title(), width=30)), inline=True)
+                research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, " "), width=30)), inline=True)
+                research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, " "), width=30)), inline=True)
                 other_reward = any(x in reward.lower() for x in reward_list)
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
                 if pokemon and not other_reward:
-                    reward = f"{reward.title()} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
+                    reward = f"{string.capwords(reward, ' ')} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
                     research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
                 else:
-                    research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(reward.title(), width=30)), inline=True)
+                    research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
                 break
             else:
                 research_embed.add_field(name=_('**New Research Report**'), value=_("Meowth! I'll help you report a research quest!\n\nFirst, I'll need to know what **pokestop** you received the quest from. Reply with the name of the **pokestop**. You can reply with **cancel** to stop anytime."), inline=False)
@@ -150,7 +154,7 @@ class Research:
                         await utils.safe_delete(pokestopmsg)
                         return
                 await utils.safe_delete(pokestopmsg)
-                research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(location.title(), width=30)), inline=True)
+                research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, " "), width=30)), inline=True)
                 research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Great! Now, reply with the **quest** that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(location=location), inline=False)
                 questwait = await channel.send(embed=research_embed)
                 try:
@@ -168,7 +172,7 @@ class Research:
                 elif questmsg:
                     quest = questmsg.clean_content
                 await utils.safe_delete(questmsg)
-                research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(quest.title(), width=30)), inline=True)
+                research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, " "), width=30)), inline=True)
                 research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Fantastic! Now, reply with the **reward** for the **{quest}** quest that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(quest=quest, location=location), inline=False)
                 rewardwait = await channel.send(embed=research_embed)
                 try:
@@ -188,10 +192,10 @@ class Research:
                     other_reward = any(x in reward.lower() for x in reward_list)
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
                     if pokemon and not other_reward:
-                        reward = f"{reward.title()} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
-                        research_embed.add_field(name=_("**Reward:**"), value=reward.title(), inline=True)
+                        reward = f"{string.capwords(reward, ' ')} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
+                        research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
                     else:
-                        research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(reward.title(), width=30)), inline=True)
+                        research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
                 await utils.safe_delete(rewardmsg)
                 research_embed.remove_field(0)
                 break
@@ -323,7 +327,7 @@ class Research:
                 try:
                     user = ctx.guild.get_member(trainer)
                     if pokemon:
-                        resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=pokemon.name.title(), author=ctx.author.mention, channel=ctx.channel.mention), embed=research_embed)
+                        resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=string.capwords(pokemon.name, ' '), author=ctx.author.mention, channel=ctx.channel.mention), embed=research_embed)
                     else:
                         resdmmsg = await user.send(_("Field Research reported by {author} in {channel}").format(author=ctx.author.mention, channel=ctx.channel.mention), embed=research_embed)
                     dm_dict[user.id] = resdmmsg.id

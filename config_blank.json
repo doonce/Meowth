@@ -66,6 +66,10 @@
 "res_candy": ":candy:",
 "res_dust": ":star:",
 "res_encounter": ":question:",
+"res_revive": ":heart:",
+"res_berry": ":strawberry:",
+"res_ball": ":baseball:",
+"res_potion": ":pill:",
 "res_other": ":small_blue_diamond:",
 
 "//": "Emoji for Wild Command.",

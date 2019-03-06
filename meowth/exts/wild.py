@@ -90,7 +90,7 @@ class Wild:
         try:
             await message.edit(embed=discord.Embed(description=wild_dict[message.id]['expedit']['embedcontent'], colour=message.embeds[0].colour.value))
             await message.clear_reactions()
-        except discord.errors.NotFound:
+        except (discord.errors.NotFound, KeyError):
             pass
         try:
             user_message = await channel.get_message(wild_dict[message.id]['reportmessage'])
