@@ -230,6 +230,7 @@ class Raid:
             pass
         if (not channel_exists) and (not self.bot.is_closed()):
             try:
+                await utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('dm_dict', {}))
                 del self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]
             except (KeyError, AttributeError):
                 pass
@@ -449,6 +450,7 @@ class Raid:
                         dict_channel_delete.append(channelid)
                         if gym_matching_cog:
                             gym_matching_cog.do_gym_stats(guildid, channel_dict)
+                        await utils.expire_dm_reports(self.bot, guilddict_chtemp[guildid][channelid].get('dm_dict', {}))
                         logger.info(log_str + " - DOESN'T EXIST IN DISCORD -> DELETING")
                     # otherwise, if meowth can still see the channel in discord
                     else:

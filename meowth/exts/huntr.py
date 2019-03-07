@@ -8,6 +8,7 @@ import dateparser
 import urllib
 import textwrap
 import logging
+import string
 
 import discord
 from discord.ext import commands
@@ -846,15 +847,15 @@ class Huntr:
                 loc_url = stop_url
         if not location:
             return
-        research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(location.title(), width=30)), inline=True)
-        research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(quest.title(), width=30)), inline=True)
+        research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, ' '), width=30)), inline=True)
+        research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, ' '), width=30)), inline=True)
         other_reward = any(x in reward.lower() for x in reward_list)
         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
         if pokemon and not other_reward:
-            reward = f"{reward.title()} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
+            reward = f"{string.capwords(reward, ' ')} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
             research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
         else:
-            research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(reward.title(), width=30)), inline=True)
+            research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, ' '), width=30)), inline=True)
         await research_cog.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)
 
     @commands.command(hidden=True)

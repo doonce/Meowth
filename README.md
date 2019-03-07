@@ -239,17 +239,26 @@ pkmn = Pokemon
 | **!trainercode**  | - | Displays author\'s trainer code. |
 | **!profile** \[username\] | - | Displays [username]\'s or user\'s profile. |
 | **!leaderboard** \[type\] | - | Displays reporting leaderboard. Accepts total, raids, eggs, exraids, wilds, research. Defaults to total. |
+| **!pokedex \<pkmn\>** | - | Displays Pokedex entry for pokemon. |
+| **!sprite \<pkmn\>**| - | Displays pokemon sprite. |
 
 ### Notification Commands:
 
 | Commands | Requirements  | Description |
 | -------- |:-------------:| ------------|
+| **!want settings** | *Want Channel* | Set active hours, mute, want list link. |
 | **!want** \<pkmn\> | *Want Channel* | Adds a Pokemon to your notifications. |
-| **!want** gym \<pkmn\> | *Want Channel* and gymmatching | Add a gym to your notifications. |
-| **!want** stop \<pkmn\> | *Want Channel* and gymmatching | Adds a pokestop to your notifications. |
+| **!want** gym \<gym list\> | *Want Channel* and gymmatching | Add a gym to your notifications. |
+| **!want** stop \<stop list\> | *Want Channel* and gymmatching | Adds a pokestop to your notifications. |
+| **!want** item \<item list\> | *Want Channel* | Adds a item to your notifications. |
+| **!want** type \<type list\> | *Want Channel* | Adds a type to your notifications. |
+| **!want** boss \<boss list\> | *Want Channel* | Adds a boss to your notifications if want list unlinked. |
 | **!unwant** \<pkmn\> | *Want Channel* | Removes a Pokemon from your notifications. |
-| **!unwant** gym \<pkmn\> | *Want Channel* and gymmatching | Removes a gym from your notifications. |
-| **!unwant** stop \<pkmn\> | *Want Channel* and gymmatching | Removes a pokestop from your notifications. |
+| **!unwant** gym \<gym list\> | *Want Channel* and gymmatching | Removes a gym from your notifications. |
+| **!unwant** stop \<stop list\> | *Want Channel* and gymmatching | Removes a pokestop from your notifications. |
+| **!unwant** item \<item list\> | *Want Channel* | Removes a item from your notifications. |
+| **!unwant** type \<type list\> | *Want Channel* | Removes a type from your notifications. |
+| **!unwant** boss \<boss list\> | *Want Channel* | Removes a boss from your notifications if want list unlinked. |
 | **!unwant all**  | *Want Channel* | Removes all notifications. |
 
 ### Reporting Commands:
@@ -314,6 +323,7 @@ pkmn = Pokemon
 | **!list bosses** | *Raid Channel* | Lists boss interest of members that have RSVPd. |
 | **!list groups** | *Raid Channel* | Lists lobby and all other groups that are battling or completed the raid. You can tag groups of users after reply with a number. |
 | **!list wants** | *Want Channel* | List the wants for the user. `Aliases: !l`|
+| **!list allwants** | *Want Channel and Manage Guild* | List the wants for the server. `Aliases: !l`|
 | **!list wilds** | *Region Channel* | List the wilds for the channel. `Aliases: !l` |
 | **!list research** | *Region Channel* | List the research for the channel. `Aliases: !l` |
 | **!list trades** \[pokemon or trainer\] | *Region Channel* | List the trades for a user or pokemon, defaults to your trades. `Aliases: !l` |
