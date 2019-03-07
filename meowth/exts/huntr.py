@@ -832,6 +832,7 @@ class Huntr:
         author = message.author
         guild = message.guild
         research_cog = self.bot.cogs.get('Research')
+        nearest_stop = ""
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         to_midnight = 24*60*60 - ((timestamp-timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
         loc_url = f"https://www.google.com/maps/search/?api=1&query={gps}"
@@ -842,6 +843,9 @@ class Huntr:
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
+            nearest_stop = gym_matching_cog.find_nearest_stop((gps.split(",")[0],gps.split(",")[1]), guild.id)
+            if nearest_stop:
+                location = nearest_stop
             stop_info, location, stop_url = await gym_matching_cog.get_stop_info(ctx, location)
             if stop_url:
                 loc_url = stop_url
