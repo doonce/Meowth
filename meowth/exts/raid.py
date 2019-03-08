@@ -233,7 +233,7 @@ class Raid(commands.Cog):
             pass
         if (not channel_exists) and (not self.bot.is_closed()):
             try:
-                await utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('dm_dict', {}))
+                await utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('dm_dict', {}))
                 del self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]
             except (KeyError, AttributeError):
                 pass
@@ -453,7 +453,7 @@ class Raid(commands.Cog):
                         dict_channel_delete.append(channelid)
                         if gym_matching_cog:
                             gym_matching_cog.do_gym_stats(guildid, channel_dict)
-                        await utils.expire_dm_reports(self.bot, guilddict_chtemp[guildid][channelid].get('dm_dict', {}))
+                        await utils.expire_dm_reports(self.bot, guilddict_chtemp[guildid].get(channelid, {}).get('dm_dict', {}))
                         logger.info(log_str + " - DOESN'T EXIST IN DISCORD -> DELETING")
                     # otherwise, if meowth can still see the channel in discord
                     else:
@@ -2371,9 +2371,12 @@ class Raid(commands.Cog):
                 recovermsg += _(" You will have to set the event times again.")
             await self._edit_party(channel, message.author)
             bulletpoint = utils.parse_emoji(ctx.guild, self.bot.config['bullet'])
-            recovermsg += ('\n' + bulletpoint) + (await self._interest(ctx))
-            recovermsg += ('\n' + bulletpoint) + (await self._otw(ctx))
-            recovermsg += ('\n' + bulletpoint) + (await self._waiting(ctx))
+            list_cog = self.bot.get_cog('Listing')
+            if not list_cog:
+                return
+            recovermsg += ('\n' + bulletpoint) + (await list_cog._interest(ctx))
+            recovermsg += ('\n' + bulletpoint) + (await list_cog._otw(ctx))
+            recovermsg += ('\n' + bulletpoint) + (await list_cog._waiting(ctx))
             if (not manual_timer):
                 if raidtype == 'egg':
                     action = _('hatch')
@@ -2552,6 +2555,8 @@ class Raid(commands.Cog):
             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                 pass
             pkmn = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('pkmn_obj', None)
+            if not pkmn:
+                pkmn = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('pokemon', None)
             pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
             if pkmn:
                 if not user:

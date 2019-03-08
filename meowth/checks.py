@@ -274,6 +274,8 @@ def dm_check(ctx, trainer):
     if not perms.read_messages:
         return False
     mute = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('settings', {}).get('mute', False)
+    if mute:
+        return False
     report_time = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))
     start_time = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('settings', {}).get('active_start', False)
     end_time = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('settings', {}).get('active_end', False)
@@ -285,7 +287,7 @@ def dm_check(ctx, trainer):
         end_time = end_time + datetime.timedelta(days=1)
     elif start_time.time() > end_time.time() and report_time.time() < start_time.time():
         start_time = start_time + datetime.timedelta(days=-1)
-    if (report_time > end_time or report_time < start_time) or mute:
+    if (report_time > end_time or report_time < start_time):
         return False
     return True
 

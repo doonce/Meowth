@@ -57,11 +57,11 @@ class Tutorial(commands.Cog):
                 channel_exists = self.bot.get_channel(channelid)
                 if not channel_exists:
                     try:
-                        del guild_dict[guildid]['configure_dict']['tutorial']['report_channels'][channelid]
+                        del self.bot.guild_dict[guildid]['configure_dict']['tutorial']['report_channels'][channelid]
                     except KeyError:
                         pass
                     try:
-                        del guild_dict[guildid]['configure_dict']['raid']['category_dict'][channelid]
+                        del self.bot.guild_dict[guildid]['configure_dict']['raid']['category_dict'][channelid]
                     except KeyError:
                         pass
                 else:
@@ -174,16 +174,19 @@ class Tutorial(commands.Cog):
         tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
 
         async def timeout_raid(cmd):
-            if raid_channel:
-                await raid_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
-            await tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
-            await asyncio.sleep(10)
-            del report_channels[tutorial_channel.id]
-            if config['raid']['categories'] == "region":
-                del category_dict[tutorial_channel.id]
-            if raid_channel:
-                await raid_channel.delete()
-            return
+            try:
+                if raid_channel:
+                    await raid_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
+                await tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
+                await asyncio.sleep(10)
+                del report_channels[tutorial_channel.id]
+                if config['raid']['categories'] == "region":
+                    del category_dict[tutorial_channel.id]
+                if raid_channel:
+                    await raid_channel.delete()
+                return
+            except discord.errors.NotFound:
+                pass
 
         msg = await tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{prefix}raid** command to report raids! When you use it, I will send a message summarizing the report and create a text channel for coordination. \nThe report must contain, in this order: The Pokemon (if an active raid) or raid level (if an egg), and the location;\nthe report may optionally contain the weather (see **{prefix}help weather** for accepted options) and the minutes remaining until hatch or expiry (at the end of the report) \n\nTry reporting a raid!\nEx: `{prefix}raid {tier5} local church cloudy 42`").set_author(name="Raid Tutorial", icon_url=ctx.bot.user.avatar_url))
 
@@ -347,7 +350,7 @@ class Tutorial(commands.Cog):
     async def research_tutorial(self, ctx, config):
         report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
 
-        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}research** command to report field research tasks! There are two ways to use this command: **{ctx.prefix}research** will start an interactive session where I will prompt you for the task, location, and reward of the research task. You can also use **{ctx.prefix}research <pokestop>, <task>, <reward>** to submit the report all at once.\n\nTry it out by typing `{ctx.prefix}research` and then a random pokestop, task, and reward.").set_author(name="Research Tutorial", icon_url=ctx.bot.user.avatar_url))
+        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}research** command to report field research tasks! There are two ways to use this command: **{ctx.prefix}research** will start an interactive session where I will prompt you for the task, location, and reward of the research task. You can also use **{ctx.prefix}research <pokestop>, <task>, <reward>** to submit the report all at once.\n\nTry it out by typing `{ctx.prefix}research`! Your responses after that can be anything.").set_author(name="Research Tutorial", icon_url=ctx.bot.user.avatar_url))
 
         report_channels[ctx.tutorial_channel.id] = msg.id
 
@@ -445,7 +448,7 @@ class Tutorial(commands.Cog):
         report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
         ctx.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.tutorial_channel.id] = {'list': ['hershey park'], 'hershey park': {'location':'40.28784,-76.65547', 'reports':{}}}
 
-        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}nest** command to keep track of nesting pokemon. You can report one using command: **{ctx.prefix}nest <pokemon>**.\nEx: `{ctx.prefix}nest magikarp`").set_author(name="Nest Tutorial", icon_url=ctx.bot.user.avatar_url))
+        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}nest** command to keep track of nesting pokemon. You can report one using command: **{ctx.prefix}nest <pokemon>**.\nEx: `{ctx.prefix}nest magikarp`\nThen, reply with **1** to report it to Hershey Park!").set_author(name="Nest Tutorial", icon_url=ctx.bot.user.avatar_url))
 
         report_channels[ctx.tutorial_channel.id] = msg.id
 
@@ -538,10 +541,10 @@ class Tutorial(commands.Cog):
                 if 'invite' in enabled:
                     invitestr = (
                         "The text channels that are created with this command "
-                        f"are read-only until members use the **{prefix}invite** "
+                        f"are read-only until members use the **{ctx.prefix}invite** "
                         "command.")
 
-                await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{prefix}exraid** command to report EX raids! When you use it, I will send a message summarizing the report and create a text channel for coordination. {invitestr}\nThe report must contain only the location of the EX raid.\n\nDue to the longer-term nature of EX raid channels, we won't try this command out right now.").set_author(name="EX Raid Tutorial", icon_url=self.bot.user.avatar_url))
+                await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}exraid** command to report EX raids! When you use it, I will send a message summarizing the report and create a text channel for coordination. {invitestr}\nThe report must contain only the location of the EX raid.\n\nDue to the longer-term nature of EX raid channels, we won't try this command out right now.").set_author(name="EX Raid Tutorial", icon_url=self.bot.user.avatar_url))
 
             # start research
             if 'research' in enabled:
