@@ -14,7 +14,7 @@ from meowth.exts import pokemon as pkmn_class
 
 logger = logging.getLogger("meowth")
 
-class Nest:
+class Nest(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.loop.create_task(self.nest_cleanup(self))

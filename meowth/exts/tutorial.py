@@ -12,7 +12,7 @@ from meowth.exts import trade
 
 logger = logging.getLogger("meowth")
 
-class Tutorial:
+class Tutorial(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.loop.create_task(self.tutorial_cleanup())

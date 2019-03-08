@@ -694,7 +694,7 @@ class Pokemon():
 
         return pokemon, match_list
 
-class Pokedex:
+class Pokedex(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 

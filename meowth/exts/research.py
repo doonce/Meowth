@@ -17,7 +17,7 @@ from meowth.exts import pokemon as pkmn_class
 
 logger = logging.getLogger("meowth")
 
-class Research:
+class Research(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.loop.create_task(self.research_cleanup())

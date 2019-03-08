@@ -18,7 +18,7 @@ from meowth.exts import pokemon as pkmn_class
 
 logger = logging.getLogger("meowth")
 
-class Raid:
+class Raid(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.bot.loop.create_task(self.channel_cleanup())
@@ -29,6 +29,7 @@ class Raid:
     Event Handlers
     """
 
+    @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         try:
@@ -62,6 +63,7 @@ class Raid:
                     await utils.get_raid_help(prefix, avatar, user)
                 await message.remove_reaction(payload.emoji, user)
 
+    @commands.Cog.listener()
     async def on_message_delete(self, message):
         guild = message.guild
         channel = message.channel
@@ -74,6 +76,7 @@ class Raid:
                 logs[message.id] = {'author_id': message.author.id, 'author_str': str(message.author), 'author_avy':message.author.avatar_url, 'author_nick':message.author.nick, 'color_int':message.author.color.value, 'content': message.clean_content, 'created_at':message.created_at}
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['logs'] = logs
 
+    @commands.Cog.listener()
     async def on_message(self, message):
         if message.guild != None:
             raid_status = self.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, None)

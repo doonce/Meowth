@@ -17,7 +17,7 @@ from meowth.exts import pokemon as pkmn_class
 
 logger = logging.getLogger("meowth")
 
-class Listing:
+class Listing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 

@@ -11,7 +11,7 @@ from meowth import utils
 from meowth import checks
 from meowth.exts import pokemon as pkmn_class
 
-class Configure:
+class Configure(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 

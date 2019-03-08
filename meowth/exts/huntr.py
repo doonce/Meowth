@@ -19,7 +19,7 @@ from meowth.exts import pokemon as pkmn_class
 
 logger = logging.getLogger("meowth")
 
-class Huntr:
+class Huntr(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.event_loop = asyncio.get_event_loop()
@@ -82,6 +82,7 @@ class Huntr:
 
     """Handlers"""
 
+    @commands.Cog.listener()
     async def on_message(self, message):
         ctx = await self.bot.get_context(message)
         if not ctx.guild:
@@ -91,6 +92,7 @@ class Huntr:
         if (str(message.author) == 'GymHuntrBot#7279') or (str(message.author) == 'HuntrBot#1845'):
             await self.on_huntr(ctx)
 
+    @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         try:

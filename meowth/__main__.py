@@ -251,7 +251,10 @@ async def reset_raid_roles(bot):
         for boss in boss_names:
             role = discord.utils.get(guild.roles, name=boss)
             if not role:
-                role = await guild.create_role(name = boss, hoist = False, mentionable = True)
+                try:
+                    role = await guild.create_role(name = boss, hoist = False, mentionable = True)
+                except discord.errors.Forbidden:
+                    pass
                 await asyncio.sleep(0.5)
         for trainer in guild_dict[guild.id]['trainers']:
             add_list = []

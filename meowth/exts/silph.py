@@ -276,7 +276,7 @@ class SilphTrainer:
         await instance.load_card_data()
         return instance
 
-class Silph:
+class Silph(commands.Cog):
     """Silph intergrations."""
     def __init__(self, bot):
         self.bot = bot

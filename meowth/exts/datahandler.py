@@ -5,7 +5,7 @@ from discord.ext import commands
 from meowth import utils
 from meowth import checks
 
-class DataHandler:
+class DataHandler(commands.Cog):
     """Data Loading and Saving Test Cog."""
 
     def __init__(self, bot):
@@ -14,7 +14,7 @@ class DataHandler:
         self.pkmn_list = bot.pkmn_list
         self.pkmn_match = partial(utils.get_match, self.pkmn_list)
 
-    def __local_check(self, ctx):
+    def cog_check(self, ctx):
         return checks.is_manager_check(ctx)
 
     def get_name(self, pkmn_number):

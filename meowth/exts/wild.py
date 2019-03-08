@@ -15,11 +15,12 @@ from meowth.exts import pokemon as pkmn_class
 
 logger = logging.getLogger("meowth")
 
-class Wild:
+class Wild(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.loop.create_task(self.wild_cleanup())
 
+    @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         try:
@@ -95,9 +96,9 @@ class Wild:
         try:
             user_message = await channel.get_message(wild_dict[message.id]['reportmessage'])
             await utils.safe_delete(user_message)
-        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
-        await utils.expire_dm_reports(self.bot, wild_dict[message.id].get('dm_dict', {}))
+        await utils.expire_dm_reports(self.bot, wild_dict.get(message.id, {}).get('dm_dict', {}))
         try:
             del self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
         except KeyError:
