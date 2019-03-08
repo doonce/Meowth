@@ -494,17 +494,14 @@ class Huntr(commands.Cog):
             wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Coordinates: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_coordinates), embed=wild_embed)
         dm_dict = {}
         for trainer in ctx.bot.guild_dict[message.guild.id].get('trainers', {}):
-            user = message.guild.get_member(trainer)
-            if not user:
-                continue
-            perms = user.permissions_in(message.channel)
-            if not perms.read_messages:
+            if not checks.dm_check(ctx, trainer):
                 continue
             user_wants = ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
             user_stops = ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
             user_types = ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
             if wild_number in user_wants or nearest_stop.lower() in user_stops or wild_types[0] in user_types or wild_types[1] in user_types:
                 try:
+                    user = message.guild.get_member(trainer)
                     wild_embed.remove_field(2)
                     wild_embed.remove_field(2)
                     if nearest_stop:
@@ -652,15 +649,12 @@ class Huntr(commands.Cog):
             raid_embed.remove_field(2)
             raid_embed.remove_field(2)
             for trainer in ctx.bot.guild_dict[message.guild.id].get('trainers', {}):
-                user = message.guild.get_member(trainer)
-                if not user:
-                    continue
-                perms = user.permissions_in(message.channel)
-                if not perms.read_messages:
+                if not checks.dm_check(ctx, trainer):
                     continue
                 user_gyms = ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', [])
                 if raid_details.lower() in user_gyms:
                     try:
+                        user = message.guild.get_member(trainer)
                         raiddmmsg = await user.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
                         dm_dict[user.id] = raiddmmsg.id
                     except:
@@ -792,15 +786,12 @@ class Huntr(commands.Cog):
             raid_embed.remove_field(2)
             raid_embed.remove_field(2)
             for trainer in ctx.bot.guild_dict[message.guild.id].get('trainers', {}):
-                user = message.guild.get_member(trainer)
-                if not user:
-                    continue
-                perms = user.permissions_in(message.channel)
-                if not perms.read_messages:
+                if not checks.dm_check(ctx, trainer):
                     continue
                 user_gyms = ctx.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', [])
                 if raid_details.lower() in user_gyms:
                     try:
+                        user = message.guild.get_member(trainer)
                         raiddmmsg = await user.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
                         dm_dict[user.id] = raiddmmsg.id
                     except:
