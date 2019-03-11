@@ -28,6 +28,7 @@ class Research(commands.Cog):
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             midnight_list = []
+            count = 0
             for guildid in guilddict_temp.keys():
                 utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guildid]['configure_dict']['settings']['offset']))
                 to_midnight = 24*60*60 - ((utcnow-utcnow.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
@@ -40,19 +41,23 @@ class Research(commands.Cog):
                             try:
                                 report_message = await report_channel.get_message(reportid)
                                 self.bot.loop.create_task(self.expire_research(report_message))
+                                count += 1
                                 continue
                             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                                 pass
-                        del self.bot.guild_dict[guildid]['questreport_dict'][reportid]
+                        try:
+                            del self.bot.guild_dict[guildid]['questreport_dict'][reportid]
+                        except KeyError:
+                            pass
             # save server_dict changes after cleanup
             logger.info('SAVING CHANGES')
             try:
                 await self.bot.save()
             except Exception as err:
                 logger.info('SAVING FAILED' + err)
-            logger.info('------ END ------')
             if not midnight_list:
                 midnight_list = [600]
+            logger.info(f"------ END - {count} Tasks Cleaned - Waiting {min(midnight_list)} seconds. ------")
             await asyncio.sleep(min(midnight_list))
             continue
 

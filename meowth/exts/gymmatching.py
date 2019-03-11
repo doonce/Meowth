@@ -98,7 +98,7 @@ class GymMatching(commands.Cog):
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
 
     @commands.command(hidden=True)
-    async def gym_match_test(self, ctx, gym_name):
+    async def gym_match_test(self, ctx, *, gym_name):
         gyms = self.get_gyms(ctx.guild.id)
         if not gyms:
             await ctx.send('Gym matching has not been set up for this server.')
@@ -115,13 +115,31 @@ class GymMatching(commands.Cog):
         else:
             await ctx.send("No match found.")
 
+    @commands.command(hidden=True)
+    async def stop_match_test(self, ctx, *, stop_name):
+        stops = self.get_stops(ctx.guild.id)
+        if not stops:
+            await ctx.send('Gym matching has not been set up for this server.')
+            return
+        match, score = self.stop_match(stop_name, stops)
+        if match:
+            stop_info = stops[match]
+            coords = stop_info['coordinates']
+            notes = stop_info.get('notes', 'No notes for this stop.')
+            stop_info_str = (f"**Coordinates:** {coords}\n"
+                            f"**Notes:** {notes}")
+            await ctx.send(f"Successful match with `{match}` "
+                           f"with a score of `{score}`\n{stop_info_str}")
+        else:
+            await ctx.send("No match found.")
+
     async def gym_match_prompt(self, ctx, gym_name, gyms):
         channel = ctx.channel
         author = ctx.author
         match, score = self.gym_match(gym_name, gyms)
         if not match:
             return None
-        if ctx.bot:
+        if ctx.author.bot:
             return match
         if score < 80:
             try:
@@ -150,7 +168,7 @@ class GymMatching(commands.Cog):
         match, score = self.stop_match(stop_name, stops)
         if not match:
             return None
-        if ctx.bot:
+        if ctx.author.bot:
             return match
         if score < 80:
             try:

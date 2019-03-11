@@ -47,6 +47,7 @@ class Nest(commands.Cog):
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             migration_list = []
+            count = 0
             for guildid in guilddict_temp.keys():
                 nest_dict = guilddict_temp[guildid].setdefault('nest_dict', {})
                 utcnow = datetime.datetime.utcnow()
@@ -73,6 +74,7 @@ class Nest(commands.Cog):
                                     if new_migration and nest_dict[channel][nest]['reports'][report]['reporttime'] > migration_utc:
                                         self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
                                         self.bot.loop.create_task(self.edit_nest_reports(report_message, migration_local, nest_dict[channel][nest]['reports'][report]['dm_dict']))
+                                        count += 1
                                         continue
                                     await utils.safe_delete(report_message)
                                 except:
@@ -82,9 +84,9 @@ class Nest(commands.Cog):
                                     del self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]
                                 except:
                                     pass
-            logger.info('------ END ------')
             if not migration_list:
                 migration_list = [600]
+            logger.info(f"------ END - {count} Nests Cleaned - Waiting {min(migration_list)} seconds. ------")
             await asyncio.sleep(min(migration_list))
             continue
 

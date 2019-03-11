@@ -51,6 +51,7 @@ class Tutorial(commands.Cog):
         await self.bot.wait_until_ready()
         logger.info('------ BEGIN ------')
         guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+        count = 0
         for guildid in guilddict_temp.keys():
             tutorial_dict = guilddict_temp[guildid]['configure_dict'].setdefault('tutorial', {}).setdefault('report_channels', {})
             for channelid in tutorial_dict:
@@ -78,6 +79,7 @@ class Tutorial(commands.Cog):
                     if tutorial_message:
                         ctx = await self.bot.get_context(tutorial_message)
                     if ctx and newbie:
+                        count += 1
                         ctx.author = newbie
                         ctx.tutorial_channel = channel_exists
                         if not ctx.prefix:
@@ -85,6 +87,7 @@ class Tutorial(commands.Cog):
                             ctx.prefix = prefix[-1]
                         await ctx.tutorial_channel.send(f"Hey {newbie.mention} I think we were cut off due to a disconnection, let's try to start over.")
                         ctx.bot.loop.create_task(self._tutorial(ctx))
+        logger.info(f"------ END - {count} Tutorials Cleaned ------")                
 
     async def want_tutorial(self, ctx, config):
         report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})

@@ -56,6 +56,7 @@ class Wild(commands.Cog):
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             despawn_list = []
+            count = 0
             for guildid in guilddict_temp.keys():
                 wild_dict = guilddict_temp[guildid].setdefault('wildreport_dict', {})
                 for reportid in wild_dict.keys():
@@ -65,10 +66,14 @@ class Wild(commands.Cog):
                             try:
                                 report_message = await report_channel.get_message(reportid)
                                 self.bot.loop.create_task(self.expire_wild(report_message))
+                                count += 1
                                 continue
                             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                                 pass
-                        del self.bot.guild_dict[guildid]['wildreport_dict'][reportid]
+                        try:
+                            del self.bot.guild_dict[guildid]['wildreport_dict'][reportid]
+                        except KeyError:
+                            continue
                     to_despawn = wild_dict[reportid].get('exp', 0) - time.time()
                     despawn_list.append(to_despawn)
             # save server_dict changes after cleanup
@@ -78,9 +83,9 @@ class Wild(commands.Cog):
             except Exception as err:
                 logger.info('SAVING FAILED' + err)
                 pass
-            logger.info('------ END ------')
             if not despawn_list:
                 despawn_list = [600]
+            logger.info(f"------ END - {count} Wilds Cleaned - Waiting {min(despawn_list)} seconds. ------")
             await asyncio.sleep(min(despawn_list))
             continue
 
@@ -146,6 +151,9 @@ class Wild(commands.Cog):
             stop_info, wild_details, stop_url = await gym_matching_cog.get_stop_info(ctx, wild_details)
             if stop_url:
                 wild_gmaps_link = stop_url
+        if not wild_details:
+            await utils.safe_delete(ctx.message)
+            return
         wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
         wild_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.capitalize(), pokemonnumber=str(wild_number), type=''.join(utils.get_type(self.bot, message.guild, pokemon.id, pokemon.form, pokemon.alolan))), inline=False)
         wild_embed.set_thumbnail(url=wild_img_url)
