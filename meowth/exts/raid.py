@@ -1180,6 +1180,12 @@ class Raid(commands.Cog):
                 await self._timerset(raid_channel, raidexp)
             else:
                 await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
+            self.bot.loop.create_task(self.expiry_check(raid_channel))
+            egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('egg_reports', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['egg_reports'] = egg_reports
+            dm_dict = {}
+            dm_dict = await self.send_dm_messages(ctx, raid_details, raidreport.content, copy.deepcopy(raid_embed), dm_dict)
+            self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
             if len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
                 pokemon = pokemon.name.lower()
@@ -1188,12 +1194,6 @@ class Raid(commands.Cog):
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
                 pokemon = pokemon.name.lower()
                 await self._eggassume(ctx, 'assume ' + pokemon, raid_channel)
-            self.bot.loop.create_task(self.expiry_check(raid_channel))
-            egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('egg_reports', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['egg_reports'] = egg_reports
-            dm_dict = {}
-            dm_dict = await self.send_dm_messages(ctx, raid_details, raidreport.content, copy.deepcopy(raid_embed), dm_dict)
-            self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
             return raid_channel
 
     async def _eggassume(self, ctx, args, raid_channel, author=None):
@@ -1202,6 +1202,7 @@ class Raid(commands.Cog):
         egglevel = eggdetails['egglevel']
         manual_timer = eggdetails['manual_timer']
         weather = eggdetails.get('weather', None)
+        dm_dict = eggdetails.get('dm_dict', {})
         egg_report = await report_channel.get_message(eggdetails['raidreport'])
         raid_message = await raid_channel.get_message(eggdetails['raidmessage'])
         gymhuntrgps = eggdetails.get('gymhuntrgps', False)
@@ -1248,6 +1249,7 @@ class Raid(commands.Cog):
         raid_embed.add_field(name=_('**Hatches:**'), value=oldembed.fields[3].value, inline=True)
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=oldembed.thumbnail.url)
+        self.bot.loop.create_task(utils.edit_dm_messages(self.bot, egg_report.content, copy.deepcopy(raid_embed), dm_dict))
         for field in oldembed.fields:
             t = _('team')
             s = _('status')
@@ -1277,7 +1279,6 @@ class Raid(commands.Cog):
         eggdetails['ctrs_dict'] = ctrs_dict
         eggdetails['ctrsmessage'] = ctrsmessage_id
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id] = eggdetails
-        return
 
     async def _eggtoraid(self, entered_raid, raid_channel, author=None, huntr=None):
         rgx = '[^a-zA-Z0-9]'
