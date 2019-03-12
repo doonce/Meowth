@@ -233,7 +233,7 @@ class Raid(commands.Cog):
             pass
         if (not channel_exists) and (not self.bot.is_closed()):
             try:
-                await utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('dm_dict', {}))
+                await utils.expire_dm_reports(self.bot, copy.deepcopy(self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('dm_dict', {})))
                 del self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]
             except (KeyError, AttributeError):
                 pass
@@ -453,7 +453,7 @@ class Raid(commands.Cog):
                         dict_channel_delete.append(channelid)
                         if gym_matching_cog:
                             gym_matching_cog.do_gym_stats(guildid, channel_dict)
-                        await utils.expire_dm_reports(self.bot, guilddict_chtemp[guildid].get(channelid, {}).get('dm_dict', {}))
+                        await utils.expire_dm_reports(self.bot, guilddict_chtemp[guildid]['raidchannel_dict'].get(channelid, {}).get('dm_dict', {}))
                         logger.info(log_str + " - DOESN'T EXIST IN DISCORD -> DELETING")
                     # otherwise, if meowth can still see the channel in discord
                     else:
@@ -503,19 +503,18 @@ class Raid(commands.Cog):
             await asyncio.sleep(600)
             continue
 
-    async def edit_dm_messages(self, content, embed, dm_dict):
-        for dm_user, dm_message in dm_dict.items():
-            try:
-                dm_user = self.bot.get_user(dm_user)
-                dm_channel = dm_user.dm_channel
-                if not dm_channel:
-                    dm_channel = await dm_user.create_dm()
-                if not dm_user or not dm_channel:
-                    continue
-                dm_message = await dm_channel.get_message(dm_message)
-                await dm_message.edit(content=content, embed=embed)
-            except:
-                pass
+    async def send_dm_messages(self, ctx, raid_details, content, embed, dm_dict):
+        for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
+            if not checks.dm_check(ctx, trainer):
+                continue
+            if trainer in dm_dict:
+                continue
+            user_gyms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', [])
+            if raid_details.lower() in user_gyms:
+                user = ctx.guild.get_member(trainer)
+                raiddmmsg = await user.send(content=content, embed=embed)
+                dm_dict[user.id] = raiddmmsg.id
+        return dm_dict
 
     """
     Admin Commands
@@ -972,8 +971,7 @@ class Raid(commands.Cog):
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=pokemon.img_url)
-        report_embed = raid_embed
-        raidreport = await message.channel.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=report_embed)
+        raidreport = await message.channel.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
         await asyncio.sleep(1)
         raidmsg = _("{roletest}Meowth! {pokemon} raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(roletest=roletest, pokemon=str(pokemon).title(), member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
         raidmessage = await raid_channel.send(content=raidmsg, embed=raid_embed)
@@ -1024,17 +1022,7 @@ class Raid(commands.Cog):
         dm_dict = {}
         raid_embed.remove_field(2)
         raid_embed.remove_field(2)
-        for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
-            if not checks.dm_check(ctx, trainer):
-                continue
-            user_gyms = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', [])
-            if raid_details.lower() in user_gyms:
-                try:
-                    user = ctx.guild.get_member(trainer)
-                    raiddmmsg = await user.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=report_embed)
-                    dm_dict[user.id] = raiddmmsg.id
-                except:
-                    continue
+        dm_dict = await self.send_dm_messages(ctx, raid_details, raidreport.content, copy.deepcopy(raid_embed), dm_dict)
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         return raid_channel
 
@@ -1204,16 +1192,7 @@ class Raid(commands.Cog):
             egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('egg_reports', 0) + 1
             self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['egg_reports'] = egg_reports
             dm_dict = {}
-            for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
-                if not checks.dm_check(ctx, trainer):
-                    continue
-                if raid_details.lower() in self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', []):
-                    try:
-                        user = ctx.guild.get_member(trainer)
-                        raiddmmsg = await user.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
-                        dm_dict[user.id] = raiddmmsg.id
-                    except:
-                        continue
+            dm_dict = await self.send_dm_messages(ctx, raid_details, raidreport.content, copy.deepcopy(raid_embed), dm_dict)
             self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
             return raid_channel
 
@@ -1267,21 +1246,19 @@ class Raid(commands.Cog):
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
         raid_embed.add_field(name=_('**Hatches:**'), value=oldembed.fields[3].value, inline=True)
+        raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
+        raid_embed.set_thumbnail(url=oldembed.thumbnail.url)
         for field in oldembed.fields:
             t = _('team')
             s = _('status')
             if (t in field.name.lower()) or (s in field.name.lower()):
                 raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
-        raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
-        raid_embed.set_thumbnail(url=oldembed.thumbnail.url)
         try:
             await raid_message.edit(new_content=raid_message.content, embed=raid_embed, content=raid_message.content)
-            raid_message = raid_message.id
         except discord.errors.NotFound:
             raid_message = None
         try:
             await egg_report.edit(new_content=egg_report.content, embed=raid_embed, content=egg_report.content)
-            egg_report = egg_report.id
         except discord.errors.NotFound:
             egg_report = None
         await raid_channel.send(_('{roletest}Meowth! This egg will be assumed to be {pokemon} when it hatches!').format(roletest=roletest, pokemon=str(pokemon).title()))
@@ -1309,7 +1286,6 @@ class Raid(commands.Cog):
         if egglevel == "0":
             egglevel = utils.get_level(self.bot, entered_raid)
         boss_list = []
-
         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, entered_raid)
         matched_boss = False
         for boss in self.bot.raid_info['raid_eggs'][str(egglevel)]['pokemon']:
@@ -1447,7 +1423,7 @@ class Raid(commands.Cog):
                     continue
                 trainer_list.append(user.mention)
         await raid_channel.send(content=_("{roletest}Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!\nIf you couldn't before, you're now able to update your status with **!coming** or **!here**. If you've changed your plans, use **!cancel**.").format(roletest=roletest, trainer_list=', '.join(trainer_list), pokemon=entered_raid.title()), embed=raid_embed)
-        self.bot.loop.create_task(self.edit_dm_messages(raidreportcontent, copy.deepcopy(raid_embed), dm_dict))
+        self.bot.loop.create_task(utils.edit_dm_messages(self.bot, raidreportcontent, copy.deepcopy(raid_embed), dm_dict))
         for field in oldembed.fields:
             t = _('team')
             s = _('status')

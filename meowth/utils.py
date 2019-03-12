@@ -481,6 +481,20 @@ async def expire_dm_reports(bot, dm_dict):
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
             pass
 
+async def edit_dm_messages(bot, content, embed, dm_dict):
+    for dm_user, dm_message in dm_dict.items():
+        try:
+            dm_user = bot.get_user(dm_user)
+            dm_channel = dm_user.dm_channel
+            if not dm_channel:
+                dm_channel = await dm_user.create_dm()
+            if not dm_user or not dm_channel:
+                continue
+            dm_message = await dm_channel.get_message(dm_message)
+            await dm_message.edit(content=content, embed=embed)
+        except:
+            pass
+
 async def safe_delete(message):
     try:
         await message.delete()

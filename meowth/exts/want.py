@@ -462,7 +462,7 @@ class Want(commands.Cog):
             for want in want_names:
                 if want in self.bot.raid_list:
                     role = discord.utils.get(ctx.guild.roles, name=want)
-                    if role and role not in user.roles:
+                    if role and role not in ctx.author.roles:
                         add_list.append(role)
             if remove_list:
                 await ctx.author.remove_roles(*remove_list)

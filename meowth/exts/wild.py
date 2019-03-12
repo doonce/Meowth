@@ -109,6 +109,26 @@ class Wild(commands.Cog):
         except KeyError:
             pass
 
+    async def send_dm_messages(self, ctx, wild_number, wild_details, wild_type_1, wild_type_2, content, embed, dm_dict):
+        for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
+            if not checks.dm_check(ctx, trainer):
+                continue
+            if trainer in dm_dict:
+                continue
+            user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+            user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
+            user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
+            if wild_number in user_wants or wild_type_1.lower() in user_types or wild_type_2.lower() in user_types or wild_details.lower() in user_stops:
+                try:
+                    user = ctx.guild.get_member(trainer)
+                    embed.remove_field(1)
+                    embed.remove_field(1)
+                    wilddmmsg = await user.send(content=content, embed=embed)
+                    dm_dict[user.id] = wilddmmsg.id
+                except:
+                    continue
+            return dm_dict
+
     @commands.group(aliases=['w'], invoke_without_command=True, case_insensitive=True)
     @checks.allowwildreport()
     async def wild(self, ctx, pokemon, *, location):
@@ -163,21 +183,7 @@ class Wild(commands.Cog):
         wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=self.bot.config['wild_despawn']))
         wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
         dm_dict = {}
-        for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
-            if not checks.dm_check(ctx, trainer):
-                continue
-            user_wants = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
-            user_stops = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
-            user_types = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
-            if wild_number in user_wants or wild_types[0].lower() in user_types or wild_types[1].lower() in user_types or wild_details.lower() in user_stops:
-                try:
-                    user = ctx.guild.get_member(trainer)
-                    wild_embed.remove_field(1)
-                    wild_embed.remove_field(1)
-                    wilddmmsg = await user.send(content=_('Meowth! Wild {pokemon} reported by {member} in {channel}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.display_name, channel=message.channel.mention, location_details=wild_details), embed=wild_embed)
-                    dm_dict[user.id] = wilddmmsg.id
-                except:
-                    continue
+        dm_dict = await self.send_dm_messages(ctx, wild_number, wild_details, wild_types[0], wild_types[1], wildreportmsg.content, copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
         await wildreportmsg.add_reaction(self.bot.config['wild_omw'])
         await asyncio.sleep(0.25)
