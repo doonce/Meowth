@@ -267,7 +267,7 @@ class Huntr(commands.Cog):
             reporttype = pokehuntr_dict[message.id]['reporttype']
             gymhuntrgps = pokehuntr_dict[message.id]['gps']
             raid_details = pokehuntr_dict[message.id]['gym'].strip()
-            dm_dict = pokehuntr_dict[message.id]['dm_dict']
+            dm_dict = copy.deepcopy(pokehuntr_dict[message.id]['dm_dict'])
             reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
             timediff = relativedelta(reacttime, reporttime)
             raidexp = int(reporttime.minute) - int(timediff.minutes)
@@ -455,7 +455,7 @@ class Huntr(commands.Cog):
             reporttime = alarm_details['reporttime']
             reporttype = alarm_details['reporttype']
             huntrtime = alarm_details['raidexp']
-            dm_dict = alarm_details['dm_dict']
+            dm_dict = copy.deepcopy(alarm_details['dm_dict'])
             reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
             timediff = relativedelta(reacttime, reporttime)
             exptime = int(huntrtime) - int(timediff.minutes)
@@ -575,7 +575,9 @@ class Huntr(commands.Cog):
 
     """Reporting"""
 
-    async def huntr_wild(self, ctx, entered_wild, wild_details, huntrexp, huntrweather, reporter=None, report_user=None, dm_dict = {}):
+    async def huntr_wild(self, ctx, entered_wild, wild_details, huntrexp, huntrweather, reporter=None, report_user=None, dm_dict=None):
+        if not dm_dict:
+            dm_dict = {}
         if report_user:
             ctx.message.author = report_user
         message = ctx.message
@@ -639,7 +641,9 @@ class Huntr(commands.Cog):
             'omw':[]
         }
 
-    async def huntr_raid(self, ctx, entered_raid, raid_details, raidexp, gymhuntrgps, gymhuntrmoves, reporter=None, report_user=None, dm_dict = {}):
+    async def huntr_raid(self, ctx, entered_raid, raid_details, raidexp, gymhuntrgps, gymhuntrmoves, reporter=None, report_user=None, dm_dict=None):
+        if not dm_dict:
+            dm_dict = {}
         raid_cog = self.bot.cogs.get('Raid')
         if report_user:
             ctx.message.author = report_user
@@ -746,7 +750,9 @@ class Huntr(commands.Cog):
         await self.auto_counters(raid_channel, gymhuntrmoves)
         return raid_channel
 
-    async def huntr_raidegg(self, ctx, egg_level, raid_details, raidexp, gymhuntrgps, reporter=None, report_user=None, dm_dict = {}):
+    async def huntr_raidegg(self, ctx, egg_level, raid_details, raidexp, gymhuntrgps, reporter=None, report_user=None, dm_dict=None):
+        if not dm_dict:
+            dm_dict = {}
         raid_cog = self.bot.cogs.get('Raid')
         if report_user:
             ctx.message.author = report_user
