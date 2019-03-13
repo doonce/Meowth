@@ -511,9 +511,12 @@ class Raid(commands.Cog):
                 continue
             user_gyms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', [])
             if raid_details.lower() in user_gyms:
-                user = ctx.guild.get_member(trainer)
-                raiddmmsg = await user.send(content=content, embed=embed)
-                dm_dict[user.id] = raiddmmsg.id
+                try:
+                    user = ctx.guild.get_member(trainer)
+                    raiddmmsg = await user.send(content=content, embed=embed)
+                    dm_dict[user.id] = raiddmmsg.id
+                except discord.errors.Forbidden:
+                    continue
         return dm_dict
 
     """
@@ -941,7 +944,15 @@ class Raid(commands.Cog):
             return
         raid_channel_name = (entered_raid + '-') + utils.sanitize_channel_name(raid_details)
         raid_channel_category = utils.get_category(self.bot, message.channel, utils.get_level(self.bot, entered_raid), category_type="raid")
-        raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
+        category_choices = [raid_channel_category, message.channel.category, None]
+        for category in category_choices:
+            try:
+                raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=category)
+                break
+            except discord.errors.HTTPException:
+                raid_channel = None
+        if not raid_channel:
+            return
         ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
         ow.send_messages = True
         try:
@@ -1123,7 +1134,15 @@ class Raid(commands.Cog):
             raid_channel_name = _('level-{egg_level}-egg-').format(egg_level=egg_level)
             raid_channel_name += utils.sanitize_channel_name(raid_details)
             raid_channel_category = utils.get_category(self.bot, message.channel, egg_level, category_type="raid")
-            raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
+            category_choices = [raid_channel_category, message.channel.category, None]
+            for category in category_choices:
+                try:
+                    raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=category)
+                    break
+                except discord.errors.HTTPException:
+                    raid_channel = None
+            if not raid_channel:
+                return
             ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
             ow.send_messages = True
             try:
@@ -1555,7 +1574,15 @@ class Raid(commands.Cog):
         raid_channel_overwrite_list.append(meowth_overwrite)
         raid_channel_overwrites = dict(raid_channel_overwrite_list)
         raid_channel_category = utils.get_category(self.bot, message.channel, "EX", category_type="exraid")
-        raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=raid_channel_overwrites, category=raid_channel_category)
+        category_choices = [raid_channel_category, message.channel.category, None]
+        for category in category_choices:
+            try:
+                raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=raid_channel_overwrites, category=category)
+                break
+            except discord.errors.HTTPException:
+                raid_channel = None
+        if not raid_channel:
+            return
         if self.bot.guild_dict[channel.guild.id]['configure_dict']['invite']['enabled']:
             for role in channel.guild.roles:
                 if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
@@ -1702,7 +1729,15 @@ class Raid(commands.Cog):
         raid_channel_name = _('meetup-')
         raid_channel_name += utils.sanitize_channel_name(raid_details)
         raid_channel_category = utils.get_category(self.bot, message.channel, "EX", category_type="meetup")
-        raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
+        category_choices = [raid_channel_category, message.channel.category, None]
+        for category in category_choices:
+            try:
+                raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=category)
+                break
+            except discord.errors.HTTPException:
+                raid_channel = None
+        if not raid_channel:
+            return
         ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
         ow.send_messages = True
         try:

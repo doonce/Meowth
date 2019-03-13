@@ -673,7 +673,15 @@ class Huntr(commands.Cog):
         raid_embed = await self.make_raid_embed(ctx, entered_raid, raid_details, raidexp, gymhuntrgps, gymhuntrmoves)
         raid_channel_name = entered_raid + "-" + utils.sanitize_channel_name(raid_details) + "-bot"
         raid_channel_category = utils.get_category(self.bot, message.channel, utils.get_level(self.bot, entered_raid), category_type="raid")
-        raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
+        category_choices = [raid_channel_category, message.channel.category, None]
+        for category in category_choices:
+            try:
+                raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=category)
+                break
+            except discord.errors.HTTPException:
+                raid_channel = None
+        if not raid_channel:
+            return
         await asyncio.sleep(1)
         raidreport = await message.channel.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
         ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
@@ -764,7 +772,15 @@ class Huntr(commands.Cog):
         raid_channel_name = _('level-{egg_level}-egg-').format(egg_level=egg_level)
         raid_channel_name += utils.sanitize_channel_name(raid_details) + "-bot"
         raid_channel_category = utils.get_category(self.bot, message.channel, egg_level, category_type="raid")
-        raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=raid_channel_category)
+        category_choices = [raid_channel_category, message.channel.category, None]
+        for category in category_choices:
+            try:
+                raid_channel = await message.guild.create_text_channel(raid_channel_name, overwrites=dict(message.channel.overwrites), category=category)
+                break
+            except discord.errors.HTTPException:
+                raid_channel = None
+        if not raid_channel:
+            return
         await asyncio.sleep(1)
         raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
         ow = raid_channel.overwrites_for(raid_channel.guild.default_role)

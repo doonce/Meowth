@@ -33,7 +33,8 @@ class Listing(commands.Cog):
         await utils.safe_delete(ctx.message)
         if ctx.invoked_subcommand == None:
             listmsg = _('**Meowth!** ')
-            raidlist = ""
+            temp_list = ""
+            raid_list = ""
             guild = ctx.guild
             channel = ctx.channel
             now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
@@ -48,7 +49,6 @@ class Listing(commands.Cog):
                     await utils.safe_delete(ctx.message)
                     await utils.safe_delete(tag_error)
                     return
-                activeraidnum = 0
                 cty = channel.name
                 rc_d = self.bot.guild_dict[guild.id]['raidchannel_dict']
                 raid_dict = {}
@@ -78,7 +78,6 @@ class Listing(commands.Cog):
                             exraid_list.append(r)
                         else:
                             raid_dict[r] = exp
-                        activeraidnum += 1
 
                 async def list_output(r):
                     trainer_dict = rc_d[r]['trainer_dict']
@@ -100,6 +99,8 @@ class Listing(commands.Cog):
                     ctx_redcount = channel_dict['valor']
                     ctx_yellowcount = channel_dict['instinct']
                     ctx_greycount = channel_dict['unknown']
+                    if not ctx_totalcount and "all" not in ctx.message.content.lower():
+                        return None
                     if rc_d[r]['manual_timer'] == False:
                         assumed_str = _(' (assumed)')
                     else:
@@ -136,31 +137,46 @@ class Listing(commands.Cog):
                     return output
 
                 if raid_dict:
-                    raidlist += _('**Active Raids:**\n')
                     for (r, e) in sorted(raid_dict.items(), key=itemgetter(1)):
-                        raidlist += await list_output(r)
-                    raidlist += '\n'
+                        output = await list_output(r)
+                        if output:
+                            temp_list += output
+                    if temp_list:
+                        raid_list += f"**Raids:**\n{temp_list}\n"
+                        temp_list = ""
                 if egg_dict:
-                    raidlist += _('**Raid Eggs:**\n')
                     for (r, e) in sorted(egg_dict.items(), key=itemgetter(1)):
-                        raidlist += await list_output(r)
-                    raidlist += '\n'
+                        output = await list_output(r)
+                        if output:
+                            temp_list += output
+                    if temp_list:
+                        raid_list += f"**Raid Eggs:**\n{temp_list}\n"
+                        temp_list = ""
                 if exraid_list:
-                    raidlist += _('**EX Raids:**\n')
                     for r in exraid_list:
-                        raidlist += await list_output(r)
+                        output = await list_output(r)
+                        if output:
+                            temp_list += output
+                    if temp_list:
+                        raid_list += f"**EX Raids:**\n{temp_list}\n"
+                        temp_list = ""
                 if event_list:
-                    raidlist += _('**Meetups:**\n')
                     for r in event_list:
-                        raidlist += await list_output(r)
-                if activeraidnum == 0:
-                    list_message = await channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=_('Meowth! No active raids!\n\nReport one with **!raid <name> <location> [weather] [timer]**.')))
+                        output = await list_output(r)
+                        if output:
+                            temp_list += output
+                    if temp_list:
+                        raid_list += f"**Meetups:**\n{temp_list}\n"
+                        temp_list = ""
+
+                if not raid_list:
+                    list_message = await channel.send(f"Meowth! No **active** channels!", embed=discord.Embed(colour=ctx.guild.me.colour, description=_('Use **!list all** to see all channels and mark your interest.\n\nReport a new one with **!raid <name> <location> [weather] [timer]**')))
                     list_messages.append(list_message.id)
                 else:
                     listmsg += _("**Here's the current channels for {0}**\n\n").format(channel.mention)
                     paginator = commands.Paginator(prefix="", suffix="")
                     index = 0
-                    for line in raidlist.splitlines():
+                    for line in raid_list.splitlines():
                         paginator.add_line(line.rstrip().replace('`', '\u200b`'))
                     for p in paginator.pages:
                         if index == 0:
@@ -170,7 +186,7 @@ class Listing(commands.Cog):
                         list_messages.append(list_message.id)
                         index += 1
                 self.bot.guild_dict[ctx.guild.id]['list_dict']['raid'][ctx.channel.id] = list_messages
-                return
+
             elif checks.check_raidactive(ctx):
                 if not raid_cog:
                     return
