@@ -170,7 +170,11 @@ class Listing(commands.Cog):
                         temp_list = ""
 
                 if not raid_list:
-                    list_message = await channel.send(f"Meowth! No **active** channels!", embed=discord.Embed(colour=ctx.guild.me.colour, description=_('Use **!list all** to see all channels and mark your interest.\n\nReport a new one with **!raid <name> <location> [weather] [timer]**')))
+                    if "all" not in ctx.message.content.lower():
+                        ctx.message.content = "!list all"
+                        await ctx.reinvoke()
+                        return
+                    list_message = await channel.send(f"Meowth! No active channels!", embed=discord.Embed(colour=ctx.guild.me.colour, description=_('Report a new one with **!raid <name> <location> [weather] [timer]**')))
                     list_messages.append(list_message.id)
                 else:
                     listmsg += _("**Here's the current channels for {0}**\n\n").format(channel.mention)
