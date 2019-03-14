@@ -127,7 +127,7 @@ class Wild(commands.Cog):
                     dm_dict[user.id] = wilddmmsg.id
                 except:
                     continue
-            return dm_dict
+        return dm_dict
 
     @commands.group(aliases=['w'], invoke_without_command=True, case_insensitive=True)
     @checks.allowwildreport()
