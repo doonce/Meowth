@@ -98,6 +98,7 @@ class Research(commands.Cog):
         research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pokemon = False
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
+        await ctx.trigger_typing()
         while True:
             if details:
                 research_split = details.rsplit(",", 2)

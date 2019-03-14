@@ -110,6 +110,7 @@ class Wild(commands.Cog):
             pass
 
     async def send_dm_messages(self, ctx, wild_number, wild_details, wild_type_1, wild_type_2, content, embed, dm_dict):
+        embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.wildreportmsg.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             if not checks.dm_check(ctx, trainer):
                 continue
@@ -138,6 +139,7 @@ class Wild(commands.Cog):
         Meowth will insert the details (really just everything after the species name) into a
         Google maps link and post the link to the same channel the report was made in."""
         content = f"{pokemon} {location}"
+        await ctx.trigger_typing()
         await self._wild(ctx, content)
 
     async def _wild(self, ctx, content):
@@ -181,17 +183,17 @@ class Wild(commands.Cog):
         despawn = 3600
         wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=self.bot.config['wild_omw']))
         wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=self.bot.config['wild_despawn']))
-        wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
+        ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
         dm_dict = {}
-        dm_dict = await self.send_dm_messages(ctx, wild_number, wild_details, wild_types[0], wild_types[1], wildreportmsg.content, copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, wild_number, wild_details, wild_types[0], wild_types[1], ctx.wildreportmsg.content, copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
-        await wildreportmsg.add_reaction(self.bot.config['wild_omw'])
+        await ctx.wildreportmsg.add_reaction(self.bot.config['wild_omw'])
         await asyncio.sleep(0.25)
-        await wildreportmsg.add_reaction(self.bot.config['wild_despawn'])
+        await ctx.wildreportmsg.add_reaction(self.bot.config['wild_despawn'])
         await asyncio.sleep(0.25)
-        self.bot.guild_dict[message.guild.id]['wildreport_dict'][wildreportmsg.id] = {
+        self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'exp':time.time() + despawn,
-            'expedit': {"content":wildreportmsg.content, "embedcontent":expiremsg},
+            'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
             'reportmessage':message.id,
             'reportchannel':message.channel.id,
             'reportauthor':message.author.id,

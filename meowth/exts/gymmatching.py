@@ -209,11 +209,11 @@ class GymMatching(commands.Cog):
             gym_note = gym.get('notes', "")
             gym_alias = gym.get('alias', "")
             if gym_note:
-                gym_note = f"**Notes:** {gym_note}"
+                gym_note = f"\n**Notes:** {gym_note}"
             if gym_alias:
                 raid_details = gym_alias
             raid_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={gym_coords}"
-            gym_info = _("**Gym:** {0}\n{1}").format(raid_details, gym_note)
+            gym_info = _("**Gym:** {0}{1}").format(raid_details, gym_note)
             duplicate_raids = []
             for raid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
                 raid_address = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid]['address']

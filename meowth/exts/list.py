@@ -31,6 +31,7 @@ class Listing(commands.Cog):
         Works only in raid or city channels. Calls the interested, waiting, and here lists. Also prints
         the raid timer. In city channels, lists all active raids."""
         await utils.safe_delete(ctx.message)
+        await ctx.trigger_typing()
         if ctx.invoked_subcommand == None:
             listmsg = _('**Meowth!** ')
             temp_list = ""

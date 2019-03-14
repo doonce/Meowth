@@ -174,9 +174,8 @@ class Nest(commands.Cog):
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
         list_messages = []
-
+        await ctx.trigger_typing()
         await utils.safe_delete(message)
-
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
         if not pokemon:
             await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!nest <pokemon>**'), delete_after=10)
