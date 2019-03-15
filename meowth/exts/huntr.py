@@ -167,7 +167,7 @@ class Huntr(commands.Cog):
                     entered_raid = None
                     moveset = False
                     await utils.safe_delete(message)
-                    auto_report = True if int(ghegglevel) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['egglvls'] else False
+                    auto_report = True if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['egglvls'] else False
                 for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
                     channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('gymhuntrgps', None)
                     channel_address = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('address', None)
@@ -176,7 +176,7 @@ class Huntr(commands.Cog):
                     if channel_gps == huntrgps or channel_address == raid_details:
                         channel = self.bot.get_channel(channelid)
                         if self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['type'] == 'egg':
-                            await raid_cog._eggtoraid(ghpokeid.lower().strip(), channel, author=message.author, huntr=moveset)
+                            await raid_cog._eggtoraid(entered_raid.lower().strip(), channel, author=message.author, huntr=moveset)
                         raidmsg = await channel.get_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
                         if moveset and raidmsg.embeds[0].fields[2].name != moveset:
                             await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=entered_raid.title(), moves=moveset))
@@ -230,7 +230,7 @@ class Huntr(commands.Cog):
                         "gps":huntrgps,
                         "embed":raid_embed
                     }
-            if (message.author.id == 295116861920772098) and message.embeds and auto_wild:
+            if (message.author.id == 295116861920772098 or message.author.id == message.guild.me.id) and message.embeds and auto_wild:
                 wild_cog = self.bot.cogs.get('Wild')
                 if not wild_cog:
                     logger.error("Wild Cog not loaded")
@@ -402,16 +402,20 @@ class Huntr(commands.Cog):
                             await raid_msg.edit(embed=raid_embed)
                         await self.auto_counters(channel, moves)
                         return
+                print(reporttype)
                 if reporttype == "egg":
+                    print(1)
                     if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('egglvls', False):
                         raid_channel = await self.huntr_raidegg(ctx, egg_level, raid_details, raidexp, gps)
                         if embed and raid_channel:
                             await raid_channel.send(embed=embed)
+                        print(2)
                         return
                     else:
                         raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this egg!"
                         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! Level {egg_level} raid egg reported by {message.author.display_name}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                         pamsg = await message.channel.send(raidmsg, embed=embed)
+                        print(3)
                 elif reporttype == "raid":
                     if not utils.get_level(self.bot, entered_raid):
                         logger.error(f"{entered_raid} not in raid_json")
@@ -839,7 +843,8 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        description = "**Marilla Park.**\nMewtwo\n**CP:** 60540 - **Moves:** Confusion / Shadow Ball\n*Raid Ending: 0 hours 46 min 50 sec*"
+        tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
+        description = f"**Marilla Park.**\n{tier5}\n**CP:** 60540 - **Moves:** Confusion / Shadow Ball\n*Raid Ending: 0 hours 46 min 50 sec*"
         url = "https://gymhuntr.com/#34.008618,-118.49125"
         img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=1'
         huntrembed = discord.Embed(title=_('Level 5 Raid has started!'), description=description, url=url, colour=message.guild.me.colour)
@@ -881,6 +886,55 @@ class Huntr(commands.Cog):
         huntrmessage = await ctx.channel.send(embed=huntrembed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_huntr(ctx)
+
+    @commands.command(hidden=True)
+    @commands.has_permissions(manage_guild=True)
+    async def alarmraid(self, ctx):
+        author = ctx.author
+        guild = ctx.guild
+        message = ctx.message
+        channel = ctx.channel
+        await utils.safe_delete(message)
+        tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
+        huntrmessage = await ctx.channel.send(f"!raid {tier5}|Marilla Park|38m 00s|34.008618,-118.49125|Move 1 / Move 2")
+        ctx = await self.bot.get_context(huntrmessage)
+        await self.on_pokealarm(ctx)
+
+    @commands.command(hidden=True)
+    @commands.has_permissions(manage_guild=True)
+    async def alarmegg(self, ctx):
+        author = ctx.author
+        guild = ctx.guild
+        message = ctx.message
+        channel = ctx.channel
+        await utils.safe_delete(message)
+        huntrmessage = await ctx.channel.send(f"!raidegg 2|Marilla Park|38m 00s|34.008618,-118.49125")
+        ctx = await self.bot.get_context(huntrmessage)
+        await self.on_pokealarm(ctx)
+
+    @commands.command(hidden=True)
+    @commands.has_permissions(manage_guild=True)
+    async def alarmwild(self, ctx):
+        author = ctx.author
+        guild = ctx.guild
+        message = ctx.message
+        channel = ctx.channel
+        await utils.safe_delete(message)
+        huntrmessage = await ctx.channel.send("!wild Weedle|39.645742,-79.969087|19m 00s|Weather: None / IV: None")
+        ctx = await self.bot.get_context(huntrmessage)
+        await self.on_pokealarm(ctx)
+
+    @commands.command(hidden=True)
+    @commands.has_permissions(manage_guild=True)
+    async def alarmquest(self, ctx):
+        author = ctx.author
+        guild = ctx.guild
+        message = ctx.message
+        channel = ctx.channel
+        await utils.safe_delete(message)
+        huntrmessage = await ctx.channel.send("!research Marilla Park|34.008618,-118.49125|Catch 5 Pokemon Category Pokémon|Pikachu Encounter")
+        ctx = await self.bot.get_context(huntrmessage)
+        await self.on_pokealarm(ctx)
 
 def setup(bot):
     bot.add_cog(Huntr(bot))
