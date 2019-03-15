@@ -2649,14 +2649,14 @@ class Raid(commands.Cog):
             pbtlr_icon = 'https://www.pokebattler.com/favicon-32x32.png'
             if user:
                 try:
-                    data = data['attackers'][0]
+                    test_var = data['attackers'][0]
                 except KeyError:
                     await ctx.send(f"{ctx.author.mention} it looks like you haven't set up your pokebox yet! Sending you generic level 30 counters.")
                     url = url.replace(f"users/{user}", 'levels/30')
                     async with aiohttp.ClientSession() as sess:
                         async with sess.get(url) as resp:
                             data = await resp.json()
-                            data = data['attackers'][0]
+            data = data['attackers'][0]
             raid_cp = data['cp']
             atk_levels = '30'
             if movesetstr == "Unknown Moveset":

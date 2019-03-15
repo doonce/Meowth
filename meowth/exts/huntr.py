@@ -618,18 +618,18 @@ class Huntr(commands.Cog):
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         despawn = (int(huntrexp.split(' ')[0]) * 60) + int(huntrexp.split(' ')[2])
         if nearest_stop:
-            wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Nearest Pokestop: {nearest_stop} | Coordinates: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, nearest_stop=nearest_stop, location_details=wild_coordinates), embed=wild_embed)
+            ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Nearest Pokestop: {nearest_stop} | Coordinates: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, nearest_stop=nearest_stop, location_details=wild_coordinates), embed=wild_embed)
         else:
-            wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Coordinates: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_coordinates), embed=wild_embed)
-        dm_dict = await wild_cog.send_dm_messages(ctx, wild_number, nearest_stop, wild_types[0], wild_types[1], wildreportmsg.content, copy.deepcopy(wild_embed), dm_dict)
+            ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Coordinates: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_coordinates), embed=wild_embed)
+        dm_dict = await wild_cog.send_dm_messages(ctx, wild_number, nearest_stop, wild_types[0], wild_types[1], ctx.wildreportmsg.content, copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
-        await wildreportmsg.add_reaction(ctx.bot.config['wild_omw'])
+        await ctx.wildreportmsg.add_reaction(ctx.bot.config['wild_omw'])
         await asyncio.sleep(0.25)
-        await wildreportmsg.add_reaction(ctx.bot.config['wild_despawn'])
+        await ctx.wildreportmsg.add_reaction(ctx.bot.config['wild_despawn'])
         await asyncio.sleep(0.25)
-        ctx.bot.guild_dict[message.guild.id]['wildreport_dict'][wildreportmsg.id] = {
+        ctx.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'exp':time.time() + despawn,
-            'expedit': {"content":wildreportmsg.content, "embedcontent":expiremsg},
+            'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
             'reportmessage':message.id,
             'reportchannel':message.channel.id,
             'reportauthor':message.author.id,
