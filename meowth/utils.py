@@ -342,8 +342,7 @@ async def autocorrect(bot, entered_word, word_list, destination, author):
         return None
 
 def type_emoji(bot, guild, pokemon):
-    if not pokemon.form:
-        form = "none"
+    form = str(pokemon.form).lower()
     if pokemon.alolan:
         form = "alolan"
     types = bot.pkmn_info[pokemon.name.lower()]['forms'][form]['type']

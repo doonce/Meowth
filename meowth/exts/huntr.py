@@ -402,20 +402,16 @@ class Huntr(commands.Cog):
                             await raid_msg.edit(embed=raid_embed)
                         await self.auto_counters(channel, moves)
                         return
-                print(reporttype)
                 if reporttype == "egg":
-                    print(1)
                     if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('egglvls', False):
                         raid_channel = await self.huntr_raidegg(ctx, egg_level, raid_details, raidexp, gps)
                         if embed and raid_channel:
                             await raid_channel.send(embed=embed)
-                        print(2)
                         return
                     else:
                         raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this egg!"
                         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! Level {egg_level} raid egg reported by {message.author.display_name}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                         pamsg = await message.channel.send(raidmsg, embed=embed)
-                        print(3)
                 elif reporttype == "raid":
                     if not utils.get_level(self.bot, entered_raid):
                         logger.error(f"{entered_raid} not in raid_json")
