@@ -248,17 +248,17 @@ pkmn = Pokemon
 | -------- |:-------------:| ------------|
 | **!want settings** | *Want Channel* | Set active hours, mute, want list link. |
 | **!want** \<pkmn\> | *Want Channel* | Adds a Pokemon to your notifications. |
-| **!want** gym \<gym list\> | *Want Channel* and gymmatching | Add a gym to your notifications. |
-| **!want** stop \<stop list\> | *Want Channel* and gymmatching | Adds a pokestop to your notifications. |
-| **!want** item \<item list\> | *Want Channel* | Adds a item to your notifications. |
-| **!want** type \<type list\> | *Want Channel* | Adds a type to your notifications. |
-| **!want** boss \<boss list\> | *Want Channel* | Adds a boss to your notifications if want list unlinked. |
+| **!want gym** \<gym list\> | *Want Channel* and gymmatching | Add a gym to your notifications. |
+| **!want stop** \<stop list\> | *Want Channel* and gymmatching | Adds a pokestop to your notifications. |
+| **!want item** \<item list\> | *Want Channel* | Adds a item to your notifications. |
+| **!want type** \<type list\> | *Want Channel* | Adds a type to your notifications. |
+| **!want boss** \<boss list\> | *Want Channel* | Adds a boss to your notifications if want list unlinked. |
 | **!unwant** \<pkmn\> | *Want Channel* | Removes a Pokemon from your notifications. |
-| **!unwant** gym \<gym list\> | *Want Channel* and gymmatching | Removes a gym from your notifications. |
-| **!unwant** stop \<stop list\> | *Want Channel* and gymmatching | Removes a pokestop from your notifications. |
-| **!unwant** item \<item list\> | *Want Channel* | Removes a item from your notifications. |
-| **!unwant** type \<type list\> | *Want Channel* | Removes a type from your notifications. |
-| **!unwant** boss \<boss list\> | *Want Channel* | Removes a boss from your notifications if want list unlinked. |
+| **!unwant gym** \<gym list\> | *Want Channel* and gymmatching | Removes a gym from your notifications. |
+| **!unwant stop** \<stop list\> | *Want Channel* and gymmatching | Removes a pokestop from your notifications. |
+| **!unwant item** \<item list\> | *Want Channel* | Removes a item from your notifications. |
+| **!unwant type** \<type list\> | *Want Channel* | Removes a type from your notifications. |
+| **!unwant boss** \<boss list\> | *Want Channel* | Removes a boss from your notifications if want list unlinked. |
 | **!unwant all**  | *Want Channel* | Removes all notifications. |
 
 ### Reporting Commands:
