@@ -129,15 +129,12 @@ def load_config():
         Meowth.pkmn_list = pkmn_list
     pkmn_class.Pokemon.generate_lists(Meowth)
     Meowth.raid_list = utils.get_raidlist(Meowth)
+    Meowth.pkmn_info_path = pokemon_path_source
+    Meowth.raid_json_path = raid_path_source
 
-    return (pokemon_path_source, raid_path_source)
-
-
-pkmn_path, raid_path = load_config()
+load_config()
 
 Meowth.config = config
-Meowth.pkmn_info_path = pkmn_path
-Meowth.raid_json_path = raid_path
 Meowth.load_config = load_config
 
 required_exts = ['utilities', 'pokemon', 'configure']
@@ -220,13 +217,9 @@ Server Management
 """
 
 async def reset_raid_roles(bot):
-    boss_names = []
     await bot.wait_until_ready()
-    for boss in Meowth.raid_list:
-        boss = pkmn_class.Pokemon.get_pokemon(bot, boss)
-        boss = boss.name.lower()
-        if boss not in boss_names:
-            boss_names.append(boss)
+    boss_names = [str(word) for word in Meowth.raid_list]
+    boss_names = [word for word in boss_names if word.islower() and not word.isdigit()]
     for guild_id in guild_dict:
         guild = Meowth.get_guild(guild_id)
         if not guild:

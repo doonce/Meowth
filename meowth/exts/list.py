@@ -130,7 +130,7 @@ class Listing(commands.Cog):
                         type_str = ""
                         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
                         if pokemon:
-                            type_str = ''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))
+                            type_str = ''.join(utils.type_emoji(self.bot, guild, pokemon))
                         expirytext = _('{type_str} - Expires: {expiry}{is_assumed}').format(type_str=type_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
                     output += _('{raidchannel}{expiry_text}\n').format(raidchannel=rchan.mention, expiry_text=expirytext)
                     if ctx_totalcount:
@@ -615,7 +615,7 @@ class Listing(commands.Cog):
             pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
             p_name = pokemon.name.title()
             boss_list.append(p_name.lower())
-            p_type = utils.get_type(self.bot, message.guild, pokemon.id, pokemon.form, pokemon.alolan)
+            p_type = utils.type_emoji(self.bot, message.guild, pokemon)
             boss_dict[p_name.lower()] = {"type": "{}".format(''.join(p_type)), "total": 0, "maybe": 0, "coming": 0, "here": 0, "trainers":[]}
         boss_list.append('unspecified')
         trainer_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'])
@@ -1067,7 +1067,7 @@ class Listing(commands.Cog):
                     if wildauthor:
                         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pokemon'])
                         wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['wild_bullet']))
-                        wildmsg += _("**Pokemon**: {pokemon} {type}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=pokemon.name.title(), type=''.join(utils.get_type(self.bot, ctx.message.guild, pokemon.id, pokemon.form, pokemon.alolan)), location=wild_dict[wildid]['location'].title(), author=wildauthor.display_name, url=wild_dict[wildid].get('url', None))
+                        wildmsg += _("**Pokemon**: {pokemon} {type}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=pokemon.name.title(), type=''.join(utils.type_emoji(self.bot, ctx.message.guild, pokemon)), location=wild_dict[wildid]['location'].title(), author=wildauthor.display_name, url=wild_dict[wildid].get('url', None))
                 except:
                     continue
         if wildmsg:

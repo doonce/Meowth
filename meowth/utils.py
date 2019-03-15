@@ -341,17 +341,12 @@ async def autocorrect(bot, entered_word, word_list, destination, author):
         question = await destination.send(msg)
         return None
 
-def get_type(bot, guild, pkmn_number, form="none", alolan=False):
-    pkmn_number = int(pkmn_number)
-    pkmn_name = bot.pkmn_list[pkmn_number-1]
-    if not form:
+def type_emoji(bot, guild, pokemon):
+    if not pokemon.form:
         form = "none"
-    if alolan:
+    if pokemon.alolan:
         form = "alolan"
-    try:
-        types = bot.pkmn_info[pkmn_name]['forms'][form]['type']
-    except KeyError:
-        types = bot.pkmn_info[pkmn_name]['forms']["none"]['type']
+    types = bot.pkmn_info[pokemon.name.lower()]['forms'][form]['type']
     ret = []
     for type in types:
         ret.append(parse_emoji(guild, bot.config['type_id_dict'][type.lower()]))
@@ -479,20 +474,6 @@ async def expire_dm_reports(bot, dm_dict):
             dm_message = await dm_channel.get_message(dm_message)
             await dm_message.delete()
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-            pass
-
-async def edit_dm_messages(bot, content, embed, dm_dict):
-    for dm_user, dm_message in dm_dict.items():
-        try:
-            dm_user = bot.get_user(dm_user)
-            dm_channel = dm_user.dm_channel
-            if not dm_channel:
-                dm_channel = await dm_user.create_dm()
-            if not dm_user or not dm_channel:
-                continue
-            dm_message = await dm_channel.get_message(dm_message)
-            await dm_message.edit(content=content, embed=embed)
-        except:
             pass
 
 async def safe_delete(message):

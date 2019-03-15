@@ -121,7 +121,7 @@ class Research(commands.Cog):
                 other_reward = any(x in reward.lower() for x in reward_list)
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
                 if pokemon and not other_reward:
-                    reward = f"{string.capwords(reward, ' ')} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
+                    reward = f"{string.capwords(reward, ' ')} {''.join(utils.type_emoji(self.bot, guild, pokemon))}"
                     research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
                 else:
                     research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
@@ -198,7 +198,7 @@ class Research(commands.Cog):
                     other_reward = any(x in reward.lower() for x in reward_list)
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
                     if pokemon and not other_reward:
-                        reward = f"{string.capwords(reward, ' ')} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
+                        reward = f"{string.capwords(reward, ' ')} {''.join(utils.type_emoji(self.bot, guild, pokemon))}"
                         research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
                     else:
                         research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
@@ -323,6 +323,8 @@ class Research(commands.Cog):
         if not ctx.author.bot:
             research_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('research_reports', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['research_reports'] = research_reports
+
+        research_embed.description = research_embed.description + f"\n**Report:** [Jump to Message]({confirmation.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])

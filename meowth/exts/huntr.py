@@ -519,7 +519,7 @@ class Huntr(commands.Cog):
         for p in egg_info['pokemon']:
             pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, p)
             p_name = pokemon.name.title()
-            p_type = utils.get_type(ctx.bot, message.guild, pokemon.id, pokemon.form, pokemon.alolan)
+            p_type = utils.type_emoji(ctx.bot, message.guild, pokemon)
             boss_list.append((((p_name + ' (') + str(pokemon.id)) + ') ') + ''.join(p_type))
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=1'.format(str(egg_img))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
@@ -563,7 +563,7 @@ class Huntr(commands.Cog):
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
         raid_number = pokemon.id
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=pokemon.id, type=''.join(utils.get_type(ctx.bot, message.guild, pokemon.id, pokemon.form, pokemon.alolan)), inline=True))
+        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=pokemon.id, type=''.join(utils.type_emoji(ctx.bot, message.guild, pokemon)), inline=True))
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(ctx.bot, message.guild, utils.get_weaknesses(ctx.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
@@ -608,7 +608,7 @@ class Huntr(commands.Cog):
             if nearest_stop:
                 wild_details = nearest_stop
         wild_embed = discord.Embed(title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), url=wild_gmaps_link, colour=message.guild.me.colour)
-        wild_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.title(), pokemonnumber=str(wild_number), type=''.join(utils.get_type(ctx.bot, message.guild, pokemon.id, pokemon.form, pokemon.alolan))), inline=True)
+        wild_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.title(), pokemonnumber=str(wild_number), type=''.join(utils.type_emoji(ctx.bot, message.guild, pokemon))), inline=True)
         wild_embed.add_field(name='**Despawns in:**', value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=huntrexp.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
         if reporter == "huntr":
             wild_embed.add_field(name=huntrweather, value=_('Perform a scan to help find more by clicking [here]({huntrurl}).').format(huntrurl=wild_details), inline=False)
@@ -725,7 +725,7 @@ class Huntr(commands.Cog):
         self.event_loop.create_task(raid_cog.expiry_check(raid_channel))
         raid_embed.remove_field(2)
         raid_embed.remove_field(2)
-        await utils.edit_dm_messages(self.bot, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict)
+        self.bot.loop.create_task(raid_cog.edit_dm_messages(ctx, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict))
         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict)
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         if report_user:
@@ -787,7 +787,7 @@ class Huntr(commands.Cog):
         self.event_loop.create_task(raid_cog.expiry_check(raid_channel))
         raid_embed.remove_field(2)
         raid_embed.remove_field(2)
-        await utils.edit_dm_messages(self.bot, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict)
+        self.bot.loop.create_task(raid_cog.edit_dm_messages(ctx, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict))
         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict)
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         if report_user:
@@ -825,7 +825,7 @@ class Huntr(commands.Cog):
         other_reward = any(x in reward.lower() for x in reward_list)
         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
         if pokemon and not other_reward:
-            reward = f"{string.capwords(reward, ' ')} {''.join(utils.get_type(self.bot, guild, pokemon.id, pokemon.form, pokemon.alolan))}"
+            reward = f"{string.capwords(reward, ' ')} {''.join(utils.type_emoji(self.bot, guild, pokemon))}"
             research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
         else:
             research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, ' '), width=30)), inline=True)

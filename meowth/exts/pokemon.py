@@ -729,7 +729,7 @@ class Pokedex(commands.Cog):
                 form = "Normal"
             form_str = f"{form} {form_key}"
             form_list.append(form_str.strip())
-        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {''.join(utils.get_type(self.bot, ctx.guild, pokemon.id, pokemon.form, pokemon.alolan))}", value=pokemon.pokedex, inline=False)
+        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {''.join(utils.type_emoji(self.bot, ctx.guild, pokemon))}", value=pokemon.pokedex, inline=False)
         if len(forms) > 1 or key_needed:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
         if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:

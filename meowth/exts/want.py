@@ -30,6 +30,7 @@ class Want(commands.Cog):
 
         """Behind the scenes, Meowth tracks user !wants by
         storing information in a database."""
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -102,6 +103,7 @@ class Want(commands.Cog):
     @want.command(name='boss')
     @checks.allowwant()
     async def want_boss(self, ctx, *, bosses):
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -171,6 +173,7 @@ class Want(commands.Cog):
     @want.command(name='gym')
     @checks.allowwant()
     async def want_gym(self, ctx, *, gyms):
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -224,6 +227,7 @@ class Want(commands.Cog):
     @want.command(name='stop')
     @checks.allowwant()
     async def want_stop(self, ctx, *, stops):
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -280,6 +284,7 @@ class Want(commands.Cog):
         """
         Item List = incense, poke ball, great ball, ultra ball, master ball, potion, super potion, hyper potion, max potion, revive, max revive, razz berry, golden razz berry, nanab berry, pinap berry, silver pinap berry, fast tm, charged tm, rare candy, lucky egg, stardust, lure module, star piece, premium raid pass, egg incubator, super incubator, team medallion, sun stone, metal coat, dragon scale, up-grade, sinnoh stone
         """
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -329,6 +334,7 @@ class Want(commands.Cog):
     @want.command(name='type')
     @checks.allowwant()
     async def want_type(self, ctx, *, types):
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -378,11 +384,26 @@ class Want(commands.Cog):
     @want.command()
     @checks.allowwant()
     async def settings(self, ctx):
+        await ctx.trigger_typing()
         mute = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', False)
         start_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_start', None)
         end_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_end', None)
         user_link = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('link', True)
-        settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:\n**mute** - Will globally mute all Meowth DMs\n**unmute** - Will unmute if you have previously muted. Will then use active hours.\n**time** - Set your active times to receive DMs\n**link** - Link want list and boss list settings\n**cancel** - Stop changing settings\n\n**Current Settings**\nMuted: {mute}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}", delete_after=120)
+        if mute:
+            mute_str = f"Reply with **unmute** to unmute your DM alerts from Meowth"
+        else:
+            mute_str = f"Reply with **mute** to globally mute all DM alerts from Meowth"
+        if user_link:
+            link_str = f"Reply with **unlink** to unlink your **!want** list from your boss notifications. You are currently linked meaning your **!want** list controls all pokemon alerts. If you unlink, your **!want** list will be used for wild, research, and nest reports only and **!want boss <pokemon>** will be used for raid boss @mentions."
+        else:
+            link_str = f"Reply with **link** to link your **!want** list to your boss notifications. Your current **!want** list will be used for wild, research, raid @mentions, and nest reports."
+        settings_embed = discord.Embed(description=f"", colour=ctx.me.colour)
+        settings_embed.add_field(name=f"**{'unmute' if mute else 'mute'}**", value=f"{mute_str}", inline=False)
+        settings_embed.add_field(name=f"**time**", value=f"Reply with **time** to set your active hours. Your start time setting will be when Meowth can start sending DMs each day and your end time setting will be when Meowth will stop sending DMs each day. If you set these to **none**, meowth will DM you regardless of time unless DMs are muted.", inline=False)
+        settings_embed.add_field(name=f"**{'unlink' if user_link else 'link'}**", value=f"{link_str}", inline=False)
+        settings_embed.add_field(name=f"**cancel**", value=f"Reply with **cancel** to stop changing settings.", inline=False)
+        settings_embed.add_field(name="**Current Settings**", value=f"Muted: {mute}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}", inline=False)
+        settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:", embed=settings_embed, delete_after=120)
         try:
             reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author)))
         except asyncio.TimeoutError:
@@ -432,24 +453,16 @@ class Want(commands.Cog):
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_start'] = start_set.time()
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_end'] = end_set.time()
         elif reply.content.lower() == "link":
+            await ctx.send(f"{ctx.author.mention} - Your **!want** list controls all pokemon notifications.")
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link'] = True
+        elif reply.content.lower() == "unlink":
+            await ctx.send(f"{ctx.author.mention} - Your **!want** list controls everything but raid @mentions. Add raid @mentions through **!want boss <pokemon>**.")
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link'] = False
+        else:
+            await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+        if reply.content.lower() == "link" or reply.content.lower() == "unlink":
             add_list = []
             remove_list = []
-            await ctx.send(f"Would you like to link your want list to your boss list? Reply with to **link** or **unlink**.\n\n**link** - Will link your !want list to wild, research, nest, and raid @mentions. This is default behavior.\n**unlink** - Your !want list will be used for wild, research, nest only. Raid @mentions have to be added through **!want boss <pokemon>**\n\nExplanation: Some users want to control if they are alerted for all occurences of their want list, or only wilds. This setting allows you to fine tune your alerts.", delete_after=120)
-            try:
-                link_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
-            except asyncio.TimeoutError:
-                await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-                return
-            await utils.safe_delete(link_reply)
-            if link_reply.content.lower() == "link":
-                await ctx.send(f"{ctx.author.mention} - Your **!want** list controls all pokemon notifications.")
-                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link'] = True
-            elif link_reply.content.lower() == "unlink":
-                await ctx.send(f"{ctx.author.mention} - Your **!want** list controls everything but raid @mentions. Add raid @mentions through **!want boss <pokemon>**.")
-                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link'] = False
-            else:
-                await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-                return
             if self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link']:
                 user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('wants', [])
             else:
@@ -468,8 +481,6 @@ class Want(commands.Cog):
                 await ctx.author.remove_roles(*remove_list)
             if add_list:
                 await ctx.author.add_roles(*add_list)
-        else:
-            await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
 
 
     @commands.group(case_insensitive=True, invoke_without_command=True)
@@ -482,6 +493,7 @@ class Want(commands.Cog):
 
         """Behind the scenes, Meowth removes the user from
         the server role for the Pokemon species."""
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -509,6 +521,7 @@ class Want(commands.Cog):
     @unwant.command(name='boss')
     @checks.allowwant()
     async def unwant_boss(self, ctx, *, bosses):
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -542,6 +555,7 @@ class Want(commands.Cog):
 
         Usage: !unwant all
         All wants are removed."""
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -599,6 +613,7 @@ class Want(commands.Cog):
     @unwant.command(name='gym')
     @checks.allowwant()
     async def unwant_gym(self, ctx, *, gyms):
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -621,6 +636,7 @@ class Want(commands.Cog):
     @unwant.command(name='stop')
     @checks.allowwant()
     async def unwant_stop(self, ctx, *, stops):
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -643,6 +659,7 @@ class Want(commands.Cog):
     @unwant.command(name='item')
     @checks.allowwant()
     async def unwant_item(self, ctx, *, items):
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -661,6 +678,7 @@ class Want(commands.Cog):
     @unwant.command(name='type')
     @checks.allowwant()
     async def unwant_type(self, ctx, *, types):
+        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
