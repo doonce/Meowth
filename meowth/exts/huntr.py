@@ -670,7 +670,7 @@ class Huntr(commands.Cog):
                 pokemon = boss
                 entered_raid = boss.name.lower()
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
-        raid_embed = await self.make_raid_embed(ctx, entered_raid, raid_details, raidexp, gymhuntrgps, gymhuntrmoves)
+        raid_embed = await self.make_raid_embed(ctx, str(pokemon), raid_details, raidexp, gymhuntrgps, gymhuntrmoves)
         raid_channel = await raid_cog.create_raid_channel(ctx, entered_raid, raid_details, "raid")
         if not raid_channel:
             return

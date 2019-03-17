@@ -2533,6 +2533,7 @@ class Raid(commands.Cog):
         channel = ctx.channel
         guild = channel.guild
         user = self.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(ctx.author.id, {}).get('pokebattlerid', None)
+        wether = None
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
         form_list = [_('none'), _('alolan'), _('origin'), _('attack'), _('defense'), _('speed')]
