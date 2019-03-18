@@ -1101,7 +1101,7 @@ class Raid(commands.Cog):
         dm_dict = {}
         raid_embed.remove_field(2)
         raid_embed.remove_field(2)
-        dm_dict = await self.send_dm_messages(ctx, raid_details, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         return raid_channel
 
@@ -1244,7 +1244,7 @@ class Raid(commands.Cog):
             egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('egg_reports', 0) + 1
             self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['egg_reports'] = egg_reports
             dm_dict = {}
-            dm_dict = await self.send_dm_messages(ctx, raid_details, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict)
+            dm_dict = await self.send_dm_messages(ctx, raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
             self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
             if len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
@@ -2533,7 +2533,7 @@ class Raid(commands.Cog):
         channel = ctx.channel
         guild = channel.guild
         user = self.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(ctx.author.id, {}).get('pokebattlerid', None)
-        wether = None
+        weather = None
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
         form_list = [_('none'), _('alolan'), _('origin'), _('attack'), _('defense'), _('speed')]
@@ -3308,7 +3308,7 @@ class Raid(commands.Cog):
                     if boss.lower() in trainer_dict[trainer].get('interest', []):
                         boss_dict[boss]['total'] += int(trainer_dict[trainer]['count'])
                         channel_dict["boss"] += int(trainer_dict[trainer]['count'])
-        channel_dict["total"] = channel_dict["maybe"] + channel_dict["coming"] + channel_dict["here"]
+        channel_dict["total"] = channel_dict["maybe"] + channel_dict["coming"] + channel_dict["here"] + channel_dict["lobby"]
         return channel_dict, boss_dict
 
     async def _edit_party(self, channel, author=None):
@@ -3496,6 +3496,7 @@ class Raid(commands.Cog):
         await self._edit_party(channel, author)
 
     async def lobby_cleanup(self):
+        await self.bot.wait_until_ready()
         for guild in self.bot.guilds:
             guild_raids = copy.deepcopy(self.bot.guild_dict[guild.id]['raidchannel_dict'])
             for raid in guild_raids:

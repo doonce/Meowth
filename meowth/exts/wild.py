@@ -185,7 +185,7 @@ class Wild(commands.Cog):
         wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=self.bot.config['wild_despawn']))
         ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
         dm_dict = {}
-        dm_dict = await self.send_dm_messages(ctx, wild_number, wild_details, wild_types[0], wild_types[1], ctx.wildreportmsg.content, copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, wild_number, wild_details, wild_types[0], wild_types[1], ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
         await ctx.wildreportmsg.add_reaction(self.bot.config['wild_omw'])
         await asyncio.sleep(0.25)

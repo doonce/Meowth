@@ -86,21 +86,8 @@ class Listing(commands.Cog):
                     end = datetime.datetime.utcfromtimestamp(rc_d[r]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
                     output = ''
                     start_str = ''
-                    ctx_herecount = 0
-                    ctx_comingcount = 0
-                    ctx_maybecount = 0
-                    ctx_lobbycount = 0
                     channel_dict, boss_dict = await raid_cog._get_party(rchan)
-                    ctx_totalcount = channel_dict['total']
-                    ctx_herecount = channel_dict['here']
-                    ctx_comingcount = channel_dict['coming']
-                    ctx_maybecount = channel_dict['maybe']
-                    ctx_lobbycount = channel_dict['lobby']
-                    ctx_bluecount = channel_dict['mystic']
-                    ctx_redcount = channel_dict['valor']
-                    ctx_yellowcount = channel_dict['instinct']
-                    ctx_greycount = channel_dict['unknown']
-                    if not ctx_totalcount and "all" not in ctx.message.content.lower():
+                    if not channel_dict['total'] and "all" not in ctx.message.content.lower():
                         return None
                     if rc_d[r]['manual_timer'] == False:
                         assumed_str = _(' (assumed)')
@@ -132,9 +119,33 @@ class Listing(commands.Cog):
                         if pokemon:
                             type_str = ''.join(utils.type_emoji(self.bot, guild, pokemon))
                         expirytext = _('{type_str} - Expires: {expiry}{is_assumed}').format(type_str=type_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                    output += _('{raidchannel}{expiry_text}\n').format(raidchannel=rchan.mention, expiry_text=expirytext)
-                    if ctx_totalcount:
-                        output += _('Maybe: **{interestcount}** | Coming: **{comingcount}** | Here: **{herecount}** | Lobby: **{lobbycount}** | {blue_emoji}: **{mystic}** | {red_emoji}: **{valor}** | {yellow_emoji}: **{instinct}** | {grey_emoji}: **{unknown}**{start_str}\n').format(interestcount=ctx_maybecount, comingcount=ctx_comingcount, herecount=ctx_herecount, lobbycount=ctx_lobbycount, blue_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic']), mystic=ctx_bluecount, red_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor']), valor=ctx_redcount, instinct=ctx_yellowcount, yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, self.bot.config['unknown']), unknown=ctx_greycount, start_str=start_str)
+                    output += f"{rchan.mention}{expirytext}\n"
+                    if channel_dict['total']:
+                        output += f"Total: **{channel_dict['total']}**"
+                    if channel_dict['maybe']:
+                        output += f" | Maybe: **{channel_dict['maybe']}**"
+                    if channel_dict['coming']:
+                        output += f" | Coming: **{channel_dict['coming']}**"
+                    if channel_dict['here']:
+                        output += f" | Here: **{channel_dict['here']}**"
+                    if channel_dict['lobby']:
+                        output += f" | Lobby: **{channel_dict['lobby']}**"
+                    if channel_dict['mystic']:
+                        emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic'])
+                        output += f" | {emoji}: **{channel_dict['mystic']}**"
+                    if channel_dict['valor']:
+                        emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor'])
+                        output += f" | {emoji}: **{channel_dict['valor']}**"
+                    if channel_dict['instinct']:
+                        emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct'])
+                        output += f" | {emoji}: **{channel_dict['instinct']}**"
+                    if channel_dict['unknown']:
+                        emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+                        output += f" | {emoji}: **{channel_dict['unknown']}**"
+                    if start_str:
+                        output += f"{start_str}\n"
+                    else:
+                        output += f"\n"
                     return output
 
                 if raid_dict:
