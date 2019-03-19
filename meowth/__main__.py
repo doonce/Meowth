@@ -157,38 +157,33 @@ for ext in meowth_exts:
 async def _load(ctx, *extensions):
     for ext in extensions:
         try:
-            ctx.bot.unload_extension(f"meowth.exts.{ext}")
+            if f"meowth.exts.{ext}" in Meowth.extensions:
+                ctx.bot.reload_extension(f"meowth.exts.{ext}")
+                await ctx.send(_('**Extension {ext} Reloaded.**\n').format(ext=ext))
+                return
             ctx.bot.load_extension(f"meowth.exts.{ext}")
+            await ctx.send(_('**Extension {ext} Loaded.**\n').format(ext=ext))
         except Exception as e:
             error_title = _('**Error when loading extension')
             await ctx.send(f'{error_title} {ext}:**\n'
                            f'{type(e).__name__}: {e}')
-        else:
-            await ctx.send(_('**Extension {ext} Loaded.**\n').format(ext=ext))
 
 @Meowth.command(name='unload')
 @checks.is_owner()
 async def _unload(ctx, *extensions):
-    exts = [e for e in extensions if f"exts.{e}" in Meowth.extensions]
+    exts = [e for e in extensions if f"meowth.exts.{e}" in Meowth.extensions]
     for ext in exts:
-        ctx.bot.unload_extension(f"exts.{ext}")
+        try:
+            ctx.bot.unload_extension(f"meowth.exts.{ext}")
+        except Exception as e:
+            error_title = _('**Error when loading extension')
+            await ctx.send(f'{error_title} {ext}:**\n'
+                           f'{type(e).__name__}: {e}')
     s = 's' if len(exts) > 1 else ''
-    await ctx.send(_("**Extension{plural} {est} unloaded.**\n").format(plural=s, est=', '.join(exts)))
-
-# Given a User, check that it is Meowth's master
-
-def check_master(user):
-    return str(user) == config['master']
-
-def check_server_owner(user, guild):
-    return str(user) == str(guild.owner)
-
-# Given a violating message, raise an exception
-# reporting unauthorized use of admin commands
-
-def raise_admin_violation(message):
-    raise Exception(_('Received admin command {command} from unauthorized user, {user}!').format(
-        command=message.content, user=message.author))
+    if exts:
+        await ctx.send(_("**Extension{plural} {est} unloaded.**\n").format(plural=s, est=', '.join(exts)))
+    else:
+        await ctx.send(_("**Extension{plural} {est} not loaded.**\n").format(plural=s, est=', '.join(exts)))
 
 @Meowth.command(hidden=True)
 async def template(ctx, *, sample_message):

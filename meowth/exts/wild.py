@@ -24,7 +24,7 @@ class Wild(commands.Cog):
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         try:
-            message = await channel.get_message(payload.message_id)
+            message = await channel.fetch_message(payload.message_id)
         except (discord.errors.NotFound, AttributeError, discord.Forbidden):
             return
         guild = message.guild
@@ -64,7 +64,7 @@ class Wild(commands.Cog):
                         report_channel = self.bot.get_channel(wild_dict[reportid].get('reportchannel'))
                         if report_channel:
                             try:
-                                report_message = await report_channel.get_message(reportid)
+                                report_message = await report_channel.fetch_message(reportid)
                                 self.bot.loop.create_task(self.expire_wild(report_message))
                                 count += 1
                                 continue
@@ -99,7 +99,7 @@ class Wild(commands.Cog):
         except (discord.errors.NotFound, KeyError):
             pass
         try:
-            user_message = await channel.get_message(wild_dict[message.id]['reportmessage'])
+            user_message = await channel.fetch_message(wild_dict[message.id]['reportmessage'])
             await utils.safe_delete(user_message)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
@@ -225,7 +225,7 @@ class Wild(commands.Cog):
         if not wild_dict:
             return
         if report_message and int(report_message) in wild_dict.keys():
-            report_message = await channel.get_message(report_message)
+            report_message = await channel.fetch_message(report_message)
             await self.expire_wild(report_message)
             return
         rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all wild reports?'))
@@ -241,7 +241,7 @@ class Wild(commands.Cog):
         elif res.emoji == self.bot.config['answer_yes']:
             await utils.safe_delete(rusure)
             for report in wild_dict:
-                report_message = await channel.get_message(report)
+                report_message = await channel.fetch_message(report)
                 await self.expire_wild(report_message)
             confirmation = await channel.send(_('Wilds reset.'), delete_after=10)
             return

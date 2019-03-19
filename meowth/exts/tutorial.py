@@ -73,7 +73,7 @@ class Tutorial(commands.Cog):
                             if not overwrite[0].bot:
                                 newbie = overwrite[0]
                     try:
-                        tutorial_message = await channel_exists.get_message(tutorial_dict[channelid])
+                        tutorial_message = await channel_exists.fetch_message(tutorial_dict[channelid])
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                         pass
                     if tutorial_message:
@@ -87,7 +87,7 @@ class Tutorial(commands.Cog):
                             ctx.prefix = prefix[-1]
                         await ctx.tutorial_channel.send(f"Hey {newbie.mention} I think we were cut off due to a disconnection, let's try to start over.")
                         ctx.bot.loop.create_task(self._tutorial(ctx))
-        logger.info(f"------ END - {count} Tutorials Cleaned ------")                
+        logger.info(f"------ END - {count} Tutorials Cleaned ------")
 
     async def want_tutorial(self, ctx, config):
         report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})

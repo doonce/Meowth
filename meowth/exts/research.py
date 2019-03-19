@@ -39,7 +39,7 @@ class Research(commands.Cog):
                         report_channel = self.bot.get_channel(research_dict[reportid].get('reportchannel'))
                         if report_channel:
                             try:
-                                report_message = await report_channel.get_message(reportid)
+                                report_message = await report_channel.fetch_message(reportid)
                                 self.bot.loop.create_task(self.expire_research(report_message))
                                 count += 1
                                 continue
@@ -67,7 +67,7 @@ class Research(commands.Cog):
         research_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['questreport_dict'])
         await utils.safe_delete(message)
         try:
-            user_message = await channel.get_message(research_dict[message.id]['reportmessage'])
+            user_message = await channel.fetch_message(research_dict[message.id]['reportmessage'])
             await utils.safe_delete(user_message)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
             pass
@@ -362,7 +362,7 @@ class Research(commands.Cog):
         if not research_dict:
             return
         if report_message and int(report_message) in research_dict.keys():
-            report_message = await channel.get_message(report_message)
+            report_message = await channel.fetch_message(report_message)
             await self.expire_research(report_message)
             return
         rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all research reports?'))
@@ -378,7 +378,7 @@ class Research(commands.Cog):
         elif res.emoji == self.bot.config['answer_yes']:
             await utils.safe_delete(rusure)
             for report in research_dict:
-                report_message = await channel.get_message(report)
+                report_message = await channel.fetch_message(report)
                 await self.expire_research(report_message)
             confirmation = await channel.send(_('Research reset.'), delete_after=10)
             return

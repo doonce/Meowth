@@ -70,7 +70,7 @@ class Nest(commands.Cog):
                         for report in nest_dict[channel][nest]['reports']:
                             if nest_dict[channel][nest]['reports'][report].get('exp', 0) <= time.time():
                                 try:
-                                    report_message = await report_channel.get_message(report)
+                                    report_message = await report_channel.fetch_message(report)
                                     if new_migration and nest_dict[channel][nest]['reports'][report]['reporttime'] > migration_utc:
                                         self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
                                         self.bot.loop.create_task(self.edit_nest_reports(report_message, migration_local, nest_dict[channel][nest]['reports'][report]['dm_dict']))
@@ -104,7 +104,7 @@ class Nest(commands.Cog):
                     dm_channel = await dm_user.create_dm()
                 if not dm_user or not dm_channel:
                     continue
-                dm_message = await dm_channel.get_message(dm_message)
+                dm_message = await dm_channel.fetch_message(dm_message)
                 await dm_message.edit(content=dm_message.content, embed=nest_embed)
         except:
             pass
@@ -507,7 +507,7 @@ class Nest(commands.Cog):
                     continue
                 for report in nest_dict[nest]['reports']:
                     try:
-                        report_message = await channel.get_message(report)
+                        report_message = await channel.fetch_message(report)
                         await utils.safe_delete(report_message)
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                         pass
@@ -568,7 +568,7 @@ class Nest(commands.Cog):
                 for report in nest_dict[nest]['reports']:
                     self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report]['exp'] = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
                     try:
-                        report_message = await channel.get_message(report)
+                        report_message = await channel.fetch_message(report)
                     except:
                         continue
                     await self.edit_nest_reports(report_message, migration_local, nest_dict[nest]['reports'][report]['dm_dict'])

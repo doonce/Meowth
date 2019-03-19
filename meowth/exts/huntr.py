@@ -59,13 +59,13 @@ class Huntr(commands.Cog):
                                 pass
                 for messageid in report_delete_dict.keys():
                     try:
-                        report_message = await report_delete_dict[messageid]['channel'].get_message(messageid)
+                        report_message = await report_delete_dict[messageid]['channel'].fetch_message(messageid)
                         await utils.safe_delete(report_message)
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
                         pass
                 for messageid in report_edit_dict.keys():
                     try:
-                        report_message = await report_edit_dict[messageid]['channel'].get_message(messageid)
+                        report_message = await report_edit_dict[messageid]['channel'].fetch_message(messageid)
                         await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=report_message.embeds[0].colour.value))
                         await report_message.clear_reactions()
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError, KeyError):
@@ -96,7 +96,7 @@ class Huntr(commands.Cog):
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         try:
-            message = await channel.get_message(payload.message_id)
+            message = await channel.fetch_message(payload.message_id)
         except (discord.errors.NotFound, AttributeError, discord.Forbidden):
             return
         ctx = await self.bot.get_context(message)
@@ -177,7 +177,7 @@ class Huntr(commands.Cog):
                         channel = self.bot.get_channel(channelid)
                         if self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['type'] == 'egg':
                             await raid_cog._eggtoraid(entered_raid.lower().strip(), channel, author=message.author, huntr=moveset)
-                        raidmsg = await channel.get_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
+                        raidmsg = await channel.fetch_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
                         if moveset and raidmsg.embeds[0].fields[2].name != moveset:
                             await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=entered_raid.title(), moves=moveset))
                         return
@@ -379,11 +379,15 @@ class Huntr(commands.Cog):
                 for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
                     channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('gymhuntrgps', None)
                     channel_address = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('address', None)
+                    channel_level = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('egglevel', None)
+                    channel_type = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('type', None)
+                    if channel_level == "EX":
+                        continue
                     if channel_gps == gps or channel_address == raid_details:
                         channel = self.bot.get_channel(channelid)
                         if embed and channel:
                             await channel.send(embed=embed)
-                        if self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('type', None) == 'egg':
+                        if channel_type == 'egg':
                             if not utils.get_level(self.bot, entered_raid):
                                 logger.error(f"{entered_raid} not in raid_json")
                                 return
@@ -391,7 +395,7 @@ class Huntr(commands.Cog):
                         elif channel and moves:
                             await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=entered_raid.title(), moves=moves))
                             try:
-                                raid_msg = await channel.get_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
+                                raid_msg = await channel.fetch_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
                             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                                 return
                             raid_embed = raid_msg.embeds[0]
@@ -476,7 +480,7 @@ class Huntr(commands.Cog):
             logger.error("Raid Cog not loaded")
             return
         try:
-            ctrs_message = await channel.get_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrsmessage'])
+            ctrs_message = await channel.fetch_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrsmessage'])
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             ctrs_message = None
         except AttributeError:

@@ -59,7 +59,7 @@ class Listing(commands.Cog):
                 list_dict = self.bot.guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
                 for msg in list_dict:
                     try:
-                        msg = await ctx.channel.get_message(msg)
+                        msg = await ctx.channel.fetch_message(msg)
                         await utils.safe_delete(msg)
                     except:
                         pass
@@ -216,7 +216,7 @@ class Listing(commands.Cog):
                 meetup = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('meetup', {})
                 raid_message = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidmessage']
                 try:
-                    raid_message = await channel.get_message(raid_message)
+                    raid_message = await channel.fetch_message(raid_message)
                 except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                     raid_message = None
                 rc_d = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]
@@ -224,7 +224,7 @@ class Listing(commands.Cog):
                 list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
                 for msg in list_dict:
                     try:
-                        msg = await ctx.channel.get_message(msg)
+                        msg = await ctx.channel.fetch_message(msg)
                         await utils.safe_delete(msg)
                     except:
                         pass
@@ -907,7 +907,7 @@ class Listing(commands.Cog):
                 try:
                     offer_channel = self.bot.get_channel(
                         target_trades[offer_id]['report_channel_id'])
-                    offer_message = await offer_channel.get_message(offer_id)
+                    offer_message = await offer_channel.fetch_message(offer_id)
                     offer_url = offer_message.jump_url
                 except:
                     continue
@@ -943,7 +943,7 @@ class Listing(commands.Cog):
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('research', {}).setdefault(ctx.channel.id, [])
         for msg in list_dict:
             try:
-                msg = await ctx.channel.get_message(msg)
+                msg = await ctx.channel.fetch_message(msg)
                 await utils.safe_delete(msg)
             except:
                 pass
@@ -981,7 +981,7 @@ class Listing(commands.Cog):
             pokemon = None
             if research_dict[questid]['reportchannel'] == ctx.message.channel.id:
                 try:
-                    questreportmsg = await ctx.message.channel.get_message(questid)
+                    questreportmsg = await ctx.message.channel.fetch_message(questid)
                     questauthor = ctx.channel.guild.get_member(research_dict[questid]['reportauthor'])
                     if questauthor:
                         quest = research_dict[questid]['quest']
@@ -1045,7 +1045,7 @@ class Listing(commands.Cog):
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('wild', {}).setdefault(ctx.channel.id, [])
         for msg in list_dict:
             try:
-                msg = await ctx.channel.get_message(msg)
+                msg = await ctx.channel.fetch_message(msg)
                 await utils.safe_delete(msg)
             except:
                 pass
@@ -1073,7 +1073,7 @@ class Listing(commands.Cog):
         for wildid in wild_dict:
             if wild_dict[wildid]['reportchannel'] == ctx.message.channel.id:
                 try:
-                    wildreportmsg = await ctx.message.channel.get_message(wildid)
+                    wildreportmsg = await ctx.message.channel.fetch_message(wildid)
                     wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['reportauthor'])
                     if wildauthor:
                         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pokemon'])
@@ -1102,7 +1102,7 @@ class Listing(commands.Cog):
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('nest', {}).setdefault(ctx.channel.id, [])
         for msg in list_dict:
             try:
-                msg = await ctx.channel.get_message(msg)
+                msg = await ctx.channel.fetch_message(msg)
                 await utils.safe_delete(msg)
             except:
                 pass
