@@ -72,9 +72,7 @@ except OSError:
             pickle.dump(Meowth.guild_dict, fd, (- 1))
         logger.info('Serverdict Created')
 
-
 guild_dict = Meowth.guild_dict
-
 
 config = {}
 pkmn_info = {}
@@ -152,6 +150,10 @@ for ext in meowth_exts:
         if 'debug' in sys.argv[1:]:
             print(f'Loaded {ext} extension.')
 
+"""
+Admin Commands
+"""
+
 @Meowth.command(name='load')
 @checks.is_owner()
 async def _load(ctx, *extensions):
@@ -185,92 +187,138 @@ async def _unload(ctx, *extensions):
     else:
         await ctx.send(_("**Extension{plural} {est} not loaded.**\n").format(plural=s, est=', '.join(exts)))
 
-@Meowth.command(hidden=True)
-async def template(ctx, *, sample_message):
-    """Sample template messages to see how they would appear."""
-    embed = None
-    (msg, errors) = utils.do_template(sample_message, ctx.author, ctx.guild)
-    if errors:
-        if msg.startswith('[') and msg.endswith(']'):
-            embed = discord.Embed(
-                colour=ctx.guild.me.colour, description=msg[1:(- 1)])
-            embed.add_field(name=_('Warning'), value=_('The following could not be found:\n{}').format(
-                '\n'.join(errors)))
-            await ctx.channel.send(embed=embed)
-        else:
-            msg = _('{}\n\n**Warning:**\nThe following could not be found: {}').format(
-                msg, ', '.join(errors))
-            await ctx.channel.send(msg)
-    elif msg.startswith('[') and msg.endswith(']'):
-        await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=msg[1:(- 1)].format(user=ctx.author.mention)))
+@Meowth.command(hidden=True, name="eval")
+@checks.is_owner()
+async def _eval(ctx, *, body: str):
+    """Evaluates a code"""
+    env = {
+        'bot': ctx.bot,
+        'ctx': ctx,
+        'channel': ctx.channel,
+        'author': ctx.author,
+        'guild': ctx.guild,
+        'message': ctx.message
+    }
+    def cleanup_code(content):
+        """Automatically removes code blocks from the code."""
+        # remove ```py\n```
+        if content.startswith('```') and content.endswith('```'):
+            return '\n'.join(content.split('\n')[1:-1])
+        # remove `foo`
+        return content.strip('` \n')
+    env.update(globals())
+    body = cleanup_code(body)
+    stdout = io.StringIO()
+    to_compile = (f'async def func():\n{textwrap.indent(body, "  ")}')
+    try:
+        exec(to_compile, env)
+    except Exception as e:
+        return await ctx.send(f'```py\n{e.__class__.__name__}: {e}\n```')
+    func = env['func']
+    try:
+        with redirect_stdout(stdout):
+            ret = await func()
+    except Exception as e:
+        value = stdout.getvalue()
+        await ctx.send(f'```py\n{value}{traceback.format_exc()}\n```')
     else:
-        await ctx.channel.send(msg.format(user=ctx.author.mention))
+        value = stdout.getvalue()
+        try:
+            await ctx.message.add_reaction(config['command_done'])
+        except:
+            pass
+        if ret is None:
+            if value:
+                paginator = commands.Paginator(prefix='```py')
+                for line in textwrap.wrap(value, 80):
+                    paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                for p in paginator.pages:
+                    await ctx.send(p)
+        else:
+            ctx.bot._last_result = ret
+            await ctx.send(f'```py\n{value}{ret}\n```')
 
+@Meowth.command()
+@checks.is_owner()
+async def save(ctx):
+    """Save persistent state to file.
+
+    Usage: !save
+    File path is relative to current directory."""
+    try:
+        await _save()
+        logger.info('CONFIG SAVED')
+    except Exception as err:
+        await _print(Meowth.owner, _('Error occured while trying to save!'))
+        await _print(Meowth.owner, err)
+
+async def _save():
+    #human-readable format, used for backup only for now
+    with tempfile.NamedTemporaryFile('w', dir=os.path.join('data'), delete=False, encoding="utf-8") as tf:
+        tf.write(str(guild_dict))
+        jstempname = tf.name
+    try:
+        os.remove(os.path.join('data', 'guilddict_backup.txt'))
+    except OSError as e:
+        pass
+    try:
+        os.rename(os.path.join('data', 'guilddict.txt'), os.path.join('data', 'guilddict_backup.txt'))
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+    os.rename(jstempname, os.path.join('data', 'guilddict.txt'))
+    #pickle, used for bot
+    with tempfile.NamedTemporaryFile('wb', dir=os.path.dirname(os.path.join('data', 'serverdict')), delete=False) as tf:
+        pickle.dump(guild_dict, tf, (- 1))
+        tempname = tf.name
+    try:
+        os.remove(os.path.join('data', 'serverdict_backup'))
+    except OSError as e:
+        pass
+    try:
+        os.rename(os.path.join('data', 'serverdict'), os.path.join('data', 'serverdict_backup'))
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+    os.rename(tempname, os.path.join('data', 'serverdict'))
+
+Meowth.save = _save
+
+@Meowth.command()
+@checks.is_owner()
+async def restart(ctx):
+    """Restart after saving.
+
+    Usage: !restart.
+    Calls the save function and restarts Meowth."""
+    try:
+        await _save()
+    except Exception as err:
+        await _print(Meowth.owner, _('Error occured while trying to save!'))
+        await _print(Meowth.owner, err)
+    await ctx.channel.send(_('Restarting...'))
+    Meowth._shutdown_mode = 26
+    await Meowth.logout()
+
+@Meowth.command()
+@checks.is_owner()
+async def exit(ctx):
+    """Exit after saving.
+
+    Usage: !exit.
+    Calls the save function and quits the script."""
+    try:
+        await _save()
+    except Exception as err:
+        await _print(Meowth.owner, _('Error occured while trying to save!'))
+        await _print(Meowth.owner, err)
+    await ctx.channel.send(_('Shutting down...'))
+    Meowth._shutdown_mode = 0
+    await Meowth.logout()
 
 """
 Server Management
 """
-
-async def reset_raid_roles(bot):
-    await bot.wait_until_ready()
-    boss_names = [str(word) for word in Meowth.raid_list]
-    boss_names = [word for word in boss_names if word.islower() and not word.isdigit()]
-    for guild_id in guild_dict:
-        guild = Meowth.get_guild(guild_id)
-        if not guild:
-            continue
-        for member in guild.members:
-            if guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True):
-                user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-            else:
-                user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-            for role in member.roles:
-                if role.name.lower() in Meowth.pkmn_list:
-                    number = utils.get_number(Meowth, role.name.lower())
-                    if number not in user_wants:
-                        user_wants.append(number)
-        for role in guild.roles:
-            if role.name not in boss_names and role.name.lower() in Meowth.pkmn_list and role != guild.me.top_role:
-                try:
-                    await role.delete()
-                    await asyncio.sleep(0.5)
-                except:
-                    pass
-        for boss in boss_names:
-            role = discord.utils.get(guild.roles, name=boss)
-            if not role:
-                try:
-                    role = await guild.create_role(name = boss, hoist = False, mentionable = True)
-                except discord.errors.Forbidden:
-                    pass
-                await asyncio.sleep(0.5)
-        for trainer in guild_dict[guild.id]['trainers']:
-            add_list = []
-            remove_list = []
-            user = guild.get_member(trainer)
-            if not user or user.bot:
-                continue
-            user_link = guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-            if user_link:
-                user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-            else:
-                user_wants = guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-            want_names = [utils.get_name(bot, x) for x in user_wants]
-            want_names = [x.lower() for x in want_names]
-            for want in want_names:
-                if want in bot.raid_list:
-                    role = discord.utils.get(guild.roles, name=want)
-                    if role and role not in user.roles:
-                        add_list.append(role)
-            for role in user.roles:
-                if role.name.lower() not in want_names and role.name.lower() in bot.pkmn_list:
-                    remove_list.append(role)
-            if add_list:
-                await user.add_roles(*add_list)
-            if remove_list:
-                await user.remove_roles(*remove_list)
-
-Meowth.reset_raid_roles = reset_raid_roles
 
 async def guild_cleanup(loop=True):
     while (not Meowth.is_closed()):
@@ -300,7 +348,6 @@ async def guild_cleanup(loop=True):
         except Exception as err:
             logger.info('Server_Cleanup - SAVING FAILED' + err)
         logger.info('Server_Cleanup ------ END ------')
-        await reset_raid_roles(Meowth)
         await asyncio.sleep(7200)
         continue
 
@@ -314,7 +361,6 @@ async def _print(owner, message):
 async def maint_start():
     try:
         event_loop.create_task(guild_cleanup())
-        await reset_raid_roles(Meowth)
         logger.info('Maintenance Tasks Started')
     except KeyboardInterrupt as e:
         tasks.cancel()
@@ -449,137 +495,8 @@ async def on_message(message):
         await Meowth.process_commands(message)
 
 """
-Admin Commands
+Miscellaneous
 """
-
-@Meowth.command(hidden=True, name="eval")
-@checks.is_owner()
-async def _eval(ctx, *, body: str):
-    """Evaluates a code"""
-    env = {
-        'bot': ctx.bot,
-        'ctx': ctx,
-        'channel': ctx.channel,
-        'author': ctx.author,
-        'guild': ctx.guild,
-        'message': ctx.message
-    }
-    def cleanup_code(content):
-        """Automatically removes code blocks from the code."""
-        # remove ```py\n```
-        if content.startswith('```') and content.endswith('```'):
-            return '\n'.join(content.split('\n')[1:-1])
-        # remove `foo`
-        return content.strip('` \n')
-    env.update(globals())
-    body = cleanup_code(body)
-    stdout = io.StringIO()
-    to_compile = (f'async def func():\n{textwrap.indent(body, "  ")}')
-    try:
-        exec(to_compile, env)
-    except Exception as e:
-        return await ctx.send(f'```py\n{e.__class__.__name__}: {e}\n```')
-    func = env['func']
-    try:
-        with redirect_stdout(stdout):
-            ret = await func()
-    except Exception as e:
-        value = stdout.getvalue()
-        await ctx.send(f'```py\n{value}{traceback.format_exc()}\n```')
-    else:
-        value = stdout.getvalue()
-        try:
-            await ctx.message.add_reaction(config['command_done'])
-        except:
-            pass
-        if ret is None:
-            if value:
-                paginator = commands.Paginator(prefix='```py')
-                for line in textwrap.wrap(value, 80):
-                    paginator.add_line(line.rstrip().replace('`', '\u200b`'))
-                for p in paginator.pages:
-                    await ctx.send(p)
-        else:
-            ctx.bot._last_result = ret
-            await ctx.send(f'```py\n{value}{ret}\n```')
-
-@Meowth.command()
-@checks.is_owner()
-async def save(ctx):
-    """Save persistent state to file.
-
-    Usage: !save
-    File path is relative to current directory."""
-    try:
-        await _save()
-        logger.info('CONFIG SAVED')
-    except Exception as err:
-        await _print(Meowth.owner, _('Error occured while trying to save!'))
-        await _print(Meowth.owner, err)
-
-async def _save():
-    #human-readable format, used for backup only for now
-    with tempfile.NamedTemporaryFile('w', dir=os.path.join('data'), delete=False, encoding="utf-8") as tf:
-        tf.write(str(guild_dict))
-        jstempname = tf.name
-    try:
-        os.remove(os.path.join('data', 'guilddict_backup.txt'))
-    except OSError as e:
-        pass
-    try:
-        os.rename(os.path.join('data', 'guilddict.txt'), os.path.join('data', 'guilddict_backup.txt'))
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-    os.rename(jstempname, os.path.join('data', 'guilddict.txt'))
-    #pickle, used for bot
-    with tempfile.NamedTemporaryFile('wb', dir=os.path.dirname(os.path.join('data', 'serverdict')), delete=False) as tf:
-        pickle.dump(guild_dict, tf, (- 1))
-        tempname = tf.name
-    try:
-        os.remove(os.path.join('data', 'serverdict_backup'))
-    except OSError as e:
-        pass
-    try:
-        os.rename(os.path.join('data', 'serverdict'), os.path.join('data', 'serverdict_backup'))
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-    os.rename(tempname, os.path.join('data', 'serverdict'))
-
-Meowth.save = _save
-
-@Meowth.command()
-@checks.is_owner()
-async def restart(ctx):
-    """Restart after saving.
-
-    Usage: !restart.
-    Calls the save function and restarts Meowth."""
-    try:
-        await _save()
-    except Exception as err:
-        await _print(Meowth.owner, _('Error occured while trying to save!'))
-        await _print(Meowth.owner, err)
-    await ctx.channel.send(_('Restarting...'))
-    Meowth._shutdown_mode = 26
-    await Meowth.logout()
-
-@Meowth.command()
-@checks.is_owner()
-async def exit(ctx):
-    """Exit after saving.
-
-    Usage: !exit.
-    Calls the save function and quits the script."""
-    try:
-        await _save()
-    except Exception as err:
-        await _print(Meowth.owner, _('Error occured while trying to save!'))
-        await _print(Meowth.owner, err)
-    await ctx.channel.send(_('Shutting down...'))
-    Meowth._shutdown_mode = 0
-    await Meowth.logout()
 
 @Meowth.group(name='set', case_insensitive=True)
 async def _set(ctx):
@@ -831,6 +748,27 @@ async def perms(ctx, channel_id = None):
             pass
         await ctx.author.send(embed=embed)
 
+@Meowth.command(hidden=True)
+async def template(ctx, *, sample_message):
+    """Sample template messages to see how they would appear."""
+    embed = None
+    (msg, errors) = utils.do_template(sample_message, ctx.author, ctx.guild)
+    if errors:
+        if msg.startswith('[') and msg.endswith(']'):
+            embed = discord.Embed(
+                colour=ctx.guild.me.colour, description=msg[1:(- 1)])
+            embed.add_field(name=_('Warning'), value=_('The following could not be found:\n{}').format(
+                '\n'.join(errors)))
+            await ctx.channel.send(embed=embed)
+        else:
+            msg = _('{}\n\n**Warning:**\nThe following could not be found: {}').format(
+                msg, ', '.join(errors))
+            await ctx.channel.send(msg)
+    elif msg.startswith('[') and msg.endswith(']'):
+        await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=msg[1:(- 1)].format(user=ctx.author.mention)))
+    else:
+        await ctx.channel.send(msg.format(user=ctx.author.mention))
+
 @Meowth.command()
 @commands.has_permissions(manage_guild=True)
 async def welcome(ctx, user: discord.Member=None):
@@ -961,11 +899,6 @@ async def announce(ctx, *, announce=None):
     await asyncio.sleep(30)
     await utils.safe_delete(message)
 
-
-"""
-Miscellaneous
-"""
-
 @Meowth.command(name='uptime')
 @checks.guildchannel()
 async def cmd_uptime(ctx):
@@ -1095,7 +1028,6 @@ async def team(ctx, *, team):
         except discord.Forbidden:
             await ctx.channel.send(_("Meowth! I can't add roles!"), delete_after=10)
 
-
 @Meowth.command()
 async def trainercode(ctx, user: discord.Member = None):
     """Displays a user's trainer code."""
@@ -1107,7 +1039,7 @@ async def trainercode(ctx, user: discord.Member = None):
     else:
         await ctx.channel.send(f"{user.display_name} has not set a trainer code. Set it with **!set trainercode <code>**")
 
-@Meowth.command(hidden=True)
+@Meowth.command()
 async def profile(ctx, member: discord.Member = None):
     """Displays a member's social and reporting profile.
 

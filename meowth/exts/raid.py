@@ -23,8 +23,8 @@ class Raid(commands.Cog):
         self.bot = bot
         self.bot.loop.create_task(self.channel_cleanup())
         self.bot.loop.create_task(self.lobby_cleanup())
+        self.bot.loop.create_task(self.reset_raid_roles())
         self.bot.active_raids = []
-        
 
     """
     Event Handlers
@@ -508,6 +508,70 @@ class Raid(commands.Cog):
     Helpers
     """
 
+    async def reset_raid_roles(self, loop=True):
+        while (not self.bot.is_closed()):
+            await self.bot.wait_until_ready()
+            boss_names = [str(word) for word in self.bot.raid_list]
+            boss_names = [word for word in boss_names if word.islower() and not word.isdigit()]
+            for guild_id in self.bot.guild_dict:
+                guild = self.bot.get_guild(guild_id)
+                if not guild:
+                    continue
+                for member in guild.members:
+                    if self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True):
+                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+                    else:
+                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+                    for role in member.roles:
+                        if role.name.lower() in self.bot.pkmn_list:
+                            number = utils.get_number(self.bot, role.name.lower())
+                            if number not in user_wants:
+                                user_wants.append(number)
+                for role in guild.roles:
+                    if role.name not in boss_names and role.name.lower() in self.bot.pkmn_list and role != guild.me.top_role:
+                        try:
+                            await role.delete()
+                            await asyncio.sleep(0.5)
+                        except:
+                            pass
+                for boss in boss_names:
+                    role = discord.utils.get(guild.roles, name=boss)
+                    if not role:
+                        try:
+                            role = await guild.create_role(name = boss, hoist = False, mentionable = True)
+                        except discord.errors.Forbidden:
+                            pass
+                        await asyncio.sleep(0.5)
+                for trainer in self.bot.guild_dict[guild.id]['trainers']:
+                    add_list = []
+                    remove_list = []
+                    user = guild.get_member(trainer)
+                    if not user or user.bot:
+                        continue
+                    user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
+                    if user_link:
+                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+                    else:
+                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+                    want_names = [utils.get_name(self.bot, x) for x in user_wants]
+                    want_names = [x.lower() for x in want_names]
+                    for want in want_names:
+                        if want in self.bot.raid_list:
+                            role = discord.utils.get(guild.roles, name=want)
+                            if role and role not in user.roles:
+                                add_list.append(role)
+                    for role in user.roles:
+                        if role.name.lower() not in want_names and role.name.lower() in self.bot.pkmn_list:
+                            remove_list.append(role)
+                    if add_list:
+                        await user.add_roles(*add_list)
+                    if remove_list:
+                        await user.remove_roles(*remove_list)
+            if not loop:
+                return
+            await asyncio.sleep(7200)
+            continue
+
     async def send_dm_messages(self, ctx, raid_details, content, embed, dm_dict):
         embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
@@ -676,7 +740,7 @@ class Raid(commands.Cog):
                 await question.add_reaction(self.bot.config['command_done'])
                 await ctx.channel.send(_("Meowth! Configuration successful!"), delete_after=10)
                 self.bot.load_config()
-                await self.bot.reset_raid_roles(self.bot)
+                await self.reset_raid_roles(loop=False)
                 await asyncio.sleep(10)
                 await utils.safe_delete(question)
                 await ctx.message.add_reaction(self.bot.config['command_done'])
