@@ -259,7 +259,7 @@ class Pokemon():
             else:
                 form_str = "_00"
         if self.form and self.id in self.bot.form_dict:
-            if self.id in [201, 327, 351, 386, 413, 421, 423, 423, 487, 492]:
+            if self.id in [201, 327, 351, 386, 412, 413, 421, 422, 423, 479, 487, 492, 493]:
                 form_str = form_str + "_" + str(self.bot.form_dict[self.id].index(self.form) + 11)
             elif self.form == "sunglasses":
                 form_str = form_str + "_00_05"
