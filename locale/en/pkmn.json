@@ -567,7 +567,8 @@
         "witch",
         "summer",
         "thunderbolt",
-        "flower"
+        "flower",
+        "beanie"
       ],
       "none": {
         "type": [
@@ -626,6 +627,14 @@
         "gender": true
       },
       "flower": {
+        "type": [
+          "Electric"
+        ],
+        "pokedex": "Whenever Pikachu comes across something new, it blasts it with a jolt of electricity. If you come across a blackened berry, it's evidence that this Pokemon mistook the intensity of its charge.",
+        "shiny": true,
+        "gender": true
+      },
+      "beanie": {
         "type": [
           "Electric"
         ],
@@ -1435,7 +1444,7 @@
           "Fighting"
         ],
         "pokedex": "When Mankey starts shaking and its nasal breathing turns rough, it's a sure sign that it is becoming angry. However, because it goes into a towering rage almost instantly, it is impossible for anyone to flee its wrath.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -1456,7 +1465,7 @@
           "Fighting"
         ],
         "pokedex": "When Primeape becomes furious, its blood circulation is boosted. In turn, its muscles are made even stronger. However, it also becomes much less intelligent at the same time.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -1642,7 +1651,7 @@
           "Fighting"
         ],
         "pokedex": "Machop's muscles are special\u2014they never get sore no matter how much they are used in exercise. This Pokemon has sufficient power to hurl a hundred adult humans.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -1663,7 +1672,7 @@
           "Fighting"
         ],
         "pokedex": "Machoke's thoroughly toned muscles possess the hardness of steel. This Pokemon has so much strength, it can easily hold aloft a sumo wrestler on just one finger.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -1684,7 +1693,7 @@
           "Fighting"
         ],
         "pokedex": "Machamp has the power to hurl anything aside. However, trying to do any work requiring care and dexterity causes its arms to get tangled. This Pokemon tends to leap into action before it thinks.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -3956,7 +3965,8 @@
         "party",
         "ash",
         "witch",
-        "summer"
+        "summer",
+        "beanie"
       ],
       "none": {
         "type": [
@@ -3999,6 +4009,14 @@
         "gender": false
       },
       "summer": {
+        "type": [
+          "Electric"
+        ],
+        "pokedex": "Pichu charges itself with electricity more easily on days with thunderclouds or when the air is very dry. You can hear the crackling of static electricity coming off this Pokemon.",
+        "shiny": true,
+        "gender": false
+      },
+      "beanie": {
         "type": [
           "Electric"
         ],
@@ -7752,7 +7770,7 @@
           "Psychic"
         ],
         "pokedex": "Lunatone becomes active around the time of the full moon. Instead of walking, it moves by floating in midair. The Pokemon's intimidating red eyes cause all those who see it to become transfixed with fear.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -7773,7 +7791,7 @@
           "Psychic"
         ],
         "pokedex": "Sunlight is the source of Solrock's power. It is said to possess the ability to read the emotions of others. This Pokemon gives off intense heat while rotating its body.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -9387,6 +9405,30 @@
         "pokedex": "If its cloak is broken in battle, it quickly remakes the cloak with materials nearby.",
         "shiny": false,
         "gender": false
+      },
+      "plant": {
+        "type": [
+          "Bug"
+        ],
+        "pokedex": "If its cloak is broken in battle, it quickly remakes the cloak with materials nearby.",
+        "shiny": false,
+        "gender": false
+      },
+      "sandy": {
+        "type": [
+          "Bug"
+        ],
+        "pokedex": "If its cloak is broken in battle, it quickly remakes the cloak with materials nearby.",
+        "shiny": false,
+        "gender": false
+      },
+      "trash": {
+        "type": [
+          "Bug"
+        ],
+        "pokedex": "If its cloak is broken in battle, it quickly remakes the cloak with materials nearby.",
+        "shiny": false,
+        "gender": false
       }
     },
     "distance": 5.0,
@@ -9398,11 +9440,7 @@
     "legendary": false,
     "mythical": false,
     "forms": {
-      "list": [
-        "plant",
-        "sandy",
-        "trash"
-      ],
+      "list": [],
       "none": {
         "type": [
           "Bug",
@@ -11275,6 +11313,150 @@
       "none": {
         "type": [
           "Normal"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "normal": {
+        "type": [
+          "Normal"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "fighting": {
+        "type": [
+          "Fighting"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "flying": {
+        "type": [
+          "Flying"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "poison": {
+        "type": [
+          "Poison"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "ground": {
+        "type": [
+          "Ground"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "rock": {
+        "type": [
+          "Rock"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "bug": {
+        "type": [
+          "Bug"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "ghost": {
+        "type": [
+          "Ghost"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "steel": {
+        "type": [
+          "Steel"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "fire": {
+        "type": [
+          "Fire"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "water": {
+        "type": [
+          "Water"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "grass": {
+        "type": [
+          "Grass"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "electric": {
+        "type": [
+          "Electric"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "psychic": {
+        "type": [
+          "Psychic"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "ice": {
+        "type": [
+          "Ice"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "dragon": {
+        "type": [
+          "Dragon"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "dark": {
+        "type": [
+          "Dark"
+        ],
+        "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
+        "shiny": false,
+        "gender": false
+      },
+      "fairy": {
+        "type": [
+          "Fairy"
         ],
         "pokedex": "It is told in mythology that this Pokemon was born before the universe even existed.",
         "shiny": false,

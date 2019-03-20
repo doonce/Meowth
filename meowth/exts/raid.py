@@ -712,7 +712,8 @@ class Raid(commands.Cog):
             for pokemon in newlist:
                 pokemon = re.sub('[^a-zA-Z0-9]' , '' , pokemon)
                 pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
-                finallist.append(str(pokemon))
+                if pokemon:
+                    finallist.append(str(pokemon))
             newlist = finallist
             msg += _('I will replace this:\n')
             msg += _('**Level {level} raid list:** `{raidlist}` \n').format(level=level, raidlist=self.bot.raid_info['raid_eggs'][level]['pokemon'])
