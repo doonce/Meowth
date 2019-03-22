@@ -98,58 +98,16 @@ class Research(commands.Cog):
         research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pokemon = False
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
-        await ctx.trigger_typing()
         while True:
-            if details:
-                research_split = details.rsplit(",", 2)
-                if len(research_split) != 3:
-                    error = _("entered an incorrect amount of arguments.\n\nUsage: **!research** or **!research <pokestop>, <quest>, <reward>**")
-                    break
-                location, quest, reward = research_split
-                location = location.replace(loc_url, "").strip()
-                loc_url = utils.create_gmaps_query(self.bot, location, message.channel, type="research")
-                gym_matching_cog = self.bot.cogs.get('GymMatching')
-                stop_info = ""
-                if gym_matching_cog:
-                    stop_info, location, stop_url = await gym_matching_cog.get_stop_info(ctx, location)
-                    if stop_url:
-                        loc_url = stop_url
-                if not location:
-                    return
-                research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, " "), width=30)), inline=True)
-                research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, " "), width=30)), inline=True)
-                other_reward = any(x in reward.lower() for x in reward_list)
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
-                if pokemon and not other_reward:
-                    reward = f"{string.capwords(reward, ' ')} {''.join(utils.type_emoji(self.bot, guild, pokemon))}"
-                    research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
-                else:
-                    research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
-                break
-            else:
-                research_embed.add_field(name=_('**New Research Report**'), value=_("Meowth! I'll help you report a research quest!\n\nFirst, I'll need to know what **pokestop** you received the quest from. Reply with the name of the **pokestop**. You can reply with **cancel** to stop anytime."), inline=False)
-                pokestopwait = await channel.send(embed=research_embed)
-                def check(reply):
-                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
-                        return True
-                    else:
-                        return False
-                try:
-                    pokestopmsg = await self.bot.wait_for('message', timeout=60, check=check)
-                except asyncio.TimeoutError:
-                    pokestopmsg = None
-                await utils.safe_delete(pokestopwait)
-                if not pokestopmsg:
-                    error = _("took too long to respond")
-                    break
-                elif pokestopmsg.clean_content.lower() == "cancel":
-                    error = _("cancelled the report")
-                    await utils.safe_delete(pokestopmsg)
-                    break
-                elif pokestopmsg:
-                    location = pokestopmsg.clean_content
-                    loc_url = utils.create_gmaps_query(self.bot, location, message.channel, type="research")
+            async with ctx.tying():
+                if details:
+                    research_split = details.rsplit(",", 2)
+                    if len(research_split) != 3:
+                        error = _("entered an incorrect amount of arguments.\n\nUsage: **!research** or **!research <pokestop>, <quest>, <reward>**")
+                        break
+                    location, quest, reward = research_split
                     location = location.replace(loc_url, "").strip()
+                    loc_url = utils.create_gmaps_query(self.bot, location, message.channel, type="research")
                     gym_matching_cog = self.bot.cogs.get('GymMatching')
                     stop_info = ""
                     if gym_matching_cog:
@@ -157,63 +115,105 @@ class Research(commands.Cog):
                         if stop_url:
                             loc_url = stop_url
                     if not location:
-                        await utils.safe_delete(pokestopmsg)
                         return
-                await utils.safe_delete(pokestopmsg)
-                research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, " "), width=30)), inline=True)
-                research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Great! Now, reply with the **quest** that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(location=location), inline=False)
-                questwait = await channel.send(embed=research_embed)
-                try:
-                    questmsg = await self.bot.wait_for('message', timeout=60, check=check)
-                except asyncio.TimeoutError:
-                    questmsg = None
-                await utils.safe_delete(questwait)
-                if not questmsg:
-                    error = _("took too long to respond")
-                    break
-                elif questmsg.clean_content.lower() == "cancel":
-                    error = _("cancelled the report")
-                    await utils.safe_delete(questmsg)
-                    break
-                elif questmsg:
-                    quest = questmsg.clean_content
-                await utils.safe_delete(questmsg)
-                research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, " "), width=30)), inline=True)
-                research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Fantastic! Now, reply with the **reward** for the **{quest}** quest that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(quest=quest, location=location), inline=False)
-                rewardwait = await channel.send(embed=research_embed)
-                try:
-                    rewardmsg = await self.bot.wait_for('message', timeout=60, check=check)
-                except asyncio.TimeoutError:
-                    rewardmsg = None
-                await utils.safe_delete(rewardwait)
-                if not rewardmsg:
-                    error = _("took too long to respond")
-                    break
-                elif rewardmsg.clean_content.lower() == "cancel":
-                    error = _("cancelled the report")
-                    await utils.safe_delete(rewardmsg)
-                    break
-                elif rewardmsg:
-                    reward = rewardmsg.clean_content
+                    research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, " "), width=30)), inline=True)
+                    research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, " "), width=30)), inline=True)
                     other_reward = any(x in reward.lower() for x in reward_list)
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
                     if pokemon and not other_reward:
                         reward = f"{string.capwords(reward, ' ')} {''.join(utils.type_emoji(self.bot, guild, pokemon))}"
-                        research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
+                        research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
                     else:
                         research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
-                await utils.safe_delete(rewardmsg)
-                research_embed.remove_field(0)
-                break
-        if not error:
-            await self.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)
-        else:
-            research_embed.clear_fields()
-            research_embed.add_field(name=_('**Research Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
-            confirmation = await channel.send(embed=research_embed)
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
-            await utils.safe_delete(message)
+                    break
+                else:
+                    research_embed.add_field(name=_('**New Research Report**'), value=_("Meowth! I'll help you report a research quest!\n\nFirst, I'll need to know what **pokestop** you received the quest from. Reply with the name of the **pokestop**. You can reply with **cancel** to stop anytime."), inline=False)
+                    pokestopwait = await channel.send(embed=research_embed)
+                    def check(reply):
+                        if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                            return True
+                        else:
+                            return False
+                    try:
+                        pokestopmsg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        pokestopmsg = None
+                    await utils.safe_delete(pokestopwait)
+                    if not pokestopmsg:
+                        error = _("took too long to respond")
+                        break
+                    elif pokestopmsg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        await utils.safe_delete(pokestopmsg)
+                        break
+                    elif pokestopmsg:
+                        location = pokestopmsg.clean_content
+                        loc_url = utils.create_gmaps_query(self.bot, location, message.channel, type="research")
+                        location = location.replace(loc_url, "").strip()
+                        gym_matching_cog = self.bot.cogs.get('GymMatching')
+                        stop_info = ""
+                        if gym_matching_cog:
+                            stop_info, location, stop_url = await gym_matching_cog.get_stop_info(ctx, location)
+                            if stop_url:
+                                loc_url = stop_url
+                        if not location:
+                            await utils.safe_delete(pokestopmsg)
+                            return
+                    await utils.safe_delete(pokestopmsg)
+                    research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, " "), width=30)), inline=True)
+                    research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Great! Now, reply with the **quest** that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(location=location), inline=False)
+                    questwait = await channel.send(embed=research_embed)
+                    try:
+                        questmsg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        questmsg = None
+                    await utils.safe_delete(questwait)
+                    if not questmsg:
+                        error = _("took too long to respond")
+                        break
+                    elif questmsg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        await utils.safe_delete(questmsg)
+                        break
+                    elif questmsg:
+                        quest = questmsg.clean_content
+                    await utils.safe_delete(questmsg)
+                    research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, " "), width=30)), inline=True)
+                    research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Fantastic! Now, reply with the **reward** for the **{quest}** quest that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(quest=quest, location=location), inline=False)
+                    rewardwait = await channel.send(embed=research_embed)
+                    try:
+                        rewardmsg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        rewardmsg = None
+                    await utils.safe_delete(rewardwait)
+                    if not rewardmsg:
+                        error = _("took too long to respond")
+                        break
+                    elif rewardmsg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        await utils.safe_delete(rewardmsg)
+                        break
+                    elif rewardmsg:
+                        reward = rewardmsg.clean_content
+                        other_reward = any(x in reward.lower() for x in reward_list)
+                        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
+                        if pokemon and not other_reward:
+                            reward = f"{string.capwords(reward, ' ')} {''.join(utils.type_emoji(self.bot, guild, pokemon))}"
+                            research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
+                        else:
+                            research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
+                    await utils.safe_delete(rewardmsg)
+                    research_embed.remove_field(0)
+                    break
+            if not error:
+                await self.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)
+            else:
+                research_embed.clear_fields()
+                research_embed.add_field(name=_('**Research Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+                confirmation = await channel.send(embed=research_embed)
+                await asyncio.sleep(10)
+                await utils.safe_delete(confirmation)
+                await utils.safe_delete(message)
 
     async def send_research(self, ctx, research_embed, location, quest, reward, other_reward, loc_url):
         dm_dict = {}
@@ -349,7 +349,6 @@ class Research(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     async def reset(self, ctx, *, report_message=None):
         """Resets all research reports."""
-
         author = ctx.author
         guild = ctx.guild
         message = ctx.message

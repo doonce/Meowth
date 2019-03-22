@@ -109,7 +109,7 @@ class Wild(commands.Cog):
         except KeyError:
             pass
 
-    async def send_dm_messages(self, ctx, wild_number, wild_details, wild_type_1, wild_type_2, content, embed, dm_dict):
+    async def send_dm_messages(self, ctx, wild_number, wild_details, wild_type_1, wild_type_2, wild_iv, content, embed, dm_dict):
         embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.wildreportmsg.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             if not checks.dm_check(ctx, trainer):
@@ -119,7 +119,8 @@ class Wild(commands.Cog):
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
-            if wild_number in user_wants or wild_type_1.lower() in user_types or wild_type_2.lower() in user_types or wild_details.lower() in user_stops:
+            user_ivs = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('ivs', [])
+            if wild_number in user_wants or wild_type_1.lower() in user_types or wild_type_2.lower() in user_types or wild_details.lower() in user_stops or wild_iv in user_ivs:
                 try:
                     user = ctx.guild.get_member(trainer)
                     embed.remove_field(1)
@@ -135,18 +136,19 @@ class Wild(commands.Cog):
     async def wild(self, ctx, pokemon, *, location):
         """Report a wild Pokemon spawn location.
 
-        Usage: !wild <species> <location>
+        Usage: !wild <species> <location> [iv]
         Meowth will insert the details (really just everything after the species name) into a
         Google maps link and post the link to the same channel the report was made in."""
         content = f"{pokemon} {location}"
-        await ctx.trigger_typing()
-        await self._wild(ctx, content)
+        async with ctx.typing():
+            await self._wild(ctx, content)
 
     async def _wild(self, ctx, content):
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         wild_split = content.split()
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, content)
+        wild_iv = None
         if pokemon:
             entered_wild = pokemon.name.lower()
             pokemon.shiny = False
@@ -157,10 +159,19 @@ class Wild(commands.Cog):
         for word in match_list:
             content = re.sub(word, "", content)
         wild_details = content.strip()
-
         if not wild_details:
             await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**'), delete_after=10)
             return
+        converter = commands.clean_content()
+        iv_test = await converter.convert(ctx, wild_details.split()[-1])
+        iv_test = iv_test.lower().strip()
+        if "iv" in iv_test or iv_test.isdigit():
+            wild_iv = iv_test.replace("iv", "").replace("@", "").replace("#", "")
+            if wild_iv.isdigit() and int(wild_iv) >= 0 and int(wild_iv) <= 100:
+                wild_iv = int(wild_iv)
+                wild_details = wild_details.replace(wild_details.split()[-1], f"- **{wild_iv}IV**")
+            else:
+                wild_iv = None
         wild_number = pokemon.id
         wild_img_url = pokemon.img_url
         wild_types = copy.deepcopy(pokemon.types)
@@ -185,7 +196,7 @@ class Wild(commands.Cog):
         wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=self.bot.config['wild_despawn']))
         ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
         dm_dict = {}
-        dm_dict = await self.send_dm_messages(ctx, wild_number, wild_details, wild_types[0], wild_types[1], ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, wild_number, wild_details, wild_types[0], wild_types[1], wild_iv, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
         await ctx.wildreportmsg.add_reaction(self.bot.config['wild_omw'])
         await asyncio.sleep(0.25)
@@ -198,10 +209,11 @@ class Wild(commands.Cog):
             'reportchannel':message.channel.id,
             'reportauthor':message.author.id,
             'dm_dict':dm_dict,
-            'location':wild_details,
+            'location':wild_details.replace(f" - **{wild_iv}IV**", ""),
             'url':wild_gmaps_link,
             'pokemon':entered_wild,
             'pkmn_obj':str(pokemon),
+            'wild_iv':wild_iv,
             'omw':[]
         }
         wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wild_reports', 0) + 1
@@ -212,7 +224,6 @@ class Wild(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     async def reset(self, ctx, *, report_message=None):
         """Resets all wild reports."""
-
         author = ctx.author
         guild = ctx.guild
         message = ctx.message

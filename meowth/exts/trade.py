@@ -421,6 +421,7 @@ class Trading(commands.Cog):
     async def trade(self, ctx, *, offer: pkmn_class.Pokemon):
         """Create a trade listing."""
         await utils.safe_delete(ctx.message)
+        await ctx.trigger_typing()
         if type(offer) == dict:
             trade_error = await ctx.send(
                 f"{ctx.author.display_name}, check your spelling and make sure "

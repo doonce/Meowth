@@ -31,285 +31,285 @@ class Listing(commands.Cog):
         Works only in raid or city channels. Calls the interested, waiting, and here lists. Also prints
         the raid timer. In city channels, lists all active raids."""
         await utils.safe_delete(ctx.message)
-        await ctx.trigger_typing()
         if ctx.invoked_subcommand == None:
-            listmsg = _('**Meowth!** ')
-            temp_list = ""
-            raid_list = ""
-            guild = ctx.guild
-            channel = ctx.channel
-            now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
-            list_messages = []
-            raid_cog = self.bot.cogs.get('Raid')
-            if (checks.check_raidreport(ctx) or checks.check_exraidreport(ctx) or checks.check_meetupreport(ctx)):
-                if not raid_cog:
-                    return
-                if ctx.invoked_with.lower() == "tag":
-                    tag_error = await channel.send(f"Please use **{ctx.prefix}{ctx.invoked_with}** in an active raid channel.", delete_after=10)
-                    await asyncio.sleep(10)
-                    await utils.safe_delete(ctx.message)
-                    await utils.safe_delete(tag_error)
-                    return
-                cty = channel.name
-                rc_d = self.bot.guild_dict[guild.id]['raidchannel_dict']
-                raid_dict = {}
-                egg_dict = {}
-                exraid_list = []
-                event_list = []
-                list_dict = self.bot.guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
-                for msg in list_dict:
-                    try:
-                        msg = await ctx.channel.fetch_message(msg)
-                        await utils.safe_delete(msg)
-                    except:
-                        pass
-                for r in rc_d:
-                    reportcity = self.bot.get_channel(rc_d[r]['reportcity'])
-                    if not reportcity:
-                        continue
-                    if (reportcity.name == cty) and rc_d[r]['active'] and discord.utils.get(guild.text_channels, id=r):
-                        exp = rc_d[r]['exp']
-                        type = rc_d[r]['type']
-                        level = rc_d[r]['egglevel']
-                        if (type == 'egg') and level.isdigit():
-                            egg_dict[r] = exp
-                        elif rc_d[r].get('meetup', {}):
-                            event_list.append(r)
-                        elif ((type == 'exraid') or (level == 'EX')):
-                            exraid_list.append(r)
-                        else:
-                            raid_dict[r] = exp
-
-                async def list_output(r):
-                    trainer_dict = rc_d[r]['trainer_dict']
-                    rchan = self.bot.get_channel(r)
-                    end = datetime.datetime.utcfromtimestamp(rc_d[r]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
-                    output = ''
-                    start_str = ''
-                    channel_dict, boss_dict = await raid_cog._get_party(rchan)
-                    if not channel_dict['total'] and "all" not in ctx.message.content.lower():
-                        return None
-                    if rc_d[r]['manual_timer'] == False:
-                        assumed_str = _(' (assumed)')
-                    else:
-                        assumed_str = ''
-                    starttime = rc_d[r].get('starttime', None)
-                    meetup = rc_d[r].get('meetup', {})
-                    if starttime and starttime > now and not meetup:
-                        start_str = _('\nNext group: **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
-                    else:
-                        starttime = False
-                    if rc_d[r]['egglevel'].isdigit() and (int(rc_d[r]['egglevel']) > 0):
-                        expirytext = _(' - Hatches: {expiry}{is_assumed}').format(expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                    elif ((rc_d[r]['egglevel'] == 'EX') or (rc_d[r]['type'] == 'exraid')) and not meetup:
-                        expirytext = _(' - Hatches: {expiry}{is_assumed}').format(expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                    elif meetup:
-                        meetupstart = meetup['start']
-                        meetupend = meetup['end']
-                        expirytext = ""
-                        if meetupstart:
-                            expirytext += _(' - Starts: {expiry}{is_assumed}').format(expiry=meetupstart.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                        if meetupend:
-                            expirytext += _(" - Ends: {expiry}{is_assumed}").format(expiry=meetupend.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                        if not meetupstart and not meetupend:
-                            expirytext = _(' - Starts: {expiry}{is_assumed}').format(expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                    else:
-                        type_str = ""
-                        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
-                        if pokemon:
-                            type_str = ''.join(utils.type_emoji(self.bot, guild, pokemon))
-                        expirytext = _('{type_str} - Expires: {expiry}{is_assumed}').format(type_str=type_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                    output += f"{rchan.mention}{expirytext}\n"
-                    if channel_dict['total']:
-                        output += f"Total: **{channel_dict['total']}**"
-                    if channel_dict['maybe']:
-                        output += f" | Maybe: **{channel_dict['maybe']}**"
-                    if channel_dict['coming']:
-                        output += f" | Coming: **{channel_dict['coming']}**"
-                    if channel_dict['here']:
-                        output += f" | Here: **{channel_dict['here']}**"
-                    if channel_dict['lobby']:
-                        output += f" | Lobby: **{channel_dict['lobby']}**"
-                    if channel_dict['mystic']:
-                        emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic'])
-                        output += f" | {emoji}: **{channel_dict['mystic']}**"
-                    if channel_dict['valor']:
-                        emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor'])
-                        output += f" | {emoji}: **{channel_dict['valor']}**"
-                    if channel_dict['instinct']:
-                        emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct'])
-                        output += f" | {emoji}: **{channel_dict['instinct']}**"
-                    if channel_dict['unknown']:
-                        emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
-                        output += f" | {emoji}: **{channel_dict['unknown']}**"
-                    if start_str:
-                        output += f"{start_str}\n"
-                    else:
-                        output += f"\n"
-                    return output
-
-                if raid_dict:
-                    for (r, e) in sorted(raid_dict.items(), key=itemgetter(1)):
-                        output = await list_output(r)
-                        if output:
-                            temp_list += output
-                    if temp_list:
-                        raid_list += f"**Raids:**\n{temp_list}\n"
-                        temp_list = ""
-                if egg_dict:
-                    for (r, e) in sorted(egg_dict.items(), key=itemgetter(1)):
-                        output = await list_output(r)
-                        if output:
-                            temp_list += output
-                    if temp_list:
-                        raid_list += f"**Raid Eggs:**\n{temp_list}\n"
-                        temp_list = ""
-                if exraid_list:
-                    for r in exraid_list:
-                        output = await list_output(r)
-                        if output:
-                            temp_list += output
-                    if temp_list:
-                        raid_list += f"**EX Raids:**\n{temp_list}\n"
-                        temp_list = ""
-                if event_list:
-                    for r in event_list:
-                        output = await list_output(r)
-                        if output:
-                            temp_list += output
-                    if temp_list:
-                        raid_list += f"**Meetups:**\n{temp_list}\n"
-                        temp_list = ""
-
-                if not raid_list:
-                    if "all" not in ctx.message.content.lower():
-                        ctx.message.content = "!list all"
-                        await ctx.reinvoke()
-                        return
-                    list_message = await channel.send(f"Meowth! No active channels!", embed=discord.Embed(colour=ctx.guild.me.colour, description=_('Report a new one with **!raid <name> <location> [weather] [timer]**')))
-                    list_messages.append(list_message.id)
-                else:
-                    listmsg += _("**Here's the current channels for {0}**\n\n").format(channel.mention)
-                    paginator = commands.Paginator(prefix="", suffix="")
-                    index = 0
-                    for line in raid_list.splitlines():
-                        paginator.add_line(line.rstrip().replace('`', '\u200b`'))
-                    for p in paginator.pages:
-                        if index == 0:
-                            list_message = await ctx.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
-                        else:
-                            list_message = await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
-                        list_messages.append(list_message.id)
-                        index += 1
-                self.bot.guild_dict[ctx.guild.id]['list_dict']['raid'][ctx.channel.id] = list_messages
-
-            elif checks.check_raidactive(ctx):
-                if not raid_cog:
-                    return
-                team_list = ["mystic", "valor", "instinct", "unknown"]
-                tag = False
-                team = False
+            async with ctx.typing():
+                listmsg = _('**Meowth!** ')
+                temp_list = ""
+                raid_list = ""
+                guild = ctx.guild
+                channel = ctx.channel
+                now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
                 list_messages = []
-                if ctx.invoked_with.lower() == "tag":
-                    tag = True
-                starttime = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime', None)
-                meetup = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('meetup', {})
-                raid_message = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidmessage']
-                try:
-                    raid_message = await channel.fetch_message(raid_message)
-                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                    raid_message = None
-                rc_d = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]
-                list_split = ctx.message.clean_content.lower().split()
-                list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
-                for msg in list_dict:
+                raid_cog = self.bot.cogs.get('Raid')
+                if (checks.check_raidreport(ctx) or checks.check_exraidreport(ctx) or checks.check_meetupreport(ctx)):
+                    if not raid_cog:
+                        return
+                    if ctx.invoked_with.lower() == "tag":
+                        tag_error = await channel.send(f"Please use **{ctx.prefix}{ctx.invoked_with}** in an active raid channel.", delete_after=10)
+                        await asyncio.sleep(10)
+                        await utils.safe_delete(ctx.message)
+                        await utils.safe_delete(tag_error)
+                        return
+                    cty = channel.name
+                    rc_d = self.bot.guild_dict[guild.id]['raidchannel_dict']
+                    raid_dict = {}
+                    egg_dict = {}
+                    exraid_list = []
+                    event_list = []
+                    list_dict = self.bot.guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
+                    for msg in list_dict:
+                        try:
+                            msg = await ctx.channel.fetch_message(msg)
+                            await utils.safe_delete(msg)
+                        except:
+                            pass
+                    for r in rc_d:
+                        reportcity = self.bot.get_channel(rc_d[r]['reportcity'])
+                        if not reportcity:
+                            continue
+                        if (reportcity.name == cty) and rc_d[r]['active'] and discord.utils.get(guild.text_channels, id=r):
+                            exp = rc_d[r]['exp']
+                            type = rc_d[r]['type']
+                            level = rc_d[r]['egglevel']
+                            if (type == 'egg') and level.isdigit():
+                                egg_dict[r] = exp
+                            elif rc_d[r].get('meetup', {}):
+                                event_list.append(r)
+                            elif ((type == 'exraid') or (level == 'EX')):
+                                exraid_list.append(r)
+                            else:
+                                raid_dict[r] = exp
+
+                    async def list_output(r):
+                        trainer_dict = rc_d[r]['trainer_dict']
+                        rchan = self.bot.get_channel(r)
+                        end = datetime.datetime.utcfromtimestamp(rc_d[r]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                        output = ''
+                        start_str = ''
+                        channel_dict, boss_dict = await raid_cog._get_party(rchan)
+                        if not channel_dict['total'] and "all" not in ctx.message.content.lower():
+                            return None
+                        if rc_d[r]['manual_timer'] == False:
+                            assumed_str = _(' (assumed)')
+                        else:
+                            assumed_str = ''
+                        starttime = rc_d[r].get('starttime', None)
+                        meetup = rc_d[r].get('meetup', {})
+                        if starttime and starttime > now and not meetup:
+                            start_str = _('\nNext group: **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
+                        else:
+                            starttime = False
+                        if rc_d[r]['egglevel'].isdigit() and (int(rc_d[r]['egglevel']) > 0):
+                            expirytext = _(' - Hatches: {expiry}{is_assumed}').format(expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                        elif ((rc_d[r]['egglevel'] == 'EX') or (rc_d[r]['type'] == 'exraid')) and not meetup:
+                            expirytext = _(' - Hatches: {expiry}{is_assumed}').format(expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                        elif meetup:
+                            meetupstart = meetup['start']
+                            meetupend = meetup['end']
+                            expirytext = ""
+                            if meetupstart:
+                                expirytext += _(' - Starts: {expiry}{is_assumed}').format(expiry=meetupstart.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                            if meetupend:
+                                expirytext += _(" - Ends: {expiry}{is_assumed}").format(expiry=meetupend.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                            if not meetupstart and not meetupend:
+                                expirytext = _(' - Starts: {expiry}{is_assumed}').format(expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                        else:
+                            type_str = ""
+                            pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
+                            if pokemon:
+                                type_str = ''.join(utils.type_emoji(self.bot, guild, pokemon))
+                            expirytext = _('{type_str} - Expires: {expiry}{is_assumed}').format(type_str=type_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                        output += f"{rchan.mention}{expirytext}\n"
+                        if channel_dict['total']:
+                            output += f"Total: **{channel_dict['total']}**"
+                        if channel_dict['maybe']:
+                            output += f" | Maybe: **{channel_dict['maybe']}**"
+                        if channel_dict['coming']:
+                            output += f" | Coming: **{channel_dict['coming']}**"
+                        if channel_dict['here']:
+                            output += f" | Here: **{channel_dict['here']}**"
+                        if channel_dict['lobby']:
+                            output += f" | Lobby: **{channel_dict['lobby']}**"
+                        if channel_dict['mystic']:
+                            emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic'])
+                            output += f" | {emoji}: **{channel_dict['mystic']}**"
+                        if channel_dict['valor']:
+                            emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor'])
+                            output += f" | {emoji}: **{channel_dict['valor']}**"
+                        if channel_dict['instinct']:
+                            emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct'])
+                            output += f" | {emoji}: **{channel_dict['instinct']}**"
+                        if channel_dict['unknown']:
+                            emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+                            output += f" | {emoji}: **{channel_dict['unknown']}**"
+                        if start_str:
+                            output += f"{start_str}\n"
+                        else:
+                            output += f"\n"
+                        return output
+
+                    if raid_dict:
+                        for (r, e) in sorted(raid_dict.items(), key=itemgetter(1)):
+                            output = await list_output(r)
+                            if output:
+                                temp_list += output
+                        if temp_list:
+                            raid_list += f"**Raids:**\n{temp_list}\n"
+                            temp_list = ""
+                    if egg_dict:
+                        for (r, e) in sorted(egg_dict.items(), key=itemgetter(1)):
+                            output = await list_output(r)
+                            if output:
+                                temp_list += output
+                        if temp_list:
+                            raid_list += f"**Raid Eggs:**\n{temp_list}\n"
+                            temp_list = ""
+                    if exraid_list:
+                        for r in exraid_list:
+                            output = await list_output(r)
+                            if output:
+                                temp_list += output
+                        if temp_list:
+                            raid_list += f"**EX Raids:**\n{temp_list}\n"
+                            temp_list = ""
+                    if event_list:
+                        for r in event_list:
+                            output = await list_output(r)
+                            if output:
+                                temp_list += output
+                        if temp_list:
+                            raid_list += f"**Meetups:**\n{temp_list}\n"
+                            temp_list = ""
+
+                    if not raid_list:
+                        if "all" not in ctx.message.content.lower():
+                            ctx.message.content = "!list all"
+                            await ctx.reinvoke()
+                            return
+                        list_message = await channel.send(f"Meowth! No active channels!", embed=discord.Embed(colour=ctx.guild.me.colour, description=_('Report a new one with **!raid <name> <location> [weather] [timer]**')))
+                        list_messages.append(list_message.id)
+                    else:
+                        listmsg += _("**Here's the current channels for {0}**\n\n").format(channel.mention)
+                        paginator = commands.Paginator(prefix="", suffix="")
+                        index = 0
+                        for line in raid_list.splitlines():
+                            paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                        for p in paginator.pages:
+                            if index == 0:
+                                list_message = await ctx.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                            else:
+                                list_message = await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                            list_messages.append(list_message.id)
+                            index += 1
+                    self.bot.guild_dict[ctx.guild.id]['list_dict']['raid'][ctx.channel.id] = list_messages
+
+                elif checks.check_raidactive(ctx):
+                    if not raid_cog:
+                        return
+                    team_list = ["mystic", "valor", "instinct", "unknown"]
+                    tag = False
+                    team = False
+                    list_messages = []
+                    if ctx.invoked_with.lower() == "tag":
+                        tag = True
+                    starttime = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime', None)
+                    meetup = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('meetup', {})
+                    raid_message = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidmessage']
                     try:
-                        msg = await ctx.channel.fetch_message(msg)
-                        await utils.safe_delete(msg)
-                    except:
-                        pass
-                if "tags" in list_split or "tag" in list_split:
-                    tag = True
-                for word in list_split:
-                    if word in team_list:
-                        team = word.lower()
-                        break
-                if team == "mystic" or team == "valor" or team == "instinct":
-                    bulletpoint = utils.parse_emoji(ctx.guild, self.bot.config['team_dict'][team])
-                elif team == "unknown":
-                    bulletpoint = utils.parse_emoji(ctx.guild, self.bot.config['unknown'])
-                else:
-                    bulletpoint = utils.parse_emoji(ctx.guild, self.bot.config['bullet'])
-                if " 0 interested!" not in await self._interest(ctx, tag, team):
-                    listmsg += ('\n' + bulletpoint) + (await self._interest(ctx, tag, team))
-                if " 0 on the way!" not in await self._otw(ctx, tag, team):
-                    listmsg += ('\n' + bulletpoint) + (await self._otw(ctx, tag, team))
-                if " 0 waiting at the raid!" not in await self._waiting(ctx, tag, team):
-                    listmsg += ('\n' + bulletpoint) + (await self._waiting(ctx, tag, team))
-                if " 0 in the lobby!" not in await self._lobbylist(ctx, tag, team):
-                    listmsg += ('\n' + bulletpoint) + (await self._lobbylist(ctx, tag, team))
-                if (len(listmsg.splitlines()) <= 1):
-                    listmsg +=  ('\n' + bulletpoint) + (_(" Nobody has updated their status yet!"))
-                listmsg += ('\n' + bulletpoint) + (await raid_cog.print_raid_timer(channel))
-                if starttime and (starttime > now) and not meetup:
-                    listmsg += _('\nThe next group will be starting at **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
-                if raid_message:
-                    list_embed = discord.Embed(colour=ctx.guild.me.colour, description=listmsg, title=raid_message.embeds[0].title, url=raid_message.embeds[0].url)
-                    if len(raid_message.embeds[0].fields) > 4:
-                        for field in raid_message.embeds[0].fields:
-                            if "status" in field.name.lower() or "team" in field.name.lower():
-                                list_embed.add_field(name=field.name, value=field.value, inline=field.inline)
-                else:
-                    list_embed = discord.Embed(colour=ctx.guild.me.colour, description=listmsg)
-                if tag:
-                    list_msg = await ctx.channel.send(listmsg)
-                else:
-                    list_msg = await ctx.channel.send(embed=list_embed)
-                list_messages.append(list_msg.id)
-                self.bot.guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {})[channel.id] = list_messages
-                return
-            elif checks.check_wantchannel(ctx):
-                if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_researchreport(ctx) or checks.check_tradereport(ctx)):
-                    want_command = ctx.command.all_commands.get('wants')
-                    if want_command:
-                        await want_command.invoke(ctx)
-                else:
-                    await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                        raid_message = await channel.fetch_message(raid_message)
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                        raid_message = None
+                    rc_d = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]
+                    list_split = ctx.message.clean_content.lower().split()
+                    list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
+                    for msg in list_dict:
+                        try:
+                            msg = await ctx.channel.fetch_message(msg)
+                            await utils.safe_delete(msg)
+                        except:
+                            pass
+                    if "tags" in list_split or "tag" in list_split:
+                        tag = True
+                    for word in list_split:
+                        if word in team_list:
+                            team = word.lower()
+                            break
+                    if team == "mystic" or team == "valor" or team == "instinct":
+                        bulletpoint = utils.parse_emoji(ctx.guild, self.bot.config['team_dict'][team])
+                    elif team == "unknown":
+                        bulletpoint = utils.parse_emoji(ctx.guild, self.bot.config['unknown'])
+                    else:
+                        bulletpoint = utils.parse_emoji(ctx.guild, self.bot.config['bullet'])
+                    if " 0 interested!" not in await self._interest(ctx, tag, team):
+                        listmsg += ('\n' + bulletpoint) + (await self._interest(ctx, tag, team))
+                    if " 0 on the way!" not in await self._otw(ctx, tag, team):
+                        listmsg += ('\n' + bulletpoint) + (await self._otw(ctx, tag, team))
+                    if " 0 waiting at the raid!" not in await self._waiting(ctx, tag, team):
+                        listmsg += ('\n' + bulletpoint) + (await self._waiting(ctx, tag, team))
+                    if " 0 in the lobby!" not in await self._lobbylist(ctx, tag, team):
+                        listmsg += ('\n' + bulletpoint) + (await self._lobbylist(ctx, tag, team))
+                    if (len(listmsg.splitlines()) <= 1):
+                        listmsg +=  ('\n' + bulletpoint) + (_(" Nobody has updated their status yet!"))
+                    listmsg += ('\n' + bulletpoint) + (await raid_cog.print_raid_timer(channel))
+                    if starttime and (starttime > now) and not meetup:
+                        listmsg += _('\nThe next group will be starting at **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
+                    if raid_message:
+                        list_embed = discord.Embed(colour=ctx.guild.me.colour, description=listmsg, title=raid_message.embeds[0].title, url=raid_message.embeds[0].url)
+                        if len(raid_message.embeds[0].fields) > 4:
+                            for field in raid_message.embeds[0].fields:
+                                if "status" in field.name.lower() or "team" in field.name.lower():
+                                    list_embed.add_field(name=field.name, value=field.value, inline=field.inline)
+                    else:
+                        list_embed = discord.Embed(colour=ctx.guild.me.colour, description=listmsg)
+                    if tag:
+                        list_msg = await ctx.channel.send(listmsg)
+                    else:
+                        list_msg = await ctx.channel.send(embed=list_embed)
+                    list_messages.append(list_msg.id)
+                    self.bot.guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {})[channel.id] = list_messages
                     return
-            elif checks.check_researchreport(ctx):
-                if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
-                    research_command = ctx.command.all_commands.get('research')
-                    if research_command:
-                        await research_command.invoke(ctx)
+                elif checks.check_wantchannel(ctx):
+                    if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_researchreport(ctx) or checks.check_tradereport(ctx)):
+                        want_command = ctx.command.all_commands.get('wants')
+                        if want_command:
+                            await want_command.invoke(ctx)
+                    else:
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                        return
+                elif checks.check_researchreport(ctx):
+                    if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
+                        research_command = ctx.command.all_commands.get('research')
+                        if research_command:
+                            await research_command.invoke(ctx)
+                    else:
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                        return
+                elif checks.check_wildreport(ctx):
+                    if not (checks.check_researchreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
+                        wild_command = ctx.command.all_commands.get('wild')
+                        if wild_command:
+                            await wild_command.invoke(ctx)
+                    else:
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                        return
+                elif checks.check_nestreport(ctx):
+                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
+                        nest_command = ctx.command.all_commands.get('nest')
+                        if nest_command:
+                            await nest_command.invoke(ctx)
+                    else:
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                        return
+                elif checks.check_tradereport(ctx):
+                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx)):
+                        trade_command = ctx.command.all_commands.get('trades')
+                        if trade_command:
+                            await trade_command.invoke(ctx)
+                    else:
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                        return
                 else:
-                    await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
-                    return
-            elif checks.check_wildreport(ctx):
-                if not (checks.check_researchreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
-                    wild_command = ctx.command.all_commands.get('wild')
-                    if wild_command:
-                        await wild_command.invoke(ctx)
-                else:
-                    await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
-                    return
-            elif checks.check_nestreport(ctx):
-                if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
-                    nest_command = ctx.command.all_commands.get('nest')
-                    if nest_command:
-                        await nest_command.invoke(ctx)
-                else:
-                    await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
-                    return
-            elif checks.check_tradereport(ctx):
-                if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx)):
-                    trade_command = ctx.command.all_commands.get('trades')
-                    if trade_command:
-                        await trade_command.invoke(ctx)
-                else:
-                    await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
-                    return
-            else:
-                raise checks.errors.CityRaidChannelCheckFail()
+                    raise checks.errors.CityRaidChannelCheckFail()
 
     @_list.command()
     @checks.activechannel()
@@ -321,11 +321,12 @@ class Listing(commands.Cog):
         listmsg = _('**Meowth!**\n')
         if tags and tags.lower() == "tags" or tags.lower() == "tag":
             tags = True
-        listmsg += await self._interest(ctx, tags)
-        if tags:
-            await ctx.channel.send(listmsg)
-        else:
-            await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+        async with ctx.typing():
+            listmsg += await self._interest(ctx, tags)
+            if tags:
+                await ctx.channel.send(listmsg)
+            else:
+                await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
 
     async def _interest(self, ctx, tag=False, team=False):
         ctx_maybecount = 0
@@ -371,11 +372,12 @@ class Listing(commands.Cog):
         listmsg = _('**Meowth!**\n')
         if tags and tags.lower() == "tags" or tags.lower() == "tag":
             tags = True
-        listmsg += await self._otw(ctx, tags)
-        if tags:
-            await ctx.channel.send(listmsg)
-        else:
-            await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+        async with ctx.typing():
+            listmsg += await self._otw(ctx, tags)
+            if tags:
+                await ctx.channel.send(listmsg)
+            else:
+                await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
 
     async def _otw(self, ctx, tag=False, team=False):
         ctx_comingcount = 0
@@ -421,11 +423,12 @@ class Listing(commands.Cog):
         listmsg = _('**Meowth!**\n')
         if tags and tags.lower() == "tags" or tags.lower() == "tag":
             tags = True
-        listmsg += await self._waiting(ctx, tags)
-        if tags:
-            await ctx.channel.send(listmsg)
-        else:
-            await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+        async with ctx.typing():
+            listmsg += await self._waiting(ctx, tags)
+            if tags:
+                await ctx.channel.send(listmsg)
+            else:
+                await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
 
     async def _waiting(self, ctx, tag=False, team=False):
         ctx_herecount = 0
@@ -474,11 +477,12 @@ class Listing(commands.Cog):
         listmsg = _('**Meowth!**\n')
         if tags and tags.lower() == "tags" or tags.lower() == "tag":
             tags = True
-        listmsg += await self._lobbylist(ctx, tags)
-        if tags:
-            await ctx.channel.send(listmsg)
-        else:
-            await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+        async with ctx.typing():
+            listmsg += await self._lobbylist(ctx, tags)
+            if tags:
+                await ctx.channel.send(listmsg)
+            else:
+                await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
 
     async def _lobbylist(self, ctx, tag=False, team=False):
         ctx_lobbycount = 0
@@ -536,66 +540,67 @@ class Listing(commands.Cog):
         all_lobbies = []
         index = 0
         await utils.safe_delete(ctx.message)
-        if raid_lobby:
-            lobby_str = f"**{index}.** "
-            lobby_list = []
-            for trainer in raid_lobby['starting_dict'].keys():
+        async with ctx.typing():
+            if raid_lobby:
+                lobby_str = f"**{index}.** "
+                lobby_list = []
+                for trainer in raid_lobby['starting_dict'].keys():
+                    user = ctx.guild.get_member(trainer)
+                    if not user:
+                        continue
+                    lobby_list.append(user.mention)
+                lobby_str += ", ".join(lobby_list)
+                list_embed.add_field(name="**Lobby**", value=lobby_str, inline=False)
+                all_lobbies.append(raid_lobby)
+            else:
+                all_lobbies.append([])
+            if raid_active:
+                for lobby in raid_active:
+                    active_list = []
+                    index += 1
+                    active_str += f"**{index}.** "
+                    for trainer in lobby['starting_dict'].keys():
+                        user = ctx.guild.get_member(trainer)
+                        if not user:
+                            continue
+                        active_list.append(user.mention)
+                    active_str += ", ".join(active_list)
+                    active_str += "\n"
+                    all_lobbies.append(lobby)
+                list_embed.add_field(name="**Battling**", value=active_str, inline=False)
+            if raid_complete:
+                for lobby in raid_complete:
+                    complete_list = []
+                    for trainer in lobby['starting_dict'].keys():
+                        user = ctx.guild.get_member(trainer)
+                        if not user:
+                            continue
+                        complete_list.append(user.mention)
+                    complete_str += utils.parse_emoji(ctx.guild, self.bot.config['bullet'])
+                    complete_str += ", ".join(complete_list)
+                    complete_str += "\n"
+                list_embed.add_field(name="**Completed**", value=complete_str, inline=False)
+            if not raid_lobby and not raid_active and not raid_complete:
+                list_embed.description = "Nobody has started this raid."
+            if not raid_active and not raid_lobby:
+                await ctx.channel.send(embed=list_embed, delete_after=30)
+                return
+            else:
+                await ctx.channel.send("Reply with the number next to a group to tag that group.", embed=list_embed, delete_after=30)
+            try:
+                lobby_mention = await self.bot.wait_for('message', timeout=30, check=(lambda message: (message.author == ctx.author)))
+            except asyncio.TimeoutError:
+                return
+            if not lobby_mention.content.isdigit():
+                return
+            await utils.safe_delete(lobby_mention)
+            mention_list = []
+            for trainer in all_lobbies[int(lobby_mention.content)]['starting_dict'].keys():
                 user = ctx.guild.get_member(trainer)
                 if not user:
                     continue
-                lobby_list.append(user.mention)
-            lobby_str += ", ".join(lobby_list)
-            list_embed.add_field(name="**Lobby**", value=lobby_str, inline=False)
-            all_lobbies.append(raid_lobby)
-        else:
-            all_lobbies.append([])
-        if raid_active:
-            for lobby in raid_active:
-                active_list = []
-                index += 1
-                active_str += f"**{index}.** "
-                for trainer in lobby['starting_dict'].keys():
-                    user = ctx.guild.get_member(trainer)
-                    if not user:
-                        continue
-                    active_list.append(user.mention)
-                active_str += ", ".join(active_list)
-                active_str += "\n"
-                all_lobbies.append(lobby)
-            list_embed.add_field(name="**Battling**", value=active_str, inline=False)
-        if raid_complete:
-            for lobby in raid_complete:
-                complete_list = []
-                for trainer in lobby['starting_dict'].keys():
-                    user = ctx.guild.get_member(trainer)
-                    if not user:
-                        continue
-                    complete_list.append(user.mention)
-                complete_str += utils.parse_emoji(ctx.guild, self.bot.config['bullet'])
-                complete_str += ", ".join(complete_list)
-                complete_str += "\n"
-            list_embed.add_field(name="**Completed**", value=complete_str, inline=False)
-        if not raid_lobby and not raid_active and not raid_complete:
-            list_embed.description = "Nobody has started this raid."
-        if not raid_active and not raid_lobby:
-            await ctx.channel.send(embed=list_embed, delete_after=30)
-            return
-        else:
-            await ctx.channel.send("Reply with the number next to a group to tag that group.", embed=list_embed, delete_after=30)
-        try:
-            lobby_mention = await self.bot.wait_for('message', timeout=30, check=(lambda message: (message.author == ctx.author)))
-        except asyncio.TimeoutError:
-            return
-        if not lobby_mention.content.isdigit():
-            return
-        await utils.safe_delete(lobby_mention)
-        mention_list = []
-        for trainer in all_lobbies[int(lobby_mention.content)]['starting_dict'].keys():
-            user = ctx.guild.get_member(trainer)
-            if not user:
-                continue
-            mention_list.append(user.mention)
-        await ctx.send(f"Hey {', '.join(mention_list)}! {ctx.author.mention} is trying to get your attention!")
+                mention_list.append(user.mention)
+            await ctx.send(f"Hey {', '.join(mention_list)}! {ctx.author.mention} is trying to get your attention!")
 
 
     @_list.command(aliases=['boss'])
@@ -605,9 +610,10 @@ class Listing(commands.Cog):
 
         Usage: !list bosses
         Works only in raid channels."""
-        listmsg = _('**Meowth!**')
-        listmsg += await self._bosslist(ctx)
-        await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+        async with ctx.typing():
+            listmsg = _('**Meowth!**')
+            listmsg += await self._bosslist(ctx)
+            await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
 
     async def _bosslist(self, ctx):
         message = ctx.message
@@ -658,9 +664,10 @@ class Listing(commands.Cog):
 
         Usage: !list teams
         Works only in raid channels."""
-        listmsg = _('**Meowth!**')
-        listmsg += await self._teamlist(ctx)
-        await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+        async with ctx.typing():
+            listmsg = _('**Meowth!**')
+            listmsg += await self._teamlist(ctx)
+            await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
 
     async def _teamlist(self, ctx):
         message = ctx.message
@@ -702,22 +709,23 @@ class Listing(commands.Cog):
 
         Usage: !list wants
         Works only in the want channel."""
-        listmsg, res_pages = await self._wantlist(ctx)
-        list_messages = []
-        if res_pages:
-            index = 0
-            for p in res_pages:
-                if index == 0:
-                    listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
-                else:
-                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+        async with ctx.typing():
+            listmsg, res_pages = await self._wantlist(ctx)
+            list_messages = []
+            if res_pages:
+                index = 0
+                for p in res_pages:
+                    if index == 0:
+                        listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    else:
+                        listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    list_messages.append(listmsg.id)
+                    index += 1
+            elif listmsg:
+                listmsg = await ctx.channel.send(listmsg)
                 list_messages.append(listmsg.id)
-                index += 1
-        elif listmsg:
-            listmsg = await ctx.channel.send(listmsg)
-            list_messages.append(listmsg.id)
-        else:
-            return
+            else:
+                return
 
     async def _wantlist(self, ctx):
         wantlist = []
@@ -736,8 +744,11 @@ class Listing(commands.Cog):
         user_items = [x.title() for x in user_items]
         user_types = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
         user_types = [x.title() for x in user_types]
+        user_ivs = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
+        user_ivs = sorted(user_ivs)
+        user_ivs = [str(x) for x in user_ivs]
         wantmsg = ""
-        if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0:
+        if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0:
             if wantlist:
                 wantmsg += _('**Pokemon:** (wilds, research, nests{raid_link})\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids" if user_link else "")
             if bosslist and not user_link:
@@ -747,9 +758,11 @@ class Listing(commands.Cog):
             if user_stops:
                 wantmsg += _('\n\n**Stops:** (research, wilds)\n{user_stops}').format(user_stops = '\n'.join(textwrap.wrap(', '.join(user_stops), width=80)))
             if user_items:
-                wantmsg += _('\n\n**Items: (research)**\n{user_items}').format(user_items = '\n'.join(textwrap.wrap(', '.join(user_items), width=80)))
+                wantmsg += _('\n\n**Items:** (research)\n{user_items}').format(user_items = '\n'.join(textwrap.wrap(', '.join(user_items), width=80)))
             if user_types:
                 wantmsg += _('\n\n**Types:** (wilds, research, nests)\n{user_types}').format(user_types = '\n'.join(textwrap.wrap(', '.join(user_types), width=80)))
+            if user_ivs:
+                wantmsg += _('\n\n**IVs:** (wilds)\n{user_ivs}').format(user_ivs = '\n'.join(textwrap.wrap(', '.join(user_ivs), width=80)))
         if wantmsg:
             listmsg = _('Meowth! {author}, you will receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
             paginator = commands.Paginator(prefix="", suffix="")
@@ -764,26 +777,27 @@ class Listing(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     @checks.allowwant()
     async def allwants(self, ctx):
-        """List the wants for the user
+        """List the wants for the server
 
         Usage: !list wants
         Works only in the want channel."""
-        listmsg, res_pages = await self._allwantlist(ctx)
-        list_messages = []
-        if res_pages:
-            index = 0
-            for p in res_pages:
-                if index == 0:
-                    listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
-                else:
-                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+        async with ctx.typing():
+            listmsg, res_pages = await self._allwantlist(ctx)
+            list_messages = []
+            if res_pages:
+                index = 0
+                for p in res_pages:
+                    if index == 0:
+                        listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    else:
+                        listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    list_messages.append(listmsg.id)
+                    index += 1
+            elif listmsg:
+                listmsg = await ctx.channel.send(listmsg)
                 list_messages.append(listmsg.id)
-                index += 1
-        elif listmsg:
-            listmsg = await ctx.channel.send(listmsg)
-            list_messages.append(listmsg.id)
-        else:
-            return
+            else:
+                return
 
     async def _allwantlist(self, ctx):
         want_list = []
@@ -850,34 +864,35 @@ class Listing(commands.Cog):
 
         Usage: !list trades [user or pokemon]
         Works only in trading channels."""
-        if not search:
-            search = ctx.author
-        else:
-            pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, search)
-            if pokemon:
-                search = str(pokemon)
+        async with ctx.typing():
+            if not search:
+                search = ctx.author
             else:
-                converter = commands.MemberConverter()
-                try:
-                    search = await converter.convert(ctx, argument)
-                except:
-                    search = ctx.author
-        listmsg, res_pages = await self._tradelist(ctx, search)
-        list_messages = []
-        if res_pages:
-            index = 0
-            for p in res_pages:
-                if index == 0:
-                    listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, search)
+                if pokemon:
+                    search = str(pokemon)
                 else:
-                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    converter = commands.MemberConverter()
+                    try:
+                        search = await converter.convert(ctx, argument)
+                    except:
+                        search = ctx.author
+            listmsg, res_pages = await self._tradelist(ctx, search)
+            list_messages = []
+            if res_pages:
+                index = 0
+                for p in res_pages:
+                    if index == 0:
+                        listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    else:
+                        listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    list_messages.append(listmsg.id)
+                    index += 1
+            elif listmsg:
+                listmsg = await ctx.channel.send(listmsg)
                 list_messages.append(listmsg.id)
-                index += 1
-        elif listmsg:
-            listmsg = await ctx.channel.send(listmsg)
-            list_messages.append(listmsg.id)
-        else:
-            return
+            else:
+                return
 
     async def _tradelist(self, ctx, search):
         tgt_trainer_trades = {}
@@ -941,29 +956,30 @@ class Listing(commands.Cog):
         Usage: !list research"""
         await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('research', {}).setdefault(ctx.channel.id, [])
-        for msg in list_dict:
-            try:
-                msg = await ctx.channel.fetch_message(msg)
-                await utils.safe_delete(msg)
-            except:
-                pass
-        listmsg, res_pages = await self._researchlist(ctx)
-        list_messages = []
-        if res_pages:
-            index = 0
-            for p in res_pages:
-                if index == 0:
-                    listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
-                else:
-                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+        async with ctx.typing():
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.fetch_message(msg)
+                    await utils.safe_delete(msg)
+                except:
+                    pass
+            listmsg, res_pages = await self._researchlist(ctx)
+            list_messages = []
+            if res_pages:
+                index = 0
+                for p in res_pages:
+                    if index == 0:
+                        listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    else:
+                        listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    list_messages.append(listmsg.id)
+                    index += 1
+            elif listmsg:
+                listmsg = await ctx.channel.send(listmsg)
                 list_messages.append(listmsg.id)
-                index += 1
-        elif listmsg:
-            listmsg = await ctx.channel.send(listmsg)
-            list_messages.append(listmsg.id)
-        else:
-            return
-        self.bot.guild_dict[ctx.guild.id]['list_dict']['research'][ctx.channel.id] = list_messages
+            else:
+                return
+            self.bot.guild_dict[ctx.guild.id]['list_dict']['research'][ctx.channel.id] = list_messages
 
     async def _researchlist(self, ctx):
         research_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('questreport_dict', {}))
@@ -1043,29 +1059,30 @@ class Listing(commands.Cog):
         Usage: !list wilds"""
         await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('wild', {}).setdefault(ctx.channel.id, [])
-        for msg in list_dict:
-            try:
-                msg = await ctx.channel.fetch_message(msg)
-                await utils.safe_delete(msg)
-            except:
-                pass
-        listmsg, wild_pages = await self._wildlist(ctx)
-        list_messages = []
-        if wild_pages:
-            index = 0
-            for p in wild_pages:
-                if index == 0:
-                    listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
-                else:
-                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+        async with ctx.typing():
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.fetch_message(msg)
+                    await utils.safe_delete(msg)
+                except:
+                    pass
+            listmsg, wild_pages = await self._wildlist(ctx)
+            list_messages = []
+            if wild_pages:
+                index = 0
+                for p in wild_pages:
+                    if index == 0:
+                        listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    else:
+                        listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    list_messages.append(listmsg.id)
+                    index += 1
+            elif listmsg:
+                listmsg = await ctx.channel.send(listmsg)
                 list_messages.append(listmsg.id)
-                index += 1
-        elif listmsg:
-            listmsg = await ctx.channel.send(listmsg)
-            list_messages.append(listmsg.id)
-        else:
-            return
-        self.bot.guild_dict[ctx.guild.id]['list_dict']['wild'][ctx.channel.id] = list_messages
+            else:
+                return
+            self.bot.guild_dict[ctx.guild.id]['list_dict']['wild'][ctx.channel.id] = list_messages
 
     async def _wildlist(self, ctx):
         wild_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('wildreport_dict', {}))
@@ -1076,9 +1093,11 @@ class Listing(commands.Cog):
                     wildreportmsg = await ctx.message.channel.fetch_message(wildid)
                     wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['reportauthor'])
                     if wildauthor:
-                        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pokemon'])
+                        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
                         wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['wild_bullet']))
                         wildmsg += _("**Pokemon**: {pokemon} {type}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=pokemon.name.title(), type=''.join(utils.type_emoji(self.bot, ctx.message.guild, pokemon)), location=wild_dict[wildid]['location'].title(), author=wildauthor.display_name, url=wild_dict[wildid].get('url', None))
+                        if wild_dict[wildid].get("wild_iv", None):
+                            wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv']}"
                 except:
                     continue
         if wildmsg:
@@ -1100,27 +1119,28 @@ class Listing(commands.Cog):
         Usage: !list nests"""
         await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('nest', {}).setdefault(ctx.channel.id, [])
-        for msg in list_dict:
-            try:
-                msg = await ctx.channel.fetch_message(msg)
-                await utils.safe_delete(msg)
-            except:
-                pass
-        nest_cog = self.bot.cogs.get('Nest')
-        if not nest_cog:
-            return
-        list_messages = []
-        nest_embed, nest_pages = await nest_cog.get_nest_reports(ctx)
-        index = 0
-        for p in nest_pages:
-            nest_embed.description = p
-            if index == 0:
-                listmsg = await ctx.channel.send(_('**Meowth!** Here\'s the current nests for {channel}').format(channel=ctx.channel.mention), embed=nest_embed)
-            else:
-                listmsg = await ctx.channel.send(embed=nest_embed)
-            list_messages.append(listmsg.id)
-            index += 1
-        self.bot.guild_dict[ctx.guild.id]['list_dict']['nest'][ctx.channel.id] = list_messages
+        async with ctx.typing():
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.fetch_message(msg)
+                    await utils.safe_delete(msg)
+                except:
+                    pass
+            nest_cog = self.bot.cogs.get('Nest')
+            if not nest_cog:
+                return
+            list_messages = []
+            nest_embed, nest_pages = await nest_cog.get_nest_reports(ctx)
+            index = 0
+            for p in nest_pages:
+                nest_embed.description = p
+                if index == 0:
+                    listmsg = await ctx.channel.send(_('**Meowth!** Here\'s the current nests for {channel}').format(channel=ctx.channel.mention), embed=nest_embed)
+                else:
+                    listmsg = await ctx.channel.send(embed=nest_embed)
+                list_messages.append(listmsg.id)
+                index += 1
+            self.bot.guild_dict[ctx.guild.id]['list_dict']['nest'][ctx.channel.id] = list_messages
 
 def setup(bot):
     bot.add_cog(Listing(bot))

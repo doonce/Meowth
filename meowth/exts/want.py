@@ -22,7 +22,7 @@ class Want(commands.Cog):
     @commands.group(case_insensitive=True, invoke_without_command=True)
     @checks.allowwant()
     async def want(self, ctx, *, pokemon):
-        """Add a Pokemon to your wanted list.
+        """Add a Pokemon to your wanted list. Currently used for wild, raid, research, nest reports.
 
         Usage: !want <species>
         Meowth will mention you if anyone reports seeing
@@ -103,6 +103,9 @@ class Want(commands.Cog):
     @want.command(name='boss')
     @checks.allowwant()
     async def want_boss(self, ctx, *, bosses):
+        """Adds a boss role to your wants. Currently used for raid reports.
+
+        Usage: !want boss <boss list>"""
         await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
@@ -173,6 +176,9 @@ class Want(commands.Cog):
     @want.command(name='gym')
     @checks.allowwant()
     async def want_gym(self, ctx, *, gyms):
+        """Add a gym to your want list. Currently used for raid and raid egg reports.
+
+        Usage: !want gym <gym list>"""
         await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
@@ -227,6 +233,9 @@ class Want(commands.Cog):
     @want.command(name='stop')
     @checks.allowwant()
     async def want_stop(self, ctx, *, stops):
+        """Add a gym to your want list. Currently used for wild and research reports.
+
+        Usage: !want stop <stop list>"""
         await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
@@ -281,9 +290,11 @@ class Want(commands.Cog):
     @want.command(name='item')
     @checks.allowwant()
     async def want_item(self, ctx, *, items):
-        """
+        """Add a item to your want list. Currently used research reports.
+
         Item List = incense, poke ball, great ball, ultra ball, master ball, potion, super potion, hyper potion, max potion, revive, max revive, razz berry, golden razz berry, nanab berry, pinap berry, silver pinap berry, fast tm, charged tm, rare candy, lucky egg, stardust, lure module, star piece, premium raid pass, egg incubator, super incubator, team medallion, sun stone, metal coat, dragon scale, up-grade, sinnoh stone
-        """
+
+        Usage: !want item <item list>"""
         await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
@@ -334,6 +345,9 @@ class Want(commands.Cog):
     @want.command(name='type')
     @checks.allowwant()
     async def want_type(self, ctx, *, types):
+        """Add a pokemon type to your want list. Currently used for wild, research, nest reports.
+
+        Usage: !want type <type list>"""
         await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
@@ -381,9 +395,70 @@ class Want(commands.Cog):
         await utils.safe_delete(want_confirmation)
         await ctx.message.add_reaction(self.bot.config['command_done'])
 
+    @want.command(name='iv', aliases=['ivs'])
+    @checks.allowwant()
+    async def want_iv(self, ctx, *, ivs):
+        """Add a IV to your want list. Currently used for wild reports.
+
+        Usage: !want iv <iv list>
+        Enter individual numbers or iv+ to add iv to 100"""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        want_split = ivs.lower().split(',')
+        want_list = []
+        added_count = 0
+        already_want_count = 0
+        already_want_list = []
+        added_list = []
+        error_list = []
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
+        for entered_want in want_split:
+            if "+" in entered_want.lower():
+                entered_want = entered_want.replace("+", "").strip()
+                if not entered_want.strip().isdigit():
+                    error_list.append(entered_want)
+                    continue
+                for iv in range(int(entered_want), 101):
+                    if iv not in want_list:
+                        want_list.append(str(iv))
+            else:
+                if not entered_want.strip().isdigit():
+                    error_list.append(entered_want)
+                    continue
+                if entered_want not in want_list:
+                    want_list.append(entered_want)
+        for entered_want in want_list:
+            if int(entered_want) in user_wants:
+                already_want_list.append(entered_want)
+                already_want_count += 1
+            else:
+                user_wants.append(int(entered_want))
+                added_list.append(f"{entered_want}")
+                added_count += 1
+        want_count = added_count + already_want_count + len(error_list)
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** iv{s}:\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
+        if added_count > 0:
+            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+        if already_want_count > 0:
+            confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+        if error_list:
+            error_msg = ''
+            for word in error_list:
+                error_msg += _('\n\t{word}').format(word=word)
+            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        await asyncio.sleep(90)
+        await utils.safe_delete(want_confirmation)
+        await ctx.message.add_reaction(self.bot.config['command_done'])
+
     @want.command()
     @checks.allowwant()
     async def settings(self, ctx):
+        """Changes alert settings such as muting and active hours.
+
+        Usage: !want settings"""
         await ctx.trigger_typing()
         mute = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', False)
         start_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_start', None)
@@ -490,10 +565,6 @@ class Want(commands.Cog):
 
         Usage: !unwant <species>
         You will no longer be notified of reports about this Pokemon."""
-
-        """Behind the scenes, Meowth removes the user from
-        the server role for the Pokemon species."""
-        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -521,7 +592,10 @@ class Want(commands.Cog):
     @unwant.command(name='boss')
     @checks.allowwant()
     async def unwant_boss(self, ctx, *, bosses):
-        await ctx.trigger_typing()
+        """Remove a boss from your wanted list.
+
+        Usage: !unwant boss <species>
+        You will no longer be notified of reports about this Pokemon."""
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -555,7 +629,6 @@ class Want(commands.Cog):
 
         Usage: !unwant all
         All wants are removed."""
-        await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -572,14 +645,16 @@ class Want(commands.Cog):
         item_count = len(user_items)
         user_types = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
         type_count = len(user_types)
+        user_ivs = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
+        iv_count = len(user_ivs)
         unwant_msg = ""
-        count = want_count + boss_count + gym_count + stop_count + item_count + type_count
+        count = want_count + boss_count + gym_count + stop_count + item_count + type_count + iv_count
         if count == 0:
-            await channel.send(content=_('{0}, you have no pokemon, gyms, stops, types, or items in your want list.').format(author.mention), delete_after=10)
+            await channel.send(content=_('{0}, you have no pokemon, gyms, stops, types, IVs, or items in your want list.').format(author.mention), delete_after=10)
             return
         unwant_msg = f"{author.mention}"
+        await channel.trigger_typing()
         if want_count > 0:
-            await channel.trigger_typing()
             roles = author.roles
             remove_roles = []
             for role in roles:
@@ -589,31 +664,32 @@ class Want(commands.Cog):
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['wants'] = []
             unwant_msg += _(" I've removed {0} pokemon from your want list.").format(count)
         if gym_count > 0:
-            await channel.trigger_typing()
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['gyms'] = []
             unwant_msg += _(" I've removed {0} gyms from your want list.").format(gym_count)
         if stop_count > 0:
-            await channel.trigger_typing()
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['stops'] = []
             unwant_msg += _(" I've removed {0} stops from your want list.").format(stop_count)
         if item_count > 0:
-            await channel.trigger_typing()
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['items'] = []
             unwant_msg += _(" I've removed {0} items from your want list.").format(item_count)
         if boss_count > 0:
-            await channel.trigger_typing()
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['bosses'] = []
             unwant_msg += _(" I've removed {0} bosses from your want list.").format(boss_count)
         if type_count > 0:
-            await channel.trigger_typing()
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['types'] = []
             unwant_msg += _(" I've removed {0} types from your want list.").format(type_count)
+        if iv_count > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['ivs'] = []
+            unwant_msg += _(" I've removed {0} IVs from your want list.").format(iv_count)
         await channel.send(unwant_msg)
 
     @unwant.command(name='gym')
     @checks.allowwant()
     async def unwant_gym(self, ctx, *, gyms):
-        await ctx.trigger_typing()
+        """Remove a gym from your wanted list.
+
+        Usage: !unwant gym <gym list>
+        You will no longer be notified of reports about this gym."""
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -636,7 +712,10 @@ class Want(commands.Cog):
     @unwant.command(name='stop')
     @checks.allowwant()
     async def unwant_stop(self, ctx, *, stops):
-        await ctx.trigger_typing()
+        """Remove a pokestop from your wanted list.
+
+        Usage: !unwant stop <stop list>
+        You will no longer be notified of reports about this pokestop."""
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -659,7 +738,10 @@ class Want(commands.Cog):
     @unwant.command(name='item')
     @checks.allowwant()
     async def unwant_item(self, ctx, *, items):
-        await ctx.trigger_typing()
+        """Remove a item from your wanted list.
+
+        Usage: !unwant item <item list>
+        You will no longer be notified of reports about this item."""
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -678,7 +760,10 @@ class Want(commands.Cog):
     @unwant.command(name='type')
     @checks.allowwant()
     async def unwant_type(self, ctx, *, types):
-        await ctx.trigger_typing()
+        """Remove a type from your wanted list.
+
+        Usage: !unwant type <species>
+        You will no longer be notified of reports about this type."""
         message = ctx.message
         guild = message.guild
         channel = message.channel
@@ -692,6 +777,37 @@ class Want(commands.Cog):
         for entered_unwant in unwant_list:
             if entered_unwant.lower() in user_wants:
                 user_wants.remove(entered_unwant.lower())
+        await message.add_reaction(self.bot.config['command_done'])
+
+    @unwant.command(name='iv', aliases=['ivs'])
+    @checks.allowwant()
+    async def unwant_iv(self, ctx, *, ivs):
+        """Remove a IV from your wanted list.
+
+        Usage: !unwant iv <iv list>
+        You will no longer be notified of reports about this IV."""
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
+        unwant_list = []
+        unwant_split = ivs.lower().split(',')
+        for entered_unwant in unwant_split:
+            if "+" in entered_unwant.lower():
+                entered_unwant = entered_unwant.replace("+", "").strip()
+                if not entered_unwant.strip().isdigit():
+                    continue
+                for iv in range(int(entered_unwant), 101):
+                    if iv not in unwant_list:
+                        unwant_list.append(str(iv))
+            else:
+                if not entered_unwant.strip().isdigit():
+                    continue
+                if entered_unwant not in unwant_list:
+                    unwant_list.append(entered_unwant)
+        for entered_unwant in unwant_list:
+            if int(entered_unwant) in user_wants:
+                user_wants.remove(int(entered_unwant))
         await message.add_reaction(self.bot.config['command_done'])
 
 def setup(bot):

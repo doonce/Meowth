@@ -982,11 +982,11 @@ class Raid(commands.Cog):
 
         Finally, Meowth will create a separate channel for the raid report, for the purposes of organizing the raid."""
         content = f"{pokemon} {location}"
-        await ctx.trigger_typing()
-        if pokemon.isdigit():
-            new_channel = await self._raidegg(ctx, content)
-        else:
-            new_channel = await self._raid(ctx, content)
+        async with ctx.typing():
+            if pokemon.isdigit():
+                new_channel = await self._raidegg(ctx, content)
+            else:
+                new_channel = await self._raid(ctx, content)
         ctx.raid_channel = new_channel
 
     async def _raid(self, ctx, content):
@@ -1617,8 +1617,8 @@ class Raid(commands.Cog):
         Meowth's message will also include the type weaknesses of the boss.
 
         Finally, Meowth will create a separate channel for the raid report, for the purposes of organizing the raid."""
-        await ctx.trigger_typing()
-        await self._exraid(ctx, location)
+        async with ctx.typing():
+            await self._exraid(ctx, location)
 
     async def _exraid(self, ctx, location):
         message = ctx.message
@@ -1714,14 +1714,14 @@ class Raid(commands.Cog):
         """Join an EX Raid.
 
         Usage: !invite"""
-        await self._invite(ctx, exraid_choice)
+        async with ctx.typing():
+            await self._invite(ctx, exraid_choice)
 
     async def _invite(self, ctx, exraid_choice):
         bot = ctx.bot
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
-        await channel.trigger_typing()
         exraidlist = ''
         exraid_dict = {}
         exraidcount = 0
@@ -1775,8 +1775,8 @@ class Raid(commands.Cog):
         Google maps link and post the link to the same channel the report was made in.
 
         Finally, Meowth will create a separate channel for the report, for the purposes of organizing the event."""
-        await ctx.trigger_typing()
-        await self._meetup(ctx, location)
+        async with ctx.typing():
+            await self._meetup(ctx, location)
 
     async def _meetup(self, ctx, location):
         message = ctx.message
@@ -2701,7 +2701,8 @@ class Raid(commands.Cog):
         if not pkmn:
             await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon that appears in raids! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
             return
-        await self._counters(ctx, str(pkmn), user, weather, form, "Unknown Moveset")
+        async with ctx.typing:
+            await self._counters(ctx, str(pkmn), user, weather, form, "Unknown Moveset")
 
     async def _counters(self, ctx, pkmn, user = None, weather = None, form = None, movesetstr = "Unknown Moveset"):
         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
@@ -2732,74 +2733,73 @@ class Raid(commands.Cog):
         weather = match_list[index]
         url += "strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=OVERALL&"
         url += "weatherCondition={weather}&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE".format(weather=weather)
-        async with ctx.typing():
-            async with aiohttp.ClientSession() as sess:
-                async with sess.get(url) as resp:
-                    data = await resp.json()
-            title_url = url.replace('https://fight', 'https://www')
-            colour = ctx.guild.me.colour
-            hyperlink_icon = 'https://i.imgur.com/fn9E5nb.png'
-            pbtlr_icon = 'https://www.pokebattler.com/favicon-32x32.png'
-            if user:
-                try:
-                    test_var = data['attackers'][0]
-                except KeyError:
-                    await ctx.send(f"{ctx.author.mention} it looks like you haven't set up your pokebox yet! Sending you generic level 30 counters.")
-                    url = url.replace(f"users/{user}", 'levels/30')
-                    async with aiohttp.ClientSession() as sess:
-                        async with sess.get(url) as resp:
-                            data = await resp.json()
-            data = data['attackers'][0]
-            raid_cp = data['cp']
-            atk_levels = '30'
-            if movesetstr == "Unknown Moveset":
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get(url) as resp:
+                data = await resp.json()
+        title_url = url.replace('https://fight', 'https://www')
+        colour = ctx.guild.me.colour
+        hyperlink_icon = 'https://i.imgur.com/fn9E5nb.png'
+        pbtlr_icon = 'https://www.pokebattler.com/favicon-32x32.png'
+        if user:
+            try:
+                test_var = data['attackers'][0]
+            except KeyError:
+                await ctx.send(f"{ctx.author.mention} it looks like you haven't set up your pokebox yet! Sending you generic level 30 counters.")
+                url = url.replace(f"users/{user}", 'levels/30')
+                async with aiohttp.ClientSession() as sess:
+                    async with sess.get(url) as resp:
+                        data = await resp.json()
+        data = data['attackers'][0]
+        raid_cp = data['cp']
+        atk_levels = '30'
+        if movesetstr == "Unknown Moveset":
+            ctrs = data['randomMove']['defenders'][-6:]
+            est = data['randomMove']['total']['estimator']
+        else:
+            for moveset in data['byMove']:
+                move1 = moveset['move1'][:-5].lower().title().replace('_', ' ')
+                move2 = moveset['move2'].lower().title().replace('_', ' ')
+                moveset_str = f'{move1} | {move2}'
+                if moveset_str == movesetstr:
+                    ctrs = moveset['defenders'][-6:]
+                    est = moveset['total']['estimator']
+                    break
+            else:
+                movesetstr = "Unknown Moveset"
                 ctrs = data['randomMove']['defenders'][-6:]
                 est = data['randomMove']['total']['estimator']
-            else:
-                for moveset in data['byMove']:
-                    move1 = moveset['move1'][:-5].lower().title().replace('_', ' ')
-                    move2 = moveset['move2'].lower().title().replace('_', ' ')
-                    moveset_str = f'{move1} | {move2}'
-                    if moveset_str == movesetstr:
-                        ctrs = moveset['defenders'][-6:]
-                        est = moveset['total']['estimator']
-                        break
-                else:
-                    movesetstr = "Unknown Moveset"
-                    ctrs = data['randomMove']['defenders'][-6:]
-                    est = data['randomMove']['total']['estimator']
-            def clean(txt):
-                return txt.replace('_', ' ').title()
-            title = _('{pkmn} | {weather} | {movesetstr}').format(pkmn=pkmn.title(), weather=weather_list[index].title(), movesetstr=movesetstr)
-            stats_msg = _("**CP:** {raid_cp}\n").format(raid_cp=raid_cp)
-            stats_msg += _("**Weather:** {weather}\n").format(weather=clean(weather))
-            stats_msg += _("**Attacker Level:** {atk_levels}").format(atk_levels=atk_levels)
-            if form == "_ALOLA_FORM":
-                form_url = "a"
-            else:
-                form_url = ""
-            img_url = pokemon.img_url
-            ctrs_embed = discord.Embed(colour=colour)
-            ctrs_embed.set_author(name=title, url=title_url, icon_url=hyperlink_icon)
-            ctrs_embed.set_thumbnail(url=img_url)
-            ctrs_embed.set_footer(text=_('Results courtesy of Pokebattler'), icon_url=pbtlr_icon)
-            index = 1
-            for ctr in reversed(ctrs):
-                ctr_name = clean(ctr['pokemonId'])
-                ctr_nick = clean(ctr.get('name', ''))
-                ctr_cp = ctr['cp']
-                moveset = ctr['byMove'][-1]
-                moves = _("{move1} | {move2}").format(move1=clean(moveset['move1'])[:-5], move2=clean(moveset['move2']))
-                name = _("#{index} - {ctr_name}").format(index=index, ctr_name=(ctr_nick or ctr_name))
-                cpstr = _("CP")
-                ctrs_embed.add_field(name=name, value=f"{cpstr}: {ctr_cp}\n{moves}")
-                index += 1
-            ctrs_embed.add_field(name=_("Results with {userstr} attackers").format(userstr=userstr), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pkmn.replace('-', '_').upper()))
-            if user:
-                ctrs_embed.add_field(name=_("Pokebattler Estimator:"), value=_("Difficulty rating: {est}").format(est=est))
-                await ctx.author.send(embed=ctrs_embed, delete_after=600)
-                return
-            await ctx.channel.send(embed=ctrs_embed)
+        def clean(txt):
+            return txt.replace('_', ' ').title()
+        title = _('{pkmn} | {weather} | {movesetstr}').format(pkmn=pkmn.title(), weather=weather_list[index].title(), movesetstr=movesetstr)
+        stats_msg = _("**CP:** {raid_cp}\n").format(raid_cp=raid_cp)
+        stats_msg += _("**Weather:** {weather}\n").format(weather=clean(weather))
+        stats_msg += _("**Attacker Level:** {atk_levels}").format(atk_levels=atk_levels)
+        if form == "_ALOLA_FORM":
+            form_url = "a"
+        else:
+            form_url = ""
+        img_url = pokemon.img_url
+        ctrs_embed = discord.Embed(colour=colour)
+        ctrs_embed.set_author(name=title, url=title_url, icon_url=hyperlink_icon)
+        ctrs_embed.set_thumbnail(url=img_url)
+        ctrs_embed.set_footer(text=_('Results courtesy of Pokebattler'), icon_url=pbtlr_icon)
+        index = 1
+        for ctr in reversed(ctrs):
+            ctr_name = clean(ctr['pokemonId'])
+            ctr_nick = clean(ctr.get('name', ''))
+            ctr_cp = ctr['cp']
+            moveset = ctr['byMove'][-1]
+            moves = _("{move1} | {move2}").format(move1=clean(moveset['move1'])[:-5], move2=clean(moveset['move2']))
+            name = _("#{index} - {ctr_name}").format(index=index, ctr_name=(ctr_nick or ctr_name))
+            cpstr = _("CP")
+            ctrs_embed.add_field(name=name, value=f"{cpstr}: {ctr_cp}\n{moves}")
+            index += 1
+        ctrs_embed.add_field(name=_("Results with {userstr} attackers").format(userstr=userstr), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pkmn.replace('-', '_').upper()))
+        if user:
+            ctrs_embed.add_field(name=_("Pokebattler Estimator:"), value=_("Difficulty rating: {est}").format(est=est))
+            await ctx.author.send(embed=ctrs_embed, delete_after=600)
+            return
+        await ctx.channel.send(embed=ctrs_embed)
 
     async def _get_generic_counters(self, guild, pkmn, weather=None):
         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
