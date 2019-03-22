@@ -165,10 +165,10 @@ class Wild(commands.Cog):
         converter = commands.clean_content()
         iv_test = await converter.convert(ctx, wild_details.split()[-1])
         iv_test = iv_test.lower().strip()
-        if "iv" in iv_test or iv_test.isdigit():
+        if "iv" in iv_test or utils.is_number(iv_test):
             wild_iv = iv_test.replace("iv", "").replace("@", "").replace("#", "")
-            if wild_iv.isdigit() and int(wild_iv) >= 0 and int(wild_iv) <= 100:
-                wild_iv = int(wild_iv)
+            if utils.is_number(wild_iv) and float(wild_iv) >= 0 and float(wild_iv) <= 100:
+                wild_iv = int(round(float(wild_iv)))
                 wild_details = wild_details.replace(wild_details.split()[-1], "").strip()
             else:
                 wild_iv = None
@@ -187,7 +187,7 @@ class Wild(commands.Cog):
         if not wild_details:
             await utils.safe_delete(ctx.message)
             return
-        if wild_iv:
+        if wild_iv or wild_iv == 0:
             iv_str = f" - **{wild_iv}IV**"
         else:
             iv_str = ""

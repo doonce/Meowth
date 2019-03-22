@@ -600,10 +600,10 @@ class Huntr(commands.Cog):
             return
         if "iv" in wild_extra.lower():
             wild_iv = wild_extra.split("IV:")[1].strip()
-            if wild_iv.isdigit() and int(wild_iv) >= 0 and int(wild_iv) <= 100:
-                wild_iv = int(wild_iv)
+            if utils.is_number(wild_iv) and float(wild_iv) >= 0 and float(wild_iv) <= 100:
+                wild_iv = int(round(float(wild_iv)))
             else:
-                wild_iv = None
+                wild_iv = None                
         wild_types = copy.deepcopy(pokemon.types)
         wild_types.append('None')
         wild_number = pokemon.id
@@ -618,7 +618,7 @@ class Huntr(commands.Cog):
             nearest_stop = gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), message.guild.id)
             if nearest_stop:
                 wild_details = nearest_stop
-        if wild_iv:
+        if wild_iv or wild_iv == 0:
             iv_str = f" - **{wild_iv}IV**"
         else:
             iv_str = ""

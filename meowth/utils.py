@@ -44,6 +44,13 @@ def colour(*args):
     else:
         return discord.Colour.lighter_grey()
 
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
 def make_embed(msg_type='', title=None, icon=None, content=None,
                msg_colour=None, guild=None, title_url=None,
                thumbnail='', image='', fields=None, footer=None,
