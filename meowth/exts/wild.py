@@ -169,7 +169,7 @@ class Wild(commands.Cog):
             wild_iv = iv_test.replace("iv", "").replace("@", "").replace("#", "")
             if wild_iv.isdigit() and int(wild_iv) >= 0 and int(wild_iv) <= 100:
                 wild_iv = int(wild_iv)
-                wild_details = wild_details.replace(wild_details.split()[-1], f"- **{wild_iv}IV**")
+                wild_details = wild_details.replace(wild_details.split()[-1], "").strip()
             else:
                 wild_iv = None
         wild_number = pokemon.id
@@ -181,14 +181,16 @@ class Wild(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
-            stop_info, wild_details, stop_url = await gym_matching_cog.get_stop_info(ctx, wild_details)
+            stop_info, wild_details, stop_url = await gym_matching_cog.get_stop_info(ctx, wild_details.replace(f" - **{wild_iv}IV**", "").strip())
             if stop_url:
                 wild_gmaps_link = stop_url
         if not wild_details:
             await utils.safe_delete(ctx.message)
             return
-        if wild_iv and "IV**" not in wild_details:
-            wild_details = wild_details + f" - **{wild_iv}IV**"
+        if wild_iv:
+            iv_str = f" - **{wild_iv}IV**"
+        else:
+            iv_str = ""
         wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
         wild_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.capitalize(), pokemonnumber=str(wild_number), type=''.join(utils.type_emoji(self.bot, message.guild, pokemon))), inline=False)
         wild_embed.set_thumbnail(url=wild_img_url)
@@ -196,7 +198,7 @@ class Wild(commands.Cog):
         despawn = 3600
         wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=self.bot.config['wild_omw']))
         wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=self.bot.config['wild_despawn']))
-        ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details), embed=wild_embed)
+        ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details, iv_str=iv_str), embed=wild_embed)
         dm_dict = {}
         dm_dict = await self.send_dm_messages(ctx, wild_number, wild_details, wild_types[0], wild_types[1], wild_iv, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
@@ -211,7 +213,7 @@ class Wild(commands.Cog):
             'reportchannel':message.channel.id,
             'reportauthor':message.author.id,
             'dm_dict':dm_dict,
-            'location':wild_details.replace(f" - **{wild_iv}IV**", ""),
+            'location':wild_details,
             'url':wild_gmaps_link,
             'pokemon':entered_wild,
             'pkmn_obj':str(pokemon),
