@@ -187,6 +187,8 @@ class Wild(commands.Cog):
         if not wild_details:
             await utils.safe_delete(ctx.message)
             return
+        if wild_iv and "IV**" not in wild_details:
+            wild_details = wild_details + f" - **{wild_iv}IV**"
         wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
         wild_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_wild.capitalize(), pokemonnumber=str(wild_number), type=''.join(utils.type_emoji(self.bot, message.guild, pokemon))), inline=False)
         wild_embed.set_thumbnail(url=wild_img_url)

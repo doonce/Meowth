@@ -806,6 +806,7 @@ class Listing(commands.Cog):
         boss_list = []
         item_list = []
         type_list = []
+        iv_list = []
         for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('wants', []):
                 if want not in want_list:
@@ -825,6 +826,9 @@ class Listing(commands.Cog):
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('types', []):
                 if want not in type_list:
                     type_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('ivs', []):
+                if want not in iv_list:
+                    iv_list.append(want)
         want_list = sorted(want_list)
         want_list = [utils.get_name(self.bot, x).title() for x in want_list]
         stop_list = [x.title() for x in stop_list]
@@ -833,8 +837,10 @@ class Listing(commands.Cog):
         boss_list = [utils.get_name(self.bot, x).title() for x in boss_list]
         item_list = [x.title() for x in item_list]
         type_list = [x.title() for x in type_list]
+        iv_list = sorted(iv_list)
+        iv_list = [str(x) for x in iv_list]
         wantmsg = ""
-        if len(want_list) > 0 or len(gym_list) > 0 or len(stop_list) > 0 or len(item_list) > 0 or len(boss_list) > 0 or len(type_list) > 0:
+        if len(want_list) > 0 or len(gym_list) > 0 or len(stop_list) > 0 or len(item_list) > 0 or len(boss_list) > 0 or len(type_list) > 0 or len(iv_list) > 0:
             if want_list:
                 wantmsg += _('**Pokemon:**\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(want_list), width=80)))
             if boss_list:
@@ -847,6 +853,8 @@ class Listing(commands.Cog):
                 wantmsg += _('\n\n**Items:**\n{user_items}').format(user_items = '\n'.join(textwrap.wrap(', '.join(item_list), width=80)))
             if type_list:
                 wantmsg += _('\n\n**Types:**\n{user_types}').format(user_types = '\n'.join(textwrap.wrap(', '.join(type_list), width=80)))
+            if iv_list:
+                wantmsg += _('\n\n**IVs:**\n{user_ivs}').format(user_ivs = '\n'.join(textwrap.wrap(', '.join(iv_list), width=80)))
         if wantmsg:
             listmsg = _('**Meowth!** The server **!want** list is:')
             paginator = commands.Paginator(prefix="", suffix="")
