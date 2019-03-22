@@ -1104,7 +1104,8 @@ class Listing(commands.Cog):
                         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
                         wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['wild_bullet']))
                         wildmsg += _("**Pokemon**: {pokemon} {type}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=pokemon.name.title(), type=''.join(utils.type_emoji(self.bot, ctx.message.guild, pokemon)), location=wild_dict[wildid]['location'].title(), author=wildauthor.display_name, url=wild_dict[wildid].get('url', None))
-                        if wild_dict[wildid].get("wild_iv", None):
+                        iv_check = wild_dict[wildid].get("wild_iv", None)
+                        if iv_check or iv_check == 0:
                             wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv']}"
                 except:
                     continue
