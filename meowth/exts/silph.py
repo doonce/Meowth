@@ -4,8 +4,8 @@ import aiohttp
 
 import discord
 from discord.ext import commands
-from meowth import utils
 from meowth import checks
+from meowth.exts import utilities as utils
 
 class SilphBadge:
 

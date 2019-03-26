@@ -5,7 +5,7 @@ import re
 from discord.ext import commands
 from discord.ext.commands import CommandError
 
-from meowth import utils
+from meowth.exts import utilities as utils
 
 
 class PokemonNotFound(CommandError):
@@ -57,7 +57,7 @@ class Pokemon():
         Current instance of Eevee
     """
 
-    __slots__ = ('name', 'id', 'types', 'bot', 'guild', 'pkmn_list',
+    __slots__ = ('name', 'id', 'types', 'emoji', 'bot', 'guild', 'pkmn_list',
                  'pb_raid', 'weather', 'moveset', 'form', 'shiny', 'gender',
                  'alolan', 'size', 'legendary', 'mythical')
 
@@ -117,7 +117,6 @@ class Pokemon():
         self.bot = bot
         self.guild = guild
         self.pkmn_list = bot.pkmn_list
-
         if pkmn.isdigit():
             pkmn = utils.get_name(bot, pkmn)
 
@@ -125,7 +124,6 @@ class Pokemon():
         if pkmn not in self.pkmn_list:
             raise PokemonNotFound(pkmn)
         self.id = utils.get_number(bot, pkmn)
-        self.types = self._get_type()
         self.pb_raid = None
         self.weather = attribs.get('weather', None)
         self.moveset = attribs.get('moveset', [])
@@ -154,6 +152,8 @@ class Pokemon():
         self.gender = attribs.get('gender', None)
         if self.id not in bot.gender_dict:
             self.gender = None
+        self.types = self._get_type()
+        self.emoji = self._get_emoji()
 
     def __str__(self):
         name = self.name.title()
@@ -326,7 +326,7 @@ class Pokemon():
         """
         types_eff = {}
         for t, v in self.type_effects.items():
-            if round(v, 3) > 1:
+            if round(v, 3) >= 1:
                 types_eff[t] = v
         return types_eff
 
@@ -343,7 +343,21 @@ class Pokemon():
 
     def _get_type(self):
         """:class:`list` : Returns the Pokemon's types"""
-        return self.bot.pkmn_info[utils.get_name(self.bot, self.id)]['forms']['none']['type']
+        form = str(self.form).lower()
+        if self.alolan:
+            form = "alolan"
+        return self.bot.pkmn_info[utils.get_name(self.bot, self.id)]['forms'][form]['type']
+
+    def _get_emoji(self):
+        """:class:`list` : Returns the Pokemon's type emoji"""
+        types = self._get_type()
+        ret = ""
+        for type in types:
+            emoji = self.bot.config['type_id_dict'][type.lower()].split(":")[1]
+            emoji = discord.utils.get(self.bot.emojis, name=emoji)
+            if emoji:
+                ret += str(emoji)
+        return ret
 
     @property
     def type_effects(self):
@@ -729,7 +743,7 @@ class Pokedex(commands.Cog):
                 form = "Normal"
             form_str = f"{form} {form_key}"
             form_list.append(form_str.strip())
-        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {''.join(utils.type_emoji(self.bot, ctx.guild, pokemon))}", value=pokemon.pokedex, inline=False)
+        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji}", value=pokemon.pokedex, inline=False)
         if len(forms) > 1 or key_needed:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
         if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:

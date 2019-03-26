@@ -9,8 +9,9 @@ import logging
 import discord
 from discord.ext import commands
 
-from meowth import utils, checks
+from meowth import checks
 from meowth.exts import pokemon as pkmn_class
+from meowth.exts import utilities as utils
 
 logger = logging.getLogger("meowth")
 
@@ -144,10 +145,10 @@ class Nest(commands.Cog):
             for pkmn in reported_pkmn:
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn[0])
                 if report_count == 0:
-                    embed_value += f"**{pokemon.name.title()}** {''.join(utils.type_emoji(self.bot, guild, pokemon))} **({pkmn[1]})**"
+                    embed_value += f"**{pokemon.name.title()}** {pokemon.emoji} **({pkmn[1]})**"
                     report_count += 1
                 else:
-                    embed_value += f"{pokemon.name.title()} {''.join(utils.type_emoji(self.bot, guild, pokemon))} ({pkmn[1]})"
+                    embed_value += f"{pokemon.name.title()} {pokemon.emoji} ({pkmn[1]})"
             description += f"**{nest_count} \u2013 {nest.title()}** | {embed_value}\n"
 
         for line in description.splitlines():
@@ -215,7 +216,7 @@ class Nest(commands.Cog):
         nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
         nest_number = pokemon.id
         nest_img_url = pokemon.img_url
-        nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {pokemon.name.title()} {''.join(utils.type_emoji(self.bot, guild, pokemon))}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
+        nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
         nest_embed.set_thumbnail(url=nest_img_url)
         nest_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -315,12 +316,12 @@ class Nest(commands.Cog):
         for pkmn in reported_pkmn:
             pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn[0])
             if report_count == 0:
-                embed_value += f"**{str(pokemon)}** {''.join(utils.type_emoji(self.bot, guild, pokemon))} **({pkmn[1]})**"
+                embed_value += f"**{str(pokemon)}** {pokemon.emoji} **({pkmn[1]})**"
                 report_count += 1
                 nest_img_url = pokemon.img_url
                 nest_number = pokemon.id
             else:
-                embed_value += f", {str(pokemon)} {''.join(utils.type_emoji(self.bot, guild, pokemon))} ({pkmn[1]})"
+                embed_value += f", {str(pokemon)} {pokemon.emoji} ({pkmn[1]})"
         nest_description = f"**Nest**: {nest_name.title()}\n**All Reports**: {embed_value}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
         nest_embed.set_thumbnail(url=nest_img_url)

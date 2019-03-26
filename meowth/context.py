@@ -3,8 +3,8 @@ import textwrap
 import discord
 from discord.ext import commands
 
-from meowth.utils import convert_to_bool, make_embed, bold
 from meowth import settings
+from meowth.exts import utilities as utils
 
 class Context(commands.Context):
     def __init__(self, **kwargs):
@@ -23,7 +23,7 @@ class Context(commands.Context):
             return paginator.pages
         for page in paginator.pages:
             if page == paginator.pages[0] and title:
-                page = bold(title)+"\n"+page
+                page = utils.bold(title)+"\n"+page
             await self.send(page)
 
     async def ok(self):
@@ -57,7 +57,7 @@ class Context(commands.Context):
                     icon=None, thumbnail='', image='', fields: dict = None,
                     footer=None, footer_icon=None, send=True, inline=False):
         """Send or build an embed using context details."""
-        embed = make_embed(title=title, content=description, msg_type=msg_type,
+        embed = utils.make_embed(title=title, content=description, msg_type=msg_type,
                            title_url=title_url, msg_colour=colour, icon=icon,
                            thumbnail=thumbnail, image=image, guild=self.guild)
         if fields:

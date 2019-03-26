@@ -10,8 +10,9 @@ import logging
 import discord
 from discord.ext import commands
 
-from meowth import utils, checks
+from meowth import checks
 from meowth.exts import pokemon as pkmn_class
+from meowth.exts import utilities as utils
 
 logger = logging.getLogger("meowth")
 
@@ -556,7 +557,6 @@ class Want(commands.Cog):
                 await ctx.author.remove_roles(*remove_list)
             if add_list:
                 await ctx.author.add_roles(*add_list)
-
 
     @commands.group(case_insensitive=True, invoke_without_command=True)
     @checks.allowwant()

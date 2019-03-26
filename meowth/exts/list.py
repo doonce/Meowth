@@ -12,8 +12,9 @@ from operator import itemgetter
 import discord
 from discord.ext import commands
 
-from meowth import utils, checks
+from meowth import checks
 from meowth.exts import pokemon as pkmn_class
+from meowth.exts import utilities as utils
 
 logger = logging.getLogger("meowth")
 
@@ -117,11 +118,11 @@ class Listing(commands.Cog):
                             type_str = ""
                             pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
                             if pokemon:
-                                type_str = ''.join(utils.type_emoji(self.bot, guild, pokemon))
+                                type_str = pokemon.emoji
                             expirytext = _('{type_str} - Expires: {expiry}{is_assumed}').format(type_str=type_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                        output += f"{rchan.mention}{expirytext}\n"
+                        output += f"{rchan.mention}{expirytext}"
                         if channel_dict['total']:
-                            output += f"Total: **{channel_dict['total']}**"
+                            output += f"\n**Total: {channel_dict['total']}**"
                         if channel_dict['maybe']:
                             output += f" | Maybe: **{channel_dict['maybe']}**"
                         if channel_dict['coming']:
@@ -630,10 +631,8 @@ class Listing(commands.Cog):
         boss_dict["unspecified"] = {"type": "❔", "total": 0, "maybe": 0, "coming": 0, "here": 0}
         for p in egg_info['pokemon']:
             pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
-            p_name = pokemon.name.title()
-            boss_list.append(p_name.lower())
-            p_type = utils.type_emoji(self.bot, message.guild, pokemon)
-            boss_dict[p_name.lower()] = {"type": "{}".format(''.join(p_type)), "total": 0, "maybe": 0, "coming": 0, "here": 0, "trainers":[]}
+            boss_list.append(pokemon.name.lower())
+            boss_dict[pokemon.name.lower()] = {"type": "{}".format(pokemon.emoji), "total": 0, "maybe": 0, "coming": 0, "here": 0, "trainers":[]}
         boss_list.append('unspecified')
         trainer_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'])
         for trainer in trainer_dict:
@@ -650,7 +649,7 @@ class Listing(commands.Cog):
         bossliststr = ''
         for boss in boss_list:
             if boss_dict[boss]['total'] > 0:
-                bossliststr += _('{type} {name}: **{total} total,** {interested} interested, {coming} coming, {here} waiting {type}\n').format(type=boss_dict[boss]['type'], name=boss.capitalize(), total=boss_dict[boss]['total'], interested=boss_dict[boss]['maybe'], coming=boss_dict[boss]['coming'], here=boss_dict[boss]['here'])
+                bossliststr += _('{type} {name}: **{total} total,** {interested} interested, {coming} coming, {here} waiting {type}\n**Trainers:** {trainers}\n\n').format(type=boss_dict[boss]['type'], name=boss.capitalize(), total=boss_dict[boss]['total'], interested=boss_dict[boss]['maybe'], coming=boss_dict[boss]['coming'], here=boss_dict[boss]['here'], trainers=', '.join(boss_dict[boss]['trainers']))
         if bossliststr:
             listmsg = _(' Boss numbers for the raid:\n\n{}').format(bossliststr)
         else:
@@ -1103,7 +1102,7 @@ class Listing(commands.Cog):
                     if wildauthor:
                         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
                         wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['wild_bullet']))
-                        wildmsg += _("**Pokemon**: {pokemon} {type}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=pokemon.name.title(), type=''.join(utils.type_emoji(self.bot, ctx.message.guild, pokemon)), location=wild_dict[wildid]['location'].title(), author=wildauthor.display_name, url=wild_dict[wildid].get('url', None))
+                        wildmsg += _("**Pokemon**: {pokemon} {type}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=pokemon.name.title(), type=pokemon.emoji, location=wild_dict[wildid]['location'].title(), author=wildauthor.display_name, url=wild_dict[wildid].get('url', None))
                         iv_check = wild_dict[wildid].get("wild_iv", None)
                         if iv_check or iv_check == 0:
                             wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv']}"

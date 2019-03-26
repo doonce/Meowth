@@ -7,9 +7,9 @@ from discord.ext import commands
 import time
 from time import strftime
 
-from meowth import utils
 from meowth import checks
 from meowth.exts import pokemon as pkmn_class
+from meowth.exts import utilities as utils
 
 class Configure(commands.Cog):
     def __init__(self, bot):

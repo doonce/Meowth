@@ -11,9 +11,9 @@ import string
 import discord
 from discord.ext import commands
 
-from meowth import utils, checks
-from meowth.logs import init_loggers
+from meowth import checks
 from meowth.exts import pokemon as pkmn_class
+from meowth.exts import utilities as utils
 
 logger = logging.getLogger("meowth")
 
@@ -121,7 +121,7 @@ class Research(commands.Cog):
                     other_reward = any(x in reward.lower() for x in reward_list)
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
                     if pokemon and not other_reward:
-                        reward = f"{string.capwords(reward, ' ')} {''.join(utils.type_emoji(self.bot, guild, pokemon))}"
+                        reward = f"{string.capwords(reward, ' ')} {pokemon.emoji}"
                         research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
                     else:
                         research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
@@ -198,7 +198,7 @@ class Research(commands.Cog):
                         other_reward = any(x in reward.lower() for x in reward_list)
                         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
                         if pokemon and not other_reward:
-                            reward = f"{string.capwords(reward, ' ')} {''.join(utils.type_emoji(self.bot, guild, pokemon))}"
+                            reward = f"{string.capwords(reward, ' ')} {pokemon.emoji}"
                             research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
                         else:
                             research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)

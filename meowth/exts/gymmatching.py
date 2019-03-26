@@ -5,7 +5,7 @@ import functools
 
 from discord.ext import commands
 
-from meowth import utils
+from meowth.exts import utilities as utils
 
 class GymMatching(commands.Cog):
     def __init__(self, bot):

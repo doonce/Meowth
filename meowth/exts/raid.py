@@ -13,8 +13,9 @@ import json
 import discord
 from discord.ext import commands
 
-from meowth import utils, checks
+from meowth import checks
 from meowth.exts import pokemon as pkmn_class
+from meowth.exts import utilities as utils
 
 logger = logging.getLogger("meowth")
 
@@ -590,6 +591,8 @@ class Raid(commands.Cog):
         return dm_dict
 
     async def edit_dm_messages(self, ctx, content, embed, dm_dict):
+        if isinstance(embed.description, discord.embeds._EmptyEmbed):
+            embed.description = ""
         embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
         for dm_user, dm_message in dm_dict.items():
             try:
@@ -853,9 +856,7 @@ class Raid(commands.Cog):
             boss_list = []
             for p in self.bot.raid_info['raid_eggs'][newraid]['pokemon']:
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
-                p_name = pokemon.name.title()
-                p_type = utils.type_emoji(self.bot, message.guild, pokemon)
-                boss_list.append((((p_name + ' (') + str(pokemon.id)) + ') ') + ''.join(p_type))
+                boss_list.append(pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
             raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=1'.format(str(egg_img))
             raid_message = await channel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidmessage'])
             report_channel = self.bot.get_channel(raid_message.raw_channel_mentions[0])
@@ -1110,7 +1111,7 @@ class Raid(commands.Cog):
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(pokemon.id), type=''.join(utils.type_emoji(self.bot, message.guild, pokemon)), inline=True))
+        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(pokemon.id), type=pokemon.emoji), inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(self.bot, message.guild, utils.get_weaknesses(self.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
@@ -1262,9 +1263,7 @@ class Raid(commands.Cog):
             boss_list = []
             for p in egg_info['pokemon']:
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
-                p_name = pokemon.name.title()
-                p_type = utils.type_emoji(self.bot, message.guild, pokemon)
-                boss_list.append((((p_name + ' (') + str(pokemon.id)) + ') ') + ''.join(p_type))
+                boss_list.append(pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
             raid_channel = await self.create_raid_channel(ctx, egg_level, raid_details, "egg")
             if not raid_channel:
                 return
@@ -1368,7 +1367,7 @@ class Raid(commands.Cog):
         else:
             roletest = _("{pokemon} - ").format(pokemon=raidrole.mention)
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=str(pokemon.id), type=''.join(utils.type_emoji(self.bot, raid_channel.guild, pokemon)), inline=True))
+        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=str(pokemon.id), type=pokemon.emoji), inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
         raid_embed.add_field(name=_('**Hatches:**'), value=oldembed.fields[3].value, inline=True)
@@ -1513,7 +1512,7 @@ class Raid(commands.Cog):
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=str(pokemon.id), type=''.join(utils.type_emoji(self.bot, raid_channel.guild, pokemon)), inline=True))
+        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=str(pokemon.id), type=pokemon.emoji), inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=pokemon.img_url)
@@ -1654,9 +1653,7 @@ class Raid(commands.Cog):
         boss_list = []
         for p in egg_info['pokemon']:
             pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
-            p_name = pokemon.name.title()
-            p_type = utils.type_emoji(self.bot, message.guild, pokemon)
-            boss_list.append((((p_name + ' (') + str(pokemon.id)) + ') ') + ''.join(p_type))
+            boss_list.append(pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
         raid_channel = await self.create_raid_channel(ctx, "EX", raid_details, "exraid")
         if not raid_channel:
             return
@@ -1794,7 +1791,7 @@ class Raid(commands.Cog):
         if not raid_channel:
             return
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/meetup.png?cache=1'
-        raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the event!'), url=raid_gmaps_link, colour=message.guild.me.colour)
+        raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the event!'), description="", url=raid_gmaps_link, colour=message.guild.me.colour)
         raid_embed.add_field(name=_('**Event Location:**'), value=raid_details, inline=True)
         raid_embed.add_field(name='\u200b', value='\u200b', inline=True)
         raid_embed.add_field(name=_('**Event Starts:**'), value=_('Set with **!starttime**'), inline=True)
@@ -3378,10 +3375,8 @@ class Raid(commands.Cog):
         if egglevel != "0":
             for p in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
-                p_name = pokemon.name.title()
-                boss_list.append(p_name.lower())
-                p_type = utils.type_emoji(self.bot, channel.guild, pokemon)
-                boss_dict[p_name.lower()] = {"type": "{}".format(''.join(p_type)), "total": 0}
+                boss_list.append(pokemon.name.lower())
+                boss_dict[pokemon.name.lower()] = {"type": "{}".format(pokemon.emoji), "total": 0}
         channel_dict = {"mystic":0, "valor":0, "instinct":0, "unknown":0, "maybe":0, "coming":0, "here":0, "lobby":0, "total":0, "boss":0}
         team_list = ["mystic", "valor", "instinct", "unknown"]
         status_list = ["maybe", "coming", "here", "lobby"]
