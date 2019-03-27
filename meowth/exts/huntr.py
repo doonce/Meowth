@@ -78,6 +78,8 @@ class Huntr(commands.Cog):
             except Exception as err:
                 logger.info('SAVING FAILED' + err)
             logger.info('------ END ------')
+            if not loop:
+                return
             await asyncio.sleep(600)
             continue
 

@@ -417,8 +417,8 @@ class Raid(commands.Cog):
                 pass
 
     async def channel_cleanup(self, loop=True):
+        await self.bot.wait_until_ready()
         while (not self.bot.is_closed()):
-            await self.bot.wait_until_ready()
             guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)
             logger.info('------ BEGIN ------')
             gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -502,6 +502,8 @@ class Raid(commands.Cog):
             except Exception as err:
                 logger.info('SAVING FAILED' + err)
             logger.info('------ END ------')
+            if not loop:
+                return
             await asyncio.sleep(600)
             continue
 
@@ -2800,6 +2802,8 @@ class Raid(commands.Cog):
 
     async def _get_generic_counters(self, guild, pkmn, weather=None):
         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
+        if not pokemon:
+            return
         pkmn = pokemon.name.lower()
         emoji_dict = {0: '0\u20e3', 1: '1\u20e3', 2: '2\u20e3', 3: '3\u20e3', 4: '4\u20e3', 5: '5\u20e3', 6: '6\u20e3', 7: '7\u20e3', 8: '8\u20e3', 9: '9\u20e3', 10: '\U0001f51f'}
         ctrs_dict = {}
@@ -3582,23 +3586,28 @@ class Raid(commands.Cog):
         t_dict['count'] = 1
         await self._edit_party(channel, author)
 
-    async def lobby_cleanup(self):
+    async def lobby_cleanup(self, loop=True):
         await self.bot.wait_until_ready()
-        for guild in self.bot.guilds:
-            guild_raids = copy.deepcopy(self.bot.guild_dict[guild.id]['raidchannel_dict'])
-            for raid in guild_raids:
-                lobby = guild_raids[raid].get("lobby", False)
-                battling = guild_raids[raid].get("battling", False)
-                if not lobby and not battling:
-                    continue
-                first_message = guild_raids[raid].get("raidmessage", False)
-                raid_channel = self.bot.get_channel(raid)
-                try:
-                    raid_message = await raid_channel.fetch_message(first_message)
-                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                    continue
-                ctx = await self.bot.get_context(raid_message)
-                self.bot.loop.create_task(self.lobby_countdown(ctx))
+        while (not self.bot.is_closed()):
+            for guild in self.bot.guilds:
+                guild_raids = copy.deepcopy(self.bot.guild_dict[guild.id]['raidchannel_dict'])
+                for raid in guild_raids:
+                    lobby = guild_raids[raid].get("lobby", False)
+                    battling = guild_raids[raid].get("battling", False)
+                    if not lobby and not battling:
+                        continue
+                    first_message = guild_raids[raid].get("raidmessage", False)
+                    raid_channel = self.bot.get_channel(raid)
+                    try:
+                        raid_message = await raid_channel.fetch_message(first_message)
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                        continue
+                    ctx = await self.bot.get_context(raid_message)
+                    self.bot.loop.create_task(self.lobby_countdown(ctx))
+            if not loop:
+                return
+            await asyncio.sleep(21600)
+            continue
 
     async def lobby_countdown(self, ctx):
         def check_battling():

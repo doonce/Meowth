@@ -88,6 +88,8 @@ class Nest(commands.Cog):
             if not migration_list:
                 migration_list = [600]
             logger.info(f"------ END - {count} Nests Cleaned - Waiting {min(migration_list)} seconds. ------")
+            if not loop:
+                return
             await asyncio.sleep(min(migration_list))
             continue
 

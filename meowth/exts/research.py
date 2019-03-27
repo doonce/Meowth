@@ -59,6 +59,8 @@ class Research(commands.Cog):
                 midnight_list = [600]
             logger.info(f"------ END - {count} Tasks Cleaned - Waiting {min(midnight_list)} seconds. ------")
             await asyncio.sleep(min(midnight_list))
+            if not loop:
+                return
             continue
 
     async def expire_research(self, message):

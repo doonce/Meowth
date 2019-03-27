@@ -311,6 +311,7 @@ Server Management
 """
 
 async def guild_cleanup(loop=True):
+    await Meowth.wait_until_ready()
     while (not Meowth.is_closed()):
         guilddict_srvtemp = copy.deepcopy(guild_dict)
         logger.info('------ BEGIN ------')
@@ -338,6 +339,8 @@ async def guild_cleanup(loop=True):
         except Exception as err:
             logger.info('Server_Cleanup - SAVING FAILED' + err)
         logger.info('Server_Cleanup ------ END ------')
+        if not loop:
+            return
         await asyncio.sleep(7200)
         continue
 

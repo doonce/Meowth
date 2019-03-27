@@ -87,6 +87,8 @@ class Wild(commands.Cog):
             if not despawn_list:
                 despawn_list = [600]
             logger.info(f"------ END - {count} Wilds Cleaned - Waiting {min(despawn_list)} seconds. ------")
+            if not loop:
+                return
             await asyncio.sleep(min(despawn_list))
             continue
 
