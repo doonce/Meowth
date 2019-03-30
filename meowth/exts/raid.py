@@ -2712,7 +2712,10 @@ class Raid(commands.Cog):
         if not form:
             index = 0
         else:
-            index = form_list.index(form)
+            try:
+                index = form_list.index(form)
+            except (IndexError, ValueError):
+                index = 0
         form = match_list[index]
         url = "https://fight.pokebattler.com/raids/defenders/{pkmn}{form}/levels/RAID_LEVEL_{level}/attackers/".format(form=form, pkmn=pkmn.replace('-', '_').upper(), level=level)
         if user:
@@ -2831,7 +2834,7 @@ class Raid(commands.Cog):
         else:
             try:
                 index = form_list.index(pokemon.form)
-            except IndexError:
+            except (IndexError, ValueError):
                 index = 0
         form = match_list[index]
         url = "https://fight.pokebattler.com/raids/defenders/{pkmn}{form}/levels/RAID_LEVEL_{level}/attackers/".format(pkmn=pkmn.replace('-', '_').upper(), form=form, level=level)
