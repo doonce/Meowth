@@ -576,6 +576,8 @@ class Raid(commands.Cog):
             continue
 
     async def send_dm_messages(self, ctx, raid_details, content, embed, dm_dict):
+        if isinstance(embed.description, discord.embeds._EmptyEmbed):
+            embed.description = ""
         embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             if not checks.dm_check(ctx, trainer):
