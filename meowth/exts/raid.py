@@ -2622,6 +2622,10 @@ class Raid(commands.Cog):
         If [user] is a valid Pokebattler user id, Meowth will simulate the Raid with that user's Pokebox.
         Uses current boss and weather by default if available.
         """
+        async with ctx.typing():
+            await self._counters(ctx, args)
+
+    async def _counters(self, ctx, args):
         rgx = '[^a-zA-Z0-9]'
         channel = ctx.channel
         guild = channel.guild
@@ -2629,26 +2633,16 @@ class Raid(commands.Cog):
         weather = None
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
-        form_list = [_('none'), _('alolan'), _('origin'), _('attack'), _('defense'), _('speed')]
+        if args:
+            user = next((w for w in args.split() if w.isdigit()), user)
+            args = args.replace(str(user), "").strip()
+            weather = next((w for w in weather_list if re.sub(rgx, '', w) in re.sub(rgx, '', args.lower())), None)
+            args = args.replace(str(weather), "").strip()
         if checks.check_raidchannel(ctx) and not checks.check_meetupchannel(ctx):
-            if args:
-                args_split = args.split()
-                for arg in args_split:
-                    if arg.isdigit():
-                        user = arg
-                        break
-            else:
-                args = ""
-            try:
-                ctrsmessage = await channel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('ctrsmessage', None))
-            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                pass
             pkmn = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('pkmn_obj', None)
-            if not pkmn:
-                pkmn = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('pokemon', None)
             pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
             if pkmn:
-                if not user:
+                if not weather and not user:
                     try:
                         ctrsmessage = await channel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('ctrsmessage', None))
                         ctrsembed = ctrsmessage.embeds[0]
@@ -2660,66 +2654,25 @@ class Raid(commands.Cog):
                         pass
                 moveset = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('moveset', 0)
                 movesetstr = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('ctrs_dict', {}).get(moveset, {}).get('moveset', "Unknown Moveset")
-                weather = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('weather', None)
-                form = pkmn.form
-                if pkmn.alolan:
-                    form = "alolan"
+                if not weather:
+                    weather = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('weather', None)
             else:
                 pkmn = next((str(p) for p in self.bot.raid_list if not str(p).isdigit() and re.sub(rgx, '', str(p)) in re.sub(rgx, '', args.lower())), None)
                 if not pkmn:
                     await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon that appears in raids! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
                     return
-            if not weather:
-                if args:
-                    weather = next((w for w in weather_list if re.sub(rgx, '', w) in re.sub(rgx, '', args.lower())), None)
-            return await self._counters(ctx, str(pkmn), user, weather, form, movesetstr)
-
-        if args:
-            args_split = args.split()
-            for arg in args_split:
-                if arg.isdigit():
-                    user = arg
-                    args = args.replace(arg, '').strip()
-                    break
-            rgx = '[^a-zA-Z0-9]'
-            pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, args)
-            if not pkmn.is_raid:
-                pkmn = False
-            if not pkmn:
-                pkmn = self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('pkmn_obj', None)
-                pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
-            weather = next((w for w in weather_list if re.sub(rgx, '', w) in re.sub(rgx, '', args.lower())), None)
-            if not weather:
-                weather = self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('weather', None)
-            form = next((w for w in form_list if re.sub(rgx, '', w) in re.sub(rgx, '', args.lower())), None)
-            if not form:
-                form = self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('form', None)
         else:
-            pkmn = self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('pkmn_obj', None)
-            pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
-            weather = self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('weather', None)
-            form = self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('form', None)
-        if not pkmn:
-            await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon that appears in raids! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
-            return
-        async with ctx.typing:
-            await self._counters(ctx, str(pkmn), user, weather, form, "Unknown Moveset")
-
-    async def _counters(self, ctx, pkmn, user = None, weather = None, form = None, movesetstr = "Unknown Moveset"):
-        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
-        pkmn = pokemon.name.lower()
-        level = utils.get_level(self.bot, pkmn) if utils.get_level(self.bot, pkmn).isdigit() else "5"
-        form_list = [_('none'), _('alolan'), _('origin'), _('attack'), _('defense'), _('speed')]
-        match_list = ['', '_ALOLA_FORM', '_ORIGIN_FORM', '_ATTACK_FORM', '_DEFENSE_FORM', '_SPEED_FORM']
-        if not form:
-            index = 0
-        else:
-            try:
-                index = form_list.index(form)
-            except (IndexError, ValueError):
-                index = 0
-        form = match_list[index]
-        url = "https://fight.pokebattler.com/raids/defenders/{pkmn}{form}/levels/RAID_LEVEL_{level}/attackers/".format(form=form, pkmn=pkmn.replace('-', '_').upper(), level=level)
+            moveset = 0
+            movesetstr = "Unknown Moveset"
+            pkmn, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, args)
+            if not pkmn or not pkmn.is_raid:
+                await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon that appears in raids! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
+                return
+        form = pkmn.form
+        if pkmn.alolan:
+            form = "alola"
+        level = utils.get_level(self.bot, pkmn.name.lower()) if utils.get_level(self.bot, pkmn.name.lower()).isdigit() else "5"
+        url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.name.upper()}{'_'+form.upper()+'_FORM' if form else ''}/levels/RAID_LEVEL_{level}/attackers/"
         if user:
             url += "users/{user}/".format(user=user)
             userstr = _("user #{user}'s").format(user=user)
@@ -2740,8 +2693,14 @@ class Raid(commands.Cog):
         async with aiohttp.ClientSession() as sess:
             async with sess.get(url) as resp:
                 data = await resp.json()
+        if data.get('error', None):
+            url = url.replace(f"_{form.upper()}_FORM", "")
+            pkmn.form = None
+            pkmn.alolan = False
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get(url) as resp:
+                    data = await resp.json()
         title_url = url.replace('https://fight', 'https://www')
-        colour = ctx.guild.me.colour
         hyperlink_icon = 'https://i.imgur.com/fn9E5nb.png'
         pbtlr_icon = 'https://www.pokebattler.com/favicon-32x32.png'
         if user:
@@ -2774,16 +2733,12 @@ class Raid(commands.Cog):
                 est = data['randomMove']['total']['estimator']
         def clean(txt):
             return txt.replace('_', ' ').title()
-        title = _('{pkmn} | {weather} | {movesetstr}').format(pkmn=pkmn.title(), weather=weather_list[index].title(), movesetstr=movesetstr)
+        title = f"{str(pkmn).title()} | {weather.replace('_', ' ').title()} | {movesetstr}"
         stats_msg = _("**CP:** {raid_cp}\n").format(raid_cp=raid_cp)
         stats_msg += _("**Weather:** {weather}\n").format(weather=clean(weather))
         stats_msg += _("**Attacker Level:** {atk_levels}").format(atk_levels=atk_levels)
-        if form == "_ALOLA_FORM":
-            form_url = "a"
-        else:
-            form_url = ""
-        img_url = pokemon.img_url
-        ctrs_embed = discord.Embed(colour=colour)
+        img_url = pkmn.img_url
+        ctrs_embed = discord.Embed(colour=ctx.guild.me.colour)
         ctrs_embed.set_author(name=title, url=title_url, icon_url=hyperlink_icon)
         ctrs_embed.set_thumbnail(url=img_url)
         ctrs_embed.set_footer(text=_('Results courtesy of Pokebattler'), icon_url=pbtlr_icon)
@@ -2798,7 +2753,7 @@ class Raid(commands.Cog):
             cpstr = _("CP")
             ctrs_embed.add_field(name=name, value=f"{cpstr}: {ctr_cp}\n{moves}")
             index += 1
-        ctrs_embed.add_field(name=_("Results with {userstr} attackers").format(userstr=userstr), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pkmn.replace('-', '_').upper()))
+        ctrs_embed.add_field(name=_("Results with {userstr} attackers").format(userstr=userstr), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pkmn.name.replace('-', '_').upper()))
         if user:
             ctrs_embed.add_field(name=_("Pokebattler Estimator:"), value=_("Difficulty rating: {est}").format(est=est))
             await ctx.author.send(embed=ctrs_embed, delete_after=600)
@@ -2809,7 +2764,9 @@ class Raid(commands.Cog):
         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
         if not pokemon:
             return
-        pkmn = pokemon.name.lower()
+        form = pokemon.form
+        if pokemon.alolan:
+            form = "alola"
         emoji_dict = {0: '0\u20e3', 1: '1\u20e3', 2: '2\u20e3', 3: '3\u20e3', 4: '4\u20e3', 5: '5\u20e3', 6: '6\u20e3', 7: '7\u20e3', 8: '8\u20e3', 9: '9\u20e3', 10: '\U0001f51f'}
         ctrs_dict = {}
         ctrs_index = 0
@@ -2817,7 +2774,7 @@ class Raid(commands.Cog):
         ctrs_dict[ctrs_index]['moveset'] = "Unknown Moveset"
         ctrs_dict[ctrs_index]['emoji'] = '0\u20e3'
         img_url = pokemon.img_url
-        level = utils.get_level(self.bot, pkmn) if utils.get_level(self.bot, pkmn).isdigit() else "5"
+        level = utils.get_level(self.bot, pokemon.name.lower()) if utils.get_level(self.bot, pokemon.name.lower()).isdigit() else "5"
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
         match_list = ['NO_WEATHER', 'NO_WEATHER', 'CLEAR', 'CLEAR', 'RAINY',
@@ -2827,19 +2784,7 @@ class Raid(commands.Cog):
         else:
             index = weather_list.index(weather)
         weather = match_list[index]
-        form_list = [_('none'), _('alolan'), _('origin'), _('attack'), _('defense'), _('speed')]
-        match_list = ['', '_ALOLA_FORM', '_ORIGIN_FORM', '_ATTACK_FORM', '_DEFENSE_FORM', '_SPEED_FORM']
-        if not pokemon.form and not pokemon.alolan:
-            index = 0
-        elif pokemon.alolan:
-            index = form_list.index("alolan")
-        else:
-            try:
-                index = form_list.index(pokemon.form)
-            except (IndexError, ValueError):
-                index = 0
-        form = match_list[index]
-        url = "https://fight.pokebattler.com/raids/defenders/{pkmn}{form}/levels/RAID_LEVEL_{level}/attackers/".format(pkmn=pkmn.replace('-', '_').upper(), form=form, level=level)
+        url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.name.upper()}{'_'+form.upper()+'_FORM' if form else ''}/levels/RAID_LEVEL_{level}/attackers/"
         url += "levels/30/"
         url += "strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=OVERALL&"
         url += "weatherCondition={weather}&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE".format(weather=weather)
@@ -2849,13 +2794,20 @@ class Raid(commands.Cog):
         async with aiohttp.ClientSession() as sess:
             async with sess.get(url) as resp:
                 data = await resp.json()
+        if data.get('error', None):
+            url = url.replace(f"_{form.upper()}_FORM", "")
+            pokemon.form = None
+            pokemon.alolan = False
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get(url) as resp:
+                    data = await resp.json()
         data = data['attackers'][0]
         raid_cp = data['cp']
         atk_levels = '30'
         ctrs = data['randomMove']['defenders'][-6:]
         def clean(txt):
             return txt.replace('_', ' ').title()
-        title = _('{form}{pkmn} | {weather} | Unknown Moveset').format(form=f"{form.replace('_', ' ').title()} ", pkmn=pkmn.title(), weather=weather.title())
+        title = f"{str(pokemon).title()} | {weather.replace('_', ' ').title()} | Unknown Moveset"
         stats_msg = _("**CP:** {raid_cp}\n").format(raid_cp=raid_cp)
         stats_msg += _("**Weather:** {weather}\n").format(weather=clean(weather))
         stats_msg += _("**Attacker Level:** {atk_levels}").format(atk_levels=atk_levels)
@@ -2880,7 +2832,7 @@ class Raid(commands.Cog):
             move2 = moveset['move2'].lower().title().replace('_', ' ')
             movesetstr = f'{move1} | {move2}'
             ctrs = moveset['defenders'][-6:]
-            title = _('{form}{pkmn} | {weather} | {movesetstr}').format(form=form.title(), pkmn=pkmn.title(), weather=weather.title(), movesetstr=movesetstr)
+            title = f"{str(pokemon).title()} | {weather.replace('_', ' ').title()} | {movesetstr}"
             ctrs_embed = discord.Embed(colour=guild.me.colour)
             ctrs_embed.set_author(name=title, url=title_url, icon_url=hyperlink_icon)
             ctrs_embed.set_thumbnail(url=img_url)
@@ -2901,7 +2853,7 @@ class Raid(commands.Cog):
             ctrs_split = int(round(len(moveset_list)/2+0.1))
             ctrs_dict[moveset]['embed'].add_field(name=_("**Possible Movesets:**"), value=f"{''.join(moveset_list[:ctrs_split])}", inline=True)
             ctrs_dict[moveset]['embed'].add_field(name="\u200b", value=f"{''.join(moveset_list[ctrs_split:])}", inline=True)
-            ctrs_dict[moveset]['embed'].add_field(name=_("Results with Level 30 attackers"), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pkmn.replace('-', '_').upper()), inline=False)
+            ctrs_dict[moveset]['embed'].add_field(name=_("Results with Level 30 attackers"), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pokemon.name.replace('-', '_').upper()), inline=False)
         return ctrs_dict
 
     @commands.command()
