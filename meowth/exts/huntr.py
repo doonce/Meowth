@@ -641,8 +641,8 @@ class Huntr(commands.Cog):
             iv_str = f" - **{wild_iv}IV**"
         else:
             iv_str = ""
-        level = report_details.get("level", '')
-        cp = report_details.get("cp", '')
+        level = str(report_details.get("level", ''))
+        cp = str(report_details.get("cp", ''))
         weather = report_details.get("weather", '')
         if weather.lower() == 'none':
             weather = ''
