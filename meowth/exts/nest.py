@@ -116,7 +116,7 @@ class Nest(commands.Cog):
         channel = ctx.channel
         guild = ctx.guild
         nest_dict = copy.deepcopy(ctx.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
-        nest_list = nest_dict['list']
+        nest_list = nest_dict.get('list', [])
         migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()

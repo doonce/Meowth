@@ -476,11 +476,18 @@ class Pokemon():
             else:
                 form = None
 
+        match = False
         for word in argument.split():
             if word.lower() not in ctx.bot.pkmn_list and not word.isdigit() and word.lower() not in ctx.bot.form_dict['two_words']:
                 match, score = utils.get_match(ctx.bot.pkmn_list, word)
                 if not score or score < 80:
                     argument = argument.replace(word, '').strip()
+                elif "nidoran" in word.lower():
+                    if gender == "female":
+                        match = utils.get_name(ctx.bot, 29)
+                    else:
+                        match = utils.get_name(ctx.bot, 32)
+                    argument = argument.replace(word, match).strip()
                 else:
                     argument = argument.replace(word, match).strip()
 
@@ -494,7 +501,7 @@ class Pokemon():
         elif argument in ctx.bot.pkmn_list:
             match = argument.lower()
             score = 100
-        else:
+        elif not match:
             match, score = utils.get_match(ctx.bot.pkmn_list, argument)
 
         result = False
@@ -576,6 +583,7 @@ class Pokemon():
             else:
                 form = None
 
+        match = False
         for word in argument.split():
             if word.lower() not in bot.pkmn_list and not word.isdigit() and word.lower() not in bot.form_dict['two_words']:
                 match, score = utils.get_match(bot.pkmn_list, word)
@@ -675,6 +683,7 @@ class Pokemon():
             else:
                 form = None
 
+        match = False
         for word in argument.split():
             if word.lower() in ctx.bot.pkmn_list:
                 if pokemon:
