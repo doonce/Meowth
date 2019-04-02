@@ -588,6 +588,11 @@ class Pokemon():
             match = utils.get_name(bot, int(argument))
         else:
             match = utils.get_match(bot.pkmn_list, argument)[0]
+        if "nidoran" in match.lower():
+            if gender == "female":
+                match = utils.get_name(bot, 29)
+            else:
+                match = utils.get_name(bot, 32)
 
         if not match:
             return None
@@ -700,6 +705,11 @@ class Pokemon():
             match = utils.get_name(ctx.bot, int(argument))
         else:
             match = utils.get_match(ctx.bot.pkmn_list, argument.split()[0])[0]
+        if "nidoran" in match.lower():
+            if gender == "female":
+                match = utils.get_name(bot, 29)
+            else:
+                match = utils.get_name(bot, 32)
 
         if not match:
             return None, None
