@@ -810,7 +810,7 @@
     "distance": 3.0,
     "evolution": "[ Sandshrew ] → [ Sandslash ]"
   },
-  "nidoran\u00e2\u2122\u20ac": {
+  "nidoran\u2640": {
     "number": 29,
     "legendary": false,
     "mythical": false,
@@ -871,7 +871,7 @@
     "distance": 3.0,
     "evolution": "[ Nidoran ] → [ Nidorina ] → [ Nidoqueen ]"
   },
-  "nidoran\u00e2\u2122\u201a": {
+  "nidoran\u2642": {
     "number": 32,
     "legendary": false,
     "mythical": false,
@@ -6323,7 +6323,7 @@
           "Grass"
         ],
         "pokedex": "Lotad is said to have dwelled on land before. However, this Pokemon is thought to have returned to water because the leaf on its head grew large and heavy. It now lives by floating atop the water.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -6344,7 +6344,7 @@
           "Grass"
         ],
         "pokedex": "Lombre's entire body is covered by a slippery, slimy film. It feels horribly unpleasant to be touched by this Pokemon's hands. Lombre is often mistaken for a human child.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -6365,7 +6365,7 @@
           "Grass"
         ],
         "pokedex": "Upon hearing an upbeat and cheerful rhythm, the cells in Ludicolo's body become very energetic and active. Even in battle, this Pokemon will exhibit an amazing amount of power.",
-        "shiny": false,
+        "shiny": true,
         "gender": true
       }
     },
@@ -8063,7 +8063,7 @@
           "Normal"
         ],
         "pokedex": "Castform borrows the power of nature to transform itself into the guises of the sun, rain, and snow-clouds. This Pokemon's feelings change with the weather.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       },
       "normal": {
@@ -8071,7 +8071,7 @@
           "Normal"
         ],
         "pokedex": "Castform borrows the power of nature to transform itself into the guises of the sun, rain, and snow-clouds. This Pokemon's feelings change with the weather.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       },
       "sunny": {
