@@ -684,7 +684,7 @@ class Huntr(commands.Cog):
             ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Nearest Pokestop: {nearest_stop} | Coordinates: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, nearest_stop=nearest_stop, location_details=wild_coordinates, iv_str=iv_str), embed=wild_embed)
         else:
             ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Coordinates: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_coordinates, iv_str=iv_str), embed=wild_embed)
-        dm_dict = await wild_cog.send_dm_messages(ctx, pokemon.id, nearest_stop, wild_types[0], wild_types[1], wild_iv, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
+        dm_dict = await wild_cog.send_dm_messages(ctx, pokemon.id, wild_details, wild_types[0], wild_types[1], wild_iv, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
         await asyncio.sleep(0.25)
         await ctx.wildreportmsg.add_reaction(ctx.bot.config['wild_omw'])
         await asyncio.sleep(0.25)
