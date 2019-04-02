@@ -125,6 +125,8 @@ load_config()
 
 Meowth.load_config = load_config
 
+event_loop = asyncio.get_event_loop()
+
 required_exts = ['utilities', 'pokemon', 'configure']
 optional_exts = ['want', 'wild', 'raid', 'list', 'gymmatching', 'tutorial', 'silph', 'trade', 'research', 'nest', 'huntr', 'trainers']
 meowth_exts = required_exts + optional_exts
@@ -345,7 +347,7 @@ async def guild_cleanup(loop=True):
         continue
 
 async def _print(owner, message):
-    if 'launcher' in sys.argv[1:]:
+    if 'launcher' in sys.argv[1:] and owner:
         if 'debug' not in sys.argv[1:]:
             await owner.send(message)
     print(message)
@@ -358,20 +360,19 @@ async def maint_start():
     except KeyboardInterrupt as e:
         tasks.cancel()
 
-event_loop = asyncio.get_event_loop()
-
 """
 Events
 """
 @Meowth.event
 async def on_connect():
-    Meowth.owner = discord.utils.get(
-        Meowth.get_all_members(), id=config['master'])
+    Meowth.owner = None
     await _print(Meowth.owner, _('Connected to Discord...'))
     Meowth.uptime = datetime.datetime.now()
 
 @Meowth.event
 async def on_ready():
+    Meowth.owner = discord.utils.get(
+        Meowth.get_all_members(), id=config['master'])
     await _print(Meowth.owner, _('Starting up...'))
     msg_success = 0
     msg_fail = 0
