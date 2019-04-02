@@ -690,6 +690,14 @@ class Pokemon():
                     match, score = utils.get_match(ctx.bot.pkmn_list, word)
                     if not score or score < 60:
                         argument = argument.replace(word, '').strip()
+                    elif "nidoran" in word.lower():
+                        if gender == "female":
+                            match = utils.get_name(ctx.bot, 29)
+                        else:
+                            match = utils.get_name(ctx.bot, 32)
+                        match_list.append(word)
+                        argument = argument.replace(word, match).strip()
+                        pokemon = match
                     else:
                         match = await utils.autocorrect(ctx.bot, word, ctx.bot.pkmn_list, ctx.channel, ctx.author)
                         if not match:
@@ -701,15 +709,11 @@ class Pokemon():
         if not argument:
             return None, None
 
-        if argument.isdigit() and allow_digits:
-            match = utils.get_name(ctx.bot, int(argument))
-        else:
-            match = utils.get_match(ctx.bot.pkmn_list, argument.split()[0])[0]
-        if "nidoran" in match.lower():
-            if gender == "female":
-                match = utils.get_name(bot, 29)
+        if not match:
+            if argument.isdigit() and allow_digits:
+                match = utils.get_name(ctx.bot, int(argument))
             else:
-                match = utils.get_name(bot, 32)
+                match = utils.get_match(ctx.bot.pkmn_list, argument.split()[0])[0]
 
         if not match:
             return None, None
