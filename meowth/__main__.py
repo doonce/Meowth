@@ -399,7 +399,7 @@ async def on_ready():
                     'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':Meowth.config['default_prefix'], 'config_sessions':{}},
                     'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'wildfilter':[], 'autoquest':False, 'alarmaction':False}
                 },
-                'wildreport_dict:':{},
+                'wildreport_dict':{},
                 'questreport_dict':{},
                 'raidchannel_dict':{},
                 'trainers':{},
