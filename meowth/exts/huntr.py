@@ -444,8 +444,8 @@ class Huntr(commands.Cog):
                         return
                     else:
                         raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this egg!"
+                        ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
                         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! Level {egg_level} raid egg reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
-                        pamsg = await message.channel.send(raidmsg, embed=embed)
                 elif reporttype == "raid":
                     if not utils.get_level(self.bot, entered_raid):
                         logger.error(f"{entered_raid} not in raid_json")
@@ -462,9 +462,9 @@ class Huntr(commands.Cog):
                         else:
                             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
                         raidmsg = f"{roletest}Meowth! {entered_raid.title()} raid reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this raid!"
+                        ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
                         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {entered_raid.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
-                        pamsg = await message.channel.send(raidmsg, embed=embed)
-                self.bot.guild_dict[message.guild.id]['pokealarm_dict'][pamsg.id] = {
+                self.bot.guild_dict[message.guild.id]['pokealarm_dict'][ctx.raidreport.id] = {
                     "exp":time.time() + timeout,
                     'expedit': {"content":raidmsg.split("React")[0], "embedcontent":expiremsg},
                     "reporttype":reporttype,
@@ -480,7 +480,7 @@ class Huntr(commands.Cog):
                     "dm_dict":dm_dict
                 }
                 await asyncio.sleep(0.25)
-                await pamsg.add_reaction(self.bot.config['huntr_report'])
+                await ctx.raidreport.add_reaction(self.bot.config['huntr_report'])
         else:
             await utils.safe_delete(message)
             pokealarm_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id].get('pokealarm_dict', {}))
@@ -698,6 +698,7 @@ class Huntr(commands.Cog):
             'reportauthor':message.author.id,
             'dm_dict':dm_dict,
             'location':wild_details,
+            'gps':wild_coordinates,
             'url':wild_gmaps_link,
             'pokemon':entered_wild,
             'pkmn_obj':str(pokemon),
