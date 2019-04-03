@@ -379,34 +379,37 @@ async def on_ready():
     guilds = len(Meowth.guilds)
     users = 0
     for guild in Meowth.guilds:
-        users += guild.member_count
-        if guild.id not in guild_dict:
-            guild_dict[guild.id] = {
-                'configure_dict':{
-                    'welcome': {'enabled':False, 'welcomechan':'', 'welcomemsg':'default'},
-                    'want': {'enabled':False, 'report_channels': []},
-                    'raid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}},
-                    'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}, 'permissions':'everyone'},
-                    'wild': {'enabled':False, 'report_channels': {}},
-                    'meetup': {'enabled':False, 'report_channels': {}},
-                    'tutorial': {'enabled':True, 'report_channels': {}},
-                    'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
-                    'trade': {'enabled':False, 'report_channels': []},
-                    'counters': {'enabled':False, 'auto_levels': []},
-                    'research': {'enabled':False, 'report_channels': {}},
-                    'archive': {'enabled':False, 'category':'same', 'list':None},
-                    'invite': {'enabled':False},
-                    'team':{'enabled':False, 'team_roles':{}},
-                    'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':Meowth.config['default_prefix'], 'config_sessions':{}},
-                    'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'wildfilter':[], 'autoquest':False, 'alarmaction':False}
-                },
-                'wildreport_dict':{},
-                'questreport_dict':{},
-                'raidchannel_dict':{},
-                'trainers':{},
-                'trade_dict': {},
-                'nest_dict': {}
-            }
+        try:
+            users += guild.member_count
+            if guild.id not in guild_dict:
+                guild_dict[guild.id] = {
+                    'configure_dict':{
+                        'welcome': {'enabled':False, 'welcomechan':'', 'welcomemsg':'default'},
+                        'want': {'enabled':False, 'report_channels': []},
+                        'raid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}},
+                        'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}, 'permissions':'everyone'},
+                        'wild': {'enabled':False, 'report_channels': {}},
+                        'meetup': {'enabled':False, 'report_channels': {}},
+                        'tutorial': {'enabled':True, 'report_channels': {}},
+                        'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
+                        'trade': {'enabled':False, 'report_channels': []},
+                        'counters': {'enabled':False, 'auto_levels': []},
+                        'research': {'enabled':False, 'report_channels': {}},
+                        'archive': {'enabled':False, 'category':'same', 'list':None},
+                        'invite': {'enabled':False},
+                        'team':{'enabled':False, 'team_roles':{}},
+                        'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':Meowth.config['default_prefix'], 'config_sessions':{}},
+                        'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'wildfilter':[], 'autoquest':False, 'alarmaction':False}
+                    },
+                    'wildreport_dict':{},
+                    'questreport_dict':{},
+                    'raidchannel_dict':{},
+                    'trainers':{},
+                    'trade_dict': {},
+                    'nest_dict': {}
+                }
+        except AttributeError:
+            continue
     await _print(Meowth.owner, _("Meowth! That's right!\n\n{server_count} servers connected.\n{member_count} members found.").format(server_count=guilds, member_count=users))
     await maint_start()
 

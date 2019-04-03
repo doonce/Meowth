@@ -375,6 +375,12 @@ class Huntr(commands.Cog):
                 gps = painfo[1]
                 quest = painfo[2]
                 reward = painfo[3]
+                alarm_details = {
+                    "pokestop":pokestop,
+                    "gps":gps,
+                    "quest":quest,
+                    "reward":reward
+                }
             elif "!alarm" in message.content.lower():
                 message.content = message.content.replace("!alarm","").strip()
                 try:
@@ -391,10 +397,27 @@ class Huntr(commands.Cog):
                     reporttype = "wild"
                     pokemon = alarm_details.setdefault('pokemon', None)
                     coordinates = alarm_details.setdefault("coordinates", None)
-                    if not pokemon or not coordinates:
-                        return
                     await utils.safe_delete(message)
+                    if not all([pokemon, coordinates]):
+                        return
                     await self.huntr_wild(ctx, alarm_details)
+                    return
+                elif alarm_details.get('type', None) == "research":
+                    if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoquest', True):
+                        return
+                    research_cog = self.bot.cogs.get('Research')
+                    if not research_cog:
+                        logger.error("Research Cog not loaded")
+                        return
+                    reporttype = "quest"
+                    pokestop = alarm_details.get('pokestop', None)
+                    gps = alarm_details.get('gps', None)
+                    quest = alarm_details.get('quest', None)
+                    reward = alarm_details.get('reward', None)
+                    await utils.safe_delete(message)
+                    if not all([pokestop, gps, quest, reward]):
+                        return
+                    await self.huntr_research(ctx, alarm_details)
                     return
             else:
                 return
@@ -403,7 +426,7 @@ class Huntr(commands.Cog):
                 await self.huntr_wild(ctx, alarm_details)
                 return
             if reporttype == "quest":
-                await self.huntr_research(ctx, pokestop, gps, quest, reward)
+                await self.huntr_research(ctx, alarm_details)
                 return
             else:
                 for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
@@ -624,10 +647,10 @@ class Huntr(commands.Cog):
             return
         details_str = f"{pokemon.name.title()}"
         gender = report_details.get("gender", '')
-        if gender and "male" in gender.lower():
-            details_str += f" (♂)"
-        elif gender and "female" in gender.lower():
-            details_str += f" (♀)"
+        if gender and "female" in gender.lower():
+            details_str += f" ♀"
+        elif gender and "male" in gender.lower():
+            details_str += f" ♂"
         details_str += f" ({pokemon.id}) {pokemon.emoji}"
         wild_details = report_details['coordinates']
         wild_iv = report_details.get("iv_percent", '')
@@ -860,13 +883,17 @@ class Huntr(commands.Cog):
             self.bot.guild_dict[message.guild.id]['trainers'][report_user.id]['egg_reports'] = egg_reports
         return raid_channel
 
-    async def huntr_research(self, ctx, location, gps, quest, reward):
+    async def huntr_research(self, ctx, report_details):
         message = ctx.message
         channel = message.channel
         author = message.author
         guild = message.guild
         research_cog = self.bot.cogs.get('Research')
         nearest_stop = ""
+        location = report_details['pokestop']
+        gps = report_details['gps']
+        quest = report_details['quest']
+        reward = report_details['reward']
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         to_midnight = 24*60*60 - ((timestamp-timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
         loc_url = f"https://www.google.com/maps/search/?api=1&query={gps}"

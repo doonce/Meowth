@@ -435,7 +435,7 @@ class Raid(commands.Cog):
                 guild = self.bot.get_guild(guildid)
                 log_str = 'Server: ' + str(guildid)
                 log_str = log_str + ' - CHECKING FOR SERVER'
-                if guild == None:
+                if not guild:
                     logger.info(log_str + ': NOT FOUND')
                     continue
                 logger.info(((log_str + ' (') + guild.name) +

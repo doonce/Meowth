@@ -28,12 +28,16 @@ class GymMatching(commands.Cog):
         return self.stop_data.get(str(guild_id))
 
     def gym_match(self, gym_name, gyms):
+        if not gyms:
+            return (None, None)
         match, score = utils.get_match(list(gyms.keys()), gym_name)
         if match:
             match = gyms[match].get('alias', match)
         return (match, score)
 
     def stop_match(self, stop_name, stops):
+        if not stops:
+            return (None, None)
         match, score = utils.get_match(list(stops.keys()), stop_name)
         if match:
             match = stops[match].get('alias', match)
