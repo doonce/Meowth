@@ -13,7 +13,7 @@ import json
 import discord
 from discord.ext import commands
 
-from meowth import checks
+from meowth import checks, errors
 from meowth.exts import pokemon as pkmn_class
 from meowth.exts import utilities as utils
 
@@ -626,25 +626,9 @@ class Raid(commands.Cog):
             raid_channel_name = _('ex-raid-egg-')
             raid_channel_category = utils.get_category(self.bot, ctx.channel, "EX", category_type="exraid")
             raid_channel_overwrite_list = ctx.channel.overwrites
-            if self.bot.guild_dict[ctx.guild.id]['configure_dict']['invite']['enabled']:
-                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['permissions'] == "everyone":
-                    everyone_overwrite = (ctx.guild.default_role, discord.PermissionOverwrite(send_messages=False))
-                    raid_channel_overwrite_list.append(everyone_overwrite)
-                for overwrite in raid_channel_overwrite_list:
-                    if isinstance(overwrite[0], discord.Role):
-                        if overwrite[0].permissions.manage_guild or overwrite[0].permissions.manage_channels or overwrite[0].permissions.manage_messages:
-                            continue
-                        overwrite[1].send_messages = False
-                    elif isinstance(overwrite[0], discord.Member):
-                        if ctx.channel.permissions_for(overwrite[0]).manage_guild or ctx.channel.permissions_for(overwrite[0]).manage_channels or ctx.channel.permissions_for(overwrite[0]).manage_messages:
-                            continue
-                        overwrite[1].send_messages = False
-                    if (overwrite[0].name not in ctx.guild.me.top_role.name) and (overwrite[0].name not in ctx.guild.me.name):
-                        overwrite[1].send_messages = False
-            else:
-                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['permissions'] == "everyone":
-                    everyone_overwrite = (ctx.guild.default_role, discord.PermissionOverwrite(send_messages=True))
-                    raid_channel_overwrite_list.append(everyone_overwrite)
+            if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['permissions'] == "everyone":
+                everyone_overwrite = (ctx.guild.default_role, discord.PermissionOverwrite(read_messages=True))
+                raid_channel_overwrite_list.append(everyone_overwrite)
             meowth_overwrite = (self.bot.user, discord.PermissionOverwrite(send_messages=True, read_messages=True, manage_roles=True))
             raid_channel_overwrite_list.append(meowth_overwrite)
             raid_channel_overwrites = dict(raid_channel_overwrite_list)

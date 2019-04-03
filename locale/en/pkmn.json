@@ -2913,7 +2913,7 @@
           "Flying"
         ],
         "pokedex": "Scyther is blindingly fast. Its blazing speed enhances the effectiveness of the twin scythes on its forearms. This Pokemon's scythes are so effective, they can slice through thick logs in one wicked stroke.",
-        "shiny": false,
+        "shiny": true,
         "gender": true
       }
     },
@@ -5124,7 +5124,7 @@
           "Steel"
         ],
         "pokedex": "Scizor has a body with the hardness of steel. It is not easily fazed by ordinary sorts of attacks. This Pokemon flaps its wings to regulate its body temperature.",
-        "shiny": false,
+        "shiny": true,
         "gender": true
       }
     },
@@ -5956,7 +5956,7 @@
           "Grass"
         ],
         "pokedex": "Treecko is cool, calm, and collected\u2014it never panics under any situation. If a bigger foe were to glare at this Pokemon, it would glare right back without conceding an inch of ground.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -5976,7 +5976,7 @@
           "Grass"
         ],
         "pokedex": "This Pokemon adeptly flies from branch to branch in trees. In a forest, no Pokemon can ever hope to catch a fleeing Grovyle however fast they may be.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },
@@ -5996,7 +5996,7 @@
           "Grass"
         ],
         "pokedex": "Sceptile has seeds growing on its back. They are said to be bursting with nutrients that revitalize trees. This Pokemon raises the trees in a forest with loving care.",
-        "shiny": false,
+        "shiny": true,
         "gender": false
       }
     },

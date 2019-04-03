@@ -128,6 +128,10 @@ class GuildCheckFail(CommandError):
     'Exception raised checks.check_guild fails'
     pass
 
+class EXInviteFail(CommandError):
+    'Exception raised checks.check_invite fails'
+    pass
+
 async def delete_error(message, error):
     try:
         await message.delete()
@@ -187,7 +191,11 @@ def custom_error_handling(bot, logger):
     @bot.event
     async def on_command_error(ctx, error):
         channel = ctx.channel
-        prefix = ctx.prefix.replace(ctx.bot.user.mention, '@' + ctx.bot.user.name)
+        if ctx.prefix:
+            prefix = ctx.prefix.replace(ctx.bot.user.mention, '@' + ctx.bot.user.name)
+        else:
+            prefix = ctx.bot._get_prefix(ctx.bot, ctx.message)
+            prefix = prefix[-1]
         if isinstance(error, commands.MissingRequiredArgument):
             error = await ctx.channel.send(missing_arg_msg(ctx))
             await asyncio.sleep(10)
@@ -436,7 +444,7 @@ def custom_error_handling(bot, logger):
             await delete_error(ctx.message, error)
         elif isinstance(error, RegionExRaidChannelCheckFail):
             guild = ctx.guild
-            msg = _('Meowth! Please use **{prefix}{cmd_name}** in either a EX Raid channel or one of the following region channels:').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
+            msg = _('Meowth! Please use **{prefix}{cmd_name}** in either a EX Raid channel or ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['exraid']['report_channels']
             if len(city_channels) > 10:
                 msg += _('a Region report channel.')
@@ -453,12 +461,12 @@ def custom_error_handling(bot, logger):
             await delete_error(ctx.message, error)
         elif isinstance(error, ExRaidChannelCheckFail):
             guild = ctx.guild
-            msg = _('Meowth! Please use **{prefix}{cmd_name}** in a EX Raid channel. Use **{prefix}list** in any of the following region channels to see active raids:').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
+            msg = _('Meowth! Please use **{prefix}{cmd_name}** in a EX Raid channel. Use **{prefix}list** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['exraid']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel.')
+                msg += _('a Region report channel to see active raids.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following region channels to see active raids:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     if channel:
@@ -467,6 +475,23 @@ def custom_error_handling(bot, logger):
                         msg += '\n#deleted-channel'
             error = await ctx.channel.send(msg)
             await asyncio.sleep(10)
+            await delete_error(ctx.message, error)
+        elif isinstance(error, EXInviteFail):
+            guild = ctx.guild
+            msg = _('Meowth! {member}, you have not gained access to this raid! Use **{prefix}invite** in ').format(member=ctx.author.mention, cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
+            city_channels = bot.guild_dict[guild.id]['configure_dict']['exraid']['report_channels']
+            if len(city_channels) > 10:
+                msg += _('a Region report channel to gain access.')
+            else:
+                msg += _('one of the following region channels to gain access:')
+                for c in city_channels:
+                    channel = discord.utils.get(guild.channels, id=c)
+                    if channel:
+                        msg += '\n' + channel.mention
+                    else:
+                        msg += '\n#deleted-channel'
+            error = await ctx.channel.send(msg)
+            await asyncio.sleep(20)
             await delete_error(ctx.message, error)
         elif isinstance(error, ResearchReportChannelCheckFail):
             guild = ctx.guild

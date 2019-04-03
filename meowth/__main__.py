@@ -19,7 +19,7 @@ from time import strftime
 import discord
 from discord.ext import commands
 
-from meowth import checks
+from meowth import checks, errors
 from meowth.bot import MeowthBot
 from meowth.errors import custom_error_handling
 from meowth.logs import init_loggers
