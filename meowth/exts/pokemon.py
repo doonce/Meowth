@@ -353,14 +353,23 @@ class Pokemon():
         types = self._get_type()
         ret = ""
         for type in types:
+            emoji = None
             try:
                 emoji_id = ''.join(x for x in self.bot.config['type_id_dict'][type.lower()].split(":")[2] if x.isdigit())
                 emoji = discord.utils.get(self.bot.emojis, id=int(emoji_id))
                 if emoji:
                     ret += str(emoji)
+                    continue
+                emoji_name = self.bot.config['type_id_dict'][type.lower()].split(":")[1]
+                emoji = discord.utils.get(self.bot.emojis, name=emoji_name)
+                if emoji:
+                    ret += str(emoji)
+                    continue
+                else:
+                    ret += f":{type.lower()}:"
             except (IndexError, ValueError):
                 ret += f":{type.lower()}:"
-            return ret
+        return ret
 
     @property
     def type_effects(self):
