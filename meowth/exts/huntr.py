@@ -192,6 +192,11 @@ class Huntr(commands.Cog):
                 elif auto_report and reporttype == "egg":
                     await self.huntr_raidegg(ctx, egg_level, raid_details, raidexp, huntrgps)
                 elif reporttype == "raid":
+                    gym_matching_cog = self.bot.cogs.get('GymMatching')
+                    if gym_matching_cog:
+                        test_gym = gym_matching_cog.find_nearest_gym((huntrgps.split(",")[0], huntrgps.split(",")[1]), message.guild.id)
+                        if test_gym:
+                            raid_details = test_gym
                     raid_embed = await self.make_raid_embed(ctx, entered_raid, raid_details, raidexp, huntrgps, moveset)
                     raid = discord.utils.get(message.guild.roles, name=entered_raid.lower())
                     if raid == None:
@@ -218,6 +223,11 @@ class Huntr(commands.Cog):
                         "dm_dict": dm_dict
                     }
                 elif reporttype == "egg":
+                    gym_matching_cog = ctx.bot.cogs.get('GymMatching')
+                    if gym_matching_cog:
+                        test_gym = gym_matching_cog.find_nearest_gym((huntrgps.split(",")[0], huntrgps.split(",")[1]), message.guild.id)
+                        if test_gym:
+                            raid_details = test_gym
                     raid_embed = await self.make_egg_embed(ctx, egg_level, raid_details, raidexp, huntrgps, reporter="huntr")
                     pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
                     ctx.raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=egg_level, member=message.author.mention, location_details=raid_details), embed=raid_embed)
@@ -564,7 +574,6 @@ class Huntr(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog:
-            raid_details = gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
             gym_info, raid_details, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid")
             if gym_url:
                 raid_gmaps_link = gym_url
@@ -606,7 +615,6 @@ class Huntr(commands.Cog):
         level = utils.get_level(ctx.bot, pokemon.id)
         gym_info = ""
         if gym_matching_cog:
-            raid_details = gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
             gym_info, raid_details, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid")
             if gym_url:
                 raid_gmaps_link = gym_url
@@ -734,7 +742,7 @@ class Huntr(commands.Cog):
             'omw':[]
         }
 
-    async def huntr_raid(self, ctx, entered_raid, raid_details, raidexp, gymhuntrgps, gymhuntrmoves, reporter=None, report_user=None, dm_dict=None):
+    async def huntr_raid(self, ctx, entered_raid, raid_details, raidexp, raid_coordinates, gymhuntrmoves, reporter=None, report_user=None, dm_dict=None):
         if not dm_dict:
             dm_dict = {}
         raid_cog = self.bot.cogs.get('Raid')
@@ -763,7 +771,12 @@ class Huntr(commands.Cog):
                 pokemon = boss
                 entered_raid = boss.name.lower()
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
-        raid_embed = await self.make_raid_embed(ctx, str(pokemon), raid_details, raidexp, gymhuntrgps, gymhuntrmoves)
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        if gym_matching_cog:
+            test_gym = gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
+            if test_gym:
+                raid_details = test_gym
+        raid_embed = await self.make_raid_embed(ctx, str(pokemon), raid_details, raidexp, raid_coordinates, gymhuntrmoves)
         raid_channel = await raid_cog.create_raid_channel(ctx, entered_raid, raid_details, "raid")
         if not raid_channel:
             return
@@ -827,7 +840,7 @@ class Huntr(commands.Cog):
         await self.auto_counters(raid_channel, gymhuntrmoves)
         return raid_channel
 
-    async def huntr_raidegg(self, ctx, egg_level, raid_details, raidexp, gymhuntrgps, reporter=None, report_user=None, dm_dict=None):
+    async def huntr_raidegg(self, ctx, egg_level, raid_details, raidexp, raid_coordinates, reporter=None, report_user=None, dm_dict=None):
         if not dm_dict:
             dm_dict = {}
         raid_cog = self.bot.cogs.get('Raid')
@@ -837,7 +850,12 @@ class Huntr(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
-        raid_embed = await self.make_egg_embed(ctx, egg_level, raid_details, raidexp, gymhuntrgps, reporter)
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        if gym_matching_cog:
+            test_gym = gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
+            if test_gym:
+                raid_details = test_gym
+        raid_embed = await self.make_egg_embed(ctx, egg_level, raid_details, raidexp, raid_coordinates, reporter)
         raid_channel = await raid_cog.create_raid_channel(ctx, egg_level, raid_details, "egg")
         if not raid_channel:
             return
