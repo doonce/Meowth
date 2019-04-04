@@ -128,7 +128,6 @@ class Nest(commands.Cog):
         description = ""
         if not nest_dict:
             description += _("There are no nests.")
-            return nest_embed
         for nest in nest_list:
             nest_count += 1
             pkmn_dict = {}

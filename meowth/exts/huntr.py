@@ -564,7 +564,7 @@ class Huntr(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog:
-            gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+            gym_info, raid_details, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid")
             if gym_url:
                 raid_gmaps_link = gym_url
         if not raid_details:
@@ -605,7 +605,7 @@ class Huntr(commands.Cog):
         level = utils.get_level(ctx.bot, pokemon.id)
         gym_info = ""
         if gym_matching_cog:
-            gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+            gym_info, raid_details, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid")
             if gym_url:
                 raid_gmaps_link = gym_url
         if not raid_details:
@@ -907,7 +907,7 @@ class Huntr(commands.Cog):
             nearest_stop = gym_matching_cog.find_nearest_stop((gps.split(",")[0],gps.split(",")[1]), guild.id)
             if nearest_stop:
                 location = nearest_stop
-            stop_info, location, stop_url = await gym_matching_cog.get_stop_info(ctx, location)
+            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "research")
             if stop_url:
                 loc_url = stop_url
         if not location:

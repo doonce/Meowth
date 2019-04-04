@@ -101,7 +101,7 @@ class Research(commands.Cog):
         pokemon = False
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
         while True:
-            async with ctx.tying():
+            async with ctx.typing():
                 if details:
                     research_split = details.rsplit(",", 2)
                     if len(research_split) != 3:
@@ -113,7 +113,7 @@ class Research(commands.Cog):
                     gym_matching_cog = self.bot.cogs.get('GymMatching')
                     stop_info = ""
                     if gym_matching_cog:
-                        stop_info, location, stop_url = await gym_matching_cog.get_stop_info(ctx, location)
+                        stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "research")
                         if stop_url:
                             loc_url = stop_url
                     if not location:
@@ -155,7 +155,7 @@ class Research(commands.Cog):
                         gym_matching_cog = self.bot.cogs.get('GymMatching')
                         stop_info = ""
                         if gym_matching_cog:
-                            stop_info, location, stop_url = await gym_matching_cog.get_stop_info(ctx, location)
+                            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "research")
                             if stop_url:
                                 loc_url = stop_url
                         if not location:
@@ -207,15 +207,15 @@ class Research(commands.Cog):
                     await utils.safe_delete(rewardmsg)
                     research_embed.remove_field(0)
                     break
-            if not error:
-                await self.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)
-            else:
-                research_embed.clear_fields()
-                research_embed.add_field(name=_('**Research Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
-                confirmation = await channel.send(embed=research_embed)
-                await asyncio.sleep(10)
-                await utils.safe_delete(confirmation)
-                await utils.safe_delete(message)
+        if not error:
+            await self.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)
+        else:
+            research_embed.clear_fields()
+            research_embed.add_field(name=_('**Research Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=research_embed)
+            await asyncio.sleep(10)
+            await utils.safe_delete(confirmation)
+            await utils.safe_delete(message)
 
     async def send_research(self, ctx, research_embed, location, quest, reward, other_reward, loc_url):
         dm_dict = {}

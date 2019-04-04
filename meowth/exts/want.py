@@ -198,7 +198,7 @@ class Want(commands.Cog):
         gyms = gym_matching_cog.get_gyms(ctx.guild.id)
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
         for entered_want in want_split:
-            gym = await gym_matching_cog.gym_match_prompt(ctx, entered_want, gyms)
+            gym = await gym_matching_cog.poi_match_prompt(ctx, entered_want, gyms, None)
             if gym:
                 want_list.append(gym.lower())
             else:
@@ -255,7 +255,7 @@ class Want(commands.Cog):
         stops = gym_matching_cog.get_stops(ctx.guild.id)
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
         for entered_want in want_split:
-            stop = await gym_matching_cog.stop_match_prompt(ctx, entered_want, stops)
+            stop = await gym_matching_cog.poi_match_prompt(ctx, entered_want, None, stops)
             if stop:
                 want_list.append(stop.lower())
             else:
@@ -701,7 +701,7 @@ class Want(commands.Cog):
             return
         gyms = gym_matching_cog.get_gyms(ctx.guild.id)
         for entered_unwant in unwant_split:
-            gym = await gym_matching_cog.gym_match_prompt(ctx, entered_unwant, gyms)
+            gym = await gym_matching_cog.poi_match_prompt(ctx, entered_unwant, gyms, None)
             if gym:
                 unwant_list.append(gym.lower())
         for entered_unwant in unwant_list:
@@ -727,7 +727,7 @@ class Want(commands.Cog):
             return
         stops = gym_matching_cog.get_stops(ctx.guild.id)
         for entered_unwant in unwant_split:
-            stop = await gym_matching_cog.stop_match_prompt(ctx, entered_unwant, stops)
+            stop = await gym_matching_cog.poi_match_prompt(ctx, entered_unwant, None, stops)
             if stop:
                 unwant_list.append(stop.lower())
         for entered_unwant in unwant_list:

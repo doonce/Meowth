@@ -1084,7 +1084,7 @@ class Raid(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog:
-            gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+            gym_info, raid_details, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid")
             if gym_url:
                 raid_gmaps_link = gym_url
         if not raid_details:
@@ -1236,7 +1236,7 @@ class Raid(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog:
-            gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+            gym_info, raid_details, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid")
             if gym_url:
                 raid_gmaps_link = gym_url
         if not raid_details:
@@ -1631,7 +1631,7 @@ class Raid(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog:
-            gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "exraid")
+            gym_info, raid_details, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "exraid")
             if gym_url:
                 raid_gmaps_link = gym_url
         if not raid_details:
@@ -2200,7 +2200,7 @@ class Raid(commands.Cog):
             gym_matching_cog = self.bot.cogs.get('GymMatching')
             gym_info = ""
             if gym_matching_cog:
-                gym_info, raid_details, gym_url = await gym_matching_cog.get_gym_info(ctx, raid_details, "raid")
+                gym_info, raid_details, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid")
                 if gym_url:
                     raid_gmaps_link = gym_url
             if not raid_details:

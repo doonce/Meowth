@@ -17,7 +17,7 @@ class MeowthBot(commands.AutoShardedBot):
         if message.author.bot:
             return
         ctx = await self.get_context(message, cls=Context)
-        if ctx.channel.id in ctx.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
+        if ctx.guild and ctx.channel.id in ctx.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
             if ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['invite']['enabled']:
                 raid_type = ctx.bot.guild_dict[ctx.guild.id]['raidchannel_dict'].get(ctx.channel.id, {}).get('type', None)
                 raid_level = ctx.bot.guild_dict[ctx.guild.id]['raidchannel_dict'].get(ctx.channel.id, {}).get('egglevel', None)
