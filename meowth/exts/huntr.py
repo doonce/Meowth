@@ -557,13 +557,14 @@ class Huntr(commands.Cog):
             await ctrs_message.edit(embed=newembed)
         self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['moveset'] = moveset
 
-    async def make_egg_embed(self, ctx, egg_level, raid_details, raidexp, gymhuntrgps, reporter=None):
+    async def make_egg_embed(self, ctx, egg_level, raid_details, raidexp, raid_coordinates, reporter=None):
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
-        raid_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={gymhuntrgps}"
+        raid_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={raid_coordinates}"
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog:
+            raid_details = gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
             gym_info, raid_details, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid")
             if gym_url:
                 raid_gmaps_link = gym_url
@@ -587,15 +588,15 @@ class Huntr(commands.Cog):
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Hatches:**'), value=_('Set with **!timerset**'), inline=True)
         if reporter == "huntr":
-            raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=gymhuntrgps), inline=False)
+            raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=raid_coordinates), inline=False)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=raid_img_url)
         return raid_embed
 
-    async def make_raid_embed(self, ctx, entered_raid, raid_details, raidexp, gymhuntrgps, gymhuntrmoves=None, reporter=None):
+    async def make_raid_embed(self, ctx, entered_raid, raid_details, raidexp, raid_coordinates, gymhuntrmoves=None, reporter=None):
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
-        raid_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={gymhuntrgps}"
+        raid_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={raid_coordinates}"
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_raid)
         if pokemon:
@@ -605,6 +606,7 @@ class Huntr(commands.Cog):
         level = utils.get_level(ctx.bot, pokemon.id)
         gym_info = ""
         if gym_matching_cog:
+            raid_details = gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
             gym_info, raid_details, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid")
             if gym_url:
                 raid_gmaps_link = gym_url
@@ -675,20 +677,26 @@ class Huntr(commands.Cog):
         expire = report_details.get("expire", "45 min 00 sec")
         huntrexpstamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(expire.split()[0]), seconds=int(expire.split()[2]))).strftime('%I:%M %p')
         nearest_stop = ""
+        nearest_poi = ""
         wild_cog = self.bot.get_cog("Wild")
         wild_types = copy.deepcopy(pokemon.types)
         wild_types.append('None')
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
         if reporter == "huntr":
+            huntr_url = wild_details
             wild_coordinates = wild_details.split("#")[1]
         else:
             wild_coordinates = wild_details
         wild_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={wild_coordinates}"
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
-            nearest_stop = gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), message.guild.id)
-            if nearest_stop:
-                wild_details = nearest_stop
+            nearest_poi = gym_matching_cog.find_nearest_poi((wild_coordinates.split(",")[0], wild_coordinates.split(",")[1]), message.guild.id)
+            nearest_stop = gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0], wild_coordinates.split(",")[1]), message.guild.id)
+            if nearest_poi:
+                wild_details = nearest_poi
+        stop_str = ""
+        if nearest_stop or nearest_poi:
+            stop_str = f"{' Details: '+nearest_poi if nearest_poi != nearest_stop else ' '}{' | ' if nearest_poi != nearest_stop and nearest_stop else ''}{'Nearest Pokestop: '+nearest_stop if nearest_stop else ''}{' | ' if nearest_poi or nearest_stop else ''}"
         wild_embed = discord.Embed(description="", title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), url=wild_gmaps_link, colour=message.guild.me.colour)
         wild_embed.add_field(name=_('**Details:**'), value=details_str, inline=True)
         if iv_long or wild_iv or level or cp or weather:
@@ -697,17 +705,14 @@ class Huntr(commands.Cog):
             wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height if height else ''} {'W: '+weight if weight else ''}\n{moveset if moveset else ''}", inline=True)
         wild_embed.add_field(name='**Despawns in:**', value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=expire.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
         if reporter == "huntr":
-            wild_embed.add_field(name=wild_extra, value=_('Perform a scan to help find more by clicking [here]({huntrurl}).').format(huntrurl=wild_details), inline=False)
+            wild_embed.add_field(name=wild_extra, value=_('Perform a scan to help find more by clicking [here]({huntrurl}).').format(huntrurl=huntr_url), inline=False)
         wild_embed.set_thumbnail(url=pokemon.img_url)
         wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=ctx.bot.config['wild_omw']), inline=True)
         wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=ctx.bot.config['wild_despawn']), inline=True)
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         despawn = (int(expire.split(' ')[0]) * 60) + int(expire.split(' ')[2])
-        if nearest_stop:
-            ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Nearest Pokestop: {nearest_stop} | Coordinates: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, nearest_stop=nearest_stop, location_details=wild_coordinates, iv_str=iv_str), embed=wild_embed)
-        else:
-            ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Coordinates: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_coordinates, iv_str=iv_str), embed=wild_embed)
-        dm_dict = await wild_cog.send_dm_messages(ctx, pokemon.id, wild_details, wild_types[0], wild_types[1], wild_iv, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
+        ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}!{stop_str}Coordinates: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, stop_str=stop_str, location_details=wild_coordinates, iv_str=iv_str), embed=wild_embed)
+        dm_dict = await wild_cog.send_dm_messages(ctx, pokemon.id, nearest_stop, wild_types[0], wild_types[1], wild_iv, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
         await asyncio.sleep(0.25)
         await ctx.wildreportmsg.add_reaction(ctx.bot.config['wild_omw'])
         await asyncio.sleep(0.25)
