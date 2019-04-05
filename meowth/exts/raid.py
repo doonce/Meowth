@@ -1362,7 +1362,8 @@ class Raid(commands.Cog):
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=oldembed.thumbnail.url)
         ctx.raidreport = egg_report
-        self.bot.loop.create_task(self.edit_dm_messages(ctx, egg_report.content, copy.deepcopy(raid_embed), dm_dict))
+        if ctx.raidreport:
+            self.bot.loop.create_task(self.edit_dm_messages(ctx, egg_report.content, copy.deepcopy(raid_embed), dm_dict))
         for field in oldembed.fields:
             t = _('team')
             s = _('status')
@@ -1538,7 +1539,8 @@ class Raid(commands.Cog):
         hatch_msg = await raid_channel.send(content=_("{roletest}Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!\nIf you couldn't before, you're now able to update your status with **!coming** or **!here**. If you've changed your plans, use **!cancel**.").format(roletest=roletest, trainer_list=', '.join(trainer_list), pokemon=entered_raid.title()), embed=raid_embed)
         ctx = await self.bot.get_context(hatch_msg)
         ctx.raidreport = egg_report
-        self.bot.loop.create_task(self.edit_dm_messages(ctx, raidreportcontent, copy.deepcopy(raid_embed), dm_dict))
+        if ctx.raidreport:
+            self.bot.loop.create_task(self.edit_dm_messages(ctx, raidreportcontent, copy.deepcopy(raid_embed), dm_dict))
         for field in oldembed.fields:
             t = _('team')
             s = _('status')
