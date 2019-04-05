@@ -576,9 +576,10 @@ class Raid(commands.Cog):
             continue
 
     async def send_dm_messages(self, ctx, raid_details, content, embed, dm_dict):
-        if isinstance(embed.description, discord.embeds._EmptyEmbed):
-            embed.description = ""
-        embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
+        if embed:
+            if isinstance(embed.description, discord.embeds._EmptyEmbed):
+                embed.description = ""
+            embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             if not checks.dm_check(ctx, trainer):
                 continue
@@ -1967,6 +1968,7 @@ class Raid(commands.Cog):
     async def _timerset(self, raidchannel, exptime):
         exptime = float(exptime)
         guild = raidchannel.guild
+        embed = None
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         end = now + datetime.timedelta(minutes=exptime)
         self.bot.guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['exp'] = time.time() + (exptime * 60)

@@ -91,11 +91,11 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(message)
         if not ctx.guild:
             return
-        if message.guild and (message.author.bot or message.webhook_id) and message.author != ctx.guild.me and ("!raid" in message.content or "!raidegg" in message.content or "!wild" in message.content or "!research" in message.content):
+        if (ctx.author.bot or message.webhook_id or ctx.author.id in self.bot.config.get('managers', []) or ctx.author.id == self.bot.config['master']) and ctx.author != ctx.guild.me and ("!raid" in message.content or "!raidegg" in message.content or "!wild" in message.content or "!research" in message.content):
             await self.on_pokealarm(ctx)
-        if message.guild and (message.author.bot or message.webhook_id or message.author.id in self.bot.config.get('managers', []) or message.author.id == self.bot.config['master']) and message.author != ctx.guild.me and "!alarm" in message.content:
+        if (ctx.author.bot or message.webhook_id or ctx.author.id in self.bot.config.get('managers', []) or ctx.author.id == self.bot.config['master']) and ctx.author != ctx.guild.me and "!alarm" in message.content:
             await self.on_pokealarm(ctx)
-        if (str(message.author) == 'GymHuntrBot#7279') or (str(message.author) == 'HuntrBot#1845'):
+        if (str(ctx.author) == 'GymHuntrBot#7279') or (str(ctx.author) == 'HuntrBot#1845'):
             await self.on_huntr(ctx)
 
     @commands.Cog.listener()
@@ -188,9 +188,22 @@ class Huntr(commands.Cog):
                             await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=entered_raid.title(), moves=moveset))
                         return
                 if auto_report and reporttype == "raid":
-                    await self.huntr_raid(ctx, entered_raid, raid_details, raidexp, huntrgps, moveset)
+                    report_details = {
+                        "pokemon":entered_raid,
+                        "gym":raid_details,
+                        "raidexp":raidexp,
+                        "gps":huntrgps,
+                        "moves":moveset
+                    }
+                    await self.huntr_raid(ctx, report_details)
                 elif auto_report and reporttype == "egg":
-                    await self.huntr_raidegg(ctx, egg_level, raid_details, raidexp, huntrgps)
+                    report_details = {
+                        "level":egg_level,
+                        "gym":raid_details,
+                        "raidexp":raidexp,
+                        "gps":huntrgps
+                    }
+                    await self.huntr_raidegg(ctx, report_details)
                 elif reporttype == "raid":
                     gym_matching_cog = self.bot.cogs.get('GymMatching')
                     if gym_matching_cog:
@@ -198,6 +211,8 @@ class Huntr(commands.Cog):
                         if test_gym:
                             raid_details = test_gym
                     raid_embed = await self.make_raid_embed(ctx, entered_raid, raid_details, raidexp, huntrgps, moveset)
+                    if not raid_embed:
+                        return
                     raid = discord.utils.get(message.guild.roles, name=entered_raid.lower())
                     if raid == None:
                         roletest = ""
@@ -210,6 +225,7 @@ class Huntr(commands.Cog):
                     dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {entered_raid.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(raid_embed), dm_dict)
                     self.bot.guild_dict[message.guild.id]['pokehuntr_dict'][ctx.raidreport.id] = {
                         "exp":time.time() + (raidexp * 60),
+                        "raidexp":raidexp,
                         'expedit': {"content":ctx.raidreport.content.split(" React")[0], "embedcontent":_('**This {pokemon} raid has expired!**').format(pokemon=entered_raid)},
                         "reporttype":"raid",
                         "reportchannel":message.channel.id,
@@ -229,6 +245,8 @@ class Huntr(commands.Cog):
                         if test_gym:
                             raid_details = test_gym
                     raid_embed = await self.make_egg_embed(ctx, egg_level, raid_details, raidexp, huntrgps, reporter="huntr")
+                    if not raid_embed:
+                        return
                     pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
                     ctx.raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=egg_level, member=message.author.mention, location_details=raid_details), embed=raid_embed)
                     await asyncio.sleep(0.25)
@@ -236,6 +254,7 @@ class Huntr(commands.Cog):
                     dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! Level {egg_level} raid egg reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(raid_embed), dm_dict)
                     self.bot.guild_dict[message.guild.id]['pokehuntr_dict'][ctx.raidreport.id] = {
                         "exp":time.time() + (int(raidexp) * 60),
+                        "raidexp":raidexp,
                         'expedit': {"content":ctx.raidreport.content.split(" React")[0], "embedcontent": _('**This level {level} raid egg has hatched!**').format(level=egg_level)},
                         "reporttype":"egg",
                         "reportchannel":message.channel.id,
@@ -244,7 +263,9 @@ class Huntr(commands.Cog):
                         "reporttime":now,
                         "gym":raid_details,
                         "gps":huntrgps,
-                        "embed":raid_embed
+                        "moves":None,
+                        "embed":raid_embed,
+                        "dm_dict":dm_dict
                     }
             if (message.author.id == 295116861920772098 or message.author.id == message.guild.me.id) and message.embeds and auto_wild:
                 wild_cog = self.bot.cogs.get('Wild')
@@ -281,7 +302,7 @@ class Huntr(commands.Cog):
             pokehuntr_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id].get('pokehuntr_dict', {}))
             reporttime = pokehuntr_dict[message.id]['reporttime']
             reporttype = pokehuntr_dict[message.id]['reporttype']
-            gymhuntrgps = pokehuntr_dict[message.id]['gps']
+            coordinates = pokehuntr_dict[message.id]['gps']
             raid_details = pokehuntr_dict[message.id]['gym'].strip()
             dm_dict = copy.deepcopy(pokehuntr_dict[message.id]['dm_dict'])
             reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
@@ -289,11 +310,24 @@ class Huntr(commands.Cog):
             raidexp = int(reporttime.minute) - int(timediff.minutes)
             if reporttype == "egg":
                 egg_level = pokehuntr_dict[message.id]['level']
-                raid_channel = await self.huntr_raidegg(ctx, egg_level, raid_details, raidexp, gymhuntrgps, report_user=reactuser, dm_dict=dm_dict)
+                report_details = {
+                    "level":egg_level,
+                    "gym":raid_details,
+                    "raidexp":raidexp,
+                    "gps":coordinates
+                }
+                raid_channel = await self.huntr_raidegg(ctx, report_details, report_user=reactuser, dm_dict=dm_dict)
             elif reporttype == "raid":
                 entered_raid = pokehuntr_dict[message.id]['pokemon']
-                gymhuntrmoves = pokehuntr_dict[message.id]['moves']
-                raid_channel = await self.huntr_raid(ctx, entered_raid, raid_details, raidexp, gymhuntrgps, gymhuntrmoves, report_user=reactuser, dm_dict=dm_dict)
+                moveset = pokehuntr_dict[message.id]['moves']
+                report_details = {
+                    "pokemon":entered_raid,
+                    "gym":raid_details,
+                    "raidexp":raidexp,
+                    "gps":coordinates,
+                    "moves":moveset
+                }
+                raid_channel = await self.huntr_raid(ctx, report_details, report_user=reactuser, dm_dict=dm_dict)
         return
 
     async def on_pokealarm(self, ctx, reactuser=None):
@@ -371,7 +405,7 @@ class Huntr(commands.Cog):
                 wild_details = painfo[1]
                 location = f"https://www.google.com/maps/search/?api=1&query={wild_details}"
                 despawn = (int(minutes) * 60) + int(seconds)
-                alarm_details = {"pokemon":entered_wild, "coordinates":wild_details, "expire":huntrexp, "weather":wild_extra.split(" / ")[0].replace("Weather: ", ""), "iv_percent":wild_extra.split(" / IV: ")[1]}
+                report_details = {"pokemon":entered_wild, "coordinates":wild_details, "expire":huntrexp, "weather":wild_extra.split(" / ")[0].replace("Weather: ", ""), "iv_percent":wild_extra.split(" / IV: ")[1]}
             elif "!research" in message.content.lower():
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoquest', True):
                     return
@@ -385,7 +419,7 @@ class Huntr(commands.Cog):
                 gps = painfo[1]
                 quest = painfo[2]
                 reward = painfo[3]
-                alarm_details = {
+                report_details = {
                     "pokestop":pokestop,
                     "gps":gps,
                     "quest":quest,
@@ -393,11 +427,120 @@ class Huntr(commands.Cog):
                 }
             elif "!alarm" in message.content.lower():
                 message.content = message.content.replace("!alarm","").strip()
+                await utils.safe_delete(message)
                 try:
-                    alarm_details = json.loads(message.content)
+                    report_details = json.loads(message.content)
                 except:
                     return
-                if alarm_details.get('type', None) == "wild":
+                if report_details.get('type', None) == "raid" or report_details.get('type', None) == "egg":
+                    for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
+                        channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('gymhuntrgps', None)
+                        channel_address = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('address', None)
+                        channel_level = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('egglevel', None)
+                        channel_type = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('type', None)
+                        if channel_level == "EX":
+                            continue
+                        if channel_gps == report_details.get('gps', None) or channel_address == report_details.get('gym', None):
+                            channel = self.bot.get_channel(channelid)
+                            if embed and channel:
+                                await channel.send(embed=embed)
+                            if channel_type == 'egg':
+                                if not utils.get_level(self.bot, report_details.get('pokemon', None)):
+                                    logger.error(f"{report_details.get('pokemon', None)} not in raid_json")
+                                    return
+                                await raid_cog._eggtoraid(report_details.get('pokemon', None), channel, message.author, huntr=report_details.get('moves', None))
+                            elif channel and report_details.get('moves', None):
+                                await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=report_details.get('pokemon', None).title(), moves=report_details.get('moves', None)))
+                                try:
+                                    raid_msg = await channel.fetch_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
+                                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                    return
+                                raid_embed = raid_msg.embeds[0]
+                                for field in raid_embed.fields:
+                                    if "moveset" in field.name.lower():
+                                        return
+                                raid_embed.add_field(name="**Moveset**:", value=report_details.get('moves', None), inline=True)
+                                await raid_msg.edit(embed=raid_embed)
+                            await self.auto_counters(channel, report_details.get('moves', None))
+                            return
+                    if report_details.get('type', None) == "raid":
+                        if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoraid', False):
+                            return
+                        raid_cog = self.bot.cogs.get('Raid')
+                        if not raid_cog:
+                            logger.error("Raid Cog not loaded")
+                            return
+                        reporttype = "raid"
+                        pokemon = report_details.setdefault('pokemon', None)
+                        if not utils.get_level(self.bot, pokemon):
+                            logger.error(f"{pokemon} not in raid_json")
+                            return
+                        coordinates = report_details.setdefault('gps', None)
+                        raid_details = report_details.setdefault('gym', None)
+                        if not all([pokemon, coordinates, raid_details]):
+                            return
+                        egg_level = 0
+                        timeout = int(report_details.get('raidexp', 45))*60
+                        expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=pokemon.title())
+                        if int(utils.get_level(self.bot, pokemon)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('raidlvls', []):
+                            raid_channel = await self.huntr_raid(ctx, report_details)
+                            if embed and raid_channel:
+                                await raid_channel.send(embed=embed)
+                            return
+                        else:
+                            raid = discord.utils.get(message.guild.roles, name=pokemon.name.lower())
+                            if raid == None:
+                                roletest = ""
+                            else:
+                                roletest = _("{pokemon} - ").format(pokemon=raid.mention)
+                            raidmsg = f"{roletest}Meowth! {pokemon.title()} raid reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this raid!"
+                            ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
+                            dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {pokemon.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
+                    elif report_details.get('type', None) == "egg":
+                        if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoegg', False):
+                            return
+                        raid_cog = self.bot.cogs.get('Raid')
+                        if not raid_cog:
+                            logger.error("Raid Cog not loaded")
+                            return
+                        reporttype = "egg"
+                        egg_level = report_details.setdefault('level', None)
+                        coordinates = report_details.setdefault('gps', None)
+                        raid_details = report_details.setdefault('gym', None)
+                        if not all([egg_level, coordinates, raid_details]):
+                            return
+                        moves = None
+                        entered_raid = None
+                        timeout = int(report_details.get('raidexp', 45))*60
+                        expiremsg = ('This level {level} raid egg has hatched!').format(level=egg_level)
+                        if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('egglvls', False):
+                            raid_channel = await self.huntr_raidegg(ctx, report_details)
+                            if embed and raid_channel:
+                                await raid_channel.send(embed=embed)
+                            return
+                        else:
+                            raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this egg!"
+                            ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
+                            dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! Level {egg_level} raid egg reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
+                    self.bot.guild_dict[message.guild.id]['pokealarm_dict'][ctx.raidreport.id] = {
+                        "exp":time.time() + timeout,
+                        'expedit': {"content":raidmsg.split("React")[0], "embedcontent":expiremsg},
+                        "reporttype":reporttype,
+                        "reportchannel":message.channel.id,
+                        "level":egg_level,
+                        "pokemon":entered_raid,
+                        "gps":coordinates,
+                        "gym":raid_details,
+                        "raidexp":report_details.setdefault('raidexp', 45),
+                        "reporttime":now,
+                        "moves":report_details.setdefault('moves', None),
+                        "embed":embed,
+                        "dm_dict":dm_dict
+                    }
+                    await asyncio.sleep(0.25)
+                    await ctx.raidreport.add_reaction(self.bot.config['huntr_report'])
+                    return
+                elif report_details.get('type', None) == "wild":
                     if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autowild', False):
                         return
                     wild_cog = self.bot.cogs.get('Wild')
@@ -405,14 +548,13 @@ class Huntr(commands.Cog):
                         logger.error("Wild Cog not loaded")
                         return
                     reporttype = "wild"
-                    pokemon = alarm_details.setdefault('pokemon', None)
-                    coordinates = alarm_details.setdefault("coordinates", None)
-                    await utils.safe_delete(message)
+                    pokemon = report_details.setdefault('pokemon', None)
+                    coordinates = report_details.setdefault("coordinates", None)
                     if not all([pokemon, coordinates]):
                         return
-                    await self.huntr_wild(ctx, alarm_details)
+                    await self.huntr_wild(ctx, report_details)
                     return
-                elif alarm_details.get('type', None) == "research":
+                elif report_details.get('type', None) == "research":
                     if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoquest', True):
                         return
                     research_cog = self.bot.cogs.get('Research')
@@ -420,23 +562,22 @@ class Huntr(commands.Cog):
                         logger.error("Research Cog not loaded")
                         return
                     reporttype = "quest"
-                    pokestop = alarm_details.get('pokestop', None)
-                    gps = alarm_details.get('gps', None)
-                    quest = alarm_details.get('quest', None)
-                    reward = alarm_details.get('reward', None)
-                    await utils.safe_delete(message)
+                    pokestop = report_details.get('pokestop', None)
+                    gps = report_details.get('gps', None)
+                    quest = report_details.get('quest', None)
+                    reward = report_details.get('reward', None)
                     if not all([pokestop, gps, quest, reward]):
                         return
-                    await self.huntr_research(ctx, alarm_details)
+                    await self.huntr_research(ctx, report_details)
                     return
             else:
                 return
             await utils.safe_delete(message)
             if reporttype == "wild":
-                await self.huntr_wild(ctx, alarm_details)
+                await self.huntr_wild(ctx, report_details)
                 return
             if reporttype == "quest":
-                await self.huntr_research(ctx, alarm_details)
+                await self.huntr_research(ctx, report_details)
                 return
             else:
                 for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
@@ -471,7 +612,13 @@ class Huntr(commands.Cog):
                         return
                 if reporttype == "egg":
                     if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('egglvls', False):
-                        raid_channel = await self.huntr_raidegg(ctx, egg_level, raid_details, raidexp, gps)
+                        report_details = {
+                            "level":egg_level,
+                            "gym":raid_details,
+                            "raidexp":raidexp,
+                            "gps":gps
+                        }
+                        raid_channel = await self.huntr_raidegg(ctx, report_details)
                         if embed and raid_channel:
                             await raid_channel.send(embed=embed)
                         return
@@ -484,7 +631,14 @@ class Huntr(commands.Cog):
                         logger.error(f"{entered_raid} not in raid_json")
                         return
                     if int(utils.get_level(self.bot, entered_raid)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('raidlvls', []):
-                        raid_channel = await self.huntr_raid(ctx, entered_raid, raid_details, raidexp, gps, moves)
+                        report_details = {
+                            "pokemon":entered_raid,
+                            "gym":raid_details,
+                            "raidexp":raidexp,
+                            "gps":gps,
+                            "moves":moves
+                        }
+                        raid_channel = await self.huntr_raid(ctx, report_details)
                         if embed and raid_channel:
                             await raid_channel.send(embed=embed)
                         return
@@ -517,19 +671,20 @@ class Huntr(commands.Cog):
         else:
             await utils.safe_delete(message)
             pokealarm_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id].get('pokealarm_dict', {}))
-            alarm_details = pokealarm_dict[message.id]
-            embed = alarm_details['embed']
-            reporttime = alarm_details['reporttime']
-            reporttype = alarm_details['reporttype']
-            huntrtime = alarm_details['raidexp']
-            dm_dict = copy.deepcopy(alarm_details['dm_dict'])
+            report_details = pokealarm_dict[message.id]
+            embed = report_details['embed']
+            reporttime = report_details['reporttime']
+            reporttype = report_details['reporttype']
+            huntrtime = report_details['raidexp']
+            dm_dict = copy.deepcopy(report_details['dm_dict'])
             reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
             timediff = relativedelta(reacttime, reporttime)
             exptime = int(huntrtime) - int(timediff.minutes)
+            report_details['raidexp'] = exptime
             if reporttype == "egg":
-                raid_channel = await self.huntr_raidegg(ctx, alarm_details['level'], alarm_details['gym'], exptime, alarm_details['gps'], report_user=reactuser, dm_dict=dm_dict)
+                raid_channel = await self.huntr_raidegg(ctx, report_details, report_user=reactuser, dm_dict=dm_dict)
             elif reporttype == "raid":
-                raid_channel = await self.huntr_raid(ctx, alarm_details['pokemon'], alarm_details['gym'], exptime, alarm_details['gps'], alarm_details['moves'], report_user=reactuser, dm_dict=dm_dict)
+                raid_channel = await self.huntr_raid(ctx, report_details, report_user=reactuser, dm_dict=dm_dict)
             if embed and raid_channel:
                 await raid_channel.send(embed=embed)
 
@@ -578,7 +733,7 @@ class Huntr(commands.Cog):
             if gym_url:
                 raid_gmaps_link = gym_url
         if not raid_details:
-            return
+            return None
         egg_level = str(egg_level)
         egg_info = ctx.bot.raid_info['raid_eggs'][egg_level]
         egg_img = egg_info['egg_img']
@@ -602,7 +757,7 @@ class Huntr(commands.Cog):
         raid_embed.set_thumbnail(url=raid_img_url)
         return raid_embed
 
-    async def make_raid_embed(self, ctx, entered_raid, raid_details, raidexp, raid_coordinates, gymhuntrmoves=None, reporter=None):
+    async def make_raid_embed(self, ctx, entered_raid, raid_details, raidexp, raid_coordinates, moveset=None, reporter=None):
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         raid_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={raid_coordinates}"
@@ -620,7 +775,7 @@ class Huntr(commands.Cog):
                 raid_gmaps_link = gym_url
         if not raid_details:
             await utils.safe_delete(ctx.message)
-            return
+            return None
         raid = discord.utils.get(message.guild.roles, name=entered_raid)
         if raid == None:
             roletest = ""
@@ -632,8 +787,8 @@ class Huntr(commands.Cog):
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(ctx.bot, message.guild, utils.get_weaknesses(ctx.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
-        if gymhuntrmoves:
-            raid_embed.add_field(name=_("**Moveset:**"), value=gymhuntrmoves)
+        if moveset:
+            raid_embed.add_field(name=_("**Moveset:**"), value=moveset)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=pokemon.img_url)
         return raid_embed
@@ -742,7 +897,7 @@ class Huntr(commands.Cog):
             'omw':[]
         }
 
-    async def huntr_raid(self, ctx, entered_raid, raid_details, raidexp, raid_coordinates, gymhuntrmoves, reporter=None, report_user=None, dm_dict=None):
+    async def huntr_raid(self, ctx, report_details, reporter=None, report_user=None, dm_dict=None):
         if not dm_dict:
             dm_dict = {}
         raid_cog = self.bot.cogs.get('Raid')
@@ -751,6 +906,11 @@ class Huntr(commands.Cog):
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
+        entered_raid = report_details['pokemon']
+        raid_coordinates = report_details['gps']
+        raid_details = report_details.get('gym', raid_coordinates)
+        moves = report_details.get('moves', None)
+        raidexp = report_details.get('raidexp', 45)
         pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_raid)
         if pokemon:
             entered_raid = pokemon.name.lower()
@@ -776,9 +936,9 @@ class Huntr(commands.Cog):
             test_gym = gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
             if test_gym:
                 raid_details = test_gym
-        raid_embed = await self.make_raid_embed(ctx, str(pokemon), raid_details, raidexp, raid_coordinates, gymhuntrmoves)
+        raid_embed = await self.make_raid_embed(ctx, str(pokemon), raid_details, raidexp, raid_coordinates, moves)
         raid_channel = await raid_cog.create_raid_channel(ctx, entered_raid, raid_details, "raid")
-        if not raid_channel:
+        if not raid_channel or not raid_embed:
             return
         await asyncio.sleep(1)
         ctx.raidreport = await message.channel.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
@@ -808,7 +968,7 @@ class Huntr(commands.Cog):
             'egglevel': '0',
             'moveset': 0,
             'weather': weather,
-            'gymhuntrgps' : gymhuntrgps
+            'gymhuntrgps' : raid_coordinates
         }
         await raid_cog._timerset(raid_channel, raidexp)
         await raid_channel.send("This raid was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
@@ -837,10 +997,10 @@ class Huntr(commands.Cog):
         if report_user:
             raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(report_user.id, {}).setdefault('raid_reports', 0) + 1
             self.bot.guild_dict[message.guild.id]['trainers'][report_user.id]['raid_reports'] = raid_reports
-        await self.auto_counters(raid_channel, gymhuntrmoves)
+        await self.auto_counters(raid_channel, moves)
         return raid_channel
 
-    async def huntr_raidegg(self, ctx, egg_level, raid_details, raidexp, raid_coordinates, reporter=None, report_user=None, dm_dict=None):
+    async def huntr_raidegg(self, ctx, report_details, reporter=None, report_user=None, dm_dict=None):
         if not dm_dict:
             dm_dict = {}
         raid_cog = self.bot.cogs.get('Raid')
@@ -849,6 +1009,10 @@ class Huntr(commands.Cog):
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
+        egg_level = report_details.get('level')
+        raid_details = report_details.get('gym')
+        raidexp = report_details.get('raidexp', 60)
+        raid_coordinates = report_details['gps']
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
@@ -857,7 +1021,7 @@ class Huntr(commands.Cog):
                 raid_details = test_gym
         raid_embed = await self.make_egg_embed(ctx, egg_level, raid_details, raidexp, raid_coordinates, reporter)
         raid_channel = await raid_cog.create_raid_channel(ctx, egg_level, raid_details, "egg")
-        if not raid_channel:
+        if not raid_channel or not raid_embed:
             return
         await asyncio.sleep(1)
         ctx.raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
@@ -880,7 +1044,7 @@ class Huntr(commands.Cog):
             'egglevel': egg_level,
             'weather': weather,
             'moveset': 0,
-            'gymhuntrgps' : gymhuntrgps
+            'gymhuntrgps' : raid_coordinates
         }
         if raidexp is not False:
             await raid_cog._timerset(raid_channel, raidexp)

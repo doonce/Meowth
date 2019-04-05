@@ -113,11 +113,12 @@ class Wild(commands.Cog):
             pass
 
     async def send_dm_messages(self, ctx, wild_number, wild_details, wild_type_1, wild_type_2, wild_iv, content, embed, dm_dict):
-        if isinstance(embed.description, discord.embeds._EmptyEmbed):
-            embed.description = ""
-        embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.wildreportmsg.jump_url})"
-        embed.remove_field(len(embed.fields)-1)
-        embed.remove_field(len(embed.fields)-1)
+        if embed:
+            if isinstance(embed.description, discord.embeds._EmptyEmbed):
+                embed.description = ""
+            embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.wildreportmsg.jump_url})"
+            embed.remove_field(len(embed.fields)-1)
+            embed.remove_field(len(embed.fields)-1)
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             if not checks.dm_check(ctx, trainer):
                 continue

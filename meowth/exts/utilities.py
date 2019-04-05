@@ -7,6 +7,7 @@ import functools
 import textwrap
 import datetime
 import copy
+import logging
 
 from dateutil.relativedelta import relativedelta
 
@@ -18,6 +19,8 @@ from discord.ext import commands
 
 from meowth import checks
 from meowth.exts import pokemon as pkmn_class
+
+logger = logging.getLogger("meowth")
 
 def get_match(word_list: list, word: str, score_cutoff: int = 60):
     """Uses fuzzywuzzy to see if word is close to entries in word_list
@@ -492,6 +495,68 @@ async def safe_delete(message):
 class Utilities(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        bot.loop.create_task(self.dm_cleanup())
+
+    async def dm_cleanup(self, loop=True):
+        await self.bot.wait_until_ready()
+        while (not self.bot.is_closed()):
+            if loop:
+                await asyncio.sleep(604800)
+            logger.info('------ BEGIN ------')
+            guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+            count = 0
+            global_dm_list = []
+            for guildid in guilddict_temp.keys():
+                for channel in guilddict_temp[guildid].get('nest_dict', {}):
+                    for nest in guilddict_temp[guildid]['nest_dict'][channel]:
+                        if nest == "list":
+                            continue
+                        for report in guilddict_temp[guildid]['nest_dict'][channel][nest]['reports']:
+                            for k,v in guilddict_temp[guildid]['nest_dict'][channel][nest]['reports'][report]['dm_dict'].items():
+                                global_dm_list.append(v)
+                report_list = ["questreport_dict", "wildreport_dict", "pokealarm_dict", "pokehuntr_dict", "raidchannel_dict"]
+                for report_dict in report_list:
+                    for report in guilddict_temp[guildid].get(report_dict, {}):
+                        for k,v in guilddict_temp[guildid][report_dict][report].get('dm_dict', {}).items():
+                            global_dm_list.append(v)
+
+                trainers = guilddict_temp[guildid].get('trainers', {}).keys()
+                for trainer in trainers:
+                    user = self.bot.get_user(trainer)
+                    if not user:
+                        continue
+                    dm_channel = user.dm_channel
+                    if not dm_channel:
+                        try:
+                            dm_channel = await user.create_dm()
+                        except:
+                            continue
+                    if not dm_channel:
+                        continue
+                    async for message in user.dm_channel.history(limit=500, reverse=True):
+                        if message.author.id == self.bot.user.id:
+                            if "reported by" in message.content or "hatched into" in message.content or "reported that" in message.content:
+                                if message.id not in global_dm_list:
+                                    try:
+                                        await message.delete()
+                                        count += 1
+                                    except:
+                                        continue
+            logger.info(f"------ END - {count} DMs Cleaned ------")
+            if not loop:
+                return count
+            continue
+
+    @commands.command()
+    @checks.is_owner()
+    async def clean_dm(self, ctx):
+        """Manually clean forgotten DMs.
+
+        DMs that Meowth forgot about will be cleaned automatically once per
+        week. This command does it on command."""
+        async with ctx.typing():
+            count = await self.dm_cleanup(loop=False)
+            await ctx.send(f"{count} DMs cleaned.")
 
     @commands.command(name='embed')
     @checks.serverowner_or_permissions(manage_message=True)
