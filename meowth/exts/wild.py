@@ -155,7 +155,7 @@ class Wild(commands.Cog):
         wild_split = content.split()
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, content)
         wild_iv = None
-        nearest_stop = None
+        nearest_stop = ""
         if pokemon:
             pokemon.shiny = False
         else:
