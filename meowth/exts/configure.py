@@ -46,10 +46,10 @@ class Configure(commands.Cog):
                                 ctx = None
                                 author = False
                                 for overwrite in channel_exists.overwrites:
-                                    if isinstance(overwrite[0], discord.Member):
-                                        if not overwrite[0].bot:
-                                            author = overwrite[0]
-                                async for message in channel_exists.history(limit=500, reverse=True):
+                                    if isinstance(overwrite, discord.Member):
+                                        if not overwrite.bot:
+                                            author = overwrite
+                                async for message in channel_exists.history(limit=500, oldest_first=True):
                                     if message.author.id == self.bot.user.id:
                                         ctx = await self.bot.get_context(message)
                                 if ctx and author:

@@ -488,14 +488,17 @@ class Huntr(commands.Cog):
                                 await raid_channel.send(embed=embed)
                             return
                         else:
+                            pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, pokemon)
+                            if not pokemon:
+                                return
                             raid = discord.utils.get(message.guild.roles, name=pokemon.name.lower())
                             if raid == None:
                                 roletest = ""
                             else:
                                 roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-                            raidmsg = f"{roletest}Meowth! {pokemon.title()} raid reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this raid!"
+                            raidmsg = f"{roletest}Meowth! {pokemon.name.title()} raid reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this raid!"
                             ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
-                            dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {pokemon.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
+                            dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {pokemon.name.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                     elif report_details.get('type', None) == "egg":
                         if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoegg', False):
                             return
@@ -510,7 +513,7 @@ class Huntr(commands.Cog):
                         if not all([egg_level, coordinates, raid_details]):
                             return
                         moves = None
-                        entered_raid = None
+                        pokemon = None
                         timeout = int(report_details.get('raidexp', 45))*60
                         expiremsg = ('This level {level} raid egg has hatched!').format(level=egg_level)
                         if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('egglvls', False):
@@ -528,7 +531,7 @@ class Huntr(commands.Cog):
                         "reporttype":reporttype,
                         "reportchannel":message.channel.id,
                         "level":egg_level,
-                        "pokemon":entered_raid,
+                        "pokemon":str(pokemon) if pokemon else None,
                         "gps":coordinates,
                         "gym":raid_details,
                         "raidexp":report_details.setdefault('raidexp', 45),

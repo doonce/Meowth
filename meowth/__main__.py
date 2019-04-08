@@ -167,6 +167,9 @@ async def _load(ctx, *extensions):
 async def _unload(ctx, *extensions):
     exts = [e for e in extensions if f"meowth.exts.{e}" in Meowth.extensions]
     for ext in exts:
+        if ext in required_exts:
+            exts.remove(ext)
+            continue
         try:
             ctx.bot.unload_extension(f"meowth.exts.{ext}")
         except Exception as e:

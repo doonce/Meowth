@@ -75,7 +75,7 @@ class Raid(commands.Cog):
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['archive'] = True
             if self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('archive', False):
                 logs = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('logs', {})
-                logs[message.id] = {'author_id': message.author.id, 'author_str': str(message.author), 'author_avy':message.author.avatar_url, 'author_nick':message.author.nick, 'color_int':message.author.color.value, 'content': message.clean_content, 'created_at':message.created_at}
+                logs[message.id] = {'author_id': message.author.id, 'author_str': str(message.author), 'author_avy':str(message.author.avatar_url), 'author_nick':message.author.nick, 'color_int':message.author.color.value, 'content': message.clean_content, 'created_at':message.created_at}
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['logs'] = logs
 
     @commands.Cog.listener()
@@ -355,23 +355,23 @@ class Raid(commands.Cog):
                                 await channel.set_permissions(guild.default_role, overwrite=discord.PermissionOverwrite(read_messages=False))
                             except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                                 pass
-                            if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
+                            if (overwrite.name not in guild.me.top_role.name) and (overwrite.name not in guild.me.name):
                                 try:
-                                    await channel.set_permissions(overwrite[0], read_messages=False)
+                                    await channel.set_permissions(overwrite, read_messages=False)
                                 except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                                     pass
-                        await channel.send(_('-----------------------------------------------\n**The channel has been removed from view for everybody but Meowth and server owner to protect from future GymHuntr duplicates. It will be removed on its own, please do not remove it. Just ignore what happens in this channel.**\n-----------------------------------------------'))
+                        await channel.send(_('-----------------------------------------------\n**The channel has been removed from view for everybody but Meowth and server owner to protect from future bot reported duplicates. It will be removed on its own, please do not remove it. Just ignore what happens in this channel.**\n-----------------------------------------------'))
                         deltime = ((gymhuntrexp - time.time()) / 60) + 10
                         await self._timerset(channel, deltime)
                     elif archive or logs:
                         try:
                             for overwrite in channel.overwrites:
-                                ow = channel.overwrites_for(overwrite[0])
-                                if (overwrite[0].name not in guild.me.top_role.name) and (overwrite[0].name not in guild.me.name):
+                                ow = channel.overwrites_for(overwrite)
+                                if (overwrite.name not in guild.me.top_role.name) and (overwrite.name not in guild.me.name):
                                     ow.read_messages = False
-                                if channel.overwrites_for(overwrite[0]).manage_guild or channel.overwrites_for(overwrite[0]).manage_channels:
+                                if channel.overwrites_for(overwrite).manage_guild or channel.overwrites_for(overwrite).manage_channels:
                                     ow.read_messages = True
-                                await channel.set_permissions(overwrite[0], overwrite = ow)
+                                await channel.set_permissions(overwrite, overwrite = ow)
                             for role in guild.roles:
                                 ow = channel.overwrites_for(role)
                                 if role.permissions.manage_guild or role.permissions.manage_channels:
@@ -615,24 +615,19 @@ class Raid(commands.Cog):
     async def create_raid_channel(self, ctx, entered_raid, raid_details, type):
         message = ctx.message
         channel = ctx.channel
+        raid_channel_overwrites = ctx.channel.overwrites
+        raid_channel_overwrites[self.bot.user] = discord.PermissionOverwrite(send_messages=True, read_messages=True, manage_roles=True)
         if type == "raid":
             raid_channel_name = (entered_raid + '-')
             raid_channel_category = utils.get_category(self.bot, ctx.channel, utils.get_level(self.bot, entered_raid), category_type="raid")
-            raid_channel_overwrites = dict(ctx.channel.overwrites)
         elif type == "egg":
             raid_channel_name = _('level-{egg_level}-egg-').format(egg_level=entered_raid)
             raid_channel_category = utils.get_category(self.bot, ctx.channel, entered_raid, category_type="raid")
-            raid_channel_overwrites = dict(ctx.channel.overwrites)
         elif type == "exraid":
             raid_channel_name = _('ex-raid-egg-')
             raid_channel_category = utils.get_category(self.bot, ctx.channel, "EX", category_type="exraid")
-            raid_channel_overwrite_list = ctx.channel.overwrites
             if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['permissions'] == "everyone":
-                everyone_overwrite = (ctx.guild.default_role, discord.PermissionOverwrite(read_messages=True))
-                raid_channel_overwrite_list.append(everyone_overwrite)
-            meowth_overwrite = (self.bot.user, discord.PermissionOverwrite(send_messages=True, read_messages=True, manage_roles=True))
-            raid_channel_overwrite_list.append(meowth_overwrite)
-            raid_channel_overwrites = dict(raid_channel_overwrite_list)
+                raid_channel_overwrites[ctx.guild.default_role] = discord.PermissionOverwrite(read_messages=True)
         elif type == "meetup":
             raid_channel_name = _('meetup-')
             raid_channel_category = utils.get_category(self.bot, ctx.channel, "EX", category_type="meetup")
@@ -1436,7 +1431,7 @@ class Raid(commands.Cog):
         weather = eggdetails.get('weather', None)
         raid_message = await raid_channel.fetch_message(eggdetails['raidmessage'])
         if not reportcitychannel:
-            async for message in raid_channel.history(limit=500, reverse=True):
+            async for message in raid_channel.history(limit=500, oldest_first=True):
                 if message.author.id == guild.me.id:
                     c = _('Coordinate here')
                     if c in message.content:
@@ -2191,7 +2186,7 @@ class Raid(commands.Cog):
             report_meetup = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id].get('meetup', None)
             report_pokemon = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id].get('pokemon', None)
             if not report_channel:
-                async for m in message.channel.history(limit=500, reverse=True):
+                async for m in message.channel.history(limit=500, oldest_first=True):
                     if m.author.id == guild.me.id:
                         c = _('Coordinate here')
                         if c in m.content:
@@ -2287,7 +2282,7 @@ class Raid(commands.Cog):
             raidmessage = None
             pkmn_obj = None
             trainer_dict = {}
-            async for message in channel.history(limit=500, reverse=True):
+            async for message in channel.history(limit=500, oldest_first=True):
                 if message.author.id == guild.me.id or "Meowth" in message.author.display_name:
                     c = _('Coordinate here')
                     if c in message.content:
@@ -3368,7 +3363,7 @@ class Raid(commands.Cog):
         try:
             raidmsg = await channel.fetch_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['raidmessage'])
         except:
-            async for message in channel.history(limit=500, reverse=True):
+            async for message in channel.history(limit=500, oldest_first=True):
                 if author and message.author.id == channel.guild.me.id:
                     c = _('Coordinate here')
                     if c in message.content:

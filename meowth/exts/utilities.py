@@ -492,6 +492,12 @@ async def safe_delete(message):
     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.NotFound, AttributeError):
         pass
 
+async def safe_bulk_delete(channel, message_list):
+    try:
+        await channel.delete_messages(message_list)
+    except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.ClientException, AttributeError):
+        pass
+
 class Utilities(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -533,7 +539,7 @@ class Utilities(commands.Cog):
                             continue
                     if not dm_channel:
                         continue
-                    async for message in user.dm_channel.history(limit=500, reverse=True):
+                    async for message in user.dm_channel.history(limit=500, oldest_first=True):
                         if message.author.id == self.bot.user.id:
                             if "reported by" in message.content or "hatched into" in message.content or "reported that" in message.content:
                                 if message.id not in global_dm_list:
@@ -720,8 +726,8 @@ class Utilities(commands.Cog):
         channel = ctx.channel
         embed_colour = guild.me.colour or discord.Colour.lighter_grey()
         uptime_str = await self._uptime(self.bot)
-        embed = discord.Embed(colour=embed_colour, icon_url=self.bot.user.avatar_url)
-        embed.add_field(name=_('Uptime'), value=uptime_str)
+        embed = discord.Embed(colour=embed_colour, description=uptime_str)
+        embed.set_author(name="Uptime", icon_url=self.bot.user.avatar_url)
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
@@ -764,8 +770,8 @@ class Utilities(commands.Cog):
         for guild in self.bot.guilds:
             guild_count += 1
             member_count += len(guild.members)
-        embed = discord.Embed(colour=embed_colour, icon_url=self.bot.user.avatar_url)
-        embed.add_field(name='About Meowth', value=about, inline=False)
+        embed = discord.Embed(colour=embed_colour, description=about)
+        embed.set_author(name="About Meowth", icon_url=self.bot.user.avatar_url)
         embed.add_field(name='Owner', value=owner)
         if guild_count > 1:
             embed.add_field(name='Servers', value=guild_count)

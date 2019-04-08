@@ -70,9 +70,9 @@ class Tutorial(commands.Cog):
                         newbie = False
                         ctx = False
                         for overwrite in channel_exists.overwrites:
-                            if isinstance(overwrite[0], discord.Member):
-                                if not overwrite[0].bot:
-                                    newbie = overwrite[0]
+                            if isinstance(overwrite, discord.Member):
+                                if not overwrite.bot:
+                                    newbie = overwrite
                         try:
                             tutorial_message = await channel_exists.fetch_message(tutorial_dict[channelid])
                         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):

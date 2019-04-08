@@ -58,12 +58,14 @@ class Listing(commands.Cog):
                     exraid_list = []
                     event_list = []
                     list_dict = self.bot.guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
+                    delete_list = []
                     for msg in list_dict:
                         try:
                             msg = await ctx.channel.fetch_message(msg)
-                            await utils.safe_delete(msg)
+                            delete_list.append(msg)
                         except:
                             pass
+                    await utils.safe_bulk_delete(ctx.channel, delete_list)
                     for r in rc_d:
                         reportcity = self.bot.get_channel(rc_d[r]['reportcity'])
                         if not reportcity:
@@ -223,12 +225,14 @@ class Listing(commands.Cog):
                     rc_d = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]
                     list_split = ctx.message.clean_content.lower().split()
                     list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
+                    delete_list = []
                     for msg in list_dict:
                         try:
                             msg = await ctx.channel.fetch_message(msg)
-                            await utils.safe_delete(msg)
+                            delete_list.append(msg)
                         except:
                             pass
+                    await utils.safe_bulk_delete(ctx.channel, delete_list)
                     if "tags" in list_split or "tag" in list_split:
                         tag = True
                     for word in list_split:
@@ -963,13 +967,15 @@ class Listing(commands.Cog):
         Usage: !list research"""
         await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('research', {}).setdefault(ctx.channel.id, [])
+        delete_list = []
         async with ctx.typing():
             for msg in list_dict:
                 try:
                     msg = await ctx.channel.fetch_message(msg)
-                    await utils.safe_delete(msg)
+                    delete_list.append(msg)
                 except:
                     pass
+            await utils.safe_bulk_delete(ctx.channel, delete_list)
             listmsg, res_pages = await self._researchlist(ctx)
             list_messages = []
             if res_pages:
@@ -1066,13 +1072,15 @@ class Listing(commands.Cog):
         Usage: !list wilds"""
         await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('wild', {}).setdefault(ctx.channel.id, [])
+        delete_list = []
         async with ctx.typing():
             for msg in list_dict:
                 try:
                     msg = await ctx.channel.fetch_message(msg)
-                    await utils.safe_delete(msg)
+                    delete_list.append(msg)
                 except:
                     pass
+            await utils.safe_bulk_delete(ctx.channel, delete_list)
             listmsg, wild_pages = await self._wildlist(ctx)
             list_messages = []
             if wild_pages:
@@ -1127,13 +1135,15 @@ class Listing(commands.Cog):
         Usage: !list nests"""
         await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('nest', {}).setdefault(ctx.channel.id, [])
+        delete_list = []
         async with ctx.typing():
             for msg in list_dict:
                 try:
                     msg = await ctx.channel.fetch_message(msg)
-                    await utils.safe_delete(msg)
+                    delete_list.append(msg)
                 except:
                     pass
+            await utils.safe_bulk_delete(ctx.channel, delete_list)
             nest_cog = self.bot.cogs.get('Nest')
             if not nest_cog:
                 return
