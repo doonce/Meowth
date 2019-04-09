@@ -166,12 +166,15 @@ class Tutorial(commands.Cog):
             tutorial_message += _("\n\n**Welcome**\nYou can either get a tutorial for everything by replying with **all** or reply with a comma separated list of the following Enabled Commands to get tutorials for those commands. Example: `want, raid, wild`")
             tutorial_message += _("\n\n**Enabled Commands:**\n{enabled}").format(enabled=", ".join(enabled))
             msg = await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
+            report_channels = cfg.setdefault('tutorial', {}).setdefault('report_channels', {})
+            report_channels[ctx.tutorial_channel.id] = msg.id
             while True:
                 try:
                     tutorial_reply = await self.wait_for_msg(ctx.tutorial_channel, ctx.author)
                 except asyncio.TimeoutError:
                     await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long! This channel will be deleted in ten seconds."))
                     await asyncio.sleep(10)
+                    await self.delete_tutorial_channel(ctx)
                     return
                 if "all" in tutorial_reply.content.lower():
                     tutorial_reply_list = enabled
@@ -190,10 +193,8 @@ class Tutorial(commands.Cog):
                     break
         else:
             msg = await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Configuration - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
-
-        report_channels = cfg.setdefault('tutorial', {}).setdefault('report_channels', {})
-        report_channels[ctx.tutorial_channel.id] = msg.id
-
+            report_channels = cfg.setdefault('tutorial', {}).setdefault('report_channels', {})
+            report_channels[ctx.tutorial_channel.id] = msg.id
         try:
             # start want tutorial
             if 'want' in tutorial_reply_list:
