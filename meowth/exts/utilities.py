@@ -688,7 +688,11 @@ class Utilities(commands.Cog):
                 else:
                     sendchannel = discord.utils.get(guild.text_channels, name=channelmsg.content)
                 if (channelmsg != None) and (sendchannel != None):
-                    announcement = await sendchannel.send(embed=embeddraft)
+                    if announce.startswith("[") and announce.endswith("]"):
+                        embeddraft.description = announce[1:-1]
+                        announcement = await sendchannel.send(embed=embeddraft)
+                    else:
+                        announcement = await sendchannel.send(announce)
                     confirmation = await channel.send(_('Announcement Sent.'), delete_after=10)
                 elif sendchannel == None:
                     confirmation = await channel.send(_("Meowth! That channel doesn't exist! Retry when you're ready."), delete_after=10)
