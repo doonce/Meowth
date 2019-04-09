@@ -204,13 +204,7 @@ class Wild(commands.Cog):
                         await utils.safe_delete(location_msg)
                         break
                     elif location_msg:
-                        gym_matching_cog = self.bot.cogs.get('GymMatching')
-                        poi_info = ""
-                        if gym_matching_cog:
-                            poi_info, location, poi_url = await gym_matching_cog.get_poi_info(ctx, location_msg.clean_content, "wild")
-                        if not location:
-                            await utils.safe_delete(location_msg)
-                            return
+                        location = location_msg.clean_content
                     await utils.safe_delete(location_msg)
                     wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Fantastic! Now, did you check the **IV** for the {str(pokemon)}? Reply with the **IV** or **N** to report without IV. You can reply with **cancel** to stop anytime.", inline=False)
                     iv_wait = await channel.send(embed=wild_embed)

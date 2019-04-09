@@ -618,6 +618,8 @@ class Utilities(commands.Cog):
         """Repeats your message in an embed from Meowth.
 
         Usage: !announce [announcement]
+        Surround announcement in brackets ([]) to send as an embed.
+        Mentions will not work in embeds.
         If the announcement isn't added at the same time as the command, Meowth will wait 3 minutes for a followup message containing the announcement."""
         message = ctx.message
         channel = message.channel
@@ -631,14 +633,19 @@ class Utilities(commands.Cog):
                 await safe_delete(announcemsg)
             else:
                 confirmation = await channel.send(_("Meowth! You took too long to send me your announcement! Retry when you're ready."), delete_after=10)
-        embeddraft = discord.Embed(colour=guild.me.colour, description=announce)
+        embeddraft = discord.Embed(colour=guild.me.colour)
         if ctx.invoked_with == "announce":
             title = _('Announcement')
             if self.bot.user.avatar_url:
                 embeddraft.set_author(name=title, icon_url=self.bot.user.avatar_url)
             else:
                 embeddraft.set_author(name=title)
-        draft = await channel.send(embed=embeddraft)
+        if announce.startswith("[") and announce.endswith("]"):
+            embeddraft.description = announce[1:-1]
+            draft = await channel.send(embed=embeddraft)
+        else:
+            draft = await channel.send(announce)
+
         reaction_list = ['❔', self.bot.config['answer_yes'], self.bot.config['answer_no']]
         owner_msg_add = ''
         if checks.is_owner_check(ctx):
