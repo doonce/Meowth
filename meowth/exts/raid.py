@@ -983,7 +983,7 @@ class Raid(commands.Cog):
                     else:
                         new_channel = await self._raid(ctx, content)
                     ctx.raid_channel = new_channel
-                    break
+                    return
                 else:
                     raid_embed.add_field(name=_('**New Raid Report**'), value=_("Meowth! I'll help you report a raid!\n\nFirst, I'll need to know what **pokemon or level** the raid is. Reply with the name of a **pokemon** or an **egg level** number 1-5. You can reply with **cancel** to stop anytime."), inline=False)
                     mon_or_lvl_wait = await channel.send(embed=raid_embed)

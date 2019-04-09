@@ -161,7 +161,7 @@ class Wild(commands.Cog):
                 if pokemon and location:
                     content = f"{pokemon} {location}"
                     await self._wild(ctx, content)
-                    break
+                    return
                 else:
                     wild_embed.add_field(name=_('**New Wild Report**'), value=_("Meowth! I'll help you report a wild!\n\nFirst, I'll need to know what **pokemon** you encountered. Reply with the name of a **pokemon**. Include any forms, size, gender if necessary. You can reply with **cancel** to stop anytime."), inline=False)
                     mon_wait = await channel.send(embed=wild_embed)
@@ -332,6 +332,8 @@ class Wild(commands.Cog):
         }
         wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wild_reports', 0) + 1
         self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports
+        if "ditto" in str(pokemon).lower():
+            await message.channel.send(f"{ctx.author.mention}, what was the Ditto hiding as?", delete_after=30)
 
     @wild.command(aliases=['expire'])
     @checks.allowwildreport()
