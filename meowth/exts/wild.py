@@ -139,15 +139,115 @@ class Wild(commands.Cog):
 
     @commands.group(aliases=['w'], invoke_without_command=True, case_insensitive=True)
     @checks.allowwildreport()
-    async def wild(self, ctx, pokemon, *, location):
+    async def wild(self, ctx, pokemon=None, *, location=None):
         """Report a wild Pokemon spawn location.
 
         Usage: !wild <species> <location> [iv]
+        Guided report available with just !wild
+
         Meowth will insert the details (really just everything after the species name) into a
         Google maps link and post the link to the same channel the report was made in."""
-        content = f"{pokemon} {location}"
-        async with ctx.typing():
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        wild_iv = None
+        wild_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1')
+        wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        while True:
+            async with ctx.typing():
+                if pokemon and location:
+                    content = f"{pokemon} {location}"
+                    await self._wild(ctx, content)
+                    break
+                else:
+                    wild_embed.add_field(name=_('**New Wild Report**'), value=_("Meowth! I'll help you report a wild!\n\nFirst, I'll need to know what **pokemon** you encountered. Reply with the name of a **pokemon**. Include any forms, size, gender if necessary. You can reply with **cancel** to stop anytime."), inline=False)
+                    mon_wait = await channel.send(embed=wild_embed)
+                    def check(reply):
+                        if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                            return True
+                        else:
+                            return False
+                    try:
+                        mon_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        mon_msg = None
+                    await utils.safe_delete(mon_wait)
+                    if not mon_msg:
+                        error = _("took too long to respond")
+                        break
+                    elif mon_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        await utils.safe_delete(mon_msg)
+                        break
+                    else:
+                        pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, mon_msg.clean_content, allow_digits=False)
+                        if not pokemon:
+                            error = _("entered an invalid pokemon")
+                            await utils.safe_delete(mon_msg)
+                            break
+                    await utils.safe_delete(mon_msg)
+                    wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Great! Now, reply with the **gym, pokestop, or other location** that the wild {str(pokemon)} is closest to. You can reply with **cancel** to stop anytime.", inline=False)
+                    location_wait = await channel.send(embed=wild_embed)
+                    try:
+                        location_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        location_msg = None
+                    await utils.safe_delete(location_wait)
+                    if not location_msg:
+                        error = _("took too long to respond")
+                        break
+                    elif location_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        await utils.safe_delete(location_msg)
+                        break
+                    elif location_msg:
+                        gym_matching_cog = self.bot.cogs.get('GymMatching')
+                        poi_info = ""
+                        if gym_matching_cog:
+                            poi_info, location, poi_url = await gym_matching_cog.get_poi_info(ctx, location_msg.clean_content, "wild")
+                        if not location:
+                            await utils.safe_delete(location_msg)
+                            return
+                    await utils.safe_delete(location_msg)
+                    wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Fantastic! Now, did you check the **IV** for the {str(pokemon)}? Reply with the **IV** or **N** to report without IV. You can reply with **cancel** to stop anytime.", inline=False)
+                    iv_wait = await channel.send(embed=wild_embed)
+                    try:
+                        iv_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        iv_msg = None
+                    await utils.safe_delete(iv_wait)
+                    if not iv_msg:
+                        error = _("took too long to respond")
+                        break
+                    elif iv_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        await utils.safe_delete(iv_msg)
+                        break
+                    elif iv_msg:
+                        iv_test = iv_msg.clean_content
+                        iv_test = iv_test.lower().strip()
+                        if "iv" in iv_test or utils.is_number(iv_test):
+                            wild_iv = iv_test.replace("iv", "").replace("@", "").replace("#", "")
+                            if utils.is_number(wild_iv) and float(wild_iv) >= 0 and float(wild_iv) <= 100:
+                                wild_iv = int(round(float(wild_iv)))
+                            else:
+                                wild_iv = None
+                    await utils.safe_delete(iv_msg)
+                    wild_embed.remove_field(0)
+                    break
+        if not error:
+            content = f"{pokemon} {location} {wild_iv if wild_iv else ''}"
             await self._wild(ctx, content)
+        else:
+            wild_embed.clear_fields()
+            wild_embed.add_field(name=_('**Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=wild_embed)
+            await asyncio.sleep(10)
+            await utils.safe_delete(confirmation)
+            await utils.safe_delete(message)
 
     async def _wild(self, ctx, content):
         message = ctx.message
@@ -183,12 +283,12 @@ class Wild(commands.Cog):
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=pokemon.name.title())
         wild_gmaps_link = utils.create_gmaps_query(self.bot, wild_details, message.channel, type="wild")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
-        stop_info = ""
+        poi_info = ""
         if gym_matching_cog:
-            stop_info, wild_details, stop_url = await gym_matching_cog.get_poi_info(ctx, wild_details.replace(f" - **{wild_iv}IV**", "").strip(), "wild")
-            if stop_url:
-                wild_gmaps_link = stop_url
-                wild_coordinates = stop_url.split("query=")[1]
+            poi_info, wild_details, poi_url = await gym_matching_cog.get_poi_info(ctx, wild_details.replace(f" - **{wild_iv}IV**", "").strip(), "wild")
+            if poi_url:
+                wild_gmaps_link = poi_url
+                wild_coordinates = poi_url.split("query=")[1]
                 nearest_stop = gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), ctx.guild.id)
         if not wild_details:
             await utils.safe_delete(ctx.message)

@@ -197,7 +197,7 @@ class GymMatching(commands.Cog):
             return None
         return match
 
-    async def get_poi_info(self, ctx, details, type):
+    async def get_poi_info(self, ctx, details, type, dupe_check=True):
         message = ctx.message
         gyms = self.get_gyms(ctx.guild.id)
         stops = self.get_stops(ctx.guild.id)
@@ -247,6 +247,8 @@ class GymMatching(commands.Cog):
             if duplicate_raids:
                 if ctx.author.bot:
                     return "", False, False
+                if not dupe_check:
+                    return poi_info, details, poi_gmaps_link
                 rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_raids)))
         elif type == "research":
             poi_info = _("**Stop:** {0}\n{1}").format(details, poi_note)
@@ -264,6 +266,8 @@ class GymMatching(commands.Cog):
             if duplicate_research:
                 if ctx.author.bot:
                     return "", False, False
+                if not dupe_check:
+                    return poi_info, details, poi_gmaps_link
                 rusure = await message.channel.send(_('Meowth! It looks like that quest might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_research)))
         if duplicate_raids or duplicate_research:
             try:

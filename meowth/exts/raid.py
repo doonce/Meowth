@@ -954,25 +954,134 @@ class Raid(commands.Cog):
     """
     Reporting
     """
-
     @commands.command(aliases=['r', 're', 'egg', 'regg', 'raidegg'])
     @checks.allowraidreport()
-    async def raid(self, ctx, pokemon, *, location:commands.clean_content(fix_channel_mentions=True)="", weather=None, timer=None):
+    async def raid(self, ctx, pokemon_or_level=None, *, location:commands.clean_content(fix_channel_mentions=True)="", weather=None, timer=None):
         """Report an ongoing raid or a raid egg.
 
         Usage: !raid <species/level> <location> [weather] [minutes]
         Meowth will insert <location> into a
         Google maps link and post the link to the same channel the report was made in.
         Meowth's message will also include the type weaknesses of the boss.
+        Guided report available with just !raid
 
         Finally, Meowth will create a separate channel for the raid report, for the purposes of organizing the raid."""
-        content = f"{pokemon} {location}"
-        async with ctx.typing():
-            if pokemon.isdigit():
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/raid_tut_raid.png?cache=1')
+        raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        while True:
+            async with ctx.typing():
+                if pokemon_or_level and location:
+                    content = f"{pokemon_or_level} {location}"
+                    if pokemon_or_level.isdigit():
+                        new_channel = await self._raidegg(ctx, content)
+                    else:
+                        new_channel = await self._raid(ctx, content)
+                    ctx.raid_channel = new_channel
+                    break
+                else:
+                    raid_embed.add_field(name=_('**New Raid Report**'), value=_("Meowth! I'll help you report a raid!\n\nFirst, I'll need to know what **pokemon or level** the raid is. Reply with the name of a **pokemon** or an **egg level** number 1-5. You can reply with **cancel** to stop anytime."), inline=False)
+                    mon_or_lvl_wait = await channel.send(embed=raid_embed)
+                    def check(reply):
+                        if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                            return True
+                        else:
+                            return False
+                    try:
+                        mon_or_lvl_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        mon_or_lvl_msg = None
+                    await utils.safe_delete(mon_or_lvl_wait)
+                    if not mon_or_lvl_msg:
+                        error = _("took too long to respond")
+                        break
+                    elif mon_or_lvl_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        await utils.safe_delete(mon_or_lvl_msg)
+                        break
+                    elif mon_or_lvl_msg.clean_content.isdigit() and (int(mon_or_lvl_msg.clean_content) == 0 or int(mon_or_lvl_msg.clean_content) > 5):
+                        error = _("entered an invalid level")
+                        await utils.safe_delete(mon_or_lvl_msg)
+                        break
+                    else:
+                        pokemon = None
+                        pokemon_or_level = mon_or_lvl_msg.clean_content
+                        if pokemon_or_level.isdigit():
+                            pass
+                        else:
+                            pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon_or_level, allow_digits=False)
+                            if not pokemon or not pokemon.is_raid:
+                                error = _("entered a pokemon that doesn't appear in raids")
+                                await utils.safe_delete(mon_or_lvl_msg)
+                                break
+                            else:
+                                pokemon_or_level = pokemon.name.lower()
+                    await utils.safe_delete(mon_or_lvl_msg)
+                    raid_embed.set_field_at(0, name=raid_embed.fields[0].name, value=f"Great! Now, reply with the **gym** that has the **{'level '+pokemon_or_level if str(pokemon_or_level).isdigit() else str(pokemon_or_level).title()}** raid. You can reply with **cancel** to stop anytime.", inline=False)
+                    location_wait = await channel.send(embed=raid_embed)
+                    try:
+                        location_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        location_msg = None
+                    await utils.safe_delete(location_wait)
+                    if not location_msg:
+                        error = _("took too long to respond")
+                        break
+                    elif location_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        await utils.safe_delete(location_msg)
+                        break
+                    elif location_msg:
+                        location = location_msg.clean_content
+                        gym_matching_cog = self.bot.cogs.get('GymMatching')
+                        loc_url = utils.create_gmaps_query(self.bot, location, message.channel, type="raid")
+                        gym_info = ""
+                        if gym_matching_cog:
+                            gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, location, "raid", dupe_check=False)
+                            if gym_url:
+                                loc_url = gym_url
+                        if not location:
+                            await utils.safe_delete(location_msg)
+                            return
+                    await utils.safe_delete(location_msg)
+                    raid_embed.set_field_at(0, name=raid_embed.fields[0].name, value=f"Fantastic! Now, reply with the **minutes remaining** before the **{'level '+pokemon_or_level if str(pokemon_or_level).isdigit() else str(pokemon_or_level).title()}** raid {'hatches' if str(pokemon_or_level).isdigit() else 'ends'}. You can reply with **cancel** to stop anytime.", inline=False)
+                    expire_wait = await channel.send(embed=raid_embed)
+                    try:
+                        expire_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        expire_msg = None
+                    await utils.safe_delete(expire_wait)
+                    if not expire_msg:
+                        error = _("took too long to respond")
+                        break
+                    elif expire_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        await utils.safe_delete(expire_msg)
+                        break
+                    elif expire_msg:
+                        raidexp = expire_msg.clean_content
+                    await utils.safe_delete(expire_msg)
+                    raid_embed.remove_field(0)
+                    break
+        if not error:
+            content = f"{pokemon_or_level} {location} {raidexp}"
+            if str(pokemon_or_level).isdigit():
                 new_channel = await self._raidegg(ctx, content)
             else:
                 new_channel = await self._raid(ctx, content)
-        ctx.raid_channel = new_channel
+            ctx.raid_channel = new_channel
+        else:
+            raid_embed.clear_fields()
+            raid_embed.add_field(name=_('**Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=raid_embed)
+            await asyncio.sleep(10)
+            await utils.safe_delete(confirmation)
+            await utils.safe_delete(message)
 
     async def _raid(self, ctx, content):
         message = ctx.message
@@ -1096,7 +1205,7 @@ class Raid(commands.Cog):
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(pokemon.id), type=pokemon.emoji), inline=True)
-        raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(self.bot, message.guild, utils.get_weaknesses(self.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
+        raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, message.guild, utils.get_weaknesses(self.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -1352,7 +1461,7 @@ class Raid(commands.Cog):
             roletest = _("{pokemon} - ").format(pokemon=raidrole.mention)
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=str(pokemon.id), type=pokemon.emoji), inline=True)
-        raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
+        raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
         raid_embed.add_field(name=_('**Hatches:**'), value=oldembed.fields[3].value, inline=True)
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
@@ -1498,7 +1607,7 @@ class Raid(commands.Cog):
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=str(pokemon.id), type=pokemon.emoji), inline=True)
-        raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
+        raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=pokemon.img_url)
         raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)

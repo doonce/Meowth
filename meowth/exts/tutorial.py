@@ -17,6 +17,37 @@ class Tutorial(commands.Cog):
         self.bot = bot
         bot.loop.create_task(self.tutorial_cleanup())
 
+    async def create_tutorial_channel(self, ctx):
+        ows = {
+            ctx.guild.default_role: discord.PermissionOverwrite(
+                read_messages=False),
+            ctx.author: discord.PermissionOverwrite(
+                read_messages=True,
+                send_messages=True,
+                manage_channels=True),
+            ctx.guild.me: discord.PermissionOverwrite(
+                read_messages=True)
+            }
+        name = utils.sanitize_channel_name(ctx.author.display_name+"-tutorial")
+        tutorial_channel = await ctx.guild.create_text_channel(
+            name, overwrites=ows)
+        await utils.safe_delete(ctx.message)
+        await ctx.send(
+            ("Meowth! I've created a private tutorial channel for "
+             f"you! Continue in {tutorial_channel.mention}"),
+            delete_after=20.0)
+        return tutorial_channel
+
+    async def delete_tutorial_channel(self, ctx):
+        try:
+            await ctx.tutorial_channel.delete()
+        except (discord.errors.Forbidden, discord.errors.NotFound, discord.errors.HTTPException):
+            pass
+        try:
+            del self.bot.guild_dict[guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]
+        except KeyError:
+            pass
+
     async def wait_for_cmd(self, tutorial_channel, newbie, command_name):
 
         # build check relevant to command
@@ -35,17 +66,18 @@ class Tutorial(commands.Cog):
 
         return cmd_ctx
 
-    def get_overwrites(self, guild, member):
-        return {
-            guild.default_role: discord.PermissionOverwrite(
-                read_messages=False),
-            member: discord.PermissionOverwrite(
-                read_messages=True,
-                send_messages=True,
-                manage_channels=True),
-            guild.me: discord.PermissionOverwrite(
-                read_messages=True)
-            }
+    async def wait_for_msg(self, tutorial_channel, author):
+        # build check relevant to command
+        def check(c):
+            if not c.channel == tutorial_channel:
+                return False
+            if not c.author == author:
+                return False
+            return True
+        # wait for the command to complete
+        cmd_ctx = await self.bot.wait_for(
+            'message', check=check, timeout=300)
+        return cmd_ctx
 
     async def tutorial_cleanup(self, loop=True):
         await self.bot.wait_until_ready()
@@ -86,22 +118,189 @@ class Tutorial(commands.Cog):
                             if not ctx.prefix:
                                 prefix = self.bot._get_prefix(self.bot, ctx.message)
                                 ctx.prefix = prefix[-1]
-                            await ctx.tutorial_channel.send(f"Hey {newbie.mention} I think we were cut off due to a disconnection, let's try to start over.")
-                            ctx.bot.loop.create_task(self._tutorial(ctx))
+                            try:
+                                await ctx.tutorial_channel.send(f"Hey {newbie.mention} I think we were cut off due to a disconnection, let's try to start over.")
+                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                pass
+                            ctx.bot.loop.create_task(self._tutorial(ctx, ""))
             logger.info(f"------ END - {count} Tutorials Cleaned ------")
             if not loop:
                 return
             await asyncio.sleep(21600)
             continue
 
-    async def want_tutorial(self, ctx, config):
-        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+    @commands.group(case_insensitive=True, invoke_without_command=True)
+    @commands.has_permissions(manage_guild=True)
+    async def tutorial(self, ctx, *, tutorial_list: str=""):
+        """Launches an interactive tutorial session for Meowth.
 
-        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=f"This server utilizes the **{ctx.prefix}want** command to help members receive push notifications about Pokemon they want! I keep your list saved and then send you a DM for wild spawns, nest spawns, and research reports. For raid bosses I will @mention you. Please make sure you have DMs enabled in order to receive alerts!\n\nTry the {ctx.prefix}want command!\nEx: `{ctx.prefix}want unown`").set_author(name="Want Tutorial", icon_url=ctx.bot.user.avatar_url))
+        Meowth will create a private channel and initiate a
+        conversation that walks you through the various commands
+        that are enabled on the current server."""
+        try:
+            ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
+            await self._tutorial(ctx, tutorial_list)
+        except:
+            return
 
+    async def _tutorial(self, ctx, tutorial_list):
+        guild = ctx.message.guild
+        cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+        enabled = [k for k, v in cfg.items() if v.get('enabled', False)]
+        no_tutorial = ['welcome', 'counters', 'archive', 'meetup']
+        enabled = list(set(enabled) - set(no_tutorial))
+        tutorial_reply_list = []
+        tutorial_error = False
+        if tutorial_list:
+            tutorial_list = tutorial_list.lower().split(",")
+            tutorial_list = [x.strip().lower() for x in tutorial_list]
+            diff =  set(tutorial_list) - set(enabled)
+            if diff and "all" in diff:
+                tutorial_reply_list = enabled
+            elif not diff:
+                tutorial_reply_list = tutorial_list
+            else:
+                await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("I'm sorry, I couldn't understand some of what you entered. Let's just start here.")))
+        tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
+        if not tutorial_reply_list:
+            tutorial_message += _("\n\n**Welcome**\nYou can either get a tutorial for everything by replying with **all** or reply with a comma separated list of the following Enabled Commands to get tutorials for those commands. Example: `want, raid, wild`")
+            tutorial_message += _("\n\n**Enabled Commands:**\n{enabled}").format(enabled=", ".join(enabled))
+            msg = await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
+            while True:
+                try:
+                    tutorial_reply = await self.wait_for_msg(ctx.tutorial_channel, ctx.author)
+                except asyncio.TimeoutError:
+                    await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long! This channel will be deleted in ten seconds."))
+                    await asyncio.sleep(10)
+                    return
+                if "all" in tutorial_reply.content.lower():
+                    tutorial_reply_list = enabled
+                    break
+                else:
+                    tutorial_reply_list = tutorial_reply.content.lower().split(",")
+                    tutorial_reply_list = [x.strip() for x in tutorial_reply_list]
+                    for tutorial_replyitem in tutorial_reply_list:
+                        if tutorial_replyitem not in enabled:
+                            tutorial_error = True
+                            break
+                if tutorial_error:
+                    await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("I'm sorry I don't understand. Please reply with the choices above.")))
+                    continue
+                else:
+                    break
+        else:
+            msg = await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Configuration - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
+
+        report_channels = cfg.setdefault('tutorial', {}).setdefault('report_channels', {})
         report_channels[ctx.tutorial_channel.id] = msg.id
 
         try:
+            # start want tutorial
+            if 'want' in tutorial_reply_list:
+                completed = await self.want_tutorial(ctx, cfg)
+                if not completed:
+                    return
+
+            # start wild tutorial
+            if 'wild' in tutorial_reply_list:
+                completed = await self.wild_tutorial(ctx, cfg)
+                if not completed:
+                    return
+
+            # start raid
+            if 'raid' in tutorial_reply_list:
+                completed = await self.raid_tutorial(ctx, cfg)
+                if not completed:
+                    return
+
+            # start exraid
+            if 'exraid' in tutorial_reply_list:
+                invitestr = ""
+
+                if 'invite' in tutorial_reply_list:
+                    invitestr = (
+                        "The text channels that are created with this command "
+                        f"are read-only until members use the **{ctx.prefix}invite** "
+                        "command.")
+
+                await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}exraid** command to report EX raids! When you use it, I will send a message summarizing the report and create a text channel for coordination. {invitestr}\nThe report must contain only the location of the EX raid.\n\nDue to the longer-term nature of EX raid channels, we won't try this command out right now.").set_author(name="EX Raid Tutorial", icon_url=self.bot.user.avatar_url))
+
+            # start research
+            if 'research' in tutorial_reply_list:
+                completed = await self.research_tutorial(ctx, cfg)
+                if not completed:
+                    return
+
+            # start nest
+            if 'nest' in tutorial_reply_list:
+                completed = await self.nest_tutorial(ctx, cfg)
+                if not completed:
+                    return
+
+            # start trade
+            if 'trade' in tutorial_reply_list:
+                completed = await self.trade_tutorial(ctx, cfg)
+                if not completed:
+                    return
+
+            # start team
+            if 'team' in enabled:
+                completed = await self.team_tutorial(ctx, cfg)
+                if not completed:
+                    return
+
+            # finish tutorial
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+
+            await asyncio.sleep(30)
+        except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
+            await self.delete_tutorial_channel(ctx)
+        finally:
+            await self.delete_tutorial_channel(ctx)
+
+    @tutorial.command(name='all')
+    async def tutorial_all(self, ctx):
+        """All tutorials"""
+        try:
+            ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
+            await self._tutorial(ctx, "all")
+        except Exception as e:
+            print(e)
+            await self.delete_tutorial_channel(ctx)
+
+    @tutorial.command()
+    @checks.feature_enabled('want')
+    async def want(self, ctx):
+        """Launches an tutorial session for the want feature.
+
+        Meowth will create a private channel and initiate a
+        conversation that walks you through the various commands
+        that are enabled on the current server."""
+        try:
+            ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
+
+            # get tutorial settings
+            cfg = self.bot.guild_dict[guild.id]['configure_dict']
+
+            tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
+            await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
+            await self.want_tutorial(ctx, cfg)
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+
+            await asyncio.sleep(10)
+        except:
+            await self.delete_tutorial_channel(ctx)
+        finally:
+            await self.delete_tutorial_channel(ctx)
+
+    async def want_tutorial(self, ctx, config):
+        try:
+            report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+
+            msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=f"This server utilizes the **{ctx.prefix}want** command to help members receive push notifications about Pokemon they want! I keep your list saved and then send you a DM for wild spawns, nest spawns, and research reports. For raid bosses I will @mention you. Please make sure you have DMs enabled in order to receive alerts!\n\nTry the {ctx.prefix}want command!\nEx: `{ctx.prefix}want unown`").set_author(name="Want Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+            report_channels[ctx.tutorial_channel.id] = msg.id
+
             await self.wait_for_cmd(ctx.tutorial_channel, ctx.author, 'want')
 
             # acknowledge and wait a second before continuing
@@ -118,23 +317,52 @@ class Tutorial(commands.Cog):
             await asyncio.sleep(10)
 
             return False
+        except:
+            await self.delete_tutorial_channel(ctx)
 
         # clean up by removing tutorial from report channel config
         finally:
-            del report_channels[ctx.tutorial_channel.id]
+            try:
+                del report_channels[ctx.tutorial_channel.id]
+            except KeyError:
+                pass
 
         return True
 
-    async def wild_tutorial(self, ctx, config):
-        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+    @tutorial.command()
+    @checks.feature_enabled('wild')
+    async def wild(self, ctx):
+        """Launches an tutorial session for the wild feature.
 
-        msg = await ctx.tutorial_channel.send(embed=discord.Embed(
-            colour=discord.Colour.lighter_grey(),
-            description=f"This server utilizes the **{ctx.prefix}wild** command to report wild spawns! When you use it, I will send a message summarizing the report and containing a link to my best guess of the spawn location. If users have **!want**ed your reported pokemon, I will DM them details! Your report must contain the name of the Pokemon followed by its location like **!wild <pokemon> <location>**.\n\nTry reporting a wild spawn!\n Ex: `{ctx.prefix}wild magikarp some park`").set_author(name="Wild Tutorial", icon_url=ctx.bot.user.avatar_url))
-
-        report_channels[ctx.tutorial_channel.id] = msg.id
-
+        Meowth will create a private channel and initiate a
+        conversation that walks you through wild command."""
         try:
+            ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
+
+            # get tutorial settings
+            cfg = self.bot.guild_dict[guild.id]['configure_dict']
+
+            tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
+            await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
+            await self.wild_tutorial(ctx, cfg)
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+
+            await asyncio.sleep(10)
+        except:
+            await self.delete_tutorial_channel(ctx)
+        finally:
+            await self.delete_tutorial_channel(ctx)
+
+    async def wild_tutorial(self, ctx, config):
+        try:
+            report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+
+            msg = await ctx.tutorial_channel.send(embed=discord.Embed(
+                colour=discord.Colour.lighter_grey(),
+                description=f"This server utilizes the **{ctx.prefix}wild** command to report wild spawns! When you use it, I will send a message summarizing the report and containing a link to my best guess of the spawn location. If users have **!want**ed your reported pokemon, I will DM them details! Your report must contain the name of the Pokemon followed by its location like **!wild <pokemon> <location>**.\n\nTry reporting a wild spawn!\n Ex: `{ctx.prefix}wild magikarp some park`").set_author(name="Wild Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+            report_channels[ctx.tutorial_channel.id] = msg.id
+
             wild_ctx = await self.wait_for_cmd(
                 ctx.tutorial_channel, ctx.author, 'wild')
 
@@ -164,12 +392,41 @@ class Tutorial(commands.Cog):
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}wild** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
             return False
+        except:
+            await self.delete_tutorial_channel(ctx)
 
         # clean up by removing tutorial from report channel config
         finally:
-            del report_channels[ctx.tutorial_channel.id]
+            try:
+                del report_channels[ctx.tutorial_channel.id]
+            except KeyError:
+                pass
 
         return True
+
+    @tutorial.command()
+    @checks.feature_enabled('raid')
+    async def raid(self, ctx):
+        """Launches an tutorial session for the raid feature.
+
+        Meowth will create a private channel and initiate a
+        conversation that walks you through the raid commands."""
+        try:
+            ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
+
+            # get tutorial settings
+            cfg = self.bot.guild_dict[guild.id]['configure_dict']
+
+            tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
+            await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
+            await self.raid_tutorial(ctx, cfg)
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+
+            await asyncio.sleep(10)
+        except:
+            await self.delete_tutorial_channel(ctx)
+        finally:
+            await self.delete_tutorial_channel(ctx)
 
     async def raid_tutorial(self, ctx, config):
         report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
@@ -355,15 +612,39 @@ class Tutorial(commands.Cog):
 
         return True
 
-    async def research_tutorial(self, ctx, config):
-        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+    @tutorial.command()
+    @checks.feature_enabled('research')
+    async def research(self, ctx):
+        """Launches an tutorial session for the research feature.
 
-        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}research** command to report field research tasks! There are two ways to use this command: **{ctx.prefix}research** will start an interactive session where I will prompt you for the task, location, and reward of the research task. You can also use **{ctx.prefix}research <pokestop>, <task>, <reward>** to submit the report all at once.\n\nTry it out by typing `{ctx.prefix}research`! Your responses after that can be anything.").set_author(name="Research Tutorial", icon_url=ctx.bot.user.avatar_url))
-
-        report_channels[ctx.tutorial_channel.id] = msg.id
-
-        # wait for research command completion
+        Meowth will create a private channel and initiate a
+        conversation that walks you through the research command."""
         try:
+            ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
+
+            # get tutorial settings
+            cfg = self.bot.guild_dict[guild.id]['configure_dict']
+
+            tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
+            await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
+            await self.research_tutorial(ctx, cfg)
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+
+            await asyncio.sleep(10)
+        except:
+            await self.delete_tutorial_channel(ctx)
+        finally:
+            await self.delete_tutorial_channel(ctx)
+
+    async def research_tutorial(self, ctx, config):
+        try:
+            report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+
+            msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}research** command to report field research tasks! There are two ways to use this command: **{ctx.prefix}research** will start an interactive session where I will prompt you for the task, location, and reward of the research task. You can also use **{ctx.prefix}research <pokestop>, <task>, <reward>** to submit the report all at once.\n\nTry it out by typing `{ctx.prefix}research`! Your responses after that can be anything.").set_author(name="Research Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+            report_channels[ctx.tutorial_channel.id] = msg.id
+
+            # wait for research command completion
             research_ctx = await self.wait_for_cmd(
                 ctx.tutorial_channel, ctx.author, 'research')
 
@@ -388,46 +669,52 @@ class Tutorial(commands.Cog):
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}research** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
             return False
+        except:
+            await self.delete_tutorial_channel(ctx)
 
         # clean up by removing tutorial from report channel config
         finally:
-            del report_channels[ctx.tutorial_channel.id]
+            try:
+                del report_channels[ctx.tutorial_channel.id]
+            except KeyError:
+                pass
 
         return True
 
-    async def team_tutorial(self, ctx, config):
-        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+    @tutorial.command()
+    @checks.feature_enabled('trade')
+    async def trade(self, ctx):
+        """Launches an tutorial session for the research feature.
 
-        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}team** command to allow members to select which Pokemon Go team they belong to! Type `{ctx.prefix}team mystic` for example if you are in Team Mystic.").set_author(name="Team Tutorial", icon_url=ctx.bot.user.avatar_url))
-
-        report_channels[ctx.tutorial_channel.id] = msg.id
-        # wait for team command completion
+        Meowth will create a private channel and initiate a
+        conversation that walks you through the research command."""
         try:
-            await self.wait_for_cmd(
-                ctx.tutorial_channel, ctx.author, 'team')
+            ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
-            # acknowledge and wait a second before continuing
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Great job!"))
-            await asyncio.sleep(1)
+            # get tutorial settings
+            cfg = self.bot.guild_dict[guild.id]['configure_dict']
 
-        # if no response for 5 minutes, close tutorial
-        except asyncio.TimeoutError:
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}team** command! This channel will be deleted in ten seconds."))
+            tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
+            await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
+            await self.trade_tutorial(ctx, cfg)
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+
             await asyncio.sleep(10)
-            return False
-
-        return True
+        except:
+            await self.delete_tutorial_channel(ctx)
+        finally:
+            await self.delete_tutorial_channel(ctx)
 
     async def trade_tutorial(self, ctx, config):
-        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
-        trade_msg = False
-
-        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}trade** command to list your pokemon up for trade. You can list one at a time using command: **{ctx.prefix}trade <pokemon>**. You can also use forms of pokemon such as `alolan vulpix`, `unown y`, or `shiny absol`.\nEx: `{ctx.prefix}trade unown y`").set_author(name="Trade Tutorial", icon_url=ctx.bot.user.avatar_url))
-
-        report_channels[ctx.tutorial_channel.id] = msg.id
-
-        # wait for trade command completion
         try:
+            report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+            trade_msg = False
+
+            msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}trade** command to list your pokemon up for trade. You can list one at a time using command: **{ctx.prefix}trade <pokemon>**. You can also use forms of pokemon such as `alolan vulpix`, `unown y`, or `shiny absol`.\nEx: `{ctx.prefix}trade unown y`").set_author(name="Trade Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+            report_channels[ctx.tutorial_channel.id] = msg.id
+
+            # wait for trade command completion
             trade_msg = await self.wait_for_cmd(
                 ctx.tutorial_channel, ctx.author, 'trade')
 
@@ -443,24 +730,103 @@ class Tutorial(commands.Cog):
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}research** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
             return False
+        except:
+            await self.delete_tutorial_channel(ctx)
 
         # clean up by removing tutorial from report channel config
         finally:
-            del report_channels[ctx.tutorial_channel.id]
+            try:
+                del report_channels[ctx.tutorial_channel.id]
+            except KeyError:
+                pass
             if trade_msg:
                 del ctx.bot.guild_dict[ctx.guild.id]['trade_dict'][trade_msg.channel.id]
 
         return True
 
-    async def nest_tutorial(self, ctx, config):
-        report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
-        ctx.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.tutorial_channel.id] = {'list': ['hershey park'], 'hershey park': {'location':'40.28784,-76.65547', 'reports':{}}}
+    @tutorial.command()
+    @checks.feature_enabled('team')
+    async def team(self, ctx):
+        """Launches an tutorial session for the team feature.
 
-        msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}nest** command to keep track of nesting pokemon. You can report one using command: **{ctx.prefix}nest <pokemon>**.\nEx: `{ctx.prefix}nest magikarp`\nThen, reply with **1** to report it to Hershey Park!").set_author(name="Nest Tutorial", icon_url=ctx.bot.user.avatar_url))
+        Meowth will create a private channel and initiate a
+        conversation that walks you through the team command."""
+        try:
+            ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
-        report_channels[ctx.tutorial_channel.id] = msg.id
+            # get tutorial settings
+            cfg = self.bot.guild_dict[guild.id]['configure_dict']
+
+            tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
+            await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
+            await self.team_tutorial(ctx, cfg)
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+
+            await asyncio.sleep(10)
+        except:
+            await self.delete_tutorial_channel(ctx)
+        finally:
+            await self.delete_tutorial_channel(ctx)
+
+    async def team_tutorial(self, ctx, config):
+        try:
+            report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+
+            msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}team** command to allow members to select which Pokemon Go team they belong to! Type `{ctx.prefix}team mystic` for example if you are in Team Mystic.").set_author(name="Team Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+            report_channels[ctx.tutorial_channel.id] = msg.id
+            # wait for team command completion
+            await self.wait_for_cmd(
+                ctx.tutorial_channel, ctx.author, 'team')
+
+            # acknowledge and wait a second before continuing
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Great job!"))
+            await asyncio.sleep(1)
+
+        # if no response for 5 minutes, close tutorial
+        except asyncio.TimeoutError:
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}team** command! This channel will be deleted in ten seconds."))
+            await asyncio.sleep(10)
+            return False
+        except:
+            await self.delete_tutorial_channel(ctx)
+
+        return True
+
+    @tutorial.command()
+    @checks.feature_enabled('nest')
+    async def nest(self, ctx):
+        """Launches an tutorial session for the nest feature.
+
+        Meowth will create a private channel and initiate a
+        conversation that walks you through the various commands
+        that are enabled on the current server."""
 
         try:
+            ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
+
+            # get tutorial settings
+            cfg = self.bot.guild_dict[guild.id]['configure_dict']
+
+            tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
+            await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
+            await self.nest_tutorial(ctx, cfg)
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+
+            await asyncio.sleep(10)
+        except:
+            await self.delete_tutorial_channel(ctx)
+        finally:
+            await self.delete_tutorial_channel(ctx)
+
+    async def nest_tutorial(self, ctx, config):
+        try:
+            report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+            ctx.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.tutorial_channel.id] = {'list': ['hershey park'], 'hershey park': {'location':'40.28784,-76.65547', 'reports':{}}}
+
+            msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}nest** command to keep track of nesting pokemon. You can report one using command: **{ctx.prefix}nest <pokemon>**.\nEx: `{ctx.prefix}nest magikarp`\nThen, reply with **1** to report it to Hershey Park!").set_author(name="Nest Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+            report_channels[ctx.tutorial_channel.id] = msg.id
             await self.wait_for_cmd(ctx.tutorial_channel, ctx.author, 'nest')
 
             # acknowledge and wait a second before continuing
@@ -473,428 +839,18 @@ class Tutorial(commands.Cog):
             await asyncio.sleep(10)
 
             return False
+        except:
+            await self.delete_tutorial_channel(ctx)
 
         # clean up by removing tutorial from report channel config
         finally:
-            del report_channels[ctx.tutorial_channel.id]
+            try:
+                del report_channels[ctx.tutorial_channel.id]
+            except KeyError:
+                pass
             del ctx.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.tutorial_channel.id]
 
         return True
-
-    @commands.group(invoke_without_command=True)
-    @checks.guildchannel()
-    async def tutorial(self, ctx):
-        """Launches an interactive tutorial session for Meowth.
-
-        Meowth will create a private channel and initiate a
-        conversation that walks you through the various commands
-        that are enabled on the current server."""
-
-        newbie = ctx.author
-        guild = ctx.guild
-        prefix = ctx.prefix
-
-        # get channel overwrites
-        ows = self.get_overwrites(guild, newbie)
-
-        # create tutorial channel
-        name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
-        ctx.tutorial_channel = await guild.create_text_channel(
-            name, overwrites=ows)
-        await utils.safe_delete(ctx.message)
-        await ctx.send(
-            ("Meowth! I've created a private tutorial channel for "
-             f"you! Continue in {ctx.tutorial_channel.mention}"),
-            delete_after=20.0)
-        await self._tutorial(ctx)
-
-    async def _tutorial(self, ctx):
-        # get tutorial settings
-        cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
-        enabled = [k for k, v in cfg.items() if v.get('enabled', False)]
-
-        await ctx.tutorial_channel.send(
-            f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
-            "Pokemon Go communities! I created this channel to teach you "
-            "about the server commands! You can abandon this tutorial at any time "
-            "and I'll delete this channel after five minutes. "
-            "Let's get started!\n\n"
-            "Just so you know, across all of Meowth, **<> denote required arguments"
-            ", [] denote optional arguments** and you don't type the <>s or []s.")
-
-        try:
-
-            # start want tutorial
-            if 'want' in enabled:
-                completed = await self.want_tutorial(ctx, cfg)
-                if not completed:
-                    return
-
-            # start wild tutorial
-            if 'wild' in enabled:
-                completed = await self.wild_tutorial(ctx, cfg)
-                if not completed:
-                    return
-
-            # start raid
-            if 'raid' in enabled:
-                completed = await self.raid_tutorial(ctx, cfg)
-                if not completed:
-                    return
-
-            # start exraid
-            if 'exraid' in enabled:
-                invitestr = ""
-
-                if 'invite' in enabled:
-                    invitestr = (
-                        "The text channels that are created with this command "
-                        f"are read-only until members use the **{ctx.prefix}invite** "
-                        "command.")
-
-                await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}exraid** command to report EX raids! When you use it, I will send a message summarizing the report and create a text channel for coordination. {invitestr}\nThe report must contain only the location of the EX raid.\n\nDue to the longer-term nature of EX raid channels, we won't try this command out right now.").set_author(name="EX Raid Tutorial", icon_url=self.bot.user.avatar_url))
-
-            # start research
-            if 'research' in enabled:
-                completed = await self.research_tutorial(ctx, cfg)
-                if not completed:
-                    return
-
-            # start nest
-            if 'nest' in enabled:
-                completed = await self.nest_tutorial(ctx, cfg)
-                if not completed:
-                    return
-
-            # start trade
-            if 'trade' in enabled:
-                completed = await self.trade_tutorial(ctx, cfg)
-                if not completed:
-                    return
-
-            # start team
-            if 'team' in enabled:
-                completed = await self.team_tutorial(ctx, cfg)
-                if not completed:
-                    return
-
-            # finish tutorial
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
-
-            await asyncio.sleep(30)
-
-        finally:
-            await ctx.tutorial_channel.delete()
-
-    @tutorial.command()
-    @checks.feature_enabled('want')
-    async def want(self, ctx):
-        """Launches an tutorial session for the want feature.
-
-        Meowth will create a private channel and initiate a
-        conversation that walks you through the various commands
-        that are enabled on the current server."""
-
-        newbie = ctx.author
-        guild = ctx.guild
-
-        # get channel overwrites
-        ows = self.get_overwrites(guild, newbie)
-
-        # create tutorial channel
-        name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
-        ctx.tutorial_channel = await guild.create_text_channel(
-            name, overwrites=ows)
-        await utils.safe_delete(ctx.message)
-        await ctx.send(
-            ("Meowth! I've created a private tutorial channel for "
-             f"you! Continue in {ctx.tutorial_channel.mention}"),
-            delete_after=20.0)
-
-        # get tutorial settings
-        cfg = self.bot.guild_dict[guild.id]['configure_dict']
-
-        await ctx.tutorial_channel.send(
-            f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
-            "Pokemon Go communities! I created this channel to teach you "
-            "about the want command! You can abandon this tutorial at any time "
-            "and I'll delete this channel after five minutes. "
-            "Let's get started!\n\n"
-            "Just so you know, across all of Meowth, **<> denote required arguments"
-            ", [] denote optional arguments** and you don't type the <>s or []s.")
-
-        try:
-            await self.want_tutorial(ctx, cfg)
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
-
-            await asyncio.sleep(10)
-        finally:
-            await ctx.tutorial_channel.delete()
-
-    @tutorial.command()
-    @checks.feature_enabled('wild')
-    async def wild(self, ctx):
-        """Launches an tutorial session for the wild feature.
-
-        Meowth will create a private channel and initiate a
-        conversation that walks you through wild command."""
-
-        newbie = ctx.author
-        guild = ctx.guild
-
-        # get channel overwrites
-        ows = self.get_overwrites(guild, newbie)
-
-        # create tutorial channel
-        name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
-        ctx.tutorial_channel = await guild.create_text_channel(
-            name, overwrites=ows)
-        await utils.safe_delete(ctx.message)
-        await ctx.send(
-            ("Meowth! I've created a private tutorial channel for "
-             f"you! Continue in {ctx.tutorial_channel.mention}"),
-            delete_after=20.0)
-
-        # get tutorial settings
-        cfg = self.bot.guild_dict[guild.id]['configure_dict']
-
-        await ctx.tutorial_channel.send(
-            f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
-            "Pokemon Go communities! I created this channel to teach you "
-            "about the wild command! You can abandon this tutorial at any time "
-            "and I'll delete this channel after five minutes. "
-            "Let's get started!\n\n"
-            "Just so you know, across all of Meowth, **<> denote required arguments"
-            ", [] denote optional arguments** and you don't type the <>s or []s.")
-
-        try:
-            await self.wild_tutorial(ctx, cfg)
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
-
-            await asyncio.sleep(10)
-        finally:
-            await ctx.tutorial_channel.delete()
-
-    @tutorial.command()
-    @checks.feature_enabled('raid')
-    async def raid(self, ctx):
-        """Launches an tutorial session for the raid feature.
-
-        Meowth will create a private channel and initiate a
-        conversation that walks you through the raid commands."""
-
-        newbie = ctx.author
-        guild = ctx.guild
-
-        # get channel overwrites
-        ows = self.get_overwrites(guild, newbie)
-
-        # create tutorial channel
-        name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
-        ctx.tutorial_channel = await guild.create_text_channel(
-            name, overwrites=ows)
-        await utils.safe_delete(ctx.message)
-        await ctx.send(
-            ("Meowth! I've created a private tutorial channel for "
-             f"you! Continue in {ctx.tutorial_channel.mention}"),
-            delete_after=20.0)
-
-        # get tutorial settings
-        cfg = self.bot.guild_dict[guild.id]['configure_dict']
-
-        await ctx.tutorial_channel.send(
-            f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
-            "Pokemon Go communities! I created this channel to teach you "
-            "about the raid command! You can abandon this tutorial at any time "
-            "and I'll delete this channel after five minutes. "
-            "Let's get started!\n\n"
-            "Just so you know, across all of Meowth, **<> denote required arguments"
-            ", [] denote optional arguments** and you don't type the <>s or []s.")
-
-        try:
-            await self.raid_tutorial(ctx, cfg)
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
-
-            await asyncio.sleep(10)
-        finally:
-            await ctx.tutorial_channel.delete()
-
-    @tutorial.command()
-    @checks.feature_enabled('research')
-    async def research(self, ctx):
-        """Launches an tutorial session for the research feature.
-
-        Meowth will create a private channel and initiate a
-        conversation that walks you through the research command."""
-
-        newbie = ctx.author
-        guild = ctx.guild
-
-        # get channel overwrites
-        ows = self.get_overwrites(guild, newbie)
-
-        # create tutorial channel
-        name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
-        ctx.tutorial_channel = await guild.create_text_channel(
-            name, overwrites=ows)
-        await utils.safe_delete(ctx.message)
-        await ctx.send(
-            ("Meowth! I've created a private tutorial channel for "
-             f"you! Continue in {ctx.tutorial_channel.mention}"),
-            delete_after=20.0)
-
-        # get tutorial settings
-        cfg = self.bot.guild_dict[guild.id]['configure_dict']
-
-        await ctx.tutorial_channel.send(
-            f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
-            "Pokemon Go communities! I created this channel to teach you "
-            "about the research command! You can abandon this tutorial at any time "
-            "and I'll delete this channel after five minutes. "
-            "Let's get started!\n\n"
-            "Just so you know, across all of Meowth, **<> denote required arguments"
-            ", [] denote optional arguments** and you don't type the <>s or []s.")
-
-        try:
-            await self.research_tutorial(ctx, cfg)
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
-
-            await asyncio.sleep(10)
-        finally:
-            await ctx.tutorial_channel.delete()
-
-    @tutorial.command()
-    @checks.feature_enabled('trade')
-    async def trade(self, ctx):
-        """Launches an tutorial session for the research feature.
-
-        Meowth will create a private channel and initiate a
-        conversation that walks you through the research command."""
-
-        newbie = ctx.author
-        guild = ctx.guild
-
-        # get channel overwrites
-        ows = self.get_overwrites(guild, newbie)
-
-        # create tutorial channel
-        name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
-        ctx.tutorial_channel = await guild.create_text_channel(
-            name, overwrites=ows)
-        await utils.safe_delete(ctx.message)
-        await ctx.send(
-            ("Meowth! I've created a private tutorial channel for "
-             f"you! Continue in {ctx.tutorial_channel.mention}"),
-            delete_after=20.0)
-
-        # get tutorial settings
-        cfg = self.bot.guild_dict[guild.id]['configure_dict']
-
-        await ctx.tutorial_channel.send(
-            f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
-            "Pokemon Go communities! I created this channel to teach you "
-            "about the trade command! You can abandon this tutorial at any time "
-            "and I'll delete this channel after five minutes. "
-            "Let's get started!\n\n"
-            "Just so you know, across all of Meowth, **<> denote required arguments"
-            ", [] denote optional arguments** and you don't type the <>s or []s.")
-
-        try:
-            await self.trade_tutorial(ctx, cfg)
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
-
-            await asyncio.sleep(10)
-        finally:
-            await ctx.tutorial_channel.delete()
-
-    @tutorial.command()
-    @checks.feature_enabled('team')
-    async def team(self, ctx):
-        """Launches an tutorial session for the team feature.
-
-        Meowth will create a private channel and initiate a
-        conversation that walks you through the team command."""
-
-        newbie = ctx.author
-        guild = ctx.guild
-
-        # get channel overwrites
-        ows = self.get_overwrites(guild, newbie)
-
-        # create tutorial channel
-        name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
-        ctx.tutorial_channel = await guild.create_text_channel(
-            name, overwrites=ows)
-        await utils.safe_delete(ctx.message)
-        await ctx.send(
-            ("Meowth! I've created a private tutorial channel for "
-             f"you! Continue in {ctx.tutorial_channel.mention}"),
-            delete_after=20.0)
-
-        # get tutorial settings
-        cfg = self.bot.guild_dict[guild.id]['configure_dict']
-
-        await ctx.tutorial_channel.send(
-            f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
-            "Pokemon Go communities! I created this channel to teach you "
-            "about the team command! You can abandon this tutorial at any time "
-            "and I'll delete this channel after five minutes. "
-            "Let's get started!\n\n"
-            "Just so you know, across all of Meowth, **<> denote required arguments"
-            ", [] denote optional arguments** and you don't type the <>s or []s.")
-
-        try:
-            await self.team_tutorial(ctx, cfg)
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
-
-            await asyncio.sleep(10)
-        finally:
-            await ctx.tutorial_channel.delete()
-
-    @tutorial.command()
-    @checks.feature_enabled('nest')
-    async def nest(self, ctx):
-        """Launches an tutorial session for the nest feature.
-
-        Meowth will create a private channel and initiate a
-        conversation that walks you through the various commands
-        that are enabled on the current server."""
-
-        newbie = ctx.author
-        guild = ctx.guild
-
-        # get channel overwrites
-        ows = self.get_overwrites(guild, newbie)
-
-        # create tutorial channel
-        name = utils.sanitize_channel_name(newbie.display_name+"-tutorial")
-        ctx.tutorial_channel = await guild.create_text_channel(
-            name, overwrites=ows)
-        await utils.safe_delete(ctx.message)
-        await ctx.send(
-            ("Meowth! I've created a private tutorial channel for "
-             f"you! Continue in {ctx.tutorial_channel.mention}"),
-            delete_after=20.0)
-
-        # get tutorial settings
-        cfg = self.bot.guild_dict[guild.id]['configure_dict']
-
-        await ctx.tutorial_channel.send(
-            f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for "
-            "Pokemon Go communities! I created this channel to teach you "
-            "about the nest command! You can abandon this tutorial at any time "
-            "and I'll delete this channel after five minutes. "
-            "Let's get started!\n\n"
-            "Just so you know, across all of Meowth, **<> denote required arguments"
-            ", [] denote optional arguments** and you don't type the <>s or []s.")
-
-        try:
-            await self.nest_tutorial(ctx, cfg)
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
-
-            await asyncio.sleep(10)
-        finally:
-            await ctx.tutorial_channel.delete()
 
 def setup(bot):
     bot.add_cog(Tutorial(bot))
