@@ -876,10 +876,20 @@ class Raid(commands.Cog):
             await channel.edit(name=raid_channel_name, topic=channel.topic)
         elif newraid and not newraid.isdigit():
             egglevel = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['egglevel']
+            ctrs_message = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].setdefault('ctrsmessage', None)
+            ctrs_dict = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].setdefault('ctrs_dict', {})
+            if ctrs_message:
+                try:
+                    ctrs_message = await ctx.channel.fetch_message(ctrs_message)
+                    await ctrs_message.delete()
+                except:
+                    pass
+                self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['ctrsmessage'] = None
+                self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['ctrs_dict'] = {}
             if egglevel == "0":
                 egglevel = utils.get_level(self.bot, newraid)
-            self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] -= 60 * self.bot.raid_info['raid_eggs'][egglevel]['raidtime']
-
+            else:
+                self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] -= 60 * self.bot.raid_info['raid_eggs'][egglevel]['raidtime']
             await self._eggtoraid(newraid, channel, author=message.author)
 
     @commands.command()
@@ -1683,7 +1693,7 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['gymhuntrgps'] = gymhuntrgps
-        if str(egglevel) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and not eggdetails.get('pokemon', None):
+        if str(egglevel) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and eggdetails.get('pokemon', None):
             ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), weather)
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
