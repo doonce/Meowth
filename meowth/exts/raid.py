@@ -3010,10 +3010,10 @@ class Raid(commands.Cog):
             if not pokemon:
                 for boss in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
-                    boss_list.append(pokemon.name.lower())
+                    boss_list.append(str(pokemon).lower())
             else:
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pokemon)
-                boss_list.append(pokemon.name.lower())
+                boss_list.append(str(pokemon).lower())
         rgx = '[^a-zA-Z0-9]'
         pkmn_match = None
         if teamcounts:
@@ -3021,17 +3021,24 @@ class Raid(commands.Cog):
                 teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts, bosslist=" ".join(boss_list))
                 teamcounts = teamcounts.lower().replace("all", "").strip()
             pkmn_match = next((p for p in self.bot.pkmn_list if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
+            pkmn_interest = copy.copy(teamcounts.lower())
+            for sep in pkmn_interest.split(','):
+                for word in sep.split():
+                    if word.lower() not in self.bot.form_dict['list'] and word.lower() not in self.bot.pkmn_list:
+                        pkmn_interest = pkmn_interest.replace(word.lower(), "").strip()
+                    else:
+                        teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
         if pkmn_match and self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
             entered_interest = []
-            for word in re.split(' |,', teamcounts.lower()):
-                if word.lower() in self.bot.pkmn_list:
-                    if word.lower() in boss_list:
-                        if word.lower() not in entered_interest:
-                            entered_interest.append(word.lower())
-                    else:
-                        await ctx.message.channel.send(_("{word} doesn't appear in level {egglevel} raids! Please try again.").format(word=word.title(), egglevel=egglevel), delete_after=10)
-                        return
-                    teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
+            for mon in pkmn_interest.lower().split(','):
+                pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, mon.lower().strip())
+                if pkmn and str(pkmn).lower() in boss_list:
+                    if str(pkmn).lower() not in entered_interest:
+                        entered_interest.append(str(pkmn).lower())
+                elif mon.lower() in self.bot.pkmn_list:
+                    for boss in boss_list:
+                        if mon.lower() in boss:
+                            entered_interest.append(boss.lower())
         elif not pkmn_match and self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
             entered_interest = boss_list
             interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
@@ -3126,30 +3133,35 @@ class Raid(commands.Cog):
             if not pokemon:
                 for boss in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
-                    boss_list.append(pokemon.name.lower())
+                    boss_list.append(str(pokemon).lower())
             else:
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pokemon)
-                boss_list.append(pokemon.name.lower())
+                boss_list.append(str(pokemon).lower())
         pkmn_match = None
         if teamcounts:
             if "all" in teamcounts.lower():
                 teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts, bosslist=" ".join(boss_list))
                 teamcounts = teamcounts.lower().replace("all", "").strip()
             pkmn_match = next((p for p in self.bot.pkmn_list if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
+            pkmn_interest = copy.copy(teamcounts.lower())
+            for sep in pkmn_interest.split(','):
+                for word in sep.split():
+                    if word.lower() not in self.bot.form_dict['list'] and word.lower() not in self.bot.pkmn_list:
+                        pkmn_interest = pkmn_interest.replace(word.lower(), "").strip()
+                    else:
+                        teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
         if pkmn_match and self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
             entered_interest = []
             unmatched_mons = False
-            for word in re.split(' |,', teamcounts.lower()):
-                if word.lower() in self.bot.pkmn_list:
-                    if word.lower() not in entered_interest:
-                        entered_interest.append(word.lower())
-                        if not word.lower() in boss_list:
-                            await ctx.message.channel.send(_("{word} doesn't appear in level {egglevel} raids!").format(word=word.title(), egglevel=egglevel), delete_after=10)
-                            unmatched_mons = True
-                    teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
-            if unmatched_mons:
-                await ctx.message.channel.send(_("Invalid Pokemon detected. Please check the pinned message for the list of possible bosses and try again."), delete_after=10)
-                return
+            for mon in pkmn_interest.lower().split(','):
+                pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, mon.lower().strip())
+                if pkmn and str(pkmn).lower() in boss_list:
+                    if str(pkmn).lower() not in entered_interest:
+                        entered_interest.append(str(pkmn).lower())
+                elif mon.lower() in self.bot.pkmn_list:
+                    for boss in boss_list:
+                        if mon.lower() in boss:
+                            entered_interest.append(boss.lower())
         elif not pkmn_match and self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
             entered_interest = boss_list
             interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
@@ -3245,27 +3257,34 @@ class Raid(commands.Cog):
             if not pokemon:
                 for boss in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
-                    boss_list.append(pokemon.name.lower())
+                    boss_list.append(str(pokemon).lower())
             else:
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pokemon)
-                boss_list.append(pokemon.name.lower())
+                boss_list.append(str(pokemon).lower())
         pkmn_match = None
         if teamcounts:
             if "all" in teamcounts.lower():
                 teamcounts = "{teamcounts} {bosslist}".format(teamcounts=teamcounts, bosslist=" ".join(boss_list))
                 teamcounts = teamcounts.lower().replace("all", "").strip()
             pkmn_match = next((p for p in self.bot.pkmn_list if re.sub(rgx, '', p) in re.sub(rgx, '', teamcounts.lower())), None)
+            pkmn_interest = copy.copy(teamcounts.lower())
+            for sep in pkmn_interest.split(','):
+                for word in sep.split():
+                    if word.lower() not in self.bot.form_dict['list'] and word.lower() not in self.bot.pkmn_list:
+                        pkmn_interest = pkmn_interest.replace(word.lower(), "").strip()
+                    else:
+                        teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
         if pkmn_match and self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
             entered_interest = []
-            for word in re.split(' |,', teamcounts.lower()):
-                if word.lower() in self.bot.pkmn_list:
-                    if word.lower() in boss_list:
-                        if word.lower() not in entered_interest:
-                            entered_interest.append(word.lower())
-                    else:
-                        await ctx.message.channel.send(_("{word} doesn't appear in level {egglevel} raids! Please try again.").format(word=word.title(), egglevel=egglevel), delete_after=10)
-                        return
-                    teamcounts = teamcounts.lower().replace(word.lower(), "").replace(",", "").strip()
+            for mon in pkmn_interest.lower().split(','):
+                pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, mon.lower().strip())
+                if pkmn and str(pkmn).lower() in boss_list:
+                    if str(pkmn).lower() not in entered_interest:
+                        entered_interest.append(str(pkmn).lower())
+                elif mon.lower() in self.bot.pkmn_list:
+                    for boss in boss_list:
+                        if mon.lower() in boss:
+                            entered_interest.append(boss.lower())
         elif not pkmn_match and self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == 'egg':
             entered_interest = boss_list
             interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
@@ -3438,8 +3457,8 @@ class Raid(commands.Cog):
         if egglevel != "0":
             for p in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
-                boss_list.append(pokemon.name.lower())
-                boss_dict[pokemon.name.lower()] = {"type": "{}".format(pokemon.emoji), "total": 0}
+                boss_list.append(str(pokemon).lower())
+                boss_dict[str(pokemon).lower()] = {"type": "{}".format(pokemon.emoji), "total": 0}
         channel_dict = {"mystic":0, "valor":0, "instinct":0, "unknown":0, "maybe":0, "coming":0, "here":0, "lobby":0, "total":0, "boss":0}
         team_list = ["mystic", "valor", "instinct", "unknown"]
         status_list = ["maybe", "coming", "here", "lobby"]
@@ -3468,11 +3487,12 @@ class Raid(commands.Cog):
         display_list = []
         if egglevel != "0":
             for boss in boss_dict.keys():
-                if boss_dict[boss]['total'] > 0:
-                    bossstr = "{name} ({number}) {types} : **{count}**".format(name=boss.title(), number=utils.get_number(self.bot, boss), types=boss_dict[boss]['type'], count=boss_dict[boss]['total'])
+                boss = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
+                if boss_dict[str(boss).lower()]['total'] > 0:
+                    bossstr = "{name} ({number}) {types} : **{count}**".format(name=boss.name.title(), number=boss.id, types=boss_dict[str(boss).lower()]['type'], count=boss_dict[str(boss).lower()]['total'])
                     display_list.append(bossstr)
-                elif boss_dict[boss]['total'] == 0:
-                    bossstr = "{name} ({number}) {types}".format(name=boss.title(), number=utils.get_number(self.bot, boss), types=boss_dict[boss]['type'])
+                elif boss_dict[str(boss).lower()]['total'] == 0:
+                    bossstr = "{name} ({number}) {types}".format(name=boss.name.title(), number=boss.id, types=boss_dict[str(boss).lower()]['type'])
                     display_list.append(bossstr)
         reportchannel = self.bot.get_channel(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['reportcity'])
         try:
