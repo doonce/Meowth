@@ -1025,7 +1025,7 @@ class Utilities(commands.Cog):
             timeout = True
         if timeout or res.emoji == self.bot.config['answer_no']:
             await safe_delete(rusure)
-            confirmation = await message.channel.send(_('Configuration Cancelled.'), delete_after=10)
+            confirmation = await ctx.send(_('Configuration Cancelled.'), delete_after=10)
         elif res.emoji == self.bot.config['answer_yes']:
             await safe_delete(rusure)
             try:
@@ -1048,7 +1048,7 @@ class Utilities(commands.Cog):
             timeout = True
         if timeout or res.emoji == self.bot.config['answer_no']:
             await safe_delete(rusure)
-            confirmation = await message.channel.send(_('Configuration Cancelled.'), delete_after=10)
+            confirmation = await ctx.send(_('Configuration Cancelled.'), delete_after=10)
         elif res.emoji == self.bot.config['answer_yes']:
             await safe_delete(rusure)
             try:
