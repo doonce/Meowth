@@ -8,6 +8,7 @@ import textwrap
 import datetime
 import copy
 import logging
+import aiohttp
 
 from dateutil.relativedelta import relativedelta
 
@@ -870,8 +871,8 @@ class Utilities(commands.Cog):
         self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'] = timezone
 
     @_set.command()
-    @checks.guildchannel()
     @commands.has_permissions(manage_guild=True)
+    @checks.guildchannel()
     async def prefix(self, ctx, prefix=None):
         """Changes server prefix."""
         if prefix == 'clear':
@@ -967,6 +968,95 @@ class Utilities(commands.Cog):
         trainers[ctx.author.id] = author
         self.bot.guild_dict[ctx.guild.id]['trainers'] = trainers
         await ctx.send(_(f'{ctx.author.display_name}\'s trainer code set to {trainercode}!'), delete_after=10)
+
+    @_set.command()
+    @checks.is_owner()
+    async def avatar(self, ctx, *, avatar: str = None):
+        """Changes Meowth's Avatar to attached image or URL."""
+        avy_url = None
+        old_avy = self.bot.user.avatar_url_as(static_format="png")
+        if avatar and "http" in avatar:
+            for word in avatar.split():
+                if "http" in word and (".png" in word.lower() or ".jpg" in word.lower() or ".jpeg" in word.lower() or ".gif" in word.lower()):
+                    avy_url = word
+                    break
+        elif ctx.message.attachments:
+            avatar = ctx.message.attachments[0]
+            if not avatar.height:
+                avy_url = None
+            else:
+                avy_url = avatar.url
+        else:
+            avy_url = None
+        if avy_url:
+            rusure = await ctx.send("Would you like to change my avatar?")
+            try:
+                timeout = False
+                res, reactuser = await ask(self.bot, rusure, ctx.author.id)
+            except TypeError:
+                timeout = True
+            if timeout or res.emoji == self.bot.config['answer_no']:
+                await safe_delete(rusure)
+                confirmation = await message.channel.send(_('Configuration Cancelled.'), delete_after=10)
+            elif res.emoji == self.bot.config['answer_yes']:
+                await safe_delete(rusure)
+                async with aiohttp.ClientSession() as cs:
+                    async with cs.get(avy_url) as r:
+                        try:
+                            await self.bot.user.edit(avatar=await r.read())
+                            await ctx.send(embed=discord.Embed(title="**Avatar Changed**", colour=ctx.guild.me.colour, description=f"Old Avatar: {old_avy}\nNew Avatar: {avy_url}"))
+                        except (discord.errors.HTTPException, discord.errors.ClientException, discord.errors.InvalidArgument):
+                            await ctx.send("Meowth! An error occured when trying to change my avatar. There is a low rate limit on doing this, try again later.", delete_after=10)
+        else:
+            await ctx.send("Meowth! I couldn't find an attachment or img URL. Please make sure your URL is an image file (png, jpg, jpeg, or gif).", delete_after=10)
+        await asyncio.sleep(10)
+        await safe_delete(ctx.message)
+
+    @_set.command()
+    @checks.is_owner()
+    async def username(self, ctx, *, username):
+        """Changes Meowth's Activity."""
+        old_username = self.bot.user.name
+        rusure = await ctx.send(f"Would you like to change my username from **{old_username}** to **{username}**?")
+        try:
+            timeout = False
+            res, reactuser = await ask(self.bot, rusure, ctx.author.id)
+        except TypeError:
+            timeout = True
+        if timeout or res.emoji == self.bot.config['answer_no']:
+            await safe_delete(rusure)
+            confirmation = await message.channel.send(_('Configuration Cancelled.'), delete_after=10)
+        elif res.emoji == self.bot.config['answer_yes']:
+            await safe_delete(rusure)
+            try:
+                await self.bot.user.edit(username=username)
+            except (discord.errors.HTTPException, discord.errors.ClientException, discord.errors.InvalidArgument):
+                await ctx.send("Meowth! An error occured when trying to change my username. There is a low rate limit on doing this, try again later.", delete_after=10)
+        await asyncio.sleep(10)
+        await safe_delete(ctx.message)
+
+    @_set.command()
+    @checks.is_owner()
+    async def activity(self, ctx, *, activity):
+        """Changes Meowth's Activity."""
+        old_activity = self.bot.activity.name
+        rusure = await ctx.send(f"Would you like to change my activity from **{old_activity}** to **{activity}**?")
+        try:
+            timeout = False
+            res, reactuser = await ask(self.bot, rusure, ctx.author.id)
+        except TypeError:
+            timeout = True
+        if timeout or res.emoji == self.bot.config['answer_no']:
+            await safe_delete(rusure)
+            confirmation = await message.channel.send(_('Configuration Cancelled.'), delete_after=10)
+        elif res.emoji == self.bot.config['answer_yes']:
+            await safe_delete(rusure)
+            try:
+                await self.bot.change_presence(activity=discord.Game(name=activity))
+            except discord.errors.InvalidArgument:
+                await ctx.send("Meowth! An error occured when trying to change my activity.", delete_after=10)
+        await asyncio.sleep(10)
+        await safe_delete(ctx.message)
 
     @commands.group(name='get', case_insensitive=True)
     @commands.has_permissions(manage_guild=True)
