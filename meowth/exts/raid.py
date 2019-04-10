@@ -1712,7 +1712,7 @@ class Raid(commands.Cog):
 
     @commands.command(aliases=['ex'])
     @checks.allowexraidreport()
-    async def exraid(self, ctx, *, location:commands.clean_content(fix_channel_mentions=True)=""):
+    async def exraid(self, ctx, *, location:commands.clean_content(fix_channel_mentions=True)):
         """Report an upcoming EX raid.
 
         Usage: !exraid <location>

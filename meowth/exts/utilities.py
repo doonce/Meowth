@@ -1015,7 +1015,7 @@ class Utilities(commands.Cog):
     @_set.command()
     @checks.is_owner()
     async def username(self, ctx, *, username):
-        """Changes Meowth's Activity."""
+        """Changes Meowth's Username."""
         old_username = self.bot.user.name
         rusure = await ctx.send(f"Would you like to change my username from **{old_username}** to **{username}**?")
         try:
@@ -1039,7 +1039,7 @@ class Utilities(commands.Cog):
     @checks.is_owner()
     async def activity(self, ctx, *, activity):
         """Changes Meowth's Activity."""
-        old_activity = self.bot.activity.name
+        old_activity = ctx.guild.me.activities[0].name
         rusure = await ctx.send(f"Would you like to change my activity from **{old_activity}** to **{activity}**?")
         try:
             timeout = False
