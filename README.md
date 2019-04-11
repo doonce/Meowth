@@ -1,11 +1,11 @@
-[![PyPI](https://img.shields.io/badge/discord.py-1.0.0a-green.svg)](https://github.com/Rapptz/discord.py/tree/rewrite/)
+[![PyPI](https://img.shields.io/badge/discord.py-1.0.0-green.svg)](https://github.com/Rapptz/discord.py/tree/rewrite/)
 [![PyPI](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-364/)
 [![PyPI](https://img.shields.io/badge/support-discord-lightgrey.svg)](https://discord.gg/z44MV4X)
 
 # Meowth
 A Discord helper bot for Pokemon Go communities.
 
-Meowth is a Discord bot written in Python 3.6.1+ built with [discord.py v1.0.0a (rewrite branch)](https://github.com/Rapptz/discord.py/tree/rewrite)
+Meowth is a Discord bot written in Python 3.6.1+ built with [discord.py v1.0.0](https://github.com/Rapptz/discord.py/tree/rewrite)
 
 ## Meowth v2 Features (with bot support by Doonce)
 
@@ -20,13 +20,11 @@ Meowth assists with organising Pokemon Go communities with support for:
  - Silph card integration
  - Gym matching extension for self-hosters
  - NEW:
- - NovaBot, Huntr, PokeAlarm support for automatic raid and wild reporting
+ - NovaBot, Huntr, PokeAlarm, etc. support for automatic raid and wild reporting
  - Nest reporting and listing
  - Uses DMs instead of roles, which saves on server roles
  - Allows all pokemon forms
  - Pokestop matching
-
-#### *`Note: All reports are provided by your active server members. Meowth does not support any TOS breaking features such as spoofing, Pokemon Go bot accounts and automated raid reporting.`*
 
 You can join the Meowth Discord Support Server for updates, setup help, feature requests, or just to test out the bot before you add it:  
 https://discord.gg/z44MV4X
@@ -41,14 +39,12 @@ https://discord.gg/z44MV4X
 
 **For all future CLI commands, replace the command name `python3` with the relevant interpreter command name for your system (such as the common `py` command name on Windows). See details [here](https://github.com/FoglyOgly/Meowth#installing-python).**
 
-## **`Discord.py v1.0.0a (Rewrite Branch)`**
-
-The [rewrite branch of discord.py](https://github.com/Rapptz/discord.py/tree/rewrite) is an in-development branch that does not yet have an official stable release, however the default/master branch is feature-frozen, and lacks support for some of the newer features in discord such as categories.
+## **`Discord.py v1.0.0`**
 
 If you intend to fork Meowth and alter any code, ensure you keep up to date with any breaking changes that might occur in this branch of discord.py.
 
 ```bash
-python3 -m pip install -U git+https://github.com/Rapptz/discord.py@rewrite
+python3 -m pip install -U discord.py
 ```
 
 #### *``Note: You will receive the following warning on your first run, which can be disregarded:``*
@@ -205,6 +201,9 @@ pkmn = Pokemon
 | **!set prefix** \[prefix\] | *Server Manager Only* | Sets Meowth's prefix. |
 | **!set regional** \<pkmn\> | *Server Manager Only* | Sets server's regional raid boss. Accepts number or name. |
 | **!set timezone** \<UTC offset\> | *Server Manager Only* | Sets server's timezone. Accepts numbers from -12 to 14. |
+| **!set activity** \<activity\> | *Owner Only* | Sets Meowth's activity (Playing: x). |
+| **!set avatar** \<avatar\> | *Owner Only* | Sets Meowth's avatar from a URL or image upload. |
+| **!set username** \<username\> | *Owner Only* | Sets Meowth's username. |
 | **!get prefix** | *Server Manager Only* | Displays Meowth's prefix. |
 | **!get perms** \[channelid\] | *Server Manager Only* | Displays Meowth's permissions in guild and channel. |
 | **!welcome** \[user\] | *Owner Only* | Test welcome message on mentioned member |
@@ -253,12 +252,14 @@ pkmn = Pokemon
 | **!want item** \<item list\> | *Want Channel* | Adds a item to your notifications. |
 | **!want type** \<type list\> | *Want Channel* | Adds a type to your notifications. |
 | **!want boss** \<boss list\> | *Want Channel* | Adds a boss to your notifications if want list unlinked. |
+| **!want iv** \<iv list\> | *Want Channel* | Adds an IV to your notifications. |
 | **!unwant** \<pkmn\> | *Want Channel* | Removes a Pokemon from your notifications. |
 | **!unwant gym** \<gym list\> | *Want Channel* and gymmatching | Removes a gym from your notifications. |
 | **!unwant stop** \<stop list\> | *Want Channel* and gymmatching | Removes a pokestop from your notifications. |
 | **!unwant item** \<item list\> | *Want Channel* | Removes a item from your notifications. |
 | **!unwant type** \<type list\> | *Want Channel* | Removes a type from your notifications. |
 | **!unwant boss** \<boss list\> | *Want Channel* | Removes a boss from your notifications if want list unlinked. |
+| **!unwant iv** \<iv list\> | *Want Channel* | Removes an IV from your notifications. |
 | **!unwant all**  | *Want Channel* | Removes all notifications. |
 
 ### Reporting Commands:
