@@ -466,7 +466,7 @@ def get_category(bot, channel, level, category_type="raid"):
         category = discord.utils.get(guild.categories, id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][channel.id])
         return category
     elif catsort == "level":
-        category = discord.utils.get(guild.categories, id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][str(level)])
+        category = discord.utils.get(guild.categories, id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][level])
         return category
     else:
         return None

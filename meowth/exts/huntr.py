@@ -479,7 +479,7 @@ class Huntr(commands.Cog):
                         raid_details = report_details.setdefault('gym', None)
                         if not all([pokemon, coordinates, raid_details]):
                             return
-                        egg_level = 0
+                        egg_level = "0"
                         timeout = int(report_details.get('raidexp', 45))*60
                         expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=pokemon.title())
                         if int(utils.get_level(self.bot, pokemon)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('raidlvls', []):
@@ -510,6 +510,7 @@ class Huntr(commands.Cog):
                             return
                         moves = None
                         pokemon = None
+                        egg_level = str(egg_level)
                         timeout = int(report_details.get('raidexp', 45))*60
                         expiremsg = ('This level {level} raid egg has hatched!').format(level=egg_level)
                         if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('egglvls', False):
@@ -1008,7 +1009,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
-        egg_level = report_details.get('level')
+        egg_level = str(report_details.get('level'))
         raid_details = report_details.get('gym')
         raidexp = report_details.get('raidexp', 60)
         raid_coordinates = report_details['gps']
