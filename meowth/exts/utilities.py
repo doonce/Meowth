@@ -512,8 +512,8 @@ class Utilities(commands.Cog):
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             count = 0
-            global_dm_list = []
-            for guildid in guilddict_temp.keys():
+            def build_dm_list(guildid):
+                global_dm_list = []
                 for channel in guilddict_temp[guildid].get('nest_dict', {}):
                     for nest in guilddict_temp[guildid]['nest_dict'][channel]:
                         if nest == "list":
@@ -526,7 +526,10 @@ class Utilities(commands.Cog):
                     for report in guilddict_temp[guildid].get(report_dict, {}):
                         for k,v in guilddict_temp[guildid][report_dict][report].get('dm_dict', {}).items():
                             global_dm_list.append(v)
-
+                return global_dm_list
+            for guildid in guilddict_temp.keys():
+                dm_list = build_dm_list(guildid)
+                delete_list = []
                 trainers = guilddict_temp[guildid].get('trainers', {}).keys()
                 for trainer in trainers:
                     user = self.bot.get_user(trainer)
@@ -540,15 +543,28 @@ class Utilities(commands.Cog):
                             continue
                     if not dm_channel:
                         continue
-                    async for message in user.dm_channel.history(limit=500, oldest_first=True):
+                    if not dm_list:
+                        continue
+                    async for message in user.dm_channel.history(limit=500):
                         if message.author.id == self.bot.user.id:
                             if "reported by" in message.content or "hatched into" in message.content or "reported that" in message.content:
-                                if message.id not in global_dm_list:
-                                    try:
-                                        await message.delete()
-                                        count += 1
-                                    except:
-                                        continue
+                                if message.id not in dm_list:
+                                    delete_list.append(message)
+                            elif message.embeds:
+                                if "pokebattler.com" in str(message.embeds[0].author.url).lower() or "raid coordination help" in str(message.embeds[0].author.name).lower():
+                                    if (datetime.datetime.now() - message.created_at).days >= 7:
+                                        delete_list.append(message)
+                            elif "trade" in message.content.lower() or "offer" in message.content.lower():
+                                if (datetime.datetime.now() - message.created_at).days >= 7:
+                                    delete_list.append(message)                                
+                    dm_list = build_dm_list(guildid)
+                    for message in delete_list:
+                        if message.id not in dm_list:
+                            try:
+                                await message.delete()
+                                count += 1
+                            except:
+                                continue
             logger.info(f"------ END - {count} DMs Cleaned ------")
             if not loop:
                 return count

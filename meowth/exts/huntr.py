@@ -967,7 +967,7 @@ class Huntr(commands.Cog):
             'egglevel': '0',
             'moveset': 0,
             'weather': weather,
-            'gymhuntrgps' : raid_coordinates
+            'gymhuntrgps': raid_coordinates
         }
         await raid_cog._timerset(raid_channel, raidexp)
         await raid_channel.send("This raid was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
@@ -1043,7 +1043,7 @@ class Huntr(commands.Cog):
             'egglevel': egg_level,
             'weather': weather,
             'moveset': 0,
-            'gymhuntrgps' : raid_coordinates
+            'gymhuntrgps': raid_coordinates
         }
         if raidexp is not False:
             await raid_cog._timerset(raid_channel, raidexp)

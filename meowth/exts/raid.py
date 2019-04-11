@@ -9,6 +9,7 @@ import logging
 import aiohttp
 import os
 import json
+from dateutil.relativedelta import relativedelta
 
 import discord
 from discord.ext import commands
@@ -3821,7 +3822,8 @@ class Raid(commands.Cog):
                     ctx_startinglist.append(user.mention)
                     name_startinglist.append('**'+user.display_name+'**')
                     id_startinglist.append(trainer)
-            starting_dict[trainer] = {"count":trainer_dict[trainer]['count'], "status":trainer_dict[trainer]['status'], "party":trainer_dict[trainer]['party'], "herecount":herecount, "teamcount":teamcount, "lobbycount":lobbycount}
+            if trainer_dict[trainer]['status']['lobby']:
+                starting_dict[trainer] = {"count":trainer_dict[trainer]['count'], "status":trainer_dict[trainer]['status'], "party":trainer_dict[trainer]['party'], "herecount":herecount, "teamcount":teamcount, "lobbycount":lobbycount}
         if len(ctx_startinglist) == 0:
             starting_str = _("Meowth! How can you start when there's no one waiting at this raid!?")
             await ctx.channel.send(starting_str, delete_after=10)

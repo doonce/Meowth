@@ -144,7 +144,7 @@ class Trainers(commands.Cog):
 
     @commands.group(case_insensitive=True, invoke_without_command=True)
     @checks.guildchannel()
-    async def leaderboard(ctx, type="total", range="1"):
+    async def leaderboard(self, ctx, type="total", range="1"):
         """Displays the top ten reporters of a server.
 
         Usage: !leaderboard [type] [page]
