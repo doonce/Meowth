@@ -433,6 +433,10 @@ class Huntr(commands.Cog):
                 except:
                     return
                 if report_details.get('type', None) == "raid" or report_details.get('type', None) == "egg":
+                    raid_cog = self.bot.cogs.get('Raid')
+                    if not raid_cog:
+                        logger.error("Raid Cog not loaded")
+                        return
                     for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
                         channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('gymhuntrgps', None)
                         channel_address = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('address', None)
@@ -466,10 +470,6 @@ class Huntr(commands.Cog):
                     if report_details.get('type', None) == "raid":
                         if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoraid', False):
                             return
-                        raid_cog = self.bot.cogs.get('Raid')
-                        if not raid_cog:
-                            logger.error("Raid Cog not loaded")
-                            return
                         reporttype = "raid"
                         pokemon = report_details.setdefault('pokemon', None)
                         if not utils.get_level(self.bot, pokemon):
@@ -501,10 +501,6 @@ class Huntr(commands.Cog):
                             dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {pokemon.name.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                     elif report_details.get('type', None) == "egg":
                         if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoegg', False):
-                            return
-                        raid_cog = self.bot.cogs.get('Raid')
-                        if not raid_cog:
-                            logger.error("Raid Cog not loaded")
                             return
                         reporttype = "egg"
                         egg_level = report_details.setdefault('level', None)
