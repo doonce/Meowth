@@ -508,7 +508,7 @@ class Utilities(commands.Cog):
         await self.bot.wait_until_ready()
         while (not self.bot.is_closed()):
             if loop:
-                await asyncio.sleep(604800)
+                await asyncio.sleep(302400)
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             count = 0
@@ -556,15 +556,15 @@ class Utilities(commands.Cog):
                                         delete_list.append(message)
                             elif "trade" in message.content.lower() or "offer" in message.content.lower():
                                 if (datetime.datetime.now() - message.created_at).days >= 7:
-                                    delete_list.append(message)                                
-                    dm_list = build_dm_list(guildid)
-                    for message in delete_list:
-                        if message.id not in dm_list:
-                            try:
-                                await message.delete()
-                                count += 1
-                            except:
-                                continue
+                                    delete_list.append(message)
+                dm_list = build_dm_list(guildid)
+                for message in delete_list:
+                    if message.id not in dm_list:
+                        try:
+                            await message.delete()
+                            count += 1
+                        except:
+                            continue
             logger.info(f"------ END - {count} DMs Cleaned ------")
             if not loop:
                 return count
