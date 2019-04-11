@@ -986,7 +986,17 @@ class Raid(commands.Cog):
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                if pokemon_or_level and location:
+                if checks.check_eggchannel(ctx):
+                    if pokemon_or_level:
+                        location = self.bot.guild_dict[message.channel.guild.id]['raidchannel_dict'][ctx.channel.id]['address']
+                        content = f"{pokemon_or_level} {location}"
+                        new_channel = await self._raid(ctx, content)
+                        ctx.raid_channel = new_channel
+                        return
+                    else:
+                        await ctx.send("Meowth! I'm missing some details! Usage: {prefix}raid **<pokemon>**".format(prefix=ctx.prefix))
+                        return
+                elif pokemon_or_level and location:
                     content = f"{pokemon_or_level} {location}"
                     if pokemon_or_level.isdigit():
                         new_channel = await self._raidegg(ctx, content)
