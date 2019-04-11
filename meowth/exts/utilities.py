@@ -466,7 +466,7 @@ def get_category(bot, channel, level, category_type="raid"):
         category = discord.utils.get(guild.categories, id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][channel.id])
         return category
     elif catsort == "level":
-        category = discord.utils.get(guild.categories, id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][level])
+        category = discord.utils.get(guild.categories, id=bot.guild_dict[guild.id]['configure_dict'][report]['category_dict'][str(level)])
         return category
     else:
         return None
@@ -529,6 +529,8 @@ class Utilities(commands.Cog):
                 return global_dm_list
             for guildid in guilddict_temp.keys():
                 dm_list = build_dm_list(guildid)
+                if not dm_list:
+                    continue
                 delete_list = []
                 trainers = guilddict_temp[guildid].get('trainers', {}).keys()
                 for trainer in trainers:
@@ -542,8 +544,6 @@ class Utilities(commands.Cog):
                         except:
                             continue
                     if not dm_channel:
-                        continue
-                    if not dm_list:
                         continue
                     async for message in user.dm_channel.history(limit=500):
                         if message.author.id == self.bot.user.id:
