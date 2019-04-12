@@ -27,10 +27,10 @@ class Context(commands.Context):
             await self.send(page)
 
     async def ok(self):
-        await self.message.add_reaction('\u2705')
+        await utils.safe_reaction(self.message, '\u2705')
 
     async def no(self):
-        await self.message.add_reaction('\u274e')
+        await utils.safe_reaction(self.message, '\u274e')
 
     async def error(self, title, details=None):
         """Quick send or build an error embed response"""

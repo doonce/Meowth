@@ -219,7 +219,7 @@ async def _eval(ctx, *, body: str):
     else:
         value = stdout.getvalue()
         try:
-            await ctx.message.add_reaction(config['command_done'])
+            await utils.safe_reaction(ctx.message, config['command_done'])
         except:
             pass
         if ret is None:
@@ -494,7 +494,7 @@ async def on_member_join(member):
 @Meowth.event
 async def on_message(message):
     if "niandick" in message.content.lower():
-        await message.add_reaction("\U0001F346")
+        await utils.safe_reaction(message, "\U0001F346")
     if (not message.author.bot):
         await Meowth.process_commands(message)
 

@@ -1594,8 +1594,8 @@ class Configure(commands.Cog):
             ctx.config_dict_temp = config_dict_temp
             return ctx
         scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raid** reports using supported bots enabled?\n\nAny raid that a bot posts in a channel that Meowth also has access to will be converted to a **!raid** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Raid Reports', icon_url=self.bot.user.avatar_url)
-        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
-        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raid <form> <pkmn>|<gym_name>|<time_left>|<lat>,<lng>|<quick_move> / <charge_move>`'))
+        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm, PokeBot, etc.'))
+        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!alarm {"type":"raid", "pokemon":"[form] <pokemon name>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<end minutes>", "moves":"<move name 1> / <move name 2>"}`'))
         await ctx.configure_channel.send(embed=scanner_embed)
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['autoraid'])).set_author(name=_("Current AutoRaid Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
@@ -1655,8 +1655,8 @@ class Configure(commands.Cog):
                         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1, 2, 3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic raids."))
                         continue
         scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raidegg** reports using supported bots enabled?\n\nAny egg that a bot posts in a channel that Meowth also has access to will be converted to a **!raidegg** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Egg Reports', icon_url=self.bot.user.avatar_url)
-        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
-        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!raidegg <level>|<gym_name>|<time_left_start>|<lat>,<lng>`'))
+        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm, PokeBot, etc.'))
+        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!alarm {"type":"egg", "level":"<raid_level>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<hatch minutes>"}`'))
         await ctx.configure_channel.send(embed=scanner_embed)
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['autoegg'])).set_author(name=_("Current AutoEgg Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
@@ -1717,7 +1717,7 @@ class Configure(commands.Cog):
                         continue
         scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!wild** reports using supported bots enabled?\n\nAny wild that a bot posts in a channel that Meowth also has access to will be converted to a **!wild** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Wild Reports', icon_url=self.bot.user.avatar_url)
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
-        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!wild <form> <pkmn>|<lat>,<lng>|<time_left>|Weather: <weather> / IV: <iv>`'))
+        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!alarm {"type":"wild", "pokemon":"[gender] [form] <pokemon name>", "gps":"<latitude>,<longitude>, "weather":"[weather boost]"}`'))
         await ctx.configure_channel.send(embed=scanner_embed)
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('autowild', False))).set_author(name=_("Current AutoWild Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
@@ -1779,7 +1779,7 @@ class Configure(commands.Cog):
                         continue
         scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!research** reports using supported bots enabled?\n\nAny quest that a bot posts in a channel that Meowth also has access to will be converted to a **!research** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Research Reports', icon_url=self.bot.user.avatar_url)
         scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('NovaBot, PokeAlarm'))
-        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!res <pokestop>|<lat>,<lng>|<task>|<reward>`'))
+        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!alarm {"type":"research", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "quest":"<quest task>", "reward":"<quest reward>"`'))
         await ctx.configure_channel.send(embed=scanner_embed)
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('autoquest', False))).set_author(name=_("Current AutoQuest Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:

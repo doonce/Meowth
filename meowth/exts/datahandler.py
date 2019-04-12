@@ -179,7 +179,7 @@ class DataHandler(commands.Cog):
 
         with open(ctx.bot.raid_json_path, 'w') as fd:
             json.dump(self.raid_info, fd, indent=4)
-        await ctx.message.add_reaction('\u2705')
+        await utils.safe_reaction(ctx.message, '\u2705')
 
 def setup(bot):
     bot.add_cog(DataHandler(bot))

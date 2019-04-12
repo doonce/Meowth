@@ -676,7 +676,7 @@ class Raid(commands.Cog):
         Usage: !reload_json
         Useful to avoid a full restart if boss list changed"""
         self.bot.load_config()
-        await ctx.message.add_reaction(self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
 
     @commands.command()
     @checks.is_manager()
@@ -726,13 +726,13 @@ class Raid(commands.Cog):
                     json.dump(data, fd, indent=2, separators=(', ', ': '))
                 await question.clear_reactions()
                 await asyncio.sleep(0.25)
-                await question.add_reaction(self.bot.config['command_done'])
+                await utils.safe_reaction(question, self.bot.config['command_done'])
                 await ctx.channel.send(_("Meowth! Configuration successful!"), delete_after=10)
                 self.bot.load_config()
                 await self.reset_raid_roles(loop=False)
                 await asyncio.sleep(10)
                 await utils.safe_delete(question)
-                await ctx.message.add_reaction(self.bot.config['command_done'])
+                await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
             else:
                 return await ctx.channel.send(_("Meowth! I'm not sure what went wrong, but configuration is cancelled!"), delete_after=10)
 
@@ -786,7 +786,7 @@ class Raid(commands.Cog):
                     json.dump(data, fd, indent=2, separators=(', ', ': '))
             self.bot.load_config()
             await question.clear_reactions()
-            await question.add_reaction(self.bot.config['command_done'])
+            await utils.safe_reaction(question, self.bot.config['command_done'])
             await ctx.channel.send(_("Meowth! Configuration successful!"), delete_after=10)
             await asyncio.sleep(10)
             await utils.safe_delete(question)
@@ -1235,7 +1235,7 @@ class Raid(commands.Cog):
         await asyncio.sleep(1)
         raidmsg = _("{roletest}Meowth! {pokemon} raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(roletest=roletest, pokemon=str(pokemon).title(), member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
         raidmessage = await raid_channel.send(content=raidmsg, embed=raid_embed)
-        await raidmessage.add_reaction('\u2754')
+        await utils.safe_reaction(raidmessage, '\u2754')
         await raidmessage.pin()
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
             'reportcity': message.channel.id,
@@ -1266,7 +1266,7 @@ class Raid(commands.Cog):
                 ctrsmessage_id = ctrsmessage.id
                 await ctrsmessage.pin()
                 for moveset in ctrs_dict:
-                    await ctrsmessage.add_reaction(ctrs_dict[moveset]['emoji'])
+                    await utils.safe_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
                     await asyncio.sleep(0.25)
             except:
                 ctrs_dict = {}
@@ -1397,7 +1397,7 @@ class Raid(commands.Cog):
             await asyncio.sleep(1)
             raidmsg = _("Meowth! Level {level} raid egg reported by {member} in {citychannel}! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(level=egg_level, member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
             raidmessage = await raid_channel.send(content=raidmsg, embed=raid_embed)
-            await raidmessage.add_reaction('\u2754')
+            await utils.safe_reaction(raidmessage, '\u2754')
             await raidmessage.pin()
             self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
                 'reportcity': message.channel.id,
@@ -1511,7 +1511,7 @@ class Raid(commands.Cog):
             ctrsmessage_id = ctrsmessage.id
             await ctrsmessage.pin()
             for moveset in ctrs_dict:
-                await ctrsmessage.add_reaction(ctrs_dict[moveset]['emoji'])
+                await utils.safe_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
                 await asyncio.sleep(0.25)
         else:
             ctrs_dict = {}
@@ -1529,12 +1529,14 @@ class Raid(commands.Cog):
         boss_list = []
         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, entered_raid)
         matched_boss = False
+        boss_str = ""
         for boss in self.bot.raid_info['raid_eggs'][str(egglevel)]['pokemon']:
             boss = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
             boss_list.append(boss.name.lower())
             if str(boss) == str(pokemon):
                 pokemon = boss
                 entered_raid = boss.name.lower()
+                boss_str = str(pokemon)
                 matched_boss = True
                 break
         if not matched_boss:
@@ -1548,6 +1550,7 @@ class Raid(commands.Cog):
                 if boss and boss.id == pokemon.id:
                     pokemon = boss
                     entered_raid = boss.name.lower()
+                    boss_str = str(pokemon)
                     break
         try:
             reportcitychannel = self.bot.get_channel(eggdetails['reportcity'])
@@ -1648,7 +1651,7 @@ class Raid(commands.Cog):
             user = raid_channel.guild.get_member(trainer)
             if not user:
                 continue
-            if (trainer_dict[trainer].get('interest', None)) and (entered_raid not in trainer_dict[trainer]['interest']):
+            if (trainer_dict[trainer].get('interest', None)) and (boss_str.lower() not in trainer_dict[trainer]['interest']):
                 self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'][trainer]['status'] = {'maybe':0, 'coming':0, 'here':0, 'lobby':0}
                 self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'][trainer]['party'] = {'mystic':0, 'valor':0, 'instinct':0, 'unknown':0}
                 self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'][trainer]['count'] = 1
@@ -1711,7 +1714,7 @@ class Raid(commands.Cog):
             ctrsmessage_id = ctrsmessage.id
             await ctrsmessage.pin()
             for moveset in ctrs_dict:
-                await ctrsmessage.add_reaction(ctrs_dict[moveset]['emoji'])
+                await utils.safe_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
                 await asyncio.sleep(0.25)
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['ctrs_dict'] = ctrs_dict
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['ctrsmessage'] = ctrsmessage_id
@@ -1795,7 +1798,7 @@ class Raid(commands.Cog):
         await asyncio.sleep(1)
         raidmsg = _("Meowth! EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here{invitemsgstr2}!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details, invitemsgstr2=invitemsgstr2)
         raidmessage = await raid_channel.send(content=raidmsg, embed=raid_embed)
-        await raidmessage.add_reaction('\u2754')
+        await utils.safe_reaction(raidmessage, '\u2754')
         await raidmessage.pin()
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
             'reportcity': channel.id,

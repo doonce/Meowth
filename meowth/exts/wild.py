@@ -306,9 +306,9 @@ class Wild(commands.Cog):
         dm_dict = {}
         dm_dict = await self.send_dm_messages(ctx, pokemon.id, nearest_stop, wild_types[0], wild_types[1], wild_iv, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
-        await ctx.wildreportmsg.add_reaction(self.bot.config['wild_omw'])
+        await utils.safe_reaction(ctx.wildreportmsg, self.bot.config['wild_omw'])
         await asyncio.sleep(0.25)
-        await ctx.wildreportmsg.add_reaction(self.bot.config['wild_despawn'])
+        await utils.safe_reaction(ctx.wildreportmsg, self.bot.config['wild_despawn'])
         await asyncio.sleep(0.25)
         self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'exp':time.time() + despawn,

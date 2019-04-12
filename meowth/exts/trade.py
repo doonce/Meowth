@@ -154,8 +154,8 @@ class Trade:
 
         if "open trade" not in wanted_pokemon:
             for i in range(len(wanted_pokemon)):
-                await trade_msg.add_reaction(f'{i+1}\u20e3')
-        await trade_msg.add_reaction(ctx.bot.config['trade_stop'])
+                await utils.safe_reaction(trade_msg, f'{i+1}\u20e3')
+        await utils.safe_reaction(trade_msg, ctx.bot.config['trade_stop'])
 
         trade = cls(
             ctx.bot, ctx.author.id, trade_msg.id, ctx.channel.id, ctx.guild.id,
@@ -251,10 +251,10 @@ class Trade:
         tradermsg = await trader.send(acceptedmsg)
         listermsg = await lister.send(acceptedmsg)
 
-        await tradermsg.add_reaction(self.bot.config['trade_complete'])
-        await tradermsg.add_reaction(self.bot.config['trade_stop'])
-        await listermsg.add_reaction(self.bot.config['trade_complete'])
-        await listermsg.add_reaction(self.bot.config['trade_stop'])
+        await utils.safe_reaction(tradermsg, self.bot.config['trade_complete'])
+        await utils.safe_reaction(tradermsg, self.bot.config['trade_stop'])
+        await utils.safe_reaction(listermsg, self.bot.config['trade_complete'])
+        await utils.safe_reaction(listermsg, self.bot.config['trade_stop'])
 
         for offerid in self.offers.keys():
             if offerid != offer_id:
@@ -334,9 +334,9 @@ class Trade:
             )
 
         for i in range(len(wanted_pokemon)):
-            await listingmsg.add_reaction(f'{i+1}\u20e3')
+            await utils.safe_reaction(listingmsg, f'{i+1}\u20e3')
 
-        await listingmsg.add_reaction(self.bot.config['trade_stop'])
+        await utils.safe_reaction(listingmsg, self.bot.config['trade_stop'])
         del self.offers[offer_id]
 
     async def reject_offer(self, offer_id):
@@ -361,9 +361,9 @@ class Trade:
             )
 
         for i in range(len(wanted_pokemon)):
-            await listingmsg.add_reaction(f'{i+1}\u20e3')
+            await utils.safe_reaction(listingmsg, f'{i+1}\u20e3')
 
-        await listingmsg.add_reaction(self.bot.config['trade_stop'])
+        await utils.safe_reaction(listingmsg, self.bot.config['trade_stop'])
 
         del self.offers[offer_id]
 

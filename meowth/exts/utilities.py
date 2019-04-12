@@ -269,7 +269,7 @@ async def ask(bot, message, user_list=None, timeout=60, *, react_list=[]):
             return (user.id != message.author.id) and (reaction.message.id == message.id) and (reaction.emoji in react_list)
     for r in react_list:
         await asyncio.sleep(0.25)
-        await message.add_reaction(r)
+        await safe_reaction(message, r)
     try:
         reaction, user = await bot.wait_for('reaction_add', check=check, timeout=timeout)
         return reaction, user
@@ -497,6 +497,12 @@ async def safe_bulk_delete(channel, message_list):
     try:
         await channel.delete_messages(message_list)
     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.ClientException, AttributeError):
+        pass
+
+async def safe_reaction(message, reaction):
+    try:
+        await message.add_reaction(reaction)
+    except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.NotFound, discord.errors.InvalidArgument, AttributeError):
         pass
 
 class Utilities(commands.Cog):
