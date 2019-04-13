@@ -336,7 +336,6 @@ class Research(commands.Cog):
             'quest':quest,
             'reward':reward
         }
-        print(reward)
         if not ctx.author.bot:
             research_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('research_reports', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['research_reports'] = research_reports
