@@ -1224,6 +1224,7 @@ class Raid(commands.Cog):
             roletest = ""
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
+        shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                 shiny_str = "✨ "
@@ -1491,6 +1492,7 @@ class Raid(commands.Cog):
             roletest = ""
         else:
             roletest = _("{pokemon} - ").format(pokemon=raidrole.mention)
+        shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                 shiny_str = "✨ "
@@ -1645,6 +1647,7 @@ class Raid(commands.Cog):
             roletest = ""
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
+        shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                 shiny_str = "✨ "
