@@ -121,10 +121,17 @@ class Research(commands.Cog):
                     research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, " "), width=30)), inline=True)
                     research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, " "), width=30)), inline=True)
                     other_reward = any(x in reward.lower() for x in reward_list)
+                    shiny_str = ""
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
+                    if pokemon.id in self.bot.shiny_dict:
+                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                            shiny_str = "✨ "
+                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                            shiny_str = "✨ "
                     if pokemon and not other_reward:
-                        reward = f"{string.capwords(reward, ' ')} {pokemon.emoji}"
+                        reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
                         research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
+                        reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
                     else:
                         research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
                     break
@@ -198,10 +205,17 @@ class Research(commands.Cog):
                     elif rewardmsg:
                         reward = rewardmsg.clean_content
                         other_reward = any(x in reward.lower() for x in reward_list)
+                        shiny_str = ""
                         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
                         if pokemon and not other_reward:
-                            reward = f"{string.capwords(reward, ' ')} {pokemon.emoji}"
+                            if pokemon.id in self.bot.shiny_dict:
+                                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                                    shiny_str = "✨ "
+                                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                                    shiny_str = "✨ "
+                            reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
                             research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
+                            reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
                         else:
                             research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
                     await utils.safe_delete(rewardmsg)
@@ -322,6 +336,7 @@ class Research(commands.Cog):
             'quest':quest,
             'reward':reward
         }
+        print(reward)
         if not ctx.author.bot:
             research_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('research_reports', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['research_reports'] = research_reports

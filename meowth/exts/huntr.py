@@ -333,8 +333,8 @@ class Huntr(commands.Cog):
         If an option is not available, replace <variable> with None
         Raid format = !alarm {"type":"raid", "pokemon":"[form] <pokemon name>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<end minutes>", "moves":"<move name 1> / <move name 2>"}
         Raidegg format = !alarm {"type":"egg", "level":"<raid_level>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<hatch minutes>"}
-        Wild format (without IV) = !alarm {"type":"wild", "pokemon":"[gender] [form] <pokemon name>", "coordinates":"<latitude>,<longitude>, "weather":"[weather boost]"}
-        Wild format (with IV) = !alarm {"type":"wild", "pokemon":"[gender] [form] <pokemon name>", "gps":"<latitude>,<longitude>, "weather":"[weather boost]", "iv_percent":"[iv percentage]", "iv_long":"[long IV A/D/S]", "level":"[level]", "cp":"<cp>", "gender":"[gender]", "height":"[height]", "weight":"[weight]", "moveset":"[move name 1] / [move name 2]"}
+        Wild format (without IV) = !alarm {"type":"wild", "pokemon":"[gender] [form] <pokemon name>", "coordinates":"<latitude>,<longitude>, "weather":"[weather boost]", "expire":"[minutes] min [seconds] sec"}
+        Wild format (with IV) = !alarm {"type":"wild", "pokemon":"[gender] [form] <pokemon name>", "gps":"<latitude>,<longitude>, "weather":"[weather boost]", "iv_percent":"[iv percentage]", "iv_long":"[long IV A/D/S]", "level":"[level]", "cp":"<cp>", "gender":"[gender]", "height":"[height]", "weight":"[weight]", "moveset":"[move name 1] / [move name 2]", "expire":"[minutes] min [seconds] sec"}
         Quest format = !alarm {"type":"research", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "quest":"<quest task>", "reward":"<quest reward>"}
         Fill in everything within <> (required) and [] (optional) based on however your bot reports it."""
         message = ctx.message
@@ -565,8 +565,14 @@ class Huntr(commands.Cog):
         egg_img = egg_info['egg_img']
         boss_list = []
         for p in egg_info['pokemon']:
+            shiny_str = ""
             pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, p)
-            boss_list.append(pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
+            if pokemon.id in self.bot.shiny_dict:
+                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                    shiny_str = "✨ "
+                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                    shiny_str = "✨ "
+            boss_list.append(shiny_str + pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=1'.format(str(egg_img))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
@@ -607,9 +613,15 @@ class Huntr(commands.Cog):
             roletest = ""
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
+        shiny_str = ""
+        if pokemon.id in self.bot.shiny_dict:
+            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                shiny_str = "✨ "
+            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                shiny_str = "✨ "
         raid_number = pokemon.id
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=pokemon.id, type=pokemon.emoji), inline=True)
+        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(ctx.bot, message.guild, utils.get_weaknesses(ctx.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
@@ -636,7 +648,13 @@ class Huntr(commands.Cog):
             return
         if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['scanners'].setdefault('wildfilter', []):
             return
-        details_str = f"{pokemon.name.title()}"
+        shiny_str = ""
+        if pokemon.id in self.bot.shiny_dict:
+            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                shiny_str = "✨ "
+            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                shiny_str = "✨ "
+        details_str = f"{shiny_str}{pokemon.name.title()}"
         gender = report_details.get("gender", '')
         if gender and "female" in gender.lower():
             details_str += f" ♀"
@@ -692,7 +710,7 @@ class Huntr(commands.Cog):
             wild_embed.add_field(name=_('**IV / Level:**'), value=f"{iv_long if iv_long else ''} {' ('+str(wild_iv)+'%)' if wild_iv else ''}\n{'Level '+level if level else ''}{' ('+cp+'CP)' if cp else ''} {weather if weather else ''}", inline=True)
         if height or weight or moveset:
             wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height if height else ''} {'W: '+weight if weight else ''}\n{moveset if moveset else ''}", inline=True)
-        wild_embed.add_field(name='**Despawns in:**', value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=expire.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
+        wild_embed.add_field(name=f"{'**Est. Despawn:**' if int(expire.split()[0]) == 45 and int(expire.split()[2]) == 0 else '**Despawns in:**'}", value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=expire.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
         if reporter == "huntr":
             wild_embed.add_field(name=wild_extra, value=_('Perform a scan to help find more by clicking [here]({huntrurl}).').format(huntrurl=huntr_url), inline=False)
         wild_embed.set_thumbnail(url=pokemon.img_url)

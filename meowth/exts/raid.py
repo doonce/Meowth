@@ -1224,8 +1224,13 @@ class Raid(commands.Cog):
             roletest = ""
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
+        if pokemon.id in self.bot.shiny_dict:
+            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                shiny_str = "✨ "
+            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                shiny_str = "✨ "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=entered_raid.capitalize(), pokemonnumber=str(pokemon.id), type=pokemon.emoji), inline=True)
+        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{entered_raid.capitalize()} ({pokemon.id}) {pokemon.emoji}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, message.guild, utils.get_weaknesses(self.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
@@ -1376,8 +1381,14 @@ class Raid(commands.Cog):
             egg_img = egg_info['egg_img']
             boss_list = []
             for p in egg_info['pokemon']:
+                shiny_str = ""
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
-                boss_list.append(pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
+                if pokemon.id in self.bot.shiny_dict:
+                    if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                        shiny_str = "✨ "
+                    elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                        shiny_str = "✨ "
+                boss_list.append(shiny_str + pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
             raid_channel = await self.create_raid_channel(ctx, egg_level, raid_details, "egg")
             if not raid_channel:
                 return
@@ -1480,8 +1491,13 @@ class Raid(commands.Cog):
             roletest = ""
         else:
             roletest = _("{pokemon} - ").format(pokemon=raidrole.mention)
+        if pokemon.id in self.bot.shiny_dict:
+            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                shiny_str = "✨ "
+            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                shiny_str = "✨ "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=str(pokemon.id), type=pokemon.emoji), inline=True)
+        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
         raid_embed.add_field(name=_('**Hatches:**'), value=oldembed.fields[3].value, inline=True)
@@ -1629,8 +1645,13 @@ class Raid(commands.Cog):
             roletest = ""
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
+        if pokemon.id in self.bot.shiny_dict:
+            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                shiny_str = "✨ "
+            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                shiny_str = "✨ "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=_('{pokemon} ({pokemonnumber}) {type}').format(pokemon=pokemon.name.title(), pokemonnumber=str(pokemon.id), type=pokemon.emoji), inline=True)
+        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=pokemon.img_url)
@@ -1771,8 +1792,14 @@ class Raid(commands.Cog):
         egg_img = egg_info['egg_img']
         boss_list = []
         for p in egg_info['pokemon']:
+            shiny_str = ""
             pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
-            boss_list.append(pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
+            if pokemon.id in self.bot.shiny_dict:
+                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                    shiny_str = "✨ "
+                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                    shiny_str = "✨ "
+            boss_list.append(shiny_str + pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
         raid_channel = await self.create_raid_channel(ctx, "EX", raid_details, "exraid")
         if not raid_channel:
             return

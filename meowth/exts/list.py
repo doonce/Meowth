@@ -1006,6 +1006,14 @@ class Listing(commands.Cog):
         revive_quests = []
         ball_quests = []
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
+        encounter_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_encounter'])
+        candy_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_candy'])
+        dust_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_dust'])
+        berry_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_berry'])
+        potion_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_potion'])
+        revive_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_revive'])
+        ball_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_ball'])
+        other_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_other'])
         for questid in research_dict:
             pokemon = None
             if research_dict[questid]['reportchannel'] == ctx.message.channel.id:
@@ -1020,21 +1028,27 @@ class Listing(commands.Cog):
                         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits = False)
                         other_reward = any(x in reward for x in reward_list)
                         if pokemon and not other_reward:
-                            encounter_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_encounter']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                            shiny_str = ""
+                            if pokemon.id in self.bot.shiny_dict:
+                                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                                    shiny_str = "✨ "
+                                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                                    shiny_str = "✨ "
+                            encounter_quests.append(f"{encounter_emoji} **Reward**: {shiny_str}{reward} {pokemon.emoji}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
                         elif "candy" in reward.lower() or "candies" in reward.lower():
-                            candy_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_candy']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                            candy_quests.append(f"{candy_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
                         elif "dust" in reward.lower():
-                            dust_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_dust']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                            dust_quests.append(f"{dust_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
                         elif "berry" in reward.lower() or "berries" in reward.lower() or "razz" in reward.lower() or "pinap" in reward.lower() or "nanab" in reward.lower():
-                            berry_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_berry']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                            berry_quests.append(f"{berry_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
                         elif "potion" in reward.lower():
-                            potion_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_potionr']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                            potion_quests.append(f"{potion_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
                         elif "revive" in reward.lower():
-                            revive_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_revive']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                            revive_quests.append(f"{revive_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
                         elif "ball" in reward.lower():
-                            ball_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_ball']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                            ball_quests.append(f"{ball_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
                         else:
-                            item_quests.append(_("{emoji} **Reward**: {reward}, **Pokestop**: [{location}]({url}), **Quest**: {quest}, **Reported By**: {author}").format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['res_other']), location=string.capwords(location, " "), quest=string.capwords(quest, " "), reward=string.capwords(reward, " "), author=questauthor.display_name, url=url))
+                            item_quests.append(f"{other_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
                 except:
                     continue
         if encounter_quests:
@@ -1108,10 +1122,15 @@ class Listing(commands.Cog):
                     wildreportmsg = await ctx.message.channel.fetch_message(wildid)
                     wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['reportauthor'])
                     if wildauthor:
+                        shiny_str = ""
                         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
+                        if pokemon.id in self.bot.shiny_dict:
+                            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                                shiny_str = "✨ "
+                            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                                shiny_str = "✨ "
                         wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['wild_bullet']))
-                        wildmsg += _("**Pokemon**: {pokemon} {type}, **Location**: [{location}]({url}), **Reported By**: {author}").format(pokemon=pokemon.name.title(), type=pokemon.emoji, location=wild_dict[wildid]['location'].title(), author=wildauthor.display_name, url=wild_dict[wildid].get('url', None))
-                        iv_check = wild_dict[wildid].get("wild_iv", None)
+                        wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}, **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}), **Reported By**: {wildauthor.display_name}"
                         if iv_check or iv_check == 0:
                             wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv']}"
                 except:

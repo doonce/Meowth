@@ -71,19 +71,18 @@ class Pokemon():
         form_list = []
         two_words = []
         for k, v in bot.pkmn_info.items():
-            shiny_forms = []
             gender_forms = []
-            for form in v["forms"]:
+            for form in v['forms']:
                 if form == "list":
                     continue
-                if v["forms"][form].get("shiny", False):
-                    shiny_forms.append(form)
-                if v["forms"][form].get("gender", False):
+                if v['forms'][form].get('shiny', []):
+                    if v['number'] not in shiny_dict:
+                        shiny_dict[v['number']] = {}
+                    shiny_dict[v['number']][form] = v['forms'][form].get('shiny', [])
+                if v['forms'][form].get('gender', False):
                     gender_forms.append(form)
-            if shiny_forms:
-                shiny_dict[v["number"]] = shiny_forms
             if gender_forms:
-                gender_dict[v["number"]] = gender_forms
+                gender_dict[v['number']] = gender_forms
             if v['forms'].get('alolan', {}):
                 alolan_list.append(bot.pkmn_info[k]['number'])
             if v['legendary']:
