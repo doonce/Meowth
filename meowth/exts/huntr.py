@@ -111,9 +111,9 @@ class Huntr(commands.Cog):
             return
         pokealarm_dict = copy.deepcopy(ctx.bot.guild_dict[channel.guild.id].get('pokealarm_dict', {}))
         pokehuntr_dict = copy.deepcopy(ctx.bot.guild_dict[channel.guild.id].get('pokehuntr_dict', {}))
-        if message.id in pokealarm_dict.keys() and not user.bot and str(payload.emoji) == self.bot.config['huntr_report']:
+        if message.id in pokealarm_dict.keys() and not user.bot and str(payload.emoji) == self.bot.config.get('huntr_report', '\u2705'):
             await self.on_pokealarm(ctx, user)
-        if message.id in pokehuntr_dict.keys() and not user.bot and str(payload.emoji) == self.bot.config['huntr_report']:
+        if message.id in pokehuntr_dict.keys() and not user.bot and str(payload.emoji) == self.bot.config.get('huntr_report', '\u2705'):
             await self.on_huntr(ctx, user)
 
     async def on_huntr(self, ctx, reactuser=None):
@@ -219,7 +219,7 @@ class Huntr(commands.Cog):
                     pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
                     ctx.raidreport = await message.channel.send(content=_('{roletest}Meowth! {pokemon} raid reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(roletest=roletest, pokemon=entered_raid.title(), member=message.author.mention, location_details=raid_details), embed=raid_embed)
                     await asyncio.sleep(0.25)
-                    await utils.safe_reaction(ctx.raidreport, self.bot.config['huntr_report'])
+                    await utils.safe_reaction(ctx.raidreport, self.bot.config.get('huntr_report', '\u2705'))
                     dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {entered_raid.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(raid_embed), dm_dict)
                     self.bot.guild_dict[message.guild.id]['pokehuntr_dict'][ctx.raidreport.id] = {
                         "exp":time.time() + (raidexp * 60),
@@ -248,7 +248,7 @@ class Huntr(commands.Cog):
                     pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
                     ctx.raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=egg_level, member=message.author.mention, location_details=raid_details), embed=raid_embed)
                     await asyncio.sleep(0.25)
-                    await utils.safe_reaction(ctx.raidreport, self.bot.config['huntr_report'])
+                    await utils.safe_reaction(ctx.raidreport, self.bot.config.get('huntr_report', '\u2705'))
                     dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! Level {egg_level} raid egg reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(raid_embed), dm_dict)
                     self.bot.guild_dict[message.guild.id]['pokehuntr_dict'][ctx.raidreport.id] = {
                         "exp":time.time() + (int(raidexp) * 60),
@@ -416,7 +416,8 @@ class Huntr(commands.Cog):
                             roletest = ""
                         else:
                             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-                        raidmsg = f"{roletest}Meowth! {pokemon.name.title()} raid reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this raid!"
+                        huntr_emoji = self.bot.config.get('huntr_report', '\u2705')
+                        raidmsg = f"{roletest}Meowth! {pokemon.name.title()} raid reported by {message.author.mention}! Details: {raid_details}. React with {huntr_emoji} if you want to make a channel for this raid!"
                         ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
                         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {pokemon.name.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                 elif report_details.get('type', None) == "egg":
@@ -439,7 +440,8 @@ class Huntr(commands.Cog):
                             await raid_channel.send(embed=embed)
                         return
                     else:
-                        raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React with {self.bot.config['huntr_report']} if you want to make a channel for this egg!"
+                        huntr_emoji = self.bot.config.get('huntr_report', '\u2705')
+                        raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React with {huntr_emoji} if you want to make a channel for this egg!"
                         ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
                         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! Level {egg_level} raid egg reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                 self.bot.guild_dict[message.guild.id]['pokealarm_dict'][ctx.raidreport.id] = {
@@ -458,7 +460,7 @@ class Huntr(commands.Cog):
                     "dm_dict":dm_dict
                 }
                 await asyncio.sleep(0.25)
-                await utils.safe_reaction(ctx.raidreport, self.bot.config['huntr_report'])
+                await utils.safe_reaction(ctx.raidreport, self.bot.config.get('huntr_report', '\u2705'))
                 return
             elif report_details.get('type', None) == "wild":
                 if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autowild', False):
@@ -569,9 +571,9 @@ class Huntr(commands.Cog):
             pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, p)
             if pokemon.id in self.bot.shiny_dict:
                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                    shiny_str = "✨ "
+                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
                 elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                    shiny_str = "✨ "
+                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
             boss_list.append(shiny_str + pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=1'.format(str(egg_img))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
@@ -616,9 +618,9 @@ class Huntr(commands.Cog):
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = "✨ "
+                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = "✨ "
+                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
         raid_number = pokemon.id
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=True)
@@ -651,9 +653,9 @@ class Huntr(commands.Cog):
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = "✨ "
+                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = "✨ "
+                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
         details_str = f"{shiny_str}{pokemon.name.title()}"
         gender = report_details.get("gender", '')
         if gender and "female" in gender.lower():
@@ -703,7 +705,7 @@ class Huntr(commands.Cog):
                 wild_details = nearest_poi
         stop_str = ""
         if nearest_stop or nearest_poi:
-            stop_str = f"{' Details: '+nearest_poi if nearest_poi != nearest_stop else ' '}{' | ' if nearest_poi != nearest_stop and nearest_stop else ''}{'Nearest Pokestop: '+nearest_stop if nearest_stop else ''}{' | ' if nearest_poi or nearest_stop else ''}"
+            stop_str = f"{' Details: '+nearest_poi if nearest_poi != nearest_stop else ''}{' | ' if nearest_poi != nearest_stop and nearest_stop else ''}{'Nearest Pokestop: '+nearest_stop if nearest_stop else ''}{' | ' if nearest_poi or nearest_stop else ''}"
         wild_embed = discord.Embed(description="", title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), url=wild_gmaps_link, colour=message.guild.me.colour)
         wild_embed.add_field(name=_('**Details:**'), value=details_str, inline=True)
         if iv_long or wild_iv or level or cp or weather:
@@ -714,16 +716,16 @@ class Huntr(commands.Cog):
         if reporter == "huntr":
             wild_embed.add_field(name=wild_extra, value=_('Perform a scan to help find more by clicking [here]({huntrurl}).').format(huntrurl=huntr_url), inline=False)
         wild_embed.set_thumbnail(url=pokemon.img_url)
-        wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=ctx.bot.config['wild_omw']), inline=True)
-        wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=ctx.bot.config['wild_despawn']), inline=True)
+        wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=ctx.bot.config.get('wild_omw', '\ud83c\udfce')), inline=True)
+        wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=ctx.bot.config.get('wild_despawn', '\ud83d\udca8')), inline=True)
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         despawn = (int(expire.split(' ')[0]) * 60) + int(expire.split(' ')[2])
-        ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}!{stop_str}Coordinates: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, stop_str=stop_str, location_details=wild_coordinates, iv_str=iv_str), embed=wild_embed)
+        ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}!{stop_str} Coordinates: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, stop_str=stop_str, location_details=wild_coordinates, iv_str=iv_str), embed=wild_embed)
         dm_dict = await wild_cog.send_dm_messages(ctx, pokemon.id, str(nearest_stop), wild_types[0], wild_types[1], wild_iv, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
         await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.config['wild_omw'])
+        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.config.get('wild_omw', '\ud83c\udfce'))
         await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.config['wild_despawn'])
+        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.config.get('wild_despawn', '\ud83d\udca8'))
         await asyncio.sleep(0.25)
         ctx.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'exp':time.time() + despawn,
@@ -952,8 +954,15 @@ class Huntr(commands.Cog):
         other_reward = any(x in reward.lower() for x in reward_list)
         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
         if pokemon and not other_reward:
-            reward = f"{string.capwords(reward, ' ')} {pokemon.emoji}"
+            shiny_str = ""
+            if pokemon.id in self.bot.shiny_dict:
+                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+            reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
             research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
+            reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
         else:
             research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, ' '), width=30)), inline=True)
         await research_cog.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)
@@ -1019,7 +1028,7 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
-        huntrmessage = await ctx.channel.send(f"!raid {tier5}|Marilla Park|38m 00s|34.008618,-118.49125|Move 1 / Move 2")
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":tier5, "gym":"Marilla Park", "gps":"34.008618,-118.49125", "moves":"Move 1 / Move 2", "raidexp":38}).replace("'", '"'))
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
@@ -1031,7 +1040,8 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send(f"!raidegg 2|Marilla Park|38m 00s|34.008618,-118.49125")
+
+        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"1", "gym":"Marilla Park", "gps":"34.008618,-118.49125"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
@@ -1043,7 +1053,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send("!wild Weedle|39.645742,-79.969087|19m 00s|Weather: None / IV: None")
+        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Pikachu", "gps":"39.645742,-79.96908"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
@@ -1055,7 +1065,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send("!research Marilla Park|34.008618,-118.49125|Catch 5 Pokemon Category Pokémon|Pikachu Encounter")
+        huntrmessage = await ctx.channel.send('!alarm {"type":"research", "pokestop":"Marilla Park", "gps":"39.645742,-79.96908", "quest":"Catch 5 Electric Pokemon", "reward":"Pikachu Encounter"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

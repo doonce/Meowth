@@ -62,6 +62,7 @@ class Pokemon():
                  'alolan', 'size', 'legendary', 'mythical')
 
     def generate_lists(bot):
+        available_dict = {}
         shiny_dict = {}
         alolan_list = []
         gender_dict = {}
@@ -81,6 +82,13 @@ class Pokemon():
                     shiny_dict[v['number']][form] = v['forms'][form].get('shiny', [])
                 if v['forms'][form].get('gender', False):
                     gender_forms.append(form)
+                if v['forms'][form].get('available', []):
+                    if len(v['forms']) > 1:
+                        if form not in form_list:
+                            form_list.append(form)
+                        if v['number'] not in available_dict:
+                            available_dict[v['number']] = {}
+                        available_dict[v['number']][form] = v['forms'][form].get('available', [])
             if gender_forms:
                 gender_dict[v['number']] = gender_forms
             if v['forms'].get('alolan', {}):
@@ -89,17 +97,11 @@ class Pokemon():
                 legendary_list.append(bot.pkmn_info[k]['number'])
             if v['mythical']:
                 mythical_list.append(bot.pkmn_info[k]['number'])
-            if v['forms'].get('list', []) and v['forms'].get('list', []) != ["none"]:
-                number = v['number']
-                form_dict[number] = v['forms']['list']
             if len(k.split()) > 1:
                 for word in k.split():
                     two_words.append(word)
                     two_words.append(re.sub('[^a-zA-Z0-9]', '', word))
-        for pkmn in form_dict:
-            for f in form_dict[pkmn]:
-                if f not in form_list:
-                    form_list.append(f)
+        form_dict = available_dict
         form_list = list(set(form_list) - set(ascii_lowercase) - set(['1', '2', '3', '4', '5', '6', '7', '8', '?', '!']))
         form_list.extend(' ' + c for c in ascii_lowercase)
         form_list.extend(c for c in [' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !'])
@@ -128,7 +130,7 @@ class Pokemon():
         self.moveset = attribs.get('moveset', [])
         self.size = attribs.get('size', None)
         self.form = attribs.get('form', '')
-        if self.form not in bot.form_dict.get(self.id, []):
+        if self.form not in bot.form_dict.get(self.id, {}):
             self.form = None
         self.alolan = attribs.get('alolan', False)
         if self.id not in bot.alolan_list:
@@ -137,9 +139,9 @@ class Pokemon():
         if self.shiny:
             if self.id not in bot.shiny_dict:
                 self.shiny = False
-            if self.alolan and "alolan" not in bot.shiny_dict.get(self.id, []):
+            if self.alolan and "alolan" not in bot.shiny_dict.get(self.id, {}):
                 self.shiny = False
-            elif str(self.form).lower() not in bot.shiny_dict.get(self.id, []):
+            elif str(self.form).lower() not in bot.shiny_dict.get(self.id, {}):
                 self.shiny = False
         if self.id in bot.legendary_list:
             self.legendary = True
@@ -259,13 +261,13 @@ class Pokemon():
                 form_str = "_00"
         if self.form and self.id in self.bot.form_dict:
             if self.id in [201, 327, 351, 386, 412, 413, 421, 422, 423, 479, 487, 492, 493]:
-                form_str = form_str + "_" + str(self.bot.form_dict[self.id].index(self.form) + 11)
+                form_str = form_str + "_" + str(list(self.bot.form_dict[self.id].keys()).index(self.form) + 10)
             elif self.form == "sunglasses":
                 form_str = form_str + "_00_05"
             elif self.id in [133, 134, 135, 136, 196, 197, 470, 471] and self.form == "flower":
                 form_str = form_str + "_00_07"
             else:
-                form_str = form_str + "_" + str(self.bot.form_dict[self.id].index(self.form)).zfill(2)
+                form_str = form_str + "_" + str(list(self.bot.form_dict[self.id].keys()).index(self.form)).zfill(2)
         if self.id not in self.bot.gender_dict and not self.form:
             form_str = form_str + "_00"
         if self.alolan:

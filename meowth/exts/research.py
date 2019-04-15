@@ -125,9 +125,9 @@ class Research(commands.Cog):
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
                     if pokemon.id in self.bot.shiny_dict:
                         if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                            shiny_str = "✨ "
+                            shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
                         elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                            shiny_str = "✨ "
+                            shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
                     if pokemon and not other_reward:
                         reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
                         research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
@@ -210,9 +210,9 @@ class Research(commands.Cog):
                         if pokemon and not other_reward:
                             if pokemon.id in self.bot.shiny_dict:
                                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                                    shiny_str = "✨ "
+                                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
                                 elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                                    shiny_str = "✨ "
+                                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
                             reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
                             research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
                             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
@@ -386,11 +386,11 @@ class Research(commands.Cog):
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.config['answer_no']:
+        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
             return
-        elif res.emoji == self.bot.config['answer_yes']:
+        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
             await utils.safe_delete(rusure)
             for report in research_dict:
                 report_message = await channel.fetch_message(report)

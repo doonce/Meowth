@@ -386,7 +386,10 @@ class Tutorial(commands.Cog):
                 colour=discord.Colour.green(),
                 description=f"Great job!"))
 
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"The {ctx.bot.config['wild_omw']} emoji adds you to a list of trainers chasing the wild spawn and the {ctx.bot.config['wild_despawn']} emoji alerts others that it has despawned."))
+            omw_emoji = ctx.bot.config.get('wild_omw', '\ud83c\udfce')
+            despawn_emoji = ctx.bot.config.get('wild_despawn', '\ud83d\udca8')
+
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"The {wild_emoji} emoji adds you to a list of trainers chasing the wild spawn and the {wild_despawn} emoji alerts others that it has despawned."))
 
             try:
                 wild_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports']

@@ -99,7 +99,7 @@ class Want(commands.Cog):
         if "tutorial" not in ctx.channel.name.lower():
             await asyncio.sleep(90)
         await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='boss')
     @checks.allowwant()
@@ -172,7 +172,7 @@ class Want(commands.Cog):
         if "tutorial" not in ctx.channel.name.lower():
             await asyncio.sleep(90)
         await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='gym')
     @checks.allowwant()
@@ -229,7 +229,7 @@ class Want(commands.Cog):
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
         await asyncio.sleep(90)
         await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='stop')
     @checks.allowwant()
@@ -286,7 +286,7 @@ class Want(commands.Cog):
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
         await asyncio.sleep(90)
         await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='item')
     @checks.allowwant()
@@ -341,7 +341,7 @@ class Want(commands.Cog):
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
         await asyncio.sleep(90)
         await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='type')
     @checks.allowwant()
@@ -394,7 +394,7 @@ class Want(commands.Cog):
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
         await asyncio.sleep(90)
         await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='iv', aliases=['ivs'])
     @checks.allowwant()
@@ -452,7 +452,7 @@ class Want(commands.Cog):
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
         await asyncio.sleep(90)
         await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command()
     @checks.allowwant()
@@ -587,7 +587,7 @@ class Want(commands.Cog):
                 if utils.get_number(self.bot, entered_unwant) in user_wants:
                     user_wants.remove(utils.get_number(self.bot, entered_unwant))
             await message.author.remove_roles(*role_list)
-            await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+            await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @unwant.command(name='boss')
     @checks.allowwant()
@@ -620,7 +620,7 @@ class Want(commands.Cog):
             if utils.get_number(self.bot, entered_unwant) in user_wants:
                 user_wants.remove(utils.get_number(self.bot, entered_unwant))
         await message.author.remove_roles(*role_list)
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @unwant.command(name='all')
     @checks.allowwant()
@@ -707,7 +707,7 @@ class Want(commands.Cog):
         for entered_unwant in unwant_list:
             if entered_unwant.lower() in user_wants:
                 user_wants.remove(entered_unwant.lower())
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @unwant.command(name='stop')
     @checks.allowwant()
@@ -733,7 +733,7 @@ class Want(commands.Cog):
         for entered_unwant in unwant_list:
             if entered_unwant.lower() in user_wants:
                 user_wants.remove(entered_unwant.lower())
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @unwant.command(name='item')
     @checks.allowwant()
@@ -755,7 +755,7 @@ class Want(commands.Cog):
         for entered_unwant in unwant_list:
             if entered_unwant.lower() in user_wants:
                 user_wants.remove(entered_unwant.lower())
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @unwant.command(name='type')
     @checks.allowwant()
@@ -777,7 +777,7 @@ class Want(commands.Cog):
         for entered_unwant in unwant_list:
             if entered_unwant.lower() in user_wants:
                 user_wants.remove(entered_unwant.lower())
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @unwant.command(name='iv', aliases=['ivs'])
     @checks.allowwant()
@@ -808,7 +808,7 @@ class Want(commands.Cog):
         for entered_unwant in unwant_list:
             if int(entered_unwant) in user_wants:
                 user_wants.remove(int(entered_unwant))
-        await utils.safe_reaction(ctx.message, self.bot.config['command_done'])
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
 def setup(bot):
     bot.add_cog(Want(bot))

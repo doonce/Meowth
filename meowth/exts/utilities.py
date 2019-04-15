@@ -259,7 +259,7 @@ def get_level(bot, pkmn):
 
 async def ask(bot, message, user_list=None, timeout=60, *, react_list=[]):
     if not react_list:
-        react_list=[bot.config['answer_yes'], bot.config['answer_no']]
+        react_list=[bot.config.get('answer_yes', '\u2705'), bot.config.get('answer_no', '\u274e')]
     if user_list and type(user_list) != list:
         user_list = [user_list]
     def check(reaction, user):
@@ -351,9 +351,9 @@ async def autocorrect(bot, entered_word, word_list, destination, author):
             except TypeError:
                 timeout = True
             await safe_delete(question)
-            if timeout or res.emoji == bot.config['answer_no']:
+            if timeout or res.emoji == bot.config.get('answer_no', '\u274e'):
                 return None
-            elif res.emoji == bot.config['answer_yes']:
+            elif res.emoji == bot.config.get('answer_yes', '\u2705'):
                 return match
             else:
                 return None
@@ -669,7 +669,7 @@ class Utilities(commands.Cog):
         else:
             draft = await channel.send(announce)
 
-        reaction_list = ['❔', self.bot.config['answer_yes'], self.bot.config['answer_no']]
+        reaction_list = ['❔', self.bot.config.get('answer_yes', '\u2705'), self.bot.config.get('answer_no', '\u274e')]
         owner_msg_add = ''
         if checks.is_owner_check(ctx):
             owner_msg_add = '🌎 '
@@ -684,9 +684,9 @@ class Utilities(commands.Cog):
         msg = _("That's what you sent, does it look good? React with ")
         msg += "{}❔ "
         msg += _("to send to another channel, ")
-        msg += "{emoji} ".format(emoji=self.bot.config['answer_yes'])
+        msg += "{emoji} ".format(emoji=self.bot.config.get('answer_yes', '\u2705'))
         msg += _("to send it to this channel, or ")
-        msg += "{emoji} ".format(emoji=self.bot.config['answer_no'])
+        msg += "{emoji} ".format(emoji=self.bot.config.get('answer_no', '\u274e'))
         msg += _("to cancel")
         rusure = await channel.send(msg.format(owner_msg_add))
         try:
@@ -696,10 +696,10 @@ class Utilities(commands.Cog):
             timeout = True
         if not timeout:
             await safe_delete(rusure)
-            if res.emoji == self.bot.config['answer_no']:
+            if res.emoji == self.bot.config.get('answer_no', '\u274e'):
                 confirmation = await channel.send(_('Announcement Cancelled.'), delete_after=10)
                 await safe_delete(draft)
-            elif res.emoji == self.bot.config['answer_yes']:
+            elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
                 confirmation = await channel.send(_('Announcement Sent.'), delete_after=10)
             elif res.emoji == '❔':
                 channelwait = await channel.send(_('What channel would you like me to send it to?'))
@@ -843,9 +843,9 @@ class Utilities(commands.Cog):
                 except TypeError:
                     timeout = True
                 await safe_delete(question)
-                if timeout or res.emoji == self.bot.config['answer_no']:
+                if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
                     return
-                elif res.emoji == self.bot.config['answer_yes']:
+                elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
                     pass
                 else:
                     return
@@ -1017,10 +1017,10 @@ class Utilities(commands.Cog):
                 res, reactuser = await ask(self.bot, rusure, ctx.author.id)
             except TypeError:
                 timeout = True
-            if timeout or res.emoji == self.bot.config['answer_no']:
+            if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
                 await safe_delete(rusure)
                 confirmation = await message.channel.send(_('Configuration Cancelled.'), delete_after=10)
-            elif res.emoji == self.bot.config['answer_yes']:
+            elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
                 await safe_delete(rusure)
                 async with aiohttp.ClientSession() as cs:
                     async with cs.get(avy_url) as r:
@@ -1045,10 +1045,10 @@ class Utilities(commands.Cog):
             res, reactuser = await ask(self.bot, rusure, ctx.author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.config['answer_no']:
+        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
             await safe_delete(rusure)
             confirmation = await ctx.send(_('Configuration Cancelled.'), delete_after=10)
-        elif res.emoji == self.bot.config['answer_yes']:
+        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
             await safe_delete(rusure)
             try:
                 await self.bot.user.edit(username=username)
@@ -1068,10 +1068,10 @@ class Utilities(commands.Cog):
             res, reactuser = await ask(self.bot, rusure, ctx.author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.config['answer_no']:
+        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
             await safe_delete(rusure)
             confirmation = await ctx.send(_('Configuration Cancelled.'), delete_after=10)
-        elif res.emoji == self.bot.config['answer_yes']:
+        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
             await safe_delete(rusure)
             try:
                 await self.bot.change_presence(activity=discord.Game(name=activity))

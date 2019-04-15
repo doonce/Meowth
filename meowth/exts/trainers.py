@@ -251,9 +251,9 @@ class Trainers(commands.Cog):
         except TypeError:
             timeout = True
         await utils.safe_delete(question)
-        if timeout or res.emoji == self.bot.config['answer_no']:
+        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
             return
-        elif res.emoji == self.bot.config['answer_yes']:
+        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
             pass
         else:
             return

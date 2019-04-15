@@ -947,7 +947,7 @@ class Listing(commands.Cog):
                     wanted_pokemon = "Open Trade (DM User)"
                 else:
                     wanted_pokemon = ', '.join(wanted_pokemon)
-                trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['trade_bullet']))
+                trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('trade_bullet', '\ud83d\udd39')))
                 trademsg += (f"{lister_str}**Offered Pokemon**: {target_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
         if trademsg:
             paginator = commands.Paginator(prefix="", suffix="")
@@ -1006,14 +1006,14 @@ class Listing(commands.Cog):
         revive_quests = []
         ball_quests = []
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
-        encounter_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_encounter'])
-        candy_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_candy'])
-        dust_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_dust'])
-        berry_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_berry'])
-        potion_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_potion'])
-        revive_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_revive'])
-        ball_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_ball'])
-        other_emoji = utils.parse_emoji(ctx.guild, self.bot.config['res_other'])
+        encounter_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_encounter', '\u2753'))
+        candy_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_candy', '\ud83c\udf6c'))
+        dust_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_dust', '\u2b50'))
+        berry_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_berry', '\ud83c\udf53'))
+        potion_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_potion', '\ud83d\udc8a'))
+        revive_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_revive', '\u2764'))
+        ball_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_ball', '\u26be'))
+        other_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_other', '\ud83d\udd39'))
         for questid in research_dict:
             pokemon = None
             if research_dict[questid]['reportchannel'] == ctx.message.channel.id:
@@ -1031,9 +1031,9 @@ class Listing(commands.Cog):
                             shiny_str = ""
                             if pokemon.id in self.bot.shiny_dict:
                                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                                    shiny_str = "✨ "
+                                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
                                 elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                                    shiny_str = "✨ "
+                                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
                             encounter_quests.append(f"{encounter_emoji} **Reward**: {shiny_str}{reward} {pokemon.emoji}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
                         elif "candy" in reward.lower() or "candies" in reward.lower():
                             candy_quests.append(f"{candy_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
@@ -1126,10 +1126,10 @@ class Listing(commands.Cog):
                         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
                         if pokemon.id in self.bot.shiny_dict:
                             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                                shiny_str = "✨ "
+                                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
                             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                                shiny_str = "✨ "
-                        wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config['wild_bullet']))
+                                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                        wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('wild_bullet', '\ud83d\udd39')))
                         wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}, **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}), **Reported By**: {wildauthor.display_name}"
                         if iv_check or iv_check == 0:
                             wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv']}"
