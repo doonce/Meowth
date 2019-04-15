@@ -760,7 +760,7 @@ class Pokedex(commands.Cog):
         pokemon.gender = False
         pokemon.size = None
         key_needed = False
-        forms = [x.title() for x in ctx.bot.pkmn_info[pokemon.name.lower()]['forms']['list']]
+        forms = [x.title() for x in ctx.bot.pkmn_info[pokemon.name.lower()]['forms'].keys()]
         if not forms:
             forms = ["None"]
         form_list = []
