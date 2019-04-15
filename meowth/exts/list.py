@@ -635,8 +635,8 @@ class Listing(commands.Cog):
         boss_dict["unspecified"] = {"type": "❔", "total": 0, "maybe": 0, "coming": 0, "here": 0}
         for p in egg_info['pokemon']:
             pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
-            boss_list.append(pokemon.name.lower())
-            boss_dict[pokemon.name.lower()] = {"type": "{}".format(pokemon.emoji), "total": 0, "maybe": 0, "coming": 0, "here": 0, "trainers":[]}
+            boss_list.append(str(pokemon).lower())
+            boss_dict[str(pokemon).lower()] = {"type": "{}".format(pokemon.emoji), "total": 0, "maybe": 0, "coming": 0, "here": 0, "trainers":[]}
         boss_list.append('unspecified')
         trainer_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'])
         for trainer in trainer_dict:
@@ -653,7 +653,7 @@ class Listing(commands.Cog):
         bossliststr = ''
         for boss in boss_list:
             if boss_dict[boss]['total'] > 0:
-                bossliststr += _('{type} {name}: **{total} total,** {interested} interested, {coming} coming, {here} waiting {type}\n**Trainers:** {trainers}\n\n').format(type=boss_dict[boss]['type'], name=boss.capitalize(), total=boss_dict[boss]['total'], interested=boss_dict[boss]['maybe'], coming=boss_dict[boss]['coming'], here=boss_dict[boss]['here'], trainers=', '.join(boss_dict[boss]['trainers']))
+                bossliststr += _('{type} {name}: **{total} total,** {interested} interested, {coming} coming, {here} waiting {type}\n**Trainers:** {trainers}\n\n').format(type=boss_dict[boss]['type'], name=boss.title(), total=boss_dict[boss]['total'], interested=boss_dict[boss]['maybe'], coming=boss_dict[boss]['coming'], here=boss_dict[boss]['here'], trainers=', '.join(boss_dict[boss]['trainers']))
         if bossliststr:
             listmsg = _(' Boss numbers for the raid:\n\n{}').format(bossliststr)
         else:
