@@ -1123,6 +1123,7 @@ class Listing(commands.Cog):
                     wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['reportauthor'])
                     if wildauthor:
                         shiny_str = ""
+                        iv_check = wild_dict[wildid].get('wild_iv', None)
                         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
                         if pokemon.id in self.bot.shiny_dict:
                             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
