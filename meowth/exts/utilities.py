@@ -648,6 +648,7 @@ class Utilities(commands.Cog):
         channel = message.channel
         guild = message.guild
         author = message.author
+
         if announce == None:
             announcewait = await channel.send(_("I'll wait for your announcement!"), delete_after=180)
             announcemsg = await self.bot.wait_for('message', timeout=180, check=(lambda reply: reply.author == message.author))
@@ -663,9 +664,11 @@ class Utilities(commands.Cog):
                 embeddraft.set_author(name=title, icon_url=self.bot.user.avatar_url)
             else:
                 embeddraft.set_author(name=title)
-        if announce.startswith("[") and announce.endswith("]"):
-            embeddraft.description = announce[1:-1]
-            draft = await channel.send(embed=embeddraft)
+        embed_search = re.search(r'\[(.+)\]', announce)
+        if embed_search:
+            embeddraft.description = embed_search.group(1)
+            announce = announce.replace("[", "").replace("]", "").replace(embed_search.group(1), "").strip()
+            draft = await channel.send(announce, embed=embeddraft)
         else:
             draft = await channel.send(announce)
 
@@ -863,6 +866,7 @@ class Utilities(commands.Cog):
         if regional in self.bot.raid_list:
             self._set_regional(self.bot, ctx.guild, regional)
             await ctx.message.channel.send(_("Meowth! Regional raid boss set to **{boss}**!").format(boss=get_name(self.bot, regional).title()), delete_after=10)
+            await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
         else:
             await ctx.message.channel.send(_("Meowth! That Pokemon doesn't appear in raids!"), delete_after=10)
             return
@@ -888,6 +892,7 @@ class Utilities(commands.Cog):
         self._set_timezone(self.bot, ctx.guild, timezone)
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
         await ctx.channel.send(_("Timezone has been set to: `UTC{offset}`\nThe current time is **{now}**").format(offset=timezone, now=now.strftime("%H:%M")), delete_after=10)
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     def _set_timezone(self, bot, guild, timezone):
         self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'] = timezone
@@ -906,6 +911,7 @@ class Utilities(commands.Cog):
         else:
             default_prefix = self.bot.config['default_prefix']
             await ctx.channel.send(_('Prefix has been reset to default: `{}`').format(default_prefix))
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     def _set_prefix(self, bot, guild, prefix):
         self.bot.guild_dict[guild.id]['configure_dict']['settings']['prefix'] = prefix
@@ -954,6 +960,7 @@ class Utilities(commands.Cog):
         await ctx.send(
             _('This Travelers Card has been successfully linked to you!'),
             embed=card.embed(offset), delete_after=10)
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @_set.command()
     @checks.guildchannel()
@@ -972,6 +979,7 @@ class Utilities(commands.Cog):
         trainers[ctx.author.id] = author
         self.bot.guild_dict[ctx.guild.id]['trainers'] = trainers
         await ctx.send(_('Pokebattler ID set to {pbid}!').format(pbid=pbid), delete_after=10)
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @_set.command()
     @checks.guildchannel()
@@ -990,6 +998,7 @@ class Utilities(commands.Cog):
         trainers[ctx.author.id] = author
         self.bot.guild_dict[ctx.guild.id]['trainers'] = trainers
         await ctx.send(_(f'{ctx.author.display_name}\'s trainer code set to {trainercode}!'), delete_after=10)
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @_set.command()
     @checks.is_owner()

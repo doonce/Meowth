@@ -705,7 +705,7 @@ class Huntr(commands.Cog):
                 wild_details = nearest_poi
         stop_str = ""
         if nearest_stop or nearest_poi:
-            stop_str = f"{' Details: '+nearest_poi if nearest_poi != nearest_stop else ''}{' | ' if nearest_poi != nearest_stop and nearest_stop else ''}{'Nearest Pokestop: '+nearest_stop if nearest_stop else ''}{' | ' if nearest_poi or nearest_stop else ''}"
+            stop_str = f"{' Details: '+nearest_poi if nearest_poi != nearest_stop else ' '}{' | ' if nearest_poi != nearest_stop and nearest_stop else ''}{'Nearest Pokestop: '+nearest_stop if nearest_stop else ''}{' | ' if nearest_poi or nearest_stop else ''}"
         wild_embed = discord.Embed(description="", title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), url=wild_gmaps_link, colour=message.guild.me.colour)
         wild_embed.add_field(name=_('**Details:**'), value=details_str, inline=True)
         if iv_long or wild_iv or level or cp or weather:

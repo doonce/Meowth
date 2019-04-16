@@ -1731,7 +1731,7 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['gymhuntrgps'] = gymhuntrgps
-        if str(egglevel) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and eggdetails.get('pokemon', None):
+        if str(egglevel) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and str(pokemon):
             ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), weather)
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
