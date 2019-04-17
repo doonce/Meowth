@@ -2,6 +2,7 @@ import asyncio
 import copy
 import re
 import logging
+import datetime
 
 import discord
 from discord.ext import commands
@@ -61,7 +62,7 @@ class Configure(commands.Cog):
                                         ctx.prefix = prefix[-1]
                                     try:
                                         await ctx.configure_channel.send(f"Hey {ctx.author.mention} I think we were cut off due to a disconnection, let's try to start over.")
-                                        ctx.bot.loop.create_task(self._configure(ctx, "all"))
+                                        ctx.bot.loop.create_task(self._configure(ctx, ""))
                                     except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden, AttributeError):
                                         pass
             logger.info(f"------ END - {count} Config Sessions Cleaned ------")
@@ -158,6 +159,42 @@ class Configure(commands.Cog):
             if not self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'].get(ctx.author.id, []):
                 del self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id]
         except (AttributeError, KeyError):
+            pass
+
+    async def configure_summary(self, ctx):
+        async def get_object(obj_id):
+            obj_channel = discord.utils.get(ctx.guild.text_channels, id=int(obj_id))
+            if obj_channel:
+                return obj_channel.name
+            obj_category = discord.utils.get(ctx.guild.categories, id=int(obj_id))
+            if obj_category:
+                return obj_category.name
+            obj_role = discord.utils.get(ctx.guild.roles, id=int(obj_id))
+            if obj_role:
+                return obj_role.name
+            obj_member = discord.utils.get(ctx.guild.members, id=int(obj_id))
+            if obj_member:
+                return obj_member.name
+            return obj_id
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        timestamp = now.strftime(_('%B %d at %I:%M %p (%H:%M)'))
+        config_embed = discord.Embed(colour=ctx.guild.me.colour)
+        config_embed.set_author(name=f"Meowth Configuration - {timestamp}", icon_url=ctx.bot.user.avatar_url)
+        config_embed.set_footer(text=f"Configured by @{ctx.author.display_name} - {timestamp}", icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
+        for k in ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].keys():
+            config_value = ""
+            for v in ctx.bot.guild_dict[ctx.guild.id]['configure_dict'][k]:
+                value = str(copy.deepcopy(ctx.bot.guild_dict[ctx.guild.id]['configure_dict'][k][v]))
+                for word in re.split('{|}|:|,| |[|]', value):
+                    word = word.replace("[", "").replace("]", "")
+                    if word.isdigit() and int(word) > 100000000:
+                        new_word = await get_object(word)
+                        value = value.replace(word, new_word)
+                config_value += v + ": " + value + "\n"
+            config_embed.add_field(name=k.title(), value=config_value, inline=False)
+        try:
+            await ctx.author.send(embed=config_embed)
+        except:
             pass
 
     async def configure_city_channels(self, ctx, config_dict_temp, type, reply_options, output):
@@ -635,7 +672,8 @@ class Configure(commands.Cog):
             if ctx:
                 ctx.config_dict_temp['settings']['done'] = True
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
 
     @configure.command(name='all')
@@ -661,7 +699,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_team(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -715,6 +754,10 @@ class Configure(commands.Cog):
                                 if not role:
                                     name = await utils.letter_case(guild.roles, item.lower())
                                     role = discord.utils.get(guild.roles, name=name)
+                                if not role:
+                                    role = discord.utils.get(guild.roles, name=f"Meowth{team_list[index].capitalize()}")
+                                    if role:
+                                        role_create = f"I couldn't find role {item}, so I set my {team_list[index]} role to your existing {'Meowth'+team_list[index].capitalize()} role. You can rename it in Server Settings."
                                 if not role:
                                     try:
                                         role = await guild.create_role(name=f"Meowth{team_list[index].capitalize()}", hoist=False, mentionable=True, colour=team_colors[index])
@@ -775,7 +818,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_welcome(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -961,7 +1005,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_raid(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1000,7 +1045,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_exraid(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1064,7 +1110,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_invite(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1124,7 +1171,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_counters(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1194,7 +1242,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_wild(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1233,7 +1282,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_research(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1272,7 +1322,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_meetup(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1312,7 +1363,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_want(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1351,7 +1403,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_archive(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1446,7 +1499,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_settings(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1502,7 +1556,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_trade(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1541,7 +1596,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_nest(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
@@ -1579,7 +1635,8 @@ class Configure(commands.Cog):
             ctx = await self._configure_scanners(ctx)
             if ctx:
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again.")).set_author(name='Configuration Complete', icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name='Configuration Complete', icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
             await self.end_configure(ctx)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.end_configure(ctx)
