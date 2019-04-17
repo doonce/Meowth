@@ -1147,7 +1147,7 @@
           "Fairy"
         ],
         "pokedex": "Jigglypuff's vocal cords can freely adjust the wavelength of its voice. This Pokemon uses this ability to sing at precisely the right wavelength to make its foes most drowsy.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       }
@@ -1167,7 +1167,7 @@
           "Fairy"
         ],
         "pokedex": "Wigglytuff has large, saucerlike eyes. The surfaces of its eyes are always covered with a thin layer of tears. If any dust gets in this Pokemon's eyes, it is quickly washed away.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       }
@@ -4193,7 +4193,7 @@
           "Fairy"
         ],
         "pokedex": "Igglybuff's vocal cords are not sufficiently developed. It would hurt its throat if it were to sing too much. This Pokemon gargles with freshwater from a clean stream.",
-        "shiny": [],
+        "shiny": ["hatch"],
         "gender": false,
         "available": true
       }
@@ -8548,7 +8548,12 @@
           "Dragon"
         ],
         "pokedex": "Bagon harbors a never-ending dream of one day soaring high among the clouds. As if trying to dispel its frustration over its inability to fly, this Pokemon slams its hard head against huge rocks and shatters them into pebbles.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
         "gender": false,
         "available": true
       }
@@ -8566,7 +8571,7 @@
           "Dragon"
         ],
         "pokedex": "Covering Shelgon's body are outgrowths much like bones. The shell is very hard and bounces off enemy attacks. When awaiting evolution, this Pokemon hides away in a cavern.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       }
@@ -8585,7 +8590,7 @@
           "Flying"
         ],
         "pokedex": "By evolving into Salamence, this Pokemon finally realizes its long-held dream of growing wings. To express its joy, it flies and wheels all over the sky while spouting flames from its mouth.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       }
@@ -8745,7 +8750,9 @@
           "Psychic"
         ],
         "pokedex": "Latios will only open its heart to a Trainer with a compassionate spirit. This Pokemon can fly faster than a jet plane by folding its forelegs to minimize air resistance.",
-        "shiny": [],
+        "shiny": [
+          "raid"
+        ],
         "gender": false,
         "available": true
       }
@@ -9811,7 +9818,12 @@
           "Normal"
         ],
         "pokedex": "When it senses danger, it perks up its ears. On cold nights, it sleeps with its head tucked into its fur.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
         "gender": false,
         "available": true
       }
@@ -9830,7 +9842,7 @@
           "Normal"
         ],
         "pokedex": "The ears appear to be delicate. If they are touched roughly, it kicks with its graceful legs.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       }
