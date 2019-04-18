@@ -471,6 +471,24 @@ def get_category(bot, channel, level, category_type="raid"):
     else:
         return None
 
+async def get_object(ctx, snowflake, return_type="object"):
+    iterables = [ctx.guild.text_channels, ctx.guild.categories, ctx.guild.roles, ctx.guild.members, ctx.bot.guilds]
+    object = None
+    for iterable in iterables:
+        object = discord.utils.get(iterable, id=int(snowflake))
+        if object:
+            break
+    if not object:
+        return snowflake
+    if return_type == "name":
+        return object.name
+    elif return_type == "mention":
+        return object.mention
+    elif return_type == "id":
+        return object.id
+    else:
+        return object
+
 async def expire_dm_reports(bot, dm_dict):
     for dm_user, dm_message in dm_dict.items():
         try:

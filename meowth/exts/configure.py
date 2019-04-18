@@ -162,20 +162,6 @@ class Configure(commands.Cog):
             pass
 
     async def configure_summary(self, ctx):
-        async def get_object(obj_id):
-            obj_channel = discord.utils.get(ctx.guild.text_channels, id=int(obj_id))
-            if obj_channel:
-                return obj_channel.name
-            obj_category = discord.utils.get(ctx.guild.categories, id=int(obj_id))
-            if obj_category:
-                return obj_category.name
-            obj_role = discord.utils.get(ctx.guild.roles, id=int(obj_id))
-            if obj_role:
-                return obj_role.name
-            obj_member = discord.utils.get(ctx.guild.members, id=int(obj_id))
-            if obj_member:
-                return obj_member.name
-            return obj_id
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
         timestamp = now.strftime(_('%B %d at %I:%M %p (%H:%M)'))
         config_embed = discord.Embed(colour=ctx.guild.me.colour)
@@ -188,7 +174,7 @@ class Configure(commands.Cog):
                 for word in re.split('{|}|:|,| |[|]', value):
                     word = word.replace("[", "").replace("]", "")
                     if word.isdigit() and int(word) > 100000000:
-                        new_word = await get_object(word)
+                        new_word = await utils.get_object(ctx, word, return_type="name")
                         value = value.replace(word, new_word)
                 config_value += v + ": " + value + "\n"
             config_embed.add_field(name=k.title(), value=config_value, inline=False)

@@ -135,11 +135,11 @@ class EXInviteFail(CommandError):
 async def delete_error(message, error):
     try:
         await message.delete()
-    except (discord.errors.Forbidden, discord.errors.HTTPException):
+    except (discord.errors.Forbidden, discord.errors.HTTPException, AttributeError):
         pass
     try:
         await error.delete()
-    except (discord.errors.Forbidden, discord.errors.HTTPException):
+    except (discord.errors.Forbidden, discord.errors.HTTPException, AttributeError):
         pass
 
 def missing_arg_msg(ctx):
