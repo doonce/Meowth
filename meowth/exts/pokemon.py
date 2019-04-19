@@ -411,130 +411,8 @@ class Pokemon():
                 type_eff_dict['low'].append(t)
         return type_eff_dict
 
-    @classmethod
-    async def convert(cls, ctx, argument):
-        """Returns a pokemon that matches the value
-        of the argument that's being converted.
-
-        It first will check if it's a valid ID, and if not, will perform
-        a fuzzymatch against the list of Pokemon names.
-
-        Returns
-        --------
-        :class:`Pokemon` or :class:`dict`
-            If there was a close or exact match, it will return a valid
-            :class:`Pokemon`.
-            If the match is lower than 80% likeness, it will return a
-            :class:`dict` with the following keys:
-                * ``suggested`` - Next best guess based on likeness.
-                * ``original`` - Original value of argument provided.
-
-        Raises
-        -------
-        :exc:`discord.ext.commands.BadArgument`
-            The argument didn't match a Pokemon ID or name.
-        """
+    def query_pokemon(bot, argument):
         argument = str(argument)
-        shiny = re.search(r'shiny', argument, re.IGNORECASE)
-        alolan = re.search(r'alolan', argument, re.IGNORECASE)
-        male = re.search(r'(?<!fe)male', argument, re.IGNORECASE)
-        female = re.search(r'female', argument, re.IGNORECASE)
-        large = re.search(r'large|big|xl', argument, re.IGNORECASE)
-        small = re.search(r'small|tiny|xs', argument, re.IGNORECASE)
-        form_list = ctx.bot.form_dict['list']
-        try:
-            form_list.remove("none")
-        except ValueError:
-            pass
-        one_char_forms = re.search(r'{unown}|201|{spinda}|327'.format(unown=ctx.bot.pkmn_list[200], spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
-        if not one_char_forms:
-            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
-        ash_forms = re.search(r'{pichu}|172|{pikachu}|25|{raichu}|26|{greninja}|658'.format(pichu=ctx.bot.pkmn_list[171], pikachu=ctx.bot.pkmn_list[24], raichu=ctx.bot.pkmn_list[25], greninja=ctx.bot.pkmn_list[657]), argument, re.IGNORECASE)
-        if not ash_forms:
-            form_list = list(set(form_list) - set(['ash']))
-
-        if shiny:
-            argument = argument.replace(shiny.group(0), '').strip()
-            shiny = True
-        else:
-            shiny = False
-        if alolan:
-            argument = argument.replace(alolan.group(0), '').strip()
-            alolan = True
-        else:
-            alolan = False
-        if male:
-            argument = argument.replace(male.group(0), '').strip()
-            gender = "male"
-        elif female:
-            argument = argument.replace(female.group(0), '').strip()
-            gender = "female"
-        else:
-            gender = None
-        if large:
-            size = "XL"
-            argument = argument.replace(large.group(0), '').strip()
-        elif small:
-            size = "XS"
-            argument = argument.replace(small.group(0), '').strip()
-        else:
-            size = None
-
-        for form in form_list:
-            form = re.search(form, argument, re.IGNORECASE)
-            if form:
-                argument = argument.replace(form.group(0), '').strip()
-                form = form.group(0).lower().strip()
-                break
-            else:
-                form = None
-
-        match = False
-        for word in argument.split():
-            if word.lower() not in ctx.bot.pkmn_list and not word.isdigit() and word.lower() not in ctx.bot.form_dict['two_words']:
-                match, score = utils.get_match(ctx.bot.pkmn_list, word)
-                if not score or score < 80:
-                    argument = argument.replace(word, '').strip()
-                elif "nidoran" in word.lower():
-                    if gender == "female":
-                        match = utils.get_name(ctx.bot, 29)
-                    else:
-                        match = utils.get_name(ctx.bot, 32)
-                    argument = argument.replace(word, match).strip()
-                else:
-                    argument = argument.replace(word, match).strip()
-
-        if argument.isdigit():
-            try:
-                match = utils.get_name(ctx.bot, int(argument))
-                score = 100
-            except IndexError:
-                raise commands.errors.BadArgument(
-                    'Pokemon ID "{}" not valid'.format(argument))
-        elif argument in ctx.bot.pkmn_list:
-            match = argument.lower()
-            score = 100
-        elif not match:
-            match, score = utils.get_match(ctx.bot.pkmn_list, argument)
-
-        result = False
-        if match:
-            if score >= 80:
-                result = cls(ctx.bot, str(match), ctx.guild, shiny=shiny, alolan=alolan, form=form, gender=gender, size=size)
-            else:
-                result = {
-                    'suggested' : str(match),
-                    'original'   : argument
-                }
-        if not result:
-            raise commands.errors.BadArgument(
-                'Pokemon "{}" not valid'.format(argument))
-
-        return result
-
-    @classmethod
-    def get_pokemon(cls, bot, argument, allow_digits = True):
-        argument = str(argument).strip()
         shiny = re.search(r'shiny', argument, re.IGNORECASE)
         alolan = re.search(r'alolan', argument, re.IGNORECASE)
         male = re.search(r'(?<!fe)male', argument, re.IGNORECASE)
@@ -557,100 +435,8 @@ class Pokemon():
         ash_forms = re.search(r'{pichu}|172|{pikachu}|25|{raichu}|26|{greninja}|658'.format(pichu=bot.pkmn_list[171], pikachu=bot.pkmn_list[24], raichu=bot.pkmn_list[25], greninja=bot.pkmn_list[657]), argument, re.IGNORECASE)
         if not ash_forms:
             form_list = list(set(form_list) - set(['ash']))
-
-        if shiny:
-            argument = argument.replace(shiny.group(0), '').strip()
-            shiny = True
-        else:
-            shiny = False
-        if alolan:
-            argument = argument.replace(alolan.group(0), '').strip()
-            alolan = True
-        else:
-            alolan = False
-        if male:
-            argument = argument.replace(male.group(0), '').strip()
-            gender = "male"
-        elif female:
-            argument = argument.replace(female.group(0), '').strip()
-            gender = "female"
-        else:
-            gender = None
-        if large:
-            size = "XL"
-            argument = argument.replace(large.group(0), '').strip()
-        elif small:
-            size = "XS"
-            argument = argument.replace(small.group(0), '').strip()
-        else:
-            size = None
-
-        for form in form_list:
-            form = re.search(form, argument, re.IGNORECASE)
-            if form:
-                argument = argument.replace(form.group(0), '').strip()
-                form = form.group(0).lower().strip()
-                argument = re.sub("(?i)spinda","spinda ", argument)
-                argument = re.sub("(?i)unown","unown ", argument)
-                break
-            else:
-                form = None
-
-        match = False
-        for word in argument.split():
-            if word.lower() not in bot.pkmn_list and not word.isdigit() and word.lower() not in bot.form_dict['two_words']:
-                match, score = utils.get_match(bot.pkmn_list, word)
-                if not score or score < 80:
-                    argument = argument.replace(word, '').strip()
-                else:
-                    argument = argument.replace(word, match).strip()
-
-        if argument.isdigit() and allow_digits:
-            match = utils.get_name(bot, int(argument))
-        else:
-            match = utils.get_match(bot.pkmn_list, argument)[0]
-        if match and "nidoran" in match.lower():
-            if gender == "female":
-                match = utils.get_name(bot, 29)
-            else:
-                match = utils.get_name(bot, 32)
-
-        if not match:
-            return None
-
-        pokemon = cls(bot, str(match), None, shiny=shiny, alolan=alolan, form=form, gender=gender, size=size)
-
-        return pokemon
-
-    @classmethod
-    async def ask_pokemon(cls, ctx, argument, allow_digits = True):
-        argument = str(argument)
-        shiny = re.search(r'shiny', argument, re.IGNORECASE)
-        alolan = re.search(r'alolan', argument, re.IGNORECASE)
-        male = re.search(r'(?<!fe)male', argument, re.IGNORECASE)
-        female = re.search(r'female', argument, re.IGNORECASE)
-        large = re.search(r'large|big|xl', argument, re.IGNORECASE)
-        small = re.search(r'small|tiny|xs', argument, re.IGNORECASE)
-        form_list = ctx.bot.form_dict['list']
-        pokemon = False
-        try:
-            form_list.remove("none")
-        except ValueError:
-            pass
-        unown_form = re.search(r'{unown}|201'.format(unown=ctx.bot.pkmn_list[200]), argument, re.IGNORECASE)
-        spinda_form = re.search(r'{spinda}|327'.format(spinda=ctx.bot.pkmn_list[326]), argument, re.IGNORECASE)
-        if not spinda_form and not unown_form:
-            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
-        elif spinda_form:
-            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' ?', ' !']))
-        elif unown_form:
-            form_list = list(set(form_list) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8']))
-        ash_forms = re.search(r'{pichu}|172|{pikachu}|25|{raichu}|26|{greninja}|658'.format(pichu=ctx.bot.pkmn_list[171], pikachu=ctx.bot.pkmn_list[24], raichu=ctx.bot.pkmn_list[25], greninja=ctx.bot.pkmn_list[657]), argument, re.IGNORECASE)
-        if not ash_forms:
-            form_list = list(set(form_list) - set(['ash']))
         pokemon = False
         match_list = []
-
         if shiny:
             match_list.append(shiny.group(0))
             argument = argument.replace(shiny.group(0), '').strip()
@@ -696,7 +482,107 @@ class Pokemon():
             else:
                 form = None
 
+        return {"argument":argument, "match_list":match_list, "shiny":shiny, "alolan":alolan, "gender":gender, "size":size, "form":form}
+
+    @classmethod
+    async def convert(self, ctx, argument):
+        """Returns a pokemon that matches the value
+        of the argument that's being converted.
+
+        It first will check if it's a valid ID, and if not, will perform
+        a fuzzymatch against the list of Pokemon names.
+
+        Returns
+        --------
+        :class:`Pokemon` or :class:`dict`
+            If there was a close or exact match, it will return a valid
+            :class:`Pokemon`.
+            If the match is lower than 80% likeness, it will return a
+            :class:`dict` with the following keys:
+                * ``suggested`` - Next best guess based on likeness.
+                * ``original`` - Original value of argument provided.
+
+        Raises
+        -------
+        :exc:`discord.ext.commands.BadArgument`
+            The argument didn't match a Pokemon ID or name.
+        """
+        query =  self.query_pokemon(ctx.bot, argument)
+        argument = query['argument']
         match = False
+        for word in argument.split():
+            if word.lower() not in ctx.bot.pkmn_list and not word.isdigit() and word.lower() not in ctx.bot.form_dict['two_words']:
+                match, score = utils.get_match(ctx.bot.pkmn_list, word)
+                if not score or score < 80:
+                    argument = argument.replace(word, '').strip()
+                elif "nidoran" in word.lower():
+                    if gender == "female":
+                        match = utils.get_name(ctx.bot, 29)
+                    else:
+                        match = utils.get_name(ctx.bot, 32)
+                    argument = argument.replace(word, match).strip()
+                else:
+                    argument = argument.replace(word, match).strip()
+        if argument.isdigit():
+            try:
+                match = utils.get_name(ctx.bot, int(argument))
+                score = 100
+            except IndexError:
+                raise commands.errors.BadArgument(
+                    'Pokemon ID "{}" not valid'.format(argument))
+        elif argument in ctx.bot.pkmn_list:
+            match = argument.lower()
+            score = 100
+        elif not match:
+            match, score = utils.get_match(ctx.bot.pkmn_list, argument)
+        result = False
+        if match:
+            if score >= 80:
+                result = self(ctx.bot, str(match), ctx.guild, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
+            else:
+                result = {
+                    'suggested' : str(match),
+                    'original'   : argument
+                }
+        if not result:
+            raise commands.errors.BadArgument(
+                'Pokemon "{}" not valid'.format(argument))
+        return result
+
+    @classmethod
+    def get_pokemon(self, bot, argument, allow_digits = True):
+        query =  self.query_pokemon(bot, str(argument).strip())
+        argument = query['argument']
+        match = False
+        for word in argument.split():
+            if word.lower() not in bot.pkmn_list and not word.isdigit() and word.lower() not in bot.form_dict['two_words']:
+                match, score = utils.get_match(bot.pkmn_list, word)
+                if not score or score < 80:
+                    argument = argument.replace(word, '').strip()
+                else:
+                    argument = argument.replace(word, match).strip()
+
+        if argument.isdigit() and allow_digits:
+            match = utils.get_name(bot, int(argument))
+        else:
+            match = utils.get_match(bot.pkmn_list, argument)[0]
+        if match and "nidoran" in match.lower():
+            if gender == "female":
+                match = utils.get_name(bot, 29)
+            else:
+                match = utils.get_name(bot, 32)
+        if not match:
+            return None
+        pokemon = self(bot, str(match), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
+        return pokemon
+
+    @classmethod
+    async def ask_pokemon(self, ctx, argument, allow_digits = True, ask_correct = True):
+        query =  self.query_pokemon(ctx.bot, str(argument).strip())
+        argument = query['argument']
+        match_list = query['match_list']
+        match = False
+        pokemon = False
         for word in argument.split():
             if word.lower() in ctx.bot.pkmn_list:
                 if pokemon:
@@ -720,7 +606,7 @@ class Pokemon():
                         match_list.append(word)
                         argument = argument.replace(word, match).strip()
                         pokemon = match
-                    else:
+                    elif ask_correct:
                         match = await utils.autocorrect(ctx.bot, word, ctx.bot.pkmn_list, ctx.channel, ctx.author)
                         if not match:
                             return None, None
@@ -740,7 +626,7 @@ class Pokemon():
         if not match:
             return None, None
 
-        pokemon = cls(ctx.bot, str(match), None, shiny=shiny, alolan=alolan, form=form, gender=gender, size=size)
+        pokemon = self(ctx.bot, str(match), ctx.guild, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
 
         return pokemon, match_list
 
