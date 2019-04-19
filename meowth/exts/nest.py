@@ -405,18 +405,6 @@ class Nest(commands.Cog):
             return
         else:
             await utils.safe_delete(nest_loc_reply)
-        rusure = await channel.send(_('Are you sure you\'d like to add **{nest}** to the list of nests in {channel}?').format(nest=nest_name.title(), channel=channel.mention))
-        try:
-            timeout = False
-            res, reactuser = await utils.ask(self.bot, rusure, author.id)
-        except TypeError:
-            timeout = True
-        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
-            await utils.safe_delete(rusure)
-            confirmation = await channel.send(_('Nest addition cancelled.'), delete_after=10)
-            return
-        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
-            await utils.safe_delete(rusure)
             nest_dict[nest_name] = {
                 'location':nest_loc,
                 'reports': {}
@@ -424,9 +412,6 @@ class Nest(commands.Cog):
             self.bot.guild_dict[guild.id]['nest_dict'][channel.id] = nest_dict
             self.bot.guild_dict[guild.id]['nest_dict'][channel.id]['list'].append(nest_name)
             confirmation = await channel.send(_('Nest added.'), delete_after=10)
-            return
-        else:
-            return
 
     @nest.command()
     @checks.allownestreport()
@@ -492,51 +477,92 @@ class Nest(commands.Cog):
         else:
             return
 
-    @nest.command()
+    @nest.command(aliases=['expire'])
     @checks.allownestreport()
     @commands.has_permissions(manage_channels=True)
-    async def reset(self, ctx):
+    async def reset(self, ctx, *, report = None):
         """Migrates all nests manually, resetting all reports."""
 
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
         channel = ctx.channel
-
         # get settings
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
-
         await utils.safe_delete(message)
-
         if not nest_dict:
             return
-        rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all reports for all nests?'))
+        if report and report.isdigit():
+            for nest in nest_dict:
+                if nest == "list":
+                    continue
+                if int(report) in nest_dict[nest]['reports'].keys():
+                    try:
+                        report = await channel.fetch_message(report)
+                        self.bot.loop.create_task(self.expire_nest(nest, report))
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                        pass
+                    return
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+        list_messages = []
+        nest_embed, nest_pages = await self.get_nest_reports(ctx)
+        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, reply with the number of the nest to reset or **all** to reset all nests.\n\nIf you want to stop your report, reply with **cancel**.".format(mention=author.mention))
+        list_messages.append(nest_list)
+        for p in nest_pages:
+            nest_embed.description = p
+            nest_list = await channel.send(embed=nest_embed)
+            list_messages.append(nest_list)
         try:
-            timeout = False
-            res, reactuser = await utils.ask(self.bot, rusure, author.id)
-        except TypeError:
-            timeout = True
-        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
-            await utils.safe_delete(rusure)
-            confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
+            nest_name_reply = await self.bot.wait_for('message', timeout=60, check=check)
+            for msg in list_messages:
+                await utils.safe_delete(msg)
+        except asyncio.TimeoutError:
+            for msg in list_messages:
+                await utils.safe_delete(msg)
             return
-        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
-            await utils.safe_delete(rusure)
+        if nest_name_reply.content.lower() == "cancel":
+            await utils.safe_delete(nest_name_reply)
+            confirmation = await channel.send(_('Reset cancelled.'), delete_after=10)
+            return
+        elif nest_name_reply.content.lower() == "all":
+            await utils.safe_delete(nest_name_reply)
             for nest in nest_dict:
                 if nest == "list":
                     continue
                 for report in nest_dict[nest]['reports']:
                     try:
                         report_message = await channel.fetch_message(report)
-                        await utils.safe_delete(report_message)
+                        self.bot.loop.create_task(self.expire_nest(nest, report_message))
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                         pass
-                    del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report]
-                    await utils.expire_dm_reports(self.bot, nest_dict[nest]['reports'][report].get('dm_dict', {}))
             confirmation = await channel.send(_('Nests reset. Use **!nest time** to set a new migration time.'), delete_after=10)
             return
         else:
+            await utils.safe_delete(nest_name_reply)
+            try:
+                nest_name = nest_dict['list'][int(nest_name_reply.content)-1]
+            except IndexError:
+                return
+            for report in nest_dict[nest_name]['reports']:
+                try:
+                    report_message = await channel.fetch_message(report)
+                    self.bot.loop.create_task(self.expire_nest(nest_name, report_message))
+                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                    pass
+            confirmation = await channel.send(_('Nests reset. Use **!nest time** to set a new migration time.'), delete_after=10)
             return
+
+    async def expire_nest(self, nest, message):
+        guild = message.channel.guild
+        channel = message.channel
+        nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
+        await utils.safe_delete(message)
+        await utils.expire_dm_reports(self.bot, nest_dict[nest]['reports'][message.id].get('dm_dict', {}))
+        try:
+            del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][message.id]
+        except KeyError:
+            pass
 
     @nest.command(name='time')
     @checks.allownestreport()
