@@ -205,7 +205,7 @@ class Huntr(commands.Cog):
                 elif reporttype == "raid":
                     gym_matching_cog = self.bot.cogs.get('GymMatching')
                     if gym_matching_cog:
-                        test_gym = gym_matching_cog.find_nearest_gym((huntrgps.split(",")[0], huntrgps.split(",")[1]), message.guild.id)
+                        test_gym = await gym_matching_cog.find_nearest_gym((huntrgps.split(",")[0], huntrgps.split(",")[1]), message.guild.id)
                         if test_gym:
                             raid_details = test_gym
                     raid_embed = await self.make_raid_embed(ctx, entered_raid, raid_details, raidexp, huntrgps, moveset)
@@ -239,7 +239,7 @@ class Huntr(commands.Cog):
                 elif reporttype == "egg":
                     gym_matching_cog = ctx.bot.cogs.get('GymMatching')
                     if gym_matching_cog:
-                        test_gym = gym_matching_cog.find_nearest_gym((huntrgps.split(",")[0], huntrgps.split(",")[1]), message.guild.id)
+                        test_gym = await gym_matching_cog.find_nearest_gym((huntrgps.split(",")[0], huntrgps.split(",")[1]), message.guild.id)
                         if test_gym:
                             raid_details = test_gym
                     raid_embed = await self.make_egg_embed(ctx, egg_level, raid_details, raidexp, huntrgps, reporter="huntr")
@@ -699,8 +699,8 @@ class Huntr(commands.Cog):
         wild_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={wild_coordinates}"
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
-            nearest_poi = gym_matching_cog.find_nearest_poi((wild_coordinates.split(",")[0], wild_coordinates.split(",")[1]), message.guild.id)
-            nearest_stop = gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0], wild_coordinates.split(",")[1]), message.guild.id)
+            nearest_poi = await gym_matching_cog.find_nearest_poi((wild_coordinates.split(",")[0], wild_coordinates.split(",")[1]), message.guild.id)
+            nearest_stop = await gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0], wild_coordinates.split(",")[1]), message.guild.id)
             if nearest_poi:
                 wild_details = nearest_poi
         stop_str = ""
@@ -779,7 +779,7 @@ class Huntr(commands.Cog):
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
-            test_gym = gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
+            test_gym = await gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
             if test_gym:
                 raid_details = test_gym
         raid_embed = await self.make_raid_embed(ctx, str(pokemon), raid_details, raidexp, raid_coordinates, moves)
@@ -864,7 +864,7 @@ class Huntr(commands.Cog):
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
-            test_gym = gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
+            test_gym = await gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
             if test_gym:
                 raid_details = test_gym
         raid_embed = await self.make_egg_embed(ctx, egg_level, raid_details, raidexp, raid_coordinates, reporter)
@@ -941,7 +941,7 @@ class Huntr(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
-            nearest_stop = gym_matching_cog.find_nearest_stop((gps.split(",")[0],gps.split(",")[1]), guild.id)
+            nearest_stop = await gym_matching_cog.find_nearest_stop((gps.split(",")[0],gps.split(",")[1]), guild.id)
             if nearest_stop:
                 location = nearest_stop
             stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "research")

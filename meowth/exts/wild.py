@@ -283,7 +283,7 @@ class Wild(commands.Cog):
             if poi_url:
                 wild_gmaps_link = poi_url
                 wild_coordinates = poi_url.split("query=")[1]
-                nearest_stop = gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), ctx.guild.id)
+                nearest_stop = await gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), ctx.guild.id)
         if not wild_details:
             await utils.safe_delete(ctx.message)
             return

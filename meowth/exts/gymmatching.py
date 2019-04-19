@@ -46,41 +46,36 @@ class GymMatching(commands.Cog):
             match = pois[match].get('alias', match)
         return(match, score)
 
-    def find_nearest_stop(self, coord, guild_id):
+    async def find_nearest_stop(self, coord, guild_id):
         stops = self.get_stops(guild_id)
         if not stops:
             return None
-        stops = {k: (float(stops[k]["coordinates"].split(",")[0]), float(stops[k]["coordinates"].split(",")[1])) for k,v in stops.items()}
-        dist = lambda s, key: (float(s[0]) - float(stops[key][0])) ** 2 + \
-                              (float(s[1]) - float(stops[key][1])) ** 2
-        nearest_stop = min(stops, key=functools.partial(dist, coord))
-        stops = self.get_stops(guild_id)
+        stop_search = {k: (float(stops[k]["coordinates"].split(",")[0]), float(stops[k]["coordinates"].split(",")[1])) for k,v in stops.items()}
+        dist = lambda s, key: (float(s[0]) - float(stop_search[key][0])) ** 2 + \
+                              (float(s[1]) - float(stop_search[key][1])) ** 2
+        nearest_stop = min(stop_search, key=functools.partial(dist, coord))
         return stops[nearest_stop].get('alias', nearest_stop)
 
-    def find_nearest_gym(self, coord, guild_id):
+    async def find_nearest_gym(self, coord, guild_id):
         gyms = self.get_gyms(guild_id)
         if not gyms:
             return None
-        gyms = {k: (float(gyms[k]["coordinates"].split(",")[0]), float(gyms[k]["coordinates"].split(",")[1])) for k,v in gyms.items()}
-        dist = lambda s, key: (float(s[0]) - float(gyms[key][0])) ** 2 + \
-                              (float(s[1]) - float(gyms[key][1])) ** 2
-        nearest_gym = min(gyms, key=functools.partial(dist, coord))
-        gyms = self.get_gyms(guild_id)
+        gym_searchs = {k: (float(gyms[k]["coordinates"].split(",")[0]), float(gyms[k]["coordinates"].split(",")[1])) for k,v in gyms.items()}
+        dist = lambda s, key: (float(s[0]) - float(gym_search[key][0])) ** 2 + \
+                              (float(s[1]) - float(gym_search[key][1])) ** 2
+        nearest_gym = min(gym_search, key=functools.partial(dist, coord))
         return gyms[nearest_gym].get('alias', nearest_gym)
 
-    def find_nearest_poi(self, coord, guild_id):
+    async def find_nearest_poi(self, coord, guild_id):
         gyms = self.get_gyms(guild_id)
         stops = self.get_stops(guild_id)
         if not gyms and not stops:
             return None
         pois = {**gyms, **stops}
-        pois = {k: (float(pois[k]["coordinates"].split(",")[0]), float(pois[k]["coordinates"].split(",")[1])) for k,v in pois.items()}
-        dist = lambda s, key: (float(s[0]) - float(pois[key][0])) ** 2 + \
-                              (float(s[1]) - float(pois[key][1])) ** 2
-        nearest_poi = min(pois, key=functools.partial(dist, coord))
-        gyms = self.get_gyms(guild_id)
-        stops = self.get_stops(guild_id)
-        pois = {**gyms, **stops}
+        poi_search = {k: (float(pois[k]["coordinates"].split(",")[0]), float(pois[k]["coordinates"].split(",")[1])) for k,v in pois.items()}
+        dist = lambda s, key: (float(s[0]) - float(poi_search[key][0])) ** 2 + \
+                              (float(s[1]) - float(poi_search[key][1])) ** 2
+        nearest_poi = min(poi_search, key=functools.partial(dist, coord))
         return pois[nearest_poi].get('alias', nearest_poi)
 
     def do_gym_stats(self, guild_id, channel_dict):
