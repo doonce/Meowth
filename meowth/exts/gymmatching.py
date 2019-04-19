@@ -60,7 +60,7 @@ class GymMatching(commands.Cog):
         gyms = self.get_gyms(guild_id)
         if not gyms:
             return None
-        gym_searchs = {k: (float(gyms[k]["coordinates"].split(",")[0]), float(gyms[k]["coordinates"].split(",")[1])) for k,v in gyms.items()}
+        gym_search = {k: (float(gyms[k]["coordinates"].split(",")[0]), float(gyms[k]["coordinates"].split(",")[1])) for k,v in gyms.items()}
         dist = lambda s, key: (float(s[0]) - float(gym_search[key][0])) ** 2 + \
                               (float(s[1]) - float(gym_search[key][1])) ** 2
         nearest_gym = min(gym_search, key=functools.partial(dist, coord))
