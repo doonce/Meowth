@@ -385,6 +385,9 @@ class Huntr(commands.Cog):
                                     return
                             raid_embed.add_field(name="**Moveset**:", value=report_details.get('moves', None), inline=True)
                             await raid_msg.edit(embed=raid_embed)
+                        raidexp = report_details.get('raidexp')
+                        if raidexp:
+                            await raid_cog._timerset(channel, raidexp)
                         await self.auto_counters(channel, report_details.get('moves', None))
                         return
                 if report_details.get('type', None) == "raid":
