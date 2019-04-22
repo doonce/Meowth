@@ -529,8 +529,8 @@ class Utilities(commands.Cog):
         bot.loop.create_task(self.dm_cleanup())
 
     async def dm_cleanup(self, loop=True):
-        await self.bot.wait_until_ready()
-        while (not self.bot.is_closed()):
+        while True:
+            await self.bot.wait_until_ready()
             if loop:
                 await asyncio.sleep(302400)
             logger.info('------ BEGIN ------')

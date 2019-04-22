@@ -21,9 +21,9 @@ class Configure(commands.Cog):
         bot.loop.create_task(self.configure_cleanup())
 
     async def configure_cleanup(self, loop=True):
-        await self.bot.wait_until_ready()
-        logger.info('------ BEGIN ------')
-        while (not self.bot.is_closed()):
+        while True:
+            await self.bot.wait_until_ready()
+            logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             count = 0
             for guildid in guilddict_temp.keys():
