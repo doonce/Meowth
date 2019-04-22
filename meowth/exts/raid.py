@@ -279,6 +279,9 @@ class Raid(commands.Cog):
                             if not user:
                                 continue
                             maybe_list.append(user.mention)
+                    channel = self.bot.get_channel(channel.id)
+                    if not channel:
+                        return
                     h = _('hatched-')
                     new_name = h if h not in channel.name else ''
                     new_name += channel.name
@@ -289,6 +292,9 @@ class Raid(commands.Cog):
                     level=self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['egglevel'])
             else:
                 if (not alreadyexpired):
+                    channel = self.bot.get_channel(channel.id)
+                    if not channel:
+                        return
                     e = _('expired-')
                     new_name = e if e not in channel.name else ''
                     new_name += channel.name
@@ -382,6 +388,9 @@ class Raid(commands.Cog):
                         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
                             pass
                         new_name = _('archived-')
+                        channel = self.bot.get_channel(channel.id)
+                        if not channel:
+                            return
                         if new_name not in channel.name:
                             new_name += channel.name
                             category = self.bot.guild_dict[guild.id]['configure_dict'].get('archive', {}).get('category', 'same')

@@ -574,13 +574,13 @@ class Utilities(commands.Cog):
                             if "reported by" in message.content or "hatched into" in message.content or "reported that" in message.content:
                                 if message.id not in dm_list:
                                     delete_list.append(message)
+                            elif "trade" in message.content.lower() or "offer" in message.content.lower():
+                                if (datetime.datetime.now() - message.created_at).days >= 7:
+                                    delete_list.append(message)
                             elif message.embeds:
                                 if "pokebattler.com" in str(message.embeds[0].author.url).lower() or "raid coordination help" in str(message.embeds[0].author.name).lower():
                                     if (datetime.datetime.now() - message.created_at).days >= 7:
                                         delete_list.append(message)
-                            elif "trade" in message.content.lower() or "offer" in message.content.lower():
-                                if (datetime.datetime.now() - message.created_at).days >= 7:
-                                    delete_list.append(message)
                 dm_list = build_dm_list(guildid)
                 for message in delete_list:
                     if message.id not in dm_list:
