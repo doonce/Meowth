@@ -52,7 +52,7 @@ class Wild(commands.Cog):
                         await self.expire_wild(message)
 
     async def wild_cleanup(self, loop=True):
-        while (not self.bot.is_closed()):
+        while True:
             await self.bot.wait_until_ready()
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)

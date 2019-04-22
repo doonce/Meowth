@@ -516,7 +516,7 @@ class Pokemon():
                 if not score or score < 80:
                     argument = argument.replace(word, '').strip()
                 elif "nidoran" in word.lower():
-                    if query['gender'] == "female":
+                    if gender == "female":
                         match = utils.get_name(ctx.bot, 29)
                     else:
                         match = utils.get_name(ctx.bot, 32)
@@ -567,7 +567,7 @@ class Pokemon():
         else:
             match = utils.get_match(bot.pkmn_list, argument)[0]
         if match and "nidoran" in match.lower():
-            if query['gender'] == "female":
+            if gender == "female":
                 match = utils.get_name(bot, 29)
             else:
                 match = utils.get_name(bot, 32)
@@ -599,7 +599,7 @@ class Pokemon():
                     if not score or score < 60:
                         argument = argument.replace(word, '').strip()
                     elif "nidoran" in word.lower():
-                        if query['gender'] == "female":
+                        if gender == "female":
                             match = utils.get_name(ctx.bot, 29)
                         else:
                             match = utils.get_name(ctx.bot, 32)
