@@ -28,7 +28,7 @@ class Huntr(commands.Cog):
         bot.loop.create_task(self.huntr_cleanup())
 
     async def huntr_cleanup(self, loop=True):
-        while True:
+        while (not self.bot.is_closed()):
             await self.bot.wait_until_ready()
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
@@ -1056,7 +1056,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Pikachu", "gps":"39.645742,-79.96908", "expire":"5 min 0 sec"}')
+        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Pikachu", "gps":"39.645742,-79.96908"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

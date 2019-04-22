@@ -418,8 +418,8 @@ class Raid(commands.Cog):
                 pass
 
     async def channel_cleanup(self, loop=True):
-        while True:
-            await self.bot.wait_until_ready()
+        await self.bot.wait_until_ready()
+        while (not self.bot.is_closed()):
             guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)
             logger.info('------ BEGIN ------')
             gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -3710,8 +3710,8 @@ class Raid(commands.Cog):
         await self._edit_party(channel, author)
 
     async def lobby_cleanup(self, loop=True):
-        while True:
-            await self.bot.wait_until_ready()
+        await self.bot.wait_until_ready()
+        while (not self.bot.is_closed()):
             for guild in self.bot.guilds:
                 guild_raids = copy.deepcopy(self.bot.guild_dict[guild.id]['raidchannel_dict'])
                 for raid in guild_raids:

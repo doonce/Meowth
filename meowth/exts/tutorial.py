@@ -80,8 +80,8 @@ class Tutorial(commands.Cog):
         return cmd_ctx
 
     async def tutorial_cleanup(self, loop=True):
-        while True:
-            await self.bot.wait_until_ready()
+        await self.bot.wait_until_ready()
+        while (not self.bot.is_closed()):
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             count = 0
