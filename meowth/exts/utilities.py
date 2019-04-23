@@ -577,6 +577,9 @@ class Utilities(commands.Cog):
                             elif "trade" in message.content.lower() or "offer" in message.content.lower():
                                 if (datetime.datetime.now() - message.created_at).days >= 7:
                                     delete_list.append(message)
+                            elif "welcome" in message.content.lower():
+                                if (datetime.datetime.now() - message.created_at).days >= 30:
+                                    delete_list.append(message)
                             elif message.embeds:
                                 if "pokebattler.com" in str(message.embeds[0].author.url).lower() or "raid coordination help" in str(message.embeds[0].author.name).lower():
                                     if (datetime.datetime.now() - message.created_at).days >= 7:

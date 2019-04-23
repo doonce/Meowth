@@ -998,8 +998,12 @@ class Raid(commands.Cog):
             async with ctx.typing():
                 if checks.check_eggchannel(ctx):
                     if pokemon_or_level:
+                        assume = ""
+                        if "assume" in pokemon_or_level:
+                            assume = "assume "
+                            pokemon_or_level = pkmn_class.Pokemon.get_pokemon(self.bot, location)
                         location = self.bot.guild_dict[message.channel.guild.id]['raidchannel_dict'][ctx.channel.id]['address']
-                        content = f"{pokemon_or_level} {location}"
+                        content = f"{assume}{pokemon_or_level} {location}"
                         new_channel = await self._raid(ctx, content)
                         ctx.raid_channel = new_channel
                         return
