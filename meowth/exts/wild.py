@@ -369,7 +369,7 @@ class Wild(commands.Cog):
             await utils.safe_delete(rusure)
             for report in wild_dict:
                 report_message = await channel.fetch_message(report)
-                await self.expire_wild(report_message)
+                self.bot.loop.create_task(self.expire_wild(report_message))
             confirmation = await channel.send(_('Wilds reset.'), delete_after=10)
             return
         else:

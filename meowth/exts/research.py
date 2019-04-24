@@ -123,7 +123,7 @@ class Research(commands.Cog):
                     other_reward = any(x in reward.lower() for x in reward_list)
                     shiny_str = ""
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
-                    if pokemon.id in self.bot.shiny_dict:
+                    if pokemon and pokemon.id in self.bot.shiny_dict:
                         if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                             shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
                         elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
@@ -394,7 +394,7 @@ class Research(commands.Cog):
             await utils.safe_delete(rusure)
             for report in research_dict:
                 report_message = await channel.fetch_message(report)
-                await self.expire_research(report_message)
+                self.bot.loop.create_task(self.expire_research(report_message))
             confirmation = await channel.send(_('Research reset.'), delete_after=10)
             return
         else:

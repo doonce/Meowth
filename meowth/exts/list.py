@@ -753,19 +753,19 @@ class Listing(commands.Cog):
         wantmsg = ""
         if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0:
             if wantlist:
-                wantmsg += _('**Pokemon:** (wilds, research, nests{raid_link})\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids" if user_link else "")
+                wantmsg += _('**Pokemon:** (wilds, research, nests{raid_link})\n{want_list}').format(want_list=', '.join(wantlist), raid_link=", raids" if user_link else "")
             if bosslist and not user_link:
-                wantmsg += _('\n\n**Bosses:** (raids)\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
+                wantmsg += _('\n\n**Bosses:** (raids)\n{want_list}').format(want_list=', '.join(bosslist))
             if user_gyms:
-                wantmsg += _('\n\n**Gyms:** (raids)\n{user_gyms}').format(user_gyms = '\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
+                wantmsg += _('\n\n**Gyms:** (raids)\n{user_gyms}').format(user_gyms=', '.join(user_gyms))
             if user_stops:
-                wantmsg += _('\n\n**Stops:** (research, wilds)\n{user_stops}').format(user_stops = '\n'.join(textwrap.wrap(', '.join(user_stops), width=80)))
+                wantmsg += _('\n\n**Stops:** (research, wilds)\n{user_stops}').format(user_stops=', '.join(user_stops))
             if user_items:
-                wantmsg += _('\n\n**Items:** (research)\n{user_items}').format(user_items = '\n'.join(textwrap.wrap(', '.join(user_items), width=80)))
+                wantmsg += _('\n\n**Items:** (research)\n{user_items}').format(user_items=', '.join(user_items))
             if user_types:
-                wantmsg += _('\n\n**Types:** (wilds, research, nests)\n{user_types}').format(user_types = '\n'.join(textwrap.wrap(', '.join(user_types), width=80)))
+                wantmsg += _('\n\n**Types:** (wilds, research, nests)\n{user_types}').format(user_types=', '.join(user_types))
             if user_ivs:
-                wantmsg += _('\n\n**IVs:** (wilds)\n{user_ivs}').format(user_ivs = '\n'.join(textwrap.wrap(', '.join(user_ivs), width=80)))
+                wantmsg += _('\n\n**IVs:** (wilds)\n{user_ivs}').format(user_ivs=', '.join(user_ivs))
         if wantmsg:
             listmsg = _('Meowth! {author}, you will receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
             paginator = commands.Paginator(prefix="", suffix="")
@@ -845,19 +845,19 @@ class Listing(commands.Cog):
         wantmsg = ""
         if len(want_list) > 0 or len(gym_list) > 0 or len(stop_list) > 0 or len(item_list) > 0 or len(boss_list) > 0 or len(type_list) > 0 or len(iv_list) > 0:
             if want_list:
-                wantmsg += _('**Pokemon:**\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(want_list), width=80)))
+                wantmsg += _('**Pokemon:**\n{want_list}').format(want_list=', '.join(want_list))
             if boss_list:
-                wantmsg += _('\n\n**Bosses:**\n{want_list}').format(want_list = '\n'.join(textwrap.wrap(', '.join(boss_list), width=80)))
+                wantmsg += _('\n\n**Bosses:**\n{want_list}').format(want_list=', '.join(boss_list))
             if gym_list:
-                wantmsg += _('\n\n**Gyms:**\n{user_gyms}').format(user_gyms = '\n'.join(textwrap.wrap(', '.join(gym_list), width=80)))
+                wantmsg += _('\n\n**Gyms:**\n{user_gyms}').format(user_gyms=', '.join(gym_list))
             if stop_list:
-                wantmsg += _('\n\n**Stops:**\n{user_stops}').format(user_stops = '\n'.join(textwrap.wrap(', '.join(stop_list), width=80)))
+                wantmsg += _('\n\n**Stops:**\n{user_stops}').format(user_stops=', '.join(stop_list))
             if item_list:
-                wantmsg += _('\n\n**Items:**\n{user_items}').format(user_items = '\n'.join(textwrap.wrap(', '.join(item_list), width=80)))
+                wantmsg += _('\n\n**Items:**\n{user_items}').format(user_items=', '.join(item_list))
             if type_list:
-                wantmsg += _('\n\n**Types:**\n{user_types}').format(user_types = '\n'.join(textwrap.wrap(', '.join(type_list), width=80)))
+                wantmsg += _('\n\n**Types:**\n{user_types}').format(user_types=', '.join(type_list))
             if iv_list:
-                wantmsg += _('\n\n**IVs:**\n{user_ivs}').format(user_ivs = '\n'.join(textwrap.wrap(', '.join(iv_list), width=80)))
+                wantmsg += _('\n\n**IVs:**\n{user_ivs}').format(user_ivs=', '.join(iv_list))
         if wantmsg:
             listmsg = _('**Meowth!** The server **!want** list is:')
             paginator = commands.Paginator(prefix="", suffix="")
@@ -882,6 +882,8 @@ class Listing(commands.Cog):
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, search)
                 if pokemon:
                     search = str(pokemon)
+                elif "shiny" in search.lower():
+                    search = "shiny"
                 else:
                     converter = commands.MemberConverter()
                     try:
@@ -908,6 +910,7 @@ class Listing(commands.Cog):
     async def _tradelist(self, ctx, search):
         tgt_trainer_trades = {}
         tgt_pokemon_trades = {}
+        tgt_shiny_trades = {}
         target_trades = {}
         listmsg = ""
         trademsg = ""
@@ -917,16 +920,20 @@ class Listing(commands.Cog):
                 if isinstance(search, discord.member.Member):
                     if self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['lister_id'] == search.id:
                         tgt_trainer_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
+                elif search == "shiny":
+                    if "shiny" in self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['offered_pokemon'].lower():
+                        tgt_shiny_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
                 else:
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, search)
                     if str(pokemon) in self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['offered_pokemon']:
                         tgt_pokemon_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
         if tgt_trainer_trades:
-            listmsg = _("Meowth! Here are the current trades for {user}").format(user=search.display_name)
-            target_trades = tgt_trainer_trades
-        if tgt_pokemon_trades:
-            listmsg = _("Meowth! Here are the current {pokemon} trades").format(pokemon=str(pokemon))
-            target_trades = tgt_pokemon_trades
+            listmsg = _("Meowth! Here are the current trades for {user}.").format(user=search.display_name)
+        elif tgt_pokemon_trades:
+            listmsg = _("Meowth! Here are the current {pokemon} trades.").format(pokemon=str(pokemon))
+        elif tgt_shiny_trades:
+            listmsg = _("Meowth! Here are the current Shiny trades.")
+        target_trades = {**tgt_shiny_trades, **tgt_shiny_trades, **tgt_pokemon_trades}
         if target_trades:
             for offer_id in target_trades:
                 offer_url = ""
@@ -1020,35 +1027,37 @@ class Listing(commands.Cog):
                 try:
                     questreportmsg = await ctx.message.channel.fetch_message(questid)
                     questauthor = ctx.channel.guild.get_member(research_dict[questid]['reportauthor'])
-                    if questauthor:
-                        quest = research_dict[questid]['quest']
-                        reward = research_dict[questid]['reward']
-                        location = research_dict[questid]['location']
-                        url = research_dict[questid].get('url', None)
-                        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits = False)
-                        other_reward = any(x in reward for x in reward_list)
-                        if pokemon and not other_reward:
-                            shiny_str = ""
-                            if pokemon.id in self.bot.shiny_dict:
-                                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-                                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-                            encounter_quests.append(f"{encounter_emoji} **Reward**: {shiny_str}{reward} {pokemon.emoji}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
-                        elif "candy" in reward.lower() or "candies" in reward.lower():
-                            candy_quests.append(f"{candy_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
-                        elif "dust" in reward.lower():
-                            dust_quests.append(f"{dust_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
-                        elif "berry" in reward.lower() or "berries" in reward.lower() or "razz" in reward.lower() or "pinap" in reward.lower() or "nanab" in reward.lower():
-                            berry_quests.append(f"{berry_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
-                        elif "potion" in reward.lower():
-                            potion_quests.append(f"{potion_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
-                        elif "revive" in reward.lower():
-                            revive_quests.append(f"{revive_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
-                        elif "ball" in reward.lower():
-                            ball_quests.append(f"{ball_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
-                        else:
-                            item_quests.append(f"{other_emoji} **Reward**: {reward}, **Pokestop**: [{string.capwords(location, ' ')}]({url}), **Quest**: {string.capwords(quest, ' ')}, **Reported By**: {questauthor.display_name}")
+                    reported_by = ""
+                    if questauthor and not questauthor.bot:
+                        reported_by = f" | **Reported By**: {questauthor.display_name}"
+                    quest = research_dict[questid]['quest']
+                    reward = research_dict[questid]['reward']
+                    location = research_dict[questid]['location']
+                    url = research_dict[questid].get('url', None)
+                    pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits = False)
+                    other_reward = any(x in reward for x in reward_list)
+                    if pokemon and not other_reward:
+                        shiny_str = ""
+                        if pokemon.id in self.bot.shiny_dict:
+                            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                        encounter_quests.append(f"{encounter_emoji} **Reward**: {shiny_str}{reward} {pokemon.emoji} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                    elif "candy" in reward.lower() or "candies" in reward.lower():
+                        candy_quests.append(f"{candy_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                    elif "dust" in reward.lower():
+                        dust_quests.append(f"{dust_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                    elif "berry" in reward.lower() or "berries" in reward.lower() or "razz" in reward.lower() or "pinap" in reward.lower() or "nanab" in reward.lower():
+                        berry_quests.append(f"{berry_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                    elif "potion" in reward.lower():
+                        potion_quests.append(f"{potion_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                    elif "revive" in reward.lower():
+                        revive_quests.append(f"{revive_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                    elif "ball" in reward.lower():
+                        ball_quests.append(f"{ball_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                    else:
+                        item_quests.append(f"{other_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
                 except:
                     continue
         if encounter_quests:
@@ -1121,20 +1130,24 @@ class Listing(commands.Cog):
                 try:
                     wildreportmsg = await ctx.message.channel.fetch_message(wildid)
                     wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['reportauthor'])
-                    if wildauthor:
-                        shiny_str = ""
-                        iv_check = wild_dict[wildid].get('wild_iv', None)
-                        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
-                        if pokemon.id in self.bot.shiny_dict:
-                            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-                            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-                        wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('wild_bullet', '\ud83d\udd39')))
-                        wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}, **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}), **Reported By**: {wildauthor.display_name}"
-                        if iv_check or iv_check == 0:
-                            wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv']}"
-                except:
+                    wild_despawn = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    reported_by = ""
+                    if wildauthor and not wildauthor.bot:
+                        reported_by = f" | **Reported By**: {wildauthor.display_name}"
+                    shiny_str = ""
+                    iv_check = wild_dict[wildid].get('wild_iv', None)
+                    pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
+                    if pokemon.id in self.bot.shiny_dict:
+                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                            shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                            shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                    wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('wild_bullet', '\ud83d\udd39')))
+                    wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
+                    if iv_check or iv_check == 0:
+                        wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv']}"
+                except Exception as e:
+                    print(e)
                     continue
         if wildmsg:
             listmsg = _('**Meowth! Here\'s the current wild reports for {channel}**').format(channel=ctx.message.channel.mention)
