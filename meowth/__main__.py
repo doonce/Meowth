@@ -498,6 +498,26 @@ async def on_message(message):
     if (not message.author.bot):
         await Meowth.process_commands(message)
 
+@Meowth.event
+async def on_raw_reaction_add(payload):
+    emoji = payload.emoji.name
+    if emoji == config.get('delete_dm', '\U0001f5d1'):
+        try:
+            user = Meowth.get_user(payload.user_id)
+        except AttributeError:
+            return
+        channel = user.dm_channel
+        if not channel:
+            channel = await user.create_dm()
+        if not channel or user.bot:
+            return
+        try:
+            message = await channel.fetch_message(payload.message_id)
+            if message.author.id == Meowth.user.id:
+                await message.delete()
+        except (discord.errors.NotFound, AttributeError, discord.Forbidden):
+            return
+
 """
 Miscellaneous
 """

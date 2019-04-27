@@ -165,7 +165,7 @@ class Nest(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     @checks.allownestreport()
-    async def nest(self, ctx, *, pokemon):
+    async def nest(self, ctx, *, pokemon=None):
         """Report a suspected nest pokemon.
 
         Usage: !nest <pokemon>
@@ -182,85 +182,124 @@ class Nest(commands.Cog):
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
         list_messages = []
-        await ctx.trigger_typing()
+        error = None
         await utils.safe_delete(message)
-        pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
-        if not pokemon:
-            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!nest <pokemon>**'), delete_after=10)
-            return
-        pokemon.alolan = False
-        pokemon.gender = None
-        pokemon.form = None
-        nest_types = copy.copy(pokemon.types)
-        nest_types.append('None')
-        nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
-        nest_embed, nest_pages = await self.get_nest_reports(ctx)
-        nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a **{pokemon}** report to?\n\nIf you want to stop your report, reply with **cancel**.".format(mention=author.mention, pokemon=pokemon.name.title()))
-        list_messages.append(nest_list)
-        for p in nest_pages:
-            nest_embed.description = p
-            nest_list = await channel.send(embed=nest_embed)
-            list_messages.append(nest_list)
-        try:
-            nest_name_reply = await self.bot.wait_for('message', timeout=60, check=(lambda message: (message.author == author)))
-            for msg in list_messages:
-                await utils.safe_delete(msg)
-        except asyncio.TimeoutError:
-            for msg in list_messages:
-                await utils.safe_delete(msg)
-            return
-        if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
-            await utils.safe_delete(nest_name_reply)
-            confirmation = await channel.send(_('Report cancelled.'), delete_after=10)
-            return
-        else:
-            await utils.safe_delete(nest_name_reply)
-        try:
-            nest_name = nest_dict['list'][int(nest_name_reply.content)-1]
-        except IndexError:
-            return
-        nest_loc = nest_dict[nest_name]['location'].split()
-        nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
-        nest_number = pokemon.id
-        nest_img_url = pokemon.img_url
-        shiny_str = ""
-        if pokemon.id in self.bot.shiny_dict:
-            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-        nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
-        nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
-        nest_embed.set_thumbnail(url=nest_img_url)
-        nest_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
-        pokemon.shiny = False
-        dm_dict = {}
-        for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
-            if not checks.dm_check(ctx, trainer):
-                continue
-            user_wants = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
-            user_types = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
-            if nest_number in user_wants or nest_types[0].lower() in user_types or nest_types[1].lower() in user_types:
+        while True:
+            async with ctx.typing():
+                nest_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/POI_Submission_Illustration_03.png?cache=1')
+                nest_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+                def check(m):
+                    return m.author == ctx.author and m.channel == ctx.channel
+                if not pokemon:
+                    nest_embed.add_field(name=_('**New Nest Report**'), value=f"Meowth! I'll help you report a nesting pokemon!\n\nFirst, I'll need to know what **pokemon** you'd like to report. Reply with the name of a **pokemon** or reply with **cancel** to stop anytime.", inline=False)
+                    nest_species = await ctx.send(embed=nest_embed)
+                    try:
+                        species_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        species_msg = None
+                    await utils.safe_delete(nest_species)
+                    if not species_msg:
+                        error = _("took too long to respond")
+                        break
+                    elif species_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        await utils.safe_delete(species_msg)
+                        break
+                    elif species_msg:
+                        await utils.safe_delete(species_msg)
+                        pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, species_msg.clean_content)
+                        if not pokemon:
+                            error = _("entered something invalid")
+                            break
+                else:
+                    pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
+                    if not pokemon:
+                        error = _("entered something invalid")
+                        break
+                pokemon.alolan = False
+                pokemon.gender = None
+                pokemon.form = None
+                nest_types = copy.copy(pokemon.types)
+                nest_types.append('None')
+                nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
+                nest_embed, nest_pages = await self.get_nest_reports(ctx)
+                nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a **{pokemon}** report to?\n\nIf you want to stop your report, reply with **cancel**.".format(mention=author.mention, pokemon=pokemon.name.title()))
+                list_messages.append(nest_list)
+                for p in nest_pages:
+                    nest_embed.description = p
+                    nest_list = await channel.send(embed=nest_embed)
+                    list_messages.append(nest_list)
                 try:
-                    user = ctx.guild.get_member(trainer)
-                    nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest in {channel.mention}!", embed=nest_embed)
-                    dm_dict[user.id] = nestdmmsg.id
-                except:
+                    nest_name_reply = await self.bot.wait_for('message', timeout=60, check=check)
+                    for msg in list_messages:
+                        await utils.safe_delete(msg)
+                except asyncio.TimeoutError:
+                    for msg in list_messages:
+                        await utils.safe_delete(msg)
+                    error = _("took too long to respond")
+                    break
+                if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
+                    await utils.safe_delete(nest_name_reply)
+                    error = _("cancelled the report or didn't enter a number")
+                    break
+                else:
+                    await utils.safe_delete(nest_name_reply)
+                try:
+                    nest_name = nest_dict['list'][int(nest_name_reply.content)-1]
+                except IndexError:
+                    error = _("entered something invalid")
+                break
+        if not error:
+            nest_loc = nest_dict[nest_name]['location'].split()
+            nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
+            nest_number = pokemon.id
+            nest_img_url = pokemon.img_url
+            shiny_str = ""
+            if pokemon.id in self.bot.shiny_dict:
+                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+            nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
+            nest_embed.title = f"Click here for directions to the nest!"
+            nest_embed.url = nest_url
+            nest_embed.description = nest_description
+            nest_embed.set_thumbnail(url=nest_img_url)
+            pokemon.shiny = False
+            dm_dict = {}
+            for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
+                if not checks.dm_check(ctx, trainer):
                     continue
-        nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest!", embed=nest_embed)
-        nest_dict[nest_name]['reports'][nestreportmsg.id] = {
-            'exp':migration_exp,
-            'expedit': "delete",
-            'reportchannel':channel.id,
-            'reportauthor':author.id,
-            'reporttime':datetime.datetime.utcnow(),
-            'dm_dict': dm_dict,
-            'location':nest_name,
-            'pokemon':str(pokemon)
-        }
-        self.bot.guild_dict[guild.id]['nest_dict'][channel.id] = nest_dict
-        nest_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('nest_reports', 0) + 1
-        self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['nest_reports'] = nest_reports
+                user_wants = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+                user_types = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
+                if nest_number in user_wants or nest_types[0].lower() in user_types or nest_types[1].lower() in user_types:
+                    try:
+                        user = ctx.guild.get_member(trainer)
+                        nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest in {channel.mention}!", embed=nest_embed)
+                        dm_dict[user.id] = nestdmmsg.id
+                    except:
+                        continue
+            nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest!", embed=nest_embed)
+            nest_dict[nest_name]['reports'][nestreportmsg.id] = {
+                'exp':migration_exp,
+                'expedit': "delete",
+                'reportchannel':channel.id,
+                'reportauthor':author.id,
+                'reporttime':datetime.datetime.utcnow(),
+                'dm_dict': dm_dict,
+                'location':nest_name,
+                'pokemon':str(pokemon)
+            }
+            self.bot.guild_dict[guild.id]['nest_dict'][channel.id] = nest_dict
+            nest_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('nest_reports', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['nest_reports'] = nest_reports
+        else:
+            nest_embed.clear_fields()
+            nest_embed.add_field(name=_('**Nest Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await ctx.send(embed=nest_embed)
+            await asyncio.sleep(10)
+            await utils.safe_delete(confirmation)
+            await utils.safe_delete(ctx.message)
 
     @nest.command()
     @checks.allownestreport()

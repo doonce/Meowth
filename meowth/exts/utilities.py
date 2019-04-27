@@ -497,7 +497,7 @@ async def expire_dm_reports(bot, dm_dict):
                 continue
             dm_channel = dm_user.dm_channel
             if not dm_channel:
-                    dm_channel = await dm_user.create_dm()
+                dm_channel = await dm_user.create_dm()
             if not dm_channel:
                 continue
             dm_message = await dm_channel.fetch_message(dm_message)
@@ -545,6 +545,15 @@ class Utilities(commands.Cog):
                         for report in guilddict_temp[guildid]['nest_dict'][channel][nest]['reports']:
                             for k,v in guilddict_temp[guildid]['nest_dict'][channel][nest]['reports'][report]['dm_dict'].items():
                                 global_dm_list.append(v)
+                for listing_id in guilddict_temp[guildid].get('trade_dict', {}):
+                    if guilddict_temp[guildid]['trade_dict'][listing_id].get('offers', {}):
+                        for offer in guilddict_temp[guildid]['trade_dict'][listing_id]].get('offers', {}):
+                            global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['offers'][offer]['lister_msg'])
+                    if guilddict_temp[guildid]['trade_dict'][listing_id].get('active_check', 0):
+                        global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['active_check'])
+                    if guilddict_temp[guildid]['trade_dict'][listing_id].get('accepted', {}):
+                        global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['accepted']['lister_msg'])
+                        global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['accepted']['buyer_msg'])
                 report_list = ["questreport_dict", "wildreport_dict", "pokealarm_dict", "pokehuntr_dict", "raidchannel_dict"]
                 for report_dict in report_list:
                     for report in guilddict_temp[guildid].get(report_dict, {}):
@@ -575,8 +584,9 @@ class Utilities(commands.Cog):
                                 if message.id not in dm_list:
                                     delete_list.append(message)
                             elif "trade" in message.content.lower() or "offer" in message.content.lower():
-                                if (datetime.datetime.now() - message.created_at).days >= 7:
-                                    delete_list.append(message)
+                                if message.id not in dm_list:
+                                    if (datetime.datetime.now() - message.created_at).days >= 7:
+                                        delete_list.append(message)
                             elif "welcome" in message.content.lower():
                                 if (datetime.datetime.now() - message.created_at).days >= 30:
                                     delete_list.append(message)

@@ -915,25 +915,26 @@ class Listing(commands.Cog):
         listmsg = ""
         trademsg = ""
         lister_str = ""
-        for channel_id in self.bot.guild_dict[ctx.guild.id]['trade_dict']:
-            for offer_id in self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id]:
-                if isinstance(search, discord.member.Member):
-                    if self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['lister_id'] == search.id:
-                        tgt_trainer_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
-                elif search == "shiny":
-                    if "shiny" in self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['offered_pokemon'].lower():
-                        tgt_shiny_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
-                else:
-                    pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, search)
-                    if str(pokemon) in self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]['offered_pokemon']:
-                        tgt_pokemon_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][channel_id][offer_id]
+        for offer_id in self.bot.guild_dict[ctx.guild.id]['trade_dict']:
+            if self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['report_channel_id'] != ctx.channel.id:
+                continue
+            if isinstance(search, discord.member.Member):
+                if self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['lister_id'] == search.id:
+                    tgt_trainer_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]
+            elif search == "shiny":
+                if "shiny" in self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['offered_pokemon'].lower():
+                    tgt_shiny_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]
+            else:
+                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, search)
+                if str(pokemon) in self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['offered_pokemon']:
+                    tgt_pokemon_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]
         if tgt_trainer_trades:
             listmsg = _("Meowth! Here are the current trades for {user}.").format(user=search.display_name)
         elif tgt_pokemon_trades:
             listmsg = _("Meowth! Here are the current {pokemon} trades.").format(pokemon=str(pokemon))
         elif tgt_shiny_trades:
             listmsg = _("Meowth! Here are the current Shiny trades.")
-        target_trades = {**tgt_shiny_trades, **tgt_shiny_trades, **tgt_pokemon_trades}
+        target_trades = {**tgt_trainer_trades, **tgt_shiny_trades, **tgt_pokemon_trades}
         if target_trades:
             for offer_id in target_trades:
                 offer_url = ""
@@ -953,9 +954,11 @@ class Listing(commands.Cog):
                 if "Open Trade" in wanted_pokemon:
                     wanted_pokemon = "Open Trade (DM User)"
                 else:
+                    wanted_pokemon = [pkmn_class.Pokemon.get_pokemon(ctx.bot, x) for x in wanted_pokemon.split('\n')]
+                    wanted_pokemon = [str(x) for x in wanted_pokemon]
                     wanted_pokemon = ', '.join(wanted_pokemon)
                 trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('trade_bullet', '\ud83d\udd39')))
-                trademsg += (f"{lister_str}**Offered Pokemon**: {target_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Go To Message]({offer_url})")
+                trademsg += (f"{lister_str}**Offered Pokemon**: {target_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Jump To Message]({offer_url})")
         if trademsg:
             paginator = commands.Paginator(prefix="", suffix="")
             for line in trademsg.splitlines():
