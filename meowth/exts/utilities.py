@@ -547,7 +547,7 @@ class Utilities(commands.Cog):
                                 global_dm_list.append(v)
                 for listing_id in guilddict_temp[guildid].get('trade_dict', {}):
                     if guilddict_temp[guildid]['trade_dict'][listing_id].get('offers', {}):
-                        for offer in guilddict_temp[guildid]['trade_dict'][listing_id]].get('offers', {}):
+                        for offer in guilddict_temp[guildid]['trade_dict'][listing_id].get('offers', {}):
                             global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['offers'][offer]['lister_msg'])
                     if guilddict_temp[guildid]['trade_dict'][listing_id].get('active_check', 0):
                         global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['active_check'])
