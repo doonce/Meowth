@@ -40,6 +40,9 @@ class Trading(commands.Cog):
                                     listing_msg = await trade_channel.fetch_message(listing_id)
                                 except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                                     await self.close_trade(guild.id, listing_id)
+                                if not lister:
+                                    await self.close_trade(guild.id, listing_id)
+                                    continue
                                 embed = listing_msg.embeds[0]
                                 embed.description = f"**Trade:** [Jump to Message]({listing_msg.jump_url})"
                                 active_check_msg = await lister.send(f"Meowth... Is this trade listing still active? React with {yes_emoji} to extend trade for 30 more days or react with {no_emoji} to cancel trade. I'll automatically cancel it in seven days if I don't hear from you.", embed=embed)
