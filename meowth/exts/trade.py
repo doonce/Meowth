@@ -31,7 +31,7 @@ class Trading(commands.Cog):
                 guild = self.bot.get_guild(guildid)
                 trade_dict = guilddict_temp[guild.id].setdefault('trade_dict', {})
                 for listing_id in trade_dict:
-                    if trade_dict[listing_id].get('exp', 0) > time.time(): #todo change to <=
+                    if trade_dict[listing_id].get('exp', 0) <= time.time():
                         trade_channel = self.bot.get_channel(trade_dict[listing_id].get('report_channel_id'))
                         if trade_channel:
                             if trade_dict[listing_id]['status'] == "active" and not trade_dict[listing_id].get('active_check', None):
@@ -130,7 +130,7 @@ class Trading(commands.Cog):
                 emoji_check = ['\u20e3' in emoji, emoji == self.bot.config.get('trade_stop', '\u23f9')]
                 if not any(emoji_check):
                     return
-                if '\u20e3' in emoji: #todo user.id != trade_dict[message.id]['lister_id'] and '\u20e3' in emoji
+                if user.id != trade_dict[message.id]['lister_id'] and '\u20e3' in emoji:
                     wanted_pokemon = [pkmn_class.Pokemon.get_pokemon(self.bot, want) for want in trade_dict[message.id]['wanted_pokemon'].split('\n')]
                     i = int(emoji[0])
                     offer = wanted_pokemon[i-1]
