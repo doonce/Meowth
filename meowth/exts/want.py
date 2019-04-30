@@ -48,7 +48,7 @@ class Want(commands.Cog):
             want_msg += f"\n**boss** - To want specific pokemon for raid reports"
         if gym_matching_cog:
             want_msg += f"\n**gym** - To want raids and eggs at specific gyms.\n**stop** - To want research and wild spawns at specific pokestops."
-        want_msg += f"\n**iv** - To want wild spawns of a specific IV.\n**type** - To want wild, research, and nest reports of a specific type.\n**item** - To want specific items from research\n**settings** - To access your want settings."
+        want_msg += f"\n**iv** - To want wild spawns of a specific IV.\n**type** - To want wild, research, and nest reports of a specific type.\n**item** - To want specific items from research\n**settings** - To access your want settings\n**list** - To view your want list"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=want_msg, inline=False)
         while True:
             async with ctx.typing():
@@ -244,6 +244,12 @@ class Want(commands.Cog):
                         if want_command:
                             await want_command.invoke(ctx)
                             return
+                    elif want_category_msg.clean_content.lower() == "list":
+                        await utils.safe_delete(ctx.message)
+                        list_command = self.bot.get_command("list")
+                        want_command = list_command.all_commands.get('wants')
+                        await want_command.invoke(ctx)
+                        return
                     else:
                         error = _("entered something invalid")
                         break
