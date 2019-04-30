@@ -178,18 +178,20 @@ class Wild(commands.Cog):
                     if not mon_msg:
                         error = _("took too long to respond")
                         break
-                    elif mon_msg.clean_content.lower() == "cancel":
-                        error = _("cancelled the report")
+                    else:
                         await utils.safe_delete(mon_msg)
+                    if mon_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
                         break
                     else:
                         pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, mon_msg.clean_content, allow_digits=False)
                         if not pokemon:
                             error = _("entered an invalid pokemon")
-                            await utils.safe_delete(mon_msg)
                             break
                     await utils.safe_delete(mon_msg)
                     wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Great! Now, reply with the **gym, pokestop, or other location** that the wild {str(pokemon)} is closest to. You can reply with **cancel** to stop anytime.", inline=False)
+                    pokemon.shiny = False
+                    wild_embed.set_thumbnail(url=pokemon.img_url)
                     location_wait = await channel.send(embed=wild_embed)
                     try:
                         location_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -199,13 +201,13 @@ class Wild(commands.Cog):
                     if not location_msg:
                         error = _("took too long to respond")
                         break
-                    elif location_msg.clean_content.lower() == "cancel":
-                        error = _("cancelled the report")
+                    else:
                         await utils.safe_delete(location_msg)
+                    if location_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
                         break
                     elif location_msg:
                         location = location_msg.clean_content
-                    await utils.safe_delete(location_msg)
                     wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Fantastic! Now, did you check the **IV** for the {str(pokemon)}? Reply with the **IV** or **N** to report without IV. You can reply with **cancel** to stop anytime.", inline=False)
                     iv_wait = await channel.send(embed=wild_embed)
                     try:
@@ -216,9 +218,10 @@ class Wild(commands.Cog):
                     if not iv_msg:
                         error = _("took too long to respond")
                         break
-                    elif iv_msg.clean_content.lower() == "cancel":
-                        error = _("cancelled the report")
+                    else:
                         await utils.safe_delete(iv_msg)
+                    if iv_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
                         break
                     elif iv_msg:
                         iv_test = iv_msg.clean_content
@@ -229,8 +232,6 @@ class Wild(commands.Cog):
                                 wild_iv = int(round(float(wild_iv)))
                             else:
                                 wild_iv = None
-                    await utils.safe_delete(iv_msg)
-                    wild_embed.remove_field(0)
                     break
         if not error:
             content = f"{pokemon} {location} {wild_iv if wild_iv else ''}"

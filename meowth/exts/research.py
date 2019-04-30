@@ -151,9 +151,10 @@ class Research(commands.Cog):
                     if not pokestopmsg:
                         error = _("took too long to respond")
                         break
-                    elif pokestopmsg.clean_content.lower() == "cancel":
-                        error = _("cancelled the report")
+                    else:
                         await utils.safe_delete(pokestopmsg)
+                    if pokestopmsg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
                         break
                     elif pokestopmsg:
                         location = pokestopmsg.clean_content
@@ -166,9 +167,7 @@ class Research(commands.Cog):
                             if stop_url:
                                 loc_url = stop_url
                         if not location:
-                            await utils.safe_delete(pokestopmsg)
                             return
-                    await utils.safe_delete(pokestopmsg)
                     research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, " "), width=30)), inline=True)
                     research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Great! Now, reply with the **quest** that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(location=location), inline=False)
                     questwait = await channel.send(embed=research_embed)
@@ -180,13 +179,13 @@ class Research(commands.Cog):
                     if not questmsg:
                         error = _("took too long to respond")
                         break
-                    elif questmsg.clean_content.lower() == "cancel":
-                        error = _("cancelled the report")
+                    else:
                         await utils.safe_delete(questmsg)
+                    if questmsg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
                         break
                     elif questmsg:
                         quest = questmsg.clean_content
-                    await utils.safe_delete(questmsg)
                     research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, " "), width=30)), inline=True)
                     research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Fantastic! Now, reply with the **reward** for the **{quest}** quest that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(quest=quest, location=location), inline=False)
                     rewardwait = await channel.send(embed=research_embed)
@@ -198,9 +197,10 @@ class Research(commands.Cog):
                     if not rewardmsg:
                         error = _("took too long to respond")
                         break
-                    elif rewardmsg.clean_content.lower() == "cancel":
-                        error = _("cancelled the report")
+                    else:
                         await utils.safe_delete(rewardmsg)
+                    if rewardmsg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
                         break
                     elif rewardmsg:
                         reward = rewardmsg.clean_content
@@ -218,8 +218,6 @@ class Research(commands.Cog):
                             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
                         else:
                             research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
-                    await utils.safe_delete(rewardmsg)
-                    research_embed.remove_field(0)
                     break
         if not error:
             await self.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)

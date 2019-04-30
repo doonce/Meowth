@@ -389,7 +389,7 @@ def allowmeetupreport():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_meetupset(ctx):
-            if check_meetupreport(ctx):
+            if check_meetupreport(ctx) or check_meetupchannel(ctx):
                 return True
             else:
                 raise errors.MeetupReportChannelCheckFail()

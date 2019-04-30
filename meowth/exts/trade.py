@@ -371,12 +371,12 @@ class Trading(commands.Cog):
                     if not listing_msg:
                         error = _("took too long to respond")
                         break
-                    elif listing_msg.clean_content.lower() == "cancel":
-                        error = _("cancelled the listing")
+                    else:
                         await utils.safe_delete(listing_msg)
+                    if listing_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the listing")
                         break
                     elif listing_msg:
-                        await utils.safe_delete(listing_msg)
                         offered_pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, listing_msg.clean_content)
                         if not offered_pokemon:
                             error = _("entered something invalid")
@@ -393,11 +393,11 @@ class Trading(commands.Cog):
                 if not want_reply:
                     error = _("took too long to respond")
                     break
-                elif want_reply.clean_content.lower() == "cancel":
-                    error = _("cancelled the listing")
+                else:
                     await utils.safe_delete(want_reply)
+                if want_reply.clean_content.lower() == "cancel":
+                    error = _("cancelled the listing")
                     break
-                await utils.safe_delete(want_reply)
                 wanted_pokemon = want_reply.content.lower().split(',')
                 if len(wanted_pokemon) > 9:
                     error = _("entered more than 9 pokemon")
@@ -422,15 +422,15 @@ class Trading(commands.Cog):
                 await utils.safe_delete(details_want)
                 if not details_msg:
                     details = None
-                elif details_msg.clean_content.lower() == "cancel":
-                    error = _("cancelled the listing")
+                else:
                     await utils.safe_delete(details_msg)
+                if details_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the listing")
                     break
                 elif details_msg.clean_content.lower() == "n":
                     details = None
                 elif details_msg:
                     details = details_msg.clean_content
-                await utils.safe_delete(details_msg)
                 break
         if not error:
             if "open trade" not in wanted_pokemon:

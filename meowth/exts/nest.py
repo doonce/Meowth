@@ -201,9 +201,10 @@ class Nest(commands.Cog):
                     if not species_msg:
                         error = _("took too long to respond")
                         break
-                    elif species_msg.clean_content.lower() == "cancel":
-                        error = _("cancelled the report")
+                    else:
                         await utils.safe_delete(species_msg)
+                    if species_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
                         break
                     elif species_msg:
                         await utils.safe_delete(species_msg)
@@ -223,6 +224,7 @@ class Nest(commands.Cog):
                 nest_types.append('None')
                 nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
                 nest_embed, nest_pages = await self.get_nest_reports(ctx)
+                nest_embed.set_thumbnail(url=pokemon.img_url)
                 nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a **{pokemon}** report to?\n\nIf you want to stop your report, reply with **cancel**.".format(mention=author.mention, pokemon=pokemon.name.title()))
                 list_messages.append(nest_list)
                 for p in nest_pages:
@@ -295,6 +297,7 @@ class Nest(commands.Cog):
             self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['nest_reports'] = nest_reports
         else:
             nest_embed.clear_fields()
+            nest_embed.description = ""
             nest_embed.add_field(name=_('**Nest Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await ctx.send(embed=nest_embed)
             await asyncio.sleep(10)
@@ -379,7 +382,7 @@ class Nest(commands.Cog):
                 nest_img_url = pokemon.img_url
                 nest_number = pokemon.id
             else:
-                embed_value += f", {str(pokemon)} {pokemon.emoji} ({pkmn[1]})"
+                embed_value += f", {shiny_str}{str(pokemon)} {pokemon.emoji} ({pkmn[1]})"
         nest_description = f"**Nest**: {nest_name.title()}\n**All Reports**: {embed_value}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here for directions to the nest!", url=nest_url, description = nest_description)
         nest_embed.set_thumbnail(url=nest_img_url)
