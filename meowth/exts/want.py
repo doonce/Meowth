@@ -699,9 +699,9 @@ class Want(commands.Cog):
         end_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_end', None)
         user_link = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('link', True)
         if mute:
-            mute_str = f"Reply with **unmute** to unmute your DM alerts from Meowth"
+            mute_str = f"Reply with **unmute** to unmute your alerts from Meowth"
         else:
-            mute_str = f"Reply with **mute** to globally mute all DM alerts from Meowth"
+            mute_str = f"Reply with **mute** to globally mute all alerts from Meowth"
         if user_link:
             link_str = f"Reply with **unlink** to unlink your **!want** list from your boss notifications. You are currently linked meaning your **!want** list controls all pokemon alerts. If you unlink, your **!want** list will be used for wild, research, and nest reports only and **!want boss <pokemon>** will be used for raid boss @mentions."
         else:
@@ -723,10 +723,10 @@ class Want(commands.Cog):
             await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed.")
             return
         elif reply.content.lower() == "mute":
-            await ctx.send(f"{ctx.author.mention} - Your DM alerts are now muted.")
+            await ctx.send(f"{ctx.author.mention} - Your alerts are now muted.")
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute'] = True
         elif reply.content.lower() == "unmute":
-            await ctx.send(f"{ctx.author.mention} - Your DM alerts are now unmuted.")
+            await ctx.send(f"{ctx.author.mention} - Your alerts are now unmuted.")
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute'] = False
         elif reply.content.lower() == "time":
             await ctx.send(f"Please enter the time you would like to **start receiving** DMs each day. *Ex: 8:00 AM*. You can reply with **none** to turn off active hours and receive all DMs regardless of time.", delete_after=120)
@@ -769,10 +769,12 @@ class Want(commands.Cog):
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link'] = False
         else:
             await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-        if reply.content.lower() == "link" or reply.content.lower() == "unlink":
+        if "link" in reply.content.lower() or "mute" in reply.content.lower():
             add_list = []
             remove_list = []
-            if self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link']:
+            if self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute']:
+                user_wants = []
+            elif self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link']:
                 user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('wants', [])
             else:
                 user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('bosses', [])
