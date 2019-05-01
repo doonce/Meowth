@@ -531,9 +531,7 @@ class Raid(commands.Cog):
                 if not guild:
                     continue
                 for member in guild.members:
-                    if self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', True):
-                        user_wants = []
-                    elif self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True):
+                    if self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True):
                         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('wants', [])
                     else:
                         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
@@ -564,10 +562,7 @@ class Raid(commands.Cog):
                     if not user or user.bot:
                         continue
                     user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-                    user_mute = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', True)
-                    if user_mute:
-                        user_wants = []
-                    elif user_link:
+                    if user_link:
                         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('wants', [])
                     else:
                         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
