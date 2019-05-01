@@ -695,6 +695,7 @@ class Want(commands.Cog):
         Usage: !want settings"""
         await ctx.trigger_typing()
         mute = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', False)
+        mute_mentions = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
         start_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_start', None)
         end_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_end', None)
         user_link = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('link', True)
@@ -702,16 +703,22 @@ class Want(commands.Cog):
             mute_str = f"Reply with **unmute** to unmute your DM alerts from Meowth"
         else:
             mute_str = f"Reply with **mute** to globally mute all DM alerts from Meowth"
+        if mute_mentions:
+            mention_str = f"Reply with **mention** to unmute all raid @mentions from Meowth"
+        else:
+            mention_str = f"Reply with **unmention** to mute all raid @mentions from Meowth"
         if user_link:
             link_str = f"Reply with **unlink** to unlink your **!want** list from your boss notifications. You are currently linked meaning your **!want** list controls all pokemon alerts. If you unlink, your **!want** list will be used for wild, research, and nest reports only and **!want boss <pokemon>** will be used for raid boss @mentions."
         else:
             link_str = f"Reply with **link** to link your **!want** list to your boss notifications. Your current **!want** list will be used for wild, research, raid @mentions, and nest reports."
         settings_embed = discord.Embed(description=f"", colour=ctx.me.colour)
         settings_embed.add_field(name=f"**{'unmute' if mute else 'mute'}**", value=f"{mute_str}", inline=False)
+        settings_embed.add_field(name=f"**{'mention' if mute_mentions else 'unmention'}**", value=f"{mention_str}", inline=False)
         settings_embed.add_field(name=f"**time**", value=f"Reply with **time** to set your active hours. Your start time setting will be when Meowth can start sending DMs each day and your end time setting will be when Meowth will stop sending DMs each day. If you set these to **none**, meowth will DM you regardless of time unless DMs are muted.", inline=False)
         settings_embed.add_field(name=f"**{'unlink' if user_link else 'link'}**", value=f"{link_str}", inline=False)
         settings_embed.add_field(name=f"**cancel**", value=f"Reply with **cancel** to stop changing settings.", inline=False)
-        settings_embed.add_field(name="**Current Settings**", value=f"Muted: {mute}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}", inline=False)
+        settings_embed.add_field(name="**Current Settings**", value=f"DMs Muted: {mute}\n@mentions Muted: {mute_mentions}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}", inline=False)
+        settings_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
         settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:", embed=settings_embed, delete_after=120)
         try:
             reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author)))
@@ -728,6 +735,12 @@ class Want(commands.Cog):
         elif reply.content.lower() == "unmute":
             await ctx.send(f"{ctx.author.mention} - Your DM alerts are now unmuted.")
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute'] = False
+        elif reply.content.lower() == "mention":
+            await ctx.send(f"{ctx.author.mention} - You will now receive raid @mentions.")
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute_mentions'] = False
+        elif reply.content.lower() == "unmention":
+            await ctx.send(f"{ctx.author.mention} - You will no longer receive raid @mentions.")
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute_mentions'] = True
         elif reply.content.lower() == "time":
             await ctx.send(f"Please enter the time you would like to **start receiving** DMs each day. *Ex: 8:00 AM*. You can reply with **none** to turn off active hours and receive all DMs regardless of time.", delete_after=120)
             try:
@@ -769,10 +782,12 @@ class Want(commands.Cog):
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link'] = False
         else:
             await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-        if reply.content.lower() == "link" or reply.content.lower() == "unlink":
+        if "link" in reply.content.lower() or "mention" in reply.content.lower():
             add_list = []
             remove_list = []
-            if self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link']:
+            if self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute_mentions']:
+                user_wants = []
+            elif self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link']:
                 user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('wants', [])
             else:
                 user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('bosses', [])
