@@ -720,8 +720,13 @@ class Want(commands.Cog):
         settings_embed.add_field(name="**Current Settings**", value=f"DMs Muted: {mute}\n@mentions Muted: {mute_mentions}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}", inline=False)
         settings_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
         settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:", embed=settings_embed, delete_after=120)
+        def check(reply):
+            if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:
+                return True
+            else:
+                return False
         try:
-            reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author)))
+            reply = await ctx.bot.wait_for('message', timeout=120, check=check)
         except asyncio.TimeoutError:
             await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=120)
             return
@@ -782,6 +787,7 @@ class Want(commands.Cog):
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link'] = False
         else:
             await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+            await utils.safe_delete(settings_msg)
         if "link" in reply.content.lower() or "mention" in reply.content.lower():
             add_list = []
             remove_list = []
