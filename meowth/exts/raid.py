@@ -1542,7 +1542,7 @@ class Raid(commands.Cog):
         raid_embed.add_field(name=_('**Hatches:**'), value=oldembed.fields[3].value, inline=True)
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=oldembed.thumbnail.url)
-        raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/raid_tut_raid.png?cache=1")
+        raid_embed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
         ctx.raidreport = egg_report
         if ctx.raidreport:
             self.bot.loop.create_task(self.edit_dm_messages(ctx, egg_report.content, copy.deepcopy(raid_embed), dm_dict))
