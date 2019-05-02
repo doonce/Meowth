@@ -1979,7 +1979,7 @@ class Raid(commands.Cog):
                         exraidlist += (('\n**' + str(exraidcount)) + '.**   ') + exraid_channel.mention
                         exraid_dict[str(exraidcount)] = exraid_channel
         invite_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/EX.png?cache=1')
-        invite_embed.add_field(name=_('**New Invite**'), value=f"Meowth! I'll help you gain access to an EX Raid channel!\n\nThe following {str(exraidcount)} EX Raids have been reported:\n{exraidlist}\n\nReply with **the number** (1, 2, etc) of the EX Raid you have been invited to. If none of them match your invite, type 'N' and report it with **!exraid**", inline=False)
+        invite_embed.add_field(name=_('**New Invite**'), value=f"Meowth! I'll help you gain access to an EX Raid channel!\n\nThe following {str(exraidcount)} EX Raids have been reported:\n{exraidlist}\n\nReply with **the number** (1, 2, etc) of the EX Raid you have been invited to. If none of them match your invite, reply with **cancel** and report it with **!exraid**", inline=False)
         invite_embed.set_footer(text=_('Inviting @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():

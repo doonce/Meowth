@@ -592,6 +592,7 @@ class Huntr(commands.Cog):
             raid_embed.add_field(name="\u200b", value=_("Perform a scan to help find more by clicking [here](https://gymhuntr.com/#{huntrurl}).").format(huntrurl=raid_coordinates), inline=False)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=raid_img_url)
+        raid_embed.set_author(name=f"Level {egg_level} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1")
         return raid_embed
 
     async def make_raid_embed(self, ctx, entered_raid, raid_details, raidexp, raid_coordinates, moveset=None, reporter=None):
@@ -634,6 +635,7 @@ class Huntr(commands.Cog):
             raid_embed.add_field(name=_("**Moveset:**"), value=moveset)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=pokemon.img_url)
+        raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/raid_tut_raid.png?cache=1")
         return raid_embed
 
     """Reporting"""
@@ -719,6 +721,7 @@ class Huntr(commands.Cog):
         if reporter == "huntr":
             wild_embed.add_field(name=wild_extra, value=_('Perform a scan to help find more by clicking [here]({huntrurl}).').format(huntrurl=huntr_url), inline=False)
         wild_embed.set_thumbnail(url=pokemon.img_url)
+        wild_embed.set_author(name=f"Wild {pokemon.name.title()} Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
         wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=ctx.bot.config.get('wild_omw', '\ud83c\udfce')), inline=True)
         wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=ctx.bot.config.get('wild_despawn', '\ud83d\udca8')), inline=True)
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
