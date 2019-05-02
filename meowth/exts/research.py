@@ -218,6 +218,7 @@ class Research(commands.Cog):
                             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
                         else:
                             research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
+                    research_embed.remove_field(0)
                     break
         if not error:
             await self.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)

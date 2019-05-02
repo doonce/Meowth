@@ -120,6 +120,7 @@ class Raid(commands.Cog):
                             newembed.add_field(name=field.name, value=field.value, inline=field.inline)
                         newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
                         newembed.set_thumbnail(url=oldembed.thumbnail.url)
+                        newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
                         try:
                             await oldraidmsg.edit(new_content=oldraidmsg.content, embed=newembed, content=oldraidmsg.content)
                         except:
@@ -887,6 +888,7 @@ class Raid(commands.Cog):
             raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
             raid_embed.add_field(name=oldembed.fields[3].name, value=oldembed.fields[3].value, inline=True)
             raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
+            raid_embed.set_author(name=f"Level {newraid} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{newraid}.png?cache=1")
             raid_embed.set_thumbnail(url=raid_img_url)
             for field in oldembed.fields:
                 t = _('team')
@@ -1270,6 +1272,7 @@ class Raid(commands.Cog):
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=pokemon.img_url)
+        raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/raid_tut_raid.png?cache=1")
         ctx.raidreport = await message.channel.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
         await asyncio.sleep(1)
         raidmsg = _("{roletest}Meowth! {pokemon} raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(roletest=roletest, pokemon=str(pokemon).title(), member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
@@ -1438,6 +1441,7 @@ class Raid(commands.Cog):
             raid_embed.add_field(name=_('**Hatches:**'), value=_('Set with **!timerset**'), inline=True)
             raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
             raid_embed.set_thumbnail(url=raid_img_url)
+            raid_embed.set_author(name=f"Level {egg_level} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1")
             ctx.raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
             await asyncio.sleep(1)
             raidmsg = _("Meowth! Level {level} raid egg reported by {member} in {citychannel}! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(level=egg_level, member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
@@ -1538,6 +1542,7 @@ class Raid(commands.Cog):
         raid_embed.add_field(name=_('**Hatches:**'), value=oldembed.fields[3].value, inline=True)
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=oldembed.thumbnail.url)
+        raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/raid_tut_raid.png?cache=1")
         ctx.raidreport = egg_report
         if ctx.raidreport:
             self.bot.loop.create_task(self.edit_dm_messages(ctx, egg_report.content, copy.deepcopy(raid_embed), dm_dict))
@@ -1691,6 +1696,7 @@ class Raid(commands.Cog):
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=pokemon.img_url)
+        raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/raid_tut_raid.png?cache=1")
         raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
         if meetup:
             raid_embed.add_field(name=oldembed.fields[3].name, value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
@@ -1900,6 +1906,7 @@ class Raid(commands.Cog):
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=raid_img_url)
+        raid_embed.set_author(name=f"EX Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/EX.png?cache=1")
         if self.bot.guild_dict[channel.guild.id]['configure_dict']['invite']['enabled']:
             invitemsgstr = _("Use the **!invite** command to gain access and coordinate")
             invitemsgstr2 = _(" after using **!invite** to gain access")
@@ -2076,6 +2083,7 @@ class Raid(commands.Cog):
                         newembed.set_field_at(0, name="**Event Title:**", value=location.title())
                         newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
                         newembed.set_thumbnail(url=oldembed.thumbnail.url)
+                        newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
                         try:
                             await oldraidmsg.edit(embed=newembed, content=oldraidmsg.content)
                         except:
@@ -2164,6 +2172,7 @@ class Raid(commands.Cog):
         raid_embed.add_field(name=_('**Event Ends:**'), value=_('Set with **!timerset**'), inline=True)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=raid_img_url)
+        raid_embed.set_author(name=f"Meetup Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/meetup.png?cache=1")
         ctx.raidreport = await channel.send(content=_('Meowth! Meetup reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
         await asyncio.sleep(1)
         raidmsg = _("Meowth! Meetup reported by {member} in {citychannel}! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
@@ -2545,6 +2554,7 @@ class Raid(commands.Cog):
                 newembed.add_field(name=field.name, value=field.value, inline=field.inline)
             newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
             newembed.set_thumbnail(url=oldembed.thumbnail.url)
+            newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
             locationmsg = await channel.send(content=_("Meowth! Here's the current location for the raid!\nDetails: {location}").format(location=location), embed=newembed, delete_after=60)
 
     @location.command()
@@ -2600,6 +2610,7 @@ class Raid(commands.Cog):
                 newembed.set_field_at(1, name=_("**Event Location:**"), value=raid_details, inline=True)
             newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
             newembed.set_thumbnail(url=oldembed.thumbnail.url)
+            newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
             otw_list = []
             trainer_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['trainer_dict'])
             for trainer in trainer_dict.keys():
@@ -2968,6 +2979,7 @@ class Raid(commands.Cog):
                                     newembed.add_field(name=field.name, value=field.value, inline=field.inline)
                                 newembed.add_field(name=dupeembed.fields[2].name, value=dupeembed.fields[2].value, inline=True)
                                 newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
+                                newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
                                 newembed.set_thumbnail(url=oldembed.thumbnail.url)
                                 try:
                                     newraidmsg = await oldraidmsg.edit(new_content=oldraidmsg.content, embed=newembed, content=oldraidmsg.content)
@@ -3820,6 +3832,7 @@ class Raid(commands.Cog):
             newembed.add_field(name=_('**Team List**'), value='{blue_emoji}: **{channelblue}** | {red_emoji}: **{channelred}** | {yellow_emoji}: **{channelyellow}** | {grey_emoji}: **{channelunknown}**'.format(blue_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic']), channelblue=channel_dict["mystic"], red_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor']), channelred=channel_dict["valor"], yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct']), channelyellow=channel_dict["instinct"], grey_emoji=utils.parse_emoji(channel.guild, self.bot.config['unknown']), channelunknown=channel_dict["unknown"]), inline=True)
         newembed.set_footer(text=reportembed.footer.text, icon_url=reportembed.footer.icon_url)
         newembed.set_thumbnail(url=reportembed.thumbnail.url)
+        newembed.set_author(name=reportembed.author.name, icon_url=reportembed.author.icon_url)
         try:
             await reportmsg.edit(embed=newembed)
         except:
