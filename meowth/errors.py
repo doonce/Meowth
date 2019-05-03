@@ -291,6 +291,9 @@ def custom_error_handling(bot, logger):
                 msg += _('one of the following region channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -309,6 +312,9 @@ def custom_error_handling(bot, logger):
             counter = 0
             for c in want_channels:
                 channel = discord.utils.get(guild.channels, id=c)
+                perms = ctx.author.permissions_in(channel)
+                if not perms.read_messages:
+                    continue
                 if counter > 0:
                     msg += '\n'
                 if channel:
@@ -329,6 +335,9 @@ def custom_error_handling(bot, logger):
                 msg += _('of the following Region channels to see active raids:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -346,6 +355,9 @@ def custom_error_handling(bot, logger):
                 msg += _('of the following Region channels to see active raids:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -374,6 +386,9 @@ def custom_error_handling(bot, logger):
                 msg += _('of the following Region channels to see active channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -399,6 +414,9 @@ def custom_error_handling(bot, logger):
                 msg += _('of the following Region channels to see active raids:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -418,6 +436,9 @@ def custom_error_handling(bot, logger):
                 msg += _('one of the following region channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -435,6 +456,9 @@ def custom_error_handling(bot, logger):
                 msg += _('one of the following region channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -452,6 +476,9 @@ def custom_error_handling(bot, logger):
                 msg += _('one of the following region channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -469,6 +496,9 @@ def custom_error_handling(bot, logger):
                 msg += _('one of the following region channels to see active raids:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -486,6 +516,9 @@ def custom_error_handling(bot, logger):
                 msg += _('one of the following region channels to gain access:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -503,6 +536,9 @@ def custom_error_handling(bot, logger):
                 msg += _('one of the following region channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -520,6 +556,9 @@ def custom_error_handling(bot, logger):
                 msg += _('one of the following region channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -537,6 +576,9 @@ def custom_error_handling(bot, logger):
                 msg += _('one of the following region channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -554,6 +596,9 @@ def custom_error_handling(bot, logger):
                 msg += _('one of the following region channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:
@@ -571,6 +616,9 @@ def custom_error_handling(bot, logger):
                 msg += _('one of the following region channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
                     if channel:
                         msg += '\n' + channel.mention
                     else:

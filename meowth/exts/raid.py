@@ -583,9 +583,15 @@ class Raid(commands.Cog):
                         if role.name.lower() not in want_names and role.name.lower() in self.bot.pkmn_list:
                             remove_list.append(role)
                     if add_list:
-                        await user.add_roles(*add_list)
+                        try:
+                            await user.add_roles(*add_list)
+                        except (discord.errors.Forbidden, discord.errors.HTTPException):
+                            pass
                     if remove_list:
-                        await user.remove_roles(*remove_list)
+                        try:
+                            await user.remove_roles(*remove_list)
+                        except (discord.errors.Forbidden, discord.errors.HTTPException):
+                            pass
             if not loop:
                 return
             await asyncio.sleep(7200)
@@ -1310,7 +1316,8 @@ class Raid(commands.Cog):
                 for moveset in ctrs_dict:
                     await utils.safe_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
                     await asyncio.sleep(0.25)
-            except:
+            except Exception as e:
+                print(e)
                 ctrs_dict = {}
                 ctrsmessage_id = None
         else:
@@ -3105,6 +3112,7 @@ class Raid(commands.Cog):
                 async with aiohttp.ClientSession() as sess:
                     async with sess.get(url) as resp:
                         data = await resp.json()
+
         data = data['attackers'][0]
         raid_cp = data['cp']
         atk_levels = '30'
@@ -3146,9 +3154,9 @@ class Raid(commands.Cog):
             cpstr = _("CP")
             ctrs_embed.add_field(name=name, value=f"{cpstr}: {ctr_cp}\n{moves}")
             index += 1
-        ctrs_embed.add_field(name=_("Results with {userstr} attackers").format(userstr=userstr), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pkmn.name.replace('-', '_').upper()))
+        ctrs_embed.add_field(name=_("Difficulty Estimate:"), value=_("{est} Trainers").format(est=round(est, 2)), inline=True)
+        ctrs_embed.add_field(name=_("Results with {userstr} attackers").format(userstr=userstr), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pkmn.name.replace('-', '_').upper()), inline=True)
         if user:
-            ctrs_embed.add_field(name=_("Pokebattler Estimator:"), value=_("Difficulty rating: {est}").format(est=est))
             await ctx.author.send(embed=ctrs_embed, delete_after=600)
             return
         await ctx.channel.send(embed=ctrs_embed)
@@ -3217,7 +3225,9 @@ class Raid(commands.Cog):
             ctrs_embed.add_field(name=name, value=moves)
             ctrindex += 1
         ctrs_dict[ctrs_index]['embed'] = ctrs_embed
+        ctrs_dict[ctrs_index]['estimator'] = str(round(data['randomMove']['total']['estimator'], 2)) + " Trainers"
         for moveset in data['byMove']:
+            est = str(round(moveset['total']['estimator'], 2)) + " Trainers"
             ctrs_index += 1
             if ctrs_index == 11:
                 break
@@ -3238,7 +3248,7 @@ class Raid(commands.Cog):
                 name = _("#{index} - {ctr_name}").format(index=ctrindex, ctr_name=ctr_name)
                 ctrs_embed.add_field(name=name, value=moves)
                 ctrindex += 1
-            ctrs_dict[ctrs_index] = {'moveset': movesetstr, 'embed': ctrs_embed, 'emoji': emoji_dict[ctrs_index]}
+            ctrs_dict[ctrs_index] = {'moveset': movesetstr, 'embed': ctrs_embed, 'emoji': emoji_dict[ctrs_index], 'estimator': est}
         moveset_list = []
         for moveset in ctrs_dict:
             moveset_list.append(f"{ctrs_dict[moveset]['emoji']}: {ctrs_dict[moveset]['moveset']}\n")
@@ -3246,7 +3256,8 @@ class Raid(commands.Cog):
             ctrs_split = int(round(len(moveset_list)/2+0.1))
             ctrs_dict[moveset]['embed'].add_field(name=_("**Possible Movesets:**"), value=f"{''.join(moveset_list[:ctrs_split])}", inline=True)
             ctrs_dict[moveset]['embed'].add_field(name="\u200b", value=f"{''.join(moveset_list[ctrs_split:])}", inline=True)
-            ctrs_dict[moveset]['embed'].add_field(name=_("Results with Level 30 attackers"), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pokemon.name.replace('-', '_').upper()), inline=False)
+            ctrs_dict[moveset]['embed'].add_field(name="Difficulty Estimate", value=ctrs_dict[moveset]['estimator'], inline=True)
+            ctrs_dict[moveset]['embed'].add_field(name=_("Results with Level 30 attackers"), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pokemon.name.replace('-', '_').upper()), inline=True)
         return ctrs_dict
 
     @commands.command()
