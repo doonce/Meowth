@@ -1758,6 +1758,7 @@ class Raid(commands.Cog):
             egg_report = None
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['active'] = True
         ctrsmessage = self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id].get('ctrsmessage', None)
+        ctrs_dict = self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id].get('ctrs_dict', {})
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id] = {
             'reportcity': reportcitychannel.id,
             'trainer_dict': trainer_dict,
@@ -1772,17 +1773,16 @@ class Raid(commands.Cog):
             'pokemon': entered_raid,
             'pkmn_obj':str(pokemon),
             'egglevel': '0',
-            'moveset': 0
+            'moveset': 0,
+            'ctrsmessage':ctrsmessage,
+            'ctrs_dict':ctrs_dict
         }
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['starttime'] = starttime
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['duplicate'] = duplicate
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['gymhuntrgps'] = gymhuntrgps
-        if str(egglevel) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and str(pokemon):
-            if ctrsmessage:
-                ctrsmessage = await raid_channel.fetch_message(ctrsmessage)
-                await ctrsmessage.delete()
+        if str(egglevel) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and str(pokemon) and not ctrsmessage:
             ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), weather)
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
