@@ -189,8 +189,8 @@ class Wild(commands.Cog):
                             error = _("entered an invalid pokemon")
                             break
                     await utils.safe_delete(mon_msg)
-                    wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Great! Now, reply with the **gym, pokestop, or other location** that the wild {str(pokemon)} is closest to. You can reply with **cancel** to stop anytime.", inline=False)
                     pokemon.shiny = False
+                    wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Great! Now, reply with the **gym, pokestop, or other location** that the wild {str(pokemon)} is closest to. You can reply with **cancel** to stop anytime.", inline=False)
                     wild_embed.set_thumbnail(url=pokemon.img_url)
                     location_wait = await channel.send(embed=wild_embed)
                     try:

@@ -471,7 +471,7 @@ class Pokemon():
             size = None
 
         for form in form_list:
-            form = re.search(form, argument, re.IGNORECASE)
+            form = re.search(re.escape(form), argument, re.IGNORECASE)
             if form:
                 match_list.append(form.group(0))
                 argument = argument.replace(form.group(0), '').strip()
