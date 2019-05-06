@@ -965,7 +965,7 @@ class Listing(commands.Cog):
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:
-            listmsg = _("Meowth! No active trades found. Report one with **!trade**")
+            listmsg = _("Meowth! No active trades found. List one with **!trade**")
         return listmsg, None
 
     @_list.command()
