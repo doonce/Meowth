@@ -722,6 +722,22 @@
         ],
         "gender": true,
         "available": true
+      },
+      "detective": {
+        "type": [
+          "Electric"
+        ],
+        "pokedex": "Whenever Pikachu comes across something new, it blasts it with a jolt of electricity. If you come across a blackened berry, it's evidence that this Pokemon mistook the intensity of its charge.",
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research",
+          "nest",
+          "evolution"
+        ],
+        "gender": true,
+        "available": true
       }
     },
     "distance": 1.0,
@@ -822,6 +838,17 @@
         "available": true
       },
       "beanie": {
+        "type": [
+          "Electric"
+        ],
+        "pokedex": "If the electrical sacs become excessively charged, Raichu plants its tail in the ground and discharges. Scorched patches of ground will be found near this Pokemon's nest.",
+        "shiny": [
+          "evolution"
+        ],
+        "gender": true,
+        "available": true
+      },
+      "detective": {
         "type": [
           "Electric"
         ],
@@ -1361,7 +1388,13 @@
           "Ground"
         ],
         "pokedex": "Diglett are raised in most farms. The reason is simple\u2014wherever this Pokemon burrows, the soil is left perfectly tilled for planting crops. This soil is made ideal for growing delicious vegetables.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research",
+          "nest"
+        ],
         "gender": false,
         "available": true
       },
@@ -1390,7 +1423,7 @@
           "Ground"
         ],
         "pokedex": "Dugtrio are actually triplets that emerged from one body. As a result, each triplet thinks exactly like the other two triplets. They work cooperatively to burrow endlessly.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       },
@@ -2172,7 +2205,13 @@
           "Water"
         ],
         "pokedex": "Seel hunts for prey in the frigid sea underneath sheets of ice. When it needs to breathe, it punches a hole through the ice with the sharply protruding section of its head.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research",
+          "nest"
+        ],
         "gender": false,
         "available": true
       }
@@ -2192,7 +2231,7 @@
           "Ice"
         ],
         "pokedex": "Dewgong loves to snooze on bitterly cold ice. The sight of this Pokemon sleeping on a glacier was mistakenly thought to be a mermaid by a mariner long ago.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       }
@@ -2370,8 +2409,7 @@
         ],
         "pokedex": "Sometimes, on a dark night, your shadow thrown by a streetlight will suddenly and startlingly overtake you. It is actually a Gengar running past you, pretending to be your shadow.",
         "shiny": [
-          "evolution",
-          "raid"
+          "evolution"
         ],
         "gender": false,
         "available": true
@@ -3137,7 +3175,12 @@
           "Ice"
         ],
         "pokedex": "People have driven Lapras almost to the point of extinction. In the evenings, this Pokemon is said to sing plaintively as it seeks what few others of its kind still remain.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
         "gender": false,
         "available": true
       }
@@ -5268,7 +5311,12 @@
           "Rock"
         ],
         "pokedex": "Shuckle quietly hides itself under rocks, keeping its body concealed inside its hard shell while eating berries it has stored away. The berries mix with its body fluids to become a juice.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
         "gender": false,
         "available": true
       }
@@ -9676,7 +9724,7 @@
         "pokedex": "Its shape and coloration vary, depending on its habitat.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "west": {
         "type": [
@@ -9685,7 +9733,7 @@
         "pokedex": "While they normally live in the sea, they can function on land, too, until their skin dries out.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "east": {
         "type": [
@@ -9694,7 +9742,7 @@
         "pokedex": "When it senses danger, it gushes a purple liquid. Some theories suggest this liquid is a greasy sweat induced by stress.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 5.0,
@@ -9714,7 +9762,7 @@
         "pokedex": "It apparently had a huge shell for protection in ancient times. It lives in shallow tidal pools.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "west": {
         "type": [
@@ -9724,7 +9772,7 @@
         "pokedex": "When it's attacked, it gushes a purple liquid that's not poisonous but makes Gastrodon's meat bitter and inedible.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "east": {
         "type": [
@@ -9734,7 +9782,7 @@
         "pokedex": "Long ago, it had a shell on its back. There's now a vestigial plate on its back that's hard but thin.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 5.0,
@@ -10924,7 +10972,7 @@
         "pokedex": "It is said that its emergence gave humans the intelligence to improve their quality of life.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 20.0,
@@ -10943,7 +10991,7 @@
         "pokedex": "It sleeps at the bottom of a lake. Its spirit is said to leave its body to fly on the lake's surface.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 20.0,
@@ -10962,7 +11010,7 @@
         "pokedex": "It is thought that Uxie, Mesprit, and Azelf all came from the same egg.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 20.0,
