@@ -42,14 +42,23 @@ class Want(commands.Cog):
         error = False
         want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
-        want_msg = f"Meowth! I'll help you add a new alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to subscribe to. Reply with one of the following or reply with **cancel** to stop anytime.\n\n**pokemon** - To want specific pokemon for research, wild, nest, and raid reports."
-        if not user_link:
-            want_msg = want_msg.replace("nest, and raid reports.", "and nest reports.")
-            want_msg += f"\n**boss** - To want specific pokemon for raid reports"
-        if gym_matching_cog:
-            want_msg += f"\n**gym** - To want raids and eggs at specific gyms.\n**stop** - To want research and wild spawns at specific pokestops."
-        want_msg += f"\n**iv** - To want wild spawns of a specific IV.\n**type** - To want wild, research, and nest reports of a specific type.\n**item** - To want specific items from research\n**settings** - To access your want settings\n**list** - To view your want list"
+        want_msg = f"Meowth! I'll help you add a new alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to subscribe to. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**New Alert Subscription**'), value=want_msg, inline=False)
+        want_embed.add_field(name=_('**Pokemon**'), value=f"Reply with **pokemon** to want specific pokemon for research, wild, {'nest, and raid reports.' if user_link else 'and nest reports.'}", inline=False)
+        if not user_link:
+            want_embed.add_field(name=_('**Boss**'), value=f"Reply with **boss** to want specific pokemon for raid reports.", inline=False)
+        if gym_matching_cog:
+            gyms = gym_matching_cog.get_gyms(ctx.guild.id)
+            stops = gym_matching_cog.get_stops(ctx.guild.id)
+            if gyms:
+                want_embed.add_field(name=_('**Gym**'), value=f"Reply with **gym** to want raids and eggs at specific gyms.", inline=False)
+            if stops:
+                want_embed.add_field(name=_('**Stop**'), value=f"Reply with **stop** to want research and wild spawns at specific pokestops.", inline=False)
+        want_embed.add_field(name=_('**IV**'), value=f"Reply with **iv** to want wild spawns of a specific IV.", inline=False)
+        want_embed.add_field(name=_('**Type**'), value=f"Reply with **type** to want wild, research, and nest reports of a specific type.", inline=False)
+        want_embed.add_field(name=_('**Item**'), value=f"Reply with **item** to want sspecific items from research.", inline=False)
+        want_embed.add_field(name=_('**Settings**'), value=f"Reply with **settings** to access your want settings.", inline=False)
+        want_embed.add_field(name=_('**List**'), value=f"Reply with **list** to view your want list.", inline=False)
         while True:
             async with ctx.typing():
                 if pokemon:
@@ -77,7 +86,8 @@ class Want(commands.Cog):
                         break
                     elif want_category_msg.clean_content.lower() == "pokemon":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the pokemon you'd like to subscribe to. You can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to subscribe to. You can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -97,7 +107,8 @@ class Want(commands.Cog):
                         break
                     elif want_category_msg.clean_content.lower() == "boss" and not user_link:
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the pokemon you'd like to subscribe to. You can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to subscribe to. You can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -119,9 +130,10 @@ class Want(commands.Cog):
                                 await ctx.invoke(want_command, bosses=ctx.message.content)
                                 return
                         break
-                    elif want_category_msg.clean_content.lower() == "gym" and gym_matching_cog:
+                    elif want_category_msg.clean_content.lower() == "gym" and gym_matching_cog and gyms:
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/gym-arena.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the gyms you'd like to subscribe to. You can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the gyms you'd like to subscribe to. You can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -143,9 +155,10 @@ class Want(commands.Cog):
                                 await ctx.invoke(want_command, gyms=ctx.message.content)
                                 return
                         break
-                    elif want_category_msg.clean_content.lower() == "stop" and gym_matching_cog:
+                    elif want_category_msg.clean_content.lower() == "stop" and gym_matching_cog and stops:
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pokestop_near.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the pokestops you'd like to subscribe to. You can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokestops you'd like to subscribe to. You can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -169,7 +182,8 @@ class Want(commands.Cog):
                         break
                     elif want_category_msg.clean_content.lower() == "iv":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the IVs you'd like to subscribe to or IV+ to subscribe to that IV through 100. You can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the IVs you'd like to subscribe to or IV+ to subscribe to that IV through 100. You can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -193,7 +207,8 @@ class Want(commands.Cog):
                         break
                     elif want_category_msg.clean_content.lower() == "item":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/MysteryItem.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the items you'd like to subscribe to.\n\nSupported items include: incense, poke ball, great ball, ultra ball, master ball, potion, super potion, hyper potion, max potion, revive, max revive, razz berry, golden razz berry, nanab berry, pinap berry, silver pinap berry, fast tm, charged tm, rare candy, lucky egg, stardust, lure module, star piece, premium raid pass, egg incubator, super incubator, team medallion, sun stone, metal coat, dragon scale, up-grade, sinnoh stone.\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the items you'd like to subscribe to.\n\nSupported items include: incense, poke ball, great ball, ultra ball, master ball, potion, super potion, hyper potion, max potion, revive, max revive, razz berry, golden razz berry, nanab berry, pinap berry, silver pinap berry, fast tm, charged tm, rare candy, lucky egg, stardust, lure module, glacial lure module, magnetic lure module, mossy lure module, star piece, premium raid pass, egg incubator, super incubator, team medallion, sun stone, metal coat, dragon scale, up-grade, sinnoh stone.\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -217,7 +232,8 @@ class Want(commands.Cog):
                         break
                     elif want_category_msg.clean_content.lower() == "type":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/types.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the types you'd like to subscribe to.\n\nSupported types include: normal, fighting, flying, poison, ground, rock, bug, ghost, steel, fire, water, grass, electric, psychic, ice, dragon, dark, fairy.\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the types you'd like to subscribe to.\n\nSupported types include: normal, fighting, flying, poison, ground, rock, bug, ghost, steel, fire, water, grass, electric, psychic, ice, dragon, dark, fairy.\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -257,9 +273,7 @@ class Want(commands.Cog):
             want_embed.clear_fields()
             want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
             want_embed.add_field(name=_('**New Subscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
-            confirmation = await channel.send(embed=want_embed)
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(embed=want_embed, delete_after=10)
             await utils.safe_delete(message)
             return
 
@@ -526,7 +540,7 @@ class Want(commands.Cog):
     async def want_item(self, ctx, *, items):
         """Add a item to your want list. Currently used research reports.
 
-        Item List = incense, poke ball, great ball, ultra ball, master ball, potion, super potion, hyper potion, max potion, revive, max revive, razz berry, golden razz berry, nanab berry, pinap berry, silver pinap berry, fast tm, charged tm, rare candy, lucky egg, stardust, lure module, star piece, premium raid pass, egg incubator, super incubator, team medallion, sun stone, metal coat, dragon scale, up-grade, sinnoh stone
+        Item List = incense, poke ball, great ball, ultra ball, master ball, potion, super potion, hyper potion, max potion, revive, max revive, razz berry, golden razz berry, nanab berry, pinap berry, silver pinap berry, fast tm, charged tm, rare candy, lucky egg, stardust, lure module, glacial lure module, magnetic lure module, mossy lure module, star piece, premium raid pass, egg incubator, super incubator, team medallion, sun stone, metal coat, dragon scale, up-grade, sinnoh stone
 
         Usage: !want item <item list>"""
         await ctx.trigger_typing()
@@ -541,7 +555,7 @@ class Want(commands.Cog):
         already_want_count = 0
         already_want_list = []
         added_list = []
-        item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
+        item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "glacial lure module", "magnetic lure module", "mossy lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
         for entered_want in want_split:
             if entered_want.strip().lower() in item_list:
@@ -828,16 +842,52 @@ class Want(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         gym_matching_cog = self.bot.cogs.get("GymMatching")
         error = False
+        user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+        user_wants = sorted(user_wants)
+        wantlist = [utils.get_name(self.bot, x).title() for x in user_wants]
+        user_bosses = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+        user_bosses = sorted(user_bosses)
+        bosslist = [utils.get_name(self.bot, x).title() for x in user_bosses]
+        user_gyms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
+        user_gyms = [x.title() for x in user_gyms]
+        user_stops = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
+        user_stops = [x.title() for x in user_stops]
+        user_ivs = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
+        user_ivs = sorted(user_ivs)
+        user_ivs = [str(x) for x in user_ivs]
+        user_items = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
+        user_items = [x.title() for x in user_items]
+        user_types = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
+        user_types = [x.title() for x in user_types]
         want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
-        want_msg = f"Meowth! I'll help you remove an alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to unsubscribe from. Reply with one of the following or reply with **cancel** to stop anytime.\n\n**pokemon** - To unwant specific pokemon for research, wild, nest, and raid reports."
-        if not user_link:
-            want_msg = want_msg.replace("nest, and raid reports.", "and nest reports.")
-            want_msg += f"\n**boss** - To unwant specific pokemon for raid reports"
-        if gym_matching_cog:
-            want_msg += f"\n**gym** - To unwant raids and eggs at specific gyms.\n**stop** - To unwant research and wild spawns at specific pokestops."
-        want_msg += f"\n**iv** - To unwant wild spawns of a specific IV.\n**type** - To unwant wild, research, and nest reports of a specific type.\n**item** - To unwant specific items from research\n**all** - To unwant everything."
+        want_msg = f"Meowth! I'll help you remove an alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to unsubscribe from. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=want_msg, inline=False)
+        if not any([user_wants, user_bosses, user_gyms, user_stops, user_ivs, user_items, user_types]):
+            want_embed.clear_fields()
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
+            want_embed.add_field(name=_('**Alert Unsubscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you don't have any subscriptions! Add some with **!want**.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=want_embed, delete_after=10)
+            await utils.safe_delete(message)
+            return
+        if user_wants:
+            want_embed.add_field(name=_('**Pokemon**'), value=f"Reply with **pokemon** to unwant specific pokemon for research, wild, {'nest, and raid reports.' if user_link else 'and nest reports.'}", inline=False)
+        if not user_link and user_bosses:
+            want_embed.add_field(name=_('**Boss**'), value=f"Reply with **boss** to unwant specific pokemon for raid reports.", inline=False)
+        if gym_matching_cog:
+            gyms = gym_matching_cog.get_gyms(ctx.guild.id)
+            stops = gym_matching_cog.get_stops(ctx.guild.id)
+            if gyms and user_gyms:
+                want_embed.add_field(name=_('**Gym**'), value=f"Reply with **gym** to unawnt raids and eggs at specific gyms.", inline=False)
+            if stops and user_stops:
+                want_embed.add_field(name=_('**Stop**'), value=f"Reply with **stop** to unwant research and wild spawns at specific pokestops.", inline=False)
+        if user_ivs:
+            want_embed.add_field(name=_('**IV**'), value=f"Reply with **iv** to unwant wild spawns of a specific IV.", inline=False)
+        if user_types:
+            want_embed.add_field(name=_('**Type**'), value=f"Reply with **type** to unwant wild, research, and nest reports of a specific type.", inline=False)
+        if user_items:
+            want_embed.add_field(name=_('**Item**'), value=f"Reply with **item** to unwant sspecific items from research.", inline=False)
+        want_embed.add_field(name=_('**All**'), value=f"Reply with **all** to unwant everything.", inline=False)
         while True:
             async with ctx.typing():
                 if pokemon:
@@ -864,14 +914,12 @@ class Want(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif want_category_msg.clean_content.lower() == "pokemon":
-                        user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-                        user_wants = sorted(user_wants)
-                        wantlist = [utils.get_name(self.bot, x).title() for x in user_wants]
                         if not wantlist:
                             error = _("don't have wants of that type")
                             break
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the pokemon you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(wantlist)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(wantlist)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -890,14 +938,12 @@ class Want(commands.Cog):
                             await self.unwant_pokemon(ctx, want_sub_msg.clean_content.lower())
                         break
                     elif want_category_msg.clean_content.lower() == "boss" and not user_link:
-                        user_bosses = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-                        user_bosses = sorted(user_bosses)
-                        bosslist = [utils.get_name(self.bot, x).title() for x in user_bosses]
                         if not bosslist:
                             error = _("don't have wants of that type")
                             break
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the pokemon you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(bosslist)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(bosslist)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -920,13 +966,12 @@ class Want(commands.Cog):
                                 return
                         break
                     elif want_category_msg.clean_content.lower() == "gym" and gym_matching_cog:
-                        user_gyms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
-                        user_gyms = [x.title() for x in user_gyms]
                         if not user_gyms:
                             error = _("don't have wants of that type")
                             break
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/gym-arena.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the gyms you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(user_gyms)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the gyms you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(user_gyms)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -949,13 +994,12 @@ class Want(commands.Cog):
                                 return
                         break
                     elif want_category_msg.clean_content.lower() == "stop" and gym_matching_cog:
-                        user_stops = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
-                        user_stops = [x.title() for x in user_stops]
                         if not user_stops:
                             error = _("don't have wants of that type")
                             break
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pokestop_near.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the pokestops you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(user_stops)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokestops you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(user_stops)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -978,14 +1022,12 @@ class Want(commands.Cog):
                                 return
                         break
                     elif want_category_msg.clean_content.lower() == "iv":
-                        user_ivs = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
-                        user_ivs = sorted(user_ivs)
-                        user_ivs = [str(x) for x in user_ivs]
                         if not user_ivs:
                             error = _("don't have wants of that type")
                             break
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the IVs you'd like to unsubscribe from or IV+ to unsubscribe from that IV through 100.\n\nYour current want list is: {(', ').join(user_ivs)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the IVs you'd like to unsubscribe from or IV+ to unsubscribe from that IV through 100.\n\nYour current want list is: {(', ').join(user_ivs)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1008,13 +1050,12 @@ class Want(commands.Cog):
                                 return
                         break
                     elif want_category_msg.clean_content.lower() == "item":
-                        user_items = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
-                        user_items = [x.title() for x in user_items]
                         if not user_items:
                             error = _("don't have wants of that type")
                             break
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/MysteryItem.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the items you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(user_items)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the items you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(user_items)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1037,13 +1078,12 @@ class Want(commands.Cog):
                                 return
                         break
                     elif want_category_msg.clean_content.lower() == "type":
-                        user_types = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
-                        user_types = [x.title() for x in user_types]
                         if not user_types:
                             error = _("don't have wants of that type")
                             break
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/types.png?cache=1")
-                        want_embed.set_field_at(0, name=want_embed.fields[0].name, value=f"Now, reply with a comma separated list of the types you'd like to subscribe to.\n\nYour current want list is: {(', ').join(user_types)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the types you'd like to subscribe to.\n\nYour current want list is: {(', ').join(user_types)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1076,10 +1116,8 @@ class Want(commands.Cog):
         if error:
             want_embed.clear_fields()
             want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
-            want_embed.add_field(name=_('**New Subscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
-            confirmation = await channel.send(embed=want_embed)
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            want_embed.add_field(name=_('**Alert Unsubscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=want_embed, delete_after=10)
             await utils.safe_delete(message)
             return
 
@@ -1264,7 +1302,7 @@ class Want(commands.Cog):
         guild = message.guild
         channel = message.channel
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
-        item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
+        item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "glacial lure module", "magnetic lure module", "mossy lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
         unwant_list = []
         unwant_split = items.lower().split(',')
         for entered_unwant in unwant_split:

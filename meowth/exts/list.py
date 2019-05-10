@@ -887,8 +887,8 @@ class Listing(commands.Cog):
                 else:
                     converter = commands.MemberConverter()
                     try:
-                        search = await converter.convert(ctx, argument)
-                    except:
+                        search = await converter.convert(ctx, search)
+                    except Exception as e:
                         search = ctx.author
             listmsg, res_pages = await self._tradelist(ctx, search)
             list_messages = []

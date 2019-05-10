@@ -99,7 +99,7 @@ class Research(commands.Cog):
         research_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
         research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pokemon = False
-        reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
+        reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module"]
         while True:
             async with ctx.typing():
                 if details:
@@ -242,6 +242,10 @@ class Research(commands.Cog):
         razz = re.search(r'(?i)razz', reward)
         goldenrazz = re.search(r'(?i)golde?n? razz', reward)
         nanab = re.search(r'(?i)nanab', reward)
+        lure = re.search(r'(?i)lure', reward)
+        glaciallure = re.search(r'(?i)glacial lure', reward)
+        magnetlure = re.search(r'(?i)magnetic lure', reward)
+        mossylure = re.search(r'(?i)mossy lure', reward)
         pokeball = re.search(r'(?i)ball', reward)
         greatball = re.search(r'(?i)great ball', reward)
         ultraball = re.search(r'(?i)ultra ball', reward)
@@ -321,6 +325,19 @@ class Research(commands.Cog):
         elif starpiece:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/starpiece.png")
             item = "star piece"
+        elif lure and not glaciallure and not magnetlure and not mossylure:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png")
+            item = "lure module"
+        elif lure and glaciallure:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png")
+            item = "glacial lure module"
+        elif lure and magnetlure:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png")
+            item = "magnetic lure module"
+        elif lure and mossylure:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png")
+            item = "mossy lure module"
+        print(item)
         research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
         confirmation = await ctx.channel.send(research_msg, embed=research_embed)
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][confirmation.id] = {
