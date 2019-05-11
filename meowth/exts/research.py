@@ -337,7 +337,6 @@ class Research(commands.Cog):
         elif lure and mossylure:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png")
             item = "mossy lure module"
-        print(item)
         research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
         confirmation = await ctx.channel.send(research_msg, embed=research_embed)
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][confirmation.id] = {
