@@ -5,7 +5,7 @@ import logging
 import datetime
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import time
 from time import strftime
 
@@ -18,11 +18,14 @@ logger = logging.getLogger("meowth")
 class Configure(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        bot.loop.create_task(self.configure_cleanup())
+        self.configure_cleanup.start()
 
+    def cog_unload(self):
+        self.configure_cleanup.cancel()
+
+    @tasks.loop(seconds=0)
     async def configure_cleanup(self, loop=True):
         while True:
-            await self.bot.wait_until_ready()
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             count = 0
@@ -70,6 +73,10 @@ class Configure(commands.Cog):
                 return
             await asyncio.sleep(21600)
             continue
+
+    @configure_cleanup.before_loop
+    async def before_cleanup(self):
+        await self.bot.wait_until_ready()
 
     async def create_configure_channel(self, ctx):
         ows = {

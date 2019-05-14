@@ -3,7 +3,7 @@ import copy
 import logging
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 
 from meowth import checks
@@ -15,7 +15,10 @@ logger = logging.getLogger("meowth")
 class Tutorial(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        bot.loop.create_task(self.tutorial_cleanup())
+        self.tutorial_cleanup.start()
+
+    def cog_unload(self):
+        self.tutorial_cleanup.cancel()
 
     async def create_tutorial_channel(self, ctx):
         ows = {
@@ -79,9 +82,9 @@ class Tutorial(commands.Cog):
             'message', check=check, timeout=300)
         return cmd_ctx
 
+    @tasks.loop(seconds=0)
     async def tutorial_cleanup(self, loop=True):
         while True:
-            await self.bot.wait_until_ready()
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             count = 0
@@ -128,6 +131,10 @@ class Tutorial(commands.Cog):
                 return
             await asyncio.sleep(21600)
             continue
+
+    @tutorial_cleanup.before_loop
+    async def before_cleanup(self):
+        await self.bot.wait_until_ready()
 
     @commands.group(case_insensitive=True, invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)

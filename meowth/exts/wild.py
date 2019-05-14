@@ -8,7 +8,7 @@ import textwrap
 import logging
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from meowth import checks
 from meowth.exts import pokemon as pkmn_class
@@ -19,7 +19,10 @@ logger = logging.getLogger("meowth")
 class Wild(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        bot.loop.create_task(self.wild_cleanup())
+        self.wild_cleanup.start()
+
+    def cog_unload(self):
+        self.wild_cleanup.cancel()
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -51,9 +54,9 @@ class Wild(commands.Cog):
                             await channel.send(f"{', '.join(wild_dict['omw'])}: {wild_dict['pokemon'].title()} {despawn}!")
                         await self.expire_wild(message)
 
+    @tasks.loop(seconds=0)
     async def wild_cleanup(self, loop=True):
         while True:
-            await self.bot.wait_until_ready()
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             despawn_list = []
@@ -91,6 +94,10 @@ class Wild(commands.Cog):
                 return
             await asyncio.sleep(min(despawn_list))
             continue
+
+    @wild_cleanup.before_loop
+    async def before_cleanup(self):
+        await self.bot.wait_until_ready()
 
     async def expire_wild(self, message):
         guild = message.channel.guild
@@ -239,9 +246,7 @@ class Wild(commands.Cog):
         else:
             wild_embed.clear_fields()
             wild_embed.add_field(name=_('**Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
-            confirmation = await channel.send(embed=wild_embed)
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(embed=wild_embed, delete_after=10)
             await utils.safe_delete(message)
 
     async def _wild(self, ctx, content):

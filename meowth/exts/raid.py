@@ -12,7 +12,7 @@ import json
 from dateutil.relativedelta import relativedelta
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from meowth import checks, errors
 from meowth.exts import pokemon as pkmn_class
@@ -23,10 +23,15 @@ logger = logging.getLogger("meowth")
 class Raid(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.bot.loop.create_task(self.channel_cleanup())
-        self.bot.loop.create_task(self.lobby_cleanup())
-        self.bot.loop.create_task(self.reset_raid_roles())
+        self.channel_cleanup.start()
+        self.lobby_cleanup.start()
+        self.reset_raid_roles.start()
         self.bot.active_raids = []
+
+    def cog_unload(self):
+        self.channel_cleanup.cancel()
+        self.lobby_cleanup.cancel()
+        self.reset_raid_roles.cancel()
 
     """
     Event Handlers
@@ -427,9 +432,9 @@ class Raid(commands.Cog):
             except KeyError:
                 pass
 
+    @tasks.loop(seconds=0)
     async def channel_cleanup(self, loop=True):
         while True:
-            await self.bot.wait_until_ready()
             guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)
             logger.info('------ BEGIN ------')
             gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -518,13 +523,17 @@ class Raid(commands.Cog):
             await asyncio.sleep(600)
             continue
 
+    @channel_cleanup.before_loop
+    async def before_channel_cleanup(self):
+        await self.bot.wait_until_ready()
+
     """
     Helpers
     """
 
+    @tasks.loop(seconds=0)
     async def reset_raid_roles(self, loop=True):
         while (not self.bot.is_closed()):
-            await self.bot.wait_until_ready()
             boss_names = [str(word) for word in self.bot.raid_list]
             boss_names = [word for word in boss_names if word.islower() and not word.isdigit()]
             for guild_id in self.bot.guild_dict:
@@ -596,6 +605,10 @@ class Raid(commands.Cog):
                 return
             await asyncio.sleep(7200)
             continue
+
+    @reset_raid_roles.before_loop
+    async def before_reset_roles(self):
+        await self.bot.wait_until_ready()
 
     async def send_dm_messages(self, ctx, raid_details, content, embed, dm_dict):
         if embed:
@@ -1140,9 +1153,7 @@ class Raid(commands.Cog):
         else:
             raid_embed.clear_fields()
             raid_embed.add_field(name=_('**Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
-            confirmation = await channel.send(embed=raid_embed)
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(embed=raid_embed, delete_after=10)
             await utils.safe_delete(message)
 
     async def _raid(self, ctx, content):
@@ -1869,9 +1880,7 @@ class Raid(commands.Cog):
         else:
             raid_embed.clear_fields()
             raid_embed.add_field(name=_('**EX Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
-            confirmation = await channel.send(embed=raid_embed)
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(embed=raid_embed, delete_after=10)
             await utils.safe_delete(message)
 
     async def _exraid(self, ctx, location):
@@ -2036,9 +2045,7 @@ class Raid(commands.Cog):
         else:
             invite_embed.clear_fields()
             invite_embed.add_field(name=_('**Invite Cancelled**'), value=_("Meowth! Your invite has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
-            confirmation = await channel.send(embed=invite_embed)
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(embed=invite_embed, delete_after=10)
             await utils.safe_delete(message)
 
     async def _invite(self, ctx, exraid_channel):
@@ -2161,9 +2168,7 @@ class Raid(commands.Cog):
         else:
             raid_embed.clear_fields()
             raid_embed.add_field(name=_('**Meetup Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
-            confirmation = await channel.send(embed=raid_embed)
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await channel.send(embed=raid_embed, delete_after=10)
             await utils.safe_delete(message)
 
     async def _meetup(self, ctx, location):
@@ -3984,9 +3989,9 @@ class Raid(commands.Cog):
         t_dict['count'] = 1
         await self._edit_party(channel, author)
 
+    @tasks.loop(seconds=0)
     async def lobby_cleanup(self, loop=True):
         while True:
-            await self.bot.wait_until_ready()
             for guild in self.bot.guilds:
                 guild_raids = copy.deepcopy(self.bot.guild_dict[guild.id]['raidchannel_dict'])
                 for raid in guild_raids:
@@ -4006,6 +4011,10 @@ class Raid(commands.Cog):
                 return
             await asyncio.sleep(21600)
             continue
+
+    @lobby_cleanup.before_loop
+    async def before_lobby_cleanup(self):
+        await self.bot.wait_until_ready()
 
     async def lobby_countdown(self, ctx):
         def check_battling():

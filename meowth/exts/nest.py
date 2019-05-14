@@ -7,7 +7,7 @@ import dateparser
 import logging
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from meowth import checks
 from meowth.exts import pokemon as pkmn_class
@@ -18,7 +18,10 @@ logger = logging.getLogger("meowth")
 class Nest(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        bot.loop.create_task(self.nest_cleanup(self))
+        self.nest_cleanup.start()
+
+    def cog_unload(self):
+        self.nest_cleanup.cancel()
 
     # nest_dict:{
     #     nestrepotchannel_id: {
@@ -42,9 +45,9 @@ class Nest(commands.Cog):
     #     }
     # }
 
+    @tasks.loop(seconds=0)
     async def nest_cleanup(self, loop=True):
         while True:
-            await self.bot.wait_until_ready()
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             migration_list = []
@@ -92,6 +95,10 @@ class Nest(commands.Cog):
                 return
             await asyncio.sleep(min(migration_list))
             continue
+
+    @nest_cleanup.before_loop
+    async def before_cleanup(self):
+        await self.bot.wait_until_ready()
 
     async def edit_nest_reports(self, report_message, migration_local, dm_dict):
         try:
@@ -299,9 +306,7 @@ class Nest(commands.Cog):
             nest_embed.clear_fields()
             nest_embed.description = ""
             nest_embed.add_field(name=_('**Nest Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
-            confirmation = await ctx.send(embed=nest_embed)
-            await asyncio.sleep(10)
-            await utils.safe_delete(confirmation)
+            confirmation = await ctx.send(embed=nest_embed, delete_after=10)
             await utils.safe_delete(ctx.message)
 
     @nest.command()

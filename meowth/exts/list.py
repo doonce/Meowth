@@ -733,6 +733,8 @@ class Listing(commands.Cog):
     async def _wantlist(self, ctx):
         wantlist = []
         user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
+        user_mute = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', False)
+        mute_mentions = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
         user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
         user_wants = sorted(user_wants)
         wantlist = [utils.get_name(self.bot, x).title() for x in user_wants]
@@ -767,7 +769,14 @@ class Listing(commands.Cog):
             if user_ivs:
                 wantmsg += _('\n\n**IVs:** (wilds)\n{user_ivs}').format(user_ivs=', '.join(user_ivs))
         if wantmsg:
-            listmsg = _('Meowth! {author}, you will receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
+            if user_mute and mute_mentions:
+                listmsg = _('Meowth! {author}, your notifications and @mentions are muted, so you will not receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
+            elif user_mute and not mute_mentions:
+                listmsg = _('Meowth! {author}, your DM notifications are muted, so you will only receive @mention notifications for your current **!want** list:').format(author=ctx.author.display_name)
+            elif not user_mute and mute_mentions:
+                listmsg = _('Meowth! {author}, your @mentions are muted, so you will only receive DM notifications for your current **!want** list:').format(author=ctx.author.display_name)
+            else:
+                listmsg = _('Meowth! {author}, you will receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
             paginator = commands.Paginator(prefix="", suffix="")
             for line in wantmsg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))

@@ -12,7 +12,7 @@ import string
 import json
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 import meowth
 from meowth import checks
@@ -24,12 +24,15 @@ logger = logging.getLogger("meowth")
 class Huntr(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.huntr_cleanup.start()
         self.event_loop = asyncio.get_event_loop()
-        bot.loop.create_task(self.huntr_cleanup())
 
+    def cog_unload(self):
+        self.huntr_cleanup.cancel()
+
+    @tasks.loop(seconds=0)
     async def huntr_cleanup(self, loop=True):
         while True:
-            await self.bot.wait_until_ready()
             logger.info('------ BEGIN ------')
             guilddict_temp = copy.deepcopy(self.bot.guild_dict)
             for guildid in guilddict_temp.keys():
@@ -83,6 +86,10 @@ class Huntr(commands.Cog):
                 return
             await asyncio.sleep(600)
             continue
+
+    @huntr_cleanup.before_loop
+    async def before_cleanup(self):
+        await self.bot.wait_until_ready()
 
     """Handlers"""
 
@@ -386,7 +393,7 @@ class Huntr(commands.Cog):
                             raid_embed.add_field(name="**Moveset**:", value=report_details.get('moves', None), inline=True)
                             await raid_msg.edit(embed=raid_embed)
                         raidexp = report_details.get('raidexp')
-                        if raidexp:
+                        if raidexp and channel:
                             await raid_cog._timerset(channel, raidexp)
                         await self.auto_counters(channel, report_details.get('moves', None))
                         return

@@ -16,7 +16,7 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from meowth import checks
 from meowth.exts import pokemon as pkmn_class
@@ -526,11 +526,14 @@ async def safe_reaction(message, reaction):
 class Utilities(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        bot.loop.create_task(self.dm_cleanup())
+        self.dm_cleanup.start()
 
+    def cog_unload(self):
+        self.dm_cleanup.cancel()
+
+    @tasks.loop(seconds=0)
     async def dm_cleanup(self, loop=True):
         while True:
-            await self.bot.wait_until_ready()
             if loop:
                 await asyncio.sleep(302400)
             logger.info('------ BEGIN ------')
@@ -606,6 +609,10 @@ class Utilities(commands.Cog):
             if not loop:
                 return count
             continue
+
+    @dm_cleanup.before_loop
+    async def before_cleanup(self):
+        await self.bot.wait_until_ready()
 
     @commands.command()
     @checks.is_owner()
