@@ -123,7 +123,7 @@ class Trading(commands.Cog):
         for guildid in self.bot.guild_dict.keys():
             guild = self.bot.get_guild(guildid)
             if message.guild and message.channel.id not in self.bot.guild_dict[guild.id]['configure_dict']['trade']['report_channels']:
-                return
+                continue
             trade_dict = self.bot.guild_dict[guild.id]['trade_dict']
             for listing_id in trade_dict:
                 if trade_dict[listing_id].get("active_check", None):
@@ -484,7 +484,7 @@ class Trading(commands.Cog):
                         trade_embed.add_field(name="Details", value=details, inline=False)
                     trade_embed.set_footer(text=f"Listed by @{ctx.author.display_name} - {timestamp}", icon_url=ctx.author.avatar_url_as(format=None, static_format='png', size=256))
                     trade_embed.set_thumbnail(url=offered_pokemon.img_url)
-                    offered_pokemon_str = f"Meowth! {ctx.author.display_name} offers a {str(offered_pokemon)} up for trade!"
+                    offered_pokemon_str = f"Meowth! {ctx.author.mention} offers a {str(offered_pokemon)} up for trade!"
                     if "open trade" not in wanted_pokemon.lower():
                         instructions = "React to this message to make an offer!"
                     else:
