@@ -1,10 +1,21 @@
+import asyncio
+import copy
+import re
+import time
+import datetime
+import dateparser
+import textwrap
+import logging
+import aiohttp
 import os
 import json
-import asyncio
-import functools
+from dateutil.relativedelta import relativedelta
 
-from discord.ext import commands
+import discord
+from discord.ext import commands, tasks
 
+from meowth import checks, errors
+from meowth.exts import pokemon as pkmn_class
 from meowth.exts import utilities as utils
 
 class GymMatching(commands.Cog):
@@ -126,6 +137,207 @@ class GymMatching(commands.Cog):
             data[str(guild_id)][address][egglevel][boss]['completed_trainers'] = boss_trainers
             with open(os.path.join('data', 'gym_stats.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
+
+    @commands.command()
+    @checks.is_manager()
+    async def poi_json(self, ctx, target=None, action=None):
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        poi_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/POI_Submission_Illustration_01.png?cache=1')
+        poi_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        def check(reply):
+            if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                return True
+            else:
+                return False
+        while True:
+            async with ctx.typing():
+                if target and any([target.lower() == "stop", target.lower() == "gym"]):
+                    poi_target = target
+                elif not target or (target and not any([target.lower() == "stop", target.lower() == "gym"])):
+                    poi_embed.clear_fields()
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=_("Meowth! I'll help you edit a POI!\n\nFirst, I'll need to know what **type** of POI you'd like to modify. Reply with **gym** or **stop**. You can reply with **cancel** to stop anytime."), inline=False)
+                    poi_type_wait = await channel.send(embed=poi_embed)
+                    try:
+                        poi_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        poi_type_msg = None
+                    await utils.safe_delete(poi_type_wait)
+                    if not poi_type_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(poi_type_msg)
+                    if poi_type_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif not any([poi_type_msg.clean_content.lower() == "stop", poi_type_msg.clean_content.lower() == "gym"]):
+                        error = _("entered an invalid option")
+                        break
+                    else:
+                        poi_target = poi_type_msg.clean_content.lower()
+                if action and any([action.lower() == "add", action.lower() == "remove", action.lower() == "list"]):
+                    poi_action = action
+                elif not action or (action and not any([action.lower() == "add", action.lower() == "remove"])):
+                    poi_embed.clear_fields()
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"{'Meowth! I will help you edit a POI!'}\n\nNow, I'll need to know what **action** you'd like to use. Reply with **add**, **remove**, or **list**. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_action_wait = await channel.send(embed=poi_embed)
+                    try:
+                        poi_action_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        poi_action_msg = None
+                    await utils.safe_delete(poi_action_wait)
+                    if not poi_action_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(poi_action_msg)
+                    if poi_action_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif not any([poi_action_msg.clean_content.lower() == "add", poi_action_msg.clean_content.lower() == "remove", poi_action_msg.clean_content.lower() == "list"]):
+                        error = _("entered an invalid option")
+                        break
+                    else:
+                        poi_action = poi_action_msg.clean_content.lower()
+                if poi_target == "stop":
+                    file_name = 'stop_data.json'
+                else:
+                    file_name = 'gym_data.json'
+                try:
+                    with open(os.path.join('data', file_name), 'r') as fd:
+                        data = json.load(fd)
+                except:
+                    data = {}
+                test_var = data.setdefault(str(guild.id), {})
+                data_keys = [x.lower().strip() for x in data[str(guild.id)].keys() if x]
+                if poi_target and poi_action == "list":
+                    paginator = commands.Paginator(prefix='```json')
+                    for line in textwrap.wrap(str(data[str(guild.id)]), 80):
+                        paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                    for p in paginator.pages:
+                        await ctx.send(p)
+                    return
+                elif poi_target and poi_action != "list":
+                    poi_embed.clear_fields()
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Now I'll need to know the in-game **name** or the **alias** of the {poi_target} you'd like to {poi_action}. Reply with the name of the {poi_target}. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_name_wait = await channel.send(embed=poi_embed)
+                    try:
+                        poi_name_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        poi_name_msg = None
+                    await utils.safe_delete(poi_name_wait)
+                    if not poi_name_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(poi_name_msg)
+                    if poi_name_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif poi_name_msg.clean_content.lower().strip() not in data_keys and poi_action != "add":
+                        error = _("entered an invalid POI")
+                        break
+                    else:
+                        poi_name = poi_name_msg.clean_content
+                if poi_target and poi_action == "remove":
+                    poi_data_name = list(data[str(guild.id)].keys())[data_keys.index(poi_name.lower())]
+                    del data[str(guild.id)][poi_data_name]
+                    for k in copy.deepcopy(list(data[str(guild.id)].keys())):
+                        if data[str(guild.id)][k].get('alias', None) == poi_data_name:
+                            del data[str(guild.id)][k]
+                    with open(os.path.join('data', file_name), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                    break
+                elif poi_target and poi_action == "add":
+                    poi_embed.clear_fields()
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Now I'll need to know the **coordinates** of the {poi_name} {poi_target} you'd like to {poi_action}. Reply with the coordinates of the {poi_target}. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_coord_wait = await channel.send(embed=poi_embed)
+                    try:
+                        poi_coord_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        poi_coord_msg = None
+                    await utils.safe_delete(poi_coord_wait)
+                    if not poi_coord_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(poi_coord_msg)
+                    if poi_coord_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif not re.match(r'^\s*-?\d{1,2}\.?\d*,\s*-?\d{1,3}\.?\d*\s*$', poi_coord_msg.clean_content.lower()):
+                        error = _("entered something invalid")
+                        break
+                    else:
+                        poi_coords = poi_coord_msg.clean_content.lower().replace(" ", "")
+                    poi_embed.clear_fields()
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Is this an alias for a {poi_target} you've previously added? Reply with the **N** if not or the in-game name of the of the {poi_target} you've previously added. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_alias_wait = await channel.send(embed=poi_embed)
+                    try:
+                        poi_alias_wait = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        poi_alias_wait = None
+                    await utils.safe_delete(poi_alias_wait)
+                    if not poi_alias_wait:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(poi_alias_wait)
+                    if poi_alias_wait.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif poi_alias_wait.clean_content.lower() == "n":
+                        poi_alias = None
+                    elif poi_alias_wait.clean_content.lower().strip() not in data_keys:
+                        error = _("entered an invalid POI")
+                        break
+                    else:
+                        poi_alias = list(data[str(guild.id)].keys())[data_keys.index(poi_alias_wait.clean_content.lower())]
+                    poi_embed.clear_fields()
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Are there any notes you'd like to add to the {poi_name} {poi_target}? Reply with the **N** if not or any notes you'd like to add. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_note_wait = await channel.send(embed=poi_embed)
+                    try:
+                        poi_note_wait = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        poi_note_wait = None
+                    await utils.safe_delete(poi_note_wait)
+                    if not poi_note_wait:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(poi_note_wait)
+                    if poi_note_wait.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif poi_note_wait.clean_content.lower() == "n":
+                        poi_notes = None
+                    else:
+                        poi_notes = poi_note_wait.clean_content.lower()
+                    data[str(guild.id)][poi_name] = {"coordinates":poi_coords}
+                    if poi_alias:
+                        data[str(guild.id)][poi_name]['alias'] = poi_alias
+                    if poi_notes:
+                        data[str(guild.id)][poi_name]['notes'] = poi_notes
+                    with open(os.path.join('data', file_name), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                    break
+        if error:
+            poi_embed.clear_fields()
+            poi_embed.add_field(name=_('**POI Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=poi_embed, delete_after=10)
+            await utils.safe_delete(message)
+        else:
+            poi_embed.clear_fields()
+            poi_embed.add_field(name=_('**POI Edit Completed**'), value=_("Meowth! Your edit completed successfully.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=poi_embed, delete_after=10)
+            await utils.safe_delete(message)
+            self.gym_data = self.init_json()
+            self.stop_data = self.init_stop_json()
 
     @commands.command(hidden=True)
     async def gym_match_test(self, ctx, *, gym_name):
