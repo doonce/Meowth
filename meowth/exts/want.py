@@ -343,10 +343,6 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-        if "tutorial" not in ctx.channel.name.lower():
-            await asyncio.sleep(90)
-        await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='boss')
     @checks.allowwant()
@@ -416,10 +412,6 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-        if "tutorial" not in ctx.channel.name.lower():
-            await asyncio.sleep(90)
-        await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='gym')
     @checks.allowwant()
@@ -474,9 +466,6 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-        await asyncio.sleep(90)
-        await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='stop')
     @checks.allowwant()
@@ -531,9 +520,6 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-        await asyncio.sleep(90)
-        await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='item')
     @checks.allowwant()
@@ -586,9 +572,6 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-        await asyncio.sleep(90)
-        await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='type')
     @checks.allowwant()
@@ -639,9 +622,6 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-        await asyncio.sleep(90)
-        await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command(name='iv', aliases=['ivs'])
     @checks.allowwant()
@@ -697,9 +677,6 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-        await asyncio.sleep(90)
-        await utils.safe_delete(want_confirmation)
-        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @want.command()
     @checks.allowwant()

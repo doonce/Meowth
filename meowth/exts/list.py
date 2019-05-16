@@ -26,7 +26,7 @@ class Listing(commands.Cog):
     @checks.guildchannel()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def _list(self, ctx):
-        """Lists all raid info for the current channel.
+        """Lists all info for the current channel depending on channel type.
 
         Usage: !list
         Works only in raid or city channels. Calls the interested, waiting, and here lists. Also prints

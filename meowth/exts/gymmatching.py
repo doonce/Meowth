@@ -279,15 +279,15 @@ class GymMatching(commands.Cog):
                     poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Is this an alias for a {poi_target} you've previously added? Reply with the **N** if not or the in-game name of the of the {poi_target} you've previously added. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_alias_wait = await channel.send(embed=poi_embed)
                     try:
-                        poi_alias_wait = await self.bot.wait_for('message', timeout=60, check=check)
+                        poi_alias_msg = await self.bot.wait_for('message', timeout=60, check=check)
                     except asyncio.TimeoutError:
-                        poi_alias_wait = None
+                        poi_alias_msg = None
                     await utils.safe_delete(poi_alias_wait)
                     if not poi_alias_wait:
                         error = _("took too long to respond")
                         break
                     else:
-                        await utils.safe_delete(poi_alias_wait)
+                        await utils.safe_delete(poi_alias_msg)
                     if poi_alias_wait.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
@@ -302,15 +302,15 @@ class GymMatching(commands.Cog):
                     poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Are there any notes you'd like to add to the {poi_name} {poi_target}? Reply with the **N** if not or any notes you'd like to add. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_note_wait = await channel.send(embed=poi_embed)
                     try:
-                        poi_note_wait = await self.bot.wait_for('message', timeout=60, check=check)
+                        poi_note_msg = await self.bot.wait_for('message', timeout=60, check=check)
                     except asyncio.TimeoutError:
-                        poi_note_wait = None
+                        poi_note_msg = None
                     await utils.safe_delete(poi_note_wait)
                     if not poi_note_wait:
                         error = _("took too long to respond")
                         break
                     else:
-                        await utils.safe_delete(poi_note_wait)
+                        await utils.safe_delete(poi_note_msg)
                     if poi_note_wait.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
