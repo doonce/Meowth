@@ -160,7 +160,7 @@ class GymMatching(commands.Cog):
             async with ctx.typing():
                 if checks.is_owner_check(ctx) and len(self.bot.guilds) > 1:
                     poi_embed.clear_fields()
-                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! I'll help you edit a POI!\n\nFirst, I'll need to know what **guild** you would like to edit. By default I will edit **{guild.name}**, would you like to change this?. Reply with **N** to stay on **{guild.name}** or reply with any of the {len(self.bot.guilds)} **Guild IDs** that I have access to. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! I'll help you edit a POI!\n\nFirst, I'll need to know what **guild** you would like to edit. By default I will edit **{guild.name}**, would you like to change this? Reply with **N** to stay on **{guild.name}** or reply with any of the {len(self.bot.guilds)} **Guild IDs** that I have access to. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_guild_wait = await channel.send(embed=poi_embed)
                     try:
                         poi_guild_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -172,7 +172,7 @@ class GymMatching(commands.Cog):
                         break
                     else:
                         await utils.safe_delete(poi_guild_msg)
-                    if poi_type_msg.clean_content.lower() == "cancel":
+                    if poi_guild_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
                     elif poi_guild_msg.clean_content.lower() == "n":
@@ -182,7 +182,7 @@ class GymMatching(commands.Cog):
                         break
                     else:
                         guild = self.bot.get_guild(int(poi_guild_msg.clean_content))
-                        first = False
+                    first = False
                 if target and any([target.lower() == "stop", target.lower() == "gym"]):
                     poi_target = target
                 elif not target or (target and not any([target.lower() == "stop", target.lower() == "gym"])):
@@ -207,7 +207,7 @@ class GymMatching(commands.Cog):
                         break
                     else:
                         poi_target = poi_type_msg.clean_content.lower()
-                        first = False
+                    first = False
                 if action and any([action.lower() == "add", action.lower() == "remove", action.lower() == "list"]):
                     poi_action = action
                 elif not action or (action and not any([action.lower() == "add", action.lower() == "remove"])):
@@ -232,7 +232,7 @@ class GymMatching(commands.Cog):
                         break
                     else:
                         poi_action = poi_action_msg.clean_content.lower()
-                        first = False
+                    first = False
                 if poi_target == "stop":
                     file_name = 'stop_data.json'
                 else:
