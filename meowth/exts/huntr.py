@@ -699,6 +699,7 @@ class Huntr(commands.Cog):
         huntrexpstamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(expire.split()[0]), seconds=int(expire.split()[2]))).strftime('%I:%M %p')
         nearest_stop = ""
         nearest_poi = ""
+        poi_info = ""
         wild_cog = self.bot.get_cog("Wild")
         wild_types = copy.deepcopy(pokemon.types)
         wild_types.append('None')
@@ -715,10 +716,13 @@ class Huntr(commands.Cog):
             nearest_stop = await gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0], wild_coordinates.split(",")[1]), message.guild.id)
             if nearest_poi:
                 wild_details = nearest_poi
+                poi_info, __, __ = await gym_matching_cog.get_poi_info(ctx, wild_details.strip(), "wild")
         stop_str = ""
         if nearest_stop or nearest_poi:
             stop_str = f"{' Details: '+nearest_poi+' |' if nearest_poi and nearest_poi != nearest_stop else ''}{' Nearest Pokestop: '+nearest_stop if nearest_stop else ''}{' | ' if nearest_poi or nearest_stop else ' '}"
         wild_embed = discord.Embed(description="", title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), url=wild_gmaps_link, colour=message.guild.me.colour)
+        if nearest_stop:
+            wild_embed.description = poi_info
         wild_embed.add_field(name=_('**Details:**'), value=details_str, inline=True)
         if iv_long or wild_iv or level or cp or weather:
             wild_embed.add_field(name=_('**IV / Level:**'), value=f"{iv_long if iv_long else ''} {' ('+str(wild_iv)+'%)' if wild_iv else ''}\n{'Level '+level if level else ''}{' ('+cp+'CP)' if cp else ''} {weather if weather else ''}", inline=True)
@@ -962,8 +966,8 @@ class Huntr(commands.Cog):
                 loc_url = stop_url
         if not location:
             return
-        research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, ' '), width=30)), inline=True)
-        research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, ' '), width=30)), inline=True)
+        research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
+        research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, ' '), inline=True)
         other_reward = any(x in reward.lower() for x in reward_list)
         pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
         if pokemon and not other_reward:
@@ -977,7 +981,7 @@ class Huntr(commands.Cog):
             research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
         else:
-            research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, ' '), width=30)), inline=True)
+            research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
         await research_cog.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)
 
     @commands.command(hidden=True)

@@ -9,6 +9,7 @@ import logging
 import aiohttp
 import os
 import json
+import functools
 from dateutil.relativedelta import relativedelta
 
 import discord
@@ -147,6 +148,7 @@ class GymMatching(commands.Cog):
         guild = message.guild
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
         error = False
+        first = True
         poi_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/POI_Submission_Illustration_01.png?cache=1')
         poi_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         def check(reply):
@@ -156,11 +158,36 @@ class GymMatching(commands.Cog):
                 return False
         while True:
             async with ctx.typing():
+                if checks.is_owner() and len(self.bot.guilds) > 1:
+                    poi_embed.clear_fields()
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! I'll help you edit a POI!\n\nFirst, I'll need to know what **guild** you would like to edit. By default I will edit **{guild.name}**, would you like to change this?. Reply with **N** to stay on **{guild.name}** or reply with any of the {len(self.bot.guilds)} **Guild IDs** that I have access to. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_guild_wait = await channel.send(embed=poi_embed)
+                    try:
+                        poi_guild_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        poi_guild_msg = None
+                    await utils.safe_delete(poi_guild_wait)
+                    if not poi_guild_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(poi_guild_msg)
+                    if poi_type_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif poi_guild_msg.clean_content.lower() == "n":
+                        guild = ctx.guild
+                    elif not poi_guild_msg.clean_content.isdigit() or int(poi_guild_msg.clean_content) not in [x.id for x in self.bot.guilds]:
+                        error = _("entered an invalid guild")
+                        break
+                    else:
+                        guild = self.bot.get_guild(int(poi_guild_msg.clean_content))
+                        first = False
                 if target and any([target.lower() == "stop", target.lower() == "gym"]):
                     poi_target = target
                 elif not target or (target and not any([target.lower() == "stop", target.lower() == "gym"])):
                     poi_embed.clear_fields()
-                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=_("Meowth! I'll help you edit a POI!\n\nFirst, I'll need to know what **type** of POI you'd like to modify. Reply with **gym** or **stop**. You can reply with **cancel** to stop anytime."), inline=False)
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"{'Meowth! I will help you edit a POI!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **type** of POI you'd like to modify. Reply with **gym** or **stop**. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_type_wait = await channel.send(embed=poi_embed)
                     try:
                         poi_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -180,11 +207,12 @@ class GymMatching(commands.Cog):
                         break
                     else:
                         poi_target = poi_type_msg.clean_content.lower()
+                        first = False
                 if action and any([action.lower() == "add", action.lower() == "remove", action.lower() == "list"]):
                     poi_action = action
                 elif not action or (action and not any([action.lower() == "add", action.lower() == "remove"])):
                     poi_embed.clear_fields()
-                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"{'Meowth! I will help you edit a POI!'}\n\nNow, I'll need to know what **action** you'd like to use. Reply with **add**, **remove**, or **list**. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"{'Meowth! I will help you edit a POI!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **action** you'd like to use. Reply with **add**, **remove**, or **list**. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_action_wait = await channel.send(embed=poi_embed)
                     try:
                         poi_action_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -204,6 +232,7 @@ class GymMatching(commands.Cog):
                         break
                     else:
                         poi_action = poi_action_msg.clean_content.lower()
+                        first = False
                 if poi_target == "stop":
                     file_name = 'stop_data.json'
                 else:
@@ -461,7 +490,7 @@ class GymMatching(commands.Cog):
                     return poi_info, details, poi_gmaps_link
                 rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_raids)))
         elif type == "research":
-            poi_info = _("**Stop:** {0}\n{1}").format(details, poi_note)
+            poi_info = poi_note
             for quest in self.bot.guild_dict[ctx.guild.id]['questreport_dict']:
                 quest_details = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][quest]
                 research_location = quest_details['location']
@@ -479,6 +508,8 @@ class GymMatching(commands.Cog):
                 if not dupe_check:
                     return poi_info, details, poi_gmaps_link
                 rusure = await message.channel.send(_('Meowth! It looks like that quest might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_research)))
+        elif type == "wild":
+            poi_info = _("**Stop:** {0}{1}").format(details, poi_note)
         if duplicate_raids or duplicate_research:
             try:
                 timeout = False

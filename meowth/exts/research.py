@@ -125,8 +125,8 @@ class Research(commands.Cog):
                             loc_url = stop_url
                     if not location:
                         return
-                    research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, " "), width=30)), inline=True)
-                    research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, " "), width=30)), inline=True)
+                    research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
+                    research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, " "), inline=True)
                     other_reward = any(x in reward.lower() for x in reward_list)
                     shiny_str = ""
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
@@ -140,7 +140,7 @@ class Research(commands.Cog):
                         research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
                         reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
                     else:
-                        research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
+                        research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, " "), inline=True)
                     break
                 else:
                     research_embed.add_field(name=_('**New Research Report**'), value=_("Meowth! I'll help you report a research quest!\n\nFirst, I'll need to know what **pokestop** you received the quest from. Reply with the name of the **pokestop**. You can reply with **cancel** to stop anytime."), inline=False)
@@ -175,7 +175,7 @@ class Research(commands.Cog):
                                 loc_url = stop_url
                         if not location:
                             return
-                    research_embed.add_field(name=_("**Pokestop:**"), value='\n'.join(textwrap.wrap(string.capwords(location, " "), width=30)), inline=True)
+                    research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
                     research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Great! Now, reply with the **quest** that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(location=location), inline=False)
                     questwait = await channel.send(embed=research_embed)
                     try:
@@ -193,7 +193,7 @@ class Research(commands.Cog):
                         break
                     elif questmsg:
                         quest = questmsg.clean_content
-                    research_embed.add_field(name=_("**Quest:**"), value='\n'.join(textwrap.wrap(string.capwords(quest, " "), width=30)), inline=True)
+                    research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, " "), inline=True)
                     research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Fantastic! Now, reply with the **reward** for the **{quest}** quest that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(quest=quest, location=location), inline=False)
                     rewardwait = await channel.send(embed=research_embed)
                     try:
@@ -224,7 +224,7 @@ class Research(commands.Cog):
                             research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
                             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
                         else:
-                            research_embed.add_field(name=_("**Reward:**"), value='\n'.join(textwrap.wrap(string.capwords(reward, " "), width=30)), inline=True)
+                            research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, " "), inline=True)
                     research_embed.remove_field(0)
                     break
         if not error:
