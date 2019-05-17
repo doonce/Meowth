@@ -158,7 +158,7 @@ class GymMatching(commands.Cog):
                 return False
         while True:
             async with ctx.typing():
-                if checks.is_owner() and len(self.bot.guilds) > 1:
+                if checks.is_owner_check(ctx) and len(self.bot.guilds) > 1:
                     poi_embed.clear_fields()
                     poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! I'll help you edit a POI!\n\nFirst, I'll need to know what **guild** you would like to edit. By default I will edit **{guild.name}**, would you like to change this?. Reply with **N** to stay on **{guild.name}** or reply with any of the {len(self.bot.guilds)} **Guild IDs** that I have access to. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_guild_wait = await channel.send(embed=poi_embed)
