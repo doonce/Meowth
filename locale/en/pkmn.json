@@ -3256,12 +3256,7 @@
           "Water"
         ],
         "pokedex": "Vaporeon underwent a spontaneous mutation and grew fins and gills that allow it to live underwater. This Pokemon has the ability to freely control water.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research"
-        ],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       },
@@ -3270,12 +3265,7 @@
           "Water"
         ],
         "pokedex": "Vaporeon underwent a spontaneous mutation and grew fins and gills that allow it to live underwater. This Pokemon has the ability to freely control water.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research"
-        ],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       }
@@ -3293,12 +3283,7 @@
           "Electric"
         ],
         "pokedex": "Jolteon's cells generate a low level of electricity. This power is amplified by the static electricity of its fur, enabling the Pokemon to drop thunderbolts. The bristling fur is made of electrically charged needles.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research"
-        ],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       },
@@ -3307,12 +3292,7 @@
           "Electric"
         ],
         "pokedex": "Jolteon's cells generate a low level of electricity. This power is amplified by the static electricity of its fur, enabling the Pokemon to drop thunderbolts. The bristling fur is made of electrically charged needles.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research"
-        ],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       }
@@ -3330,12 +3310,7 @@
           "Fire"
         ],
         "pokedex": "Flareon's fluffy fur has a functional purpose-it releases heat into the air so that its body does not get excessively hot. This Pokemon's body temperature can rise to a maximum of 1,650 degrees Fahrenheit.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research"
-        ],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       },
@@ -3344,12 +3319,7 @@
           "Fire"
         ],
         "pokedex": "Flareon's fluffy fur has a functional purpose-it releases heat into the air so that its body does not get excessively hot. This Pokemon's body temperature can rise to a maximum of 1,650 degrees Fahrenheit.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research"
-        ],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       }
@@ -4565,7 +4535,12 @@
           "Normal"
         ],
         "pokedex": "Aipom's tail ends in a hand-like appendage that can be cleverly manipulated. However, because the Pokemon uses its tail so much, its real hands have become rather clumsy.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
         "gender": true,
         "available": true
       }
@@ -9455,7 +9430,7 @@
         "pokedex": "If its cloak is broken in battle, it quickly remakes the cloak with materials nearby.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "plant": {
         "type": [
@@ -9464,7 +9439,7 @@
         "pokedex": "If its cloak is broken in battle, it quickly remakes the cloak with materials nearby.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "sandy": {
         "type": [
@@ -9473,7 +9448,7 @@
         "pokedex": "If its cloak is broken in battle, it quickly remakes the cloak with materials nearby.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "trash": {
         "type": [
@@ -9482,7 +9457,7 @@
         "pokedex": "If its cloak is broken in battle, it quickly remakes the cloak with materials nearby.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 5.0,
@@ -9502,7 +9477,7 @@
         "pokedex": "Its appearance changes depending on where it evolved. The materials on hand become a part of its body.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "plant": {
         "type": [
@@ -9512,7 +9487,7 @@
         "pokedex": "Its appearance changes depending on where it evolved. The materials on hand become a part of its body.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "sandy": {
         "type": [
@@ -9522,7 +9497,7 @@
         "pokedex": "Its appearance changes depending on where it evolved. The materials on hand become a part of its body.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "trash": {
         "type": [
@@ -9532,7 +9507,7 @@
         "pokedex": "Its appearance changes depending on where it evolved. The materials on hand become a part of its body.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 1.0,
@@ -9552,7 +9527,7 @@
         "pokedex": "It flutters around at night and steals honey from the Combee hive.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 1.0,
@@ -9668,7 +9643,7 @@
         "pokedex": "It evolves by sucking the energy out of the small ball where it had been storing nutrients.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 3.0,
@@ -9687,7 +9662,7 @@
         "pokedex": "If it senses strong sunlight, it opens its folded petals to absorb the sun's rays with its whole body.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "overcast": {
         "type": [
@@ -9696,7 +9671,7 @@
         "pokedex": "If it senses strong sunlight, it opens its folded petals to absorb the sun's rays with its whole body.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       },
       "sunshine": {
         "type": [
@@ -9705,7 +9680,7 @@
         "pokedex": "If it senses strong sunlight, it opens its folded petals to absorb the sun's rays with its whole body.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 3.0,
@@ -9799,7 +9774,7 @@
           "Normal"
         ],
         "pokedex": "To eat, it deftly shucks nuts with its two tails. It rarely uses its arms now.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": true,
         "available": true
       }
@@ -10050,7 +10025,12 @@
           "Psychic"
         ],
         "pokedex": "Implements shaped like it were discovered in ancient tombs. It is unknown if they are related.",
-        "shiny": [],
+        "shiny":  [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
         "gender": false,
         "available": true
       }
@@ -10070,7 +10050,7 @@
           "Psychic"
         ],
         "pokedex": "Ancient people believed that petitioning Bronzong for rain was the way to make crops grow.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": false,
         "available": true
       }
@@ -10188,7 +10168,7 @@
         "pokedex": "It nests in small, horizontal holes in cave walls. It pounces to catch prey that stray too close.",
         "shiny": [],
         "gender": true,
-        "available": false
+        "available": true
       }
     },
     "distance": 5.0,
@@ -10208,7 +10188,7 @@
         "pokedex": "As it digs to expand its nest, it habitually digs up gems that it then hoards in its nest.",
         "shiny": [],
         "gender": true,
-        "available": false
+        "available": true
       }
     },
     "distance": 5.0,
@@ -10228,7 +10208,7 @@
         "pokedex": "It flies at speeds equal to a jet fighter plane. It never allows its prey to escape.",
         "shiny": [],
         "gender": true,
-        "available": false
+        "available": true
       }
     },
     "distance": 5.0,
@@ -10305,7 +10285,7 @@
         "pokedex": "It enshrouds itself with sand to protect itself from germs. It does not enjoy getting wet.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 1.0,
@@ -10324,7 +10304,7 @@
         "pokedex": "It blasts internally stored sand from ports on its body to create a towering twister for attack.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 1.0,
@@ -10559,9 +10539,9 @@
           "Steel"
         ],
         "pokedex": "It evolved from exposure to a special magnetic field. Three units generate magnetism.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 3.0,
@@ -10720,9 +10700,18 @@
           "Grass"
         ],
         "pokedex": "Just like a plant, it uses photosynthesis. As a result, it is always enveloped in clear air.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": false,
-        "available": false
+        "available": true
+      },
+      "flower": {
+        "type": [
+          "Grass"
+        ],
+        "pokedex": "Just like a plant, it uses photosynthesis. As a result, it is always enveloped in clear air.",
+        "shiny": ["evolution"],
+        "gender": false,
+        "available": true
       }
     },
     "distance": 5.0,
@@ -10739,9 +10728,18 @@
           "Ice"
         ],
         "pokedex": "It lowers its body heat to freeze its fur. The hairs then become like needles it can fire.",
-        "shiny": [],
+        "shiny": ["evolution"],
         "gender": false,
-        "available": false
+        "available": true
+      },
+      "flower": {
+        "type": [
+          "Ice"
+        ],
+        "pokedex": "It lowers its body heat to freeze its fur. The hairs then become like needles it can fire.",
+        "shiny": ["evolution"],
+        "gender": false,
+        "available": true
       }
     },
     "distance": 5.0,
@@ -10840,7 +10838,7 @@
         "pokedex": "It freely controls three small units called Mini-Noses using magnetic force.",
         "shiny": [],
         "gender": false,
-        "available": false
+        "available": true
       }
     },
     "distance": 3.0,
