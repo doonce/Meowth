@@ -1,10 +1,25 @@
+
+import asyncio
+import copy
+import re
+import time
+import datetime
+import dateparser
+import textwrap
+import logging
+import aiohttp
+import os
+import json
+import functools
+from dateutil.relativedelta import relativedelta
 from string import ascii_lowercase
 
 import discord
-import re
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import CommandError
 
+from meowth import checks, errors
+from meowth.exts import pokemon as pkmn_class
 from meowth.exts import utilities as utils
 
 
@@ -633,6 +648,136 @@ class Pokemon():
 class Pokedex(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command()
+    @checks.is_manager()
+    async def pkmn_json(self, ctx, *, pokemon: Pokemon=None):
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        first = True
+        action = "edit"
+        owner = self.bot.get_user(self.bot.config['master'])
+        pkmn_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pokemonstorageupgrade.1.png?cache=1')
+        pkmn_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        def check(reply):
+            if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                return True
+            else:
+                return False
+        while True:
+            async with ctx.typing():
+                if not pokemon:
+                    pkmn_embed.clear_fields()
+                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"{'Meowth! I will help you edit Pokemon information!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **pokemon** you'd like to edit. Reply with **name** of the pokemon and include any **form or gender** if applicable. You can reply with **cancel** to stop anytime.", inline=False)
+                    pkmn_name_wait = await channel.send(embed=pkmn_embed)
+                    try:
+                        pkmn_name_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        pkmn_name_msg = None
+                    await utils.safe_delete(pkmn_name_wait)
+                    if not pkmn_name_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(pkmn_name_msg)
+                    if pkmn_name_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    else:
+                        pokemon, match_list = await Pokemon.ask_pokemon(ctx, pkmn_name_msg.clean_content.lower(), allow_digits=False)
+                        if not pokemon:
+                            error = _("entered an invalid pokemon")
+                            break
+                    first = False
+                if pokemon:
+                    if pokemon.form:
+                        pkmn_form = pokemon.form
+                    else:
+                        pkmn_form = "none"
+                    if pokemon.alolan:
+                        pkmn_form = "alolan"
+                    pkmn_available = False
+                    if self.bot.form_dict.get(pokemon.id, {}).get(pkmn_form, False):
+                        pkmn_available = True
+                    pkmn_shiny = []
+                    pkmn_shiny = self.bot.shiny_dict.get(pokemon.id, {}).get(pkmn_form, [])
+                    pkmn_gender = False
+                    if self.bot.gender_dict.get(pokemon.id, {}).get(pkmn_form, False):
+                        pkmn_available = True
+                    pkmn_embed.clear_fields()
+                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist. Please ask **{owner.name}** to make changes.\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **available** to toggle in-game availability, **shiny** to set shiny availability, or **gender** to toggle gender sprites. You can reply with **cancel** to stop anytime.\n\n**Current Settings**\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Sprites: {pkmn_gender}", inline=False)
+                    attr_type_wait = await channel.send(embed=pkmn_embed)
+                    try:
+                        attr_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        attr_type_msg = None
+                    await utils.safe_delete(attr_type_wait)
+                    if not attr_type_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(attr_type_msg)
+                    if attr_type_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif attr_type_msg.clean_content.lower() == "gender":
+                        pkmn_gender = not pkmn_gender
+                        break
+                    elif attr_type_msg.clean_content.lower() == "available":
+                        pkmn_available = not pkmn_available
+                        break
+                    elif attr_type_msg.clean_content.lower() == "shiny":
+                        pkmn_embed.clear_fields()
+                        pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"Shiny **{str(pokemon)}** is {'not currently available' if not pkmn_shiny else 'currently available in the following: '+str(pkmn_shiny)}.\n\nTo change availability, reply with a comma separated list of all possible occurrences that shiny {str(pokemon)} can appear in-game. You can reply with **cancel** to stop anytime.\n\nSelect from the following options:\n**hatch, raid, wild, research, nest, evolution, none**", inline=False)
+                        shiny_type_wait = await channel.send(embed=pkmn_embed)
+                        try:
+                            shiny_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            shiny_type_msg = None
+                        await utils.safe_delete(shiny_type_wait)
+                        if not shiny_type_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(shiny_type_msg)
+                        if shiny_type_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        else:
+                            shiny_options = ["hatch", "raid", "wild", "research", "nest", "evolution"]
+                            shiny_split = shiny_type_msg.clean_content.lower().split(',')
+                            shiny_split = [x.strip() for x in shiny_split]
+                            shiny_split = [x for x in shiny_split if x in shiny_options]
+                            pkmn_shiny = shiny_split
+                            break
+                        first = False
+                    else:
+                        error = _("entered an invalid option")
+                        break
+                    first = False
+        if error:
+            pkmn_embed.clear_fields()
+            pkmn_embed.add_field(name=_('**Pokemon Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=pkmn_embed, delete_after=10)
+            await utils.safe_delete(message)
+        else:
+            with open(self.bot.pkmn_info_path, 'r', encoding="utf8") as fd:
+                pkmn_info = json.load(fd)
+            pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['available'] = pkmn_available
+            pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['gender'] = pkmn_gender
+            pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['shiny'] = pkmn_shiny
+            with open(self.bot.pkmn_info_path, 'w', encoding="utf8") as fd:
+                json.dump(pkmn_info, fd, indent=2, separators=(', ', ': '))
+            self.bot.pkmn_info = pkmn_info
+            Pokemon.generate_lists(self.bot)
+            pkmn_embed.clear_fields()
+            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current Settings**:\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Sprites: {pkmn_gender}", inline=False)
+            confirmation = await channel.send(embed=pkmn_embed, delete_after=10)
+            await utils.safe_delete(message)
 
     @commands.command(hidden=True)
     async def sprite(self, ctx, *, sprite: Pokemon):
