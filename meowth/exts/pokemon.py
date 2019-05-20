@@ -489,7 +489,7 @@ class Pokemon():
             form = re.search(re.escape(form), argument, re.IGNORECASE)
             if form:
                 match_list.append(form.group(0))
-                argument = argument.replace(form.group(0), '').strip()
+                argument = argument.replace(form.group(0), '', 1).strip()
                 form = form.group(0).lower().strip()
                 argument = re.sub("(?i)spinda","spinda ", argument)
                 argument = re.sub("(?i)unown","unown ", argument)
@@ -652,6 +652,9 @@ class Pokedex(commands.Cog):
     @commands.command()
     @checks.is_manager()
     async def pkmn_json(self, ctx, *, pokemon: Pokemon=None):
+        """Edits pkmn.json pokemon availability
+
+        Usage: !pkmn_json [pokemon]"""
         message = ctx.message
         channel = message.channel
         author = message.author
