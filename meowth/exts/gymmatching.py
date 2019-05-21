@@ -142,6 +142,9 @@ class GymMatching(commands.Cog):
     @commands.command()
     @checks.is_manager()
     async def poi_json(self, ctx, target=None, action=None):
+        """Edits stop_info.json and gym_info.json
+
+        Usage: !poi_json [gym/stop] [add/remove]"""
         message = ctx.message
         channel = message.channel
         author = message.author

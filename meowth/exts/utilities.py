@@ -534,81 +534,84 @@ class Utilities(commands.Cog):
     @tasks.loop(seconds=0)
     async def dm_cleanup(self, loop=True):
         while True:
-            if loop:
-                await asyncio.sleep(302400)
-            logger.info('------ BEGIN ------')
-            guilddict_temp = copy.deepcopy(self.bot.guild_dict)
-            count = 0
-            def build_dm_list(guildid):
-                global_dm_list = []
-                for channel in guilddict_temp[guildid].get('nest_dict', {}):
-                    for nest in guilddict_temp[guildid]['nest_dict'][channel]:
-                        if nest == "list":
-                            continue
-                        for report in guilddict_temp[guildid]['nest_dict'][channel][nest]['reports']:
-                            for k,v in guilddict_temp[guildid]['nest_dict'][channel][nest]['reports'][report]['dm_dict'].items():
-                                global_dm_list.append(v)
-                for listing_id in guilddict_temp[guildid].get('trade_dict', {}):
-                    if guilddict_temp[guildid]['trade_dict'][listing_id].get('offers', {}):
-                        for offer in guilddict_temp[guildid]['trade_dict'][listing_id].get('offers', {}):
-                            global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['offers'][offer]['lister_msg'])
-                    if guilddict_temp[guildid]['trade_dict'][listing_id].get('active_check', 0):
-                        global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['active_check'])
-                    if guilddict_temp[guildid]['trade_dict'][listing_id].get('accepted', {}):
-                        global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['accepted']['lister_msg'])
-                        global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['accepted']['buyer_msg'])
-                report_list = ["questreport_dict", "wildreport_dict", "pokealarm_dict", "pokehuntr_dict", "raidchannel_dict"]
-                for report_dict in report_list:
-                    for report in guilddict_temp[guildid].get(report_dict, {}):
-                        for k,v in guilddict_temp[guildid][report_dict][report].get('dm_dict', {}).items():
-                            global_dm_list.append(v)
-                return global_dm_list
-            for guildid in guilddict_temp.keys():
-                dm_list = build_dm_list(guildid)
-                if not dm_list:
-                    continue
-                delete_list = []
-                trainers = guilddict_temp[guildid].get('trainers', {}).keys()
-                for trainer in trainers:
-                    user = self.bot.get_user(trainer)
-                    if not user:
-                        continue
-                    dm_channel = user.dm_channel
-                    if not dm_channel:
-                        try:
-                            dm_channel = await user.create_dm()
-                        except:
-                            continue
-                    if not dm_channel:
-                        continue
-                    async for message in user.dm_channel.history(limit=500):
-                        if message.author.id == self.bot.user.id:
-                            if "reported by" in message.content or "hatched into" in message.content or "reported that" in message.content:
-                                if message.id not in dm_list:
-                                    delete_list.append(message)
-                            elif "trade" in message.content.lower() or "offer" in message.content.lower():
-                                if message.id not in dm_list:
-                                    if (datetime.datetime.now() - message.created_at).days >= 7:
-                                        delete_list.append(message)
-                            elif "welcome" in message.content.lower():
-                                if (datetime.datetime.now() - message.created_at).days >= 30:
-                                    delete_list.append(message)
-                            elif message.embeds:
-                                if "pokebattler.com" in str(message.embeds[0].author.url).lower() or "raid coordination help" in str(message.embeds[0].author.name).lower():
-                                    if (datetime.datetime.now() - message.created_at).days >= 7:
-                                        delete_list.append(message)
-                dm_list = build_dm_list(guildid)
-                for message in delete_list:
-                    if message.id not in dm_list:
-                        try:
-                            await message.delete()
-                            count += 1
-                        except:
-                            continue
-            logger.info(f"------ END - {count} DMs Cleaned ------")
-            if not loop:
-                return count
+            await self.dm_cleanup_func(loop)
             continue
+
+    async def dm_cleanup_func(self, loop=True):
+        if loop:
+            await asyncio.sleep(302400)
+        logger.info('------ BEGIN ------')
+        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+        count = 0
+        def build_dm_list(guildid):
+            global_dm_list = []
+            for channel in guilddict_temp[guildid].get('nest_dict', {}):
+                for nest in guilddict_temp[guildid]['nest_dict'][channel]:
+                    if nest == "list":
+                        continue
+                    for report in guilddict_temp[guildid]['nest_dict'][channel][nest]['reports']:
+                        for k,v in guilddict_temp[guildid]['nest_dict'][channel][nest]['reports'][report]['dm_dict'].items():
+                            global_dm_list.append(v)
+            for listing_id in guilddict_temp[guildid].get('trade_dict', {}):
+                if guilddict_temp[guildid]['trade_dict'][listing_id].get('offers', {}):
+                    for offer in guilddict_temp[guildid]['trade_dict'][listing_id].get('offers', {}):
+                        global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['offers'][offer]['lister_msg'])
+                if guilddict_temp[guildid]['trade_dict'][listing_id].get('active_check', 0):
+                    global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['active_check'])
+                if guilddict_temp[guildid]['trade_dict'][listing_id].get('accepted', {}):
+                    global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['accepted']['lister_msg'])
+                    global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['accepted']['buyer_msg'])
+            report_list = ["questreport_dict", "wildreport_dict", "pokealarm_dict", "pokehuntr_dict", "raidchannel_dict"]
+            for report_dict in report_list:
+                for report in guilddict_temp[guildid].get(report_dict, {}):
+                    for k,v in guilddict_temp[guildid][report_dict][report].get('dm_dict', {}).items():
+                        global_dm_list.append(v)
+            return global_dm_list
+        for guildid in guilddict_temp.keys():
+            dm_list = build_dm_list(guildid)
+            if not dm_list:
+                continue
+            delete_list = []
+            trainers = guilddict_temp[guildid].get('trainers', {}).keys()
+            for trainer in trainers:
+                user = self.bot.get_user(trainer)
+                if not user:
+                    continue
+                dm_channel = user.dm_channel
+                if not dm_channel:
+                    try:
+                        dm_channel = await user.create_dm()
+                    except:
+                        continue
+                if not dm_channel:
+                    continue
+                async for message in user.dm_channel.history(limit=500):
+                    if message.author.id == self.bot.user.id:
+                        if "reported by" in message.content or "hatched into" in message.content or "reported that" in message.content:
+                            if message.id not in dm_list:
+                                delete_list.append(message)
+                        elif "trade" in message.content.lower() or "offer" in message.content.lower():
+                            if message.id not in dm_list:
+                                if (datetime.datetime.now() - message.created_at).days >= 7:
+                                    delete_list.append(message)
+                        elif "welcome" in message.content.lower():
+                            if (datetime.datetime.now() - message.created_at).days >= 30:
+                                delete_list.append(message)
+                        elif message.embeds:
+                            if "pokebattler.com" in str(message.embeds[0].author.url).lower() or "raid coordination help" in str(message.embeds[0].author.name).lower():
+                                if (datetime.datetime.now() - message.created_at).days >= 7:
+                                    delete_list.append(message)
+            dm_list = build_dm_list(guildid)
+            for message in delete_list:
+                if message.id not in dm_list:
+                    try:
+                        await message.delete()
+                        count += 1
+                    except:
+                        continue
+        logger.info(f"------ END - {count} DMs Cleaned ------")
+        if not loop:
+            return count
 
     @dm_cleanup.before_loop
     async def before_cleanup(self):
@@ -622,7 +625,7 @@ class Utilities(commands.Cog):
         DMs that Meowth forgot about will be cleaned automatically once per
         week. This command does it on command."""
         async with ctx.typing():
-            count = await self.dm_cleanup(loop=False)
+            count = await self.dm_cleanup_func(loop=False)
             await ctx.send(f"{count} DMs cleaned.")
 
     @commands.command(name='embed')

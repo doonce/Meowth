@@ -524,7 +524,7 @@ def custom_error_handling(bot, logger):
                     else:
                         msg += '\n#deleted-channel'
             error = await ctx.channel.send(msg)
-            await asyncio.sleep(20)
+            await asyncio.sleep(60)
             await delete_error(ctx.message, error)
         elif isinstance(error, ResearchReportChannelCheckFail):
             guild = ctx.guild

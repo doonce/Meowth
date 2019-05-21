@@ -335,7 +335,7 @@ class Want(commands.Cog):
         if added_count > 0:
             confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -404,7 +404,7 @@ class Want(commands.Cog):
         if added_count > 0:
             confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -458,7 +458,7 @@ class Want(commands.Cog):
         if added_count > 0:
             confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -512,7 +512,7 @@ class Want(commands.Cog):
         if added_count > 0:
             confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -564,7 +564,7 @@ class Want(commands.Cog):
         if added_count > 0:
             confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -614,7 +614,7 @@ class Want(commands.Cog):
         if added_count > 0:
             confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -671,7 +671,7 @@ class Want(commands.Cog):
         if added_count > 0:
             confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if error_list:
             error_msg = ''
             for word in error_list:
@@ -1150,7 +1150,7 @@ class Want(commands.Cog):
         if removed_count > 0:
             confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -1213,7 +1213,7 @@ class Want(commands.Cog):
         if removed_count > 0:
             confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -1329,7 +1329,7 @@ class Want(commands.Cog):
         if removed_count > 0:
             confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -1384,7 +1384,7 @@ class Want(commands.Cog):
         if removed_count > 0:
             confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -1435,7 +1435,7 @@ class Want(commands.Cog):
         if removed_count > 0:
             confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n**{not_wanted_count} Not Wwanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('\n\n**{not_wanted_count} Not Wwanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -1486,7 +1486,7 @@ class Want(commands.Cog):
         if removed_count > 0:
             confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -1543,7 +1543,7 @@ class Want(commands.Cog):
         if removed_count > 0:
             confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if error_list:
             error_msg = ''
             for word in error_list:

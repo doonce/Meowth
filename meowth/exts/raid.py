@@ -533,7 +533,7 @@ class Raid(commands.Cog):
 
     @tasks.loop(seconds=0)
     async def reset_raid_roles(self, loop=True):
-        while (not self.bot.is_closed()):
+        while True:
             boss_names = [str(word) for word in self.bot.raid_list]
             boss_names = [word for word in boss_names if word.islower() and not word.isdigit()]
             for guild_id in self.bot.guild_dict:
@@ -714,66 +714,154 @@ class Raid(commands.Cog):
 
     @commands.command()
     @checks.is_manager()
-    async def raid_json(self, ctx, level=None, *, newlist=None):
+    async def raid_json(self, ctx, level=None, *, new_list=None):
         """Edits or displays raid_info.json
 
         Usage: !raid_json [level] [list]"""
-        finallist = []
-        msg = ''
-        if level and level.lower() == "ex":
-            level = "EX"
-        if (not level) and (not newlist):
-            for level in self.bot.raid_info['raid_eggs']:
-                msg += _('\n**Level {level} raid list:** `{raidlist}` \n').format(level=level, raidlist=self.bot.raid_info['raid_eggs'][level]['pokemon'])
-            return await ctx.channel.send(msg)
-        elif level in self.bot.raid_info['raid_eggs'] and (not newlist):
-            msg += _('**Level {level} raid list:** `{raidlist}` \n').format(level=level, raidlist=self.bot.raid_info['raid_eggs'][level]['pokemon'])
-            return await ctx.channel.send(msg)
-        elif level in self.bot.raid_info['raid_eggs'] and newlist:
-            newlist = [str(item.title().strip()) for item in newlist.strip('[]').split(',')]
-            for pokemon in newlist:
-                pokemon = re.sub('[^a-zA-Z0-9]' , '' , pokemon)
-                pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
-                if pokemon:
-                    finallist.append(str(pokemon))
-            newlist = finallist
-            msg += _('I will replace this:\n')
-            msg += _('**Level {level} raid list:** `{raidlist}` \n').format(level=level, raidlist=self.bot.raid_info['raid_eggs'][level]['pokemon'])
-            msg += _('\nWith this:\n')
-            msg += _('**Level {level} raid list:** `{raidlist}` \n').format(level=level, raidlist=str(newlist))
-            msg += _('\nContinue?')
-            question = await ctx.channel.send(msg)
-            try:
-                timeout = False
-                res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
-            except TypeError:
-                timeout = True
-            if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
-                await utils.safe_delete(question)
-                return await ctx.channel.send(_("Meowth! Configuration cancelled!"), delete_after=10)
-            elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
-                pass
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        first = True
+        msg = ""
+        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1')
+        raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        def check(reply):
+            if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                return True
             else:
-                return await ctx.channel.send(_("Meowth! I'm not sure what went wrong, but configuration is cancelled!"), delete_after=10)
+                return False
+        while True:
+            async with ctx.typing():
+                edit_level = None
+                if level and level.lower() == "ex":
+                    edit_level = "EX"
+                elif level and level in self.bot.raid_info['raid_eggs']:
+                    edit_level = level
+                if not edit_level:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**Edit Raid Bosses**'), value=f"{'Meowth! I will help you edit raid bosses!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **level** of bosses you'd like to modify. Reply with **1, 2, 3, 4, 5, or EX**. Or, if you want to list all bosses, reply with **list**. You can reply with **cancel** to stop anytime.", inline=False)
+                    boss_level_wait = await channel.send(embed=raid_embed)
+                    try:
+                        boss_level_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        boss_level_msg = None
+                    await utils.safe_delete(boss_level_wait)
+                    if not boss_level_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(boss_level_msg)
+                    if boss_level_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif boss_level_msg.clean_content.lower() == "list":
+                        for raid_level in self.bot.raid_info['raid_eggs']:
+                            msg += _('\n**Level {level} bosses:**\n`{raidlist}` \n').format(level=raid_level, raidlist=self.bot.raid_info['raid_eggs'][raid_level]['pokemon'])
+                        raid_embed.set_field_at(0, name="Raid Boss List", value=msg)
+                        return await ctx.channel.send(embed=raid_embed)
+                    elif not any([boss_level_msg.clean_content.lower() == "ex", boss_level_msg.clean_content.isdigit()]):
+                        error = _("entered an invalid option")
+                        break
+                    elif boss_level_msg.clean_content not in self.bot.raid_info['raid_eggs']:
+                        error = _("entered an invalid level")
+                        break
+                    else:
+                        edit_level = boss_level_msg.clean_content.lower()
+                    first = False
+                edit_list = []
+                if new_list:
+                    new_list = re.sub(r'\[|\]|\'|\"', '', str(new_list)).split(',')
+                    new_list = [str(item.title().strip()) for item in new_list]
+                    for pokemon in new_list:
+                        pokemon = re.sub('[^a-zA-Z0-9]' , '' , pokemon)
+                        pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
+                        if pokemon:
+                            edit_list.append(str(pokemon))
+                if not edit_list:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**Edit Raid Bosses**'), value=f"{'Meowth! I will help you edit raid bosses!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **bosses** you'd like to set for level {edit_level} raids. Reply with a comma separated list of bosses including any forms. Or, if you want to list all bosses in level {edit_level} raids, reply with **list**. You can reply with **cancel** to stop anytime.", inline=False)
+                    boss_list_wait = await channel.send(embed=raid_embed)
+                    try:
+                        boss_list_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        boss_list_msg = None
+                    await utils.safe_delete(boss_list_wait)
+                    if not boss_list_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(boss_list_msg)
+                    if boss_list_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif boss_list_msg.clean_content.lower() == "list":
+                        msg = _('**Level {level} bosses:**\n`{raidlist}` \n').format(level=edit_level, raidlist=self.bot.raid_info['raid_eggs'][edit_level]['pokemon'])
+                        raid_embed.set_field_at(0, name="Raid Boss List", value=msg)
+                        return await ctx.channel.send(embed=raid_embed)
+                    else:
+                        new_list = re.sub(r'\[|\]|\'|\"', '', str(boss_list_msg.clean_content.lower())).split(',')
+                        new_list = [str(item.title().strip()) for item in new_list]
+                        for pokemon in new_list:
+                            pokemon = re.sub('[^a-zA-Z0-9]' , '' , pokemon)
+                            pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
+                            if pokemon:
+                                edit_list.append(str(pokemon))
+                        if not edit_list:
+                            error = _("didn't enter any pokemon")
+                            break
+                    first = False
+                if edit_level and edit_list:
+                    msg += _('I will replace this:\n')
+                    msg += _('**Level {level} boss list:**\n`{raidlist}` \n').format(level=edit_level, raidlist=self.bot.raid_info['raid_eggs'][edit_level]['pokemon'])
+                    msg += _('\nWith this:\n')
+                    msg += _('**Level {level} boss list:**\n`{raidlist}` \n').format(level=edit_level, raidlist=str(new_list))
+                    msg += _('\nWould you like to continue?')
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name="Raid Boss Edit", value=msg)
+                    question = await ctx.channel.send(embed=raid_embed)
+                    try:
+                        timeout = False
+                        res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
+                    except TypeError:
+                        timeout = True
+                    if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                        await utils.safe_delete(question)
+                        error = _('cancelled the command')
+                        break
+                    elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                        pass
+                    else:
+                        error = _('did something invalid')
+                        break
+                    await utils.safe_delete(question)
+                    break
+        if error:
+            raid_embed.clear_fields()
+            raid_embed.add_field(name=_('**Boss Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=raid_embed, delete_after=10)
+            await utils.safe_delete(message)
+        else:
+            raid_embed.clear_fields()
+            raid_embed.add_field(name=_('**Boss Edit Completed**'), value=_("Meowth! Your edit completed successfully.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=raid_embed, delete_after=10)
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
-            tmp = data['raid_eggs'][level]['pokemon']
-            data['raid_eggs'][level]['pokemon'] = newlist
+            tmp = data['raid_eggs'][edit_level]['pokemon']
+            data['raid_eggs'][edit_level]['pokemon'] = new_list
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
-            await question.clear_reactions()
-            await asyncio.sleep(0.25)
-            await utils.safe_reaction(question, self.bot.config.get('command_done', '\u2611'))
-            await ctx.channel.send(_("Meowth! Configuration successful!"), delete_after=10)
             self.bot.load_config()
-            await self.reset_raid_roles(loop=False)
+            self.reset_raid_roles.restart()
             guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)
             for guild_id in guilddict_chtemp:
                 for channel_id in guilddict_chtemp[guild_id]['raidchannel_dict']:
-                    if guilddict_chtemp[guild_id]['raidchannel_dict'][channel_id]['egglevel'] == str(level):
+                    if guilddict_chtemp[guild_id]['raidchannel_dict'][channel_id]['egglevel'] == str(edit_level):
                         for trainer_id in guilddict_chtemp[guild_id]['raidchannel_dict'][channel_id]['trainer_dict']:
                             interest = copy.copy(guilddict_chtemp[guild_id]['raidchannel_dict'][channel_id]['trainer_dict'][trainer_id]['interest'])
-                            new_bosses = list(set(newlist) - set(tmp))
+                            new_bosses = list(set(new_list) - set(tmp))
                             new_bosses = [x.lower() for x in new_bosses]
                             self.bot.guild_dict[guild_id]['raidchannel_dict'][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
                         self.bot.guild_dict[guild_id]['raidchannel_dict'][channel_id]['pokemon'] = ''
@@ -781,69 +869,166 @@ class Raid(commands.Cog):
                         self.bot.guild_dict[guild_id]['raidchannel_dict'][channel_id]['ctrs_message'] = None
                         channel = self.bot.get_channel(channel_id)
                         await self._edit_party(channel)
-            await asyncio.sleep(10)
-            await utils.safe_delete(question)
-            await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
-
+            await utils.safe_delete(message)
 
     @commands.command()
     @checks.is_manager()
-    async def raid_time(self, ctx, hatch_or_raid, level, newtime):
+    async def raid_time(self, ctx, hatch_or_raid=None, level=None, new_time=None):
         """Edits raid time in raid_info.json
 
-        Usage: !raid_time <hatch_or_raid> <level> <newtime>
+        Usage: !raid_time [hatch_or_raid] [level] [new_time]
         hatch_or_raid = input the word hatch or raid to set which time to change
         level = 1 through 5 or all
-        newtime = new time to change to in minutes"""
-        msg = ''
-        if hatch_or_raid.lower() == "hatch":
-            modify_time = "hatchtime"
-        elif hatch_or_raid.lower() == "raid":
-            modify_time = "raidtime"
+        new_time = new time to change to in minutes"""
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        first = True
+        msg = ""
+        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1')
+        raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        def check(reply):
+            if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                return True
+            else:
+                return False
+        while True:
+            async with ctx.typing():
+                edit_type = None
+                if hatch_or_raid and hatch_or_raid.lower() == "hatch":
+                    edit_type = "hatchtime"
+                elif hatch_or_raid and hatch_or_raid.lower() == "raid":
+                    edit_type = "raidtime"
+                if not edit_type:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**Edit Raid Times**'), value=f"{'Meowth! I will help you edit raid times!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **time** you'd like to edit. Reply with **hatch** or **raid**. You can reply with **cancel** to stop anytime.", inline=False)
+                    time_type_wait = await channel.send(embed=raid_embed)
+                    try:
+                        time_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        time_type_msg = None
+                    await utils.safe_delete(time_type_wait)
+                    if not time_type_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(time_type_msg)
+                    if time_type_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif not any([time_type_msg.clean_content.lower() == "hatch", time_type_msg.clean_content.lower() == "raid"]):
+                        error = _("entered something invalid")
+                        break
+                    else:
+                        edit_type = f"{time_type_msg.clean_content.lower()}time"
+                    first = False
+                edit_level = None
+                if level and level.lower() == "ex":
+                    edit_level = "EX"
+                elif level and level in self.bot.raid_info['raid_eggs']:
+                    edit_level = level
+                if not edit_level:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**Edit Raid Times**'), value=f"{'Meowth! I will help you edit raid times!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **level** of times you'd like to modify. Reply with **1, 2, 3, 4, 5, EX, or all**. You can reply with **cancel** to stop anytime.", inline=False)
+                    time_level_wait = await channel.send(embed=raid_embed)
+                    try:
+                        time_level_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        time_level_msg = None
+                    await utils.safe_delete(time_level_wait)
+                    if not time_level_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(time_level_msg)
+                    if time_level_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif not any([time_level_msg.clean_content.lower() == "ex", time_level_msg.clean_content.lower() == "all", time_level_msg.clean_content.isdigit()]):
+                        error = _("entered an invalid option")
+                        break
+                    elif time_level_msg.clean_content not in self.bot.raid_info['raid_eggs']:
+                        error = _("entered an invalid level")
+                        break
+                    else:
+                        edit_level = time_level_msg.clean_content.lower()
+                    first = False
+                edit_time = None
+                if new_time and new_time.isdigit():
+                    edit_time = int(new_time)
+                if not edit_time:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**Edit Raid Bosses**'), value=f"{'Meowth! I will help you edit raid times!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what the **new time** for level {edit_level} raid {edit_type.replace('time', ' time')}. Reply with a new time. You can reply with **cancel** to stop anytime.", inline=False)
+                    boss_list_wait = await channel.send(embed=raid_embed)
+                    try:
+                        boss_list_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        boss_list_msg = None
+                    await utils.safe_delete(boss_list_wait)
+                    if not boss_list_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(boss_list_msg)
+                    if boss_list_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif not boss_list_msg.clean_content.isdigit():
+                        error = _("didn't enter a number")
+                        break
+                    else:
+                        edit_time = int(boss_list_msg.clean_content.lower())
+                    first = False
+                if edit_level and edit_time and edit_type:
+                    msg += _('I will change Level **{level}**\'s **{hatch_or_raid}** time from **{oldtime}** minutes to **{newtime}** minutes.').format(level=edit_level, hatch_or_raid=edit_type.replace('time', ''), oldtime=self.bot.raid_info['raid_eggs'][edit_level][edit_type], newtime=edit_time)
+                    msg += _('\nWould you like to continue?')
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name="Raid Boss Edit", value=msg)
+                    question = await ctx.channel.send(embed=raid_embed)
+                    try:
+                        timeout = False
+                        res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
+                    except TypeError:
+                        timeout = True
+                    if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                        await utils.safe_delete(question)
+                        error = _('cancelled the command')
+                        break
+                    elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                        pass
+                    else:
+                        error = _('did something invalid')
+                        break
+                    await utils.safe_delete(question)
+                    break
+        if error:
+            raid_embed.clear_fields()
+            raid_embed.add_field(name=_('**Time Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=raid_embed, delete_after=10)
+            await utils.safe_delete(message)
         else:
-            return await ctx.channel.send(_("Please enter **raid** or **hatch** so I know what time to change!"), delete_after=10)
-        if level.lower() == "all" and newtime.isdigit():
-            msg += _('I will change all level raids (1-5) **{hatch_or_raid}** time to **{newtime}** minutes.').format(hatch_or_raid=hatch_or_raid, newtime=newtime)
-        elif not level.isdigit() or not newtime.isdigit():
-            return await ctx.channel.send(_("Please make sure level and newtime are numbers"))
-        else:
-            newtime = int(newtime)
-            msg += _('I will change Level **{level}**\'s **{hatch_or_raid}** time from **{oldtime}** minutes to **{newtime}** minutes.').format(level=level, hatch_or_raid=hatch_or_raid, oldtime=self.bot.raid_info['raid_eggs'][level][modify_time], newtime=newtime)
-        msg += _('\n\nContinue?')
-        question = await ctx.channel.send(msg)
-        try:
-            timeout = False
-            res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
-        except TypeError:
-            timeout = True
-        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
-            await utils.safe_delete(question)
-            return await ctx.channel.send(_("Meowth! Configuration cancelled!"), delete_after=10)
-        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+            raid_embed.clear_fields()
+            raid_embed.add_field(name=_('**Time Edit Completed**'), value=_("Meowth! Your edit completed successfully.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=raid_embed, delete_after=10)
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
-            if level.lower() == "all":
+            if edit_level.lower() == "all":
                 levellist = ["1", "2", "3", "4", "5"]
                 for level in levellist:
-                    tmp = data['raid_eggs'][level][modify_time]
-                    data['raid_eggs'][level][modify_time] = int(newtime)
+                    tmp = data['raid_eggs'][level][edit_type]
+                    data['raid_eggs'][level][edit_type] = int(edit_time)
                     with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
             else:
-                tmp = data['raid_eggs'][level][modify_time]
-                data['raid_eggs'][level][modify_time] = int(newtime)
+                tmp = data['raid_eggs'][edit_level][edit_type]
+                data['raid_eggs'][edit_level][edit_type] = int(edit_time)
                 with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                     json.dump(data, fd, indent=2, separators=(', ', ': '))
             self.bot.load_config()
-            await question.clear_reactions()
-            await utils.safe_reaction(question, self.bot.config.get('command_done', '\u2611'))
-            await ctx.channel.send(_("Meowth! Configuration successful!"), delete_after=10)
-            await asyncio.sleep(10)
-            await utils.safe_delete(question)
-        else:
-            return await ctx.channel.send(_("Meowth! I'm not sure what went wrong, but configuration is cancelled!"), delete_after=10)
-            await asyncio.sleep(10)
-            await utils.safe_delete(question)
+            await utils.safe_delete(message)
 
     @commands.command()
     @commands.has_permissions(manage_channels=True)
