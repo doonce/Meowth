@@ -46,7 +46,7 @@ class Lure(commands.Cog):
                             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                                 pass
                         try:
-                            del self.bot.guild_dict[guildid]['wildreport_dict'][reportid]
+                            del self.bot.guild_dict[guildid]['lure_dict'][reportid]
                         except KeyError:
                             continue
                     to_expire = lure_dict[reportid].get('exp', 0) - time.time()
@@ -60,7 +60,7 @@ class Lure(commands.Cog):
                 pass
             if not expire_list:
                 expire_list = [600]
-            logger.info(f"------ END - {count} Wilds Cleaned - Waiting {min(expire_list)} seconds. ------")
+            logger.info(f"------ END - {count} Lures Cleaned - Waiting {min(expire_list)} seconds. ------")
             if not loop:
                 return
             await asyncio.sleep(min(expire_list))
@@ -103,14 +103,14 @@ class Lure(commands.Cog):
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                if lure_type and any([lure_type.lower() == "normal", lure_type.lower() == "moss", lure_type.lower() == "glacial", lure_type.lower() == "magnetic"]) and location:
+                if lure_type and any([lure_type.lower() == "normal", lure_type.lower() == "mossy", lure_type.lower() == "glacial", lure_type.lower() == "magnetic"]) and location:
                     if location.split()[-1].isdigit():
                         timer = location.split()[-1]
                         location = location.replace(timer, '').strip()
                     await self._lure(ctx, lure_type, location, timer)
                     return
                 else:
-                    lure_embed.add_field(name=_('**New Lure Report**'), value=_("Meowth! I'll help you report a lure!\n\nFirst, I'll need to know what **type** the lure is. Reply with the **normal, moss, magnetic, or glacial**. You can reply with **cancel** to stop anytime."), inline=False)
+                    lure_embed.add_field(name=_('**New Lure Report**'), value=_("Meowth! I'll help you report a lure!\n\nFirst, I'll need to know what **type** the lure is. Reply with the **normal, mossy, magnetic, or glacial**. You can reply with **cancel** to stop anytime."), inline=False)
                     lure_type_wait = await channel.send(embed=lure_embed)
                     def check(reply):
                         if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
@@ -130,7 +130,7 @@ class Lure(commands.Cog):
                     if lure_type_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
-                    elif not any([lure_type_msg.clean_content.lower() == "normal", lure_type_msg.clean_content.lower() == "moss", lure_type_msg.clean_content.lower() == "magnetic", lure_type_msg.clean_content.lower() == "glacial"]):
+                    elif not any([lure_type_msg.clean_content.lower() == "normal", lure_type_msg.clean_content.lower() == "mossy", lure_type_msg.clean_content.lower() == "magnetic", lure_type_msg.clean_content.lower() == "glacial"]):
                         error = _("entered an invalid type")
                         break
                     else:
@@ -138,7 +138,7 @@ class Lure(commands.Cog):
                         if lure_type != "normal":
                             lure_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png?cache=1")
                     lure_embed.clear_fields()
-                    lure_embed.add_field(name="**New Lure Report**", value=f"Great! Now, reply with the **pokestop** that has the **{lure_type} lure** raid. You can reply with **cancel** to stop anytime.", inline=False)
+                    lure_embed.add_field(name="**New Lure Report**", value=f"Great! Now, reply with the **pokestop** that has the **{lure_type} lure**. You can reply with **cancel** to stop anytime.", inline=False)
                     location_wait = await channel.send(embed=lure_embed)
                     try:
                         location_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -216,18 +216,10 @@ class Lure(commands.Cog):
         lure_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png")
         lure_embed.set_author(name=f"Normal Lure Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1")
         item = "lure module"
-        if lure_type == "glacial":
-            lure_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_glacial.png")
-            lure_embed.set_author(name=f"Glacial Lure Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_glacial.png?cache=1")
-            item = "glacial lure module"
-        elif lure_type == "magnetic":
-            lure_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_magnetic.png")
-            lure_embed.set_author(name=f"Magnetic Lure Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_magnetic.png?cache=1")
-            item = "magnetic lure module"
-        elif lure_type == "moss":
-            lure_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_moss.png")
-            lure_embed.set_author(name=f"Mossy Lure Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_moss.png?cache=1")
-            item = "mossy lure module"
+        if lure_type != "normal":
+            lure_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png")
+            lure_embed.set_author(name=f"{lure_type.title()} Lure Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png?cache=1")
+            item = f"{lure_type} lure module"
         lure_embed.add_field(name=f"Lure Type", value=item.title())
         lure_embed.add_field(name=f"Expires", value=end.strftime(_('%I:%M %p (%H:%M)')))
         confirmation = await ctx.channel.send(lure_msg, embed=lure_embed)

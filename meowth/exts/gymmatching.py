@@ -451,11 +451,9 @@ class GymMatching(commands.Cog):
             return poi_info, details, False
         if type == "raid" or type == "exraid":
             match = await self.poi_match_prompt(ctx, details, gyms, None)
-        elif type == "research":
+        elif type == "research" or type == "lure":
             match = await self.poi_match_prompt(ctx, details, None, stops)
-        elif type == "lure":
-            match = await self.poi_match_prompt(ctx, details, None, stops)
-        elif type == "wild":
+        elif type == "wild" or type == "pvp":
             match = await self.poi_match_prompt(ctx, details, gyms, stops)
         else:
             return poi_info, details, False

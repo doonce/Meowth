@@ -274,52 +274,60 @@ class Listing(commands.Cog):
                     self.bot.guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {})[channel.id] = list_messages
                     return
                 elif checks.check_wantchannel(ctx):
-                    if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_researchreport(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx)):
+                    if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_researchreport(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx) or checks.check_pvpreport(ctx)):
                         want_command = ctx.command.all_commands.get('wants')
                         if want_command:
                             await want_command.invoke(ctx)
                     else:
-                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, !list pvp, or !list trades**", delete_after=10)
                         return
                 elif checks.check_researchreport(ctx):
-                    if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx)):
+                    if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx) or checks.check_pvpreport(ctx)):
                         research_command = ctx.command.all_commands.get('research')
                         if research_command:
                             await research_command.invoke(ctx)
                     else:
-                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, !list pvp, or !list trades**", delete_after=10)
                         return
                 elif checks.check_wildreport(ctx):
-                    if not (checks.check_researchreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx)):
+                    if not (checks.check_researchreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx) or checks.check_pvpreport(ctx)):
                         wild_command = ctx.command.all_commands.get('wild')
                         if wild_command:
                             await wild_command.invoke(ctx)
                     else:
-                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, !list pvp, or !list trades**", delete_after=10)
                         return
                 elif checks.check_nestreport(ctx):
-                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx)):
+                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx) or checks.check_pvpreport(ctx)):
                         nest_command = ctx.command.all_commands.get('nest')
                         if nest_command:
                             await nest_command.invoke(ctx)
                     else:
-                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, !list pvp, or !list trades**", delete_after=10)
                         return
                 elif checks.check_tradereport(ctx):
-                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx) or checks.check_lurereport(ctx)):
+                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx) or checks.check_lurereport(ctx) or checks.check_pvpreport(ctx)):
                         trade_command = ctx.command.all_commands.get('trades')
                         if trade_command:
                             await trade_command.invoke(ctx)
                     else:
-                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, !list pvp, or !list trades**", delete_after=10)
                         return
                 elif checks.check_lurereport(ctx):
-                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx) or checks.check_tradereport(ctx)):
+                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx) or checks.check_tradereport(ctx) or checks.check_pvpreport(ctx)):
                         trade_command = ctx.command.all_commands.get('lures')
                         if trade_command:
                             await trade_command.invoke(ctx)
                     else:
-                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, !list pvp, or !list trades**", delete_after=10)
+                        return
+                elif checks.check_pvpreport(ctx):
+                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx)):
+                        trade_command = ctx.command.all_commands.get('pvp')
+                        if trade_command:
+                            await trade_command.invoke(ctx)
+                    else:
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, !list pvp, or !list trades**", delete_after=10)
                         return
                 else:
                     raise checks.errors.CityRaidChannelCheckFail()
@@ -1168,6 +1176,70 @@ class Listing(commands.Cog):
             return listmsg, paginator.pages
         else:
             listmsg = _("Meowth! There are no reported lures. Report one with **!lure**")
+        return listmsg, None
+
+    @_list.command()
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    @checks.allowpvpreport()
+    async def pvp(self, ctx):
+        """List the pvps for the channel
+
+        Usage: !list pvps"""
+        await utils.safe_delete(ctx.message)
+        list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('pvp', {}).setdefault(ctx.channel.id, [])
+        delete_list = []
+        async with ctx.typing():
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.fetch_message(msg)
+                    delete_list.append(msg)
+                except:
+                    pass
+            await utils.safe_bulk_delete(ctx.channel, delete_list)
+            listmsg, pvp_pages = await self._pvplist(ctx)
+            list_messages = []
+            if pvp_pages:
+                index = 0
+                for p in pvp_pages:
+                    if index == 0:
+                        listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    else:
+                        listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    list_messages.append(listmsg.id)
+                    index += 1
+            elif listmsg:
+                listmsg = await ctx.channel.send(listmsg)
+                list_messages.append(listmsg.id)
+            else:
+                return
+            self.bot.guild_dict[ctx.guild.id]['list_dict']['pvp'][ctx.channel.id] = list_messages
+
+    async def _pvplist(self, ctx):
+        pvp_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('pvp_dict', {}))
+        pvpmsg = ""
+        for pvpid in pvp_dict:
+            if pvp_dict[pvpid]['reportchannel'] == ctx.message.channel.id:
+                try:
+                    pvpreportmsg = await ctx.message.channel.fetch_message(pvpid)
+                    pvpauthor = ctx.channel.guild.get_member(pvp_dict[pvpid]['reportauthor'])
+                    pvp_expire = datetime.datetime.utcfromtimestamp(pvp_dict[pvpid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    reported_by = ""
+                    if pvpauthor and not pvpauthor.bot:
+                        reported_by = f" | **Requested By**: {pvpauthor.display_name}"
+                    iv_check = pvp_dict[pvpid].get('pvp_iv', None)
+                    pvpmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('pvp_bullet', '\ud83d\udd39')))
+                    pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Available Until**: {pvp_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                except Exception as e:
+                    print(e)
+                    continue
+        if pvpmsg:
+            listmsg = _('**Meowth! Here\'s the current PVP Requests for {channel}**').format(channel=ctx.message.channel.mention)
+            paginator = commands.Paginator(prefix="", suffix="")
+            for line in pvpmsg.splitlines():
+                paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+            return listmsg, paginator.pages
+        else:
+            listmsg = _("Meowth! There are no requested PVP battles. Report one with **!pvp**")
         return listmsg, None
 
     @_list.command(aliases=['wild'])

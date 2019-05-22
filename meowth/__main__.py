@@ -128,7 +128,7 @@ Meowth.load_config = load_config
 event_loop = asyncio.get_event_loop()
 
 required_exts = ['utilities', 'pokemon', 'configure']
-optional_exts = ['want', 'wild', 'raid', 'list', 'gymmatching', 'tutorial', 'silph', 'trade', 'research', 'nest', 'huntr', 'trainers', 'lure']
+optional_exts = ['want', 'wild', 'raid', 'list', 'gymmatching', 'tutorial', 'silph', 'trade', 'research', 'nest', 'huntr', 'trainers', 'lure', 'pvp']
 meowth_exts = required_exts + optional_exts
 
 for ext in meowth_exts:

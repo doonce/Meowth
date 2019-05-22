@@ -40,6 +40,10 @@ class LureSetCheckFail(CommandError):
     'Exception raised checks.lureset fails'
     pass
 
+class PVPSetCheckFail(CommandError):
+    'Exception raised checks.pvpset fails'
+    pass
+
 class NestSetCheckFail(CommandError):
     'Exception raised checks.nestset fails'
     pass
@@ -106,6 +110,10 @@ class ResearchReportChannelCheckFail(CommandError):
 
 class LureReportChannelCheckFail(CommandError):
     'Exception raised checks.lurereport fails'
+    pass
+
+class PVPReportChannelCheckFail(CommandError):
+    'Exception raised checks.pvpreport fails'
     pass
 
 class NestReportChannelCheckFail(CommandError):
@@ -266,6 +274,11 @@ def custom_error_handling(bot, logger):
             await delete_error(ctx.message, error)
         elif isinstance(error, LureSetCheckFail):
             msg = _('Meowth! Lure Reporting is not enabled on this server. **{prefix}{cmd_name}** is unable to be used.').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
+            error = await ctx.channel.send(msg)
+            await asyncio.sleep(10)
+            await delete_error(ctx.message, error)
+        elif isinstance(error, PVPSetCheckFail):
+            msg = _('Meowth! PVP Reporting is not enabled on this server. **{prefix}{cmd_name}** is unable to be used.').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             error = await ctx.channel.send(msg)
             await asyncio.sleep(10)
             await delete_error(ctx.message, error)
@@ -563,6 +576,26 @@ def custom_error_handling(bot, logger):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['lure']['report_channels']
+            if len(city_channels) > 10:
+                msg += _('a Region report channel.')
+            else:
+                msg += _('one of the following region channels:')
+                for c in city_channels:
+                    channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
+                    if channel:
+                        msg += '\n' + channel.mention
+                    else:
+                        msg += '\n#deleted-channel'
+            error = await ctx.channel.send(msg)
+            await asyncio.sleep(10)
+            await delete_error(ctx.message, error)
+        elif isinstance(error, PVPReportChannelCheckFail):
+            guild = ctx.guild
+            msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
+            city_channels = bot.guild_dict[guild.id]['configure_dict']['pvp']['report_channels']
             if len(city_channels) > 10:
                 msg += _('a Region report channel.')
             else:

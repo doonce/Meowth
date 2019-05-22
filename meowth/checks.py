@@ -250,12 +250,26 @@ def check_lureset(ctx):
     guild = ctx.guild
     return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('lure', {}).get('enabled', False)
 
+def check_pvpset(ctx):
+    if ctx.guild is None:
+        return False
+    guild = ctx.guild
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('pvp', {}).get('enabled', False)
+
 def check_lurereport(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
     channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('lure', {}).get('report_channels', {}).keys()]
+    return channel.id in channel_list
+
+def check_pvpreport(ctx):
+    if ctx.guild is None:
+        return False
+    channel = ctx.channel
+    guild = ctx.guild
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('pvp', {}).get('report_channels', {}).keys()]
     return channel.id in channel_list
 
 def check_nestset(ctx):
@@ -326,6 +340,8 @@ def allowreports():
         elif check_researchreport(ctx):
             return True
         elif check_lurereport(ctx):
+            return True
+        elif check_pvpreport(ctx):
             return True
         elif check_tradereport(ctx):
             return True
@@ -398,6 +414,19 @@ def allowlurereport():
                 raise errors.LureReportChannelCheckFail()
         else:
             raise errors.LureSetCheckFail()
+    return commands.check(predicate)
+
+def allowpvpreport():
+    def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
+        if check_pvpset(ctx):
+            if check_pvpreport(ctx) or check_tutorialchannel(ctx):
+                return True
+            else:
+                raise errors.PVPReportChannelCheckFail()
+        else:
+            raise errors.PVPSetCheckFail()
     return commands.check(predicate)
 
 def allownestreport():
