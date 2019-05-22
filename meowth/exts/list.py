@@ -315,7 +315,7 @@ class Listing(commands.Cog):
                         return
                 elif checks.check_lurereport(ctx):
                     if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx) or checks.check_tradereport(ctx)):
-                        trade_command = ctx.command.all_commands.get('trades')
+                        trade_command = ctx.command.all_commands.get('lures')
                         if trade_command:
                             await trade_command.invoke(ctx)
                     else:
