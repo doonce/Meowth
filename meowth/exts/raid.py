@@ -703,16 +703,6 @@ class Raid(commands.Cog):
     """
 
     @commands.command()
-    @checks.is_owner()
-    async def reload_json(self, ctx):
-        """Reloads the JSON files for the server
-
-        Usage: !reload_json
-        Useful to avoid a full restart if boss list changed"""
-        self.bot.load_config()
-        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
-
-    @commands.command()
     @checks.is_manager()
     async def raid_json(self, ctx, level=None, *, new_list=None):
         """Edits or displays raid_info.json

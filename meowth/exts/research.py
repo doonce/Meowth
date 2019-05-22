@@ -78,7 +78,7 @@ class Research(commands.Cog):
         try:
             user_message = await channel.fetch_message(research_dict[message.id]['reportmessage'])
             await utils.safe_delete(user_message)
-        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
         await utils.expire_dm_reports(self.bot, research_dict[message.id].get('dm_dict', {}))
         try:

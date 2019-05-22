@@ -274,44 +274,52 @@ class Listing(commands.Cog):
                     self.bot.guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {})[channel.id] = list_messages
                     return
                 elif checks.check_wantchannel(ctx):
-                    if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_researchreport(ctx) or checks.check_tradereport(ctx)):
+                    if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_researchreport(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx)):
                         want_command = ctx.command.all_commands.get('wants')
                         if want_command:
                             await want_command.invoke(ctx)
                     else:
-                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
                         return
                 elif checks.check_researchreport(ctx):
-                    if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
+                    if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx)):
                         research_command = ctx.command.all_commands.get('research')
                         if research_command:
                             await research_command.invoke(ctx)
                     else:
-                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
                         return
                 elif checks.check_wildreport(ctx):
-                    if not (checks.check_researchreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
+                    if not (checks.check_researchreport(ctx) or checks.check_nestreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx)):
                         wild_command = ctx.command.all_commands.get('wild')
                         if wild_command:
                             await wild_command.invoke(ctx)
                     else:
-                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
                         return
                 elif checks.check_nestreport(ctx):
-                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx)):
+                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx)):
                         nest_command = ctx.command.all_commands.get('nest')
                         if nest_command:
                             await nest_command.invoke(ctx)
                     else:
-                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
                         return
                 elif checks.check_tradereport(ctx):
-                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx)):
+                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx) or checks.check_lurereport(ctx)):
                         trade_command = ctx.command.all_commands.get('trades')
                         if trade_command:
                             await trade_command.invoke(ctx)
                     else:
-                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, or !list nests, or !list trades**", delete_after=10)
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
+                        return
+                elif checks.check_lurereport(ctx):
+                    if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx) or checks.check_tradereport(ctx)):
+                        trade_command = ctx.command.all_commands.get('trades')
+                        if trade_command:
+                            await trade_command.invoke(ctx)
+                    else:
+                        await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, or !list trades**", delete_after=10)
                         return
                 else:
                     raise checks.errors.CityRaidChannelCheckFail()
@@ -755,19 +763,19 @@ class Listing(commands.Cog):
         wantmsg = ""
         if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0:
             if wantlist:
-                wantmsg += _('**Pokemon:** (wilds, research, nests{raid_link})\n{want_list}').format(want_list=', '.join(wantlist), raid_link=", raids" if user_link else "")
+                wantmsg += _('**Pokemon:** (wilds, research, nests{raid_link})\n{want_list}').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80), raid_link=", raids" if user_link else ""))
             if bosslist and not user_link:
-                wantmsg += _('\n\n**Bosses:** (raids)\n{want_list}').format(want_list=', '.join(bosslist))
+                wantmsg += _('\n\n**Bosses:** (raids)\n{want_list}').format(want_list='\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
             if user_gyms:
-                wantmsg += _('\n\n**Gyms:** (raids)\n{user_gyms}').format(user_gyms=', '.join(user_gyms))
+                wantmsg += _('\n\n**Gyms:** (raids)\n{user_gyms}').format(user_gyms='\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
             if user_stops:
-                wantmsg += _('\n\n**Stops:** (research, wilds)\n{user_stops}').format(user_stops=', '.join(user_stops))
+                wantmsg += _('\n\n**Stops:** (research, wilds, lures)\n{user_stops}').format(user_stops='\n'.join(textwrap.wrap(', '.join(user_stops), width=80)))
             if user_items:
-                wantmsg += _('\n\n**Items:** (research)\n{user_items}').format(user_items=', '.join(user_items))
+                wantmsg += _('\n\n**Items:** (research, lures)\n{user_items}').format(user_items='\n'.join(textwrap.wrap(', '.join(user_items), width=80)))
             if user_types:
-                wantmsg += _('\n\n**Types:** (wilds, research, nests)\n{user_types}').format(user_types=', '.join(user_types))
+                wantmsg += _('\n\n**Types:** (wilds, research, nests)\n{user_types}').format(user_types='\n'.join(textwrap.wrap(', '.join(user_types), width=80)))
             if user_ivs:
-                wantmsg += _('\n\n**IVs:** (wilds)\n{user_ivs}').format(user_ivs=', '.join(user_ivs))
+                wantmsg += _('\n\n**IVs:** (wilds)\n{user_ivs}').format(user_ivs='\n'.join(textwrap.wrap(', '.join(user_ivs), width=80)))
         if wantmsg:
             if user_mute and mute_mentions:
                 listmsg = _('Meowth! {author}, your notifications and @mentions are muted, so you will not receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
@@ -854,19 +862,19 @@ class Listing(commands.Cog):
         wantmsg = ""
         if len(want_list) > 0 or len(gym_list) > 0 or len(stop_list) > 0 or len(item_list) > 0 or len(boss_list) > 0 or len(type_list) > 0 or len(iv_list) > 0:
             if want_list:
-                wantmsg += _('**Pokemon:**\n{want_list}').format(want_list=', '.join(want_list))
+                wantmsg += _('**Pokemon:**\n{want_list}').format(want_list='\n'.join(textwrap.wrap(', '.join(want_list), width=80)))
             if boss_list:
-                wantmsg += _('\n\n**Bosses:**\n{want_list}').format(want_list=', '.join(boss_list))
+                wantmsg += _('\n\n**Bosses:**\n{want_list}').format(want_list='\n'.join(textwrap.wrap(', '.join(boss_list), width=80)))
             if gym_list:
-                wantmsg += _('\n\n**Gyms:**\n{user_gyms}').format(user_gyms=', '.join(gym_list))
+                wantmsg += _('\n\n**Gyms:**\n{user_gyms}').format(user_gyms='\n'.join(textwrap.wrap(', '.join(gym_list), width=80)))
             if stop_list:
-                wantmsg += _('\n\n**Stops:**\n{user_stops}').format(user_stops=', '.join(stop_list))
+                wantmsg += _('\n\n**Stops:**\n{user_stops}').format(user_stops='\n'.join(textwrap.wrap(', '.join(stop_list), width=80)))
             if item_list:
-                wantmsg += _('\n\n**Items:**\n{user_items}').format(user_items=', '.join(item_list))
+                wantmsg += _('\n\n**Items:**\n{user_items}').format(user_items='\n'.join(textwrap.wrap(', '.join(item_list), width=80)))
             if type_list:
-                wantmsg += _('\n\n**Types:**\n{user_types}').format(user_types=', '.join(type_list))
+                wantmsg += _('\n\n**Types:**\n{user_types}').format(user_types='\n'.join(textwrap.wrap(', '.join(type_list), width=80)))
             if iv_list:
-                wantmsg += _('\n\n**IVs:**\n{user_ivs}').format(user_ivs=', '.join(iv_list))
+                wantmsg += _('\n\n**IVs:**\n{user_ivs}').format(user_ivs='\n'.join(textwrap.wrap(', '.join(iv_list), width=80)))
         if wantmsg:
             listmsg = _('**Meowth!** The server **!want** list is:')
             paginator = commands.Paginator(prefix="", suffix="")
@@ -1096,6 +1104,70 @@ class Listing(commands.Cog):
             return listmsg, paginator.pages
         else:
             listmsg = _("Meowth! There are no reported research reports. Report one with **!research**")
+        return listmsg, None
+
+    @_list.command()
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    @checks.allowlurereport()
+    async def lures(self, ctx):
+        """List the lures for the channel
+
+        Usage: !list lures"""
+        await utils.safe_delete(ctx.message)
+        list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('lure', {}).setdefault(ctx.channel.id, [])
+        delete_list = []
+        async with ctx.typing():
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.fetch_message(msg)
+                    delete_list.append(msg)
+                except:
+                    pass
+            await utils.safe_bulk_delete(ctx.channel, delete_list)
+            listmsg, lure_pages = await self._lurelist(ctx)
+            list_messages = []
+            if lure_pages:
+                index = 0
+                for p in lure_pages:
+                    if index == 0:
+                        listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    else:
+                        listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    list_messages.append(listmsg.id)
+                    index += 1
+            elif listmsg:
+                listmsg = await ctx.channel.send(listmsg)
+                list_messages.append(listmsg.id)
+            else:
+                return
+            self.bot.guild_dict[ctx.guild.id]['list_dict']['lure'][ctx.channel.id] = list_messages
+
+    async def _lurelist(self, ctx):
+        lure_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('lure_dict', {}))
+        luremsg = ""
+        for lureid in lure_dict:
+            if lure_dict[lureid]['reportchannel'] == ctx.message.channel.id:
+                try:
+                    lurereportmsg = await ctx.message.channel.fetch_message(lureid)
+                    lureauthor = ctx.channel.guild.get_member(lure_dict[lureid]['reportauthor'])
+                    lure_expire = datetime.datetime.utcfromtimestamp(lure_dict[lureid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    reported_by = ""
+                    if lureauthor and not lureauthor.bot:
+                        reported_by = f" | **Reported By**: {lureauthor.display_name}"
+                    iv_check = lure_dict[lureid].get('lure_iv', None)
+                    luremsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('lure_bullet', '\ud83d\udd39')))
+                    luremsg += f"**Lure Type**: {lure_dict[lureid]['type'].title()} | **Location**: [{lure_dict[lureid]['location'].title()}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                except Exception as e:
+                    print(e)
+                    continue
+        if luremsg:
+            listmsg = _('**Meowth! Here\'s the current lure reports for {channel}**').format(channel=ctx.message.channel.mention)
+            paginator = commands.Paginator(prefix="", suffix="")
+            for line in luremsg.splitlines():
+                paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+            return listmsg, paginator.pages
+        else:
+            listmsg = _("Meowth! There are no reported lures. Report one with **!lure**")
         return listmsg, None
 
     @_list.command(aliases=['wild'])

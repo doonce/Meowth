@@ -453,6 +453,8 @@ class GymMatching(commands.Cog):
             match = await self.poi_match_prompt(ctx, details, gyms, None)
         elif type == "research":
             match = await self.poi_match_prompt(ctx, details, None, stops)
+        elif type == "lure":
+            match = await self.poi_match_prompt(ctx, details, None, stops)
         elif type == "wild":
             match = await self.poi_match_prompt(ctx, details, gyms, stops)
         else:
@@ -511,7 +513,7 @@ class GymMatching(commands.Cog):
                 if not dupe_check:
                     return poi_info, details, poi_gmaps_link
                 rusure = await message.channel.send(_('Meowth! It looks like that quest might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_research)))
-        elif type == "wild":
+        elif type == "wild" or type == "lure":
             poi_info = _("**Stop:** {0}{1}").format(details, poi_note)
         if duplicate_raids or duplicate_research:
             try:

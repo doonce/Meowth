@@ -128,7 +128,7 @@ Meowth.load_config = load_config
 event_loop = asyncio.get_event_loop()
 
 required_exts = ['utilities', 'pokemon', 'configure']
-optional_exts = ['want', 'wild', 'raid', 'list', 'gymmatching', 'tutorial', 'silph', 'trade', 'research', 'nest', 'huntr', 'trainers']
+optional_exts = ['want', 'wild', 'raid', 'list', 'gymmatching', 'tutorial', 'silph', 'trade', 'research', 'nest', 'huntr', 'trainers', 'lure']
 meowth_exts = required_exts + optional_exts
 
 for ext in meowth_exts:
@@ -149,6 +149,7 @@ Admin Commands
 @Meowth.command(name='load')
 @checks.is_owner()
 async def _load(ctx, *extensions):
+    """Load or reload an extension"""
     for ext in extensions:
         try:
             if f"meowth.exts.{ext}" in Meowth.extensions:
@@ -165,6 +166,7 @@ async def _load(ctx, *extensions):
 @Meowth.command(name='unload')
 @checks.is_owner()
 async def _unload(ctx, *extensions):
+    """Unload an extension"""
     exts = [e for e in extensions if f"meowth.exts.{e}" in Meowth.extensions]
     for ext in exts:
         if ext in required_exts:

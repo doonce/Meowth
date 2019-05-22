@@ -244,6 +244,20 @@ def check_researchreport(ctx):
     channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('research', {}).get('report_channels', {}).keys()]
     return channel.id in channel_list
 
+def check_lureset(ctx):
+    if ctx.guild is None:
+        return False
+    guild = ctx.guild
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('lure', {}).get('enabled', False)
+
+def check_lurereport(ctx):
+    if ctx.guild is None:
+        return False
+    channel = ctx.channel
+    guild = ctx.guild
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('lure', {}).get('report_channels', {}).keys()]
+    return channel.id in channel_list
+
 def check_nestset(ctx):
     if ctx.guild is None:
         return False
@@ -311,6 +325,8 @@ def allowreports():
             return True
         elif check_researchreport(ctx):
             return True
+        elif check_lurereport(ctx):
+            return True
         elif check_tradereport(ctx):
             return True
         elif check_nestreport(ctx):
@@ -369,6 +385,19 @@ def allowresearchreport():
                 raise errors.ResearchReportChannelCheckFail()
         else:
             raise errors.ResearchSetCheckFail()
+    return commands.check(predicate)
+
+def allowlurereport():
+    def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
+        if check_lureset(ctx):
+            if check_lurereport(ctx) or check_tutorialchannel(ctx):
+                return True
+            else:
+                raise errors.LureReportChannelCheckFail()
+        else:
+            raise errors.LureSetCheckFail()
     return commands.check(predicate)
 
 def allownestreport():

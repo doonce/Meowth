@@ -561,7 +561,7 @@ class Utilities(commands.Cog):
                 if guilddict_temp[guildid]['trade_dict'][listing_id].get('accepted', {}):
                     global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['accepted']['lister_msg'])
                     global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['accepted']['buyer_msg'])
-            report_list = ["questreport_dict", "wildreport_dict", "pokealarm_dict", "pokehuntr_dict", "raidchannel_dict"]
+            report_list = ["questreport_dict", "wildreport_dict", "pokealarm_dict", "pokehuntr_dict", "raidchannel_dict", "lure_dict"]
             for report_dict in report_list:
                 for report in guilddict_temp[guildid].get(report_dict, {}):
                     for k,v in guilddict_temp[guildid][report_dict][report].get('dm_dict', {}).items():
@@ -796,7 +796,7 @@ class Utilities(commands.Cog):
         await asyncio.sleep(30)
         await safe_delete(message)
 
-    @commands.command(name='uptime')
+    @commands.command(name='uptime', hidden=True)
     @checks.guildchannel()
     async def cmd_uptime(self, ctx):
         "Shows Meowth's uptime"
@@ -864,7 +864,11 @@ class Utilities(commands.Cog):
 
     @commands.group(name='set', case_insensitive=True)
     async def _set(self, ctx):
-        """Changes a setting."""
+        """Changes a setting.
+
+        Users: pokebattler, trainercode, silph
+        Manager: timezone, regional, prefix
+        Owner: avatar, username, activity"""
         if ctx.invoked_subcommand == None:
             raise commands.BadArgument()
             return
@@ -873,7 +877,6 @@ class Utilities(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def regional(self, ctx, regional):
         """Changes server regional pokemon."""
-
         if regional.isdigit():
             regional = int(regional)
         else:
@@ -1133,7 +1136,9 @@ class Utilities(commands.Cog):
     @commands.group(name='get', case_insensitive=True)
     @commands.has_permissions(manage_guild=True)
     async def _get(self, ctx):
-        """Get a setting value"""
+        """Get a setting value.
+
+        Managers: prefix, perms"""
         if ctx.invoked_subcommand == None:
             raise commands.BadArgument()
             return
