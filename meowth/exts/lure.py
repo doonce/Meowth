@@ -204,13 +204,13 @@ class Lure(commands.Cog):
                     if expire_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
+                    elif expire_msg.clean_content.lower() == "n":
+                        timer = ""
                     elif not expire_msg.clean_content.isdigit():
                         error = _("didn't enter a number")
                         break
                     elif int(expire_msg.clean_content) > 720:
                         timer = "720"
-                    elif expire_msg.clean_content.lower() == "n":
-                        timer = ""
                     elif expire_msg:
                         timer = expire_msg.clean_content
                     lure_embed.remove_field(0)
