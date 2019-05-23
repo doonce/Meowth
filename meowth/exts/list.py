@@ -982,7 +982,7 @@ class Listing(commands.Cog):
                     wanted_pokemon = [pkmn_class.Pokemon.get_pokemon(ctx.bot, x) for x in wanted_pokemon.split('\n')]
                     wanted_pokemon = [str(x) for x in wanted_pokemon]
                     wanted_pokemon = ', '.join(wanted_pokemon)
-                trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('trade_bullet', '\ud83d\udd39')))
+                trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('trade_bullet', '\U0001F539')))
                 trademsg += (f"{lister_str}**Offered Pokemon**: {target_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Jump To Message]({offer_url})")
         if trademsg:
             paginator = commands.Paginator(prefix="", suffix="")
@@ -1042,13 +1042,13 @@ class Listing(commands.Cog):
         ball_quests = []
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
         encounter_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_encounter', '\u2753'))
-        candy_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_candy', '\ud83c\udf6c'))
+        candy_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_candy', '\U0001F36C'))
         dust_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_dust', '\u2b50'))
-        berry_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_berry', '\ud83c\udf53'))
-        potion_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_potion', '\ud83d\udc8a'))
+        berry_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_berry', '\U0001F353'))
+        potion_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_potion', '\U0001F48A'))
         revive_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_revive', '\u2764'))
         ball_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_ball', '\u26be'))
-        other_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_other', '\ud83d\udd39'))
+        other_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_other', '\U0001F539'))
         for questid in research_dict:
             pokemon = None
             if research_dict[questid]['reportchannel'] == ctx.message.channel.id:
@@ -1163,7 +1163,7 @@ class Listing(commands.Cog):
                     if lureauthor and not lureauthor.bot:
                         reported_by = f" | **Reported By**: {lureauthor.display_name}"
                     iv_check = lure_dict[lureid].get('lure_iv', None)
-                    luremsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('lure_bullet', '\ud83d\udd39')))
+                    luremsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('lure_bullet', '\U0001F539')))
                     luremsg += f"**Lure Type**: {lure_dict[lureid]['type'].title()} | **Location**: [{lure_dict[lureid]['location'].title()}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
                 except Exception as e:
                     print(e)
@@ -1227,7 +1227,7 @@ class Listing(commands.Cog):
                     if pvpauthor and not pvpauthor.bot:
                         reported_by = f" | **Requested By**: {pvpauthor.display_name}"
                     iv_check = pvp_dict[pvpid].get('pvp_iv', None)
-                    pvpmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('pvp_bullet', '\ud83d\udd39')))
+                    pvpmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('pvp_bullet', '\U0001F539')))
                     pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Available Until**: {pvp_expire.strftime(_('%I:%M %p'))}{reported_by}"
                 except Exception as e:
                     print(e)
@@ -1298,7 +1298,7 @@ class Listing(commands.Cog):
                             shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
                         elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                             shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-                    wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('wild_bullet', '\ud83d\udd39')))
+                    wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('wild_bullet', '\U0001F539')))
                     wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
                     if iv_check or iv_check == 0:
                         wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv']}"

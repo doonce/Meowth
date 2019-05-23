@@ -70,6 +70,29 @@ class Lure(commands.Cog):
     async def before_cleanup(self):
         await self.bot.wait_until_ready()
 
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except (discord.errors.NotFound, AttributeError, discord.Forbidden):
+            return
+        guild = message.guild
+        try:
+            user = guild.get_member(payload.user_id)
+        except AttributeError:
+            return
+        guild = message.guild
+        try:
+            lure_dict = self.bot.guild_dict[guild.id]['lure_dict']
+        except KeyError:
+            lure_dict = []
+        if message.id in lure_dict and user.id != self.bot.user.id:
+            wild_dict = self.bot.guild_dict[guild.id]['lure_dict'][message.id]
+            if str(payload.emoji) == self.bot.config.get('lure_expire', '\U0001F4A8'):
+                for reaction in message.reactions:
+                    await self.expire_lure(message)
+
     async def expire_lure(self, message):
         guild = message.channel.guild
         channel = message.channel
@@ -86,9 +109,9 @@ class Lure(commands.Cog):
         except KeyError:
             pass
 
-    @commands.command()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     @checks.allowlurereport()
-    async def lure(self, ctx, lure_type=None, *, location:commands.clean_content(fix_channel_mentions=True)="", timer="30"):
+    async def lure(self, ctx, lure_type=None, *, location:commands.clean_content(fix_channel_mentions=True)="", timer=""):
         """Report an ongoing lure.
 
         Usage: !lure [type] [pokestop] [minutes]
@@ -107,7 +130,7 @@ class Lure(commands.Cog):
                     if location.split()[-1].isdigit():
                         timer = location.split()[-1]
                         location = location.replace(timer, '').strip()
-                    if int(timer) > 720:
+                    if timer.isdigit() and int(timer) > 720:
                         timer = "720"
                     await self._lure(ctx, lure_type, location, timer)
                     return
@@ -166,7 +189,7 @@ class Lure(commands.Cog):
                         if not location:
                             return
                     lure_embed.clear_fields()
-                    lure_embed.add_field(name="**New Lure Report**", value=f"Fantastic! Now, reply with the **minutes remaining** before the **{lure_type} lure** ends. This is usually 30 minutes from when the lure started unless there is an event. You can reply with **cancel** to stop anytime.", inline=False)
+                    lure_embed.add_field(name="**New Lure Report**", value=f"Fantastic! Now, reply with the **minutes remaining** before the **{lure_type} lure** ends. This is usually 30 minutes from when the lure started unless there is an event. If you don't know, reply with **N**. You can reply with **cancel** to stop anytime.", inline=False)
                     expire_wait = await channel.send(embed=lure_embed)
                     try:
                         expire_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -186,6 +209,8 @@ class Lure(commands.Cog):
                         break
                     elif int(expire_msg.clean_content) > 720:
                         timer = "720"
+                    elif expire_msg.clean_content.lower() == "n":
+                        timer = ""
                     elif expire_msg:
                         timer = expire_msg.clean_content
                     lure_embed.remove_field(0)
@@ -200,9 +225,12 @@ class Lure(commands.Cog):
 
     async def _lure(self, ctx, lure_type, location, timer):
         dm_dict = {}
+        expire_time = "30"
+        if timer:
+            expire_time = timer
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
-        end = now + datetime.timedelta(minutes=int(timer))
+        end = now + datetime.timedelta(minutes=int(expire_time))
         lure_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         lure_msg = _("Lure reported by {author}").format(author=ctx.author.mention)
@@ -232,7 +260,7 @@ class Lure(commands.Cog):
         confirmation = await ctx.channel.send(lure_msg, embed=lure_embed)
         test_var = self.bot.guild_dict[ctx.guild.id].setdefault('lure_dict', {}).setdefault(confirmation.id, {})
         self.bot.guild_dict[ctx.guild.id]['lure_dict'][confirmation.id] = {
-            'exp':time.time() + int(timer)*60,
+            'exp':time.time() + int(expire_time)*60,
             'expedit':"delete",
             'reportmessage':ctx.message.id,
             'reportchannel':ctx.channel.id,
@@ -242,6 +270,8 @@ class Lure(commands.Cog):
             'url':loc_url,
             'type':lure_type
         }
+        if not timer:
+            await utils.safe_reaction(confirmation, self.bot.config.get('lure_expire', '\U0001F4A8'))
         lure_embed.description = lure_embed.description + f"\n**Report:** [Jump to Message]({confirmation.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
@@ -256,6 +286,46 @@ class Lure(commands.Cog):
                 except:
                     continue
         self.bot.guild_dict[ctx.guild.id]['lure_dict'][confirmation.id]['dm_dict'] = dm_dict
+
+    @lure.command(aliases=['expire'])
+    @checks.allowlurereport()
+    @commands.has_permissions(manage_channels=True)
+    async def reset(self, ctx, *, report_message=None):
+        """Resets all lure reports."""
+        author = ctx.author
+        guild = ctx.guild
+        message = ctx.message
+        channel = ctx.channel
+
+        # get settings
+        lure_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('lure_dict', {}))
+        await utils.safe_delete(message)
+
+        if not lure_dict:
+            return
+        if report_message and int(report_message) in lure_dict.keys():
+            report_message = await channel.fetch_message(report_message)
+            await self.expire_lure(report_message)
+            return
+        rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all lures?'))
+        try:
+            timeout = False
+            res, reactuser = await utils.ask(self.bot, rusure, author.id)
+        except TypeError:
+            timeout = True
+        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+            await utils.safe_delete(rusure)
+            confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
+            return
+        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+            await utils.safe_delete(rusure)
+            for report in lure_dict:
+                report_message = await channel.fetch_message(report)
+                self.bot.loop.create_task(self.expire_lure(report_message))
+            confirmation = await channel.send(_('Lures reset.'), delete_after=10)
+            return
+        else:
+            return
 
 def setup(bot):
     bot.add_cog(Lure(bot))

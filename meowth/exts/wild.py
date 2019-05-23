@@ -43,12 +43,12 @@ class Wild(commands.Cog):
             wildreport_dict = []
         if message.id in wildreport_dict and user.id != self.bot.user.id:
             wild_dict = self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
-            if str(payload.emoji) == self.bot.config.get('wild_omw', '\ud83c\udfce'):
+            if str(payload.emoji) == self.bot.config.get('wild_omw', '\U0001F3CE'):
                 wild_dict['omw'].append(user.mention)
                 self.bot.guild_dict[guild.id]['wildreport_dict'][message.id] = wild_dict
-            elif str(payload.emoji) == self.bot.config.get('wild_despawn', '\ud83d\udca8'):
+            elif str(payload.emoji) == self.bot.config.get('wild_despawn', '\U0001F4A8'):
                 for reaction in message.reactions:
-                    if reaction.emoji == self.bot.config.get('wild_despawn', '\ud83d\udca8') and reaction.count >= 2:
+                    if reaction.emoji == self.bot.config.get('wild_despawn', '\U0001F4A8') and reaction.count >= 2:
                         if wild_dict['omw']:
                             despawn = _("has despawned")
                             await channel.send(f"{', '.join(wild_dict['omw'])}: {wild_dict['pokemon'].title()} {despawn}!")
@@ -314,16 +314,16 @@ class Wild(commands.Cog):
         wild_embed.set_thumbnail(url=pokemon.img_url)
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         despawn = 3600
-        wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=self.bot.config.get('wild_omw', '\ud83c\udfce')))
-        wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=self.bot.config.get('wild_despawn', '\ud83d\udca8')))
+        wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=self.bot.config.get('wild_omw', '\U0001F3CE')))
+        wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=self.bot.config.get('wild_despawn', '\U0001F4A8')))
         wild_embed.set_author(name=f"Wild {pokemon.name.title()} Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
         ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}{iv_str}{stop_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details, iv_str=iv_str, stop_str=stop_str), embed=wild_embed)
         dm_dict = {}
         dm_dict = await self.send_dm_messages(ctx, pokemon.id, nearest_stop, wild_types[0], wild_types[1], wild_iv, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, self.bot.config.get('wild_omw', '\ud83c\udfce'))
+        await utils.safe_reaction(ctx.wildreportmsg, self.bot.config.get('wild_omw', '\U0001F3CE'))
         await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, self.bot.config.get('wild_despawn', '\ud83d\udca8'))
+        await utils.safe_reaction(ctx.wildreportmsg, self.bot.config.get('wild_despawn', '\U0001F4A8'))
         await asyncio.sleep(0.25)
         self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'exp':time.time() + despawn,

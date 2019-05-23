@@ -86,7 +86,7 @@ class Pvp(commands.Cog):
         except KeyError:
             pass
 
-    @commands.command()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     @checks.allowpvpreport()
     async def pvp(self, ctx, pvp_type=None, *, location:commands.clean_content(fix_channel_mentions=True)="", timer="30"):
         """Report a PVP battle request.
@@ -240,6 +240,46 @@ class Pvp(commands.Cog):
             'url':loc_url,
             'type':pvp_type
         }
+
+    @pvp.command(aliases=['expire'])
+    @checks.allowpvpreport()
+    @commands.has_permissions(manage_channels=True)
+    async def reset(self, ctx, *, report_message=None):
+        """Resets all PVP requests."""
+        author = ctx.author
+        guild = ctx.guild
+        message = ctx.message
+        channel = ctx.channel
+
+        # get settings
+        pvp_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('pvp_dict', {}))
+        await utils.safe_delete(message)
+
+        if not pvp_dict:
+            return
+        if report_message and int(report_message) in pvp_dict.keys():
+            report_message = await channel.fetch_message(report_message)
+            await self.expire_pvp(report_message)
+            return
+        rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all PVP requests?'))
+        try:
+            timeout = False
+            res, reactuser = await utils.ask(self.bot, rusure, author.id)
+        except TypeError:
+            timeout = True
+        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+            await utils.safe_delete(rusure)
+            confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
+            return
+        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+            await utils.safe_delete(rusure)
+            for report in pvp_dict:
+                report_message = await channel.fetch_message(report)
+                self.bot.loop.create_task(self.expire_pvp(report_message))
+            confirmation = await channel.send(_('PVPs reset.'), delete_after=10)
+            return
+        else:
+            return
 
 def setup(bot):
     bot.add_cog(Pvp(bot))
