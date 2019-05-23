@@ -107,8 +107,9 @@ class Pvp(commands.Cog):
                     if location.split()[-1].isdigit():
                         timer = location.split()[-1]
                         location = location.replace(timer, '').strip()
-                    if int(timer) < 1440:
-                        await self._pvp(ctx, pvp_type, location, timer)
+                    if int(timer) > 720:
+                        timer = "720"
+                    await self._pvp(ctx, pvp_type, location, timer)
                     return
                 else:
                     pvp_embed.add_field(name=_('**New PVP Request**'), value=_("Meowth! I'll help you report a PVP battle!\n\nFirst, I'll need to know what **type** of PVP battle you'd like to start. Reply with the **any, great, ultra, or master**. You can reply with **cancel** to stop anytime."), inline=False)
@@ -183,9 +184,8 @@ class Pvp(commands.Cog):
                     elif not expire_msg.clean_content.isdigit():
                         error = _("didn't enter a number")
                         break
-                    elif int(expire_msg.clean_content) > 1440:
-                        error = _("entered too large of a number")
-                        break
+                    elif int(expire_msg.clean_content) > 720:
+                        timer = "720"
                     elif expire_msg:
                         timer = expire_msg.clean_content
                     pvp_embed.remove_field(0)

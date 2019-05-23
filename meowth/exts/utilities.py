@@ -575,7 +575,7 @@ class Utilities(commands.Cog):
             trainers = guilddict_temp[guildid].get('trainers', {}).keys()
             for trainer in trainers:
                 user = self.bot.get_user(trainer)
-                if not user:
+                if not user or user = self.bot.user:
                     continue
                 dm_channel = user.dm_channel
                 if not dm_channel:

@@ -107,6 +107,8 @@ class Lure(commands.Cog):
                     if location.split()[-1].isdigit():
                         timer = location.split()[-1]
                         location = location.replace(timer, '').strip()
+                    if int(timer) > 720:
+                        timer = "720"
                     await self._lure(ctx, lure_type, location, timer)
                     return
                 else:
@@ -182,9 +184,8 @@ class Lure(commands.Cog):
                     elif not expire_msg.clean_content.isdigit():
                         error = _("didn't enter a number")
                         break
-                    elif int(expire_msg.clean_content) > 1440:
-                        error = _("entered too large of a number")
-                        break
+                    elif int(expire_msg.clean_content) > 720:
+                        timer = "720"
                     elif expire_msg:
                         timer = expire_msg.clean_content
                     lure_embed.remove_field(0)
