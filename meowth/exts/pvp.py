@@ -73,7 +73,7 @@ class Pvp(commands.Cog):
     async def expire_pvp(self, message):
         guild = message.channel.guild
         channel = message.channel
-        pvp_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['questreport_dict'])
+        pvp_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['pvp_dict'])
         await utils.safe_delete(message)
         try:
             user_message = await channel.fetch_message(pvp_dict[message.id]['reportmessage'])
@@ -82,7 +82,7 @@ class Pvp(commands.Cog):
             pass
         await utils.expire_dm_reports(self.bot, pvp_dict.get(message.id, {}).get('dm_dict', {}))
         try:
-            del self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
+            del self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
         except KeyError:
             pass
 
@@ -107,7 +107,8 @@ class Pvp(commands.Cog):
                     if location.split()[-1].isdigit():
                         timer = location.split()[-1]
                         location = location.replace(timer, '').strip()
-                    await self._pvp(ctx, pvp_type, location, timer)
+                    if int(timer) < 1440:
+                        await self._pvp(ctx, pvp_type, location, timer)
                     return
                 else:
                     pvp_embed.add_field(name=_('**New PVP Request**'), value=_("Meowth! I'll help you report a PVP battle!\n\nFirst, I'll need to know what **type** of PVP battle you'd like to start. Reply with the **any, great, ultra, or master**. You can reply with **cancel** to stop anytime."), inline=False)
@@ -179,6 +180,12 @@ class Pvp(commands.Cog):
                     if expire_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
+                    elif not expire_msg.clean_content.isdigit():
+                        error = _("didn't enter a number")
+                        break
+                    elif int(expire_msg.clean_content) > 1440:
+                        error = _("entered too large of a number")
+                        break
                     elif expire_msg:
                         timer = expire_msg.clean_content
                     pvp_embed.remove_field(0)
@@ -200,7 +207,7 @@ class Pvp(commands.Cog):
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         pvp_msg = _("PVP Requested by {author}").format(author=ctx.author.mention)
         pvp_embed.title = _('Meowth! Click here for my directions to the PVP!')
-        pvp_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location**: {location}"
+        pvp_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="pvp")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
@@ -218,8 +225,8 @@ class Pvp(commands.Cog):
         if pvp_type != "any":
             pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png")
             pvp_embed.set_author(name=f"{pvp_type.title()} League PVP Request", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png?cache=1")
-        pvp_embed.add_field(name=f"**PVP Type**:", value=pvp_type.title())
-        pvp_embed.add_field(name=f"**Available Until**:", value=end.strftime(_('%I:%M %p (%H:%M)')))
+        pvp_embed.add_field(name=f"**PVP Type:**", value=pvp_type.title())
+        pvp_embed.add_field(name=f"**Available Until:**", value=end.strftime(_('%I:%M %p (%H:%M)')))
         confirmation = await ctx.channel.send(pvp_msg, embed=pvp_embed)
         test_var = self.bot.guild_dict[ctx.guild.id].setdefault('pvp_dict', {}).setdefault(confirmation.id, {})
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][confirmation.id] = {

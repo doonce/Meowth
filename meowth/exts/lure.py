@@ -73,7 +73,7 @@ class Lure(commands.Cog):
     async def expire_lure(self, message):
         guild = message.channel.guild
         channel = message.channel
-        lure_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['questreport_dict'])
+        lure_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['lure_dict'])
         await utils.safe_delete(message)
         try:
             user_message = await channel.fetch_message(lure_dict[message.id]['reportmessage'])
@@ -82,7 +82,7 @@ class Lure(commands.Cog):
             pass
         await utils.expire_dm_reports(self.bot, lure_dict.get(message.id, {}).get('dm_dict', {}))
         try:
-            del self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
+            del self.bot.guild_dict[guild.id]['lure_dict'][message.id]
         except KeyError:
             pass
 
@@ -179,6 +179,12 @@ class Lure(commands.Cog):
                     if expire_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
+                    elif not expire_msg.clean_content.isdigit():
+                        error = _("didn't enter a number")
+                        break
+                    elif int(expire_msg.clean_content) > 1440:
+                        error = _("entered too large of a number")
+                        break
                     elif expire_msg:
                         timer = expire_msg.clean_content
                     lure_embed.remove_field(0)
@@ -200,7 +206,7 @@ class Lure(commands.Cog):
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         lure_msg = _("Lure reported by {author}").format(author=ctx.author.mention)
         lure_embed.title = _('Meowth! Click here for my directions to the lure!')
-        lure_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=ctx.author.name)
+        lure_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="lure")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""

@@ -445,6 +445,7 @@ class GymMatching(commands.Cog):
         stops = self.get_stops(ctx.guild.id)
         pois = {**gyms, **stops}
         poi_info = ""
+        match_type = None
         duplicate_raids = []
         duplicate_research = []
         if not gyms and not stops:
@@ -461,6 +462,10 @@ class GymMatching(commands.Cog):
             return poi_info, False, False
         if not match:
             return poi_info, details, False
+        if match in gyms:
+            match_type = "gym"
+        elif match in stops:
+            match_type = "stop"
         poi = pois[match]
         details = match
         poi_coords = poi['coordinates']
@@ -494,6 +499,7 @@ class GymMatching(commands.Cog):
                 rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_raids)))
         elif type == "research":
             poi_info = poi_note
+            counter = 1
             for quest in self.bot.guild_dict[ctx.guild.id]['questreport_dict']:
                 quest_details = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][quest]
                 research_location = quest_details['location']
@@ -503,16 +509,17 @@ class GymMatching(commands.Cog):
                 if (details == research_location) and ctx.channel.id == research_channel:
                     if message.author.bot:
                         return "", False, False
-                    research_details = f"`Pokestop: {research_location} Quest: {research_quest} Reward: {research_reward}`"
+                    research_details = f"`{counter}. Pokestop: {research_location} Quest: {research_quest} Reward: {research_reward}`"
                     duplicate_research.append(research_details)
+                    counter += 1
             if duplicate_research:
                 if ctx.author.bot:
                     return "", False, False
                 if not dupe_check:
                     return poi_info, details, poi_gmaps_link
                 rusure = await message.channel.send(_('Meowth! It looks like that quest might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_research)))
-        elif type == "wild" or type == "lure":
-            poi_info = _("**Stop:** {0}{1}").format(details, poi_note)
+        elif type == "wild" or type == "lure" or type == "pvp":
+            poi_info = f"**{match_type.title()}:** {details}{poi_note}"
         if duplicate_raids or duplicate_research:
             try:
                 timeout = False
