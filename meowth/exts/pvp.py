@@ -111,8 +111,7 @@ class Pvp(commands.Cog):
             pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
             round = pvp_dict['tournament']['round']
             if pvp_dict['tournament']['round'] == 0:
-                #if "\u20e3" in emoji and user.id not in pvp_dict['tournament']['trainers']:
-                if "\u20e3" in emoji:
+                if "\u20e3" in emoji and user.id not in pvp_dict['tournament']['trainers']:
                     i = int(emoji[0])
                     pvp_dict['tournament']['trainers'].append(user.id)
                     user_list = [self.bot.get_user(x) for x in pvp_dict['tournament']['trainers']]
