@@ -1222,13 +1222,17 @@ class Listing(commands.Cog):
                 try:
                     pvpreportmsg = await ctx.message.channel.fetch_message(pvpid)
                     pvpauthor = ctx.channel.guild.get_member(pvp_dict[pvpid]['reportauthor'])
+                    pvp_tournament = pvp_dict[pvpid].get('tournament', {})
                     pvp_expire = datetime.datetime.utcfromtimestamp(pvp_dict[pvpid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
                     reported_by = ""
                     if pvpauthor and not pvpauthor.bot:
                         reported_by = f" | **Requested By**: {pvpauthor.display_name}"
-                    iv_check = pvp_dict[pvpid].get('pvp_iv', None)
                     pvpmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.config.get('pvp_bullet', '\U0001F539')))
-                    pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Available Until**: {pvp_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    if pvp_tournament:
+                        pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} Tournament | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Tournament Size**: {pvp_tournament['size']} | **Round**: {pvp_tournament['round']}{reported_by}"
+                        pass
+                    else:
+                        pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Available Until**: {pvp_expire.strftime(_('%I:%M %p'))}{reported_by}"
                 except Exception as e:
                     print(e)
                     continue

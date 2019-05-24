@@ -7,6 +7,7 @@ import dateparser
 import textwrap
 import logging
 import string
+import random
 
 import discord
 from discord.ext import commands, tasks
@@ -74,7 +75,8 @@ class Pvp(commands.Cog):
         guild = message.channel.guild
         channel = message.channel
         pvp_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['pvp_dict'])
-        await utils.safe_delete(message)
+        if not pvp_dict[message.id].get('tournament', {}):
+            await utils.safe_delete(message)
         try:
             user_message = await channel.fetch_message(pvp_dict[message.id]['reportmessage'])
             await utils.safe_delete(user_message)
@@ -85,6 +87,208 @@ class Pvp(commands.Cog):
             del self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
         except KeyError:
             pass
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except (discord.errors.NotFound, AttributeError, discord.Forbidden):
+            return
+        guild = message.guild
+        try:
+            user = guild.get_member(payload.user_id)
+        except AttributeError:
+            return
+        guild = message.guild
+        emoji = payload.emoji.name
+        try:
+            pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict']
+        except KeyError:
+            pvp_dict = {}
+        if message.id in pvp_dict and user.id != self.bot.user.id:
+            embed = message.embeds[0]
+            pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
+            round = pvp_dict['tournament']['round']
+            if pvp_dict['tournament']['round'] == 0:
+                #if "\u20e3" in emoji and user.id not in pvp_dict['tournament']['trainers']:
+                if "\u20e3" in emoji:
+                    i = int(emoji[0])
+                    pvp_dict['tournament']['trainers'].append(user.id)
+                    user_list = [self.bot.get_user(x) for x in pvp_dict['tournament']['trainers']]
+                    user_list = [x.mention for x in user_list]
+                    await message.remove_reaction(emoji, self.bot.user)
+                    new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
+                    new_embed.add_field(name=embed.fields[0].name, value=embed.fields[0].value, inline=embed.fields[0].inline)
+                    new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
+                    new_embed.add_field(name="Trainers Joined", value=(', ').join(user_list), inline=False)
+                    await message.edit(embed=new_embed)
+                elif emoji == self.bot.config.get('pvp_start', '\u25B6') and user.id == pvp_dict['tournament']['creator'] and len(pvp_dict['tournament']['trainers']) == pvp_dict['tournament']['size']:
+                    ctx = await self.bot.get_context(message)
+                    if len(pvp_dict['tournament']['trainers']) == 8:
+                        await self.bracket_8(ctx)
+                    elif len(pvp_dict['tournament']['trainers']) == 4:
+                        await self.bracket_4(ctx)
+                    elif len(pvp_dict['tournament']['trainers']) == 2:
+                        await self.bracket_2(ctx)
+                    return
+            else:
+                if "\u20e3" in emoji and user.id == pvp_dict['tournament']['creator']:
+                    trainer_list = copy.deepcopy(pvp_dict['tournament']['bracket'][0])
+                    i = int(emoji[0])
+                    winner_list = pvp_dict['tournament']['winners'].get(round, [])
+                    winner_list.append(trainer_list[i-1])
+                    pvp_dict['tournament']['winners'][round] = winner_list
+                    if i%2 == 0:
+                        try:
+                            await message.remove_reaction(f"{i-1}\u20e3", self.bot.user)
+                        except:
+                            pass
+                    else:
+                        try:
+                            await message.remove_reaction(f"{i+1}\u20e3", self.bot.user)
+                        except:
+                            pass
+                    await message.remove_reaction(emoji, self.bot.user)
+                    await message.remove_reaction(emoji, user)
+                    user_list = [self.bot.get_user(x) for x in winner_list]
+                    user_list = [x.mention for x in user_list]
+                    new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
+                    if pvp_dict['tournament']['next_size'] == 1:
+                        first_place = self.bot.get_user(pvp_dict['tournament']['trainers'][i-1])
+                        second_place = copy.deepcopy(pvp_dict['tournament']['bracket'][round-1])
+                        second_place.remove(first_place.id)
+                        second_place = self.bot.get_user(second_place[0])
+                        new_embed.clear_fields()
+                        new_embed.add_field(name=embed.fields[0].name, value=embed.fields[0].value, inline=embed.fields[0].inline)
+                        new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
+                        new_embed.add_field(name="\U0001F947 First Place \U0001F947", value=first_place.mention, inline=True)
+                        new_embed.add_field(name="\U0001F948 Second Place \U0001F948", value=second_place.mention, inline=True)
+                        await message.clear_reactions()
+                        edit_content = message.content.split("\n")[0] + " has ended! congratulations to the winner!"
+                    else:
+                        new_embed.clear_fields()
+                        for field in embed.fields:
+                            if "winners" not in field.name.lower():
+                                new_embed.add_field(name=field.name, value=field.value, inline=field.inline)
+                        new_embed.add_field(name="Round Winners", value=(', ').join(user_list), inline=False)
+                        edit_content = message.content
+                    await message.edit(content=edit_content, embed=new_embed)
+                    pvp_dict['tournament']['trainers'] = winner_list
+                elif emoji == self.bot.config.get('pvp_start', '\u25B6') and user.id == pvp_dict['tournament']['creator'] and  len(pvp_dict['tournament']['trainers']) == pvp_dict['tournament']['next_size']:
+                    ctx = await self.bot.get_context(message)
+                    if len(pvp_dict['tournament']['trainers']) == 8:
+                        await self.bracket_8(ctx)
+                    elif len(pvp_dict['tournament']['trainers']) == 4:
+                        await self.bracket_4(ctx)
+                    elif len(pvp_dict['tournament']['trainers']) == 2:
+                        await self.bracket_2(ctx)
+                    return
+            if emoji == self.bot.config.get('pvp_stop', '\u23f9') and user.id == pvp_dict['tournament']['creator']:
+                await self.expire_pvp(message)
+                return
+            await message.remove_reaction(emoji, user)
+            return
+
+    async def bracket_8(self, ctx):
+        message = ctx.message
+        guild = ctx.guild
+        pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
+        embed = message.embeds[0]
+        start_emoji = self.bot.config.get('pvp_start', '\u25B6')
+        stop_emoji = self.bot.config.get('pvp_stop', '\u23f9')
+        new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
+        new_embed.add_field(name=embed.fields[0].name, value=embed.fields[0].value, inline=embed.fields[0].inline)
+        new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
+        trainer_list = pvp_dict['tournament']['trainers']
+        round = pvp_dict['tournament']['round']
+        creator = self.bot.get_user(pvp_dict['tournament']['creator'])
+        random.shuffle(trainer_list)
+        random.shuffle(trainer_list)
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['bracket'][round] = copy.copy(trainer_list)
+        round = round + 1
+        trainer_mentions = [self.bot.get_user(x) for x in trainer_list]
+        trainer_mentions = [x.mention for x in trainer_mentions]
+        trainer_mentions.insert(0, None)
+        new_embed.add_field(name=f"**Round {round} Match 1:**", value=f"1\u20e3 {trainer_mentions[1]} **VS** {trainer_mentions[2]} 2\u20e3")
+        new_embed.add_field(name=f"**Round {round} Match 2:**", value=f"3\u20e3 {trainer_mentions[3]} **VS** {trainer_mentions[4]} 4\u20e3")
+        new_embed.add_field(name=f"**Round {round} Match 3:**", value=f"5\u20e3 {trainer_mentions[5]} **VS** {trainer_mentions[6]} 6\u20e3")
+        new_embed.add_field(name=f"**Round {round} Match 4:**", value=f"7\u20e3 {trainer_mentions[7]} **VS** {trainer_mentions[8]} 8\u20e3")
+        trainer_mentions.remove(None)
+        await ctx.message.edit(content=f"PVP Tournament started by {creator.mention}\n\n{creator.mention}, react with the emoji 1\u20e3 through {len(trainer_list)}\u20e3 that matches the **winner** of each match!\n\n{creator.mention} can react with {start_emoji} to go to next round once all matches are decided, or react with {stop_emoji} to cancel the tournament.", embed=new_embed)
+        await ctx.message.clear_reactions()
+        for i in range(8):
+            await utils.safe_reaction(ctx.message, f'{i+1}\u20e3')
+        await utils.safe_reaction(ctx.message, start_emoji)
+        await utils.safe_reaction(ctx.message, stop_emoji)
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['round'] = round
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['trainers'] = trainer_list
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['next_size'] = 4
+
+    async def bracket_4(self, ctx):
+        message = ctx.message
+        guild = ctx.guild
+        pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
+        embed = message.embeds[0]
+        start_emoji = self.bot.config.get('pvp_start', '\u25B6')
+        stop_emoji = self.bot.config.get('pvp_stop', '\u23f9')
+        new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
+        new_embed.add_field(name=embed.fields[0].name, value=embed.fields[0].value, inline=embed.fields[0].inline)
+        new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
+        trainer_list = pvp_dict['tournament']['trainers']
+        round = pvp_dict['tournament']['round']
+        creator = self.bot.get_user(pvp_dict['tournament']['creator'])
+        random.shuffle(trainer_list)
+        random.shuffle(trainer_list)
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['bracket'][round] = copy.copy(trainer_list)
+        round = round + 1
+        trainer_mentions = [self.bot.get_user(x) for x in trainer_list]
+        trainer_mentions = [x.mention for x in trainer_mentions]
+        trainer_mentions.insert(0, None)
+        new_embed.add_field(name=f"**Round {round} Match 1:**", value=f"1\u20e3 {trainer_mentions[1]} **VS** {trainer_mentions[2]} 2\u20e3")
+        new_embed.add_field(name=f"**Round {round} Match 2:**", value=f"3\u20e3 {trainer_mentions[3]} **VS** {trainer_mentions[4]} 4\u20e3")
+        trainer_mentions.remove(None)
+        await ctx.message.edit(content=f"PVP Tournament started by {creator.mention}\n\n{creator.mention}, react with the emoji 1\u20e3 through {len(trainer_list)}\u20e3 for each winner of each match!\n\n{creator.mention} can react with {start_emoji} to go to next round once all matches are decided, or react with {stop_emoji} to cancel the tournament.", embed=new_embed)
+        await ctx.message.clear_reactions()
+        for i in range(4):
+            await utils.safe_reaction(ctx.message, f'{i+1}\u20e3')
+        await utils.safe_reaction(ctx.message, start_emoji)
+        await utils.safe_reaction(ctx.message, stop_emoji)
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['round'] = round
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['trainers'] = trainer_list
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['next_size'] = 2
+
+    async def bracket_2(self, ctx):
+        message = ctx.message
+        guild = ctx.guild
+        pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
+        embed = message.embeds[0]
+        start_emoji = self.bot.config.get('pvp_start', '\u25B6')
+        stop_emoji = self.bot.config.get('pvp_stop', '\u23f9')
+        new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
+        new_embed.add_field(name=embed.fields[0].name, value=embed.fields[0].value, inline=embed.fields[0].inline)
+        new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
+        trainer_list = pvp_dict['tournament']['trainers']
+        round = pvp_dict['tournament']['round']
+        creator = self.bot.get_user(pvp_dict['tournament']['creator'])
+        random.shuffle(trainer_list)
+        random.shuffle(trainer_list)
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['bracket'][round] = copy.copy(trainer_list)
+        round = round + 1
+        trainer_mentions = [self.bot.get_user(x) for x in trainer_list]
+        trainer_mentions = [x.mention for x in trainer_mentions]
+        trainer_mentions.insert(0, None)
+        new_embed.add_field(name=f"**Round {round} Match 1:**", value=f"1\u20e3 {trainer_mentions[1]} **VS** {trainer_mentions[2]} 2\u20e3")
+        trainer_mentions.remove(None)
+        await ctx.message.edit(content=f"PVP Tournament started by {creator.mention}\n\n{creator.mention}, react with the emoji 1\u20e3 through {len(trainer_list)}\u20e3 for each winner of each match!\n\n{creator.mention} can react with {start_emoji} to go to next round once all matches are decided, or react with {stop_emoji} to cancel the tournament.", embed=new_embed)
+        await ctx.message.clear_reactions()
+        for i in range(2):
+            await utils.safe_reaction(ctx.message, f'{i+1}\u20e3')
+        await utils.safe_reaction(ctx.message, start_emoji)
+        await utils.safe_reaction(ctx.message, stop_emoji)
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['round'] = round
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['trainers'] = trainer_list
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['next_size'] = 1
 
     @commands.group(invoke_without_command=True, case_insensitive=True)
     @checks.allowpvpreport()
@@ -239,6 +443,166 @@ class Pvp(commands.Cog):
             'location':location,
             'url':loc_url,
             'type':pvp_type
+        }
+
+    @pvp.command()
+    @checks.allowpvpreport()
+    async def tournament(self, ctx, size="8", pvp_type=None, *, location:commands.clean_content(fix_channel_mentions=True)=""):
+        """Report a PVP battle request.
+
+        Usage: !pvp tournament [size] [type] [location]
+        Guided report available with just !pvp"""
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/CombatButton.png?cache=1')
+        pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        while True:
+            async with ctx.typing():
+                if pvp_type and any([pvp_type.lower() == "any", pvp_type.lower() == "great", pvp_type.lower() == "ultra", pvp_type.lower() == "master"]) and location:
+                    await self._pvp_tournament(ctx, size, pvp_type, location)
+                    return
+                else:
+                    pvp_embed.add_field(name=_('**New PVP Tournament**'), value=_("Meowth! I'll help you report a PVP Tournament!\n\nFirst, I'll need to know what **size** of PVP tournament you'd like to start. Reply with a currently supported size: **2, 4, 8**. You can reply with **cancel** to stop anytime."), inline=False)
+                    pvp_size_wait = await channel.send(embed=pvp_embed)
+                    def check(reply):
+                        if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                            return True
+                        else:
+                            return False
+                    try:
+                        pvp_size_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        pvp_size_msg = None
+                    await utils.safe_delete(pvp_size_wait)
+                    if not pvp_size_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(pvp_size_msg)
+                    if pvp_size_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif not any([pvp_size_msg.clean_content.lower() == "2", pvp_size_msg.clean_content.lower() == "4", pvp_size_msg.clean_content.lower() == "8"]):
+                        error = _("entered an invalid size")
+                        break
+                    else:
+                        size = pvp_size_msg.clean_content.lower()
+                    pvp_embed.clear_fields()
+                    pvp_embed.add_field(name=_('**New PVP Tournament**'), value=_("Next, I'll need to know what **type** of PVP tournament you'd like to start. Reply with **great, ultra, or master**. You can reply with **cancel** to stop anytime."), inline=False)
+                    pvp_type_wait = await channel.send(embed=pvp_embed)
+                    def check(reply):
+                        if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                            return True
+                        else:
+                            return False
+                    try:
+                        pvp_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        pvp_type_msg = None
+                    await utils.safe_delete(pvp_type_wait)
+                    if not pvp_type_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(pvp_type_msg)
+                    if pvp_type_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif not any([pvp_type_msg.clean_content.lower() == "great", pvp_type_msg.clean_content.lower() == "ultra", pvp_type_msg.clean_content.lower() == "master"]):
+                        error = _("entered an invalid type")
+                        break
+                    else:
+                        pvp_type = pvp_type_msg.clean_content.lower()
+                        pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png?cache=1")
+                    pvp_embed.clear_fields()
+                    pvp_embed.add_field(name="**New PVP Tournament**", value=f"Great! Now, reply with the **location** that you will be at for **{pvp_type} PVP** battles. You can reply with **cancel** to stop anytime.", inline=False)
+                    location_wait = await channel.send(embed=pvp_embed)
+                    try:
+                        location_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        location_msg = None
+                    await utils.safe_delete(location_wait)
+                    if not location_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(location_msg)
+                    if location_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif location_msg:
+                        location = location_msg.clean_content
+                        gym_matching_cog = self.bot.cogs.get('GymMatching')
+                        poi_info = ""
+                        if gym_matching_cog:
+                            poi_info, location, poi_url = await gym_matching_cog.get_poi_info(ctx, location, "pvp")
+                            if poi_url:
+                                loc_url = poi_url
+                        if not location:
+                            return
+        if not error:
+            await self._pvp_tournament(ctx,size,  pvp_type, location)
+        else:
+            pvp_embed.clear_fields()
+            pvp_embed.add_field(name=_('**PVP Tournament Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=pvp_embed, delete_after=10)
+            await utils.safe_delete(message)
+
+    async def _pvp_tournament(self, ctx, size, pvp_type, location):
+        dm_dict = {}
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
+        start_emoji = self.bot.config.get('pvp_start', '\u25B6')
+        stop_emoji = self.bot.config.get('pvp_stop', '\u23f9')
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
+        pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
+        pvp_msg = f"PVP Tournament started by {ctx.author.mention} - React with 1\u20e3 through {size}\u20e3 to join!\n\n{ctx.author.mention} can react with {start_emoji} to start the tournament once {size} trainers have joined, or react with {stop_emoji} to cancel the tournament."
+        pvp_embed.title = _('Meowth! Click here for my directions to the PVP!')
+        pvp_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
+        loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="pvp")
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        stop_info = ""
+        if gym_matching_cog:
+            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "pvp", dupe_check=False)
+            if stop_url:
+                loc_url = stop_url
+                pvp_embed.description = stop_info
+        if not location:
+            return
+        pvp_embed.url = loc_url
+        item = None
+        pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png")
+        pvp_embed.set_author(name=f"{pvp_type.title()} League PVP Tournament", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png?cache=1")
+        pvp_embed.add_field(name=f"**PVP Type:**", value=pvp_type.title())
+        pvp_embed.add_field(name=f"**Tournament Size:**", value=str(size))
+        confirmation = await ctx.channel.send(pvp_msg, embed=pvp_embed)
+        for i in range(int(size)):
+            await utils.safe_reaction(confirmation, f'{i+1}\u20e3')
+        await utils.safe_reaction(confirmation, start_emoji)
+        await utils.safe_reaction(confirmation, stop_emoji)
+        test_var = self.bot.guild_dict[ctx.guild.id].setdefault('pvp_dict', {}).setdefault(confirmation.id, {})
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][confirmation.id] = {
+            'exp':time.time() + 4*60*60,
+            'expedit':"delete",
+            'reportmessage':ctx.message.id,
+            'reportchannel':ctx.channel.id,
+            'reportauthor':ctx.author.id,
+            'dm_dict':dm_dict,
+            'location':location,
+            'url':loc_url,
+            'type':pvp_type,
+            'tournament':{
+                'creator':ctx.author.id,
+                'size':int(size),
+                'trainers':[],
+                'round':0,
+                'bracket':{},
+                'winners':{}
+            }
         }
 
     @pvp.command(aliases=['expire'])
