@@ -369,7 +369,8 @@ class Huntr(commands.Cog):
                     channel_address = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('address', None)
                     channel_level = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('egglevel', None)
                     channel_type = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('type', None)
-                    if channel_level == "EX":
+                    channel_meetup = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('meetup', {})
+                    if channel_level == "EX" or meetup:
                         continue
                     if channel_gps == report_details.get('gps', None) or channel_address == report_details.get('gym', None):
                         channel = self.bot.get_channel(channelid)
@@ -1045,7 +1046,7 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":tier5, "gym":"Marilla Park", "gps":"34.008618,-118.49125", "moves":"Move 1 / Move 2", "raidexp":38}).replace("'", '"'))
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":tier5, "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":"Move 1 / Move 2", "raidexp":38}).replace("'", '"'))
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
@@ -1058,7 +1059,7 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
 
-        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"1", "gym":"Marilla Park", "gps":"34.008618,-118.49125"}')
+        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"1", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

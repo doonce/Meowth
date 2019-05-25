@@ -75,7 +75,7 @@ class Pvp(commands.Cog):
         guild = message.channel.guild
         channel = message.channel
         pvp_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['pvp_dict'])
-        if not pvp_dict[message.id].get('tournament', {}):
+        if not pvp_dict[message.id].get('tournament', {}).get('status', None) == "complete":
             await utils.safe_delete(message)
         try:
             user_message = await channel.fetch_message(pvp_dict[message.id]['reportmessage'])
@@ -106,7 +106,7 @@ class Pvp(commands.Cog):
             pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict']
         except KeyError:
             pvp_dict = {}
-        if message.id in pvp_dict and user.id != self.bot.user.id:
+        if message.id in pvp_dict and pvp_dict.get(message.id, {}).get('tournament') and user.id != self.bot.user.id:
             embed = message.embeds[0]
             pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
             round = pvp_dict['tournament']['round']
@@ -163,6 +163,7 @@ class Pvp(commands.Cog):
                         new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
                         new_embed.add_field(name="\U0001F947 First Place \U0001F947", value=first_place.mention, inline=True)
                         new_embed.add_field(name="\U0001F948 Second Place \U0001F948", value=second_place.mention, inline=True)
+                        pvp_dict['tournament']['status'] = "complete"
                         await message.clear_reactions()
                         edit_content = message.content.split("\n")[0] + " has ended! congratulations to the winner!"
                     else:
@@ -223,6 +224,7 @@ class Pvp(commands.Cog):
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['round'] = round
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['trainers'] = trainer_list
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['next_size'] = 4
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['status'] = "active"
 
     async def bracket_4(self, ctx):
         message = ctx.message
@@ -256,6 +258,7 @@ class Pvp(commands.Cog):
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['round'] = round
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['trainers'] = trainer_list
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['next_size'] = 2
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['status'] = "active"
 
     async def bracket_2(self, ctx):
         message = ctx.message
@@ -288,6 +291,7 @@ class Pvp(commands.Cog):
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['round'] = round
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['trainers'] = trainer_list
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['next_size'] = 1
+        self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['status'] = "active"
 
     @commands.group(invoke_without_command=True, case_insensitive=True)
     @checks.allowpvpreport()
@@ -600,7 +604,8 @@ class Pvp(commands.Cog):
                 'trainers':[],
                 'round':0,
                 'bracket':{},
-                'winners':{}
+                'winners':{},
+                'status':"starting"
             }
         }
 

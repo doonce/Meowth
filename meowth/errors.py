@@ -312,9 +312,9 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel.')
+                msg += _('a report channel.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -358,7 +358,7 @@ def custom_error_handling(bot, logger):
             if len(city_channels) > 10:
                 msg += _('Region report channel to see active raids.')
             else:
-                msg += _('of the following Region channels to see active raids:')
+                msg += _('of the following channels to see active raids:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -378,7 +378,7 @@ def custom_error_handling(bot, logger):
             if len(city_channels) > 10:
                 msg += _('Region report channel to see active raids.')
             else:
-                msg += _('of the following Region channels to see active raids:')
+                msg += _('of the following channels to see active raids:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -409,7 +409,7 @@ def custom_error_handling(bot, logger):
             if len(city_channels) > 10:
                 msg += _('Region report channel to see active channels.')
             else:
-                msg += _('of the following Region channels to see active channels:')
+                msg += _('of the following channels to see active channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -437,7 +437,7 @@ def custom_error_handling(bot, logger):
             if len(city_channels) > 10:
                 msg += _('Region report channel to see active raids.')
             else:
-                msg += _('of the following Region channels to see active raids:')
+                msg += _('of the following channels to see active raids:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -457,9 +457,9 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in either a Raid channel or ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel.')
+                msg += _('a report channel.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -477,9 +477,9 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in either a Raid Egg channel or ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel.')
+                msg += _('a report channel.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -497,9 +497,9 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in either a EX Raid channel or ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['exraid']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel.')
+                msg += _('a report channel.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -517,9 +517,9 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in a EX Raid channel. Use **{prefix}list** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['exraid']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel to see active raids.')
+                msg += _('a report channel to see active raids.')
             else:
-                msg += _('one of the following region channels to see active raids:')
+                msg += _('one of the following channels to see active raids:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -537,9 +537,9 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! {member}, you have not gained access to this raid! Use **{prefix}invite** in ').format(member=ctx.author.mention, cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['exraid']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel to gain access.')
+                msg += _('a report channel to gain access.')
             else:
-                msg += _('one of the following region channels to gain access:')
+                msg += _('one of the following channels to gain access:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -557,9 +557,9 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['research']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel.')
+                msg += _('a report channel.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -577,9 +577,9 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['lure']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel.')
+                msg += _('a report channel.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -597,9 +597,9 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['pvp']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel.')
+                msg += _('a report channel.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -617,9 +617,9 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['meetup']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel.')
+                msg += _('a report channel.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -639,7 +639,7 @@ def custom_error_handling(bot, logger):
             if len(city_channels) > 10:
                 msg += _('a trading channel.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -659,7 +659,7 @@ def custom_error_handling(bot, logger):
             if len(city_channels) > 10:
                 msg += _('a nest report channel.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
@@ -677,9 +677,9 @@ def custom_error_handling(bot, logger):
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['wild']['report_channels']
             if len(city_channels) > 10:
-                msg += _('a Region report channel.')
+                msg += _('a report channel.')
             else:
-                msg += _('one of the following region channels:')
+                msg += _('one of the following channels:')
                 for c in city_channels:
                     channel = discord.utils.get(guild.channels, id=c)
                     perms = ctx.author.permissions_in(channel)
