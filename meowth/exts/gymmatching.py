@@ -248,9 +248,21 @@ class GymMatching(commands.Cog):
                 test_var = data.setdefault(str(guild.id), {})
                 data_keys = [x.lower().strip() for x in data[str(guild.id)].keys() if x]
                 if poi_target and poi_action == "list":
-                    paginator = commands.Paginator(prefix='```json')
-                    for line in textwrap.wrap(str(data[str(guild.id)]), 80):
-                        paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                    msg = f"**{poi_target.title()}s for {guild.name} Server as of {timestamp.strftime(_('%B %d, %Y'))}**\n\nAll {poi_target}s can be wanted with {ctx.prefix}want {poi_target} <{poi_target} name>\n\n"
+                    for poi in data[str(guild.id)]:
+                        poi_coords = data[str(guild.id)][poi]['coordinates']
+                        poi_alias = data[str(guild.id)][poi].get('alias', "")
+                        poi_notes = data[str(guild.id)][poi].get('notes', "")
+                        msg += f"**{poi}**"
+                        if poi_alias:
+                            msg += f" (*Alias for {poi_alias}*)"
+                        msg += f" – Coordinates: {poi_coords}"
+                        if poi_notes:
+                            msg += f" – Notes: {poi_notes}"
+                        msg += "\n"
+                    paginator = commands.Paginator(prefix=None, suffix=None)
+                    for line in msg.split('\n'):
+                        paginator.add_line(line.rstrip())
                     for p in paginator.pages:
                         await ctx.send(p)
                     return
