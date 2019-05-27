@@ -448,6 +448,8 @@ class Trading(commands.Cog):
                         wanted_pokemon = wanted_pokemon_list
                     if not wanted_pokemon:
                         error = _("entered something invalid")
+                        await error_msg(error)
+                        return
                     preview_embed.set_field_at(0, name=preview_embed.fields[0].name, value=f"Great! Now, would you like to add some **details** to your trade? This can be something like 'My offer has a legacy moveset, I'm looking for a great league trade. Trade is negotiable.'\n\nReply with your **details** to add them, reply with **N** to list without any details, or reply with **cancel** to cancel this listing.{' Reply with **stop** to cancel all listed trades.' if len(all_offered) > 1 else ''}", inline=False)
                     details_want = await ctx.send(embed=preview_embed)
                     try:

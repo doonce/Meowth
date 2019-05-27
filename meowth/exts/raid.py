@@ -2736,6 +2736,7 @@ class Raid(commands.Cog):
             guild = message.guild
             channel = message.channel
             rc_d = self.bot.guild_dict[guild.id]['raidchannel_dict']
+            meetup = rc_d.get(ctx.channel.id, {}).get('meetup', {})
             raidmsg = await channel.fetch_message(rc_d[channel.id]['raidmessage'])
             location = rc_d[channel.id]['address']
             report_channel = self.bot.get_channel(rc_d[channel.id]['reportcity'])
@@ -2747,7 +2748,7 @@ class Raid(commands.Cog):
             newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
             newembed.set_thumbnail(url=oldembed.thumbnail.url)
             newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
-            locationmsg = await channel.send(content=_("Meowth! Here's the current location for the raid!\nDetails: {location}").format(location=location), embed=newembed, delete_after=60)
+            locationmsg = await channel.send(f"Meowth! Here's the current location for the {'meetup' if meetup else 'raid'}!\nDetails: {location}", embed=newembed, delete_after=60)
 
     @location.command()
     @checks.activechannel()
