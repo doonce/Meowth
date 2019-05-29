@@ -856,7 +856,7 @@ class Want(commands.Cog):
             gyms = gym_matching_cog.get_gyms(ctx.guild.id)
             stops = gym_matching_cog.get_stops(ctx.guild.id)
             if gyms and user_gyms:
-                want_embed.add_field(name=_('**Gym**'), value=f"Reply with **gym** to unawnt raids and eggs at specific gyms.", inline=False)
+                want_embed.add_field(name=_('**Gym**'), value=f"Reply with **gym** to unwant raids and eggs at specific gyms.", inline=False)
             if stops and user_stops:
                 want_embed.add_field(name=_('**Stop**'), value=f"Reply with **stop** to unwant research and wild spawns at specific pokestops.", inline=False)
         if user_ivs:

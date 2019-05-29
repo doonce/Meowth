@@ -168,9 +168,12 @@ class Raid(commands.Cog):
                         end = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['meetup'].get('end', False)
                         if start and self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg':
                             if start < now:
-                                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.raid_info['raid_eggs']['EX']['pokemon'][0])
-                                pokemon = pokemon.name.lower()
-                                await self._eggtoraid(pokemon, channel, author=None)
+                                raid_message = await channel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidmessage'])
+                                oldembed = raid_message.embeds[0]
+                                self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['type'] = 'exraid'
+                                self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['egglevel'] = '0'
+                                await channel.send(_("The event has started!"), embed=oldembed)
+                                await channel.edit(topic="")
                         if end and end < now:
                             self.bot.loop.create_task(self.expire_channel(channel))
                             try:
@@ -665,7 +668,7 @@ class Raid(commands.Cog):
                 raid_channel_overwrites[ctx.guild.default_role] = discord.PermissionOverwrite(read_messages=True)
         elif type == "meetup":
             raid_channel_name = _('meetup-')
-            raid_channel_category = utils.get_category(self.bot, ctx.channel, "EX", category_type="meetup")
+            raid_channel_category = utils.get_category(self.bot, ctx.channel, None, category_type="meetup")
         raid_channel_name += utils.sanitize_channel_name(raid_details)
         if ctx.author.bot:
             raid_channel_name += "-bot"
@@ -1828,7 +1831,6 @@ class Raid(commands.Cog):
         starttime = eggdetails.get('starttime', None)
         duplicate = eggdetails.get('duplicate', 0)
         archive = eggdetails.get('archive', False)
-        meetup = eggdetails.get('meetup', {})
         dm_dict = eggdetails.get('dm_dict', {})
         ctrs_dict = eggdetails.get('ctrs_dict', {})
         ctrsmessage_id = eggdetails.get('ctrsmessage', None)
@@ -1852,13 +1854,6 @@ class Raid(commands.Cog):
         end = datetime.datetime.utcfromtimestamp(raidexp) + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
         oldembed = raid_message.embeds[0]
         raid_gmaps_link = oldembed.url
-        if self.bot.guild_dict[raid_channel.guild.id].get('raidchannel_dict', {}).get(raid_channel.id, {}).get('meetup', {}):
-            self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['type'] = 'exraid'
-            self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['egglevel'] = '0'
-            await raid_channel.send(_("The event has started!"), embed=oldembed)
-            await raid_channel.edit(topic="")
-            self.bot.loop.create_task(self.expiry_check(raid_channel))
-            return
         if egglevel.isdigit():
             hatchtype = 'raid'
             raidreportcontent = _('Meowth! The egg has hatched into a {pokemon} raid! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=egg_address, raid_channel=raid_channel.mention)
@@ -1892,10 +1887,7 @@ class Raid(commands.Cog):
         raid_embed.set_thumbnail(url=pokemon.img_url)
         raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/raid_tut_raid.png?cache=1")
         raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
-        if meetup:
-            raid_embed.add_field(name=oldembed.fields[3].name, value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
-        else:
-            raid_embed.add_field(name=_('**Expires:**'), value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
+        raid_embed.add_field(name=_('**Expires:**'), value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
         if gymhuntrgps:
             gymhuntrmoves = "\u200b"
             if huntr:

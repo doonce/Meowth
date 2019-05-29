@@ -709,8 +709,8 @@ class Pokedex(commands.Cog):
                     pkmn_shiny = []
                     pkmn_shiny = self.bot.shiny_dict.get(pokemon.id, {}).get(pkmn_form, [])
                     pkmn_gender = False
-                    if self.bot.gender_dict.get(pokemon.id, {}).get(pkmn_form, False):
-                        pkmn_available = True
+                    if pkmn_form in self.bot.gender_dict.get(pokemon.id, []):
+                        pkmn_gender = True
                     pkmn_embed.clear_fields()
                     pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist. Please ask **{owner.name}** to make changes.\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **available** to toggle in-game availability, **shiny** to set shiny availability, or **gender** to toggle gender sprites. You can reply with **cancel** to stop anytime.\n\n**Current Settings**\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Sprites: {pkmn_gender}", inline=False)
                     attr_type_wait = await channel.send(embed=pkmn_embed)

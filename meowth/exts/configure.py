@@ -1889,7 +1889,7 @@ class Configure(commands.Cog):
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
                 continue
         if config_dict_temp['scanners']['autowild']:
-            scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Please enter a list of wild pokemon to block automatic reports of or reply with **N** to disable the fitler.").set_author(name='Automatic Wild Report Filter', icon_url=self.bot.user.avatar_url)
+            scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Reports with IV will still be posted. Please enter a list of wild pokemon to block automatic reports of or reply with **N** to disable the filter.").set_author(name='Automatic Wild Report Filter', icon_url=self.bot.user.avatar_url)
             await ctx.configure_channel.send(embed=scanner_embed)
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['wildfilter'])).set_author(name=_("Current AutoWild Filter"), icon_url=self.bot.user.avatar_url), delete_after=300)
             wildfilter_list = []
