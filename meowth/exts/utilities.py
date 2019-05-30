@@ -673,7 +673,8 @@ class Utilities(commands.Cog):
             logdata = logfile.read()
         try:
             await ctx.channel.send(hastebin.post(logdata))
-        except:
+        except Exception as e:
+            print(e)
             await ctx.channel.send("Hastebin Error", delete_after=10)
 
     @commands.command(aliases=['say'])

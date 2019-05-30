@@ -704,15 +704,18 @@ class Pokedex(commands.Cog):
                     if pokemon.alolan:
                         pkmn_form = "alolan"
                     pkmn_available = False
-                    if self.bot.form_dict.get(pokemon.id, {}).get(pkmn_form, False):
+                    form_str = f" I only know about the {str(pokemon)} without a form."
+                    if self.bot.pkmn_info.get(pokemon.name.lower(), {}).get('forms', {}).get(pkmn_form, {}).get('available', False):
                         pkmn_available = True
+                    if len(self.bot.form_dict.get(pokemon.id, {}).keys()) > 1:
+                        form_str = f" Current {pokemon} forms include: `{(', ').join(self.bot.form_dict.get(pokemon.id, {}).keys())}`"
                     pkmn_shiny = []
                     pkmn_shiny = self.bot.shiny_dict.get(pokemon.id, {}).get(pkmn_form, [])
                     pkmn_gender = False
                     if pkmn_form in self.bot.gender_dict.get(pokemon.id, []):
                         pkmn_gender = True
                     pkmn_embed.clear_fields()
-                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist. Please ask **{owner.name}** to make changes.\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **available** to toggle in-game availability, **shiny** to set shiny availability, or **gender** to toggle gender sprites or evolution. You can reply with **cancel** to stop anytime.\n\n**Current Settings**\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Sprites or Evolution: {pkmn_gender}", inline=False)
+                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **available** to toggle in-game availability, **shiny** to set shiny availability, or **gender** to toggle gender differences. You can reply with **cancel** to stop anytime.\n\n**Current Settings**\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}", inline=False)
                     attr_type_wait = await channel.send(embed=pkmn_embed)
                     try:
                         attr_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -778,7 +781,7 @@ class Pokedex(commands.Cog):
             self.bot.pkmn_info = pkmn_info
             Pokemon.generate_lists(self.bot)
             pkmn_embed.clear_fields()
-            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current Settings**:\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Sprites or Evolution: {pkmn_gender}", inline=False)
+            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current Settings**:\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}", inline=False)
             confirmation = await channel.send(embed=pkmn_embed, delete_after=10)
             await utils.safe_delete(message)
 
@@ -825,7 +828,7 @@ class Pokedex(commands.Cog):
             preview_embed.add_field(name="Mythical:", value=pokemon.id in ctx.bot.mythical_list, inline=True)
         preview_embed.set_thumbnail(url=pokemon.img_url)
         if key_needed:
-            preview_embed.set_footer(text="S = Shiny Available | G = Gender Sprites or Evolution")
+            preview_embed.set_footer(text="S = Shiny Available | G = Gender Differences")
         pokedex_msg = await ctx.send(embed=preview_embed)
 
 def setup(bot):
