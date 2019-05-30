@@ -778,7 +778,6 @@ class Huntr(commands.Cog):
         raidexp = report_details.get('raidexp', 45)
         pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_raid)
         if pokemon:
-            entered_raid = pokemon.name.lower()
             pokemon.shiny = False
             pokemon.gender = False
         else:
@@ -790,11 +789,21 @@ class Huntr(commands.Cog):
             await message.channel.send(_("Meowth! The Pokemon {pokemon} only appears in EX Raids! Use **!exraid** to report one!").format(pokemon=entered_raid.capitalize()), delete_after=10)
             return
         level = utils.get_level(ctx.bot, pokemon.id)
-        for boss in ctx.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
+        matched_boss = False
+        for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
             boss = pkmn_class.Pokemon.get_pokemon(ctx.bot, boss)
-            if boss.id == pokemon.id:
+            if str(boss) == str(pokemon):
                 pokemon = boss
                 entered_raid = boss.name.lower()
+                matched_boss = True
+                break
+        if not matched_boss:
+            for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
+                boss = pkmn_class.Pokemon.get_pokemon(ctx.bot, boss)
+                if boss and boss.id == pokemon.id:
+                    pokemon = boss
+                    entered_raid = boss.name.lower()
+                    break
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
