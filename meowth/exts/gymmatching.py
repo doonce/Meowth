@@ -332,16 +332,16 @@ class GymMatching(commands.Cog):
                         break
                     else:
                         await utils.safe_delete(poi_alias_msg)
-                    if poi_alias_wait.clean_content.lower() == "cancel":
+                    if poi_alias_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
-                    elif poi_alias_wait.clean_content.lower() == "n":
+                    elif poi_alias_msg.clean_content.lower() == "n":
                         poi_alias = None
-                    elif poi_alias_wait.clean_content.lower().strip() not in data_keys:
+                    elif poi_alias_msg.clean_content.lower().strip() not in data_keys:
                         error = _("entered an invalid POI")
                         break
                     else:
-                        poi_alias = list(data[str(guild.id)].keys())[data_keys.index(poi_alias_wait.clean_content.lower())]
+                        poi_alias = list(data[str(guild.id)].keys())[data_keys.index(poi_alias_msg.clean_content.lower())]
                     poi_embed.clear_fields()
                     poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Are there any notes you'd like to add to the {poi_name} {poi_target}? Reply with the **N** if not or any notes you'd like to add. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_note_wait = await channel.send(embed=poi_embed)
