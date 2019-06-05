@@ -1041,7 +1041,7 @@ class Listing(commands.Cog):
         dust_quests = []
         dust_dict = {}
         dust_list = []
-        candy_quests = {}
+        candy_quests = []
         candy_dict = {}
         candy_list = []
         berry_quests = []
