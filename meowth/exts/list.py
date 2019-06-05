@@ -1033,13 +1033,29 @@ class Listing(commands.Cog):
         research_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('questreport_dict', {}))
         questmsg = ""
         item_quests = []
+        item_dict = {}
+        item_list = []
         encounter_quests = []
+        encounter_dict = {}
+        encounter_list = []
         dust_quests = []
-        candy_quests = []
+        dust_dict = {}
+        dust_list = []
+        candy_quests = {}
+        candy_dict = {}
+        candy_list = []
         berry_quests = []
+        berry_dict = {}
+        berry_list = []
         potion_quests = []
+        potion_dict = {}
+        potion_list = []
         revive_quests = []
+        revive_dict = {}
+        revive_list = []
         ball_quests = []
+        ball_dict = {}
+        ball_list = []
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
         encounter_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_encounter', '\u2753'))
         candy_emoji = utils.parse_emoji(ctx.guild, self.bot.config.get('res_candy', '\U0001F36C'))
@@ -1071,37 +1087,93 @@ class Listing(commands.Cog):
                                 shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
                             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                                 shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-                        encounter_quests.append(f"{encounter_emoji} **Reward**: {shiny_str}{reward} {pokemon.emoji} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                        encounter_dict[location] = {"reward":f"{shiny_str}{reward} {pokemon.emoji}", "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "pokemon":pokemon.name}
+                        if pokemon.name not in encounter_list:
+                            encounter_list.append(pokemon.name)
                     elif "candy" in reward.lower() or "candies" in reward.lower():
-                        candy_quests.append(f"{candy_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                        candy_dict[location] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        if reward not in candy_list:
+                            candy_list.append(reward)
                     elif "dust" in reward.lower():
-                        dust_quests.append(f"{dust_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                        dust_dict[location] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        if reward not in dust_list:
+                            dust_list.append(reward)
                     elif "berry" in reward.lower() or "berries" in reward.lower() or "razz" in reward.lower() or "pinap" in reward.lower() or "nanab" in reward.lower():
-                        berry_quests.append(f"{berry_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                        berry_dict[location] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        if reward not in berry_list:
+                            berry_list.append(reward)
                     elif "potion" in reward.lower():
-                        potion_quests.append(f"{potion_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                        potion_dict[location] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        if reward not in potion_list:
+                            potion_list.append(reward)
                     elif "revive" in reward.lower():
-                        revive_quests.append(f"{revive_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                        revive_dict[location] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        if reward not in revive_list:
+                            revive_list.append(reward)
                     elif "ball" in reward.lower():
-                        ball_quests.append(f"{ball_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                        ball_dict[location] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        if reward not in ball_list:
+                            ball_list.append(reward)
                     else:
-                        item_quests.append(f"{other_emoji} **Reward**: {reward} | **Pokestop**: [{string.capwords(location, ' ')}]({url}) | **Quest**: {string.capwords(quest, ' ')}{reported_by}")
+                        item_dict[location] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        if reward not in item_list:
+                            item_list.append(reward)
                 except:
                     continue
+        for pkmn in sorted(encounter_list):
+            for quest in encounter_dict:
+                if encounter_dict[quest]['pokemon'] == pkmn and not encounter_dict[quest].get('listed', False):
+                    encounter_quests.append(f"{encounter_emoji} **Reward**: {encounter_dict[quest]['reward']} | **Pokestop**: {encounter_dict[quest]['location']} | **Quest**: {encounter_dict[quest]['quest']}{encounter_dict[quest]['reporter']}")
+                    encounter_dict[quest]['listed'] = True
         if encounter_quests:
             questmsg += "\n\n**Pokemon Encounters**\n{encounterlist}".format(encounterlist="\n".join(encounter_quests))
+        for candy in sorted(candy_list):
+            for quest in candy_dict:
+                if candy_dict[quest]['reward'] == candy and not candy_dict[quest].get('listed', False):
+                    candy_quests.append(f"{candy_emoji} **Reward**: {candy_dict[quest]['reward']} | **Pokestop**: {candy_dict[quest]['location']} | **Quest**: {candy_dict[quest]['quest']}{candy_dict[quest]['reporter']}")
+                    candy_dict[quest]['listed'] = True
         if candy_quests:
             questmsg += "\n\n**Rare Candy**\n{candylist}".format(candylist="\n".join(candy_quests))
+        for berry in sorted(berry_list):
+            for quest in berry_dict:
+                if berry_dict[quest]['reward'] == berry and not berry_dict[quest].get('listed', False):
+                    berry_quests.append(f"{berry_emoji} **Reward**: {berry_dict[quest]['reward']} | **Pokestop**: {berry_dict[quest]['location']} | **Quest**: {berry_dict[quest]['quest']}{berry_dict[quest]['reporter']}")
+                    berry_dict[quest]['listed'] = True
         if berry_quests:
             questmsg += "\n\n**Berries**\n{itemlist}".format(itemlist="\n".join(berry_quests))
+        for potion in sorted(potion_list):
+            for quest in potion_dict:
+                if potion_dict[quest]['reward'] == potion and not potion_dict[quest].get('listed', False):
+                    potion_quests.append(f"{potion_emoji} **Reward**: {potion_dict[quest]['reward']} | **Pokestop**: {potion_dict[quest]['location']} | **Quest**: {potion_dict[quest]['quest']}{potion_dict[quest]['reporter']}")
+                    potion_dict[quest]['listed'] = True
         if potion_quests:
             questmsg += "\n\n**Potions**\n{itemlist}".format(itemlist="\n".join(potion_quests))
+        for revive in sorted(revive_list):
+            for quest in revive_dict:
+                if revive_dict[quest]['reward'] == revive and not revive_dict[quest].get('listed', False):
+                    revive_quests.append(f"{revive_emoji} **Reward**: {revive_dict[quest]['reward']} | **Pokestop**: {revive_dict[quest]['location']} | **Quest**: {revive_dict[quest]['quest']}{revive_dict[quest]['reporter']}")
+                    revive_dict[quest]['listed'] = True
         if revive_quests:
             questmsg += "\n\n**Revives**\n{itemlist}".format(itemlist="\n".join(revive_quests))
+        for ball in sorted(ball_list):
+            for quest in ball_dict:
+                if ball_dict[quest]['reward'] == ball and not ball_dict[quest].get('listed', False):
+                    ball_quests.append(f"{ball_emoji} **Reward**: {ball_dict[quest]['reward']} | **Pokestop**: {ball_dict[quest]['location']} | **Quest**: {ball_dict[quest]['quest']}{ball_dict[quest]['reporter']}")
+                    ball_dict[quest]['listed'] = True
         if ball_quests:
             questmsg += "\n\n**Poke Balls**\n{itemlist}".format(itemlist="\n".join(ball_quests))
+        for item in sorted(item_list):
+            for quest in item_dict:
+                if item_dict[quest]['reward'] == item and not item_dict[quest].get('listed', False):
+                    item_quests.append(f"{other_emoji} **Reward**: {item_dict[quest]['reward']} | **Pokestop**: {item_dict[quest]['location']} | **Quest**: {item_dict[quest]['quest']}{item_dict[quest]['reporter']}")
+                    item_dict[quest]['listed'] = True
         if item_quests:
             questmsg += "\n\n**Other Rewards**\n{itemlist}".format(itemlist="\n".join(item_quests))
+        for dust in sorted(dust_list):
+            for quest in dust_dict:
+                if dust_dict[quest]['reward'] == dust and not dust_dict[quest].get('listed', False):
+                    dust_quests.append(f"{dust_emoji} **Reward**: {dust_dict[quest]['reward']} | **Pokestop**: {dust_dict[quest]['location']} | **Quest**: {dust_dict[quest]['quest']}{dust_dict[quest]['reporter']}")
+                    dust_dict[quest]['listed'] = True
         if dust_quests:
             questmsg += "\n\n**Stardust**\n{dustlist}".format(dustlist="\n".join(dust_quests))
         if questmsg:
