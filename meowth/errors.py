@@ -133,7 +133,7 @@ class TradeChannelCheckFail(CommandError):
     pass
 
 class NestChannelCheckFail(CommandError):
-    'Exception raised checks.tradereport fails'
+    'Exception raised checks.nestreport fails'
     pass
 
 class TradeSetCheckFail(CommandError):

@@ -630,7 +630,7 @@ class Want(commands.Cog):
         """Add a IV to your want list. Currently used for wild reports.
 
         Usage: !want iv <iv list>
-        Enter individual numbers or iv+ to add iv to 100"""
+        Enter individual numbers, a range with iv-iv, or iv+ to add iv to 100"""
         await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
@@ -652,6 +652,13 @@ class Want(commands.Cog):
                 for iv in range(int(entered_want), 101):
                     if iv not in want_list:
                         want_list.append(str(iv))
+            elif "-" in entered_want.lower():
+                range_split = entered_want.split("-")
+                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]):
+                    for iv in range(int(range_split[0]), int(range_split[1])+1):
+                        want_list.append(str(iv))
+                else:
+                    error_list.append(entered_want)
             else:
                 if not entered_want.strip().isdigit():
                     error_list.append(entered_want)
@@ -1524,6 +1531,13 @@ class Want(commands.Cog):
                 for iv in range(int(entered_unwant), 101):
                     if iv not in unwant_list:
                         unwant_list.append(str(iv))
+            elif "-" in entered_unwant.lower():
+                range_split = entered_unwant.split("-")
+                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]):
+                    for iv in range(int(range_split[0]), int(range_split[1])+1):
+                        unwant_list.append(str(iv))
+                else:
+                    error_list.append(entered_unwant)
             else:
                 if not entered_unwant.strip().isdigit():
                     error_list.append(entered_unwant)

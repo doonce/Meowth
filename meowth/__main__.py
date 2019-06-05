@@ -524,7 +524,7 @@ async def on_raw_reaction_add(payload):
 Miscellaneous
 """
 
-@Meowth.command()
+@Meowth.command(hidden=True)
 @commands.has_permissions(manage_guild=True)
 async def welcome(ctx, user: discord.Member=None):
     """Test welcome on yourself or mentioned member.

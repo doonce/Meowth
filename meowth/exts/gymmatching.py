@@ -163,7 +163,7 @@ class GymMatching(commands.Cog):
             async with ctx.typing():
                 if checks.is_owner_check(ctx) and len(self.bot.guilds) > 1:
                     poi_embed.clear_fields()
-                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! I'll help you edit a POI!\n\nFirst, I'll need to know what **guild** you would like to edit. By default I will edit **{guild.name}**, would you like to change this? Reply with **N** to stay on **{guild.name}** or reply with any of the {len(self.bot.guilds)} **Guild IDs** that I have access to. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! I'll help you edit a POI!\n\nFirst, I'll need to know what **guild** you would like to edit. By default I will edit **{guild.name}**, would you like to continue with this guild?\n\nReply with **Y** to stay on **{guild.name}** or reply with any of the {len(self.bot.guilds)} **Guild IDs** that I have access to. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_guild_wait = await channel.send(embed=poi_embed)
                     try:
                         poi_guild_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -178,7 +178,7 @@ class GymMatching(commands.Cog):
                     if poi_guild_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
-                    elif poi_guild_msg.clean_content.lower() == "n":
+                    elif poi_guild_msg.clean_content.lower() == "y":
                         guild = ctx.guild
                     elif not poi_guild_msg.clean_content.isdigit() or int(poi_guild_msg.clean_content) not in [x.id for x in self.bot.guilds]:
                         error = _("entered an invalid guild")
@@ -284,7 +284,7 @@ class GymMatching(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif poi_name_msg.clean_content.lower().strip() not in data_keys and poi_action != "add":
-                        error = _("entered an invalid POI")
+                        error = _("entered a POI not on my **list**")
                         break
                     else:
                         poi_name = poi_name_msg.clean_content
@@ -320,7 +320,7 @@ class GymMatching(commands.Cog):
                     else:
                         poi_coords = poi_coord_msg.clean_content.lower().replace(" ", "")
                     poi_embed.clear_fields()
-                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Is this an alias for a {poi_target} you've previously added? Reply with the **N** if not or the in-game name of the of the {poi_target} you've previously added. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Is this an **alias** for a {poi_target} you've previously added? Reply with the **N** if not or the in-game name of the of the {poi_target} you've previously added. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_alias_wait = await channel.send(embed=poi_embed)
                     try:
                         poi_alias_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -338,12 +338,12 @@ class GymMatching(commands.Cog):
                     elif poi_alias_msg.clean_content.lower() == "n":
                         poi_alias = None
                     elif poi_alias_msg.clean_content.lower().strip() not in data_keys:
-                        error = _("entered an invalid POI")
+                        error = _("entered a POI not on my **list**")
                         break
                     else:
                         poi_alias = list(data[str(guild.id)].keys())[data_keys.index(poi_alias_msg.clean_content.lower())]
                     poi_embed.clear_fields()
-                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Are there any notes you'd like to add to the {poi_name} {poi_target}? Reply with the **N** if not or any notes you'd like to add. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Are there any **notes** you'd like to add to the {poi_name} {poi_target}? Reply with the **N** if not or any notes you'd like to add. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_note_wait = await channel.send(embed=poi_embed)
                     try:
                         poi_note_msg = await self.bot.wait_for('message', timeout=60, check=check)
