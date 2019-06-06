@@ -286,6 +286,8 @@ class Lure(commands.Cog):
                 except:
                     continue
         self.bot.guild_dict[ctx.guild.id]['lure_dict'][confirmation.id]['dm_dict'] = dm_dict
+        lure_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('lure_reports', 0) + 1
+        self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['lure_reports'] = lure_reports
 
     @lure.command(aliases=['expire'])
     @checks.allowlurereport()

@@ -107,13 +107,14 @@ class Trainers(commands.Cog):
             card = _("Traveler Card")
             silph = f"[{card}](https://sil.ph/{silph.lower()})"
         field_value = ""
-        raids = trainers.setdefault(member.id, {}).get('raid_reports', 0)
-        eggs = trainers.setdefault(member.id, {}).get('egg_reports', 0)
-        exraids = trainers.setdefault(member.id, {}).get('ex_reports', 0)
-        wilds = trainers.setdefault(member.id, {}).get('wild_reports', 0)
-        research = trainers.setdefault(member.id, {}).get('research_reports', 0)
-        nests = trainers.setdefault(member.id, {}).get('nest_reports', 0)
-        wants = trainers.setdefault(member.id, {}).get('alerts', {}).get('wants', [])
+        raids = trainers.get(member.id, {}).get('raid_reports', 0)
+        eggs = trainers.get(member.id, {}).get('egg_reports', 0)
+        exraids = trainers.get(member.id, {}).get('ex_reports', 0)
+        wilds = trainers.get(member.id, {}).get('wild_reports', 0)
+        research = trainers.get(member.id, {}).get('research_reports', 0)
+        nests = trainers.get(member.id, {}).get('nest_reports', 0)
+        lures = trainers.get(member.id, {}).get('lure_reports', 0)
+        wants = trainers.get(member.id, {}).get('alerts', {}).get('wants', [])
         wants = sorted(wants)
         wants = [utils.get_name(self.bot, x).title() for x in wants]
         roles = [x.mention for x in sorted(member.roles, reverse=True) if ctx.guild.id != x.id]
@@ -121,19 +122,21 @@ class Trainers(commands.Cog):
         embed.set_thumbnail(url=member.avatar_url)
         embed.set_footer(text=f"User Registered: {member.created_at.strftime(_('%b %d, %Y %I:%M %p'))} | Status: {str(member.status).title()}")
         embed.add_field(name=_("Silph Road"), value=f"{silph}", inline=True)
-        embed.add_field(name=_("Pokebattler"), value=f"{self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).get('pokebattlerid', None)}", inline=True)
-        embed.add_field(name=_("Trainer Code"), value=f"{self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).get('trainercode', None)}", inline=True)
+        embed.add_field(name=_("Pokebattler"), value=f"{self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('pokebattlerid', None)}", inline=True)
+        embed.add_field(name=_("Trainer Code"), value=f"{self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('trainercode', None)}", inline=True)
         embed.add_field(name=_("Member Since"), value=f"{member.joined_at.strftime(_('%b %d, %Y %I:%M %p'))}", inline=True)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled']:
-            field_value += _("Raid: **{raids}** | Egg: **{eggs}** | ").format(raids=raids, eggs=eggs)
+            field_value += _("Raid: **{raids}** | Egg: **{eggs}**").format(raids=raids, eggs=eggs)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['enabled']:
-            field_value += _("EX: **{exraids}** | ").format(exraids=exraids)
+            field_value += _(" | EX: **{exraids}**").format(exraids=exraids)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled']:
-            field_value += _("Wild: **{wilds}** | ").format(wilds=wilds)
+            field_value += _(" | Wild: **{wilds}**").format(wilds=wilds)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['research']['enabled']:
-            field_value += _("Research: **{research}** | ").format(research=research)
+            field_value += _(" | Research: **{research}**").format(research=research)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
-            field_value += _("Nest: **{nest}** | ").format(nest=nests)
+            field_value += _(" | Nest: **{nest}**").format(nest=nests)
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
+            field_value += _(" | Lure: **{lure}**").format(lure=lures)
         embed.add_field(name=_("Reports"), value=field_value[:-3], inline=False)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['want']['enabled'] and wants:
             embed.add_field(name=_("Want List"), value=f"{(', ').join(wants)[:2000]}", inline=False)
@@ -148,12 +151,12 @@ class Trainers(commands.Cog):
         """Displays the top ten reporters of a server.
 
         Usage: !leaderboard [type] [page]
-        Accepted types: raids, eggs, exraids, wilds, research, nest
+        Accepted types: raids, eggs, exraids, wilds, research, nest, lure
         Page: 1 = 1 through 10, 2 = 11 through 20, etc."""
         trainers = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['trainers'])
         leaderboard = []
         field_value = ""
-        typelist = ["total", "raids", "exraids", "wilds", "research", "eggs", "nests"]
+        typelist = ["total", "raid", "exraid", "wild", "research", "eggs", "nest", "lure"]
         type = type.lower()
         if type.isdigit():
             range = type
@@ -168,14 +171,15 @@ class Trainers(commands.Cog):
             return
         for trainer in trainers.keys():
             user = ctx.guild.get_member(trainer)
-            raids = trainers[trainer].setdefault('raid_reports', 0)
-            wilds = trainers[trainer].setdefault('wild_reports', 0)
-            exraids = trainers[trainer].setdefault('ex_reports', 0)
-            eggs = trainers[trainer].setdefault('egg_reports', 0)
-            research = trainers[trainer].setdefault('research_reports', 0)
-            nests = trainers[trainer].setdefault('nest_reports', 0)
-            total_reports = raids + wilds + exraids + eggs + research
-            trainer_stats = {'trainer':trainer, 'total':total_reports, 'raids':raids, 'wilds':wilds, 'research':research, 'exraids':exraids, 'eggs':eggs, 'nests':nests}
+            raid = trainers[trainer].get('raid_reports', 0)
+            wild = trainers[trainer].get('wild_reports', 0)
+            exraid = trainers[trainer].get('ex_reports', 0)
+            egg = trainers[trainer].get('egg_reports', 0)
+            research = trainers[trainer].get('research_reports', 0)
+            nest = trainers[trainer].get('nest_reports', 0)
+            lure = trainers[trainer].get('lure_reports', 0)
+            total_reports = raid + wild + exraid + egg + research + nest + lure
+            trainer_stats = {'trainer':trainer, 'total':total_reports, 'raid':raid, 'wild':wild, 'research':research, 'exraid':exraid, 'egg':egg, 'nest':nest, 'lure':lure}
             if trainer_stats[type] > 0 and user:
                 leaderboard.append(trainer_stats)
         leaderboard = sorted(leaderboard, key= lambda x: x[type], reverse=True)[begin_range:int(range)]
@@ -185,16 +189,18 @@ class Trainers(commands.Cog):
             user = ctx.guild.get_member(trainer['trainer'])
             if user:
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled']:
-                    field_value += _("Raid: **{raids}** | Egg: **{eggs}** | ").format(raids=trainer['raids'], eggs=trainer['eggs'])
+                    field_value += _("Raid: **{raids}** | Egg: **{eggs}**").format(raids=trainer['raid'], eggs=trainer['egg'])
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['enabled']:
-                    field_value += _("EX: **{exraids}** | ").format(exraids=trainer['exraids'])
+                    field_value += _(" | EX: **{exraids}**").format(exraids=trainer['exraid'])
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled']:
-                    field_value += _("Wild: **{wilds}** | ").format(wilds=trainer['wilds'])
+                    field_value += _(" | Wild: **{wilds}**").format(wilds=trainer['wild'])
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['research']['enabled']:
-                    field_value += _("Research: **{research}** | ").format(research=trainer['research'])
+                    field_value += _(" | Quest: **{research}**").format(research=trainer['research'])
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
-                    field_value += _("Nest: **{nest}** | ").format(nest=trainer['nests'])
-                embed.add_field(name=f"{rank}. {user.display_name} - {type.title()}: **{trainer[type]}**", value=field_value[:-3], inline=False)
+                    field_value += _(" | Nest: **{nest}**").format(nest=trainer['nest'])
+                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
+                    field_value += _(" | Lure: **{lure}**").format(lure=trainer['lure'])
+                embed.add_field(name=f"{rank}. {user.display_name} - {type.title()}: **{trainer[type]}**", value=field_value, inline=False)
                 field_value = ""
                 rank += 1
         if len(embed.fields) == 0:
@@ -239,6 +245,9 @@ class Trainers(commands.Cog):
                 elif "nest" in argument.lower():
                     type = "nest_reports"
                     break
+                elif "lure" in argument.lower():
+                    type = "lure_reports"
+                    break
         if not type:
             type = "total_reports"
         if not tgt_string:
@@ -267,6 +276,7 @@ class Trainers(commands.Cog):
                 trainers[trainer]['egg_reports'] = 0
                 trainers[trainer]['research_reports'] = 0
                 trainers[trainer]['nest_reports'] = 0
+                trainers[trainer]['lure_reports'] = 0
             else:
                 trainers[trainer][type] = 0
             if tgt_trainer:
