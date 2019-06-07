@@ -922,6 +922,8 @@ class Listing(commands.Cog):
                 for p in res_pages:
                     if index == 0:
                         listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                        if search == ctx.author:
+                            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trade_list'] = {ctx.channel.id: listmsg.id}
                     else:
                         listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                     list_messages.append(listmsg.id)

@@ -102,11 +102,27 @@ class Trainers(commands.Cog):
         if not member:
             member = ctx.message.author
         trainers = self.bot.guild_dict[ctx.guild.id]['trainers']
-        silph = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).get('silphid', None)
+        silph = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('silphid', None)
         if silph:
-            card = _("Traveler Card")
-            silph = f"[{card}](https://sil.ph/{silph.lower()})"
-        field_value = ""
+            silph = f"[Silph Card](https://sil.ph/{silph.lower()})"
+        else:
+            silph = f"{ctx.prefix}set silph"
+        trainercode = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('trainercode', None)
+        if not trainercode:
+            trainercode = f"{ctx.prefix}set trainercode"
+        pokebattler = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('pokebattlerid', None)
+        if not pokebattler:
+            pokebattler = f"{ctx.prefix}set pokebattler"
+        trade_list = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('trade_list', None)
+        trade_message = None
+        if trade_list:
+            for k,v in trade_list.items():
+                trade_channel = self.bot.get_channel(k)
+                try:
+                    trade_message = await trade_channel.fetch_message(v)
+                    trade_message = trade_message.jump_url
+                except:
+                    trade_message = None
         raids = trainers.get(member.id, {}).get('raid_reports', 0)
         eggs = trainers.get(member.id, {}).get('egg_reports', 0)
         exraids = trainers.get(member.id, {}).get('ex_reports', 0)
@@ -120,26 +136,30 @@ class Trainers(commands.Cog):
         roles = [x.mention for x in sorted(member.roles, reverse=True) if ctx.guild.id != x.id]
         embed = discord.Embed(title=_("{member}\'s Trainer Profile").format(member=member.display_name), colour=member.colour)
         embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=f"User Registered: {member.created_at.strftime(_('%b %d, %Y %I:%M %p'))} | Status: {str(member.status).title()}")
-        embed.add_field(name=_("Silph Road"), value=f"{silph}", inline=True)
-        embed.add_field(name=_("Pokebattler"), value=f"{self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('pokebattlerid', None)}", inline=True)
-        embed.add_field(name=_("Trainer Code"), value=f"{self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('trainercode', None)}", inline=True)
+        phone_emoji = "\U0001F4F1"
+        embed.set_footer(text=f"User Registered: {member.created_at.strftime(_('%b %d, %Y %I:%M %p'))} | Status: {str(member.status).title()} {phone_emoji if member.is_on_mobile() else ''}")
+        embed.add_field(name=_("Silph Road"), value=silph, inline=True)
+        embed.add_field(name=_("Pokebattler"), value=pokebattler, inline=True)
+        embed.add_field(name=_("Trainer Code"), value=trainercode, inline=True)
         embed.add_field(name=_("Member Since"), value=f"{member.joined_at.strftime(_('%b %d, %Y %I:%M %p'))}", inline=True)
+        field_value = ""
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled']:
-            field_value += _("Raid: **{raids}** | Egg: **{eggs}**").format(raids=raids, eggs=eggs)
+            field_value += _("Raid: **{raids}** | Egg: **{eggs}** | ").format(raids=raids, eggs=eggs)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['enabled']:
-            field_value += _(" | EX: **{exraids}**").format(exraids=exraids)
+            field_value += _("EX: **{exraids}** | ").format(exraids=exraids)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled']:
-            field_value += _(" | Wild: **{wilds}**").format(wilds=wilds)
+            field_value += _("Wild: **{wilds}** | ").format(wilds=wilds)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['research']['enabled']:
-            field_value += _(" | Research: **{research}**").format(research=research)
+            field_value += _("Quest: **{research}** | ").format(research=research)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
-            field_value += _(" | Nest: **{nest}**").format(nest=nests)
+            field_value += _("Nest: **{nest}** | ").format(nest=nests)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
-            field_value += _(" | Lure: **{lure}**").format(lure=lures)
+            field_value += _("Lure: **{lure}** | ").format(lure=lures)
         embed.add_field(name=_("Reports"), value=field_value[:-3], inline=False)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict']['want']['enabled'] and wants:
             embed.add_field(name=_("Want List"), value=f"{(', ').join(wants)[:2000]}", inline=False)
+        if trade_message:
+            embed.add_field(name="Active Trades", value=f"[Click here]({trade_message}) to view active trades in {trade_channel.mention}.")
         if roles:
             embed.add_field(name=_("Roles"), value=f"{(' ').join(roles)[:2000]}", inline=False)
 
@@ -189,18 +209,18 @@ class Trainers(commands.Cog):
             user = ctx.guild.get_member(trainer['trainer'])
             if user:
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled']:
-                    field_value += _("Raid: **{raids}** | Egg: **{eggs}**").format(raids=trainer['raid'], eggs=trainer['egg'])
+                    field_value += _("Raid: **{raids}** | Egg: **{eggs}** | ").format(raids=trainer['raid'], eggs=trainer['egg'])
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['enabled']:
-                    field_value += _(" | EX: **{exraids}**").format(exraids=trainer['exraid'])
+                    field_value += _("EX: **{exraids}** | ").format(exraids=trainer['exraid'])
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled']:
-                    field_value += _(" | Wild: **{wilds}**").format(wilds=trainer['wild'])
+                    field_value += _("Wild: **{wilds}** | ").format(wilds=trainer['wild'])
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['research']['enabled']:
-                    field_value += _(" | Quest: **{research}**").format(research=trainer['research'])
+                    field_value += _("Quest: **{research}** | ").format(research=trainer['research'])
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
-                    field_value += _(" | Nest: **{nest}**").format(nest=trainer['nest'])
+                    field_value += _("Nest: **{nest}** | ").format(nest=trainer['nest'])
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
-                    field_value += _(" | Lure: **{lure}**").format(lure=trainer['lure'])
-                embed.add_field(name=f"{rank}. {user.display_name} - {type.title()}: **{trainer[type]}**", value=field_value, inline=False)
+                    field_value += _("Lure: **{lure}** | ").format(lure=trainer['lure'])
+                embed.add_field(name=f"{rank}. {user.display_name} - {type.title()}: **{trainer[type]}**", value=field_value[:-3], inline=False)
                 field_value = ""
                 rank += 1
         if len(embed.fields) == 0:

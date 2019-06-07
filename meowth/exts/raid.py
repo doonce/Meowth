@@ -3579,8 +3579,20 @@ class Raid(commands.Cog):
                 team_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict'][team_emoji])
             await channel.send(_('Meowth! {member} is interested{interest_str}! {emoji}: 1').format(member=author.mention, interest_str=interest_str, emoji=team_emoji))
         else:
-            msg = _('Meowth! {member} is interested{interest_str} with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count, interest_str=interest_str)
-            await channel.send('{msg} {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(msg=msg, blue_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, self.bot.config['unknown']), unknown=party['unknown']))
+            blue_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic'])
+            red_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor'])
+            yellow_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct'])
+            grey_emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+            msg = f"Meowth! {author.mention} is interested{interest_str} with a total of **{count}** trainers! "
+            if party['mystic']:
+                msg += f"{blue_emoji}: {party['mystic']} | "
+            if party['valor']:
+                msg += f"{red_emoji}: {party['valor']} | "
+            if party['instinct']:
+                msg += f"{yellow_emoji}: {party['instinct']} | "
+            if party['unknown']:
+                msg += f"{grey_emoji}: {party['unknown']} | "
+            await channel.send(msg[:-3])
         trainer_dict['status'] = {'maybe':count, 'coming':0, 'here':0, 'lobby':0}
         if entered_interest:
             trainer_dict['interest'] = entered_interest
@@ -3703,8 +3715,20 @@ class Raid(commands.Cog):
                 team_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict'][team_emoji])
             await channel.send(_('Meowth! {member} is on the way{interest_str}! {emoji}: 1').format(member=author.mention, interest_str=interest_str, emoji=team_emoji))
         else:
-            msg = _('Meowth! {member} is on the way with a total of {trainer_count} trainers{interest_str}!').format(member=author.mention, interest_str=interest_str, trainer_count=count)
-            await channel.send('{msg} {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(msg=msg, blue_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, self.bot.config['unknown']), unknown=party['unknown']))
+            blue_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic'])
+            red_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor'])
+            yellow_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct'])
+            grey_emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+            msg = f"Meowth! {author.mention} is on the way with a total of **{count}** trainers{interest_str}! "
+            if party['mystic']:
+                msg += f"{blue_emoji}: {party['mystic']} | "
+            if party['valor']:
+                msg += f"{red_emoji}: {party['valor']} | "
+            if party['instinct']:
+                msg += f"{yellow_emoji}: {party['instinct']} | "
+            if party['unknown']:
+                msg += f"{grey_emoji}: {party['unknown']} | "
+            await channel.send(msg[:-3])
         trainer_dict['status'] = {'maybe':0, 'coming':count, 'here':0, 'lobby':0}
         trainer_dict['count'] = count
         trainer_dict['party'] = party
@@ -3837,8 +3861,20 @@ class Raid(commands.Cog):
             msg = _('Meowth! {member} is at the {raidtype}{interest_str}! {emoji}: 1').format(member=author.mention, emoji=team_emoji, interest_str=interest_str, raidtype=raidtype)
             await channel.send(msg + lobbymsg)
         else:
-            msg = _('Meowth! {member} is at the {raidtype} with a total of {trainer_count} trainers{interest_str}!').format(member=author.mention, trainer_count=count, interest_str=interest_str, raidtype=raidtype)
-            msg += ' {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(blue_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, self.bot.config['unknown']), unknown=party['unknown'])
+            blue_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic'])
+            red_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor'])
+            yellow_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct'])
+            grey_emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+            msg = f"Meowth! {author.mention} is at the {raidtype} with a total of **{count}** trainers{interest_str}! "
+            if party['mystic']:
+                msg += f"{blue_emoji}: {party['mystic']} | "
+            if party['valor']:
+                msg += f"{red_emoji}: {party['valor']} | "
+            if party['instinct']:
+                msg += f"{yellow_emoji}: {party['instinct']} | "
+            if party['unknown']:
+                msg += f"{grey_emoji}: {party['unknown']} | "
+            msg = msg[:-3]
             await channel.send(msg + lobbymsg)
         trainer_dict['status'] = {'maybe':0, 'coming':0, 'here':count, 'lobby':0}
         trainer_dict['count'] = count
