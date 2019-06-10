@@ -376,7 +376,7 @@ class Trainers(commands.Cog):
                 pass
             return
         elif author.get('trainercode'):
-            return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is: **{author.get('pokebattlerid')}**")
+            return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is: **{author.get('trainercode')}**")
         elif not trainercode:
             return await ctx.error(f"Please enter your trainer code")
         else:
