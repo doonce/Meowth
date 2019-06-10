@@ -858,7 +858,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.6.7 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.6.10 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
@@ -961,90 +961,6 @@ class Utilities(commands.Cog):
 
     def _set_prefix(self, bot, guild, prefix):
         self.bot.guild_dict[guild.id]['configure_dict']['settings']['prefix'] = prefix
-
-    @_set.command()
-    @checks.guildchannel()
-    async def silph(self, ctx, silph_user: str = None):
-        """Links a server member to a Silph Road Travelers Card."""
-        if not silph_user:
-            await ctx.send(_('Silph Road Travelers Card cleared!'), delete_after=10)
-            try:
-                del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['silphid']
-            except:
-                pass
-            return
-
-        silph_cog = ctx.bot.cogs.get('Silph')
-        if not silph_cog:
-            return await ctx.send(
-                _("The Silph Extension isn't accessible at the moment, sorry!"), delete_after=10)
-
-        async with ctx.typing():
-            card = await silph_cog.get_silph_card(silph_user)
-            if not card:
-                return await ctx.send(_('Silph Card for {silph_user} not found.').format(silph_user=silph_user), delete_after=10)
-
-        if not card.discord_name:
-            return await ctx.send(
-                _('No Discord account found linked to this Travelers Card!'), delete_after=10)
-
-        if card.discord_name != str(ctx.author):
-            return await ctx.send(
-                _('This Travelers Card is linked to another Discord account!'), delete_after=10)
-
-        try:
-            offset = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']
-        except KeyError:
-            offset = None
-
-        trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
-        author = trainers.get(ctx.author.id, {})
-        author['silphid'] = silph_user
-        trainers[ctx.author.id] = author
-        self.bot.guild_dict[ctx.guild.id]['trainers'] = trainers
-
-        await ctx.send(
-            _('This Travelers Card has been successfully linked to you!'),
-            embed=card.embed(offset), delete_after=10)
-        await safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
-
-    @_set.command()
-    @checks.guildchannel()
-    async def pokebattler(self, ctx, pbid: int = 0):
-        """Links a server member to a PokeBattler ID."""
-        if not pbid:
-            await ctx.send(_('Pokebattler ID cleared!'), delete_after=10)
-            try:
-                del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['pokebattlerid']
-            except:
-                pass
-            return
-        trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
-        author = trainers.get(ctx.author.id, {})
-        author['pokebattlerid'] = pbid
-        trainers[ctx.author.id] = author
-        self.bot.guild_dict[ctx.guild.id]['trainers'] = trainers
-        await ctx.send(_('Pokebattler ID set to {pbid}!').format(pbid=pbid), delete_after=10)
-        await safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
-
-    @_set.command()
-    @checks.guildchannel()
-    async def trainercode(self, ctx, *, trainercode: str = None):
-        """Links a server member to a Pokemon Go Trainer Code."""
-        if not trainercode:
-            await ctx.send(_('Trainer code cleared!'), delete_after=10)
-            try:
-                del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode']
-            except:
-                pass
-            return
-        trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
-        author = trainers.get(ctx.author.id, {})
-        author['trainercode'] = trainercode
-        trainers[ctx.author.id] = author
-        self.bot.guild_dict[ctx.guild.id]['trainers'] = trainers
-        await ctx.send(_(f'{ctx.author.display_name}\'s trainer code set to {trainercode}!'), delete_after=10)
-        await safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @_set.command()
     @checks.is_owner()

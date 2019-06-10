@@ -83,36 +83,55 @@ class Trainers(commands.Cog):
             except discord.Forbidden:
                 await ctx.channel.send(_("Meowth! I can't add roles!"), delete_after=10)
 
-    @commands.command()
-    async def trainercode(self, ctx, user: discord.Member = None):
-        """Displays a user's trainer code."""
-        if not user:
-            user = ctx.message.author
-        trainercode = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(user.id, {}).get('trainercode', None)
-        if trainercode:
-            await ctx.channel.send(f"{user.display_name}\'s trainer code is: **{trainercode}**")
-        else:
-            await ctx.channel.send(f"{user.display_name} has not set a trainer code. Set it with **!set trainercode <code>**")
-
-    @commands.command()
-    async def profile(self, ctx, member: discord.Member = None):
+    @commands.command(aliases=['whois'])
+    async def profile(self, ctx, *, member=""):
         """Displays a member's social and reporting profile.
 
         Usage:!profile [member]"""
+        converter = commands.MemberConverter()
+        if member:
+            try:
+                member = await converter.convert(ctx, member)
+            except:
+                member_found = False
+                for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+                    search_list = []
+                    pbid = str(self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pokebattlerid', "")).lower()
+                    if pbid:
+                        search_list.append(pbid)
+                    trainercode = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('trainercode', "").replace(" ", "").lower()
+                    if trainercode:
+                        search_list.append(trainercode)
+                    ign = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('ign', "")
+                    if ign:
+                        ign = ign.split(',')
+                        ign = [x.strip().lower() for x in ign]
+                        search_list = search_list + ign
+                    silphid = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('silphid', "").lower()
+                    if silphid:
+                        search_list.append(silphid)
+                    if member.lower() in search_list:
+                        member = trainer
+                        member_found = True
+                        break
+                if member_found:
+                    member = ctx.guild.get_member(member)
+                else:
+                    member = None
         if not member:
             member = ctx.message.author
         trainers = self.bot.guild_dict[ctx.guild.id]['trainers']
         silph = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('silphid', None)
         if silph:
-            silph = f"[Silph Card](https://sil.ph/{silph.lower()})"
+            silph = f"[Traveler Card](https://sil.ph/{silph.lower()})"
         else:
-            silph = f"{ctx.prefix}set silph"
+            silph = f"Set with {ctx.prefix}silph"
         trainercode = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('trainercode', None)
         if not trainercode:
-            trainercode = f"{ctx.prefix}set trainercode"
+            trainercode = f"Set with {ctx.prefix}trainercode"
         pokebattler = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('pokebattlerid', None)
         if not pokebattler:
-            pokebattler = f"{ctx.prefix}set pokebattler"
+            pokebattler = f"Set with {ctx.prefix}pokebattler"
         trade_list = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('trade_list', None)
         trade_message = None
         if trade_list:
@@ -123,6 +142,17 @@ class Trainers(commands.Cog):
                     trade_message = trade_message.jump_url
                 except:
                     trade_message = None
+        want_list = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('want_list', None)
+        want_message = None
+        if want_list:
+            for k,v in want_list.items():
+                want_channel = self.bot.get_channel(k)
+                try:
+                    want_message = await want_channel.fetch_message(v)
+                    want_message = want_message.jump_url
+                except:
+                    want_message = None
+        ign = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('ign', None)
         raids = trainers.get(member.id, {}).get('raid_reports', 0)
         eggs = trainers.get(member.id, {}).get('egg_reports', 0)
         exraids = trainers.get(member.id, {}).get('ex_reports', 0)
@@ -130,9 +160,6 @@ class Trainers(commands.Cog):
         research = trainers.get(member.id, {}).get('research_reports', 0)
         nests = trainers.get(member.id, {}).get('nest_reports', 0)
         lures = trainers.get(member.id, {}).get('lure_reports', 0)
-        wants = trainers.get(member.id, {}).get('alerts', {}).get('wants', [])
-        wants = sorted(wants)
-        wants = [utils.get_name(self.bot, x).title() for x in wants]
         roles = [x.mention for x in sorted(member.roles, reverse=True) if ctx.guild.id != x.id]
         embed = discord.Embed(title=_("{member}\'s Trainer Profile").format(member=member.display_name), colour=member.colour)
         embed.set_thumbnail(url=member.avatar_url)
@@ -142,23 +169,28 @@ class Trainers(commands.Cog):
         embed.add_field(name=_("Pokebattler"), value=pokebattler, inline=True)
         embed.add_field(name=_("Trainer Code"), value=trainercode, inline=True)
         embed.add_field(name=_("Member Since"), value=f"{member.joined_at.strftime(_('%b %d, %Y %I:%M %p'))}", inline=True)
+        if ign:
+            embed.add_field(name="In-Game Name(s)", value=ign)
         field_value = ""
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled']:
-            field_value += _("Raid: **{raids}** | Egg: **{eggs}** | ").format(raids=raids, eggs=eggs)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['enabled']:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled'] and raids:
+            field_value += _("Raid: **{raids}** | ").format(raids=raids)
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled'] and eggs:
+            field_value += _("Egg: **{eggs}** | ").format(eggs=eggs)
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['enabled'] and exraids:
             field_value += _("EX: **{exraids}** | ").format(exraids=exraids)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled']:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled'] and wilds:
             field_value += _("Wild: **{wilds}** | ").format(wilds=wilds)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['research']['enabled']:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['research']['enabled'] and research:
             field_value += _("Quest: **{research}** | ").format(research=research)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled'] and nests:
             field_value += _("Nest: **{nest}** | ").format(nest=nests)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled'] and lures:
             field_value += _("Lure: **{lure}** | ").format(lure=lures)
-        embed.add_field(name=_("Reports"), value=field_value[:-3], inline=False)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['want']['enabled'] and wants:
-            embed.add_field(name=_("Want List"), value=f"{(', ').join(wants)[:2000]}", inline=False)
-        if trade_message:
+        if field_value:
+            embed.add_field(name=_("Reports"), value=field_value[:-3], inline=False)
+        if want_message and self.bot.guild_dict[ctx.guild.id]['configure_dict']['want']['enabled'] and (want_channel.overwrites_for(ctx.guild.default_role).read_messages or want_channel.overwrites_for(ctx.guild.default_role).read_messages == None):
+            embed.add_field(name=_("Want List"), value=f"[Click here]({want_message}) to view most recent want list in {want_channel.mention}.")
+        if trade_message and (trade_channel.overwrites_for(ctx.guild.default_role).read_messages or trade_channel.overwrites_for(ctx.guild.default_role).read_messages == None):
             embed.add_field(name="Active Trades", value=f"[Click here]({trade_message}) to view active trades in {trade_channel.mention}.")
         if roles:
             embed.add_field(name=_("Roles"), value=f"{(' ').join(roles)[:2000]}", inline=False)
@@ -303,6 +335,79 @@ class Trainers(commands.Cog):
                 await ctx.send(_("{trainer}'s report stats have been cleared!").format(trainer=tgt_trainer.display_name), delete_after=10)
                 return
         await ctx.send("This server's report stats have been reset!", delete_after=10)
+
+    @commands.command()
+    @checks.guildchannel()
+    async def pokebattler(self, ctx, *, pbid: str = ""):
+        """Links a server member to a PokeBattler ID.
+
+        To clear, enter 'clear' as an argument."""
+        trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
+        author = trainers.get(ctx.author.id, {})
+        if author.get('pokebattlerid') and pbid.lower() == "clear":
+            await ctx.send(_('Your PokeBattler ID has been cleared!'), delete_after=10)
+            try:
+                del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['pokebattlerid']
+            except:
+                pass
+            return
+        elif author.get('pokebattlerid'):
+            return await ctx.channel.send(f"{ctx.author.display_name}\'s PokeBattler ID is: **{author.get('pokebattlerid')}**")
+        elif not pbid or not pbid.isdigit():
+            return await ctx.error(f"Please enter your PokeBattler ID")
+        else:
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['pokebattlerid'] = int(pbid)
+            await ctx.send(f"{ctx.author.mention}, your Pokebattler ID has been set to {pbid}!", delete_after=10)
+            await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
+
+    @commands.command()
+    @checks.guildchannel()
+    async def trainercode(self, ctx, *, trainercode: str = ""):
+        """Links a server member to a Pokemon Go Trainer Code.
+
+        To clear, enter 'clear' as an argument."""
+        trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
+        author = trainers.get(ctx.author.id, {})
+        if author.get('trainercode') and trainercode.lower() == "clear":
+            await ctx.send(_('Your trainer code has been cleared!'), delete_after=10)
+            try:
+                del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode']
+            except:
+                pass
+            return
+        elif author.get('trainercode'):
+            return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is: **{author.get('pokebattlerid')}**")
+        elif not trainercode:
+            return await ctx.error(f"Please enter your trainer code")
+        else:
+            trainercode = trainercode.replace(" ", "")
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode'] = trainercode
+            await ctx.send(f"{ctx.author.mention}, your trainer code has been set to {trainercode}!", delete_after=10)
+            await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
+
+    @commands.command()
+    @checks.guildchannel()
+    async def ign(self, ctx, *, ign: str = ""):
+        """Links a server member to a comma separated list of Pokemon Go in-game name(s).
+
+        To clear, enter 'clear' as an argument."""
+        trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
+        author = trainers.get(ctx.author.id, {})
+        if author.get('ign') and ign.lower() == "clear":
+            await ctx.send(_('Your in-game name(s) have been cleared!'), delete_after=10)
+            try:
+                del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign']
+            except:
+                pass
+            return
+        elif author.get('ign'):
+            return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name(s) are: **{author.get('ign')}**")
+        elif not ign:
+            return await ctx.error(f"Please enter your in-game name")
+        else:
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign'] = ign[:300]
+            await ctx.send(f"{ctx.author.mention}, your in-game name(s) have been set to {ign}!", delete_after=10)
+            await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
 def setup(bot):
     bot.add_cog(Trainers(bot))

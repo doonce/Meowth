@@ -292,6 +292,51 @@ class Silph(commands.Cog):
 
     @commands.command()
     @checks.guildchannel()
+    async def silph(self, ctx, silph_user: str = ""):
+        """Links a server member to a Silph Road Travelers Card."""
+        trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
+        author = trainers.get(ctx.author.id, {})
+        if author.get('silphid') and silph_user.lower() == "clear":
+            await ctx.send(_('Silph Road Travelers Card cleared!'), delete_after=10)
+            try:
+                del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['silphid']
+            except:
+                pass
+            return
+        elif author.get('silphid'):
+            silph_command = self.bot.get_command("silphcard")
+            await silph_command.invoke(ctx)
+            return
+        if not silph_user:
+            return await ctx.error(f"Please enter your Silph ID")
+        else:
+            async with ctx.typing():
+                card = await self.get_silph_card(silph_user)
+                if not card:
+                    return await ctx.send(_('Silph Card for {silph_user} not found.').format(silph_user=silph_user), delete_after=10)
+
+            if not card.discord_name:
+                return await ctx.send(
+                    _('No Discord account found linked to this Travelers Card!'), delete_after=10)
+
+            if card.discord_name != str(ctx.author):
+                return await ctx.send(
+                    _('This Travelers Card is linked to another Discord account!'), delete_after=10)
+
+            try:
+                offset = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']
+            except KeyError:
+                offset = None
+
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['silphid'] = silph_user
+
+            await ctx.send(
+                _('This Travelers Card has been successfully linked to you!'),
+                embed=card.embed(offset), delete_after=10)
+            await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
+
+    @commands.command()
+    @checks.guildchannel()
     async def silphcard(self, ctx, silph_user: str = None):
         """Displays a user's Silph Road Trainer Card."""
         guild_data = ctx.bot.guild_dict[ctx.guild.id]
