@@ -45,6 +45,7 @@ class Want(commands.Cog):
         want_msg = f"Meowth! I'll help you add a new alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to subscribe to. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**New Alert Subscription**'), value=want_msg, inline=False)
         want_embed.add_field(name=_('**Pokemon**'), value=f"Reply with **pokemon** to want specific pokemon for research, wild, {'nest, and raid reports.' if user_link else 'and nest reports.'}", inline=False)
+        role_list = self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])
         if not user_link:
             want_embed.add_field(name=_('**Boss**'), value=f"Reply with **boss** to want specific pokemon for raid reports.", inline=False)
         if gym_matching_cog:
@@ -54,6 +55,8 @@ class Want(commands.Cog):
                 want_embed.add_field(name=_('**Gym**'), value=f"Reply with **gym** to want raids and eggs at specific gyms.", inline=False)
             if stops:
                 want_embed.add_field(name=_('**Stop**'), value=f"Reply with **stop** to want research and wild spawns at specific pokestops.", inline=False)
+        if role_list:
+            want_embed.add_field(name=_('**Role**'), value=f"Reply with **role** to subscribe to server roles.", inline=False)
         want_embed.add_field(name=_('**IV**'), value=f"Reply with **iv** to want wild spawns of a specific IV.", inline=False)
         want_embed.add_field(name=_('**Type**'), value=f"Reply with **type** to want wild, research, and nest reports of a specific type.", inline=False)
         want_embed.add_field(name=_('**Item**'), value=f"Reply with **item** to want sspecific items from research.", inline=False)
@@ -253,6 +256,33 @@ class Want(commands.Cog):
                             want_command = ctx.command.all_commands.get('type')
                             if want_command:
                                 await ctx.invoke(want_command, types=ctx.message.content)
+                                return
+                        break
+                    elif want_category_msg.clean_content.lower() == "role" and role_list:
+                        want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/discord.png?cache=1")
+                        want_embed.clear_fields()
+                        role_list = [guild.get_role(x) for x in role_list]
+                        role_list = [x.mention for x in role_list]
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the roles you'd like to subscribe to.\n\nSupported roles include:{(', ').join(role_list)}.\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_wait = await channel.send(embed=want_embed)
+                        try:
+                            want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            want_sub_msg = None
+                        await utils.safe_delete(want_wait)
+                        if not want_sub_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(want_sub_msg)
+                        if want_sub_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled your request")
+                            break
+                        elif want_sub_msg:
+                            ctx.message.content = want_sub_msg.clean_content
+                            want_command = ctx.command.all_commands.get('role')
+                            if want_command:
+                                await ctx.invoke(want_command, roles=ctx.message.content)
                                 return
                         break
                     elif want_category_msg.clean_content.lower() == "settings":
@@ -686,6 +716,65 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
+    @want.command(name='role')
+    @checks.allowwant()
+    async def want_role(self, ctx, *, roles):
+        """Adds a joinable role to your wants.
+
+        Usage: !want role <role list>"""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        want_split = roles.lower().split(',')
+        want_list = []
+        added_count = 0
+        spellcheck_dict = {}
+        already_want_count = 0
+        already_want_list = []
+        added_list = []
+        role_list = []
+        converter = commands.RoleConverter()
+        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])]
+        for entered_want in want_split:
+            try:
+                role = await converter.convert(ctx, entered_want)
+            except:
+                role = None
+            if role:
+                want_list.append(role)
+            else:
+                match, score = utils.get_match([x.name for x in ctx.guild.roles], entered_want)
+                spellcheck_dict[entered_want] = match
+        for role in want_list:
+            role_str = ""
+            if role in join_roles:
+                role_str = f" ({role.mention})"
+                if role not in ctx.author.roles:
+                    role_list.append(role)
+                    added_list.append(f"{role.name}{role_str}")
+                    added_count += 1
+                else:
+                    already_want_list.append(f"{role.name}{role_str}")
+                    already_want_count += 1
+            else:
+                spellcheck_dict[role.name] = None
+        await ctx.author.add_roles(*role_list)
+        want_count = added_count + already_want_count + len(spellcheck_dict)
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** role{s}:\n').format(member=ctx.author.display_name, count=want_count, s="es" if want_count > 1 else "")
+        if added_count > 0:
+            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+        if already_want_count > 0:
+            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+        if spellcheck_dict:
+            spellcheckmsg = ''
+            for word in spellcheck_dict:
+                spellcheckmsg += _('\n\t{word}').format(word=word)
+                if spellcheck_dict[word]:
+                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
+            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+
     @want.command()
     @checks.allowwant()
     async def settings(self, ctx):
@@ -844,6 +933,8 @@ class Want(commands.Cog):
         user_items = [x.title() for x in user_items]
         user_types = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
         user_types = [x.title() for x in user_types]
+        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[ctx.guild.id]['configure_dict']['want'].get('roles', [])]
+        user_roles = [x for x in ctx.author.roles if x in join_roles]
         want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         want_msg = f"Meowth! I'll help you remove an alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to unsubscribe from. Reply with one of the following or reply with **cancel** to stop anytime."
@@ -866,6 +957,8 @@ class Want(commands.Cog):
                 want_embed.add_field(name=_('**Gym**'), value=f"Reply with **gym** to unwant raids and eggs at specific gyms.", inline=False)
             if stops and user_stops:
                 want_embed.add_field(name=_('**Stop**'), value=f"Reply with **stop** to unwant research and wild spawns at specific pokestops.", inline=False)
+        if user_roles:
+            want_embed.add_field(name=_('**Role**'), value=f"Reply with **role** to unwant server roles.", inline=False)
         if user_ivs:
             want_embed.add_field(name=_('**IV**'), value=f"Reply with **iv** to unwant wild spawns of a specific IV.", inline=False)
         if user_types:
@@ -1068,7 +1161,7 @@ class Want(commands.Cog):
                             break
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/types.png?cache=1")
                         want_embed.clear_fields()
-                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the types you'd like to subscribe to.\n\nYour current want list is: {(', ').join(user_types)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the types you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(user_types)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1088,6 +1181,35 @@ class Want(commands.Cog):
                             want_command = ctx.command.all_commands.get('type')
                             if want_command:
                                 await ctx.invoke(want_command, types=ctx.message.content)
+                                return
+                        break
+                    elif want_category_msg.clean_content.lower() == "role" and user_roles:
+                        if not user_roles:
+                            error = _("don't have wants of that type")
+                            break
+                        want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/discord.png?cache=1")
+                        want_embed.clear_fields()
+                        role_list = [x.mention for x in user_roles]
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the roles you'd like to unsubscribe from.\n\nYour current roles are: {(', ').join(role_list)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_wait = await channel.send(embed=want_embed)
+                        try:
+                            want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            want_sub_msg = None
+                        await utils.safe_delete(want_wait)
+                        if not want_sub_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(want_sub_msg)
+                        if want_sub_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled your request")
+                            break
+                        elif want_sub_msg:
+                            ctx.message.content = want_sub_msg.clean_content
+                            want_command = ctx.command.all_commands.get('role')
+                            if want_command:
+                                await ctx.invoke(want_command, roles=ctx.message.content)
                                 return
                         break
                     elif want_category_msg.clean_content.lower() == "all":
@@ -1563,6 +1685,66 @@ class Want(commands.Cog):
             for word in error_list:
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+        unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+
+    @unwant.command(name='role')
+    @checks.allowwant()
+    async def unwant_role(self, ctx, *, roles):
+        """Remove a role from your wanted list.
+
+        Usage: !unwant role <role>"""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        unwant_split = roles.lower().split(',')
+        unwant_list = []
+        removed_count = 0
+        spellcheck_dict = {}
+        spellcheck_list = []
+        not_wanted_count = 0
+        not_wanted_list = []
+        removed_list = []
+        role_list = []
+        converter = commands.RoleConverter()
+        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])]
+        for entered_unwant in unwant_split:
+            try:
+                role = await converter.convert(ctx, entered_unwant)
+            except:
+                role = None
+            if role:
+                unwant_list.append(role)
+            else:
+                match, score = utils.get_match([x.name for x in ctx.guild.roles], entered_unwant)
+                spellcheck_dict[entered_unwant] = match
+        for role in unwant_list:
+            role_str = ""
+            if role in join_roles:
+                role_str = f" ({role.mention})"
+                if role in ctx.author.roles:
+                    role_list.append(role)
+                    removed_list.append(f"{role.name}{role_str}")
+                    removed_count += 1
+                else:
+                    not_wanted_list.append(f"{role.name}{role_str}")
+                    not_wanted_count += 1
+            else:
+                spellcheck_dict[role.name] = None
+        await ctx.author.remove_roles(*role_list)
+        unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** role{s}:\n').format(member=ctx.author.display_name, count=unwant_count, s="es" if unwant_count > 1 else "")
+        if removed_count > 0:
+            confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+        if not_wanted_count > 0:
+            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+        if spellcheck_dict:
+            spellcheckmsg = ''
+            for word in spellcheck_dict:
+                spellcheckmsg += _('\n\t{word}').format(word=word)
+                if spellcheck_dict[word]:
+                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
+            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
 def setup(bot):

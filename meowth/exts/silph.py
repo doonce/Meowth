@@ -296,19 +296,33 @@ class Silph(commands.Cog):
         """Links a server member to a Silph Road Travelers Card."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
         author = trainers.get(ctx.author.id, {})
-        if author.get('silphid') and silph_user.lower() == "clear":
+        silph_command = self.bot.get_command("silphcard")
+        if author.get('silphid') and (silph_user.lower() == "clear" or silph_user.lower() == "reset"):
             await ctx.send(_('Silph Road Travelers Card cleared!'), delete_after=10)
             try:
                 del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['silphid']
             except:
                 pass
             return
+        elif author.get('silphid') and silph_user:
+            question = await ctx.channel.send(f"Your Silph ID is already set to **{author.get('silphid')}**. Do you want to change it to **{silph_user}**?")
+            try:
+                timeout = False
+                res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
+            except TypeError:
+                timeout = True
+            await utils.safe_delete(question)
+            if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                return await silph_command.invoke(ctx)
+            elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                pass
+            else:
+                return
         elif author.get('silphid'):
             silph_command = self.bot.get_command("silphcard")
-            await silph_command.invoke(ctx)
-            return
+            return await silph_command.invoke(ctx)
         if not silph_user:
-            return await ctx.error(f"Please enter your Silph ID")
+            return await ctx.error(f"Please enter your Silph ID. Try again when ready.")
         else:
             async with ctx.typing():
                 card = await self.get_silph_card(silph_user)
@@ -332,7 +346,7 @@ class Silph(commands.Cog):
 
             await ctx.send(
                 _('This Travelers Card has been successfully linked to you!'),
-                embed=card.embed(offset), delete_after=10)
+                embed=card.embed(offset), delete_after=30)
             await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @commands.command()

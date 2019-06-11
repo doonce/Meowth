@@ -344,21 +344,34 @@ class Trainers(commands.Cog):
         To clear, enter 'clear' as an argument."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
         author = trainers.get(ctx.author.id, {})
-        if author.get('pokebattlerid') and pbid.lower() == "clear":
+        if author.get('pokebattlerid') and (pbid.lower() == "clear" or pbid.lower() == "reset"):
             await ctx.send(_('Your PokeBattler ID has been cleared!'), delete_after=10)
             try:
                 del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['pokebattlerid']
             except:
                 pass
             return
+        elif author.get('pokebattlerid') and pbid:
+            question = await ctx.channel.send(f"Your PokeBattler ID is already set to **{author.get('pokebattlerid')}**. Do you want to change it to **{pbid}**?")
+            try:
+                timeout = False
+                res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
+            except TypeError:
+                timeout = True
+            await utils.safe_delete(question)
+            if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                return await ctx.channel.send(f"{ctx.author.display_name}\'s PokeBattler ID is: **{author.get('pokebattlerid')}**")
+            elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                pass
+            else:
+                return
         elif author.get('pokebattlerid'):
             return await ctx.channel.send(f"{ctx.author.display_name}\'s PokeBattler ID is: **{author.get('pokebattlerid')}**")
         elif not pbid or not pbid.isdigit():
-            return await ctx.error(f"Please enter your PokeBattler ID")
-        else:
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['pokebattlerid'] = int(pbid)
-            await ctx.send(f"{ctx.author.mention}, your Pokebattler ID has been set to {pbid}!", delete_after=10)
-            await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
+            return await ctx.error(f"Please enter your PokeBattler ID. Try again when ready.")
+        self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['pokebattlerid'] = int(pbid)
+        await ctx.send(f"{ctx.author.mention}, your Pokebattler ID has been set to **{pbid}**!", delete_after=10)
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @commands.command()
     @checks.guildchannel()
@@ -368,22 +381,35 @@ class Trainers(commands.Cog):
         To clear, enter 'clear' as an argument."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
         author = trainers.get(ctx.author.id, {})
-        if author.get('trainercode') and trainercode.lower() == "clear":
+        if author.get('trainercode') and (trainercode.lower() == "clear" or trainercode.lower() == "reset"):
             await ctx.send(_('Your trainer code has been cleared!'), delete_after=10)
             try:
                 del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode']
             except:
                 pass
             return
+        elif author.get('trainercode') and trainercode:
+            question = await ctx.channel.send(f"Your trainer code is already set to **{author.get('trainercode')}**. Do you want to change it to **{trainercode}**?")
+            try:
+                timeout = False
+                res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
+            except TypeError:
+                timeout = True
+            await utils.safe_delete(question)
+            if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is: **{author.get('trainercode')}**")
+            elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                pass
+            else:
+                return
         elif author.get('trainercode'):
             return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is: **{author.get('trainercode')}**")
         elif not trainercode:
-            return await ctx.error(f"Please enter your trainer code")
-        else:
-            trainercode = trainercode.replace(" ", "")
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode'] = trainercode
-            await ctx.send(f"{ctx.author.mention}, your trainer code has been set to {trainercode}!", delete_after=10)
-            await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
+            return await ctx.error(f"Please enter your trainer code. Try again when ready.")
+        trainercode = trainercode.replace(" ", "")
+        self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode'] = trainercode[:50]
+        await ctx.send(f"{ctx.author.mention}, your trainer code has been set to **{trainercode}**!", delete_after=10)
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
     @commands.command()
     @checks.guildchannel()
@@ -393,21 +419,34 @@ class Trainers(commands.Cog):
         To clear, enter 'clear' as an argument."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
         author = trainers.get(ctx.author.id, {})
-        if author.get('ign') and ign.lower() == "clear":
+        if author.get('ign') and (ign.lower() == "clear" or ign.lower() == "reset"):
             await ctx.send(_('Your in-game name(s) have been cleared!'), delete_after=10)
             try:
                 del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign']
             except:
                 pass
             return
+        elif author.get('ign') and ign:
+            question = await ctx.channel.send(f"Your in-game name(s) are already set to **{author.get('ign')}**. Do you want to change it to **{ign}**?")
+            try:
+                timeout = False
+                res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
+            except TypeError:
+                timeout = True
+            await utils.safe_delete(question)
+            if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name(s) are: **{author.get('ign')}**")
+            elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                pass
+            else:
+                return
         elif author.get('ign'):
             return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name(s) are: **{author.get('ign')}**")
         elif not ign:
-            return await ctx.error(f"Please enter your in-game name")
-        else:
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign'] = ign[:300]
-            await ctx.send(f"{ctx.author.mention}, your in-game name(s) have been set to {ign}!", delete_after=10)
-            await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
+            return await ctx.error(f"Please enter your in-game name. Try again when ready.")
+        self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign'] = ign[:300]
+        await ctx.send(f"{ctx.author.mention}, your in-game name(s) have been set to **{ign}**!", delete_after=10)
+        await utils.safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
 
 def setup(bot):
     bot.add_cog(Trainers(bot))

@@ -1463,6 +1463,7 @@ class Configure(commands.Cog):
         guild = ctx.message.guild
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         want_cog = self.bot.cogs.get('Want')
+        join_roles = config_dict_temp['want'].get('roles', [])
         if not want_cog:
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Want Cog is not loaded. Want cannot be configured.")))
             ctx.config_dict_temp = config_dict_temp
@@ -1471,6 +1472,46 @@ class Configure(commands.Cog):
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "want", [], output="list")
         if not config_dict_temp:
             return None
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("**!want** and **!unwant** can also be used for joining and leaving custom server roles unrelated to pokemon notifications. Would you like to add joinable roles? Reply with a comma separated list of role names or IDs to add joinable roles, or reply with **N** to disable joinable roles.")).set_author(name=_('Joinable Roles'), icon_url=self.bot.user.avatar_url))
+        if join_roles:
+            join_roles = [guild.get_role(x) for x in join_roles]
+            join_roles = [x.mention for x in join_roles]
+            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=(", ").join(join_roles)).set_author(name=_("Current Joinable Roles"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        while True:
+            try:
+                rolereply = await self.wait_for_msg(ctx.configure_channel, ctx.author)
+            except asyncio.TimeoutError:
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG TIMEOUT!**\n\nNo changes have been made.')))
+                await self.end_configure(ctx)
+                return None
+            if rolereply.content.lower() == 'n':
+                config_dict_temp['want']['roles'] = []
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('Joinable Roles disabled!')))
+                break
+            elif rolereply.content.lower() == 'cancel':
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                await self.end_configure(ctx)
+                return None
+            else:
+                rolesreplylist = rolereply.content.split(",")
+                rolesreplylist = [x.strip() for x in rolesreplylist]
+                role_list = []
+                error_list = []
+                for item in rolesreplylist:
+                    role = None
+                    if item.isdigit():
+                        role = discord.utils.get(guild.roles, id=int(item))
+                    if not role:
+                        name = await utils.letter_case(guild.roles, item.lower())
+                        role = discord.utils.get(guild.roles, name=name)
+                    if not role:
+                        error_list.append(item)
+                    else:
+                        role_list.append(role.id)
+                if error_list:
+                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=f"I couldn't find the following roles: {(', ').join(error_list)}"))
+                config_dict_temp['want']['roles'] = role_list
+                break
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
