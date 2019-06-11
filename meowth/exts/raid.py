@@ -1222,8 +1222,8 @@ class Raid(commands.Cog):
                         if "assume" in pokemon_or_level:
                             assume = "assume "
                             pokemon_or_level = pkmn_class.Pokemon.get_pokemon(self.bot, location)
-                        location = self.bot.guild_dict[message.channel.guild.id]['raidchannel_dict'][ctx.channel.id]['address']
-                        content = f"{assume}{pokemon_or_level} {location}"
+                        address = self.bot.guild_dict[message.channel.guild.id]['raidchannel_dict'][ctx.channel.id]['address']
+                        content = f"{assume}{pokemon_or_level} {location} {address}"
                         new_channel = await self._raid(ctx, content)
                         ctx.raid_channel = new_channel
                         return
