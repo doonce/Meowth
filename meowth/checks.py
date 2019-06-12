@@ -94,6 +94,8 @@ def check_citychannel(ctx):
     channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('wild', {}).get('report_channels', {}).keys()])
     channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('research', {}).get('report_channels', {}).keys()])
     channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).get('report_channels', [])])
+    channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('lure', {}).get('report_channels', {}).keys()])
+    channel_list.extend([x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('pvp', {}).get('report_channels', {}).keys()])
     return channel.id in channel_list
 
 def check_raidset(ctx):
@@ -357,6 +359,19 @@ def allowraidreport():
             raise errors.GuildCheckFail()
         if check_raidset(ctx):
             if check_raidreport(ctx) or check_tutorialchannel(ctx) or (check_eggchannel(ctx) and check_raidchannel(ctx)):
+                return True
+            else:
+                raise errors.RegionEggChannelCheckFail()
+        else:
+            raise errors.RaidSetCheckFail()
+    return commands.check(predicate)
+
+def allowtrainreport():
+    def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
+        if check_raidset(ctx):
+            if check_raidreport(ctx) or check_tutorialchannel(ctx) or check_eggchannel(ctx) or check_raidchannel(ctx):
                 return True
             else:
                 raise errors.RegionEggChannelCheckFail()

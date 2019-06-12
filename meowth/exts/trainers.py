@@ -96,6 +96,9 @@ class Trainers(commands.Cog):
                 member_found = False
                 for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
                     search_list = []
+                    user = ctx.guild.get_member(trainer)
+                    search_list.append(user.name.lower())
+                    search_list.append(user.display_name.lower())
                     pbid = str(self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pokebattlerid', "")).lower()
                     if pbid:
                         search_list.append(pbid)
@@ -163,8 +166,14 @@ class Trainers(commands.Cog):
         roles = [x.mention for x in sorted(member.roles, reverse=True) if ctx.guild.id != x.id]
         embed = discord.Embed(title=_("{member}\'s Trainer Profile").format(member=member.display_name), colour=member.colour)
         embed.set_thumbnail(url=member.avatar_url)
-        phone_emoji = "\U0001F4F1"
-        embed.set_footer(text=f"User Registered: {member.created_at.strftime(_('%b %d, %Y %I:%M %p'))} | Status: {str(member.status).title()} {phone_emoji if member.is_on_mobile() else ''}")
+        status_emoji = ""
+        if str(member.web_status) == "online":
+            status_emoji = "\U0001F310"
+        if (member.desktop_status) == "online":
+            status_emoji = "\U0001F4BB"
+        if member.is_on_mobile():
+            status_emoji = "\U0001F4F1"
+        embed.set_footer(text=f"User Registered: {member.created_at.strftime(_('%b %d, %Y %I:%M %p'))} | Status: {str(member.status).title()} {status_emoji}")
         embed.add_field(name=_("Silph Road"), value=silph, inline=True)
         embed.add_field(name=_("Pokebattler"), value=pokebattler, inline=True)
         embed.add_field(name=_("Trainer Code"), value=trainercode, inline=True)

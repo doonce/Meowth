@@ -781,8 +781,8 @@ class Pokedex(commands.Cog):
             self.bot.pkmn_info = pkmn_info
             Pokemon.generate_lists(self.bot)
             pkmn_embed.clear_fields()
-            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current Settings**:\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}", inline=False)
-            confirmation = await channel.send(embed=pkmn_embed, delete_after=10)
+            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {pokemon.name.title()} Settings**:\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}", inline=False)
+            confirmation = await channel.send(embed=pkmn_embed)
             await utils.safe_delete(message)
 
     @commands.command(hidden=True)

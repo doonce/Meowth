@@ -62,14 +62,61 @@ class Raid(commands.Cog):
                     return
                 await message.edit(embed=newembed)
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['moveset'] = moveset
-                await message.remove_reaction(payload.emoji, user)
             elif message.id == self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('raidmessage', None):
                 if str(payload.emoji) == '\u2754':
                     prefix = self.bot.guild_dict[guild.id]['configure_dict']['settings']['prefix']
                     prefix = prefix or self.bot.config['default_prefix']
                     avatar = self.bot.user.avatar_url
                     await utils.get_raid_help(prefix, avatar, user)
-                await message.remove_reaction(payload.emoji, user)
+            elif message.id in self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('next_trains', {}).keys():
+                if str(payload.emoji) == self.bot.config.get('train_emoji', "\U0001F682"):
+                    next_train = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['next_trains'][message.id]
+                    if user.id == next_train['author']:
+                        return
+                    next_channel = self.bot.get_channel(next_train['channel'])
+                    teamcounts = ""
+                    def get_teamcounts(raid_channel, trainer, lobby):
+                        total = lobby[trainer]['count']
+                        mystic = lobby[trainer]['party']['mystic']
+                        valor = lobby[trainer]['party']['valor']
+                        instinct = lobby[trainer]['party']['instinct']
+                        unknown = lobby[trainer]['party']['unknown']
+                        return f"{total} {mystic}m {valor}v {instinct}i {unknown}u"
+                    for trainer in self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['trainer_dict']:
+                        if trainer == user.id:
+                            teamcounts = get_teamcounts(channel, trainer, self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['trainer_dict'])
+                            break
+                    if not teamcounts:
+                        for trainer in self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('lobby', {}).get('starting_dict', {}):
+                            if trainer == user.id:
+                                teamcounts = get_teamcounts(channel, trainer, self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('lobby', {}).get('starting_dict', {}))
+                                break
+                    if not teamcounts:
+                        for lobby in self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('battling', []):
+                            for trainer in lobby['starting_dict']:
+                                if trainer == user.id:
+                                    teamcounts = get_teamcounts(channel, trainer, lobby['starting_dict'])
+                                    break
+                    if not teamcounts:
+                        for lobby in self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('completed', []):
+                            for trainer in lobby['starting_dict']:
+                                if trainer == user.id:
+                                    teamcounts = get_teamcounts(channel, trainer, lobby['starting_dict'])
+                                    break
+                    if not teamcounts:
+                        teamcounts = "1"
+                    teamcounts = teamcounts.split()
+                    ctx = await self.bot.get_context(message)
+                    ctx.author = user
+                    ctx.channel = next_channel
+                    result = await self._party_status(ctx, int(teamcounts.pop(0)), (' ').join(teamcounts))
+                    if isinstance(result, list):
+                        count = result[0]
+                        partylist = result[1]
+                        await self._coming(next_channel, user, count, partylist)
+                        await asyncio.sleep(1)
+                        self.bot.guild_dict[guild.id]['raidchannel_dict'][next_channel.id]['trainer_dict'][user.id]['train'] = True
+            await message.remove_reaction(payload.emoji, user)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -839,7 +886,7 @@ class Raid(commands.Cog):
         else:
             raid_embed.clear_fields()
             raid_embed.add_field(name=_('**Boss Edit Completed**'), value=_("Meowth! Your edit completed successfully.").format(error=error), inline=False)
-            confirmation = await channel.send(embed=raid_embed, delete_after=10)
+            confirmation = await channel.send(embed=raid_embed, delete_after=90)
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
             tmp = data['raid_eggs'][edit_level]['pokemon']
@@ -1005,7 +1052,7 @@ class Raid(commands.Cog):
         else:
             raid_embed.clear_fields()
             raid_embed.add_field(name=_('**Time Edit Completed**'), value=_("Meowth! Your edit completed successfully.").format(error=error), inline=False)
-            confirmation = await channel.send(embed=raid_embed, delete_after=10)
+            confirmation = await channel.send(embed=raid_embed, delete_after=90)
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
             if edit_level.lower() == "all":
@@ -1834,6 +1881,7 @@ class Raid(commands.Cog):
         dm_dict = eggdetails.get('dm_dict', {})
         ctrs_dict = eggdetails.get('ctrs_dict', {})
         ctrsmessage_id = eggdetails.get('ctrsmessage', None)
+        next_trains = eggdetails.get('next_trains', None)
         if not author:
             try:
                 raid_messageauthor = raid_message.mentions[0]
@@ -1960,6 +2008,7 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['gymhuntrgps'] = gymhuntrgps
+        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['next_trains'] = next_trains
         if str(egglevel) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and str(pokemon) and not ctrsmessage:
             ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), weather)
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
@@ -2382,6 +2431,169 @@ class Raid(commands.Cog):
         await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time that the event starts with **!starttime <date and time>** and also set the time that the event ends using **!timerset <date and time>**. You can also set the title of the event using **!meetup <title>**.').format(member=message.author.mention))
         self.bot.loop.create_task(self.expiry_check(raid_channel))
 
+    @commands.command()
+    @checks.allowtrainreport()
+    async def train(self, ctx, *, channel_or_gym=None):
+        """Report an ongoing raid train.
+
+        Usage: !train [channel or location]
+        Starts a raid train if used in a reporting channel. Continues
+        a raid train if used in a raid channel."""
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        train_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1')
+        train_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        active_trains = []
+        train_msg = ""
+        for raid_channel in self.bot.guild_dict[guild.id]['raidchannel_dict']:
+            for trainer in self.bot.guild_dict[guild.id]['raidchannel_dict'][raid_channel]['trainer_dict']:
+                if self.bot.guild_dict[guild.id]['raidchannel_dict'][raid_channel]['trainer_dict'][trainer].get('train', False):
+                    raid_channel = self.bot.get_channel(raid_channel)
+                    active_trains.append(raid_channel.mention)
+                    break
+        def check(reply):
+            if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                return True
+            else:
+                return False
+        if active_trains:
+            train_msg = "\n\nThere are active trains that you can join in the following channels:\n{active_trains}\n\n".format(active_trains=('\n').join(active_trains))
+        while True:
+            async with ctx.typing():
+                if not channel_or_gym:
+                    train_embed.add_field(name=_('**New Raid Train Report**'), value=f"Meowth! I'll help you report a raid train!\n\nFirst, I'll need to know what **channel of location** you'd like to start the raid train at. Reply with the name of a **location** or **channel mention**.{train_msg}You can reply with **cancel** to stop anytime.", inline=False)
+                    channel_or_gym_wait = await channel.send(embed=train_embed)
+                    try:
+                        channel_or_gym_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        channel_or_gym_msg = None
+                    await utils.safe_delete(channel_or_gym_wait)
+                    if not channel_or_gym_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(channel_or_gym_msg)
+                    if channel_or_gym_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    else:
+                        channel_or_gym = channel_or_gym_msg.content.lower()
+                converter = commands.TextChannelConverter()
+                try:
+                    channel_or_gym = await converter.convert(ctx, channel_or_gym)
+                except Exception as e:
+                    gym_matching_cog = self.bot.cogs.get('GymMatching')
+                    gym_info = ""
+                    location = ""
+                    if gym_matching_cog:
+                        gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, str(channel_or_gym), "raid", dupe_check=False)
+                    if location:
+                        channel_or_gym = location
+                    for raid_channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
+                        raid_channel = self.bot.get_channel(raid_channel)
+                        raid_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['address']
+                        raid_type = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['type']
+                        raid_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['egglevel']
+                        if channel_or_gym == raid_address and raid_type != "exraid" and raid_level != "EX":
+                            channel_or_gym = raid_channel
+                            break
+                        else:
+                            channel_or_gym = None
+                    if not channel_or_gym:
+                        error = _("entered an invalid location or channel")
+                        break
+                if channel_or_gym == ctx.channel:
+                    error = _("entered this channel")
+                    break
+                if checks.check_raidreport(ctx):
+                    train_embed.clear_fields()
+                    train_embed.add_field(name=_('**New Raid Train Report**'), value=f"Great! Now, reply with your **party and team counts** `Ex: 5 2m 2v 1i` or reply with **1** if it's just you. You can reply with **cancel** to stop anytime.", inline=False)
+                    party_wait = await channel.send(embed=train_embed)
+                    try:
+                        party_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        party_msg = None
+                    await utils.safe_delete(party_wait)
+                    if not party_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(party_msg)
+                    if party_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif party_msg:
+                        teamcounts = party_msg.clean_content.lower().split()
+                        if not teamcounts[0].isdigit():
+                            error = _("entered an invalid party count")
+                            break
+                        result = await self._party_status(ctx, int(teamcounts.pop(0)), (' ').join(teamcounts))
+                        if isinstance(result, list):
+                            count = result[0]
+                            partylist = result[1]
+                            await self._coming(channel_or_gym, ctx.author, count, partylist)
+                            train_embed.clear_fields()
+                            train_embed.add_field(name=_('**New Raid Train Report**'), value=_("Meowth! Your raid train has been started in {raid_channel}").format(raid_channel=channel_or_gym.mention), inline=False)
+                            confirmation = await channel.send(embed=train_embed, delete_after=10)
+                            await utils.safe_delete(message)
+                            await asyncio.sleep(1)
+                            self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'][author.id]['train'] = True
+                            return
+                elif checks.check_raidchannel(ctx) and not checks.check_exraidchannel(ctx) and not checks.check_meetupchannel(ctx):
+                    train_emoji = self.bot.config.get('train_emoji', "\U0001F682")
+                    train_msg = await ctx.send(f"Meowth! {ctx.author.mention} wants to keep this **raid train** moving in {channel_or_gym.mention}!\n\nReact to this message with {train_emoji} to automatically RSVP in {channel_or_gym.mention} with your current party.")
+                    await utils.safe_reaction(train_msg, train_emoji)
+                    teamcounts = ""
+                    def get_teamcounts(raid_channel, trainer, lobby):
+                        total = lobby[trainer]['count']
+                        mystic = lobby[trainer]['party']['mystic']
+                        valor = lobby[trainer]['party']['valor']
+                        instinct = lobby[trainer]['party']['instinct']
+                        unknown = lobby[trainer]['party']['unknown']
+                        return f"{total} {mystic}m {valor}v {instinct}i {unknown}u"
+                    for trainer in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']:
+                        if trainer == ctx.author.id:
+                            teamcounts = get_teamcounts(ctx.channel, trainer, self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'])
+                            break
+                    if not teamcounts:
+                        for trainer in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('lobby', {}).get('starting_dict', {}):
+                            if trainer == ctx.author.id:
+                                teamcounts = get_teamcounts(ctx.channel, trainer, self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('lobby', {}).get('starting_dict', {}))
+                                break
+                    if not teamcounts:
+                        for lobby in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('battling', []):
+                            for trainer in lobby['starting_dict']:
+                                if trainer == ctx.author.id:
+                                    teamcounts = get_teamcounts(ctx.channel, trainer, lobby['starting_dict'])
+                                    break
+                    if not teamcounts:
+                        for lobby in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('completed', []):
+                            for trainer in lobby['starting_dict']:
+                                if trainer == ctx.author.id:
+                                    teamcounts = get_teamcounts(ctx.channel, trainer, lobby['starting_dict'])
+                                    break
+                    if not teamcounts:
+                        teamcounts = "1"
+                    teamcounts = teamcounts.split()
+                    result = await self._party_status(ctx, int(teamcounts.pop(0)), (' ').join(teamcounts))
+                    if isinstance(result, list):
+                        count = result[0]
+                        partylist = result[1]
+                        await self._coming(channel_or_gym, ctx.author, count, partylist)
+                        await asyncio.sleep(1)
+                        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'][author.id]['train'] = True
+                        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('next_trains', {})[train_msg.id] = {'author':ctx.author.id, 'channel':channel_or_gym.id}
+                        return
+        if error:
+            train_embed.clear_fields()
+            train_embed.add_field(name=_('**Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=train_embed, delete_after=10)
+            await utils.safe_delete(message)
+
     """
     Raid Channel Management
     """
@@ -2443,24 +2655,27 @@ class Raid(commands.Cog):
                 raidlevel = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['egglevel']
                 raidtype = _('Raid Egg')
                 maxtime = self.bot.raid_info['raid_eggs'][raidlevel]['hatchtime']
+                msg = _("Did you mean egg hatch time {0} or time remaining before hatch {1}?").format("🥚", "⏲")
+                react_list = ['🥚', '⏲']
             else:
                 raidlevel = utils.get_level(self.bot, self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['pokemon'])
                 raidtype = _('Raid')
                 maxtime = self.bot.raid_info['raid_eggs'][raidlevel]['raidtime']
+                msg = _("Did you mean raid end time {0} or time remaining before end {1}?").format("💨", "⏲")
+                react_list = ['💨', '⏲']
             if timer.isdigit():
                 raidexp = int(timer)
-            elif type == 'egg' and ':' in timer:
-                msg = _("Did you mean egg hatch time {0} or time remaining before hatch {1}?").format("🥚", "⏲")
+            elif ':' in timer:
                 question = await ctx.channel.send(msg)
                 try:
                     timeout = False
-                    res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id, react_list=['🥚', '⏲'])
+                    res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id, react_list=react_list)
                 except TypeError:
                     timeout = True
                 await utils.safe_delete(question)
                 if timeout or res.emoji == '⏲':
                     hourminute = True
-                elif res.emoji == '🥚':
+                elif res.emoji == '🥚' or res.emoji == '💨':
                     now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset'])
                     start = dateparser.parse(timer)
                     if now.hour > 12 and start.hour < 12 and "m" not in timer:
@@ -3954,7 +4169,7 @@ class Raid(commands.Cog):
                 a = _('Team counts are higher than the total, double check your counts and try again. You entered **')
                 b = _('** total and **')
                 c = _('** in your party.')
-                return await channel.send(((( a + str(total)) + b) + str(team_total)) + c)
+                return await channel.send(((( a + str(total)) + b) + str(team_total)) + c, delete_after=10)
             if int(total) > int(team_total):
                 if team_aliases[my_team][1]:
                     if unknown[1]:
@@ -3992,6 +4207,8 @@ class Raid(commands.Cog):
             for status in status_list:
                 if trainer_dict[trainer]['status'][status]:
                     channel_dict[status] += int(trainer_dict[trainer]['count'])
+            if trainer_dict[trainer].get('train', False):
+                channel_dict['train'] = True
             if egglevel != "0":
                 for boss in boss_list:
                     if boss.lower() in trainer_dict[trainer].get('interest', []):

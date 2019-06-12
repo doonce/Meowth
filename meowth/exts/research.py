@@ -397,7 +397,12 @@ class Research(commands.Cog):
         if not research_dict:
             return
         if report_message and int(report_message) in research_dict.keys():
-            report_message = await channel.fetch_message(report_message)
+            try:
+                report_message = await channel.fetch_message(report_message)
+            except:
+                await utils.expire_dm_reports(self.bot, research_dict[report_message].get('dm_dict', {}))
+                del self.bot.guild_dict[guild.id]['questreport_dict'][report_message]
+                return
             await self.expire_research(report_message)
             return
         rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all research reports?'))
@@ -413,7 +418,12 @@ class Research(commands.Cog):
         elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
             await utils.safe_delete(rusure)
             for report in research_dict:
-                report_message = await channel.fetch_message(report)
+                try:
+                    report_message = await channel.fetch_message(report)
+                except:
+                    await utils.expire_dm_reports(self.bot, research_dict[report].get('dm_dict', {}))
+                    del self.bot.guild_dict[guild.id]['questreport_dict'][report]
+                    return
                 self.bot.loop.create_task(self.expire_research(report_message))
             confirmation = await channel.send(_('Research reset.'), delete_after=10)
             return

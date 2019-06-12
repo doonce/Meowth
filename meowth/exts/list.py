@@ -96,6 +96,10 @@ class Listing(commands.Cog):
                             assumed_str = _(' (assumed)')
                         else:
                             assumed_str = ''
+                        if channel_dict.get('train', False):
+                            train_str = "{train_emoji} - ".format(train_emoji=self.bot.config.get('train_emoji', '\U0001F682'))
+                        else:
+                            train_str = ''
                         starttime = rc_d[r].get('starttime', None)
                         meetup = rc_d[r].get('meetup', {})
                         if starttime and starttime > now and not meetup:
@@ -103,9 +107,9 @@ class Listing(commands.Cog):
                         else:
                             starttime = False
                         if rc_d[r]['egglevel'].isdigit() and (int(rc_d[r]['egglevel']) > 0):
-                            expirytext = _(' - Hatches: {expiry}{is_assumed}').format(expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                            expirytext = _(' - {train_str}Hatches: {expiry}{is_assumed}').format(train_str=train_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
                         elif ((rc_d[r]['egglevel'] == 'EX') or (rc_d[r]['type'] == 'exraid')) and not meetup:
-                            expirytext = _(' - Hatches: {expiry}{is_assumed}').format(expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                            expirytext = _(' - {train_str}Hatches: {expiry}{is_assumed}').format(train_str=train_str, expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
                         elif meetup:
                             meetupstart = meetup['start']
                             meetupend = meetup['end']
@@ -121,7 +125,7 @@ class Listing(commands.Cog):
                             pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
                             if pokemon:
                                 type_str = pokemon.emoji
-                            expirytext = _('{type_str} - Expires: {expiry}{is_assumed}').format(type_str=type_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                            expirytext = _('{type_str} - {train_str}Expires: {expiry}{is_assumed}').format(type_str=type_str, train_str=train_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
                         output += f"{rchan.mention}{expirytext}"
                         if channel_dict['total']:
                             output += f"\n**Total: {channel_dict['total']}**"
