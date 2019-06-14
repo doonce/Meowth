@@ -97,6 +97,8 @@ class Trainers(commands.Cog):
                 for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
                     search_list = []
                     user = ctx.guild.get_member(trainer)
+                    if not user:
+                        continue
                     search_list.append(user.name.lower())
                     search_list.append(user.display_name.lower())
                     pbid = str(self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pokebattlerid', "")).lower()

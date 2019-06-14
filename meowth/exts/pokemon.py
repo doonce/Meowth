@@ -7,12 +7,13 @@ import datetime
 import dateparser
 import textwrap
 import logging
-import aiohttp
 import os
 import json
 import functools
+import urllib
 from dateutil.relativedelta import relativedelta
 from string import ascii_lowercase
+from math import log, floor
 
 import discord
 from discord.ext import commands, tasks
@@ -74,7 +75,10 @@ class Pokemon():
 
     __slots__ = ('name', 'id', 'types', 'emoji', 'bot', 'guild', 'pkmn_list',
                  'pb_raid', 'weather', 'moveset', 'form', 'shiny', 'gender',
-                 'alolan', 'size', 'legendary', 'mythical')
+                 'alolan', 'size', 'legendary', 'mythical', 'base_stamina',
+                 'base_attack', 'base_defense', 'charge_moves', 'quick_moves',
+                 'height', 'weight', 'evolves', 'evolve_candy', 'buddy_distance',
+                 'research_cp', 'raid_cp', 'boost_raid_cp', 'max_cp')
 
     def generate_lists(bot):
         available_dict = {}
@@ -128,6 +132,9 @@ class Pokemon():
         bot.mythical_list = mythical_list
         bot.form_dict = form_dict
         bot.shiny_dict = shiny_dict
+        with urllib.request.urlopen("http://raw.githubusercontent.com/ZeChrales/PogoAssets/master/gamemaster/gamemaster.json") as url:
+            data = json.loads(url.read().decode())
+            bot.gamemaster = data
 
     def __init__(self, bot, pkmn, guild=None, **attribs):
         self.bot = bot
@@ -135,7 +142,6 @@ class Pokemon():
         self.pkmn_list = bot.pkmn_list
         if pkmn.isdigit():
             pkmn = utils.get_name(bot, pkmn)
-
         self.name = pkmn
         if pkmn not in self.pkmn_list:
             raise PokemonNotFound(pkmn)
@@ -170,6 +176,31 @@ class Pokemon():
             self.gender = None
         self.types = self._get_type()
         self.emoji = self._get_emoji()
+        template = {}
+        search_term = ""
+        search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}".lower()
+        excluded_forms = list(self.bot.pkmn_info['pikachu']['forms'].keys()) + list(self.bot.pkmn_info['unown']['forms'].keys()) + list(self.bot.pkmn_info['spinda']['forms'].keys()) + ["sunglasses"]
+        if self.form and not self.alolan and self.form not in excluded_forms:
+            search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}_{self.form.strip()}".lower()
+        if self.alolan:
+            search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}_alola".lower()
+        for template in self.bot.gamemaster['itemTemplates']:
+            if search_term in template['templateId'].lower() and "form" not in template['templateId'].lower() and "spawn" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
+                break
+        self.base_stamina = template.get('pokemonSettings', {}).get('stats', {}).get('baseStamina', None)
+        self.base_attack = template.get('pokemonSettings', {}).get('stats', {}).get('baseAttack', None)
+        self.base_defense = template.get('pokemonSettings', {}).get('stats', {}).get('baseDefense', None)
+        self.charge_moves = template.get('pokemonSettings', {}).get('cinematicMoves', None)
+        self.quick_moves = template.get('pokemonSettings', {}).get('quickMoves', None)
+        self.height = template.get('pokemonSettings', {}).get('pokedexHeightM', None)
+        self.weight = template.get('pokemonSettings', {}).get('pokedexWeightKg', None)
+        self.evolves = template.get('pokemonSettings', {}).get('evolutionIds', None)
+        self.evolve_candy = template.get('pokemonSettings', {}).get('candyToEvolve', None)
+        self.buddy_distance = template.get('pokemonSettings', {}).get('kmBuddyDistance', None)
+        self.research_cp = f"{self._get_cp(15, 10, 10, 10)} - {self._get_cp(15, 15, 15, 15)}"
+        self.raid_cp = f"{self._get_cp(20, 10, 10, 10)} - {self._get_cp(20, 15, 15, 15)}"
+        self.boost_raid_cp = f"{self._get_cp(25, 10, 10, 10)} - {self._get_cp(25, 15, 15, 15)}"
+        self.max_cp = f"{self._get_cp(40, 0, 0, 0)} - {self._get_cp(40, 15, 15, 15)}"
 
     def __str__(self):
         name = self.name.title()
@@ -386,6 +417,25 @@ class Pokemon():
             except (IndexError, ValueError):
                 ret += f":{type.lower()}:"
         return ret
+
+    def _get_cp(self, level, attack, defense, stamina):
+        if not all([self.base_attack, self.base_defense, self.base_stamina]):
+            return None
+        if level == 15:
+            cpm = 0.51739395
+        elif level == 20:
+            cpm = 0.5974
+        elif level == 25:
+            cpm = 0.667934
+        elif level == 40:
+            cpm = 0.7903
+        attack = (self.base_attack + attack)*cpm
+        defense = (self.base_defense + defense)*cpm
+        stamina = (self.base_stamina + stamina)*cpm
+        cp = floor((attack*defense**0.5*stamina**0.5)/10)
+        if cp < 10:
+            cp = 10
+        return cp
 
     @property
     def type_effects(self):
@@ -788,11 +838,10 @@ class Pokedex(commands.Cog):
     @commands.command(hidden=True)
     async def sprite(self, ctx, *, sprite: Pokemon):
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
-        await ctx.send(sprite.img_url)
         preview_embed.set_image(url=sprite.img_url)
         sprite_msg = await ctx.send(embed=preview_embed)
 
-    @commands.command(hidden=True, aliases=['dex'])
+    @commands.group(hidden=True, aliases=['dex'], invoke_without_command=True, case_insensitive=True)
     async def pokedex(self, ctx, *, pokemon: Pokemon):
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
         pokemon.gender = False
@@ -821,11 +870,64 @@ class Pokedex(commands.Cog):
         if len(forms) > 1 or key_needed:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
         if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:
-            preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"], inline=False)
-        if pokemon.id in ctx.bot.legendary_list:
-            preview_embed.add_field(name="Legendary:", value=pokemon.id in ctx.bot.legendary_list, inline=True)
-        if pokemon.id in ctx.bot.mythical_list:
-            preview_embed.add_field(name="Mythical:", value=pokemon.id in ctx.bot.mythical_list, inline=True)
+            preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"])
+        if pokemon.id in ctx.bot.legendary_list or pokemon.id in ctx.bot.mythical_list:
+            preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.id in ctx.bot.mythical_list else 'Legendary'}")
+        if all([pokemon.research_cp, pokemon.raid_cp, pokemon.boost_raid_cp, pokemon.max_cp]):
+            preview_embed.add_field(name=f"{pokemon.name.title()} CP Reference by Level:", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**")
+        preview_embed.set_thumbnail(url=pokemon.img_url)
+        if key_needed:
+            preview_embed.set_footer(text="S = Shiny Available | G = Gender Differences")
+        pokedex_msg = await ctx.send(embed=preview_embed)
+
+    @pokedex.command(hidden=True)
+    async def stats(self, ctx, *, pokemon: Pokemon):
+        preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
+        pokemon.gender = False
+        pokemon.size = None
+        key_needed = False
+        forms = [x.title() for x in ctx.bot.pkmn_info[pokemon.name.lower()]['forms'].keys()]
+        if not forms:
+            forms = ["None"]
+        form_list = []
+        for form in forms:
+            form_str = ""
+            form_key = ""
+            if form.lower() in ctx.bot.shiny_dict.get(pokemon.id, []):
+                key_needed = True
+                form_key += "S"
+            if form.lower() in ctx.bot.gender_dict.get(pokemon.id, []):
+                key_needed = True
+                form_key += "G"
+            if "S" in form_key or "G" in form_key:
+                form_key = f"**({form_key})**"
+            if form == "None":
+                form = "Normal"
+            form_str = f"{form} {form_key}"
+            form_list.append(form_str.strip())
+        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji}", value=pokemon.pokedex, inline=False)
+        if len(forms) > 1 or key_needed:
+            preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
+        if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:
+            preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"])
+        if pokemon.id in ctx.bot.legendary_list or pokemon.id in ctx.bot.mythical_list:
+            preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.id in ctx.bot.mythical_list else 'Legendary'}")
+        if all([pokemon.research_cp, pokemon.raid_cp, pokemon.boost_raid_cp, pokemon.max_cp]):
+            preview_embed.add_field(name=f"{pokemon.name.title()} CP Reference by Level:", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**")
+        if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
+            preview_embed.add_field(name="Base Stats", value=f"Attack: **{pokemon.base_attack}** | Defense: **{pokemon.base_defense}** | Stamina: **{pokemon.base_stamina}**\n")
+        field_value = ""
+        if pokemon.height and pokemon.weight:
+            field_value += f"Height: **{round(pokemon.height, 3)}m** | Weight: **{round(pokemon.weight, 3)}kg**\n"
+        if pokemon.evolve_candy:
+            field_value += f"Evolution Candy: **{pokemon.evolve_candy}**\n"
+        if pokemon.buddy_distance:
+            field_value += f"Buddy Distance: **{pokemon.buddy_distance}km**\n"
+        if pokemon.charge_moves and pokemon.quick_moves:
+            charge_moves = [x.replace('_', ' ').title() for x in pokemon.charge_moves]
+            quick_moves = [x.replace('_', ' ').title() for x in pokemon.quick_moves]
+            field_value += f"Quick Moves: **{(', ').join(quick_moves)}**\nCharge Moves: **{(', ').join(charge_moves)}**"
+        preview_embed.add_field(name="Other Info:", value=field_value)
         preview_embed.set_thumbnail(url=pokemon.img_url)
         if key_needed:
             preview_embed.set_footer(text="S = Shiny Available | G = Gender Differences")
