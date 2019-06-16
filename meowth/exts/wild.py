@@ -53,6 +53,21 @@ class Wild(commands.Cog):
                             despawn = _("has despawned")
                             await channel.send(f"{', '.join(wild_dict['omw'])}: {wild_dict['pokemon'].title()} {despawn}!")
                         await self.expire_wild(message)
+            elif str(payload.emoji) == self.bot.config.get('wild_catch', '\u26BE'):
+                if user.id not in wild_dict.get('bonus', []):
+                    if user.id != wild_dict['reportauthor']:
+                        wild_dict.get('bonus', []).append(user.id)
+                    if user.mention in wild_dict['omw']:
+                        wild_dict['omw'].remove(user.mention)
+                        await message.remove_reaction(self.bot.config.get('wild_omw', '\U0001F3CE'), user)
+                await message.remove_reaction(payload.emoji, user)
+            elif str(payload.emoji) == self.bot.config.get('wild_info', '\u2139'):
+                ctx = await self.bot.get_context(message)
+                if not ctx.prefix:
+                    prefix = self.bot._get_prefix(self.bot, message)
+                    ctx.prefix = prefix[-1]
+                await message.remove_reaction(payload.emoji, user)
+                await self.add_wild_info(ctx, message)
 
     @tasks.loop(seconds=0)
     async def wild_cleanup(self, loop=True):
@@ -114,18 +129,227 @@ class Wild(commands.Cog):
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
         await utils.expire_dm_reports(self.bot, wild_dict.get(message.id, {}).get('dm_dict', {}))
+        wild_bonus = self.bot.guild_dict[guild.id]['wildreport_dict'][message.id].get('bonus', [])
+        if len(wild_bonus) >= 5 and not message.author.bot:
+            wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wild_reports', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports
         try:
             del self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
         except KeyError:
             pass
 
-    async def send_dm_messages(self, ctx, wild_number, wild_details, wild_type_1, wild_type_2, wild_iv, content, embed, dm_dict):
+    async def make_wild_embed(self, ctx, details):
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        gender = details.get('gender', None)
+        iv_long = details.get('iv_long', None)
+        wild_iv = details.get('wild_iv', None)
+        level = details.get('level', None)
+        cp = details.get('cp', None)
+        weather = details.get('weather', None)
+        height = details.get('height', None)
+        weight = details.get('weight', None)
+        moveset = details.get('moveset', None)
+        expire = details.get('expire', "45 min 0 sec")
+        pkmn_obj = details.get('pkmn_obj', None)
+        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn_obj)
+        location = details.get('location', None)
+        wild_gmaps_link = utils.create_gmaps_query(self.bot, location, ctx.channel, type="wild")
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        poi_info = ""
+        nearest_stop = ""
+        if gym_matching_cog:
+            poi_info, location, poi_url = await gym_matching_cog.get_poi_info(ctx, location, "wild")
+            if poi_url:
+                wild_gmaps_link = poi_url
+                wild_coordinates = poi_url.split("query=")[1]
+                nearest_stop = await gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), ctx.guild.id)
+        huntrexpstamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'], minutes=int(expire.split()[0]), seconds=int(expire.split()[2]))).strftime('%I:%M %p')
+        shiny_str = ""
+        if pokemon.id in self.bot.shiny_dict:
+            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+        details_str = f"{shiny_str}{pokemon.name.title()}"
+        if gender and "female" in gender.lower():
+            details_str += f" ♀"
+        elif gender and "male" in gender.lower():
+            details_str += f" ♂"
+        details_str += f" ({pokemon.id}) {pokemon.emoji}"
+        wild_embed = discord.Embed(description="", title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=pokemon.name.title()), url=wild_gmaps_link, colour=ctx.guild.me.colour)
+        if nearest_stop:
+            wild_embed.description = poi_info
+        wild_embed.add_field(name=_('**Details:**'), value=details_str, inline=True)
+        if iv_long or wild_iv or level or cp or weather:
+            wild_embed.add_field(name=f"**IV{' / Level' if level or cp or weather else ''}:**", value=f"{iv_long + ' (' if iv_long else ''}{str(wild_iv)+'%' if wild_iv else ''}{')' if iv_long else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {weather if weather else ''}", inline=True)
+        if height or weight or moveset:
+            wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height if height else ''} {'W: '+weight if weight else ''}\n{moveset if moveset else ''}", inline=True)
+        elif iv_long or wild_iv or level or cp or weather:
+            wild_embed.add_field(name=_('**Other Info (Base):**'), value=f"H: {round(pokemon.height, 2)}m W: {round(pokemon.weight, 2)}kg\n{ctx.prefix}dex stats {str(pokemon).lower()}", inline=True)
+        wild_embed.add_field(name=f"{'**Est. Despawn:**' if int(expire.split()[0]) == 45 and int(expire.split()[2]) == 0 else '**Despawns in:**'}", value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=expire.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
+        wild_embed.set_thumbnail(url=pokemon.img_url)
+        wild_embed.set_author(name=f"Wild {pokemon.name.title()} Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
+        omw_emoji = ctx.bot.config.get('wild_omw', '\U0001F3CE')
+        despawn_emoji = ctx.bot.config.get('wild_despawn', '\U0001F4A8')
+        info_emoji = ctx.bot.config.get('wild_info', '\u2139')
+        catch_emoji = ctx.bot.config.get('wild_catch', '\u26BE')
+        wild_embed.add_field(name='**Status Reactions:**', value=f"{omw_emoji}: I'm on my way!\n{catch_emoji}: I caught it!", inline=True)
+        wild_embed.add_field(name='**Spawn Reactions:**', value=f"{despawn_emoji}: The Pokemon despawned!\n{info_emoji}: Add wild details", inline=True)
+        wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
+        return wild_embed
+
+    async def add_wild_info(self, ctx, message):
+        wild_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'].get(message.id, {})
+        message = ctx.message
+        channel = message.channel
+        guild = message.guild
+        author = guild.get_member(wild_dict.get('reportauthor', None))
+        if not author:
+            return
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        level = wild_dict.get('level', None)
+        wild_iv = wild_dict.get('wild_iv', None)
+        cp = wild_dict.get('cp', None)
+        gender = wild_dict.get('gender', None)
+        if all([level, wild_iv, cp, gender]):
+            return
+        reply_msg = ""
+        if not wild_iv:
+            reply_msg += f"**iv <pokemon iv>**\n"
+        if not level:
+            reply_msg += f"**level <pokemon level>**\n"
+        if not gender:
+            reply_msg += f"**gender <male or female>**\n"
+        if not cp:
+            reply_msg += f"**cp <pokemon cp>**"
+        wild_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1')
+        wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        while True:
+            async with ctx.typing():
+                wild_embed.add_field(name=_('**Add Wild Info**'), value=f"Meowth! I'll help you add information to a wild! **NOTE:** Please make sure you are above level 30 before setting these.\n\nI'll need to know what **value** you'd like to add. Reply **cancel** to stop anytime or reply with __one__ of the following options `Ex: iv 100` to add that value:\n\n{reply_msg}", inline=False)
+                value_wait = await channel.send(embed=wild_embed)
+                def check(reply):
+                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == author:
+                        return True
+                    else:
+                        return False
+                try:
+                    value_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    value_msg = None
+                await utils.safe_delete(value_wait)
+                if not value_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(value_msg)
+                if value_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                else:
+                    value_split = value_msg.clean_content.lower().split()
+                    try:
+                        test_var = value_split[1]
+                    except IndexError:
+                        error = _("entered something invalid")
+                        break
+                if "cp" in value_msg.clean_content.lower() and not cp:
+                    if value_split[1] and value_split[1].isdigit():
+                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['cp'] = int(value_split[1])
+                    else:
+                        error = _("entered something invalid")
+                    break
+                elif "gender" in value_msg.clean_content.lower() and not gender:
+                    if value_split[1] and (value_split[1] == "male" or value_split[1] == "female"):
+                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['gender'] = value_split[1]
+                    else:
+                        error = _("entered something invalid")
+                    break
+                elif "iv" in value_msg.clean_content.lower() and not wild_iv:
+                    if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 100:
+                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv'] = int(value_split[1])
+                    else:
+                        error = _("entered something invalid")
+                    break
+                elif "level" in value_msg.clean_content.lower() and not level:
+                    if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 40:
+                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['level'] = int(value_split[1])
+                    else:
+                        error = _("entered something invalid")
+                    break
+                else:
+                    error = _("entered something invalid")
+                    break
+        if not error:
+            await self.edit_wild_messages(ctx, message)
+        else:
+            wild_embed.clear_fields()
+            wild_embed.add_field(name=_('**Wild Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=wild_embed, delete_after=10)
+
+    async def edit_wild_messages(self, ctx, message):
+        wild_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'].get(message.id, {})
+        dm_dict = wild_dict.get('dm_dict', {})
+        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict['pkmn_obj'])
+        wild_types = copy.deepcopy(pokemon.types)
+        wild_types.append('None')
+        wild_iv = wild_dict.get('wild_iv', None)
+        level = wild_dict.get('level', None)
+        old_embed = message.embeds[0]
+        wild_gmaps_link = old_embed.url
+        nearest_stop = wild_dict.get('location', None)
+        poi_info = wild_dict.get('poi_info')
+        wild_embed = await self.make_wild_embed(ctx, wild_dict)
+        print(1, wild_embed.to_dict())
+        content = message.content
+        if wild_dict.get('wild_iv') and "IV**" not in message.content:
+            content = message.content + f" - **{wild_dict.get('wild_iv')}IV**"
+        try:
+            await message.edit(content=content, embed=wild_embed)
+        except:
+            pass
+        if isinstance(wild_embed.description, discord.embeds._EmptyEmbed):
+            wild_embed.description = ""
+        if "Jump to Message" not in wild_embed.description:
+            wild_embed.description = wild_embed.description + f"\n**Report:** [Jump to Message]({message.jump_url})"
+        index = 0
+        for field in wild_embed.fields:
+            if "reaction" in field.name.lower():
+                wild_embed.remove_field(index)
+            else:
+                index += 1
+        for dm_user, dm_message in dm_dict.items():
+            try:
+                dm_user = self.bot.get_user(dm_user)
+                dm_channel = dm_user.dm_channel
+                if not dm_channel:
+                    dm_channel = await dm_user.create_dm()
+                if not dm_user or not dm_channel:
+                    continue
+                dm_message = await dm_channel.fetch_message(dm_message)
+                content = dm_message.content
+                if wild_dict.get('wild_iv') and "IV**" not in dm_message.content:
+                    content = dm_message.content + f" - **{wild_dict.get('wild_iv')}IV**"
+                await dm_message.edit(content=content, embed=wild_embed)
+            except:
+                pass
+        ctx.wildreportmsg = message
+        dm_dict = await self.send_dm_messages(ctx, pokemon.id, nearest_stop, wild_types[0], wild_types[1], wild_iv, level, content, copy.deepcopy(wild_embed), dm_dict)
+        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['dm_dict'] = dm_dict
+
+    async def send_dm_messages(self, ctx, wild_number, wild_details, wild_type_1, wild_type_2, wild_iv, wild_level, content, embed, dm_dict):
         if embed:
             if isinstance(embed.description, discord.embeds._EmptyEmbed):
                 embed.description = ""
-            embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.wildreportmsg.jump_url})"
-            embed.remove_field(len(embed.fields)-1)
-            embed.remove_field(len(embed.fields)-1)
+            if "Jump to Message" not in embed.description:
+                embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.wildreportmsg.jump_url})"
+            index = 0
+            for field in embed.fields:
+                if "reaction" in field.name.lower():
+                    embed.remove_field(index)
+                else:
+                    index += 1
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             if not checks.dm_check(ctx, trainer):
                 continue
@@ -135,7 +359,8 @@ class Wild(commands.Cog):
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
             user_ivs = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('ivs', [])
-            if wild_number in user_wants or wild_type_1.lower() in user_types or wild_type_2.lower() in user_types or wild_details.lower() in user_stops or wild_iv in user_ivs:
+            user_levels = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('levels', [])
+            if wild_number in user_wants or wild_type_1.lower() in user_types or wild_type_2.lower() in user_types or str(wild_details).lower() in user_stops or wild_iv in user_ivs or wild_level in user_levels:
                 try:
                     user = ctx.guild.get_member(trainer)
                     wilddmmsg = await user.send(content=content, embed=embed)
@@ -245,7 +470,7 @@ class Wild(commands.Cog):
             await self._wild(ctx, content)
         else:
             wild_embed.clear_fields()
-            wild_embed.add_field(name=_('**Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            wild_embed.add_field(name=_('**Wild Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=wild_embed, delete_after=10)
             await utils.safe_delete(message)
 
@@ -261,7 +486,6 @@ class Wild(commands.Cog):
         else:
             await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**'), delete_after=10)
             return
-
         for word in match_list:
             content = re.sub(word, "", content)
         wild_details = content.strip()
@@ -301,30 +525,26 @@ class Wild(commands.Cog):
             stop_str = f" | Nearest Pokestop: {nearest_stop}{iv_str}"
         else:
             stop_str = iv_str
-        shiny_str = ""
-        if pokemon.id in self.bot.shiny_dict:
-            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-        wild_embed = discord.Embed(title=_('Meowth! Click here for my directions to the wild {pokemon}!').format(pokemon=pokemon.name.title()), description=_("Ask {author} if my directions aren't perfect!").format(author=message.author.name), url=wild_gmaps_link, colour=message.guild.me.colour)
-        if nearest_stop:
-            wild_embed.description = poi_info
-        wild_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=False)
-        wild_embed.set_thumbnail(url=pokemon.img_url)
-        wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
-        despawn = 3600
-        wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=self.bot.config.get('wild_omw', '\U0001F3CE')))
-        wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=self.bot.config.get('wild_despawn', '\U0001F4A8')))
-        wild_embed.set_author(name=f"Wild {pokemon.name.title()} Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
+        details = {
+            'pkmn_obj':str(pokemon),
+            'location': nearest_stop,
+            'expire':'45 min 0 sec',
+            'gender':pokemon.gender,
+            'wild_iv':wild_iv
+        }
+        despawn = 2700
+        wild_embed = await self.make_wild_embed(ctx, details)
         ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}{stop_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details, iv_str=iv_str, stop_str=stop_str), embed=wild_embed)
         dm_dict = {}
-        dm_dict = await self.send_dm_messages(ctx, pokemon.id, nearest_stop, wild_types[0], wild_types[1], wild_iv, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, pokemon.id, nearest_stop, wild_types[0], wild_types[1], wild_iv, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
         await utils.safe_reaction(ctx.wildreportmsg, self.bot.config.get('wild_omw', '\U0001F3CE'))
         await asyncio.sleep(0.25)
         await utils.safe_reaction(ctx.wildreportmsg, self.bot.config.get('wild_despawn', '\U0001F4A8'))
         await asyncio.sleep(0.25)
+        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.config.get('wild_catch', '\u26BE'))
+        await asyncio.sleep(0.25)
+        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.config.get('wild_info', '\u2139'))
         self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'exp':time.time() + despawn,
             'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
@@ -337,7 +557,11 @@ class Wild(commands.Cog):
             'pokemon':pokemon.name.lower(),
             'pkmn_obj':str(pokemon),
             'wild_iv':wild_iv,
-            'omw':[]
+            'level':None,
+            'cp':None,
+            'gender':pokemon.gender,
+            'omw':[],
+            'bonus':[]
         }
         wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wild_reports', 0) + 1
         self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports

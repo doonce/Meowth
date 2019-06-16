@@ -172,8 +172,6 @@ class Pokemon():
             self.legendary = False
             self.mythical = False
         self.gender = attribs.get('gender', None)
-        if self.id not in bot.gender_dict:
-            self.gender = None
         self.types = self._get_type()
         self.emoji = self._get_emoji()
         template = {}
@@ -197,10 +195,10 @@ class Pokemon():
         self.evolves = template.get('pokemonSettings', {}).get('evolutionIds', None)
         self.evolve_candy = template.get('pokemonSettings', {}).get('candyToEvolve', None)
         self.buddy_distance = template.get('pokemonSettings', {}).get('kmBuddyDistance', None)
-        self.research_cp = f"{self._get_cp(15, 10, 10, 10)} - {self._get_cp(15, 15, 15, 15)}"
-        self.raid_cp = f"{self._get_cp(20, 10, 10, 10)} - {self._get_cp(20, 15, 15, 15)}"
-        self.boost_raid_cp = f"{self._get_cp(25, 10, 10, 10)} - {self._get_cp(25, 15, 15, 15)}"
-        self.max_cp = f"{self._get_cp(40, 0, 0, 0)} - {self._get_cp(40, 15, 15, 15)}"
+        self.research_cp = f"{self._get_cp(15, 10, 10, 10)}-{self._get_cp(15, 15, 15, 15)}"
+        self.raid_cp = f"{self._get_cp(20, 10, 10, 10)}-{self._get_cp(20, 15, 15, 15)}"
+        self.boost_raid_cp = f"{self._get_cp(25, 10, 10, 10)}-{self._get_cp(25, 15, 15, 15)}"
+        self.max_cp = f"{self._get_cp(40, 10, 10, 10)}-{self._get_cp(40, 15, 15, 15)}"
 
     def __str__(self):
         name = self.name.title()
@@ -212,7 +210,7 @@ class Pokemon():
             name = 'Alolan ' + name
         if self.shiny:
             name = 'Shiny ' + name
-        if self.gender:
+        if self.gender and self.id in self.bot.gender_dict:
             name = str(self.gender).title() + ' ' + name
         return name
 
@@ -874,7 +872,7 @@ class Pokedex(commands.Cog):
         if pokemon.id in ctx.bot.legendary_list or pokemon.id in ctx.bot.mythical_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.id in ctx.bot.mythical_list else 'Legendary'}")
         if all([pokemon.research_cp, pokemon.raid_cp, pokemon.boost_raid_cp, pokemon.max_cp]):
-            preview_embed.add_field(name=f"{pokemon.name.title()} CP Reference by Level:", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**")
+            preview_embed.add_field(name=f"{pokemon.name.title()} CP by Level (Raids / Research):", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**")
         preview_embed.set_thumbnail(url=pokemon.img_url)
         if key_needed:
             preview_embed.set_footer(text="S = Shiny Available | G = Gender Differences")
@@ -913,13 +911,13 @@ class Pokedex(commands.Cog):
         if pokemon.id in ctx.bot.legendary_list or pokemon.id in ctx.bot.mythical_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.id in ctx.bot.mythical_list else 'Legendary'}")
         if all([pokemon.research_cp, pokemon.raid_cp, pokemon.boost_raid_cp, pokemon.max_cp]):
-            preview_embed.add_field(name=f"{pokemon.name.title()} CP Reference by Level:", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**")
+            preview_embed.add_field(name=f"{pokemon.name.title()} CP by Level (Raids / Research):", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**")
         if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
             preview_embed.add_field(name="Base Stats", value=f"Attack: **{pokemon.base_attack}** | Defense: **{pokemon.base_defense}** | Stamina: **{pokemon.base_stamina}**\n")
         field_value = ""
         if pokemon.height and pokemon.weight:
             field_value += f"Height: **{round(pokemon.height, 3)}m** | Weight: **{round(pokemon.weight, 3)}kg**\n"
-        if pokemon.evolve_candy:
+        if pokemon.evolves:
             field_value += f"Evolution Candy: **{pokemon.evolve_candy}**\n"
         if pokemon.buddy_distance:
             field_value += f"Buddy Distance: **{pokemon.buddy_distance}km**\n"

@@ -1843,9 +1843,9 @@ class Raid(commands.Cog):
             for boss in self.bot.raid_info['raid_eggs'][str(egglevel)]['pokemon']:
                 boss = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
                 if not boss or not pokemon:
-                    print("boss: "+boss)
-                    print("pokemon: "+pokemon)
-                    eggdetails['archive'] = True
+                    # print("boss: "+boss)
+                    # print("pokemon: "+pokemon)
+                    # self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = True
                     continue
                 if boss and boss.id == pokemon.id:
                     pokemon = boss
@@ -1857,11 +1857,6 @@ class Raid(commands.Cog):
             reportcity = reportcitychannel.name
         except (discord.errors.NotFound, AttributeError):
             reportcity = None
-        manual_timer = eggdetails['manual_timer']
-        trainer_dict = eggdetails['trainer_dict']
-        egg_address = eggdetails['address']
-        user_report = eggdetails['reportmessage']
-        weather = eggdetails.get('weather', None)
         raid_message = await raid_channel.fetch_message(eggdetails['raidmessage'])
         if not reportcitychannel:
             async for message in raid_channel.history(limit=500, oldest_first=True):
@@ -1875,12 +1870,6 @@ class Raid(commands.Cog):
                 egg_report = await reportcitychannel.fetch_message(eggdetails['raidreport'])
             except (discord.errors.NotFound, discord.errors.HTTPException):
                 egg_report = None
-        starttime = eggdetails.get('starttime', None)
-        duplicate = eggdetails.get('duplicate', 0)
-        archive = eggdetails.get('archive', False)
-        dm_dict = eggdetails.get('dm_dict', {})
-        ctrs_dict = eggdetails.get('ctrs_dict', {})
-        ctrsmessage_id = eggdetails.get('ctrsmessage', None)
         next_trains = eggdetails.get('next_trains', None)
         if not author:
             try:
@@ -1890,7 +1879,6 @@ class Raid(commands.Cog):
                 logger.info('Hatching Mention Failed - Trying alternative method: channel: {} (id: {}) - server: {} | Attempted mention: {}...'.format(raid_channel.name, raid_channel.id, raid_channel.guild.name, raid_message.content[:125]))
         else:
             raid_messageauthor = author
-        gymhuntrgps = eggdetails.get('gymhuntrgps', False)
         raid_match = True if entered_raid in boss_list else False
         if entered_raid not in boss_list or not raid_match:
             await raid_channel.send(_('Meowth! The Pokemon {pokemon} does not hatch from level {level} raid eggs!').format(pokemon=entered_raid.capitalize(), level=egglevel), delete_after=10)
@@ -1904,19 +1892,19 @@ class Raid(commands.Cog):
         raid_gmaps_link = oldembed.url
         if egglevel.isdigit():
             hatchtype = 'raid'
-            raidreportcontent = _('Meowth! The egg has hatched into a {pokemon} raid! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=egg_address, raid_channel=raid_channel.mention)
-            raidmsg = _("Meowth! The egg reported by {member} in {citychannel} hatched into a {pokemon} raid! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, pokemon=str(pokemon), location_details=egg_address)
+            raidreportcontent = _('Meowth! The egg has hatched into a {pokemon} raid! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=eggdetails['address'], raid_channel=raid_channel.mention)
+            raidmsg = _("Meowth! The egg reported by {member} in {citychannel} hatched into a {pokemon} raid! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, pokemon=str(pokemon), location_details=eggdetails['address'])
         elif egglevel == 'EX':
             hatchtype = 'exraid'
             if self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['invite']['enabled']:
-                invitemsgstr = _("Use the **!invite** command to gain access and coordinate")
-                invitemsgstr2 = _(" after using **!invite** to gain access")
+                invitemsgstr = _("Use the **!invite** in {report_channel} command to gain access and coordinate").format(report_channel=reportcitychannel.mention)
+                invitemsgstr2 = _(" after using **!invite** in {report_channel} to gain access").format(report_channel=reportcitychannel.mention)
             else:
                 invitemsgstr = _("Coordinate")
                 invitemsgstr2 = ""
-            raidreportcontent = _('Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. {invitemsgstr} coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=egg_address, invitemsgstr=invitemsgstr, raid_channel=raid_channel.mention)
-            raidmsg = _("Meowth! {pokemon} EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here{invitemsgstr2}!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(pokemon=str(pokemon), member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, location_details=egg_address, invitemsgstr2=invitemsgstr2)
-        raid_channel_name = (entered_raid + '-') + utils.sanitize_channel_name(egg_address)
+            raidreportcontent = _('Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. {invitemsgstr} coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=eggdetails['address'], invitemsgstr=invitemsgstr, raid_channel=raid_channel.mention)
+            raidmsg = _("Meowth! {pokemon} EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here{invitemsgstr2}!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(pokemon=str(pokemon), member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, location_details=eggdetails['address'], invitemsgstr2=invitemsgstr2)
+        raid_channel_name = (entered_raid + '-') + utils.sanitize_channel_name(eggdetails['address'])
         raid = discord.utils.get(raid_channel.guild.roles, name=entered_raid)
         if raid == None:
             roletest = ""
@@ -1936,7 +1924,7 @@ class Raid(commands.Cog):
         raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1")
         raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
         raid_embed.add_field(name=_('**Expires:**'), value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
-        if gymhuntrgps:
+        if eggdetails.get('gymhuntrgps', False):
             gymhuntrmoves = "\u200b"
             if huntr:
                 gymhuntrmoves = huntr
@@ -1966,7 +1954,7 @@ class Raid(commands.Cog):
         ctx = await self.bot.get_context(hatch_msg)
         ctx.raidreport = egg_report
         if ctx.raidreport:
-            self.bot.loop.create_task(self.edit_dm_messages(ctx, raidreportcontent, copy.deepcopy(raid_embed), dm_dict))
+            self.bot.loop.create_task(self.edit_dm_messages(ctx, raidreportcontent, copy.deepcopy(raid_embed), eggdetails.get('dm_dict', {})))
         for field in oldembed.fields:
             t = _('team')
             s = _('status')
@@ -1982,35 +1970,20 @@ class Raid(commands.Cog):
             egg_report = egg_report.id
         except (discord.errors.NotFound, AttributeError):
             egg_report = None
-        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['active'] = True
         ctrsmessage = self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id].get('ctrsmessage', None)
         ctrs_dict = self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id].get('ctrs_dict', {})
-        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id] = {
-            'reportcity': reportcitychannel.id,
-            'trainer_dict': trainer_dict,
-            'exp': raidexp,
-            'manual_timer': manual_timer,
-            'active': True,
-            'raidmessage': raid_message,
-            'raidreport': egg_report,
-            'reportmessage': user_report,
-            'address': egg_address,
-            'type': hatchtype,
-            'pokemon': entered_raid,
-            'pkmn_obj':str(pokemon),
-            'egglevel': '0',
-            'moveset': 0,
-            'ctrsmessage':ctrsmessage,
-            'ctrs_dict':ctrs_dict
-        }
-        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['starttime'] = starttime
-        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['duplicate'] = duplicate
-        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['archive'] = archive
-        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
-        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['gymhuntrgps'] = gymhuntrgps
-        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['next_trains'] = next_trains
+        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'] = trainer_dict
+        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['exp'] = raidexp
+        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['active'] = True
+        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['raidmessage'] = raid_message
+        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['raidreport'] = egg_report
+        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['type'] = hatchtype
+        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['pokemon'] = entered_raid
+        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['pkmn_obj'] = str(pokemon)
+        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['egglevel'] = '0'
+        self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['moveset'] = 0
         if str(egglevel) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and str(pokemon) and not ctrsmessage:
-            ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), weather)
+            ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), eggdetails.get('weather', None))
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
             ctrsmessage_id = ctrsmessage.id

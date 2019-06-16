@@ -58,6 +58,7 @@ class Want(commands.Cog):
         if role_list:
             want_embed.add_field(name=_('**Role**'), value=f"Reply with **role** to subscribe to server roles.", inline=False)
         want_embed.add_field(name=_('**IV**'), value=f"Reply with **iv** to want wild spawns of a specific IV.", inline=False)
+        want_embed.add_field(name=_('**Level**'), value=f"Reply with **level** to want wild spawns of a specific level.", inline=False)
         want_embed.add_field(name=_('**Type**'), value=f"Reply with **type** to want wild, research, and nest reports of a specific type.", inline=False)
         want_embed.add_field(name=_('**Item**'), value=f"Reply with **item** to want sspecific items from research.", inline=False)
         want_embed.add_field(name=_('**Settings**'), value=f"Reply with **settings** to access your want settings.", inline=False)
@@ -206,6 +207,31 @@ class Want(commands.Cog):
                             want_command = ctx.command.all_commands.get('iv')
                             if want_command:
                                 await ctx.invoke(want_command, ivs=ctx.message.content)
+                                return
+                        break
+                    elif want_category_msg.clean_content.lower() == "level":
+                        want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1")
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the levels you'd like to subscribe to or level+ to subscribe to that level through 40. You can reply with **cancel** to stop anytime.", inline=False)
+                        want_wait = await channel.send(embed=want_embed)
+                        try:
+                            want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            want_sub_msg = None
+                        await utils.safe_delete(want_wait)
+                        if not want_sub_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(want_sub_msg)
+                        if want_sub_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled your request")
+                            break
+                        elif want_sub_msg:
+                            ctx.message.content = want_sub_msg.clean_content
+                            want_command = ctx.command.all_commands.get('level')
+                            if want_command:
+                                await ctx.invoke(want_command, levels=ctx.message.content)
                                 return
                         break
                     elif want_category_msg.clean_content.lower() == "item":
@@ -716,6 +742,68 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
+    @want.command(name='level', aliases=['levels'])
+    @checks.allowwant()
+    async def want_level(self, ctx, *, levels):
+        """Add a level to your want list. Currently used for wild reports.
+
+        Usage: !want level <level list>
+        Enter individual numbers, a range with level-level, or level+ to add level to 40"""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        want_split = levels.lower().split(',')
+        want_list = []
+        added_count = 0
+        already_want_count = 0
+        already_want_list = []
+        added_list = []
+        error_list = []
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
+        for entered_want in want_split:
+            if "+" in entered_want.lower():
+                entered_want = entered_want.replace("+", "").strip()
+                if not entered_want.strip().isdigit():
+                    error_list.append(entered_want)
+                    continue
+                for level in range(int(entered_want), 41):
+                    if level not in want_list:
+                        want_list.append(str(level))
+            elif "-" in entered_want.lower():
+                range_split = entered_want.split("-")
+                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]):
+                    for level in range(int(range_split[0]), int(range_split[1])+1):
+                        want_list.append(str(level))
+                else:
+                    error_list.append(entered_want)
+            else:
+                if not entered_want.strip().isdigit():
+                    error_list.append(entered_want)
+                    continue
+                if entered_want not in want_list:
+                    want_list.append(entered_want)
+        for entered_want in want_list:
+            if int(entered_want) in user_wants:
+                already_want_list.append(entered_want)
+                already_want_count += 1
+            else:
+                user_wants.append(int(entered_want))
+                added_list.append(f"{entered_want}")
+                added_count += 1
+        want_count = added_count + already_want_count + len(error_list)
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** level{s}:\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
+        if added_count > 0:
+            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+        if already_want_count > 0:
+            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+        if error_list:
+            error_msg = ''
+            for word in error_list:
+                error_msg += _('\n\t{word}').format(word=word)
+            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+
     @want.command(name='role')
     @checks.allowwant()
     async def want_role(self, ctx, *, roles):
@@ -929,6 +1017,9 @@ class Want(commands.Cog):
         user_ivs = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
         user_ivs = sorted(user_ivs)
         user_ivs = [str(x) for x in user_ivs]
+        user_levels = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
+        user_levels = sorted(user_levels)
+        user_levels = [str(x) for x in user_levels]
         user_items = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
         user_items = [x.title() for x in user_items]
         user_types = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
@@ -939,7 +1030,7 @@ class Want(commands.Cog):
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         want_msg = f"Meowth! I'll help you remove an alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to unsubscribe from. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=want_msg, inline=False)
-        if not any([user_wants, user_bosses, user_gyms, user_stops, user_ivs, user_items, user_types]):
+        if not any([user_wants, user_bosses, user_gyms, user_stops, user_ivs, user_levels, user_items, user_types]):
             want_embed.clear_fields()
             want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
             want_embed.add_field(name=_('**Alert Unsubscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you don't have any subscriptions! Add some with **!want**.").format(error=error), inline=False)
@@ -961,6 +1052,8 @@ class Want(commands.Cog):
             want_embed.add_field(name=_('**Role**'), value=f"Reply with **role** to unwant server roles.", inline=False)
         if user_ivs:
             want_embed.add_field(name=_('**IV**'), value=f"Reply with **iv** to unwant wild spawns of a specific IV.", inline=False)
+        if user_levels:
+            want_embed.add_field(name=_('**Level**'), value=f"Reply with **level** to unwant wild spawns of a specific level.", inline=False)
         if user_types:
             want_embed.add_field(name=_('**Type**'), value=f"Reply with **type** to unwant wild, research, and nest reports of a specific type.", inline=False)
         if user_items:
@@ -1125,6 +1218,34 @@ class Want(commands.Cog):
                             want_command = ctx.command.all_commands.get('iv')
                             if want_command:
                                 await ctx.invoke(want_command, ivs=ctx.message.content)
+                                return
+                        break
+                    elif want_category_msg.clean_content.lower() == "level":
+                        if not user_levels:
+                            error = _("don't have wants of that type")
+                            break
+                        want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1")
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the levels you'd like to unsubscribe from or level+ to unsubscribe from that level through 40.\n\nYour current want list is: {(', ').join(user_levels)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_wait = await channel.send(embed=want_embed)
+                        try:
+                            want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            want_sub_msg = None
+                        await utils.safe_delete(want_wait)
+                        if not want_sub_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(want_sub_msg)
+                        if want_sub_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled your request")
+                            break
+                        elif want_sub_msg:
+                            ctx.message.content = want_sub_msg.clean_content
+                            want_command = ctx.command.all_commands.get('level')
+                            if want_command:
+                                await ctx.invoke(want_command, levels=ctx.message.content)
                                 return
                         break
                     elif want_category_msg.clean_content.lower() == "item":
@@ -1377,17 +1498,20 @@ class Want(commands.Cog):
         type_count = len(user_types)
         user_ivs = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
         iv_count = len(user_ivs)
+        user_levels = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
+        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])]
+        user_roles = [x for x in join_roles if x in author.roles]
+        level_count = len(user_levels)
         unwant_msg = ""
-        count = want_count + boss_count + gym_count + stop_count + item_count + type_count + iv_count
+        count = want_count + boss_count + gym_count + stop_count + item_count + type_count + iv_count + level_count
         if count == 0:
-            await channel.send(content=_('{0}, you have no pokemon, gyms, stops, types, IVs, or items in your want list.').format(author.mention), delete_after=10)
+            await channel.send(content=_('{0}, you have no pokemon, gyms, stops, types, IVs, levels, or items in your want list.').format(author.mention), delete_after=10)
             return
         unwant_msg = f"{author.mention}"
         await channel.trigger_typing()
         if want_count > 0:
-            roles = author.roles
             remove_roles = []
-            for role in roles:
+            for role in author.roles:
                 if role.name in self.bot.pkmn_list:
                     remove_roles.append(role)
             await author.remove_roles(*remove_roles)
@@ -1411,6 +1535,16 @@ class Want(commands.Cog):
         if iv_count > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['ivs'] = []
             unwant_msg += _(" I've removed {0} IVs from your want list.").format(iv_count)
+        if level_count > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['levels'] = []
+            unwant_msg += _(" I've removed {0} levels from your want list.").format(level_count)
+        if len(user_roles) > 0:
+            remove_roles = []
+            for role in author.roles:
+                if role in join_roles:
+                    remove_roles.append(role)
+            await author.remove_roles(*remove_roles)
+            unwant_msg += _(" I've removed {0} roles from your account.").format(len(user_roles))
         await channel.send(unwant_msg)
 
     @unwant.command(name='gym')
@@ -1676,6 +1810,68 @@ class Want(commands.Cog):
                 removed_count += 1
         unwant_count = removed_count + not_wanted_count + len(error_list)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** iv{s}:\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
+        if removed_count > 0:
+            confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+        if not_wanted_count > 0:
+            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+        if error_list:
+            error_msg = ''
+            for word in error_list:
+                error_msg += _('\n\t{word}').format(word=word)
+            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+        unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+
+    @unwant.command(name='level', aliases=['levels'])
+    @checks.allowwant()
+    async def unwant_level(self, ctx, *, levels):
+        """Remove a level from your wanted list.
+
+        Usage: !unwant level <level list>
+        You will no longer be notified of reports about this level."""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        unwant_split = levels.lower().split(',')
+        unwant_list = []
+        removed_count = 0
+        not_wanted_count = 0
+        not_wanted_list = []
+        removed_list = []
+        error_list = []
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
+        for entered_unwant in unwant_split:
+            if "+" in entered_unwant.lower():
+                entered_unwant = entered_unwant.replace("+", "").strip()
+                if not entered_unwant.strip().isdigit():
+                    error_list.append(entered_unwant)
+                    continue
+                for level in range(int(entered_unwant), 41):
+                    if level not in unwant_list:
+                        unwant_list.append(str(level))
+            elif "-" in entered_unwant.lower():
+                range_split = entered_unwant.split("-")
+                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]):
+                    for level in range(int(range_split[0]), int(range_split[1])+1):
+                        unwant_list.append(str(level))
+                else:
+                    error_list.append(entered_unwant)
+            else:
+                if not entered_unwant.strip().isdigit():
+                    error_list.append(entered_unwant)
+                    continue
+                if entered_unwant not in unwant_list:
+                    unwant_list.append(entered_unwant)
+        for entered_unwant in unwant_list:
+            if int(entered_unwant) not in user_wants:
+                not_wanted_list.append(entered_unwant)
+                not_wanted_count += 1
+            else:
+                user_wants.remove(int(entered_unwant))
+                removed_list.append(f"{entered_unwant}")
+                removed_count += 1
+        unwant_count = removed_count + not_wanted_count + len(error_list)
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** level{s}:\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
         if removed_count > 0:
             confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:

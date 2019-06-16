@@ -654,7 +654,6 @@ class Huntr(commands.Cog):
         if report_user:
             ctx.message.author = report_user
         message = ctx.message
-        timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, report_details['pokemon'])
         if pokemon:
             entered_wild = pokemon.name.lower()
@@ -664,19 +663,7 @@ class Huntr(commands.Cog):
         if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['scanners'].setdefault('wildfilter', []):
             if not report_details.get("iv_percent", '') and not report_details.get("level", ''):
                 return
-        shiny_str = ""
-        if pokemon.id in self.bot.shiny_dict:
-            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
-        details_str = f"{shiny_str}{pokemon.name.title()}"
         gender = report_details.get("gender", '')
-        if gender and "female" in gender.lower():
-            details_str += f" ♀"
-        elif gender and "male" in gender.lower():
-            details_str += f" ♂"
-        details_str += f" ({pokemon.id}) {pokemon.emoji}"
         wild_details = report_details['coordinates']
         wild_iv = report_details.get("iv_percent", '')
         iv_long = report_details.get("iv_long", '')
@@ -685,6 +672,7 @@ class Huntr(commands.Cog):
                 wild_iv = int(round(float(wild_iv)))
             else:
                 wild_iv = None
+            report_details['wild_iv'] = wild_iv
         if wild_iv or wild_iv == 0:
             iv_str = f" - **{wild_iv}IV**"
         else:
@@ -694,11 +682,11 @@ class Huntr(commands.Cog):
         weather = report_details.get("weather", '')
         if weather.lower() == 'none':
             weather = ''
+            report_details['weather'] = weather
         height = report_details.get("height", '')
         weight = report_details.get("weight", '')
         moveset = report_details.get("moveset", '')
-        expire = report_details.get("expire", "45 min 00 sec")
-        huntrexpstamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(expire.split()[0]), seconds=int(expire.split()[2]))).strftime('%I:%M %p')
+        expire = report_details.setdefault("expire", "45 min 00 sec")
         nearest_stop = ""
         nearest_poi = ""
         poi_info = ""
@@ -719,33 +707,31 @@ class Huntr(commands.Cog):
             if nearest_poi:
                 wild_details = nearest_poi
                 poi_info, __, __ = await gym_matching_cog.get_poi_info(ctx, wild_details.strip(), "wild")
+        report_details['location'] = nearest_stop
+        report_details['pkmn_obj'] = str(pokemon)
         stop_str = ""
         if nearest_stop or nearest_poi:
             stop_str = f"{' Details: '+nearest_poi+' |' if nearest_poi and nearest_poi != nearest_stop else ''}{' Nearest Pokestop: '+nearest_stop if nearest_stop else ''}{' | ' if nearest_poi or nearest_stop else ' '}"
-        wild_embed = discord.Embed(description="", title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=entered_wild.title()), url=wild_gmaps_link, colour=message.guild.me.colour)
-        if nearest_stop:
-            wild_embed.description = poi_info
-        wild_embed.add_field(name=_('**Details:**'), value=details_str, inline=True)
-        if iv_long or wild_iv or level or cp or weather:
-            wild_embed.add_field(name=_('**IV / Level:**'), value=f"{iv_long if iv_long else ''} {' ('+str(wild_iv)+'%)' if wild_iv else ''}\n{'Level '+level if level else ''}{' ('+cp+'CP)' if cp else ''} {weather if weather else ''}", inline=True)
-        if height or weight or moveset:
-            wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height if height else ''} {'W: '+weight if weight else ''}\n{moveset if moveset else ''}", inline=True)
-        wild_embed.add_field(name=f"{'**Est. Despawn:**' if int(expire.split()[0]) == 45 and int(expire.split()[2]) == 0 else '**Despawns in:**'}", value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=expire.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
-        if reporter == "huntr":
-            wild_embed.add_field(name=wild_extra, value=_('Perform a scan to help find more by clicking [here]({huntrurl}).').format(huntrurl=huntr_url), inline=False)
-        wild_embed.set_thumbnail(url=pokemon.img_url)
-        wild_embed.set_author(name=f"Wild {pokemon.name.title()} Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
-        wild_embed.add_field(name='**Reactions:**', value=_("{emoji}: I'm on my way!").format(emoji=ctx.bot.config.get('wild_omw', '\U0001F3CE')), inline=True)
-        wild_embed.add_field(name='\u200b', value=_("{emoji}: The Pokemon despawned!").format(emoji=ctx.bot.config.get('wild_despawn', '\U0001F4A8')), inline=True)
-        wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
+        wild_embed = await wild_cog.make_wild_embed(ctx, report_details)
+        omw_emoji = ctx.bot.config.get('wild_omw', '\U0001F3CE')
+        despawn_emoji = ctx.bot.config.get('wild_despawn', '\U0001F4A8')
+        info_emoji = ctx.bot.config.get('wild_info', '\u2139')
+        catch_emoji = ctx.bot.config.get('wild_catch', '\u26BE')
+        reaction_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji]
+        if iv_long:
+            wild_embed.set_field_at(len(wild_embed.fields)-1, name="\u200b", value=wild_embed.fields[-1].value.replace(f"{info_emoji}: Add wild details", ""))
+            reaction_list.remove(info_emoji)
         despawn = (int(expire.split(' ')[0]) * 60) + int(expire.split(' ')[2])
+        if despawn < 2700:
+            wild_embed.set_field_at(len(wild_embed.fields)-1, name="\u200b", value=wild_embed.fields[-1].value.replace(f"{despawn_emoji}: The Pokemon despawned!\n", ""))
+            reaction_list.remove(despawn_emoji)
+        if not wild_embed.fields[-1].value:
+            wild_embed.remove_field(len(wild_embed.fields)-1)
         ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}!{stop_str}Coordinates: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, stop_str=stop_str, location_details=wild_coordinates, iv_str=iv_str), embed=wild_embed)
-        dm_dict = await wild_cog.send_dm_messages(ctx, pokemon.id, str(nearest_stop), wild_types[0], wild_types[1], wild_iv, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.config.get('wild_omw', '\U0001F3CE'))
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.config.get('wild_despawn', '\U0001F4A8'))
-        await asyncio.sleep(0.25)
+        dm_dict = await wild_cog.send_dm_messages(ctx, pokemon.id, str(nearest_stop), wild_types[0], wild_types[1], wild_iv, level, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
+        for reaction in reaction_list:
+            await asyncio.sleep(0.25)
+            await utils.safe_reaction(ctx.wildreportmsg, reaction)
         ctx.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'exp':time.time() + despawn,
             'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
@@ -759,6 +745,9 @@ class Huntr(commands.Cog):
             'pokemon':entered_wild,
             'pkmn_obj':str(pokemon),
             'wild_iv':wild_iv,
+            'level':level,
+            'cp':cp,
+            'gender':gender,
             'omw':[]
         }
 
@@ -1081,7 +1070,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Pikachu", "gps":"39.645742,-79.96908", "expire":"5 min 0 sec"}')
+        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Pikachu", "gps":"39.645742,-79.96908", "expire":"5 min 0 sec", "iv_percent":"95.5", "iv_long":"14 / 14/ 15", "level":"27", "gender":"male", "height":"0.4", "weight":"6", "moveset":"Quick Attack / Wild Charge"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
