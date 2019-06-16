@@ -1970,6 +1970,7 @@ class Raid(commands.Cog):
             egg_report = egg_report.id
         except (discord.errors.NotFound, AttributeError):
             egg_report = None
+        ctrsmessage_id = eggdetails.get('ctrsmessage', None)
         ctrsmessage = self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id].get('ctrsmessage', None)
         ctrs_dict = self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id].get('ctrs_dict', {})
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['trainer_dict'] = trainer_dict

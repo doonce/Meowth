@@ -719,11 +719,11 @@ class Huntr(commands.Cog):
         catch_emoji = ctx.bot.config.get('wild_catch', '\u26BE')
         reaction_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji]
         if iv_long:
-            wild_embed.set_field_at(len(wild_embed.fields)-1, name="\u200b", value=wild_embed.fields[-1].value.replace(f"{info_emoji}: Add wild details", ""))
+            wild_embed.set_field_at(len(wild_embed.fields)-1, name="**Spawn Reactions:**", value=wild_embed.fields[-1].value.replace(f"{info_emoji}: Add wild details", ""))
             reaction_list.remove(info_emoji)
         despawn = (int(expire.split(' ')[0]) * 60) + int(expire.split(' ')[2])
         if despawn < 2700:
-            wild_embed.set_field_at(len(wild_embed.fields)-1, name="\u200b", value=wild_embed.fields[-1].value.replace(f"{despawn_emoji}: The Pokemon despawned!\n", ""))
+            wild_embed.set_field_at(len(wild_embed.fields)-1, name="**Spawn Reactions:**", value=wild_embed.fields[-1].value.replace(f"{despawn_emoji}: The Pokemon despawned!\n", ""))
             reaction_list.remove(despawn_emoji)
         if not wild_embed.fields[-1].value:
             wild_embed.remove_field(len(wild_embed.fields)-1)

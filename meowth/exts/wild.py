@@ -129,7 +129,7 @@ class Wild(commands.Cog):
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
         await utils.expire_dm_reports(self.bot, wild_dict.get(message.id, {}).get('dm_dict', {}))
-        wild_bonus = self.bot.guild_dict[guild.id]['wildreport_dict'][message.id].get('bonus', [])
+        wild_bonus = self.bot.guild_dict[guild.id]['wildreport_dict'].get(message.id, {}).get('bonus', [])
         if len(wild_bonus) >= 5 and not message.author.bot:
             wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wild_reports', 0) + 1
             self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports
