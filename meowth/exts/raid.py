@@ -50,8 +50,13 @@ class Raid(commands.Cog):
         except AttributeError:
             return
         guild = message.guild
-        if channel.id in self.bot.guild_dict[guild.id]['raidchannel_dict'] and user.id != self.bot.user.id:
-            if message.id == self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('ctrsmessage', None):
+        raidchannel_list = list(self.bot.guild_dict[guild.id]['raidchannel_dict'].keys())
+        raidmessage_list = [self.bot.guild_dict[guild.id]['raidchannel_dict'][x].get('raidreport') for x in self.bot.guild_dict[guild.id]['raidchannel_dict']]
+        if message.id in raidmessage_list:
+            index = raidmessage_list.index(message.id)
+            channel = guild.get_channel(raidchannel_list[index])
+        if (channel.id in raidchannel_list or message.id in raidmessage_list) and user.id != self.bot.user.id:
+            if message.id == self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('ctrsmessage', None):
                 ctrs_dict = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['ctrs_dict']
                 for i in ctrs_dict:
                     if ctrs_dict[i]['emoji'] == str(payload.emoji):
@@ -62,13 +67,21 @@ class Raid(commands.Cog):
                     return
                 await message.edit(embed=newembed)
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['moveset'] = moveset
-            elif message.id == self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('raidmessage', None):
-                if str(payload.emoji) == '\u2754':
+            elif message.id == self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('raidmessage', None) or message.id == self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('raidreport', None):
+                if str(payload.emoji) == self.bot.config.get('raid_info', '\u2139') and message.id == self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('raidmessage', None):
                     prefix = self.bot.guild_dict[guild.id]['configure_dict']['settings']['prefix']
                     prefix = prefix or self.bot.config['default_prefix']
                     avatar = self.bot.user.avatar_url
                     await utils.get_raid_help(prefix, avatar, user)
-            elif message.id in self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('next_trains', {}).keys():
+                elif str(payload.emoji) == self.bot.config.get('raid_maybe', '\u2753'):
+                    await self._maybe(channel, user, 1, None)
+                elif str(payload.emoji) == self.bot.config.get('raid_omw', '\ud83c\udfce'):
+                    await self._coming(channel, user, 1, None)
+                elif str(payload.emoji) == self.bot.config.get('raid_here', '\U0001F4CD'):
+                    await self._here(channel, user, 1, None)
+                elif str(payload.emoji) == self.bot.config.get('raid_cancel', '\u274C'):
+                    await self._cancel(channel, user)
+            elif message.id in self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('next_trains', {}).keys():
                 if str(payload.emoji) == self.bot.config.get('train_emoji', "\U0001F682"):
                     next_train = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['next_trains'][message.id]
                     if user.id == next_train['author']:
@@ -381,6 +394,7 @@ class Raid(commands.Cog):
                             try:
                                 reportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
                                 await reportmsg.edit(embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
+                                await reportmsg.clear_reactions()
                             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                                 pass
                         try:
@@ -1137,7 +1151,8 @@ class Raid(commands.Cog):
             for field in oldembed.fields:
                 t = _('team')
                 s = _('status')
-                if (t in field.name.lower()) or (s in field.name.lower()):
+                r = _('reaction')
+                if (t in field.name.lower()) or (s in field.name.lower()) or (r in field.name.lower()):
                     raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
             if changefrom == "egg":
                 raid_message.content = re.sub(_('level\s\d'), _('Level {}').format(newraid), raid_message.content, flags=re.IGNORECASE)
@@ -1384,6 +1399,12 @@ class Raid(commands.Cog):
     async def _raid(self, ctx, content):
         message = ctx.message
         fromegg = False
+        help_reaction = self.bot.config.get('raid_info', '\u2139')
+        maybe_reaction = self.bot.config.get('raid_maybe', '\u2753')
+        omw_reaction = self.bot.config.get('raid_omw', '\ud83c\udfce')
+        here_reaction = self.bot.config.get('raid_here', '\U0001F4CD')
+        cancel_reaction = self.bot.config.get('raid_cancel', '\u274C')
+        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         if self.bot.guild_dict[message.channel.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('type') == "egg":
             fromegg = True
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
@@ -1517,9 +1538,8 @@ class Raid(commands.Cog):
         raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1")
         ctx.raidreport = await message.channel.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
         await asyncio.sleep(1)
-        raidmsg = _("{roletest}Meowth! {pokemon} raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(roletest=roletest, pokemon=str(pokemon).title(), member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
+        raidmsg = f"{roletest}Meowth! {str(pokemon).title()} raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
         raidmessage = await raid_channel.send(content=raidmsg, embed=raid_embed)
-        await utils.safe_reaction(raidmessage, '\u2754')
         await raidmessage.pin()
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
             'reportcity': message.channel.id,
@@ -1565,10 +1585,18 @@ class Raid(commands.Cog):
         raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('raid_reports', 0) + 1
         self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['raid_reports'] = raid_reports
         dm_dict = {}
-        raid_embed.remove_field(2)
-        raid_embed.remove_field(2)
+        index = 0
+        for field in raid_embed.fields:
+            if "reaction" in field.name.lower() or "status" in field.name.lower() or "team" in field.name.lower():
+                raid_embed.remove_field(index)
+            else:
+                index += 1
         dm_dict = await self.send_dm_messages(ctx, raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
+        await utils.safe_reaction(raidmessage, help_reaction)
+        for reaction in react_list:
+            await utils.safe_reaction(raidmessage, reaction)
+            await utils.safe_reaction(ctx.raidreport, reaction)
         return raid_channel
 
     async def _raidegg(self, ctx, content):
@@ -1576,6 +1604,12 @@ class Raid(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         raidexp = False
         hourminute = False
+        help_reaction = self.bot.config.get('raid_info', '\u2139')
+        maybe_reaction = self.bot.config.get('raid_maybe', '\u2753')
+        omw_reaction = self.bot.config.get('raid_omw', '\ud83c\udfce')
+        here_reaction = self.bot.config.get('raid_here', '\U0001F4CD')
+        cancel_reaction = self.bot.config.get('raid_cancel', '\u274C')
+        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         raidegg_split = content.split()
         if raidegg_split[0].lower() == 'egg':
             del raidegg_split[0]
@@ -1687,9 +1721,8 @@ class Raid(commands.Cog):
             raid_embed.set_author(name=f"Level {egg_level} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1")
             ctx.raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
             await asyncio.sleep(1)
-            raidmsg = _("Meowth! Level {level} raid egg reported by {member} in {citychannel}! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(level=egg_level, member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
+            raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
             raidmessage = await raid_channel.send(content=raidmsg, embed=raid_embed)
-            await utils.safe_reaction(raidmessage, '\u2754')
             await raidmessage.pin()
             self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
                 'reportcity': message.channel.id,
@@ -1725,6 +1758,10 @@ class Raid(commands.Cog):
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
                 pokemon = pokemon.name.lower()
                 await self._eggassume(ctx, 'assume ' + pokemon, raid_channel)
+            await utils.safe_reaction(raidmessage, help_reaction)
+            for reaction in react_list:
+                await utils.safe_reaction(raidmessage, reaction)
+                await utils.safe_reaction(ctx.raidreport, reaction)
             return raid_channel
 
     async def _eggassume(self, ctx, args, raid_channel, author=None):
@@ -1793,7 +1830,8 @@ class Raid(commands.Cog):
         for field in oldembed.fields:
             t = _('team')
             s = _('status')
-            if (t in field.name.lower()) or (s in field.name.lower()):
+            r = _('reaction')
+            if (t in field.name.lower()) or (s in field.name.lower()) or (r in field.name.lower()):
                 raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
         try:
             await raid_message.edit(new_content=raid_message.content, embed=raid_embed, content=raid_message.content)
@@ -1852,6 +1890,7 @@ class Raid(commands.Cog):
                     entered_raid = boss.name.lower()
                     boss_str = str(pokemon)
                     break
+        help_reaction = self.bot.config.get('raid_info', '\u2139')
         try:
             reportcitychannel = self.bot.get_channel(eggdetails['reportcity'])
             reportcity = reportcitychannel.name
@@ -1893,7 +1932,7 @@ class Raid(commands.Cog):
         if egglevel.isdigit():
             hatchtype = 'raid'
             raidreportcontent = _('Meowth! The egg has hatched into a {pokemon} raid! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=eggdetails['address'], raid_channel=raid_channel.mention)
-            raidmsg = _("Meowth! The egg reported by {member} in {citychannel} hatched into a {pokemon} raid! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, pokemon=str(pokemon), location_details=eggdetails['address'])
+            raidmsg = f"Meowth! The egg reported by {raid_messageauthor.mention} in {reportcitychannel.mention} hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate here!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
         elif egglevel == 'EX':
             hatchtype = 'exraid'
             if self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['invite']['enabled']:
@@ -1903,7 +1942,7 @@ class Raid(commands.Cog):
                 invitemsgstr = _("Coordinate")
                 invitemsgstr2 = ""
             raidreportcontent = _('Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. {invitemsgstr} coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=eggdetails['address'], invitemsgstr=invitemsgstr, raid_channel=raid_channel.mention)
-            raidmsg = _("Meowth! {pokemon} EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here{invitemsgstr2}!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(pokemon=str(pokemon), member=raid_messageauthor.mention, citychannel=reportcitychannel.mention, location_details=eggdetails['address'], invitemsgstr2=invitemsgstr2)
+            raidmsg = f"Meowth! {str(pokemon)} EX raid reported by {raid_messageauthor.mention} in {reportcitychannel.mention}! Details: {eggdetails['address']}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
         raid_channel_name = (entered_raid + '-') + utils.sanitize_channel_name(eggdetails['address'])
         raid = discord.utils.get(raid_channel.guild.roles, name=entered_raid)
         if raid == None:
@@ -1958,7 +1997,8 @@ class Raid(commands.Cog):
         for field in oldembed.fields:
             t = _('team')
             s = _('status')
-            if (t in field.name.lower()) or (s in field.name.lower()):
+            r = _('reaction')
+            if (t in field.name.lower()) or (s in field.name.lower()) or (r in field.name.lower()):
                 raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
         try:
             await raid_message.edit(new_content=raidmsg, embed=raid_embed, content=raidmsg)
@@ -2077,6 +2117,7 @@ class Raid(commands.Cog):
         message = ctx.message
         channel = message.channel
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        help_reaction = self.bot.config.get('raid_info', '\u2139')
         fromegg = False
         exraid_split = location.split()
         raid_details = ' '.join(exraid_split)
@@ -2126,7 +2167,7 @@ class Raid(commands.Cog):
             invitemsgstr2 = ""
         ctx.raidreport = await channel.send(content=_('Meowth! EX raid egg reported by {member}! Details: {location_details}. {invitemsgstr} in {raid_channel}').format(member=message.author.mention, location_details=raid_details, invitemsgstr=invitemsgstr, raid_channel=raid_channel.mention), embed=raid_embed)
         await asyncio.sleep(1)
-        raidmsg = _("Meowth! EX raid reported by {member} in {citychannel}! Details: {location_details}. Coordinate here{invitemsgstr2}!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details, invitemsgstr2=invitemsgstr2)
+        raidmsg = f"Meowth! EX raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
         raidmessage = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await utils.safe_reaction(raidmessage, '\u2754')
         await raidmessage.pin()
@@ -2365,6 +2406,7 @@ class Raid(commands.Cog):
         message = ctx.message
         channel = message.channel
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        help_reaction = self.bot.config.get('raid_info', '\u2139')
         raid_details = location
         raid_details = raid_details.strip()
         raid_gmaps_link = utils.create_gmaps_query(self.bot, raid_details, message.channel, type="meetup")
@@ -2382,7 +2424,7 @@ class Raid(commands.Cog):
         raid_embed.set_author(name=f"Meetup Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/meetup.png?cache=1")
         ctx.raidreport = await channel.send(content=_('Meowth! Meetup reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
         await asyncio.sleep(1)
-        raidmsg = _("Meowth! Meetup reported by {member} in {citychannel}! Details: {location_details}. Coordinate here!\n\nClick the question mark reaction to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires.").format(member=message.author.mention, citychannel=message.channel.mention, location_details=raid_details)
+        raidmsg = f"Meowth! Meetup reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
         raidmessage = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await utils.safe_reaction(raidmessage, '\u2754')
         await raidmessage.pin()
@@ -2978,7 +3020,8 @@ class Raid(commands.Cog):
             for field in oldembed.fields:
                 t = _('team')
                 s = _('status')
-                if (t not in field.name.lower()) and (s not in field.name.lower()):
+                r = _('reaction')
+                if (t not in field.name.lower()) and (s not in field.name.lower()) and (r not in field.name.lower()):
                     newembed.add_field(name=field.name, value=field.value, inline=field.inline)
             if report_meetup:
                 newembed.set_field_at(1, name=_("**Event Location:**"), value=raid_details, inline=True)
@@ -2997,7 +3040,8 @@ class Raid(commands.Cog):
             for field in oldembed.fields:
                 t = _('team')
                 s = _('status')
-                if (t in field.name.lower()) or (s in field.name.lower()):
+                r = _('reaction')
+                if (t in field.name.lower()) or (s in field.name.lower()) or (r in field.name.lower()):
                     newembed.add_field(name=field.name, value=field.value, inline=field.inline)
             try:
                 await oldraidmsg.edit(embed=newembed, content=oldraidmsg.content.replace(old_location, raid_details))
@@ -4231,7 +4275,8 @@ class Raid(commands.Cog):
         for field in reportembed.fields:
             t = _('team')
             s = _('status')
-            if (t not in field.name.lower()) and (s not in field.name.lower()):
+            r = _('reaction')
+            if (t not in field.name.lower()) and (s not in field.name.lower()) and (r not in field.name.lower()):
                 newembed.add_field(name=field.name, value=field.value, inline=field.inline)
         if egglevel != "0" and not self.bot.guild_dict[channel.guild.id].get('raidchannel_dict', {}).get(channel.id, {}).get('meetup', {}):
             if len(boss_dict.keys()) == 1 or pokemon:

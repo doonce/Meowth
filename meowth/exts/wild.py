@@ -40,7 +40,7 @@ class Wild(commands.Cog):
         try:
             wildreport_dict = self.bot.guild_dict[guild.id]['wildreport_dict']
         except KeyError:
-            wildreport_dict = []
+            wildreport_dict = {}
         if message.id in wildreport_dict and user.id != self.bot.user.id:
             wild_dict = self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
             if str(payload.emoji) == self.bot.config.get('wild_omw', '\U0001F3CE'):
@@ -301,7 +301,6 @@ class Wild(commands.Cog):
         nearest_stop = wild_dict.get('location', None)
         poi_info = wild_dict.get('poi_info')
         wild_embed = await self.make_wild_embed(ctx, wild_dict)
-        print(1, wild_embed.to_dict())
         content = message.content
         if wild_dict.get('wild_iv') and "IV**" not in message.content:
             content = message.content + f" - **{wild_dict.get('wild_iv')}IV**"
