@@ -262,6 +262,7 @@ class Huntr(commands.Cog):
                         'expedit': {"content":ctx.raidreport.content.split(" React")[0], "embedcontent":_('**This {pokemon} raid has expired!**').format(pokemon=entered_raid)},
                         "reporttype":"raid",
                         "reportchannel":message.channel.id,
+                        'report_channel':message.channel.id,
                         "level":0,
                         "pokemon":entered_raid,
                         "reporttime":now,
@@ -293,6 +294,7 @@ class Huntr(commands.Cog):
                         'expedit': {"content":ctx.raidreport.content.split(" React")[0], "embedcontent": _('**This level {level} raid egg has hatched!**').format(level=egg_level)},
                         "reporttype":"egg",
                         "reportchannel":message.channel.id,
+                        "report_channel":message.channel.id,
                         "level":egg_level,
                         "pokemon":None,
                         "reporttime":now,
@@ -494,6 +496,7 @@ class Huntr(commands.Cog):
                     'expedit': {"content":raidmsg.split("React")[0], "embedcontent":expiremsg},
                     "reporttype":reporttype,
                     "reportchannel":message.channel.id,
+                    "report_channel":message.channel.id,
                     "level":egg_level,
                     "pokemon":str(pokemon) if pokemon else None,
                     "gps":coordinates,
@@ -700,7 +703,7 @@ class Huntr(commands.Cog):
         if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['scanners'].setdefault('wildfilter', []):
             if not report_details.get("iv_percent", '') and not report_details.get("level", ''):
                 return
-        gender = report_details.get("gender", '')
+        gender = report_details.setdefault("gender", pokemon.gender)
         wild_details = report_details['coordinates']
         wild_iv = report_details.get("iv_percent", '')
         iv_long = report_details.get("iv_long", '')
@@ -773,8 +776,12 @@ class Huntr(commands.Cog):
             'exp':time.time() + despawn,
             'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
             'reportmessage':message.id,
+            'report_message':message.id,
             'reportchannel':message.channel.id,
+            'report_channel':message.channel.id,
             'reportauthor':message.author.id,
+            'report_author':message.author.id,
+            'report_guild':message.guild.id,
             'dm_dict':dm_dict,
             'location':wild_details,
             'gps':wild_coordinates,
@@ -865,21 +872,29 @@ class Huntr(commands.Cog):
         level = utils.get_level(self.bot, entered_raid)
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
             'reportcity': message.channel.id,
+            'report_channel':message.channel.id,
+            'report_guild':message.guild.id,
+            'report_author':message.author.id,
             'trainer_dict': {},
             'exp': time.time() + (60 * ctx.bot.raid_info['raid_eggs'][str(level)]['raidtime']),
             'manual_timer': False,
             'active': True,
             'raidmessage': raidmessage.id,
+            'raid_message':raidmessage.id,
             'raidreport': ctx.raidreport.id,
+            'raid_report':ctx.raidreport.id,
             'reportmessage': message.id,
+            'report_message':message.id,
             'address': raid_details,
             'type': 'raid',
             'pokemon': entered_raid,
             'pkmn_obj': str(pokemon),
             'egglevel': '0',
+            'egg_level':"0",
             'moveset': 0,
             'weather': weather,
-            'gymhuntrgps': raid_coordinates
+            'gymhuntrgps': raid_coordinates,
+            'coordinates':raid_coordinates
         }
         await raid_cog._timerset(raid_channel, raidexp)
         await raid_channel.send("This raid was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
@@ -957,20 +972,28 @@ class Huntr(commands.Cog):
         await raidmessage.pin()
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
             'reportcity': message.channel.id,
+            'report_channel':message.channel.id,
+            'report_guild':message.guild.id,
+            'report_author':message.author.id,
             'trainer_dict': {},
             'exp': time.time() + (60 * ctx.bot.raid_info['raid_eggs'][egg_level]['hatchtime']),
             'manual_timer': False,
             'active': True,
             'raidmessage': raidmessage.id,
+            'raid_message':raidmessage.id,
             'raidreport': ctx.raidreport.id,
+            'raid_report':ctx.raidreport.id,
             'reportmessage': message.id,
+            'report_message':message.id,
             'address': raid_details,
             'type': 'egg',
             'pokemon': '',
             'egglevel': egg_level,
+            'egg_level':egg_level,
             'weather': weather,
             'moveset': 0,
-            'gymhuntrgps': raid_coordinates
+            'gymhuntrgps': raid_coordinates,
+            'coordinates':raid_coordinates
         }
         if raidexp is not False:
             await raid_cog._timerset(raid_channel, raidexp)

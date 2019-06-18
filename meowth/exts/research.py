@@ -70,6 +70,35 @@ class Research(commands.Cog):
     async def before_cleanup(self):
         await self.bot.wait_until_ready()
 
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except (discord.errors.NotFound, AttributeError, discord.Forbidden):
+            return
+        guild = message.guild
+        try:
+            user = guild.get_member(payload.user_id)
+        except AttributeError:
+            return
+        guild = message.guild
+        can_manage = channel.permissions_for(user).manage_messages
+        try:
+            research_dict = self.bot.guild_dict[guild.id]['questreport_dict']
+        except KeyError:
+            research_dict = {}
+        if message.id in research_dict and user.id != self.bot.user.id:
+            research_dict =  self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
+            if str(payload.emoji) == self.bot.config.get('research_complete', '\u2705'):
+                if user.id not in research_dict.get('completed_by', []):
+                    if user.id != research_dict['reportauthor']:
+                        research_dict.get('completed_by', []).append(user.id)
+            elif str(payload.emoji) == self.bot.config.get('research_expired', '\U0001F4A8'):
+                for reaction in message.reactions:
+                    if reaction.emoji == self.bot.config.get('research_expired', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
+                        await self.expire_research(message)
+
     async def expire_research(self, message):
         guild = message.channel.guild
         channel = message.channel
@@ -81,6 +110,10 @@ class Research(commands.Cog):
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
         await utils.expire_dm_reports(self.bot, research_dict[message.id].get('dm_dict', {}))
+        research_bonus = research_dict.get(message.id, {}).get('completed_by', [])
+        if len(research_bonus) >= 3 and not message.author.bot:
+            research_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('research_reports', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['research_reports'] = research_reports
         try:
             del self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
         except KeyError:
@@ -344,17 +377,24 @@ class Research(commands.Cog):
             item = "mossy lure module"
         research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
         confirmation = await ctx.channel.send(research_msg, embed=research_embed)
+        await utils.safe_reaction(confirmation, self.bot.config.get('research_complete', '\u2705'))
+        await utils.safe_reaction(confirmation, self.bot.config.get('research_expired', '\ud83d\udca8'))
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][confirmation.id] = {
             'exp':time.time() + to_midnight - 60,
             'expedit':"delete",
             'reportmessage':ctx.message.id,
+            'report_message':ctx.message.id,
             'reportchannel':ctx.channel.id,
+            'report_channel':ctx.channel.id,
             'reportauthor':ctx.author.id,
+            'report_author':ctx.author.id,
+            'report_guild':ctx.guild.id,
             'dm_dict':dm_dict,
             'location':location,
             'url':loc_url,
             'quest':quest,
-            'reward':reward
+            'reward':reward,
+            'completed_by':[]
         }
         if not ctx.author.bot:
             research_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('research_reports', 0) + 1

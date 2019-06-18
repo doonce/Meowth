@@ -37,6 +37,7 @@ class Wild(commands.Cog):
         except AttributeError:
             return
         guild = message.guild
+        can_manage = channel.permissions_for(user).manage_messages
         try:
             wildreport_dict = self.bot.guild_dict[guild.id]['wildreport_dict']
         except KeyError:
@@ -48,15 +49,15 @@ class Wild(commands.Cog):
                 self.bot.guild_dict[guild.id]['wildreport_dict'][message.id] = wild_dict
             elif str(payload.emoji) == self.bot.config.get('wild_despawn', '\U0001F4A8'):
                 for reaction in message.reactions:
-                    if reaction.emoji == self.bot.config.get('wild_despawn', '\U0001F4A8') and reaction.count >= 2:
+                    if reaction.emoji == self.bot.config.get('wild_despawn', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         if wild_dict['omw']:
                             despawn = _("has despawned")
                             await channel.send(f"{', '.join(wild_dict['omw'])}: {wild_dict['pokemon'].title()} {despawn}!")
                         await self.expire_wild(message)
             elif str(payload.emoji) == self.bot.config.get('wild_catch', '\u26BE'):
-                if user.id not in wild_dict.get('bonus', []):
+                if user.id not in wild_dict.get('caught_by', []):
                     if user.id != wild_dict['reportauthor']:
-                        wild_dict.get('bonus', []).append(user.id)
+                        wild_dict.get('caught_by', []).append(user.id)
                     if user.mention in wild_dict['omw']:
                         wild_dict['omw'].remove(user.mention)
                         await message.remove_reaction(self.bot.config.get('wild_omw', '\U0001F3CE'), user)
@@ -67,6 +68,7 @@ class Wild(commands.Cog):
                     prefix = self.bot._get_prefix(self.bot, message)
                     ctx.prefix = prefix[-1]
                 await message.remove_reaction(payload.emoji, user)
+                ctx.author = user
                 await self.add_wild_info(ctx, message)
 
     @tasks.loop(seconds=0)
@@ -129,8 +131,8 @@ class Wild(commands.Cog):
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
         await utils.expire_dm_reports(self.bot, wild_dict.get(message.id, {}).get('dm_dict', {}))
-        wild_bonus = self.bot.guild_dict[guild.id]['wildreport_dict'].get(message.id, {}).get('bonus', [])
-        if len(wild_bonus) >= 5 and not message.author.bot:
+        wild_bonus = self.bot.guild_dict[guild.id]['wildreport_dict'].get(message.id, {}).get('caught_by', [])
+        if len(wild_bonus) >= 3 and not message.author.bot:
             wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wild_reports', 0) + 1
             self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports
         try:
@@ -163,6 +165,8 @@ class Wild(commands.Cog):
                 wild_gmaps_link = poi_url
                 wild_coordinates = poi_url.split("query=")[1]
                 nearest_stop = await gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), ctx.guild.id)
+        if details.get('coordinates'):
+            wild_gmaps_link = "https://www.google.com/maps/search/?api=1&query={0}".format(details['coordinates'])
         huntrexpstamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'], minutes=int(expire.split()[0]), seconds=int(expire.split()[2]))).strftime('%I:%M %p')
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
@@ -230,7 +234,7 @@ class Wild(commands.Cog):
                 wild_embed.add_field(name=_('**Add Wild Info**'), value=f"Meowth! I'll help you add information to a wild! **NOTE:** Please make sure you are above level 30 before setting these.\n\nI'll need to know what **value** you'd like to add. Reply **cancel** to stop anytime or reply with __one__ of the following options `Ex: iv 100` to add that value:\n\n{reply_msg}", inline=False)
                 value_wait = await channel.send(embed=wild_embed)
                 def check(reply):
-                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == author:
+                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == ctx.author:
                         return True
                     else:
                         return False
@@ -300,6 +304,9 @@ class Wild(commands.Cog):
         wild_gmaps_link = old_embed.url
         nearest_stop = wild_dict.get('location', None)
         poi_info = wild_dict.get('poi_info')
+        author = ctx.guild.get_member(wild_dict.get('reportauthor', None))
+        if author:
+            ctx.author = author
         wild_embed = await self.make_wild_embed(ctx, wild_dict)
         content = message.content
         if wild_dict.get('wild_iv') and "IV**" not in message.content:
@@ -548,8 +555,12 @@ class Wild(commands.Cog):
             'exp':time.time() + despawn,
             'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
             'reportmessage':message.id,
+            'report_message':message.id,
             'reportchannel':message.channel.id,
+            'report_channel':message.channel.id,
             'reportauthor':message.author.id,
+            'report_author':message.author.id,
+            'report_guild':message.guild.id,
             'dm_dict':dm_dict,
             'location':wild_details,
             'url':wild_gmaps_link,
@@ -560,7 +571,7 @@ class Wild(commands.Cog):
             'cp':None,
             'gender':pokemon.gender,
             'omw':[],
-            'bonus':[]
+            'caught_by':[]
         }
         wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wild_reports', 0) + 1
         self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports

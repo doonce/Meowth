@@ -507,7 +507,9 @@ class Trading(commands.Cog):
                         'status':"active",
                         'lister_id': ctx.author.id,
                         'report_channel_id': ctx.channel.id,
+                        'report_channel':ctx.channel.id,
                         'guild_id': ctx.guild.id,
+                        'report_guild':ctx.guild.id,
                         'wanted_pokemon': wanted_pokemon,
                         'offered_pokemon': str(offered_pokemon),
                         'offers':{}

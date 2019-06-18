@@ -57,8 +57,7 @@ class Want(commands.Cog):
                 want_embed.add_field(name=_('**Stop**'), value=f"Reply with **stop** to want research and wild spawns at specific pokestops.", inline=False)
         if role_list:
             want_embed.add_field(name=_('**Role**'), value=f"Reply with **role** to subscribe to server roles.", inline=False)
-        want_embed.add_field(name=_('**IV**'), value=f"Reply with **iv** to want wild spawns of a specific IV.", inline=False)
-        want_embed.add_field(name=_('**Level**'), value=f"Reply with **level** to want wild spawns of a specific level.", inline=False)
+        want_embed.add_field(name=_('**IV** / **Level**'), value=f"Reply with **iv** or **level** to want wild spawns of a specific IV / level.", inline=False)
         want_embed.add_field(name=_('**Type**'), value=f"Reply with **type** to want wild, research, and nest reports of a specific type.", inline=False)
         want_embed.add_field(name=_('**Item**'), value=f"Reply with **item** to want sspecific items from research.", inline=False)
         want_embed.add_field(name=_('**Settings**'), value=f"Reply with **settings** to access your want settings.", inline=False)

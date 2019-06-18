@@ -293,8 +293,12 @@ class Nest(commands.Cog):
                 'exp':migration_exp,
                 'expedit': "delete",
                 'reportchannel':channel.id,
+                'report_channel':channel.id,
                 'reportauthor':author.id,
+                'report_author':author.id,
+                'report_guild':message.guild.id,
                 'reporttime':datetime.datetime.utcnow(),
+                'report_time':datetime.datetime.utcnow(),
                 'dm_dict': dm_dict,
                 'location':nest_name,
                 'pokemon':str(pokemon)
