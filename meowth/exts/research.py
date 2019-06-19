@@ -55,7 +55,7 @@ class Research(commands.Cog):
             # save server_dict changes after cleanup
             logger.info('SAVING CHANGES')
             try:
-                await self.bot.save()
+                await self.bot.save
             except Exception as err:
                 logger.info('SAVING FAILED' + err)
             if not midnight_list:
@@ -90,13 +90,13 @@ class Research(commands.Cog):
             research_dict = {}
         if message.id in research_dict and user.id != self.bot.user.id:
             research_dict =  self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
-            if str(payload.emoji) == self.bot.config.get('research_complete', '\u2705'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('research_complete', '\u2705'):
                 if user.id not in research_dict.get('completed_by', []):
                     if user.id != research_dict['reportauthor']:
                         research_dict.get('completed_by', []).append(user.id)
-            elif str(payload.emoji) == self.bot.config.get('research_expired', '\U0001F4A8'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('research_expired', '\U0001F4A8'):
                 for reaction in message.reactions:
-                    if reaction.emoji == self.bot.config.get('research_expired', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
+                    if reaction.emoji == self.bot.custom_emoji.get('research_expired', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         await self.expire_research(message)
 
     async def expire_research(self, message):
@@ -165,9 +165,9 @@ class Research(commands.Cog):
                     pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
                     if pokemon and pokemon.id in self.bot.shiny_dict:
                         if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                            shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                         elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                            shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                     if pokemon and not other_reward:
                         reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
                         research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
@@ -208,8 +208,7 @@ class Research(commands.Cog):
                                 loc_url = stop_url
                         if not location:
                             return
-                    research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
-                    research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Great! Now, reply with the **quest** that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(location=location), inline=False)
+                    research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Great! Now, reply with the **quest** that you received from the **{location}** pokestop. You can reply with **cancel** to stop anytime.").format(location=location), inline=False)
                     questwait = await channel.send(embed=research_embed)
                     try:
                         questmsg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -226,8 +225,7 @@ class Research(commands.Cog):
                         break
                     elif questmsg:
                         quest = questmsg.clean_content
-                    research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, " "), inline=True)
-                    research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Fantastic! Now, reply with the **reward** for the **{quest}** quest that you received from **{location}**. You can reply with **cancel** to stop anytime.\n\nHere's what I have so far:").format(quest=quest, location=location), inline=False)
+                    research_embed.set_field_at(0, name=research_embed.fields[0].name, value=_("Fantastic! Now, reply with the **reward** you earned for the **{quest}** quest that you received from the **{location}** pokestop. You can reply with **cancel** to stop anytime").format(quest=quest, location=location), inline=False)
                     rewardwait = await channel.send(embed=research_embed)
                     try:
                         rewardmsg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -250,9 +248,9 @@ class Research(commands.Cog):
                         if pokemon and not other_reward:
                             if pokemon.id in self.bot.shiny_dict:
                                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                                 elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                             reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
                             research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
                             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
@@ -377,8 +375,8 @@ class Research(commands.Cog):
             item = "mossy lure module"
         research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
         confirmation = await ctx.channel.send(research_msg, embed=research_embed)
-        await utils.safe_reaction(confirmation, self.bot.config.get('research_complete', '\u2705'))
-        await utils.safe_reaction(confirmation, self.bot.config.get('research_expired', '\ud83d\udca8'))
+        await utils.safe_reaction(confirmation, self.bot.custom_emoji.get('research_complete', '\u2705'))
+        await utils.safe_reaction(confirmation, self.bot.custom_emoji.get('research_expired', '\ud83d\udca8'))
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][confirmation.id] = {
             'exp':time.time() + to_midnight - 60,
             'expedit':"delete",
@@ -451,11 +449,11 @@ class Research(commands.Cog):
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
             return
-        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
             await utils.safe_delete(rusure)
             for report in research_dict:
                 try:

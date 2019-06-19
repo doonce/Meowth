@@ -330,14 +330,14 @@ class Pokemon():
     @property
     def is_raid(self):
         """:class:`bool` : Indicates if the pokemon can show in Raids"""
-        return self.id in utils.get_raidlist(self.bot)
+        return str(self) in utils.get_raidlist(self.bot)
 
     @property
     def is_exraid(self):
         """:class:`bool` : Indicates if the pokemon can show in Raids"""
         if not self.is_raid:
             return False
-        return self.id in self.bot.raid_info['raid_eggs']['EX']['pokemon']
+        return str(self) in self.bot.raid_info['raid_eggs']['EX']['pokemon']
 
     @property
     def raid_level(self):
@@ -400,12 +400,12 @@ class Pokemon():
         for type in types:
             emoji = None
             try:
-                emoji_id = ''.join(x for x in self.bot.config['type_id_dict'][type.lower()].split(":")[2] if x.isdigit())
+                emoji_id = ''.join(x for x in self.bot.config.type_id_dict[type.lower()].split(":")[2] if x.isdigit())
                 emoji = discord.utils.get(self.bot.emojis, id=int(emoji_id))
                 if emoji:
                     ret += str(emoji)
                     continue
-                emoji_name = self.bot.config['type_id_dict'][type.lower()].split(":")[1]
+                emoji_name = self.bot.config.type_id_dict[type.lower()].split(":")[1]
                 emoji = discord.utils.get(self.bot.emojis, name=emoji_name)
                 if emoji:
                     ret += str(emoji)
@@ -711,7 +711,7 @@ class Pokedex(commands.Cog):
         error = False
         first = True
         action = "edit"
-        owner = self.bot.get_user(self.bot.config['master'])
+        owner = self.bot.get_user(self.bot.owner)
         pkmn_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pokemonstorageupgrade.1.png?cache=1')
         pkmn_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         def check(reply):

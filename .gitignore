@@ -5,4 +5,5 @@ data/serverdict_backup
 data/serverdict
 data/guilddict.txt
 data/guilddict_backup.txt
+meowth/config.py
 

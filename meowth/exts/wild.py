@@ -44,25 +44,25 @@ class Wild(commands.Cog):
             wildreport_dict = {}
         if message.id in wildreport_dict and user.id != self.bot.user.id:
             wild_dict = self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
-            if str(payload.emoji) == self.bot.config.get('wild_omw', '\U0001F3CE'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('wild_omw', '\U0001F3CE'):
                 wild_dict['omw'].append(user.mention)
                 self.bot.guild_dict[guild.id]['wildreport_dict'][message.id] = wild_dict
-            elif str(payload.emoji) == self.bot.config.get('wild_despawn', '\U0001F4A8'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_despawn', '\U0001F4A8'):
                 for reaction in message.reactions:
-                    if reaction.emoji == self.bot.config.get('wild_despawn', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
+                    if reaction.emoji == self.bot.custom_emoji.get('wild_despawn', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         if wild_dict['omw']:
                             despawn = _("has despawned")
                             await channel.send(f"{', '.join(wild_dict['omw'])}: {wild_dict['pokemon'].title()} {despawn}!")
                         await self.expire_wild(message)
-            elif str(payload.emoji) == self.bot.config.get('wild_catch', '\u26BE'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_catch', '\u26BE'):
                 if user.id not in wild_dict.get('caught_by', []):
                     if user.id != wild_dict['reportauthor']:
                         wild_dict.get('caught_by', []).append(user.id)
                     if user.mention in wild_dict['omw']:
                         wild_dict['omw'].remove(user.mention)
-                        await message.remove_reaction(self.bot.config.get('wild_omw', '\U0001F3CE'), user)
+                        await message.remove_reaction(self.bot.custom_emoji.get('wild_omw', '\U0001F3CE'), user)
                 await message.remove_reaction(payload.emoji, user)
-            elif str(payload.emoji) == self.bot.config.get('wild_info', '\u2139'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_info', '\u2139'):
                 ctx = await self.bot.get_context(message)
                 if not ctx.prefix:
                     prefix = self.bot._get_prefix(self.bot, message)
@@ -100,7 +100,7 @@ class Wild(commands.Cog):
             # save server_dict changes after cleanup
             logger.info('SAVING CHANGES')
             try:
-                await self.bot.save()
+                await self.bot.save
             except Exception as err:
                 logger.info('SAVING FAILED' + err)
                 pass
@@ -171,9 +171,9 @@ class Wild(commands.Cog):
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         details_str = f"{shiny_str}{pokemon.name.title()}"
         if gender and "female" in gender.lower():
             details_str += f" ♀"
@@ -193,10 +193,10 @@ class Wild(commands.Cog):
         wild_embed.add_field(name=f"{'**Est. Despawn:**' if int(expire.split()[0]) == 45 and int(expire.split()[2]) == 0 else '**Despawns in:**'}", value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=expire.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
         wild_embed.set_thumbnail(url=pokemon.img_url)
         wild_embed.set_author(name=f"Wild {pokemon.name.title()} Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
-        omw_emoji = ctx.bot.config.get('wild_omw', '\U0001F3CE')
-        despawn_emoji = ctx.bot.config.get('wild_despawn', '\U0001F4A8')
-        info_emoji = ctx.bot.config.get('wild_info', '\u2139')
-        catch_emoji = ctx.bot.config.get('wild_catch', '\u26BE')
+        omw_emoji = ctx.bot.custom_emoji.get('wild_omw', '\U0001F3CE')
+        despawn_emoji = ctx.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
+        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
         wild_embed.add_field(name='**Status Reactions:**', value=f"{omw_emoji}: I'm on my way!\n{catch_emoji}: I caught it!", inline=True)
         wild_embed.add_field(name='**Spawn Reactions:**', value=f"{despawn_emoji}: The Pokemon despawned!\n{info_emoji}: Add wild details", inline=True)
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -544,13 +544,13 @@ class Wild(commands.Cog):
         dm_dict = {}
         dm_dict = await self.send_dm_messages(ctx, pokemon.id, nearest_stop, wild_types[0], wild_types[1], wild_iv, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, self.bot.config.get('wild_omw', '\U0001F3CE'))
+        await utils.safe_reaction(ctx.wildreportmsg, self.bot.custom_emoji.get('wild_omw', '\U0001F3CE'))
         await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, self.bot.config.get('wild_despawn', '\U0001F4A8'))
+        await utils.safe_reaction(ctx.wildreportmsg, self.bot.custom_emoji.get('wild_despawn', '\U0001F4A8'))
         await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.config.get('wild_catch', '\u26BE'))
+        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.custom_emoji.get('wild_catch', '\u26BE'))
         await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.config.get('wild_info', '\u2139'))
+        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.custom_emoji.get('wild_info', '\u2139'))
         self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'exp':time.time() + despawn,
             'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
@@ -604,11 +604,11 @@ class Wild(commands.Cog):
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
             return
-        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
             await utils.safe_delete(rusure)
             for report in wild_dict:
                 report_message = await channel.fetch_message(report)

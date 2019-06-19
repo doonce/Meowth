@@ -259,7 +259,7 @@ def get_level(bot, pkmn):
 
 async def ask(bot, message, user_list=None, timeout=60, *, react_list=[]):
     if not react_list:
-        react_list=[bot.config.get('answer_yes', '\u2705'), bot.config.get('answer_no', '\u274e')]
+        react_list=[bot.custom_emoji.get('answer_yes', '\u2705'), bot.custom_emoji.get('answer_no', '\u274e')]
     if user_list and type(user_list) != list:
         user_list = [user_list]
     def check(reaction, user):
@@ -351,9 +351,9 @@ async def autocorrect(bot, entered_word, word_list, destination, author):
             except TypeError:
                 timeout = True
             await safe_delete(question)
-            if timeout or res.emoji == bot.config.get('answer_no', '\u274e'):
+            if timeout or res.emoji == bot.custom_emoji.get('answer_no', '\u274e'):
                 return None
-            elif res.emoji == bot.config.get('answer_yes', '\u2705'):
+            elif res.emoji == bot.custom_emoji.get('answer_yes', '\u2705'):
                 return match
             else:
                 return None
@@ -425,7 +425,7 @@ def weakness_to_str(bot, guild, weak_list):
             x2 = 'x2'
         # Append to string
         ret += (parse_emoji(guild,
-                bot.config['type_id_dict'][weakness]) + x2) + ' '
+                bot.config.type_id_dict[weakness]) + x2) + ' '
     return ret
 
 def create_gmaps_query(bot, details, channel, type="raid"):
@@ -714,7 +714,7 @@ class Utilities(commands.Cog):
         else:
             draft = await channel.send(announce)
 
-        reaction_list = ['❔', self.bot.config.get('answer_yes', '\u2705'), self.bot.config.get('answer_no', '\u274e')]
+        reaction_list = ['❔', self.bot.custom_emoji.get('answer_yes', '\u2705'), self.bot.custom_emoji.get('answer_no', '\u274e')]
         owner_msg_add = ''
         if checks.is_owner_check(ctx):
             owner_msg_add = '🌎 '
@@ -729,9 +729,9 @@ class Utilities(commands.Cog):
         msg = _("That's what you sent, does it look good? React with ")
         msg += "{}❔ "
         msg += _("to send to another channel, ")
-        msg += "{emoji} ".format(emoji=self.bot.config.get('answer_yes', '\u2705'))
+        msg += "{emoji} ".format(emoji=self.bot.custom_emoji.get('answer_yes', '\u2705'))
         msg += _("to send it to this channel, or ")
-        msg += "{emoji} ".format(emoji=self.bot.config.get('answer_no', '\u274e'))
+        msg += "{emoji} ".format(emoji=self.bot.custom_emoji.get('answer_no', '\u274e'))
         msg += _("to cancel")
         rusure = await channel.send(msg.format(owner_msg_add))
         try:
@@ -741,10 +741,10 @@ class Utilities(commands.Cog):
             timeout = True
         if not timeout:
             await safe_delete(rusure)
-            if res.emoji == self.bot.config.get('answer_no', '\u274e'):
+            if res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
                 confirmation = await channel.send(_('Announcement Cancelled.'), delete_after=10)
                 await safe_delete(draft)
-            elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+            elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                 confirmation = await channel.send(_('Announcement Sent.'), delete_after=10)
             elif res.emoji == '❔':
                 channelwait = await channel.send(_('What channel would you like me to send it to?'))
@@ -797,38 +797,16 @@ class Utilities(commands.Cog):
         await asyncio.sleep(30)
         await safe_delete(message)
 
-    @commands.command(name='uptime', hidden=True)
-    @checks.guildchannel()
-    async def cmd_uptime(self, ctx):
-        "Shows Meowth's uptime"
-        guild = ctx.guild
-        channel = ctx.channel
-        embed_colour = guild.me.colour or discord.Colour.lighter_grey()
-        uptime_str = await self._uptime(self.bot)
-        embed = discord.Embed(colour=embed_colour, description=uptime_str)
+    @commands.command(name="uptime", hidden=True)
+    async def _uptime(self, ctx):
+        """Shows bot's uptime"""
+        uptime_str = ctx.bot.uptime_str
+        embed = discord.Embed(colour=ctx.guild.me.colour, description=uptime_str)
         embed.set_author(name="Uptime", icon_url=self.bot.user.avatar_url)
         try:
-            await channel.send(embed=embed)
-        except discord.HTTPException:
-            await channel.send(_('I need the `Embed links` permission to send this'))
-
-    async def _uptime(self, bot):
-        'Shows info about Meowth'
-        time_start = bot.uptime
-        time_now = datetime.datetime.now()
-        ut = relativedelta(time_now, time_start)
-        (ut.years, ut.months, ut.days, ut.hours, ut.minutes)
-        if ut.years >= 1:
-            uptime = _('{yr}y {mth}m {day}d {hr}:{min}').format(yr=ut.years, mth=ut.months, day=ut.days, hr=ut.hours, min=ut.minutes)
-        elif ut.months >= 1:
-            uptime = _('{mth}m {day}d {hr}:{min}').format(mth=ut.months, day=ut.days, hr=ut.hours, min=ut.minutes)
-        elif ut.days >= 1:
-            uptime = _('{day} days {hr} hrs {min} mins').format(day=ut.days, hr=ut.hours, min=ut.minutes)
-        elif ut.hours >= 1:
-            uptime = _('{hr} hrs {min} mins {sec} secs').format(hr=ut.hours, min=ut.minutes, sec=ut.seconds)
-        else:
-            uptime = _('{min} mins {sec} secs').format(min=ut.minutes, sec=ut.seconds)
-        return uptime
+            await ctx.send(embed=embed)
+        except discord.errors.Forbidden:
+            await ctx.send("Uptime: {}".format(uptime_str))
 
     @commands.command()
     @checks.guildchannel()
@@ -837,7 +815,7 @@ class Utilities(commands.Cog):
         huntr_repo = 'https://github.com/doonce/Meowth'
         huntr_name = 'BrenenP'
         guild_url = 'https://discord.gg/Qwb8xev'
-        owner = self.bot.owner
+        owner = self.bot.get_user(self.bot.owner)
         channel = ctx.channel
         uptime_str = await self._uptime(self.bot)
         yourguild = ctx.guild.name
@@ -868,9 +846,8 @@ class Utilities(commands.Cog):
     async def _set(self, ctx):
         """Changes a setting.
 
-        Users: pokebattler, trainercode, silph
         Manager: timezone, regional, prefix
-        Owner: avatar, username, activity"""
+        Owner: avatar, username, activity, status"""
         if ctx.invoked_subcommand == None:
             raise commands.BadArgument()
             return
@@ -892,9 +869,9 @@ class Utilities(commands.Cog):
                 except TypeError:
                     timeout = True
                 await safe_delete(question)
-                if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
                     return
-                elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                     pass
                 else:
                     return
@@ -904,21 +881,18 @@ class Utilities(commands.Cog):
                 return
             elif regional == 'clear':
                 regional = None
-                self._set_regional(self.bot, ctx.guild, regional)
+                self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['regional'] = regional
                 await ctx.message.channel.send(_("Meowth! Regional raid boss cleared!"), delete_after=10)
                 return
             else:
                 regional = get_number(self.bot, regional)
         if regional in self.bot.raid_list:
-            self._set_regional(self.bot, ctx.guild, regional)
+            self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['regional'] = regional
             await ctx.message.channel.send(_("Meowth! Regional raid boss set to **{boss}**!").format(boss=get_name(self.bot, regional).title()), delete_after=10)
-            await safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
+            await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', '\u2611'))
         else:
             await ctx.message.channel.send(_("Meowth! That Pokemon doesn't appear in raids!"), delete_after=10)
             return
-
-    def _set_regional(self, bot, guild, regional):
-        self.bot.guild_dict[guild.id]['configure_dict']['settings']['regional'] = regional
 
     @_set.command()
     @checks.guildchannel()
@@ -935,32 +909,43 @@ class Utilities(commands.Cog):
         if (not ((- 12) <= timezone <= 14)):
             await ctx.channel.send(_("I couldn't convert your answer to an appropriate timezone! Please double check what you sent me and resend a number from **-12** to **12**."), delete_after=10)
             return
-        self._set_timezone(self.bot, ctx.guild, timezone)
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'] = timezone
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
         await ctx.channel.send(_("Timezone has been set to: `UTC{offset}`\nThe current time is **{now}**").format(offset=timezone, now=now.strftime("%H:%M")), delete_after=10)
-        await safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
-
-    def _set_timezone(self, bot, guild, timezone):
-        self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'] = timezone
+        await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', '\u2611'))
 
     @_set.command()
-    @commands.has_permissions(manage_guild=True)
-    @checks.guildchannel()
-    async def prefix(self, ctx, prefix=None):
-        """Changes server prefix."""
-        if prefix == 'clear':
-            prefix = None
-        prefix = prefix.strip()
-        self._set_prefix(self.bot, ctx.guild, prefix)
-        if prefix != None:
-            await ctx.channel.send(_('Prefix has been set to: `{}`').format(prefix))
-        else:
-            default_prefix = self.bot.config['default_prefix']
-            await ctx.channel.send(_('Prefix has been reset to default: `{}`').format(default_prefix))
-        await safe_reaction(ctx.message, self.bot.config.get('command_done', '\u2611'))
+    @checks.is_owner()
+    async def status(self, ctx, *, status: str):
+        """Sets the bot's online status
+        Available statuses include: online, idle, dnd, invisible
+        """
 
-    def _set_prefix(self, bot, guild, prefix):
-        self.bot.guild_dict[guild.id]['configure_dict']['settings']['prefix'] = prefix
+        statuses = {
+            "online"    : discord.Status.online,
+            "idle"      : discord.Status.idle,
+            "dnd"       : discord.Status.dnd,
+            "invisible" : discord.Status.invisible
+            }
+
+        game = ctx.me.activity
+
+        try:
+            status = statuses[status.lower()]
+        except KeyError:
+            await ctx.bot.send_cmd_help(ctx)
+        else:
+            await ctx.bot.change_presence(status=status,
+                                          activity=game)
+
+    @_set.command()
+    @checks.is_owner()
+    async def nickname(self, ctx, *, nickname: str):
+        """Sets bot's nickname"""
+        try:
+            await ctx.guild.me.edit(nick=nickname)
+        except discord.Forbidden:
+            await ctx.send("Meowth! An error occured when trying to change my nickname, try again later.", delete_after=10)
 
     @_set.command()
     @checks.is_owner()
@@ -988,10 +973,10 @@ class Utilities(commands.Cog):
                 res, reactuser = await ask(self.bot, rusure, ctx.author.id)
             except TypeError:
                 timeout = True
-            if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
                 await safe_delete(rusure)
                 confirmation = await message.channel.send(_('Configuration Cancelled.'), delete_after=10)
-            elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+            elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                 await safe_delete(rusure)
                 async with aiohttp.ClientSession() as cs:
                     async with cs.get(avy_url) as r:
@@ -1016,10 +1001,10 @@ class Utilities(commands.Cog):
             res, reactuser = await ask(self.bot, rusure, ctx.author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
             await safe_delete(rusure)
             confirmation = await ctx.send(_('Configuration Cancelled.'), delete_after=10)
-        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
             await safe_delete(rusure)
             try:
                 await self.bot.user.edit(username=username)
@@ -1039,10 +1024,10 @@ class Utilities(commands.Cog):
             res, reactuser = await ask(self.bot, rusure, ctx.author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
             await safe_delete(rusure)
             confirmation = await ctx.send(_('Configuration Cancelled.'), delete_after=10)
-        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
             await safe_delete(rusure)
             try:
                 await self.bot.change_presence(activity=discord.Game(name=activity))
@@ -1051,26 +1036,27 @@ class Utilities(commands.Cog):
         await asyncio.sleep(10)
         await safe_delete(ctx.message)
 
-    @commands.group(name='get', case_insensitive=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
-    async def _get(self, ctx):
-        """Get a setting value.
+    async def prefix(self, ctx, prefix=None):
+        """Get and set server prefix."""
+        if not prefix:
+            prefix = self.bot._get_prefix(self.bot, ctx.message)
+            return await ctx.channel.send(_('Prefix for this server is: `{}`').format(prefix), delete_after=10)
+        if prefix == 'clear':
+            prefix = None
+        prefix = prefix.strip()
+        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['prefix'] = prefix
+        if prefix != None:
+            await ctx.channel.send(_('Prefix has been set to: `{}`').format(prefix))
+        else:
+            default_prefix = self.bot.default_prefix
+            await ctx.channel.send(_('Prefix has been reset to default: `{}`').format(default_prefix))
+        await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', '\u2611'))
 
-        Managers: prefix, perms"""
-        if ctx.invoked_subcommand == None:
-            raise commands.BadArgument()
-            return
-
-    @_get.command()
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
-    async def prefix(self, ctx):
-        """Get server prefix."""
-        prefix = self.bot._get_prefix(self.bot, ctx.message)
-        await ctx.channel.send(_('Prefix for this server is: `{}`').format(prefix), delete_after=10)
-
-    @_get.command()
-    @commands.has_permissions(manage_guild=True)
-    async def perms(self, ctx, channel_id = None):
+    async def permissions(self, ctx, channel_id = None):
         """Show Meowth's permissions for the guild and channel."""
         channel = discord.utils.get(ctx.bot.get_all_channels(), id=channel_id)
         guild = channel.guild if channel else ctx.guild

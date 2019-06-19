@@ -54,7 +54,7 @@ class Lure(commands.Cog):
             # save server_dict changes after cleanup
             logger.info('SAVING CHANGES')
             try:
-                await self.bot.save()
+                await self.bot.save
             except Exception as err:
                 logger.info('SAVING FAILED' + err)
                 pass
@@ -89,7 +89,7 @@ class Lure(commands.Cog):
             lure_dict = []
         if message.id in lure_dict and user.id != self.bot.user.id:
             wild_dict = self.bot.guild_dict[guild.id]['lure_dict'][message.id]
-            if str(payload.emoji) == self.bot.config.get('lure_expire', '\U0001F4A8'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('lure_expire', '\U0001F4A8'):
                 for reaction in message.reactions:
                     await self.expire_lure(message)
 
@@ -180,14 +180,6 @@ class Lure(commands.Cog):
                         break
                     elif location_msg:
                         location = location_msg.clean_content
-                        gym_matching_cog = self.bot.cogs.get('GymMatching')
-                        stop_info = ""
-                        if gym_matching_cog:
-                            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "lure", dupe_check=False)
-                            if stop_url:
-                                loc_url = stop_url
-                        if not location:
-                            return
                     lure_embed.clear_fields()
                     lure_embed.add_field(name="**New Lure Report**", value=f"Fantastic! Now, reply with the **minutes remaining** before the **{lure_type} lure** ends. This is usually 30 minutes from when the lure started unless there is an event. If you don't know, reply with **N**. You can reply with **cancel** to stop anytime.", inline=False)
                     expire_wait = await channel.send(embed=lure_embed)
@@ -275,7 +267,7 @@ class Lure(commands.Cog):
             'type':lure_type
         }
         if not timer:
-            await utils.safe_reaction(confirmation, self.bot.config.get('lure_expire', '\U0001F4A8'))
+            await utils.safe_reaction(confirmation, self.bot.custom_emoji.get('lure_expire', '\U0001F4A8'))
         lure_embed.description = lure_embed.description + f"\n**Report:** [Jump to Message]({confirmation.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
@@ -290,8 +282,8 @@ class Lure(commands.Cog):
                 except:
                     continue
         self.bot.guild_dict[ctx.guild.id]['lure_dict'][confirmation.id]['dm_dict'] = dm_dict
-        lure_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('lure_reports', 0) + 1
-        self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['lure_reports'] = lure_reports
+        lure_reports = ctx.bot.guild_dict[ctx.message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('lure_reports', 0) + 1
+        self.bot.guild_dict[message.guild.id]['trainers'][ctx.message.author.id]['lure_reports'] = lure_reports
 
     @lure.command(aliases=['expire'])
     @checks.allowlurereport()
@@ -319,11 +311,11 @@ class Lure(commands.Cog):
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
             return
-        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
             await utils.safe_delete(rusure)
             for report in lure_dict:
                 report_message = await channel.fetch_message(report)

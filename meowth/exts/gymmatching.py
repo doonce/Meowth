@@ -429,9 +429,9 @@ class GymMatching(commands.Cog):
             return match
         if score < 80:
             try:
-                answer_yes = self.bot.config.get('answer_yes', '\u2705')
-                answer_no = self.bot.config.get('answer_no', '\u274e')
-                answer_cancel = self.bot.config.get('answer_cancel', '\u274c')
+                answer_yes = self.bot.custom_emoji.get('answer_yes', '\u2705')
+                answer_no = self.bot.custom_emoji.get('answer_no', '\u274e')
+                answer_cancel = self.bot.custom_emoji.get('answer_cancel', '\u274c')
                 question = f"{author.mention} Did you mean: **{match}**?\n\nReact with {answer_yes} to match report with **{match}**, {answer_no} to report without matching, or {answer_cancel} to cancel report."
                 q_msg = await channel.send(question)
                 reaction, __ = await utils.ask(self.bot, q_msg, author.id, react_list=[answer_yes, answer_no, answer_cancel])
@@ -441,10 +441,10 @@ class GymMatching(commands.Cog):
             if not reaction:
                 await utils.safe_delete(q_msg)
                 return None
-            if reaction.emoji == self.bot.config.get('answer_cancel', '\u274c'):
+            if reaction.emoji == self.bot.custom_emoji.get('answer_cancel', '\u274c'):
                 await utils.safe_delete(q_msg)
                 return False
-            if reaction.emoji == self.bot.config.get('answer_yes', '\u2705'):
+            if reaction.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                 await utils.safe_delete(q_msg)
                 return match
             await utils.safe_delete(q_msg)
@@ -538,12 +538,12 @@ class GymMatching(commands.Cog):
                 res, reactuser = await utils.ask(self.bot, rusure, message.author.id)
             except TypeError:
                 timeout = True
-            if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
                 await utils.safe_delete(rusure)
                 confirmation = await message.channel.send(_('Report cancelled.'), delete_after=10)
                 await utils.safe_delete(message)
                 return "", False, False
-            elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+            elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                 await utils.safe_delete(rusure)
                 return poi_info, details, poi_gmaps_link
             else:

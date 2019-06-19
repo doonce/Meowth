@@ -78,7 +78,7 @@ class Huntr(commands.Cog):
             # save server_dict changes after cleanup
             logger.info('SAVING CHANGES')
             try:
-                await self.bot.save()
+                await self.bot.save
             except Exception as err:
                 logger.info('SAVING FAILED' + err)
             logger.info('------ END ------')
@@ -98,7 +98,7 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(message)
         if not ctx.guild:
             return
-        if (ctx.author.bot or message.webhook_id or ctx.author.id in self.bot.config.get('managers', []) or ctx.author.id == self.bot.config['master']) and ctx.author != ctx.guild.me and "!alarm" in message.content.lower():
+        if (ctx.author.bot or message.webhook_id or ctx.author.id in self.bot.managers or ctx.author.id == self.bot.owner) and ctx.author != ctx.guild.me and "!alarm" in message.content.lower():
             await self.on_pokealarm(ctx)
         if (str(ctx.author) == 'GymHuntrBot#7279') or (str(ctx.author) == 'HuntrBot#1845'):
             await self.on_huntr(ctx)
@@ -120,27 +120,27 @@ class Huntr(commands.Cog):
         pokehuntr_dict = copy.deepcopy(ctx.bot.guild_dict[channel.guild.id].get('pokehuntr_dict', {}))
         raid_cog = self.bot.cogs.get('Raid')
         if message.id in pokealarm_dict.keys() and not user.bot:
-            if str(payload.emoji) == self.bot.config.get('huntr_report', '\u2705'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('huntr_report', '\u2705'):
                 await self.on_pokealarm(ctx, user)
-            elif str(payload.emoji) == self.bot.config.get('raid_maybe', '\u2753'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', '\u2753'):
                 raid_channel = await self.on_pokealarm(ctx, user)
                 await raid_cog._maybe(raid_channel, user, 1, None)
-            elif str(payload.emoji) == self.bot.config.get('raid_omw', '\ud83c\udfce'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce'):
                 raid_channel = await self.on_pokealarm(ctx, user)
                 await raid_cog._coming(raid_channel, user, 1, None)
-            elif str(payload.emoji) == self.bot.config.get('raid_here', '\U0001F4CD'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_here', '\U0001F4CD'):
                 raid_channel = await self.on_pokealarm(ctx, user)
                 await raid_cog._here(raid_channel, user, 1, None)
         elif message.id in pokehuntr_dict.keys() and not user.bot:
-            if str(payload.emoji) == self.bot.config.get('huntr_report', '\u2705'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('huntr_report', '\u2705'):
                 await self.on_huntr(ctx, user)
-            elif str(payload.emoji) == self.bot.config.get('raid_maybe', '\u2753'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', '\u2753'):
                 raid_channel = await self.on_huntr(ctx, user)
                 await raid_cog._maybe(raid_channel, user, 1, None)
-            elif str(payload.emoji) == self.bot.config.get('raid_omw', '\ud83c\udfce'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce'):
                 raid_channel = await self.on_huntr(ctx, user)
                 await raid_cog._coming(raid_channel, user, 1, None)
-            elif str(payload.emoji) == self.bot.config.get('raid_here', '\U0001F4CD'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_here', '\U0001F4CD'):
                 raid_channel = await self.on_huntr(ctx, user)
                 await raid_cog._here(raid_channel, user, 1, None)
 
@@ -152,9 +152,9 @@ class Huntr(commands.Cog):
         auto_egg = self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoegg', False)
         auto_wild = self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autowild', False)
         raid_channel = None
-        maybe_reaction = self.bot.config.get('raid_maybe', '\u2753')
-        omw_reaction = self.bot.config.get('raid_omw', '\ud83c\udfce')
-        here_reaction = self.bot.config.get('raid_here', '\U0001F4CD')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
+        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         react_list = [maybe_reaction, omw_reaction, here_reaction]
         if not auto_raid and not auto_egg and not auto_wild:
             return
@@ -252,7 +252,7 @@ class Huntr(commands.Cog):
                     pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
                     ctx.raidreport = await message.channel.send(content=_('{roletest}Meowth! {pokemon} raid reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(roletest=roletest, pokemon=entered_raid.title(), member=message.author.mention, location_details=raid_details), embed=raid_embed)
                     await asyncio.sleep(0.25)
-                    await utils.safe_reaction(ctx.raidreport, self.bot.config.get('huntr_report', '\u2705'))
+                    await utils.safe_reaction(ctx.raidreport, self.bot.custom_emoji.get('huntr_report', '\u2705'))
                     for reaction in react_list:
                         await utils.safe_reaction(ctx.raidreport, reaction)
                     dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {entered_raid.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(raid_embed), dm_dict)
@@ -284,7 +284,7 @@ class Huntr(commands.Cog):
                     pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
                     ctx.raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. React if you want to make a channel for this raid!').format(level=egg_level, member=message.author.mention, location_details=raid_details), embed=raid_embed)
                     await asyncio.sleep(0.25)
-                    await utils.safe_reaction(ctx.raidreport, self.bot.config.get('huntr_report', '\u2705'))
+                    await utils.safe_reaction(ctx.raidreport, self.bot.custom_emoji.get('huntr_report', '\u2705'))
                     for reaction in react_list:
                         await utils.safe_reaction(ctx.raidreport, reaction)
                     dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! Level {egg_level} raid egg reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(raid_embed), dm_dict)
@@ -381,10 +381,10 @@ class Huntr(commands.Cog):
         raid_channel = False
         pokealarm_dict = self.bot.guild_dict[ctx.guild.id].setdefault('pokealarm_dict', {})
         dm_dict = {}
-        huntr_emoji = self.bot.config.get('huntr_report', '\u2705')
-        maybe_reaction = self.bot.config.get('raid_maybe', '\u2753')
-        omw_reaction = self.bot.config.get('raid_omw', '\ud83c\udfce')
-        here_reaction = self.bot.config.get('raid_here', '\U0001F4CD')
+        huntr_emoji = self.bot.custom_emoji.get('huntr_report', '\u2705')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
+        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         react_list = [huntr_emoji, maybe_reaction, omw_reaction, here_reaction]
         if not reactuser:
             reporttype = None
@@ -622,9 +622,9 @@ class Huntr(commands.Cog):
             pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, p)
             if pokemon.id in self.bot.shiny_dict:
                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
             boss_list.append(shiny_str + pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=1'.format(str(egg_img))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
@@ -670,9 +670,9 @@ class Huntr(commands.Cog):
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         raid_number = pokemon.id
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=True)
@@ -753,10 +753,10 @@ class Huntr(commands.Cog):
         if nearest_stop or nearest_poi:
             stop_str = f"{' Details: '+nearest_poi+' |' if nearest_poi and nearest_poi != nearest_stop else ''}{' Nearest Pokestop: '+nearest_stop if nearest_stop else ''}{' | ' if nearest_poi or nearest_stop else ' '}"
         wild_embed = await wild_cog.make_wild_embed(ctx, report_details)
-        omw_emoji = ctx.bot.config.get('wild_omw', '\U0001F3CE')
-        despawn_emoji = ctx.bot.config.get('wild_despawn', '\U0001F4A8')
-        info_emoji = ctx.bot.config.get('wild_info', '\u2139')
-        catch_emoji = ctx.bot.config.get('wild_catch', '\u26BE')
+        omw_emoji = ctx.bot.custom_emoji.get('wild_omw', '\U0001F3CE')
+        despawn_emoji = ctx.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
+        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
         reaction_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji]
         if iv_long:
             wild_embed.set_field_at(len(wild_embed.fields)-1, name="**Spawn Reactions:**", value=wild_embed.fields[-1].value.replace(f"{info_emoji}: Add wild details", ""))
@@ -802,11 +802,11 @@ class Huntr(commands.Cog):
         if report_user:
             ctx.message.author = report_user
         message = ctx.message
-        help_reaction = self.bot.config.get('raid_info', '\u2139')
-        maybe_reaction = self.bot.config.get('raid_maybe', '\u2753')
-        omw_reaction = self.bot.config.get('raid_omw', '\ud83c\udfce')
-        here_reaction = self.bot.config.get('raid_here', '\U0001F4CD')
-        cancel_reaction = self.bot.config.get('raid_cancel', '\u274C')
+        help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
+        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
+        cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
@@ -937,11 +937,11 @@ class Huntr(commands.Cog):
         if report_user:
             ctx.message.author = report_user
         message = ctx.message
-        help_reaction = self.bot.config.get('raid_info', '\u2139')
-        maybe_reaction = self.bot.config.get('raid_maybe', '\u2753')
-        omw_reaction = self.bot.config.get('raid_omw', '\ud83c\udfce')
-        here_reaction = self.bot.config.get('raid_here', '\U0001F4CD')
-        cancel_reaction = self.bot.config.get('raid_cancel', '\u274C')
+        help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
+        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
+        cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
@@ -1060,9 +1060,9 @@ class Huntr(commands.Cog):
             shiny_str = ""
             if pokemon.id in self.bot.shiny_dict:
                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
             reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
             research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
@@ -1143,7 +1143,6 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-
         huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"1", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)

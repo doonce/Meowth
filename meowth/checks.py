@@ -6,7 +6,7 @@ from meowth import errors
 
 def is_owner_check(ctx):
     author = ctx.author.id
-    owner = ctx.bot.config['master']
+    owner = ctx.bot.owner
     return author == owner
 
 def is_owner():
@@ -14,16 +14,11 @@ def is_owner():
 
 def is_manager_check(ctx):
     author = ctx.author.id
-    manager_list = ctx.bot.config.get('managers', [])
+    manager_list = ctx.bot.managers
     return author in manager_list or is_dev_check(ctx) or is_owner_check(ctx)
 
 def is_manager():
-    def predicate(ctx):
-        if is_manager_check(ctx):
-            return True
-        else:
-            return False
-    return commands.check(predicate)
+    return commands.check(is_manager_check)
 
 def is_dev_check(ctx):
     author = ctx.author.id
@@ -31,12 +26,31 @@ def is_dev_check(ctx):
     return author in dev_list
 
 def is_dev():
-    def predicate(ctx):
-        if is_dev_check(ctx):
-            return True
-        else:
-            return False
-    return commands.check(predicate)
+    return commands.check(is_dev_check)
+
+async def check_is_guildowner(ctx):
+    if is_manager_check(ctx):
+        return True
+    if ctx.author.id == ctx.guild.owner.id:
+        return True
+    return False
+
+async def check_is_admin(ctx):
+    if await check_is_guildowner(ctx):
+        return True
+    if ctx.author.guild_permissions.manage_guild:
+        return True
+    return False
+
+async def check_is_mod(ctx):
+    if await check_is_admin(ctx):
+        return True
+    if ctx.author.permissions_in(ctx.channel).manage_messages:
+        return True
+    return False
+
+def is_mod():
+    return commands.check(check_is_mod)
 
 def check_permissions(ctx, perms):
     if not perms:

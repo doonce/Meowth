@@ -409,8 +409,8 @@ class Tutorial(commands.Cog):
                 colour=discord.Colour.green(),
                 description=f"Great job!"))
 
-            omw_emoji = ctx.bot.config.get('wild_omw', '\U0001F3CE')
-            despawn_emoji = ctx.bot.config.get('wild_despawn', '\U0001F4A8')
+            omw_emoji = ctx.bot.custom_emoji.get('wild_omw', '\U0001F3CE')
+            despawn_emoji = ctx.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
 
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"The {omw_emoji} emoji adds you to a list of trainers chasing the wild spawn and the {despawn_emoji} emoji alerts others that it has despawned."))
 

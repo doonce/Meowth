@@ -68,21 +68,21 @@ class Raid(commands.Cog):
                 await message.edit(embed=newembed)
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['moveset'] = moveset
             elif message.id == self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('raidmessage', None) or message.id == self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('raidreport', None):
-                if str(payload.emoji) == self.bot.config.get('raid_info', '\u2139') and message.id == self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('raidmessage', None):
+                if str(payload.emoji) == self.bot.custom_emoji.get('raid_info', '\u2139') and message.id == self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('raidmessage', None):
                     prefix = self.bot.guild_dict[guild.id]['configure_dict']['settings']['prefix']
-                    prefix = prefix or self.bot.config['default_prefix']
+                    prefix = prefix or self.bot.default_prefix
                     avatar = self.bot.user.avatar_url
                     await utils.get_raid_help(prefix, avatar, user)
-                elif str(payload.emoji) == self.bot.config.get('raid_maybe', '\u2753'):
+                elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', '\u2753'):
                     await self._maybe(channel, user, 1, None)
-                elif str(payload.emoji) == self.bot.config.get('raid_omw', '\ud83c\udfce'):
+                elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce'):
                     await self._coming(channel, user, 1, None)
-                elif str(payload.emoji) == self.bot.config.get('raid_here', '\U0001F4CD'):
+                elif str(payload.emoji) == self.bot.custom_emoji.get('raid_here', '\U0001F4CD'):
                     await self._here(channel, user, 1, None)
-                elif str(payload.emoji) == self.bot.config.get('raid_cancel', '\u274C'):
+                elif str(payload.emoji) == self.bot.custom_emoji.get('raid_cancel', '\u274C'):
                     await self._cancel(channel, user)
             elif message.id in self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('next_trains', {}).keys():
-                if str(payload.emoji) == self.bot.config.get('train_emoji', "\U0001F682"):
+                if str(payload.emoji) == self.bot.custom_emoji.get('train_emoji', "\U0001F682"):
                     next_train = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['next_trains'][message.id]
                     if user.id == next_train['author']:
                         return
@@ -159,12 +159,12 @@ class Raid(commands.Cog):
                         count = trainer_dict[message.author.id].get('count', 1)
                     else:
                         count = 1
-                    omw_emoji = utils.parse_emoji(message.guild, self.bot.config['omw_id'])
+                    omw_emoji = utils.parse_emoji(message.guild, self.bot.config.omw_id)
                     if message.content.startswith(omw_emoji):
                         emoji_count = message.content.count(omw_emoji)
                         await self._coming(message.channel, message.author, emoji_count, party=None)
                         return
-                    here_emoji = utils.parse_emoji(message.guild, self.bot.config['here_id'])
+                    here_emoji = utils.parse_emoji(message.guild, self.bot.config.here_id)
                     if message.content.startswith(here_emoji):
                         emoji_count = message.content.count(here_emoji)
                         await self._here(message.channel, message.author, emoji_count, party=None)
@@ -590,7 +590,7 @@ class Raid(commands.Cog):
             # save server_dict changes after cleanup
             logger.info('SAVING CHANGES')
             try:
-                await self.bot.save()
+                await self.bot.save
             except Exception as err:
                 logger.info('SAVING FAILED' + err)
             logger.info('------ END ------')
@@ -893,11 +893,11 @@ class Raid(commands.Cog):
                         res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
                     except TypeError:
                         timeout = True
-                    if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                    if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
                         await utils.safe_delete(question)
                         error = _('cancelled the command')
                         break
-                    elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                    elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                         pass
                     else:
                         error = _('did something invalid')
@@ -919,7 +919,8 @@ class Raid(commands.Cog):
             data['raid_eggs'][edit_level]['pokemon'] = new_list
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
-            self.bot.load_config()
+            pkmn_class.Pokemon.generate_lists(self.bot)
+            self.bot.raid_list = utils.get_raidlist(self.bot)
             self.reset_raid_roles.restart()
             guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)
             for guild_id in guilddict_chtemp:
@@ -1059,11 +1060,11 @@ class Raid(commands.Cog):
                         res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
                     except TypeError:
                         timeout = True
-                    if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                    if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
                         await utils.safe_delete(question)
                         error = _('cancelled the command')
                         break
-                    elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                    elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                         pass
                     else:
                         error = _('did something invalid')
@@ -1093,7 +1094,8 @@ class Raid(commands.Cog):
                 data['raid_eggs'][edit_level][edit_type] = int(edit_time)
                 with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                     json.dump(data, fd, indent=2, separators=(', ', ': '))
-            self.bot.load_config()
+            pkmn_class.Pokemon.generate_lists(self.bot)
+            self.bot.raid_list = utils.get_raidlist(self.bot)
             await utils.safe_delete(message)
 
     @commands.command()
@@ -1213,9 +1215,9 @@ class Raid(commands.Cog):
         except TypeError:
             timeout = True
         await utils.safe_delete(question)
-        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
             return
-        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
             pass
         else:
             return
@@ -1411,11 +1413,11 @@ class Raid(commands.Cog):
     async def _raid(self, ctx, content):
         message = ctx.message
         fromegg = False
-        help_reaction = self.bot.config.get('raid_info', '\u2139')
-        maybe_reaction = self.bot.config.get('raid_maybe', '\u2753')
-        omw_reaction = self.bot.config.get('raid_omw', '\ud83c\udfce')
-        here_reaction = self.bot.config.get('raid_here', '\U0001F4CD')
-        cancel_reaction = self.bot.config.get('raid_cancel', '\u274C')
+        help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
+        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
+        cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         if self.bot.guild_dict[message.channel.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('type') == "egg":
             fromegg = True
@@ -1487,7 +1489,7 @@ class Raid(commands.Cog):
             eggdetails = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]
             egglevel = eggdetails['egglevel']
             if raid_split[0].lower() == 'assume':
-                if self.bot.config['allow_assume'][egglevel] == 'False':
+                if self.bot.config.allow_assume[egglevel] == 'False':
                     await message.channel.send(_('Meowth! **!raid assume** is not allowed in this level egg.'), delete_after=10)
                     return
                 if self.bot.guild_dict[message.channel.guild.id]['raidchannel_dict'][message.channel.id]['active'] == False:
@@ -1537,9 +1539,9 @@ class Raid(commands.Cog):
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{entered_raid.capitalize()} ({pokemon.id}) {pokemon.emoji}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, message.guild, utils.get_weaknesses(self.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
@@ -1623,11 +1625,11 @@ class Raid(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         raidexp = False
         hourminute = False
-        help_reaction = self.bot.config.get('raid_info', '\u2139')
-        maybe_reaction = self.bot.config.get('raid_maybe', '\u2753')
-        omw_reaction = self.bot.config.get('raid_omw', '\ud83c\udfce')
-        here_reaction = self.bot.config.get('raid_here', '\U0001F4CD')
-        cancel_reaction = self.bot.config.get('raid_cancel', '\u274C')
+        help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
+        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
+        cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         raidegg_split = content.split()
         if raidegg_split[0].lower() == 'egg':
@@ -1718,9 +1720,9 @@ class Raid(commands.Cog):
                 pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
                 if pokemon.id in self.bot.shiny_dict:
                     if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                        shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                     elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                        shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 boss_list.append(shiny_str + pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
             raid_channel = await self.create_raid_channel(ctx, egg_level, raid_details, "egg")
             if not raid_channel:
@@ -1839,9 +1841,9 @@ class Raid(commands.Cog):
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
@@ -1916,7 +1918,7 @@ class Raid(commands.Cog):
                     entered_raid = boss.name.lower()
                     boss_str = str(pokemon)
                     break
-        help_reaction = self.bot.config.get('raid_info', '\u2139')
+        help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
         try:
             reportcitychannel = self.bot.get_channel(eggdetails['reportcity'])
             reportcity = reportcitychannel.name
@@ -1978,9 +1980,9 @@ class Raid(commands.Cog):
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
@@ -2143,7 +2145,7 @@ class Raid(commands.Cog):
         message = ctx.message
         channel = message.channel
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
-        help_reaction = self.bot.config.get('raid_info', '\u2139')
+        help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
         fromegg = False
         exraid_split = location.split()
         raid_details = ' '.join(exraid_split)
@@ -2165,9 +2167,9 @@ class Raid(commands.Cog):
             pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
             if pokemon.id in self.bot.shiny_dict:
                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                    shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
             boss_list.append(shiny_str + pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
         raid_channel = await self.create_raid_channel(ctx, "EX", raid_details, "exraid")
         if not raid_channel:
@@ -2388,10 +2390,10 @@ class Raid(commands.Cog):
                                 timeout = True
                             if timeout:
                                 return
-                            if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
                                 await utils.safe_delete(question)
                                 return
-                            elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                            elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                                 await utils.safe_delete(question)
                             await ctx.channel.edit(name=raid_channel_name)
                         return
@@ -2439,7 +2441,7 @@ class Raid(commands.Cog):
         message = ctx.message
         channel = message.channel
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
-        help_reaction = self.bot.config.get('raid_info', '\u2139')
+        help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
         raid_details = location
         raid_details = raid_details.strip()
         raid_gmaps_link = utils.create_gmaps_query(self.bot, raid_details, message.channel, type="meetup")
@@ -2600,7 +2602,7 @@ class Raid(commands.Cog):
                             self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'][author.id]['train'] = True
                             return
                 elif checks.check_raidchannel(ctx) and not checks.check_exraidchannel(ctx) and not checks.check_meetupchannel(ctx):
-                    train_emoji = self.bot.config.get('train_emoji', "\U0001F682")
+                    train_emoji = self.bot.custom_emoji.get('train_emoji', "\U0001F682")
                     train_msg = await ctx.send(f"Meowth! {ctx.author.mention} wants to keep this **raid train** moving in {channel_or_gym.mention}!\n\nReact to this message with {train_emoji} to automatically RSVP in {channel_or_gym.mention} with your current party.")
                     await utils.safe_reaction(train_msg, train_emoji)
                     teamcounts = ""
@@ -2950,11 +2952,11 @@ class Raid(commands.Cog):
                         res, reactuser = await utils.ask(self.bot, rusure, author.id)
                     except TypeError:
                         timeout = True
-                    if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                    if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
                         await utils.safe_delete(rusure)
                         confirmation = await channel.send(_('Start time change cancelled.'), delete_after=10)
                         return
-                    elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                    elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                         await utils.safe_delete(rusure)
                         if now <= start:
                             timeset = True
@@ -3113,10 +3115,10 @@ class Raid(commands.Cog):
                         timeout = True
                     if timeout:
                         return
-                    if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                    if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
                         await utils.safe_delete(question)
                         return
-                    elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                    elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                         await utils.safe_delete(question)
                 await ctx.channel.edit(name=raid_channel_name)
 
@@ -3317,7 +3319,7 @@ class Raid(commands.Cog):
                 self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['meetup'] = {'start':False, 'end':False}
                 recovermsg += _(" You will have to set the event times again.")
             await self._edit_party(channel, message.author)
-            bulletpoint = utils.parse_emoji(ctx.guild, self.bot.config['bullet'])
+            bulletpoint = self.bot.custom_emoji.get('bullet', '\U0001F539')
             list_cog = self.bot.get_cog('Listing')
             if not list_cog:
                 return
@@ -3386,14 +3388,14 @@ class Raid(commands.Cog):
             except TypeError:
                 timeout = True
             if not timeout:
-                if res.emoji == self.bot.config.get('answer_no', '\u274e'):
+                if res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
                     await utils.safe_delete(rusure)
                     confirmation = await channel.send(_('Duplicate Report cancelled.'), delete_after=10)
                     logger.info((('Duplicate Report - Cancelled - ' + channel.name) + ' - Report by ') + author.name)
                     dupecount = 2
                     self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['duplicate'] = dupecount
                     return
-                elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+                elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                     await utils.safe_delete(rusure)
                     await channel.send(_('Duplicate Confirmed'), delete_after=10)
                     logger.info((('Duplicate Report - Channel Expired - ' + channel.name) + ' - Last Report by ') + author.name)
@@ -3856,15 +3858,15 @@ class Raid(commands.Cog):
         if count == 1:
             team_emoji = max(party, key=lambda key: party[key])
             if team_emoji == "unknown":
-                team_emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+                team_emoji = utils.parse_emoji(channel.guild, self.bot.config.unknown)
             else:
-                team_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict'][team_emoji])
+                team_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict[team_emoji])
             await channel.send(_('Meowth! {member} is interested{interest_str}! {emoji}: 1').format(member=author.mention, interest_str=interest_str, emoji=team_emoji))
         else:
-            blue_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic'])
-            red_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor'])
-            yellow_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct'])
-            grey_emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+            blue_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['mystic'])
+            red_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['valor'])
+            yellow_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['instinct'])
+            grey_emoji = utils.parse_emoji(channel.guild, self.bot.config.unknown)
             msg = f"Meowth! {author.mention} is interested{interest_str} with a total of **{count}** trainers! "
             if party['mystic']:
                 msg += f"{blue_emoji}: {party['mystic']} | "
@@ -3992,15 +3994,15 @@ class Raid(commands.Cog):
         if count == 1:
             team_emoji = max(party, key=lambda key: party[key])
             if team_emoji == "unknown":
-                team_emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+                team_emoji = utils.parse_emoji(channel.guild, self.bot.config.unknown)
             else:
-                team_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict'][team_emoji])
+                team_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict[team_emoji])
             await channel.send(_('Meowth! {member} is on the way{interest_str}! {emoji}: 1').format(member=author.mention, interest_str=interest_str, emoji=team_emoji))
         else:
-            blue_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic'])
-            red_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor'])
-            yellow_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct'])
-            grey_emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+            blue_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['mystic'])
+            red_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['valor'])
+            yellow_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['instinct'])
+            grey_emoji = utils.parse_emoji(channel.guild, self.bot.config.unknown)
             msg = f"Meowth! {author.mention} is on the way with a total of **{count}** trainers{interest_str}! "
             if party['mystic']:
                 msg += f"{blue_emoji}: {party['mystic']} | "
@@ -4137,16 +4139,16 @@ class Raid(commands.Cog):
         if count == 1:
             team_emoji = max(party, key=lambda key: party[key])
             if team_emoji == "unknown":
-                team_emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+                team_emoji = utils.parse_emoji(channel.guild, self.bot.config.unknown)
             else:
-                team_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict'][team_emoji])
+                team_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict[team_emoji])
             msg = _('Meowth! {member} is at the {raidtype}{interest_str}! {emoji}: 1').format(member=author.mention, emoji=team_emoji, interest_str=interest_str, raidtype=raidtype)
             await channel.send(msg + lobbymsg)
         else:
-            blue_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic'])
-            red_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor'])
-            yellow_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct'])
-            grey_emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+            blue_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['mystic'])
+            red_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['valor'])
+            yellow_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['instinct'])
+            grey_emoji = utils.parse_emoji(channel.guild, self.bot.config.unknown)
             msg = f"Meowth! {author.mention} is at the {raidtype} with a total of **{count}** trainers{interest_str}! "
             if party['mystic']:
                 msg += f"{blue_emoji}: {party['mystic']} | "
@@ -4295,9 +4297,9 @@ class Raid(commands.Cog):
                 shiny_str = ""
                 if boss.id in self.bot.shiny_dict:
                     if boss.alolan and "alolan" in self.bot.shiny_dict.get(boss.id, {}) and "raid" in self.bot.shiny_dict.get(boss.id, {}).get("alolan", []):
-                        shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                     elif str(boss.form).lower() in self.bot.shiny_dict.get(boss.id, {}) and "raid" in self.bot.shiny_dict.get(boss.id, {}).get(str(boss.form).lower(), []):
-                        shiny_str = self.bot.config.get('shiny_chance', '\u2728') + " "
+                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 if boss_dict[str(boss).lower()]['total'] > 0:
                     bossstr = f"{shiny_str}{boss.name.title()} ({boss.id}) {boss_dict[str(boss).lower()]['type']} : **{boss_dict[str(boss).lower()]['total']}**"
                     display_list.append(bossstr)
@@ -4339,7 +4341,7 @@ class Raid(commands.Cog):
                 newembed.set_field_at(1, name='\u200b', value='\u200b', inline=True)
         if channel_dict["total"] > 0:
             newembed.add_field(name=_('**Status List**'), value=_('Maybe: **{channelmaybe}** | Coming: **{channelcoming}** | Here: **{channelhere}**').format(channelmaybe=channel_dict["maybe"], channelcoming=channel_dict["coming"], channelhere=channel_dict["here"]), inline=True)
-            newembed.add_field(name=_('**Team List**'), value='{blue_emoji}: **{channelblue}** | {red_emoji}: **{channelred}** | {yellow_emoji}: **{channelyellow}** | {grey_emoji}: **{channelunknown}**'.format(blue_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic']), channelblue=channel_dict["mystic"], red_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor']), channelred=channel_dict["valor"], yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct']), channelyellow=channel_dict["instinct"], grey_emoji=utils.parse_emoji(channel.guild, self.bot.config['unknown']), channelunknown=channel_dict["unknown"]), inline=True)
+            newembed.add_field(name=_('**Team List**'), value='{blue_emoji}: **{channelblue}** | {red_emoji}: **{channelred}** | {yellow_emoji}: **{channelyellow}** | {grey_emoji}: **{channelunknown}**'.format(blue_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['mystic']), channelblue=channel_dict["mystic"], red_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['valor']), channelred=channel_dict["valor"], yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['instinct']), channelyellow=channel_dict["instinct"], grey_emoji=utils.parse_emoji(channel.guild, self.bot.config.unknown), channelunknown=channel_dict["unknown"]), inline=True)
         newembed.set_footer(text=reportembed.footer.text, icon_url=reportembed.footer.icon_url)
         newembed.set_thumbnail(url=reportembed.thumbnail.url)
         newembed.set_author(name=reportembed.author.name, icon_url=reportembed.author.icon_url)
@@ -4416,14 +4418,14 @@ class Raid(commands.Cog):
         if count == 1:
             team_emoji = max(party, key=lambda key: party[key])
             if team_emoji == "unknown":
-                team_emoji = utils.parse_emoji(channel.guild, self.bot.config['unknown'])
+                team_emoji = utils.parse_emoji(channel.guild, self.bot.config.unknown)
             else:
-                team_emoji = utils.parse_emoji(channel.guild, self.bot.config['team_dict'][team_emoji])
+                team_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict[team_emoji])
             msg = _('Meowth! {member} is entering the lobby! {emoji}: 1').format(member=author.mention, emoji=team_emoji)
             await channel.send(msg)
         else:
             msg = _('Meowth! {member} is entering the lobby with a total of {trainer_count} trainers!').format(member=author.mention, trainer_count=count)
-            msg += ' {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(blue_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config['team_dict']['instinct']), grey_emoji=utils.parse_emoji(channel.guild, self.bot.config['unknown']), unknown=party['unknown'])
+            msg += ' {blue_emoji}: {mystic} | {red_emoji}: {valor} | {yellow_emoji}: {instinct} | {grey_emoji}: {unknown}'.format(blue_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['mystic']), mystic=party['mystic'], red_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['valor']), valor=party['valor'], instinct=party['instinct'], yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['instinct']), grey_emoji=utils.parse_emoji(channel.guild, self.bot.config.unknown), unknown=party['unknown'])
             await channel.send(msg)
         trainer_dict['status'] = {'maybe':0, 'coming':0, 'here':0, 'lobby':count}
         trainer_dict['count'] = count
@@ -4585,9 +4587,9 @@ class Raid(commands.Cog):
         starting_dict = {}
         ctx_startinglist = []
         id_startinglist = []
-        for manager in self.bot.config.get('managers', []):
+        for manager in self.bot.managers:
             id_startinglist.append(manager)
-        id_startinglist.append(self.bot.config['master'])
+        id_startinglist.append(self.bot.config.owenr)
         name_startinglist = []
         team_list = []
         team_names = ["mystic", "valor", "instinct", "unknown"]
@@ -4645,10 +4647,10 @@ class Raid(commands.Cog):
             timeout = True
         if timeout:
             await ctx.channel.send(_('Meowth! The **!starting** command was not confirmed. I\'m not sure if the group started.'))
-        if timeout or res.emoji == self.bot.config.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
             await utils.safe_delete(question)
             return
-        elif res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
             await utils.safe_delete(question)
             self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'] = trainer_dict
             starttime = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('starttime', None)
@@ -4658,7 +4660,7 @@ class Raid(commands.Cog):
             else:
                 timestr = ' '
             self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['lobby'] = {"exp":time.time() + 120, "team":team, "starting_dict":starting_dict}
-            starting_str = _('Starting - Meowth! The group that was waiting{timestr}is starting the raid! Trainers {trainer_list}, if you are not in this group and are waiting for the next group, please respond with {here_emoji} or **!here**. If you need to ask those that just started to back out of their lobby, use **!backout**').format(timestr=timestr, trainer_list=', '.join(ctx_startinglist), here_emoji=utils.parse_emoji(ctx.guild, self.bot.config['here_id']))
+            starting_str = _('Starting - Meowth! The group that was waiting{timestr}is starting the raid! Trainers {trainer_list}, if you are not in this group and are waiting for the next group, please respond with {here_emoji} or **!here**. If you need to ask those that just started to back out of their lobby, use **!backout**').format(timestr=timestr, trainer_list=', '.join(ctx_startinglist), here_emoji=utils.parse_emoji(ctx.guild, self.bot.config.here_id))
             if starttime:
                 starting_str += '\n\nThe start time has also been cleared, new groups can set a new start time wtih **!starttime HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!).'
                 report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['reportcity'])
@@ -4749,10 +4751,10 @@ class Raid(commands.Cog):
             backoutmsg = await channel.send(_('Backout - Meowth! {author} has requested a backout! If one of the following trainers reacts with the check mark, I will assume the group is backing out of the raid lobby as requested! {lobby_list}').format(author=author.mention, lobby_list=', '.join(lobby_list)))
             try:
                 timeout = False
-                res, reactuser = await utils.ask(self.bot, backoutmsg, trainer_list, react_list=[self.bot.config.get('answer_yes', '\u2705')])
+                res, reactuser = await utils.ask(self.bot, backoutmsg, trainer_list, react_list=[self.bot.custom_emoji.get('answer_yes', '\u2705')])
             except TypeError:
                 timeout = True
-            if not timeout and res.emoji == self.bot.config.get('answer_yes', '\u2705'):
+            if not timeout and res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
                 for trainer in trainer_list:
                     count = trainer_dict[trainer]['count']
                     if trainer in trainer_dict:
