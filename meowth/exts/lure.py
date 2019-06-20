@@ -36,7 +36,7 @@ class Lure(commands.Cog):
                 lure_dict = guilddict_temp[guildid].setdefault('lure_dict', {})
                 for reportid in lure_dict.keys():
                     if lure_dict[reportid].get('exp', 0) <= time.time():
-                        report_channel = self.bot.get_channel(lure_dict[reportid].get('reportchannel'))
+                        report_channel = self.bot.get_channel(lure_dict[reportid].get('report_channel'))
                         if report_channel:
                             try:
                                 report_message = await report_channel.fetch_message(reportid)
@@ -99,7 +99,7 @@ class Lure(commands.Cog):
         lure_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['lure_dict'])
         await utils.safe_delete(message)
         try:
-            user_message = await channel.fetch_message(lure_dict[message.id]['reportmessage'])
+            user_message = await channel.fetch_message(lure_dict[message.id]['report_message'])
             await utils.safe_delete(user_message)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
@@ -253,12 +253,9 @@ class Lure(commands.Cog):
         test_var = self.bot.guild_dict[ctx.guild.id].setdefault('lure_dict', {}).setdefault(confirmation.id, {})
         self.bot.guild_dict[ctx.guild.id]['lure_dict'][confirmation.id] = {
             'exp':time.time() + int(expire_time)*60,
-            'expedit':"delete",
-            'reportmessage':ctx.message.id,
             'report_message':ctx.message.id,
-            'reportchannel':ctx.channel.id,
+            'report_message':ctx.message.id,
             'report_channel':ctx.channel.id,
-            'reportauthor':ctx.author.id,
             'report_author':ctx.author.id,
             'report_guild':ctx.guild.id,
             'dm_dict':dm_dict,

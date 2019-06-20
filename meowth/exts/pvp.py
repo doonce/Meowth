@@ -37,7 +37,7 @@ class Pvp(commands.Cog):
                 pvp_dict = guilddict_temp[guildid].setdefault('pvp_dict', {})
                 for reportid in pvp_dict.keys():
                     if pvp_dict[reportid].get('exp', 0) <= time.time():
-                        report_channel = self.bot.get_channel(pvp_dict[reportid].get('reportchannel'))
+                        report_channel = self.bot.get_channel(pvp_dict[reportid].get('report_channel'))
                         if report_channel:
                             try:
                                 report_message = await report_channel.fetch_message(reportid)
@@ -78,7 +78,7 @@ class Pvp(commands.Cog):
         if not pvp_dict[message.id].get('tournament', {}).get('status', None) == "complete":
             await utils.safe_delete(message)
         try:
-            user_message = await channel.fetch_message(pvp_dict[message.id]['reportmessage'])
+            user_message = await channel.fetch_message(pvp_dict[message.id]['report_message'])
             await utils.safe_delete(user_message)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
@@ -431,11 +431,8 @@ class Pvp(commands.Cog):
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][confirmation.id] = {
             'exp':time.time() + int(timer)*60,
             'expedit':"delete",
-            'reportmessage':ctx.message.id,
             'report_message':ctx.message.id,
-            'reportchannel':ctx.channel.id,
             'report_channel':ctx.channel.id,
-            'reportauthor':ctx.author.id,
             'report_author':ctx.author.id,
             'report_guild':ctx.guild.id,
             'dm_dict':dm_dict,
@@ -587,11 +584,8 @@ class Pvp(commands.Cog):
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][confirmation.id] = {
             'exp':time.time() + 4*60*60,
             'expedit':"delete",
-            'reportmessage':ctx.message.id,
             'report_message':ctx.message.id,
-            'reportchannel':ctx.channel.id,
             'report_channel':ctx.channel.id,
-            'reportauthor':ctx.author.id,
             'report_author':ctx.author.id,
             'report_guild':ctx.guild.id,
             'dm_dict':dm_dict,

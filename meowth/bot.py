@@ -24,6 +24,7 @@ from time import strftime
 from dateutil.relativedelta import relativedelta
 from meowth import checks, errors, config
 from meowth.exts import utilities as utils
+from meowth.exts import pokemon as pkmn_class
 from meowth.context import Context
 
 class MeowthBot(commands.AutoShardedBot):
@@ -163,6 +164,8 @@ class MeowthBot(commands.AutoShardedBot):
         print('Connected to Discord...')
         self.launch_time = datetime.datetime.utcnow()
         await self.change_presence(status=discord.Status.idle)
+        await pkmn_class.Pokemon.generate_lists(self)
+        self.raid_list = await utils.get_raidlist(self)
 
     async def on_ready(self):
         print(_('Starting up...'))

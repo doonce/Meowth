@@ -1954,7 +1954,7 @@ class Configure(commands.Cog):
                 else:
                     wildfilter_list = wildfilters.content.lower().split(',')
                     for pkmn in wildfilter_list:
-                        pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, pkmn)
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pkmn)
                         if pokemon:
                             config_dict_temp['scanners']['wildfilter'].append(pokemon.id)
                             wildfilter_names.append(pokemon.name)

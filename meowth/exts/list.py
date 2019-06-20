@@ -122,7 +122,7 @@ class Listing(commands.Cog):
                                 expirytext = _(' - Starts: {expiry}{is_assumed}').format(expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
                         else:
                             type_str = ""
-                            pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
+                            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
                             if pokemon:
                                 type_str = pokemon.emoji
                             expirytext = _('{type_str} - {train_str}Expires: {expiry}{is_assumed}').format(type_str=type_str, train_str=train_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
@@ -654,7 +654,7 @@ class Listing(commands.Cog):
         boss_list = []
         boss_dict["unspecified"] = {"type": "❔", "total": 0, "maybe": 0, "coming": 0, "here": 0}
         for p in egg_info['pokemon']:
-            pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, p)
             boss_list.append(str(pokemon).lower())
             boss_dict[str(pokemon).lower()] = {"type": "{}".format(pokemon.emoji), "total": 0, "maybe": 0, "coming": 0, "here": 0, "trainers":[]}
         boss_list.append('unspecified')
@@ -922,7 +922,7 @@ class Listing(commands.Cog):
             if not search:
                 search = ctx.author
             else:
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, search)
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search)
                 if pokemon:
                     search = str(pokemon)
                 elif "shiny" in search.lower():
@@ -970,7 +970,7 @@ class Listing(commands.Cog):
                 if "shiny" in self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['offered_pokemon'].lower():
                     tgt_shiny_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]
             else:
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, search)
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search)
                 if str(pokemon) in self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['offered_pokemon']:
                     tgt_pokemon_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]
         if tgt_trainer_trades:
@@ -999,7 +999,7 @@ class Listing(commands.Cog):
                 if "Open Trade" in wanted_pokemon:
                     wanted_pokemon = "Open Trade (DM User)"
                 else:
-                    wanted_pokemon = [pkmn_class.Pokemon.get_pokemon(ctx.bot, x) for x in wanted_pokemon.split('\n')]
+                    wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in wanted_pokemon.split('\n')]
                     wanted_pokemon = [str(x) for x in wanted_pokemon]
                     wanted_pokemon = ', '.join(wanted_pokemon)
                 trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('trade_bullet', '\U0001F539')))
@@ -1085,7 +1085,7 @@ class Listing(commands.Cog):
                     reward = research_dict[questid]['reward']
                     location = research_dict[questid]['location']
                     url = research_dict[questid].get('url', None)
-                    pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits = False)
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits = False)
                     other_reward = any(x in reward for x in reward_list)
                     if pokemon and not other_reward:
                         shiny_str = ""
@@ -1375,7 +1375,7 @@ class Listing(commands.Cog):
                         reported_by = f" | **Reported By**: {wildauthor.display_name}"
                     shiny_str = ""
                     iv_check = wild_dict[wildid].get('wild_iv', None)
-                    pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
                     if pokemon.id in self.bot.shiny_dict:
                         if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "

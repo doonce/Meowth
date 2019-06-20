@@ -10,7 +10,7 @@ import logging
 import os
 import json
 import functools
-import urllib
+import aiohttp
 from dateutil.relativedelta import relativedelta
 from string import ascii_lowercase
 from math import log, floor
@@ -80,7 +80,7 @@ class Pokemon():
                  'height', 'weight', 'evolves', 'evolve_candy', 'buddy_distance',
                  'research_cp', 'raid_cp', 'boost_raid_cp', 'max_cp')
 
-    def generate_lists(bot):
+    async def generate_lists(bot):
         available_dict = {}
         shiny_dict = {}
         alolan_list = []
@@ -132,9 +132,10 @@ class Pokemon():
         bot.mythical_list = mythical_list
         bot.form_dict = form_dict
         bot.shiny_dict = shiny_dict
-        with urllib.request.urlopen("http://raw.githubusercontent.com/ZeChrales/PogoAssets/master/gamemaster/gamemaster.json") as url:
-            data = json.loads(url.read().decode())
-            bot.gamemaster = data
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get("http://raw.githubusercontent.com/ZeChrales/PogoAssets/master/gamemaster/gamemaster.json") as resp:
+                data = await resp.json(content_type=None)
+                bot.gamemaster = data
 
     def __init__(self, bot, pkmn, guild=None, **attribs):
         self.bot = bot
@@ -182,9 +183,10 @@ class Pokemon():
             search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}_{self.form.strip()}".lower()
         if self.alolan:
             search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}_alola".lower()
-        for template in self.bot.gamemaster['itemTemplates']:
-            if search_term in template['templateId'].lower() and "form" not in template['templateId'].lower() and "spawn" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
-                break
+        if hasattr(self.bot, 'gamemaster'):
+            for template in self.bot.gamemaster['itemTemplates']:
+                if search_term in template['templateId'].lower() and "form" not in template['templateId'].lower() and "spawn" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
+                    break
         self.base_stamina = template.get('pokemonSettings', {}).get('stats', {}).get('baseStamina', None)
         self.base_attack = template.get('pokemonSettings', {}).get('stats', {}).get('baseAttack', None)
         self.base_defense = template.get('pokemonSettings', {}).get('stats', {}).get('baseDefense', None)
@@ -330,7 +332,7 @@ class Pokemon():
     @property
     def is_raid(self):
         """:class:`bool` : Indicates if the pokemon can show in Raids"""
-        return str(self) in utils.get_raidlist(self.bot)
+        return str(self) in self.raid_list
 
     @property
     def is_exraid(self):
@@ -640,6 +642,33 @@ class Pokemon():
         return pokemon
 
     @classmethod
+    async def async_get_pokemon(self, bot, argument, allow_digits = True):
+        query =  self.query_pokemon(bot, str(argument).strip())
+        argument = query['argument']
+        match = False
+        for word in argument.split():
+            if word.lower() not in bot.pkmn_list and not word.isdigit() and word.lower() not in bot.form_dict['two_words']:
+                match, score = utils.get_match(bot.pkmn_list, word)
+                if not score or score < 80:
+                    argument = argument.replace(word, '').strip()
+                else:
+                    argument = argument.replace(word, match).strip()
+
+        if argument.isdigit() and allow_digits:
+            match = utils.get_name(bot, int(argument))
+        else:
+            match = utils.get_match(bot.pkmn_list, argument)[0]
+        if match and "nidoran" in match.lower():
+            if query['gender'] == "female":
+                match = utils.get_name(bot, 29)
+            else:
+                match = utils.get_name(bot, 32)
+        if not match:
+            return None
+        pokemon = self(bot, str(match), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
+        return pokemon
+
+    @classmethod
     async def ask_pokemon(self, ctx, argument, allow_digits = True, ask_correct = True):
         query =  self.query_pokemon(ctx.bot, str(argument).strip())
         argument = query['argument']
@@ -827,7 +856,7 @@ class Pokedex(commands.Cog):
             with open(self.bot.pkmn_info_path, 'w', encoding="utf8") as fd:
                 json.dump(pkmn_info, fd, indent=2, separators=(', ', ': '))
             self.bot.pkmn_info = pkmn_info
-            Pokemon.generate_lists(self.bot)
+            await Pokemon.generate_lists(self.bot)
             pkmn_embed.clear_fields()
             pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {pokemon.name.title()} Settings**:\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}", inline=False)
             confirmation = await channel.send(embed=pkmn_embed)

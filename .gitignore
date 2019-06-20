@@ -6,4 +6,6 @@ data/serverdict
 data/guilddict.txt
 data/guilddict_backup.txt
 meowth/config.py
+meowth/__pycache__
+meowth/exts/__pycache__
 

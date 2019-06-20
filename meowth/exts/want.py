@@ -350,7 +350,7 @@ class Want(commands.Cog):
         added_list = []
         role_list = []
         for entered_want in want_split:
-            pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_want.strip())
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_want.strip())
             if pokemon:
                 want_list.append(pokemon.name.lower())
             elif len(want_split) == 1 and "list" in entered_want:
@@ -425,7 +425,7 @@ class Want(commands.Cog):
             await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!want** to add pokemon.")
             return
         for entered_want in want_split:
-            pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_want.strip())
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_want.strip())
             if pokemon:
                 want_list.append(pokemon.name.lower())
             else:
@@ -1366,7 +1366,7 @@ class Want(commands.Cog):
         removed_list = []
         role_list = []
         for entered_unwant in unwant_split:
-            pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_unwant.strip())
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_unwant.strip())
             if pokemon:
                 unwant_list.append(pokemon.name.lower())
             elif len(unwant_split) == 1 and "list" in entered_unwant:
@@ -1435,7 +1435,7 @@ class Want(commands.Cog):
             await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!unwant** to remove pokemon.")
             return
         for entered_unwant in unwant_split:
-            pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_unwant.strip())
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_unwant.strip())
             if pokemon:
                 unwant_list.append(pokemon.name.lower())
             else:

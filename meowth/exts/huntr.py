@@ -457,7 +457,7 @@ class Huntr(commands.Cog):
                             await raid_channel.send(embed=embed)
                         return
                     else:
-                        pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, pokemon)
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pokemon)
                         if not pokemon:
                             return
                         raid = discord.utils.get(message.guild.roles, name=pokemon.name.lower())
@@ -619,7 +619,7 @@ class Huntr(commands.Cog):
         boss_list = []
         for p in egg_info['pokemon']:
             shiny_str = ""
-            pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, p)
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, p)
             if pokemon.id in self.bot.shiny_dict:
                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
@@ -648,7 +648,7 @@ class Huntr(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         raid_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={raid_coordinates}"
         gym_matching_cog = self.bot.cogs.get('GymMatching')
-        pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_raid)
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_raid)
         if pokemon:
             entered_raid = pokemon.name.lower()
             pokemon.shiny = False
@@ -676,7 +676,7 @@ class Huntr(commands.Cog):
         raid_number = pokemon.id
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=True)
-        raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}').format(weakness_list=utils.weakness_to_str(ctx.bot, message.guild, utils.get_weaknesses(ctx.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
+        raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(ctx.bot, message.guild, utils.get_weaknesses(ctx.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
         if moveset:
@@ -694,7 +694,7 @@ class Huntr(commands.Cog):
         if report_user:
             ctx.message.author = report_user
         message = ctx.message
-        pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, report_details['pokemon'])
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, report_details['pokemon'])
         if pokemon:
             entered_wild = pokemon.name.lower()
             pokemon.shiny = False
@@ -815,7 +815,7 @@ class Huntr(commands.Cog):
         raid_details = report_details.get('gym', raid_coordinates)
         moves = report_details.get('moves', None)
         raidexp = report_details.get('raidexp', 45)
-        pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, entered_raid)
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_raid)
         if pokemon:
             pokemon.shiny = False
             pokemon.gender = False
@@ -830,7 +830,7 @@ class Huntr(commands.Cog):
         level = utils.get_level(ctx.bot, pokemon.id)
         matched_boss = False
         for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
-            boss = pkmn_class.Pokemon.get_pokemon(ctx.bot, boss)
+            boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
             if str(boss) == str(pokemon):
                 pokemon = boss
                 entered_raid = boss.name.lower()
@@ -838,7 +838,7 @@ class Huntr(commands.Cog):
                 break
         if not matched_boss:
             for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
-                boss = pkmn_class.Pokemon.get_pokemon(ctx.bot, boss)
+                boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
                 if boss and boss.id == pokemon.id:
                     pokemon = boss
                     entered_raid = boss.name.lower()
@@ -1001,11 +1001,11 @@ class Huntr(commands.Cog):
             await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
         await raid_channel.send("This egg was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
         if len(ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
-            pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
             pokemon = pokemon.name.lower()
             await raid_cog._eggassume(ctx, 'assume ' + pokemon, raid_channel)
         elif egg_level == "5" and ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings'].get('regional', None) in ctx.bot.raid_list:
-            pokemon = pkmn_class.Pokemon.get_pokemon(ctx.bot, ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
             pokemon = pokemon.name.lower()
             await raid_cog._eggassume(ctx, 'assume ' + pokemon, raid_channel)
         self.event_loop.create_task(raid_cog.expiry_check(raid_channel))
@@ -1055,7 +1055,7 @@ class Huntr(commands.Cog):
         research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
         research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, ' '), inline=True)
         other_reward = any(x in reward.lower() for x in reward_list)
-        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
         if pokemon and not other_reward:
             shiny_str = ""
             if pokemon.id in self.bot.shiny_dict:

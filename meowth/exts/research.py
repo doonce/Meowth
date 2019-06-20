@@ -39,7 +39,7 @@ class Research(commands.Cog):
                 research_dict = guilddict_temp[guildid].setdefault('questreport_dict', {})
                 for reportid in research_dict.keys():
                     if research_dict[reportid].get('exp', 0) <= time.time():
-                        report_channel = self.bot.get_channel(research_dict[reportid].get('reportchannel'))
+                        report_channel = self.bot.get_channel(research_dict[reportid].get('report_channel'))
                         if report_channel:
                             try:
                                 report_message = await report_channel.fetch_message(reportid)
@@ -92,7 +92,7 @@ class Research(commands.Cog):
             research_dict =  self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
             if str(payload.emoji) == self.bot.custom_emoji.get('research_complete', '\u2705'):
                 if user.id not in research_dict.get('completed_by', []):
-                    if user.id != research_dict['reportauthor']:
+                    if user.id != research_dict['report_author']:
                         research_dict.get('completed_by', []).append(user.id)
             elif str(payload.emoji) == self.bot.custom_emoji.get('research_expired', '\U0001F4A8'):
                 for reaction in message.reactions:
@@ -105,7 +105,7 @@ class Research(commands.Cog):
         research_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['questreport_dict'])
         await utils.safe_delete(message)
         try:
-            user_message = await channel.fetch_message(research_dict[message.id]['reportmessage'])
+            user_message = await channel.fetch_message(research_dict[message.id]['report_message'])
             await utils.safe_delete(user_message)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
@@ -162,7 +162,7 @@ class Research(commands.Cog):
                     research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, " "), inline=True)
                     other_reward = any(x in reward.lower() for x in reward_list)
                     shiny_str = ""
-                    pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
                     if pokemon and pokemon.id in self.bot.shiny_dict:
                         if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
@@ -244,7 +244,7 @@ class Research(commands.Cog):
                         reward = rewardmsg.clean_content
                         other_reward = any(x in reward.lower() for x in reward_list)
                         shiny_str = ""
-                        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
                         if pokemon and not other_reward:
                             if pokemon.id in self.bot.shiny_dict:
                                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
@@ -270,7 +270,7 @@ class Research(commands.Cog):
         dm_dict = {}
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
         to_midnight = 24*60*60 - ((timestamp-timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
-        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, reward, allow_digits=False)
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
         dust = re.search(r'(?i)dust', reward)
         candy = re.search(r'(?i)candy|(?i)candies', reward)
         pinap = re.search(r'(?i)pinap', reward)
@@ -380,11 +380,8 @@ class Research(commands.Cog):
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][confirmation.id] = {
             'exp':time.time() + to_midnight - 60,
             'expedit':"delete",
-            'reportmessage':ctx.message.id,
             'report_message':ctx.message.id,
-            'reportchannel':ctx.channel.id,
             'report_channel':ctx.channel.id,
-            'reportauthor':ctx.author.id,
             'report_author':ctx.author.id,
             'report_guild':ctx.guild.id,
             'dm_dict':dm_dict,

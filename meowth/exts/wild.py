@@ -56,7 +56,7 @@ class Wild(commands.Cog):
                         await self.expire_wild(message)
             elif str(payload.emoji) == self.bot.custom_emoji.get('wild_catch', '\u26BE'):
                 if user.id not in wild_dict.get('caught_by', []):
-                    if user.id != wild_dict['reportauthor']:
+                    if user.id != wild_dict['report_author']:
                         wild_dict.get('caught_by', []).append(user.id)
                     if user.mention in wild_dict['omw']:
                         wild_dict['omw'].remove(user.mention)
@@ -82,7 +82,7 @@ class Wild(commands.Cog):
                 wild_dict = guilddict_temp[guildid].setdefault('wildreport_dict', {})
                 for reportid in wild_dict.keys():
                     if wild_dict[reportid].get('exp', 0) <= time.time():
-                        report_channel = self.bot.get_channel(wild_dict[reportid].get('reportchannel'))
+                        report_channel = self.bot.get_channel(wild_dict[reportid].get('report_channel'))
                         if report_channel:
                             try:
                                 report_message = await report_channel.fetch_message(reportid)
@@ -126,7 +126,7 @@ class Wild(commands.Cog):
         except (discord.errors.NotFound, KeyError):
             pass
         try:
-            user_message = await channel.fetch_message(wild_dict[message.id]['reportmessage'])
+            user_message = await channel.fetch_message(wild_dict[message.id]['report_message'])
             await utils.safe_delete(user_message)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
@@ -153,7 +153,7 @@ class Wild(commands.Cog):
         moveset = details.get('moveset', None)
         expire = details.get('expire', "45 min 0 sec")
         pkmn_obj = details.get('pkmn_obj', None)
-        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn_obj)
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn_obj)
         location = details.get('location', None)
         wild_gmaps_link = utils.create_gmaps_query(self.bot, location, ctx.channel, type="wild")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -207,7 +207,7 @@ class Wild(commands.Cog):
         message = ctx.message
         channel = message.channel
         guild = message.guild
-        author = guild.get_member(wild_dict.get('reportauthor', None))
+        author = guild.get_member(wild_dict.get('report_author', None))
         if not author:
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
@@ -295,7 +295,7 @@ class Wild(commands.Cog):
     async def edit_wild_messages(self, ctx, message):
         wild_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'].get(message.id, {})
         dm_dict = wild_dict.get('dm_dict', {})
-        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, wild_dict['pkmn_obj'])
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict['pkmn_obj'])
         wild_types = copy.deepcopy(pokemon.types)
         wild_types.append('None')
         wild_iv = wild_dict.get('wild_iv', None)
@@ -304,7 +304,7 @@ class Wild(commands.Cog):
         wild_gmaps_link = old_embed.url
         nearest_stop = wild_dict.get('location', None)
         poi_info = wild_dict.get('poi_info')
-        author = ctx.guild.get_member(wild_dict.get('reportauthor', None))
+        author = ctx.guild.get_member(wild_dict.get('report_author', None))
         if author:
             ctx.author = author
         wild_embed = await self.make_wild_embed(ctx, wild_dict)
@@ -554,11 +554,8 @@ class Wild(commands.Cog):
         self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'exp':time.time() + despawn,
             'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
-            'reportmessage':message.id,
             'report_message':message.id,
-            'reportchannel':message.channel.id,
             'report_channel':message.channel.id,
-            'reportauthor':message.author.id,
             'report_author':message.author.id,
             'report_guild':message.guild.id,
             'dm_dict':dm_dict,

@@ -96,8 +96,6 @@ def run_bot(debug=False, launcher=None, from_restart=False):
         'meowth', localedir='locale', languages=[config.bot_language])
     language.install()
     pokemon_language = [config.pokemon_language]
-    pkmn_class.Pokemon.generate_lists(Meowth)
-    Meowth.raid_list = utils.get_raidlist(Meowth)
 
     if Meowth.token is None or not Meowth.default_prefix:
         Meowth.logger.critical(

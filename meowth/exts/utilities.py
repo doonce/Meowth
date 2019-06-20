@@ -237,16 +237,15 @@ def get_name(bot, pkmn_number):
         name = None
     return name
 
-def get_raidlist(bot):
-    raidlist = []
+async def get_raidlist(bot):
+    raid_tuple = ()
     for level in bot.raid_info['raid_eggs']:
         for pkmn in bot.raid_info['raid_eggs'][level]['pokemon']:
-            pokemon = pkmn_class.Pokemon.get_pokemon(bot, pkmn)
-            raidlist.append(pokemon)
-            raidlist.append(str(pokemon))
-            raidlist.append(pokemon.name)
-            raidlist.append(pokemon.id)
-    return raidlist
+            pkmn_tuple = ()
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(bot, pkmn)
+            pkmn_tuple = (pokemon, str(pokemon), pokemon.name, pokemon.id)
+            raid_tuple = (*pkmn_tuple, *raid_tuple)
+    return raid_tuple
 
 def get_level(bot, pkmn):
     entered_pkmn = pkmn_class.Pokemon.get_pokemon(bot, pkmn)
@@ -836,7 +835,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.6.18.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.6.20.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

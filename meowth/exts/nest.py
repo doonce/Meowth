@@ -152,7 +152,7 @@ class Nest(commands.Cog):
                 embed_value = ""
             for pkmn in reported_pkmn:
                 shiny_str = ""
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn[0])
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn[0])
                 if pokemon.id in self.bot.shiny_dict:
                     if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                         shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
@@ -379,7 +379,7 @@ class Nest(commands.Cog):
             embed_value = ""
         for pkmn in reported_pkmn:
             shiny_str = ""
-            pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn[0])
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn[0])
             if pokemon.id in self.bot.shiny_dict:
                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "

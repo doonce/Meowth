@@ -251,10 +251,10 @@ class Raid(commands.Cog):
                                     pokemon = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['pokemon']
                                     egglevel = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['egglevel']
                                     if not pokemon and len(self.bot.raid_info['raid_eggs'][egglevel]['pokemon']) == 1:
-                                        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egglevel]['pokemon'][0])
+                                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egglevel]['pokemon'][0])
                                         pokemon = pokemon.name.lower()
                                     elif not pokemon and egglevel == "5" and self.bot.guild_dict[channel.guild.id]['configure_dict']['settings'].get('regional', None) in self.bot.raid_list:
-                                        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['regional'])
+                                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['regional'])
                                         pokemon = pokemon.name.lower()
                                     if pokemon:
                                         logger.info(
@@ -920,7 +920,7 @@ class Raid(commands.Cog):
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
             pkmn_class.Pokemon.generate_lists(self.bot)
-            self.bot.raid_list = utils.get_raidlist(self.bot)
+            self.bot.raid_list = await utils.get_raidlist(self.bot)
             self.reset_raid_roles.restart()
             guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)
             for guild_id in guilddict_chtemp:
@@ -1094,8 +1094,8 @@ class Raid(commands.Cog):
                 data['raid_eggs'][edit_level][edit_type] = int(edit_time)
                 with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                     json.dump(data, fd, indent=2, separators=(', ', ': '))
-            pkmn_class.Pokemon.generate_lists(self.bot)
-            self.bot.raid_list = utils.get_raidlist(self.bot)
+            await pkmn_class.Pokemon.generate_lists(self.bot)
+            self.bot.raid_list = await utils.get_raidlist(self.bot)
             await utils.safe_delete(message)
 
     @commands.command()
@@ -1108,7 +1108,7 @@ class Raid(commands.Cog):
         egg_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egglevel']
         boss_list = []
         for p in self.bot.raid_info['raid_eggs'][egg_level]['pokemon']:
-            pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, p)
             p_name = pokemon.name.title()
             boss_list.append(p_name.lower())
         for trainer in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']:
@@ -1143,7 +1143,7 @@ class Raid(commands.Cog):
             egg_img = self.bot.raid_info['raid_eggs'][newraid]['egg_img']
             boss_list = []
             for p in self.bot.raid_info['raid_eggs'][newraid]['pokemon']:
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, p)
                 boss_list.append(pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
             raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=1'.format(str(egg_img))
             raid_message = await channel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidmessage'])
@@ -1297,7 +1297,7 @@ class Raid(commands.Cog):
                         assume = ""
                         if "assume" in pokemon_or_level:
                             assume = "assume "
-                            pokemon_or_level = pkmn_class.Pokemon.get_pokemon(self.bot, location)
+                            pokemon_or_level = await pkmn_class.Pokemon.async_get_pokemon(self.bot, location)
                         address = self.bot.guild_dict[message.channel.guild.id]['raidchannel_dict'][ctx.channel.id]['address']
                         content = f"{assume}{pokemon_or_level} {location} {address}"
                         new_channel = await self._raid(ctx, content)
@@ -1471,7 +1471,7 @@ class Raid(commands.Cog):
         matched_boss = False
         level = utils.get_level(self.bot, pokemon.id)
         for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
-            boss = pkmn_class.Pokemon.get_pokemon(ctx.bot, boss)
+            boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
             if str(boss) == str(pokemon):
                 pokemon = boss
                 entered_raid = boss.name.lower()
@@ -1479,7 +1479,7 @@ class Raid(commands.Cog):
                 break
         if not matched_boss:
             for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
-                boss = pkmn_class.Pokemon.get_pokemon(ctx.bot, boss)
+                boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
                 if boss and boss.id == pokemon.id:
                     pokemon = boss
                     entered_raid = boss.name.lower()
@@ -1717,7 +1717,7 @@ class Raid(commands.Cog):
             boss_list = []
             for p in egg_info['pokemon']:
                 shiny_str = ""
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, p)
                 if pokemon.id in self.bot.shiny_dict:
                     if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                         shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
@@ -1779,11 +1779,11 @@ class Raid(commands.Cog):
             dm_dict = await self.send_dm_messages(ctx, raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
             self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
             if len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
                 pokemon = pokemon.name.lower()
                 await self._eggassume(ctx, 'assume ' + pokemon, raid_channel)
             elif egg_level == "5" and self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings'].get('regional', None) in self.bot.raid_list:
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
                 pokemon = pokemon.name.lower()
                 await self._eggassume(ctx, 'assume ' + pokemon, raid_channel)
             await utils.safe_reaction(raidmessage, help_reaction)
@@ -1807,7 +1807,7 @@ class Raid(commands.Cog):
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, args)
         matched_boss = False
         for boss in self.bot.raid_info['raid_eggs'][str(egglevel)]['pokemon']:
-            boss = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
+            boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
             boss_list.append(boss.name.lower())
             if str(boss) == str(pokemon):
                 pokemon = boss
@@ -1816,7 +1816,7 @@ class Raid(commands.Cog):
                 break
         if not matched_boss:
             for boss in self.bot.raid_info['raid_eggs'][str(egglevel)]['pokemon']:
-                boss = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
+                boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
                 if boss and boss.id == pokemon.id:
                     pokemon = boss
                     entered_raid = boss.name.lower()
@@ -1893,11 +1893,11 @@ class Raid(commands.Cog):
         if egglevel == "0":
             egglevel = utils.get_level(self.bot, entered_raid)
         boss_list = []
-        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, entered_raid)
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, entered_raid)
         matched_boss = False
         boss_str = ""
         for boss in self.bot.raid_info['raid_eggs'][str(egglevel)]['pokemon']:
-            boss = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
+            boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
             boss_list.append(boss.name.lower())
             if str(boss) == str(pokemon):
                 pokemon = boss
@@ -1907,7 +1907,7 @@ class Raid(commands.Cog):
                 break
         if not matched_boss:
             for boss in self.bot.raid_info['raid_eggs'][str(egglevel)]['pokemon']:
-                boss = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
+                boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
                 if not boss or not pokemon:
                     # print("boss: "+boss)
                     # print("pokemon: "+pokemon)
@@ -2164,7 +2164,7 @@ class Raid(commands.Cog):
         boss_list = []
         for p in egg_info['pokemon']:
             shiny_str = ""
-            pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, p)
             if pokemon.id in self.bot.shiny_dict:
                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
@@ -2221,7 +2221,7 @@ class Raid(commands.Cog):
             'egg_level':'EX'
         }
         if len(self.bot.raid_info['raid_eggs']['EX']['pokemon']) == 1:
-            pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.raid_info['raid_eggs']['EX']['pokemon'][0])
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs']['EX']['pokemon'][0])
             pokemon = pokemon.name.lower()
             await self._eggassume(ctx, 'assume ' + pokemon, raid_channel)
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
@@ -3180,7 +3180,7 @@ class Raid(commands.Cog):
                     manual_timer = True
                 pokemon = ''
                 if len(self.bot.raid_info['raid_eggs'][egglevel]['pokemon']) == 1:
-                    pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egglevel]['pokemon'][0])
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egglevel]['pokemon'][0])
                     pokemon = pokemon.name.lower()
             elif name.split('-')[0] in self.bot.raid_list:
                 raidtype = 'raid'
@@ -3198,7 +3198,7 @@ class Raid(commands.Cog):
                     utcend = localend - datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
                     exp = utcend.replace(year=now.year, tzinfo=datetime.timezone.utc).timestamp()
                     manual_timer = True
-                pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, pokemon)
+                pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 if pkmn:
                     pkmn_obj = str(pokemon)
             elif name.split('-')[0] == 'ex':
@@ -3221,7 +3221,7 @@ class Raid(commands.Cog):
                     manual_timer = True
                 pokemon = ''
                 if len(self.bot.raid_info['raid_eggs']['EX']['pokemon']) == 1:
-                    pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, self.bot.raid_info['raid_eggs']['EX']['pokemon'][0])
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs']['EX']['pokemon'][0])
                     pokemon = pokemon.name.lower()
             elif meetup:
                 raidtype = 'egg'
@@ -3502,7 +3502,7 @@ class Raid(commands.Cog):
             args = args.replace(str(weather), "").strip()
         if checks.check_raidchannel(ctx) and not checks.check_meetupchannel(ctx):
             pkmn = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('pkmn_obj', None)
-            pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
+            pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
             if pkmn:
                 if not weather and not user:
                     try:
@@ -3624,7 +3624,7 @@ class Raid(commands.Cog):
         await ctx.channel.send(embed=ctrs_embed)
 
     async def _get_generic_counters(self, guild, pkmn, weather=None):
-        pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
         if not pokemon:
             return
         form = pokemon.form
@@ -3773,10 +3773,10 @@ class Raid(commands.Cog):
         if not meetup:
             if not pokemon:
                 for boss in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
-                    pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
                     boss_list.append(str(pokemon).lower())
             else:
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pokemon)
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 boss_list.append(str(pokemon).lower())
         rgx = '[^a-zA-Z0-9]'
         pkmn_match = None
@@ -3795,7 +3795,7 @@ class Raid(commands.Cog):
         if pkmn_match and self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
             entered_interest = []
             for mon in pkmn_interest.lower().split(','):
-                pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, mon.lower().strip())
+                pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, mon.lower().strip())
                 if pkmn and str(pkmn).lower() in boss_list:
                     if str(pkmn).lower() not in entered_interest:
                         entered_interest.append(str(pkmn).lower())
@@ -3908,10 +3908,10 @@ class Raid(commands.Cog):
         if not meetup:
             if not pokemon:
                 for boss in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
-                    pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
                     boss_list.append(str(pokemon).lower())
             else:
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pokemon)
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 boss_list.append(str(pokemon).lower())
         pkmn_match = None
         if teamcounts:
@@ -3930,7 +3930,7 @@ class Raid(commands.Cog):
             entered_interest = []
             unmatched_mons = False
             for mon in pkmn_interest.lower().split(','):
-                pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, mon.lower().strip())
+                pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, mon.lower().strip())
                 if pkmn and str(pkmn).lower() in boss_list:
                     if str(pkmn).lower() not in entered_interest:
                         entered_interest.append(str(pkmn).lower())
@@ -4044,10 +4044,10 @@ class Raid(commands.Cog):
         if not meetup:
             if not pokemon:
                 for boss in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
-                    pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
                     boss_list.append(str(pokemon).lower())
             else:
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pokemon)
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 boss_list.append(str(pokemon).lower())
         pkmn_match = None
         if teamcounts:
@@ -4065,7 +4065,7 @@ class Raid(commands.Cog):
         if pkmn_match and self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['type'] == "egg":
             entered_interest = []
             for mon in pkmn_interest.lower().split(','):
-                pkmn = pkmn_class.Pokemon.get_pokemon(self.bot, mon.lower().strip())
+                pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, mon.lower().strip())
                 if pkmn and str(pkmn).lower() in boss_list:
                     if str(pkmn).lower() not in entered_interest:
                         entered_interest.append(str(pkmn).lower())
@@ -4256,7 +4256,7 @@ class Raid(commands.Cog):
         boss_list = []
         if egglevel != "0":
             for p in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
-                pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, p)
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, p)
                 boss_list.append(str(pokemon).lower())
                 boss_dict[str(pokemon).lower()] = {
                     "type": "{}".format(pokemon.emoji),
@@ -4293,7 +4293,7 @@ class Raid(commands.Cog):
         display_list = []
         if egglevel != "0":
             for boss in boss_dict.keys():
-                boss = pkmn_class.Pokemon.get_pokemon(self.bot, boss)
+                boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
                 shiny_str = ""
                 if boss.id in self.bot.shiny_dict:
                     if boss.alolan and "alolan" in self.bot.shiny_dict.get(boss.id, {}) and "raid" in self.bot.shiny_dict.get(boss.id, {}).get("alolan", []):
@@ -4589,7 +4589,7 @@ class Raid(commands.Cog):
         id_startinglist = []
         for manager in self.bot.managers:
             id_startinglist.append(manager)
-        id_startinglist.append(self.bot.config.owenr)
+        id_startinglist.append(self.bot.owner)
         name_startinglist = []
         team_list = []
         team_names = ["mystic", "valor", "instinct", "unknown"]

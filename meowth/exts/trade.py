@@ -141,7 +141,7 @@ class Trading(commands.Cog):
                 if not any(emoji_check):
                     return
                 if user.id != trade_dict[message.id]['lister_id'] and '\u20e3' in emoji:
-                    wanted_pokemon = [pkmn_class.Pokemon.get_pokemon(self.bot, want) for want in trade_dict[message.id]['wanted_pokemon'].split('\n')]
+                    wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want) for want in trade_dict[message.id]['wanted_pokemon'].split('\n')]
                     i = int(emoji[0])
                     offer = wanted_pokemon[i-1]
                     await self.make_offer(message.guild.id, message.id, user.id, offer)
@@ -187,8 +187,8 @@ class Trading(commands.Cog):
     async def make_offer(self, guild_id, listing_id, buyer_id, pkmn):
         guild = self.bot.get_guild(guild_id)
         trade_dict = self.bot.guild_dict[guild.id]['trade_dict'][listing_id]
-        listing_pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, trade_dict['offered_pokemon'])
-        buyer_pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, pkmn)
+        listing_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
+        buyer_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
         buyer = guild.get_member(buyer_id)
         lister = guild.get_member(trade_dict['lister_id'])
         offer_embed = discord.Embed(colour=guild.me.colour)
@@ -218,8 +218,8 @@ class Trading(commands.Cog):
                 listing_msg = await channel.fetch_message(listing_id)
             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                 await self.close_trade(guild_id, listing_id)
-            offered_pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, trade_dict['offered_pokemon'])
-            wanted_pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, trade_dict['offers'][buyer_id]['offer'])
+            offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
+            wanted_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offers'][buyer_id]['offer'])
             complete_emoji = self.bot.custom_emoji.get('trade_complete', '\u2611')
             cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
             acceptedmsg = f"Meowth! {lister.display_name} has agreed to trade their {offered_pokemon} for {buyer.display_name}'s {wanted_pokemon}. React with {complete_emoji} when the trade has been completed! To reject or cancel this offer, react with {cancel_emoji}"
@@ -254,8 +254,8 @@ class Trading(commands.Cog):
             listing_msg = await channel.fetch_message(listing_id)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
             await self.close_trade(guild_id, listing_id)
-        offered_pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, trade_dict['offered_pokemon'])
-        wanted_pokemon = [pkmn_class.Pokemon.get_pokemon(self.bot, want) for want in trade_dict['wanted_pokemon'].split('\n')]
+        offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
+        wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want) for want in trade_dict['wanted_pokemon'].split('\n')]
         await buyer.send(f"Meowth... {lister.display_name} rejected your offer for their {offered_pokemon}.")
         cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
         offer_str = f"Meowth! {lister.display_name} offers a {str(offered_pokemon)} up for trade!"
@@ -283,9 +283,9 @@ class Trading(commands.Cog):
             listing_msg = await channel.fetch_message(listing_id)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
             await self.close_trade(guild_id, listing_id)
-        offered_pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, trade_dict['offered_pokemon'])
-        wanted_pokemon = [pkmn_class.Pokemon.get_pokemon(self.bot, want) for want in trade_dict['wanted_pokemon'].split('\n')]
-        buyer_pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, trade_dict['offers'][buyer_id]['offer'])
+        offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
+        wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want) for want in trade_dict['wanted_pokemon'].split('\n')]
+        buyer_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offers'][buyer_id]['offer'])
         cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
         await lister.send(f"Meowth... {buyer.display_name} withdrew their trade offer of {str(buyer_pokemon)}.")
         offer_str = f"Meowth! {lister.display_name} offers a {str(offered_pokemon)} up for trade!"
@@ -312,7 +312,7 @@ class Trading(commands.Cog):
                 pass
             return
         guild = self.bot.get_guild(guild_id)
-        offered_pokemon = pkmn_class.Pokemon.get_pokemon(self.bot, trade_dict['offered_pokemon'])
+        offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
         lister = guild.get_member(trade_dict['lister_id'])
         for offerid in trade_dict['offers']:
             reject = guild.get_member(offerid)
@@ -442,7 +442,7 @@ class Trading(commands.Cog):
                     else:
                         wanted_pokemon_list = []
                         for pkmn in wanted_pokemon:
-                            pkmn = pkmn_class.Pokemon.get_pokemon(ctx.bot, pkmn)
+                            pkmn = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pkmn)
                             if pkmn and str(pkmn) not in wanted_pokemon_list:
                                 wanted_pokemon_list.append(str(pkmn))
                         wanted_pokemon = wanted_pokemon_list
