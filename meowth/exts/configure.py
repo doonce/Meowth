@@ -1996,3 +1996,6 @@ class Configure(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Configure(bot))
+
+def teardown(bot):
+    bot.remove_cog(Configure)

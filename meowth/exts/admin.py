@@ -94,6 +94,27 @@ class Admin(commands.Cog):
         self.bot._shutdown_mode = 26
         await self.bot.logout()
 
+    @commands.command(name='reload')
+    @checks.is_owner()
+    async def _reload(self, ctx, *extensions):
+        """Reload all current extensions
+
+        Useful if restarts become slow due to large guilds"""
+        reload_str = []
+        reloaded_exts = []
+        for ext in self.bot.extensions:
+            try:
+                if ext not in reloaded_exts:
+                    ctx.bot.reload_extension(ext)
+                    reloaded_exts.append(ext)
+                    reload_str.append(f"**{ext.replace('meowth.exts.', '')}**")
+            except Exception as e:
+                error_title = _('**Error when loading extension')
+                await ctx.send(f'{error_title} {ext}:**\n'
+                               f'{type(e).__name__}: {e}')
+                return
+        await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Reloaded the following extensions:\n\n{(', ').join(reload_str)}"))
+
     @commands.command(name="shutdown", aliases=["exit"])
     @checks.is_owner()
     async def exit(self, ctx):
@@ -212,3 +233,6 @@ class Admin(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Admin(bot))
+
+def teardown(bot):
+    bot.remove_cog(Admin)

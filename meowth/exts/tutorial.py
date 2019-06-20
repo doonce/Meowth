@@ -1033,3 +1033,6 @@ class Tutorial(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Tutorial(bot))
+
+def teardown(bot):
+    bot.remove_cog(Tutorial)

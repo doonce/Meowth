@@ -1173,3 +1173,6 @@ class Huntr(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Huntr(bot))
+
+def teardown(bot):
+    bot.remove_cog(Huntr)

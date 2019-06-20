@@ -1118,3 +1118,6 @@ class Utilities(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Utilities(bot))
+
+def teardown(bot):
+    bot.remove_cog(Utilities)

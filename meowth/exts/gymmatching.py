@@ -553,3 +553,6 @@ class GymMatching(commands.Cog):
 
 def setup(bot):
     bot.add_cog(GymMatching(bot))
+
+def teardown(bot):
+    bot.remove_cog(GymMatching)

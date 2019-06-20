@@ -74,7 +74,7 @@ def main():
     retries = 0
 
     # show the bot is launching
-    print("Launching...", end=' ', flush=True)
+    print("Launching...\n\n", end=' ', flush=True)
 
     while True:
 

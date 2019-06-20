@@ -518,3 +518,6 @@ class Trading(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Trading(bot))
+
+def teardown(bot):
+    bot.remove_cog(Trading)

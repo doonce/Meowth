@@ -645,3 +645,6 @@ class Pvp(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Pvp(bot))
+
+def teardown(bot):
+    bot.remove_cog(Pvp)

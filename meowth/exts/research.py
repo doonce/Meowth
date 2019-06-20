@@ -467,3 +467,6 @@ class Research(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Research(bot))
+
+def teardown(bot):
+    bot.remove_cog(Research)

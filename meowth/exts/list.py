@@ -1434,3 +1434,6 @@ class Listing(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Listing(bot))
+
+def teardown(bot):
+    bot.remove_cog(Listing)

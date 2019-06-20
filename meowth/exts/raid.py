@@ -4769,3 +4769,6 @@ class Raid(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Raid(bot))
+
+def teardown(bot):
+    bot.remove_cog(Raid)

@@ -379,3 +379,6 @@ class Silph(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Silph(bot))
+
+def teardown(bot):
+    bot.remove_cog(Silph)

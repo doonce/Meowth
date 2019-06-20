@@ -1944,3 +1944,6 @@ class Want(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Want(bot))
+
+def teardown(bot):
+    bot.remove_cog(Want)

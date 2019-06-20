@@ -324,3 +324,6 @@ class Lure(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Lure(bot))
+
+def teardown(bot):
+    bot.remove_cog(Lure)

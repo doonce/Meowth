@@ -676,3 +676,6 @@ class Nest(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Nest(bot))
+
+def teardown(bot):
+    bot.remove_cog(Nest)

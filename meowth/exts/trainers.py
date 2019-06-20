@@ -461,3 +461,6 @@ class Trainers(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Trainers(bot))
+
+def teardown(bot):
+    bot.remove_cog(Trainers)

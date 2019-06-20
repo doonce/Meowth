@@ -962,3 +962,6 @@ class Pokedex(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Pokedex(bot))
+
+def teardown(bot):
+    bot.remove_cog(Pokedex)

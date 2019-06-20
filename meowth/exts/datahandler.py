@@ -183,3 +183,6 @@ class DataHandler(commands.Cog):
 
 def setup(bot):
     bot.add_cog(DataHandler(bot))
+
+def teardown(bot):
+    bot.remove_cog(DataHandler)
