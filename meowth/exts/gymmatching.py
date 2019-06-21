@@ -419,6 +419,66 @@ class GymMatching(commands.Cog):
         else:
             await ctx.send("No match found.")
 
+    @commands.command(hidden=True)
+    async def whereis(self, ctx, *, poi_name):
+        stops = self.get_stops(ctx.guild.id)
+        gyms = self.get_gyms(ctx.guild.id)
+        if not stops and not gyms:
+            await ctx.send('Location matching has not been set up for this server.')
+            return
+        poi_info, location, poi_url = await self.get_poi_info(ctx, poi_name, "whereis", dupe_check=False)
+        if not location:
+            return
+        if location in gyms:
+            match_type = "gym"
+        elif location in stops:
+            match_type = "stop"
+        poi_coords = poi_url.split("query=")[1]
+        poi_embed = discord.Embed(colour=ctx.guild.me.colour, description=poi_info).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/POI_Submission_Illustration_01.png?cache=1')
+        poi_embed.add_field(name="Directions", value=f"[Google Maps](https://www.google.com/maps/search/?api=1&query={poi_coords}) | [Apple Maps](http://maps.apple.com/maps?daddr={poi_coords}&z=10&t=s&dirflg=d) | [Open Street Map](https://www.openstreetmap.org/#map=16/{poi_coords.split(',')[0]}/{poi_coords.split(',')[1]})", inline=False)
+        if match_type == "gym":
+            active_raids = []
+            index = 1
+            for channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
+                if self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('address', "") == location:
+                    raid_channel = self.bot.get_channel(channel)
+                    active_raids.append(f"{index}. {raid_channel.mention}")
+                    index += 1
+            if active_raids:
+                poi_embed.add_field(name="Current Raids", value=('\n').join(active_raids), inline=False)
+        elif match_type == "stop":
+            active_quests = []
+            index = 1
+            for report in self.bot.guild_dict[ctx.guild.id]['questreport_dict']:
+                if self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('location', "") == location:
+                    report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'])
+                    report_message = await report_channel.fetch_message(report)
+                    reward = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['reward']
+                    active_quests.append(f"{index}. [{reward.title()}]({report_message.jump_url})")
+            if active_quests:
+                poi_embed.add_field(name="Current Research", value=('\n').join(active_quests), inline=False)
+            active_lures = []
+            index = 1
+            for report in self.bot.guild_dict[ctx.guild.id]['lure_dict']:
+                if self.bot.guild_dict[ctx.guild.id]['lure_dict'][report].get('location', "") == location:
+                    report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['report_channel'])
+                    report_message = await report_channel.fetch_message(report)
+                    type = self.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['type']
+                    active_lures.append(f"{index}. [{type.title()}]({report_message.jump_url})")
+            if active_lures:
+                poi_embed.add_field(name="Current Lures", value=('\n').join(active_lures), inline=False)
+            active_wilds = []
+            index = 1
+            for report in self.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
+                if self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('location', "") == location:
+                    report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'])
+                    report_message = await report_channel.fetch_message(report)
+                    pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['pkmn_obj']
+                    active_wilds.append(f"{index}. [{pokemon.title()}]({report_message.jump_url})")
+            if active_wilds:
+                poi_embed.add_field(name="Current Wilds", value=('\n').join(active_wilds), inline=False)
+        await ctx.send(embed=poi_embed)
+
     async def poi_match_prompt(self, ctx, poi_name, gyms=None, stops=None):
         channel = ctx.channel
         author = ctx.author
@@ -466,7 +526,7 @@ class GymMatching(commands.Cog):
             match = await self.poi_match_prompt(ctx, details, gyms, None)
         elif type == "research" or type == "lure":
             match = await self.poi_match_prompt(ctx, details, None, stops)
-        elif type == "wild" or type == "pvp":
+        elif type == "wild" or type == "pvp" or type == "whereis":
             match = await self.poi_match_prompt(ctx, details, gyms, stops)
         else:
             return poi_info, details, False
@@ -530,7 +590,7 @@ class GymMatching(commands.Cog):
                 if not dupe_check:
                     return poi_info, details, poi_gmaps_link
                 rusure = await message.channel.send(_('Meowth! It looks like that quest might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_research)))
-        elif type == "wild" or type == "lure" or type == "pvp":
+        elif type == "wild" or type == "lure" or type == "pvp" or type == "whereis":
             poi_info = f"**{match_type.title()}:** {details}{poi_note}"
         if duplicate_raids or duplicate_research:
             try:

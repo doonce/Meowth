@@ -770,15 +770,10 @@ class Huntr(commands.Cog):
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
         reaction_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji]
-        if iv_long:
-            wild_embed.set_field_at(len(wild_embed.fields)-1, name="**Spawn Reactions:**", value=wild_embed.fields[-1].value.replace(f"{info_emoji}: Add wild details", ""))
-            reaction_list.remove(info_emoji)
         despawn = (int(expire.split(' ')[0]) * 60) + int(expire.split(' ')[2])
         if despawn < 2700:
             wild_embed.set_field_at(len(wild_embed.fields)-1, name="**Spawn Reactions:**", value=wild_embed.fields[-1].value.replace(f"{despawn_emoji}: The Pokemon despawned!\n", ""))
             reaction_list.remove(despawn_emoji)
-        if not wild_embed.fields[-1].value:
-            wild_embed.remove_field(len(wild_embed.fields)-1)
         ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}!{stop_str}Coordinates: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, stop_str=stop_str, location_details=wild_coordinates, iv_str=iv_str), embed=wild_embed)
         dm_dict = await wild_cog.send_dm_messages(ctx, pokemon.id, str(nearest_stop), wild_types[0], wild_types[1], wild_iv, level, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
         for reaction in reaction_list:

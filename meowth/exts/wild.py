@@ -199,7 +199,7 @@ class Wild(commands.Cog):
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
         wild_embed.add_field(name='**Status Reactions:**', value=f"{omw_emoji}: I'm on my way!\n{catch_emoji}: I caught it!", inline=True)
-        wild_embed.add_field(name='**Spawn Reactions:**', value=f"{despawn_emoji}: The Pokemon despawned!\n{info_emoji}: Add wild details", inline=True)
+        wild_embed.add_field(name='**Spawn Reactions:**', value=f"{despawn_emoji}: The Pokemon despawned!\n{info_emoji}: Edit wild details", inline=True)
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         return wild_embed
 
@@ -234,7 +234,7 @@ class Wild(commands.Cog):
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                wild_embed.add_field(name=_('**Add Wild Info**'), value=f"Meowth! I'll help you add information to a wild! **NOTE:** Please make sure you are above level 30 before setting these.\n\nI'll need to know what **value** you'd like to add. Reply **cancel** to stop anytime or reply with __one__ of the following options `Ex: iv 100` to add that value:\n\n{reply_msg}", inline=False)
+                wild_embed.add_field(name=_('**Edit Wild Info**'), value=f"Meowth! I'll help you add information to a wild! **NOTE:** Please make sure you are above level 30 before setting these.\n\nI'll need to know what **value** you'd like to add. Reply **cancel** to stop anytime or reply with __one__ of the following options `Ex: iv 100` to add that value:\n\n{reply_msg}", inline=False)
                 value_wait = await channel.send(embed=wild_embed)
                 def check(reply):
                     if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == ctx.author:
