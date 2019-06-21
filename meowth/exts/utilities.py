@@ -674,7 +674,7 @@ class Utilities(commands.Cog):
             await ctx.channel.send(hastebin.post(logdata))
         except Exception as e:
             print(e)
-            await ctx.channel.send("Hastebin Error", delete_after=10)
+            await ctx.channel.send(f"Hastebin Error\n{e}", delete_after=10)
 
     @commands.command(aliases=['say'])
     @commands.has_permissions(manage_guild=True)
@@ -835,7 +835,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.6.21.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.6.21.1 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

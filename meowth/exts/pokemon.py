@@ -360,19 +360,19 @@ class Pokemon():
         pkmn_types.append(None)
         for type in pkmn_types:
             if self.weather == "clear" and type in clear_boost:
-                return f"{self.bot.custom_emoji.get('clear', 'test')} *Boosted*"
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('clear', '\u2600'))
             elif self.weather == "foggy" and type in fog_boost:
-                return f"{self.bot.custom_emoji.get('foggy', 'test')} *Boosted*"
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('foggy', '\U0001F301'))
             elif self.weather == "cloudy" and type in cloudy_boost:
-                return f"{self.bot.custom_emoji.get('cloudy', 'test')} *Boosted*"
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('cloudy', '\u2601'))
             elif self.weather == "partlycloudy" and type in partlycloudy_boost:
-                return f"{self.bot.custom_emoji.get('partlycloudy', 'test')} *Boosted*"
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('partlycloudy', '\u26C5'))
             elif self.weather == "rainy" and type in rainy_boost:
-                return f"{self.bot.custom_emoji.get('rainy', 'test')} *Boosted*"
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('rainy', '\u2614'))
             elif self.weather == "snowy" and type in snow_boost:
-                return f"{self.bot.custom_emoji.get('snowy', 'test')} *Boosted*"
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('snowy', '\u2744'))
             elif self.weather == "windy" and type in windy_boost:
-                return f"{self.bot.custom_emoji.get('windy', 'test')} *Boosted*"
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('windy', '\U0001F343'))
         return False
 
     def role(self, guild=None):

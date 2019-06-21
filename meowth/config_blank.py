@@ -82,10 +82,10 @@ custom_emoji = {
     'huntr_report' : "\u2705",
     'shiny_chance' : "\u2728",
     'windy':"\U0001F343",
-    'snow':"\u2744",
+    'snowy':"\u2744",
     'partlycloudy':"\u26C5",
-    'extreme':"\u26A0",
-    'fog':"\U0001F301",
+    'rainy':"\u2614",
+    'foggy':"\U0001F301",
     'cloudy':"\u2601",
     'clear':"\u2600"
 }

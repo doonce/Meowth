@@ -175,6 +175,7 @@ class Admin(commands.Cog):
         """Evaluates a code"""
         env = {
             'Meowth': ctx.bot,
+            'guild_dict':self.bot.guild_dict,
             'bot': ctx.bot,
             'ctx': ctx,
             'channel': ctx.channel,

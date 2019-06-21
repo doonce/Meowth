@@ -720,9 +720,21 @@ class Huntr(commands.Cog):
         level = str(report_details.get("level", ''))
         cp = str(report_details.get("cp", ''))
         weather = report_details.get("weather", '')
-        if weather.lower() == 'none':
-            weather = ''
-            report_details['weather'] = weather
+        if "rain" in weather:
+            pokemon.weather = "rainy"
+        elif "partly" in weather:
+            pokemon.weather = "partlycloudy"
+        elif "clear" in weather:
+            pokemon.weather = "clear"
+        elif "cloudy" in weather:
+            pokemon.weather = "cloudy"
+        elif "windy" in weather:
+            pokemon.weather = "windy"
+        elif "snow" in weather:
+            pokemon.weather = "snowy"
+        elif "fog" in weather:
+            pokemon.weather = "foggy"
+        report_details['weather'] = pokemon.weather
         height = report_details.get("height", '')
         weight = report_details.get("weight", '')
         moveset = report_details.get("moveset", '')
@@ -792,6 +804,7 @@ class Huntr(commands.Cog):
             'level':level,
             'cp':cp,
             'gender':gender,
+            'weather':pokemon.weather,
             'omw':[]
         }
 

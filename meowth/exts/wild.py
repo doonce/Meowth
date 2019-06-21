@@ -154,6 +154,7 @@ class Wild(commands.Cog):
         expire = details.get('expire', "45 min 0 sec")
         pkmn_obj = details.get('pkmn_obj', None)
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn_obj)
+        pokemon.weather = weather
         location = details.get('location', None)
         wild_gmaps_link = utils.create_gmaps_query(self.bot, location, ctx.channel, type="wild")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -184,11 +185,11 @@ class Wild(commands.Cog):
         if nearest_stop:
             wild_embed.description = poi_info
         wild_embed.add_field(name=_('**Details:**'), value=details_str, inline=True)
-        if iv_long or wild_iv or level or cp or weather:
-            wild_embed.add_field(name=f"**IV{' / Level' if level or cp or weather else ''}:**", value=f"{iv_long + ' (' if iv_long else ''}{str(wild_iv)+'%' if wild_iv else ''}{')' if iv_long else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {weather if weather else ''}", inline=True)
+        if iv_long or wild_iv or level or cp or pokemon.is_boosted:
+            wild_embed.add_field(name=f"**IV{' / Level' if level or cp or pokemon.is_boosted else ''}:**", value=f"{iv_long + ' (' if iv_long else ''}{str(wild_iv)+'%' if wild_iv else ''}{')' if iv_long else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         if height or weight or moveset:
             wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height if height else ''} {'W: '+weight if weight else ''}\n{moveset if moveset else ''}", inline=True)
-        elif iv_long or wild_iv or level or cp or weather:
+        elif iv_long or wild_iv or level or cp or pokemon.is_boosted:
             wild_embed.add_field(name=_('**Other Info (Base):**'), value=f"H: {round(pokemon.height, 2)}m W: {round(pokemon.weight, 2)}kg\n{ctx.prefix}dex stats {str(pokemon).lower()}", inline=True)
         wild_embed.add_field(name=f"{'**Est. Despawn:**' if int(expire.split()[0]) == 45 and int(expire.split()[2]) == 0 else '**Despawns in:**'}", value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=expire.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
         wild_embed.set_thumbnail(url=pokemon.img_url)
@@ -216,6 +217,7 @@ class Wild(commands.Cog):
         wild_iv = wild_dict.get('wild_iv', None)
         cp = wild_dict.get('cp', None)
         gender = wild_dict.get('gender', None)
+        weather = wild_dict.get('weather', "")
         if all([level, wild_iv, cp, gender]):
             return
         reply_msg = ""
@@ -226,7 +228,8 @@ class Wild(commands.Cog):
         if not gender:
             reply_msg += f"**gender <male or female>**\n"
         if not cp:
-            reply_msg += f"**cp <pokemon cp>**"
+            reply_msg += f"**cp <pokemon cp>**\n"
+        reply_msg += f"**weather <game weather>**"
         wild_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1')
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
@@ -281,6 +284,24 @@ class Wild(commands.Cog):
                         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['level'] = int(value_split[1])
                     else:
                         error = _("entered something invalid")
+                    break
+                elif "weather" in value_msg.clean_content.lower():
+                    if "rain" in value_msg.clean_content.lower():
+                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "rainy"
+                    elif "partly" in value_msg.clean_content.lower():
+                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "partlycloudy"
+                    elif "clear" in value_msg.clean_content.lower():
+                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "clear"
+                    elif "cloudy" in value_msg.clean_content.lower():
+                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "cloudy"
+                    elif "windy" in value_msg.clean_content.lower():
+                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "windy"
+                    elif "snow" in value_msg.clean_content.lower():
+                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "snowy"
+                    elif "fog" in value_msg.clean_content.lower():
+                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "foggy"
+                    else:
+                        error = _("entered something invalid. Please choose from rainy, partly cloudy, clear, cloudy, windy, snowy, foggy")
                     break
                 else:
                     error = _("entered something invalid")

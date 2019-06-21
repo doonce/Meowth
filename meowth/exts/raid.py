@@ -1821,7 +1821,7 @@ class Raid(commands.Cog):
                     pokemon = boss
                     entered_raid = boss.name.lower()
                     break
-
+        pokemon.weather = weather
         rgx = '[^a-zA-Z0-9]'
         if entered_raid not in boss_list:
             await raid_channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()), delete_after=10)
@@ -1845,7 +1845,7 @@ class Raid(commands.Cog):
             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=True)
+        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
         raid_embed.add_field(name=_('**Hatches:**'), value=oldembed.fields[3].value, inline=True)
@@ -1918,6 +1918,8 @@ class Raid(commands.Cog):
                     entered_raid = boss.name.lower()
                     boss_str = str(pokemon)
                     break
+        weather = eggdetails.get('weather', None)
+        pokemon.weather = weather
         help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
         try:
             reportcitychannel = self.bot.get_channel(eggdetails['reportcity'])
@@ -1984,7 +1986,7 @@ class Raid(commands.Cog):
             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=True)
+        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=pokemon.img_url)
@@ -3728,9 +3730,9 @@ class Raid(commands.Cog):
         """Sets the weather for the raid.
         Usage: !weather <weather>
         Only usable in raid channels.
-        Acceptable options: none, extreme, clear, rainy, partlycloudy, cloudy, windy, snow, fog"""
+        Acceptable options: none, extreme, clear, rainy, partlycloudy, cloudy, windy, snowy, foggy"""
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
-                        _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
+                        _('partlycloudy'), _('cloudy'), _('windy'), _('snowy'), _('foggy')]
         async with ctx.typing():
             if weather.lower() not in weather_list:
                 return await ctx.channel.send(_("Meowth! Enter one of the following weather conditions: {}").format(", ".join(weather_list)), delete_after=10)
@@ -3738,6 +3740,19 @@ class Raid(commands.Cog):
                 self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['weather'] = weather.lower()
                 pkmn = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('pkmn_obj', None)
                 if pkmn:
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
+                    pokemon.weather = weather
+                    try:
+                        raid_message = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['raidmessage'])
+                        report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['reportcity'])
+                        report_message = await report_channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['raidreport'])
+                        raid_embed = raid_message.embeds[0]
+                        if pokemon.is_boosted and "boosted" not in raid_embed.fields[0].value.lower():
+                            raid_embed.set_field_at(0, name=raid_embed.fields[0].name, value=f"{raid_embed.fields[0].value}\n{pokemon.is_boosted}")
+                            await raid_message.edit(embed=raid_embed)
+                            await report_message.edit(embed=raid_embed)
+                    except Exception as e:
+                        print(e)
                     if str(utils.get_level(self.bot, pkmn)) in self.bot.guild_dict[ctx.guild.id]['configure_dict']['counters']['auto_levels']:
                         ctrs_dict = await self._get_generic_counters(ctx.guild, pkmn, weather.lower())
                         try:
