@@ -3731,23 +3731,24 @@ class Raid(commands.Cog):
         Acceptable options: none, extreme, clear, rainy, partlycloudy, cloudy, windy, snow, fog"""
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
-        if weather.lower() not in weather_list:
-            return await ctx.channel.send(_("Meowth! Enter one of the following weather conditions: {}").format(", ".join(weather_list)), delete_after=10)
-        else:
-            self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['weather'] = weather.lower()
-            pkmn = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('pkmn_obj', None)
-            if pkmn:
-                if str(utils.get_level(self.bot, pkmn)) in self.bot.guild_dict[ctx.guild.id]['configure_dict']['counters']['auto_levels']:
-                    ctrs_dict = await self._get_generic_counters(ctx.guild, pkmn, weather.lower())
-                    try:
-                        ctrsmessage = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrsmessage'])
-                        moveset = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['moveset']
-                        newembed = ctrs_dict[moveset]['embed']
-                        await ctrsmessage.edit(embed=newembed)
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                        pass
-                    self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrs_dict'] = ctrs_dict
-            return await ctx.channel.send(_("Meowth! Weather set to {}!").format(weather.lower()))
+        async with ctx.typing():
+            if weather.lower() not in weather_list:
+                return await ctx.channel.send(_("Meowth! Enter one of the following weather conditions: {}").format(", ".join(weather_list)), delete_after=10)
+            else:
+                self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['weather'] = weather.lower()
+                pkmn = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('pkmn_obj', None)
+                if pkmn:
+                    if str(utils.get_level(self.bot, pkmn)) in self.bot.guild_dict[ctx.guild.id]['configure_dict']['counters']['auto_levels']:
+                        ctrs_dict = await self._get_generic_counters(ctx.guild, pkmn, weather.lower())
+                        try:
+                            ctrsmessage = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrsmessage'])
+                            moveset = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['moveset']
+                            newembed = ctrs_dict[moveset]['embed']
+                            await ctrsmessage.edit(embed=newembed)
+                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                            pass
+                        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrs_dict'] = ctrs_dict
+                return await ctx.channel.send(_("Meowth! Weather set to {}!").format(weather.lower()))
 
     """
     Status Management

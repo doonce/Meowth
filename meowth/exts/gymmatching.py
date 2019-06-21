@@ -515,7 +515,7 @@ class GymMatching(commands.Cog):
             for quest in self.bot.guild_dict[ctx.guild.id]['questreport_dict']:
                 quest_details = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][quest]
                 research_location = quest_details['location']
-                research_channel = quest_details['reportchannel']
+                research_channel = quest_details['report_channel']
                 research_reward = quest_details['reward'].strip()
                 research_quest = quest_details['quest'].strip()
                 if (details == research_location) and ctx.channel.id == research_channel:

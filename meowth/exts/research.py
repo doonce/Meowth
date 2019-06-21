@@ -241,6 +241,8 @@ class Research(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif rewardmsg:
+                        research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
+                        research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, " "), inline=True)
                         reward = rewardmsg.clean_content
                         other_reward = any(x in reward.lower() for x in reward_list)
                         shiny_str = ""

@@ -78,7 +78,7 @@ class Pokemon():
                  'alolan', 'size', 'legendary', 'mythical', 'base_stamina',
                  'base_attack', 'base_defense', 'charge_moves', 'quick_moves',
                  'height', 'weight', 'evolves', 'evolve_candy', 'buddy_distance',
-                 'research_cp', 'raid_cp', 'boost_raid_cp', 'max_cp')
+                 'research_cp', 'raid_cp', 'boost_raid_cp', 'max_cp', 'weather')
 
     async def generate_lists(bot):
         available_dict = {}
@@ -183,6 +183,7 @@ class Pokemon():
             search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}_{self.form.strip()}".lower()
         if self.alolan:
             search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}_alola".lower()
+        self.weather = None
         if hasattr(self.bot, 'gamemaster'):
             for template in self.bot.gamemaster['itemTemplates']:
                 if search_term in template['templateId'].lower() and "form" not in template['templateId'].lower() and "spawn" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
@@ -346,11 +347,33 @@ class Pokemon():
         """:class:`int` or :obj:`None` : Returns raid egg level"""
         return utils.get_level(self.bot, self.id)
 
-    # def max_raid_cp(self, weather_boost=False):
-    #     """:class:`int` or :obj:`None` : Returns max CP on capture after raid
-    #     """
-    #     key = "max_cp_w" if weather_boost else "max_cp"
-    #     return self.bot.raid_pokemon[self.name][key] if self.is_raid else None
+    @property
+    def is_boosted(self):
+        clear_boost = ["Grass", "Ground", "Fire"]
+        fog_boost = ["Dark", "Ghost"]
+        cloudy_boost = ["Fairy", "Fighting", "Poison"]
+        partlycloudy_boost = ["Normal", "Rock"]
+        rainy_boost = ["Water", "Electric", "Bug"]
+        snow_boost = ["Ice", "Steel"]
+        windy_boost = ["Dragon", "Flying", "Psychic"]
+        pkmn_types = self.types.copy()
+        pkmn_types.append(None)
+        for type in pkmn_types:
+            if self.weather == "clear" and type in clear_boost:
+                return f"{self.bot.custom_emoji.get('clear', 'test')} *Boosted*"
+            elif self.weather == "foggy" and type in fog_boost:
+                return f"{self.bot.custom_emoji.get('foggy', 'test')} *Boosted*"
+            elif self.weather == "cloudy" and type in cloudy_boost:
+                return f"{self.bot.custom_emoji.get('cloudy', 'test')} *Boosted*"
+            elif self.weather == "partlycloudy" and type in partlycloudy_boost:
+                return f"{self.bot.custom_emoji.get('partlycloudy', 'test')} *Boosted*"
+            elif self.weather == "rainy" and type in rainy_boost:
+                return f"{self.bot.custom_emoji.get('rainy', 'test')} *Boosted*"
+            elif self.weather == "snowy" and type in snow_boost:
+                return f"{self.bot.custom_emoji.get('snowy', 'test')} *Boosted*"
+            elif self.weather == "windy" and type in windy_boost:
+                return f"{self.bot.custom_emoji.get('windy', 'test')} *Boosted*"
+        return False
 
     def role(self, guild=None):
         """:class:`discord.Role` or :obj:`None` : Returns the role for

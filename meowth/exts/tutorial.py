@@ -423,7 +423,7 @@ class Tutorial(commands.Cog):
             await asyncio.sleep(1)
 
             for report in ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
-                if ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['reportchannel'] == ctx.tutorial_channel.id:
+                if ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'] == ctx.tutorial_channel.id:
                     await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('dm_dict', {}))
 
             await asyncio.sleep(1)
@@ -700,7 +700,7 @@ class Tutorial(commands.Cog):
             await asyncio.sleep(1)
 
             for report in ctx.bot.guild_dict[ctx.guild.id]['questreport_dict']:
-                if ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['reportchannel'] == ctx.tutorial_channel.id:
+                if ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'] == ctx.tutorial_channel.id:
                     await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {}))
 
             await asyncio.sleep(1)
@@ -764,7 +764,7 @@ class Tutorial(commands.Cog):
             await asyncio.sleep(1)
 
             for report in ctx.bot.guild_dict[ctx.guild.id]['questreport_dict']:
-                if ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['reportchannel'] == ctx.tutorial_channel.id:
+                if ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'] == ctx.tutorial_channel.id:
                     await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {}))
 
             await asyncio.sleep(1)
@@ -828,7 +828,7 @@ class Tutorial(commands.Cog):
             await asyncio.sleep(1)
 
             for report in ctx.bot.guild_dict[ctx.guild.id]['questreport_dict']:
-                if ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['reportchannel'] == ctx.tutorial_channel.id:
+                if ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'] == ctx.tutorial_channel.id:
                     await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {}))
 
             await asyncio.sleep(1)

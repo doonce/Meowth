@@ -53,6 +53,8 @@ def run_bot(debug=False, launcher=None, from_restart=False):
     Meowth = MeowthBot(command_prefix=_get_prefix, launcher=launcher,
     debug=debug, from_restart=from_restart)
 
+    Meowth._get_prefix = _get_prefix
+
     # setup logging
     logger = init_loggers()
     custom_error_handling(Meowth, logger)

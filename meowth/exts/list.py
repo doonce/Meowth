@@ -1074,10 +1074,10 @@ class Listing(commands.Cog):
         other_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_other', '\U0001F539'))
         for questid in research_dict:
             pokemon = None
-            if research_dict[questid]['reportchannel'] == ctx.message.channel.id:
+            if research_dict[questid]['report_channel'] == ctx.message.channel.id:
                 try:
                     questreportmsg = await ctx.message.channel.fetch_message(questid)
-                    questauthor = ctx.channel.guild.get_member(research_dict[questid]['reportauthor'])
+                    questauthor = ctx.channel.guild.get_member(research_dict[questid]['report_author'])
                     reported_by = ""
                     if questauthor and not questauthor.bot:
                         reported_by = f" | **Reported By**: {questauthor.display_name}"
@@ -1233,10 +1233,10 @@ class Listing(commands.Cog):
         lure_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('lure_dict', {}))
         luremsg = ""
         for lureid in lure_dict:
-            if lure_dict[lureid]['reportchannel'] == ctx.message.channel.id:
+            if lure_dict[lureid]['report_channel'] == ctx.message.channel.id:
                 try:
                     lurereportmsg = await ctx.message.channel.fetch_message(lureid)
-                    lureauthor = ctx.channel.guild.get_member(lure_dict[lureid]['reportauthor'])
+                    lureauthor = ctx.channel.guild.get_member(lure_dict[lureid]['report_author'])
                     lure_expire = datetime.datetime.utcfromtimestamp(lure_dict[lureid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
                     reported_by = ""
                     if lureauthor and not lureauthor.bot:
@@ -1297,10 +1297,10 @@ class Listing(commands.Cog):
         pvp_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('pvp_dict', {}))
         pvpmsg = ""
         for pvpid in pvp_dict:
-            if pvp_dict[pvpid]['reportchannel'] == ctx.message.channel.id:
+            if pvp_dict[pvpid]['report_channel'] == ctx.message.channel.id:
                 try:
                     pvpreportmsg = await ctx.message.channel.fetch_message(pvpid)
-                    pvpauthor = ctx.channel.guild.get_member(pvp_dict[pvpid]['reportauthor'])
+                    pvpauthor = ctx.channel.guild.get_member(pvp_dict[pvpid]['report_author'])
                     pvp_tournament = pvp_dict[pvpid].get('tournament', {})
                     pvp_expire = datetime.datetime.utcfromtimestamp(pvp_dict[pvpid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
                     reported_by = ""
@@ -1365,10 +1365,10 @@ class Listing(commands.Cog):
         wild_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('wildreport_dict', {}))
         wildmsg = ""
         for wildid in wild_dict:
-            if wild_dict[wildid]['reportchannel'] == ctx.message.channel.id:
+            if wild_dict[wildid]['report_channel'] == ctx.message.channel.id:
                 try:
                     wildreportmsg = await ctx.message.channel.fetch_message(wildid)
-                    wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['reportauthor'])
+                    wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['report_author'])
                     wild_despawn = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
                     reported_by = ""
                     if wildauthor and not wildauthor.bot:

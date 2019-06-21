@@ -816,7 +816,7 @@ class Utilities(commands.Cog):
         guild_url = 'https://discord.gg/Qwb8xev'
         owner = self.bot.get_user(self.bot.owner)
         channel = ctx.channel
-        uptime_str = await self._uptime(self.bot)
+        uptime_str = self.bot.uptime_str
         yourguild = ctx.guild.name
         yourmembers = len(ctx.guild.members)
         embed_colour = ctx.guild.me.colour or discord.Colour.lighter_grey()
@@ -835,7 +835,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.6.20.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.6.21.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
