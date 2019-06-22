@@ -344,8 +344,11 @@ class Trading(commands.Cog):
             await self.close_trade(guild_id, listing_id)
 
     async def close_trade(self, guild_id, listing_id):
-        trade_dict = self.bot.guild_dict[guild_id]['trade_dict'][listing_id]
-        channel = self.bot.get_channel(trade_dict['report_channel_id'])
+        try:
+            trade_dict = self.bot.guild_dict[guild_id]['trade_dict'][listing_id]
+            channel = self.bot.get_channel(trade_dict['report_channel_id'])
+        except KeyError:
+            pass
         try:
             listing_msg = await channel.fetch_message(listing_id)
             await utils.safe_delete(listing_msg)

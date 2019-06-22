@@ -333,7 +333,7 @@ class Pokemon():
     @property
     def is_raid(self):
         """:class:`bool` : Indicates if the pokemon can show in Raids"""
-        return str(self) in self.raid_list
+        return str(self) in self.bot.raid_list
 
     @property
     def is_exraid(self):

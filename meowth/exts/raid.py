@@ -328,6 +328,11 @@ class Raid(commands.Cog):
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['active'] = False
             logger.info('Channel Expired - ' + channel.name)
             dupecount = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('duplicate', 0)
+            report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportcity'])
+            try:
+                reportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
+            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                reportmsg = None
             if dupecount >= 3:
                 if self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('gymhuntrgps', False) is not False:
                     gymhuntrexp = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp']
@@ -336,7 +341,10 @@ class Raid(commands.Cog):
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['duplicate'] = 0
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] = time.time()
                 if (not alreadyexpired):
-                    await channel.send(_('This channel has been successfully reported as a duplicate and will be deleted in 1 minute. Check the channel list for the other raid channel to coordinate in!\nIf this was in error, reset the raid with **!timerset**'))
+                    expire_embed = discord.Embed(colour=channel.guild.me.colour, description=f"The channel has been deleted in 1 minute. Check the channel list for the other raid channel to coordinate in!\nIf this was an error, reset the raid with **!timerset**.")
+                    expire_embed.set_author(name=f"Duplicate Reported!")
+                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_speedometer.png?cache=1")
+                    await channel.send(embed=expire_embed)
                 delete_time = (self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] + (1 * 60)) - time.time()
             elif self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == 'egg' and not self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('meetup', {}):
                 if (not alreadyexpired):
@@ -360,7 +368,13 @@ class Raid(commands.Cog):
                     new_name = h if h not in channel.name else ''
                     new_name += channel.name
                     await channel.edit(name=new_name)
-                    await channel.send(_("**This egg has hatched!**\n\n...or the time has just expired. Trainers {trainer_list}: Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**. This channel will be deactivated until I get an update and I'll delete it in 45 minutes if I don't hear anything.").format(trainer_list=', '.join(maybe_list)))
+                    if reportmsg:
+                        expire_embed = discord.Embed(colour=channel.guild.me.colour, description=reportmsg.embeds[0].description, title=reportmsg.embeds[0].title, url=reportmsg.embeds[0].url)
+                        expire_embed.add_field(name=reportmsg.embeds[0].fields[0].name, value=reportmsg.embeds[0].fields[0].value)
+                        expire_embed.add_field(name=reportmsg.embeds[0].fields[1].name, value=reportmsg.embeds[0].fields[1].value)
+                    else:
+                        expire_embed = None
+                    await channel.send(f"**This egg has hatched!** Trainers {(', ').join(maybe_list)}: Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**.", embed=expire_embed)
                 delete_time = (self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] + (45 * 60)) - time.time()
                 expiremsg = _('**This level {level} raid egg has expired!**').format(
                     level=self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['egglevel'])
@@ -373,7 +387,10 @@ class Raid(commands.Cog):
                     new_name = e if e not in channel.name else ''
                     new_name += channel.name
                     await channel.edit(name=new_name)
-                    await channel.send(_('This channel timer has expired! The channel has been deactivated and will be deleted in 5 minutes.\nTo reactivate the channel, use **!timerset** to set the timer again.'))
+                    expire_embed = discord.Embed(colour=channel.guild.me.colour, description=f"The channel has been deactivated and will be deleted in 5 minutes.\nTo reactivate the channel, use **!timerset** to set the timer again.")
+                    expire_embed.set_author(name=f"This channel timer has expired!")
+                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_speedometer.png?cache=1")
+                    await channel.send(embed=expire_embed)
                 delete_time = (self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] + (5 * 60)) - time.time()
                 raidtype = _("event") if self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('meetup', False) else _(" raid")
                 expiremsg = _('**This {pokemon}{raidtype} has expired!**').format(
@@ -386,18 +403,11 @@ class Raid(commands.Cog):
                 if self.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('active', False):
                     return
                 if (self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['active'] == False) and (not self.bot.is_closed()):
-                    report_channel = self.bot.get_channel(
-                        self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['reportcity'])
                     if report_channel:
                         if dupechannel:
-                            try:
-                                reportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
-                                await utils.safe_delete(reportmsg)
-                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                                pass
+                            await utils.safe_delete(reportmsg)
                         else:
                             try:
-                                reportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
                                 await reportmsg.edit(embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
                                 await reportmsg.clear_reactions()
                             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
