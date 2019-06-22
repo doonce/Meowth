@@ -435,6 +435,7 @@ class GymMatching(commands.Cog):
             match_type = "stop"
         poi_coords = poi_url.split("query=")[1]
         poi_embed = discord.Embed(colour=ctx.guild.me.colour, description=poi_info).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/POI_Submission_Illustration_01.png?cache=1')
+        poi_embed.set_author(name=f"Matched Location", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/here.png?cache=1")
         poi_embed.add_field(name="Directions", value=f"[Google Maps](https://www.google.com/maps/search/?api=1&query={poi_coords}) | [Apple Maps](http://maps.apple.com/maps?daddr={poi_coords}&z=10&t=s&dirflg=d) | [Open Street Map](https://www.openstreetmap.org/#map=16/{poi_coords.split(',')[0]}/{poi_coords.split(',')[1]})", inline=False)
         if match_type == "gym":
             active_raids = []

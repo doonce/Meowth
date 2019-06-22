@@ -290,18 +290,18 @@ class Wild(commands.Cog):
                         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "rainy"
                     elif "partly" in value_msg.clean_content.lower():
                         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "partlycloudy"
-                    elif "clear" in value_msg.clean_content.lower():
+                    elif "clear" in value_msg.clean_content.lower() or "sunny" in value_msg.clean_content.lower():
                         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "clear"
-                    elif "cloudy" in value_msg.clean_content.lower():
+                    elif "cloudy" in value_msg.clean_content.lower() or "overcast" in value_msg.clean_content.lower():
                         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "cloudy"
-                    elif "windy" in value_msg.clean_content.lower():
+                    elif "wind" in value_msg.clean_content.lower():
                         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "windy"
                     elif "snow" in value_msg.clean_content.lower():
                         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "snowy"
                     elif "fog" in value_msg.clean_content.lower():
                         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "foggy"
                     else:
-                        error = _("entered something invalid. Please choose from rainy, partly cloudy, clear, cloudy, windy, snowy, foggy")
+                        error = _("entered something invalid. Please choose from rainy, partly cloudy, clear, sunny, cloudy, overcast, windy, snowy, foggy")
                     break
                 else:
                     error = _("entered something invalid")

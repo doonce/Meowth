@@ -3734,36 +3734,51 @@ class Raid(commands.Cog):
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snowy'), _('foggy')]
         async with ctx.typing():
-            if weather.lower() not in weather_list:
-                return await ctx.channel.send(_("Meowth! Enter one of the following weather conditions: {}").format(", ".join(weather_list)), delete_after=10)
+            if "rain" in weather.lower():
+                weather = "rainy"
+            elif "partly" in weather.lower():
+                weather = "partlycloudy"
+            elif "clear" in weather.lower() or "sunny" in weather.lower():
+                weather = "clear"
+            elif "cloudy" in weather.lower() or "overcast" in weather.lower():
+                weather = "cloudy"
+            elif "wind" in weather.lower():
+                weather = "windy"
+            elif "snow" in weather.lower():
+                weather = "snowy"
+            elif "fog" in weather.lower():
+                weather = "foggy"
+            elif "none" in weather.lower() or "extreme" in weather.lower():
+                weather = None
             else:
-                self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['weather'] = weather.lower()
-                pkmn = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('pkmn_obj', None)
-                if pkmn:
-                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
-                    pokemon.weather = weather
+                return await ctx.channel.send(_("Meowth! Enter one of the following weather conditions: {}").format(", ".join(weather_list)), delete_after=10)
+            self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['weather'] = weather
+            pkmn = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('pkmn_obj', None)
+            if pkmn:
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
+                pokemon.weather = weather
+                try:
+                    raid_message = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['raidmessage'])
+                    report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['reportcity'])
+                    report_message = await report_channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['raidreport'])
+                    raid_embed = raid_message.embeds[0]
+                    if pokemon.is_boosted and "boosted" not in raid_embed.fields[0].value.lower():
+                        raid_embed.set_field_at(0, name=raid_embed.fields[0].name, value=f"{raid_embed.fields[0].value}\n{pokemon.is_boosted}")
+                        await raid_message.edit(embed=raid_embed)
+                        await report_message.edit(embed=raid_embed)
+                except Exception as e:
+                    print(e)
+                if str(utils.get_level(self.bot, pkmn)) in self.bot.guild_dict[ctx.guild.id]['configure_dict']['counters']['auto_levels']:
+                    ctrs_dict = await self._get_generic_counters(ctx.guild, pkmn, weather.lower())
                     try:
-                        raid_message = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['raidmessage'])
-                        report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['reportcity'])
-                        report_message = await report_channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['raidreport'])
-                        raid_embed = raid_message.embeds[0]
-                        if pokemon.is_boosted and "boosted" not in raid_embed.fields[0].value.lower():
-                            raid_embed.set_field_at(0, name=raid_embed.fields[0].name, value=f"{raid_embed.fields[0].value}\n{pokemon.is_boosted}")
-                            await raid_message.edit(embed=raid_embed)
-                            await report_message.edit(embed=raid_embed)
-                    except Exception as e:
-                        print(e)
-                    if str(utils.get_level(self.bot, pkmn)) in self.bot.guild_dict[ctx.guild.id]['configure_dict']['counters']['auto_levels']:
-                        ctrs_dict = await self._get_generic_counters(ctx.guild, pkmn, weather.lower())
-                        try:
-                            ctrsmessage = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrsmessage'])
-                            moveset = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['moveset']
-                            newembed = ctrs_dict[moveset]['embed']
-                            await ctrsmessage.edit(embed=newembed)
-                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
-                        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrs_dict'] = ctrs_dict
-                return await ctx.channel.send(_("Meowth! Weather set to {}!").format(weather.lower()))
+                        ctrsmessage = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrsmessage'])
+                        moveset = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['moveset']
+                        newembed = ctrs_dict[moveset]['embed']
+                        await ctrsmessage.edit(embed=newembed)
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                        pass
+                    self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrs_dict'] = ctrs_dict
+            return await ctx.channel.send(_("Meowth! Weather set to {}!").format(weather.lower()))
 
     """
     Status Management
