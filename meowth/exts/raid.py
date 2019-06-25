@@ -370,8 +370,9 @@ class Raid(commands.Cog):
                     await channel.edit(name=new_name)
                     if reportmsg:
                         expire_embed = discord.Embed(colour=channel.guild.me.colour, description=reportmsg.embeds[0].description, title=reportmsg.embeds[0].title, url=reportmsg.embeds[0].url)
-                        expire_embed.add_field(name=reportmsg.embeds[0].fields[0].name, value=reportmsg.embeds[0].fields[0].value)
-                        expire_embed.add_field(name=reportmsg.embeds[0].fields[1].name, value=reportmsg.embeds[0].fields[1].value)
+                        for field in reportmsg.embeds[0].fields:
+                            if _('possible') in field.value.lower() or _('interest') in field.value.lower():
+                                expire_embed.add_field(name=field.name, value=field.value, inline=field.inline)
                     else:
                         expire_embed = None
                     await channel.send(f"**This egg has hatched!** Trainers {(', ').join(maybe_list)}: Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**.", embed=expire_embed)
@@ -1161,23 +1162,19 @@ class Raid(commands.Cog):
             report_message = await report_channel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidreport'])
             oldembed = raid_message.embeds[0]
             raid_embed = discord.Embed(title=oldembed.title, description=oldembed.description, url=oldembed.url, colour=message.guild.me.colour)
+            raid_embed.title =  re.sub(_('level\s\d'), _('Level {}').format(newraid), oldembed.title, flags=re.IGNORECASE)
             if len(self.bot.raid_info['raid_eggs'][newraid]['pokemon']) > 1:
                 raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
-                raid_embed.add_field(name='\u200b', value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
+                raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
             else:
                 raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist}').format(bosslist=''.join(boss_list)), inline=True)
-                raid_embed.add_field(name='\u200b', value='\u200b', inline=True)
-            raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
-            raid_embed.add_field(name=oldembed.fields[3].name, value=oldembed.fields[3].value, inline=True)
+                raid_embed.add_field(name=_('**Weaknesses:**'), value='\u200b', inline=True)
             raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
+            for field in oldembed.fields:
+                if _('possible') not in field.name.lower() and _('weakness') not in field.name.lower() and _('details') not in field.name.lower() and _('interest') not in field.name.lower():
+                    raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
             raid_embed.set_author(name=f"Level {newraid} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{newraid}.png?cache=1")
             raid_embed.set_thumbnail(url=raid_img_url)
-            for field in oldembed.fields:
-                t = _('team')
-                s = _('status')
-                r = _('reaction')
-                if (t in field.name.lower()) or (s in field.name.lower()) or (r in field.name.lower()):
-                    raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
             if changefrom == "egg":
                 raid_message.content = re.sub(_('level\s\d'), _('Level {}').format(newraid), raid_message.content, flags=re.IGNORECASE)
                 report_message.content = re.sub(_('level\s\d'), _('Level {}').format(newraid), report_message.content, flags=re.IGNORECASE)
@@ -1190,6 +1187,8 @@ class Raid(commands.Cog):
             except (discord.errors.NotFound, AttributeError):
                 pass
             await channel.edit(name=raid_channel_name, topic=channel.topic)
+            if len(self.bot.raid_info['raid_eggs'][newraid]['pokemon']) == 1:
+                await self._eggassume(ctx, 'assume ' + self.bot.raid_info['raid_eggs'][newraid]['pokemon'][0], channel)
         elif newraid and not newraid.isdigit():
             egglevel = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['egglevel']
             ctrs_message = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].setdefault('ctrsmessage', None)
@@ -1362,7 +1361,8 @@ class Raid(commands.Cog):
                                 pokemon_or_level = pokemon.name.lower()
                                 pokemon.shiny = False
                                 raid_embed.set_thumbnail(url=pokemon.img_url)
-                    raid_embed.set_field_at(0, name=raid_embed.fields[0].name, value=f"Great! Now, reply with the **gym** that has the **{'level '+pokemon_or_level if str(pokemon_or_level).isdigit() else str(pokemon_or_level).title()}** raid. You can reply with **cancel** to stop anytime.", inline=False)
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Raid Report**'), value=f"Great! Now, reply with the **gym** that has the **{'level '+pokemon_or_level if str(pokemon_or_level).isdigit() else str(pokemon_or_level).title()}** raid. You can reply with **cancel** to stop anytime.", inline=False)
                     location_wait = await channel.send(embed=raid_embed)
                     try:
                         location_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1388,7 +1388,8 @@ class Raid(commands.Cog):
                                 loc_url = gym_url
                         if not location:
                             return
-                    raid_embed.set_field_at(0, name=raid_embed.fields[0].name, value=f"Fantastic! Now, reply with the **minutes remaining** before the **{'level '+pokemon_or_level if str(pokemon_or_level).isdigit() else str(pokemon_or_level).title()}** raid {'hatches' if str(pokemon_or_level).isdigit() else 'ends'}. You can reply with **cancel** to stop anytime.", inline=False)
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Raid Report**'), value=f"Fantastic! Now, reply with the **minutes remaining** before the **{'level '+pokemon_or_level if str(pokemon_or_level).isdigit() else str(pokemon_or_level).title()}** raid {'hatches' if str(pokemon_or_level).isdigit() else 'ends'}. You can reply with **cancel** to stop anytime.", inline=False)
                     expire_wait = await channel.send(embed=raid_embed)
                     try:
                         expire_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1741,10 +1742,10 @@ class Raid(commands.Cog):
             raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
             if len(egg_info['pokemon']) > 1:
                 raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
-                raid_embed.add_field(name='\u200b', value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
+                raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
             else:
                 raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist}').format(bosslist=''.join(boss_list)), inline=True)
-                raid_embed.add_field(name='\u200b', value='\u200b', inline=True)
+                raid_embed.add_field(name=_('**Weaknesses:**'), value='\u200b', inline=True)
             raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
             raid_embed.add_field(name=_('**Hatches:**'), value=_('Set with **!timerset**'), inline=True)
             raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -1857,20 +1858,18 @@ class Raid(commands.Cog):
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egglevel), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, entered_raid, pokemon.form, pokemon.alolan))), inline=True)
-        raid_embed.add_field(name=_('**Next Group:**'), value=oldembed.fields[2].value, inline=True)
-        raid_embed.add_field(name=_('**Hatches:**'), value=oldembed.fields[3].value, inline=True)
+        index = 0
+        for field in oldembed.fields:
+            if _('group') in field.name.lower() or _('expires') in field.name.lower() or _('hatches') in field.name.lower() or _('list') in field.name.lower() or _('event') in field.name.lower():
+                raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
+            else:
+                index += 1
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=oldembed.thumbnail.url)
         raid_embed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
         ctx.raidreport = egg_report
         if ctx.raidreport:
             self.bot.loop.create_task(self.edit_dm_messages(ctx, egg_report.content, copy.deepcopy(raid_embed), dm_dict))
-        for field in oldembed.fields:
-            t = _('team')
-            s = _('status')
-            r = _('reaction')
-            if (t in field.name.lower()) or (s in field.name.lower()) or (r in field.name.lower()):
-                raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
         try:
             await raid_message.edit(new_content=raid_message.content, embed=raid_embed, content=raid_message.content)
         except discord.errors.NotFound:
@@ -2001,7 +2000,9 @@ class Raid(commands.Cog):
         raid_embed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
         raid_embed.set_thumbnail(url=pokemon.img_url)
         raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1")
-        raid_embed.add_field(name=oldembed.fields[2].name, value=oldembed.fields[2].value, inline=True)
+        for field in oldembed.fields:
+            if _('expires') in field.name.lower() or _('hatches') in field.name.lower() or _('list') in field.name.lower() or _('reaction') in field.name.lower() or _('event') in field.name.lower():
+                raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
         raid_embed.add_field(name=_('**Expires:**'), value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
         if eggdetails.get('gymhuntrgps', False):
             gymhuntrmoves = "\u200b"
@@ -2034,12 +2035,6 @@ class Raid(commands.Cog):
         ctx.raidreport = egg_report
         if ctx.raidreport:
             self.bot.loop.create_task(self.edit_dm_messages(ctx, raidreportcontent, copy.deepcopy(raid_embed), eggdetails.get('dm_dict', {})))
-        for field in oldembed.fields:
-            t = _('team')
-            s = _('status')
-            r = _('reaction')
-            if (t in field.name.lower()) or (s in field.name.lower()) or (r in field.name.lower()):
-                raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
         try:
             await raid_message.edit(new_content=raidmsg, embed=raid_embed, content=raidmsg)
             raid_message = raid_message.id
@@ -2190,12 +2185,12 @@ class Raid(commands.Cog):
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level EX raid!'), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
-            raid_embed.add_field(name='\u200b', value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
+            raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
         else:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist}').format(bosslist=''.join(boss_list)), inline=True)
-            raid_embed.add_field(name='\u200b', value='\u200b', inline=True)
+            raid_embed.add_field(name=_('**Weaknesses:**'), value='\u200b', inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
-        raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
+        raid_embed.add_field(name=_('**Hatches:**'), value=_('Set with **!timerset**'), inline=True)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=raid_img_url)
         raid_embed.set_author(name=f"EX Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin_exclusive.png?cache=1")
@@ -2377,7 +2372,13 @@ class Raid(commands.Cog):
                         newembed = discord.Embed(title=oldembed.title, description=oldembed.description, url=oldembed.url, colour=oldembed.colour)
                         for field in oldembed.fields:
                             newembed.add_field(name=field.name, value=field.value, inline=field.inline)
-                        newembed.set_field_at(0, name="**Event Title:**", value=location.title())
+                        index = 0
+                        for field in newembed.fields:
+                            if _("**Event Title:**") in field.name:
+                                embed.set_field_at(index, name=_("**Event Title:**"), value=raid_details, inline=field.inline)
+                                break
+                            else:
+                                index += 1
                         newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
                         newembed.set_thumbnail(url=oldembed.thumbnail.url)
                         newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
@@ -2835,6 +2836,7 @@ class Raid(commands.Cog):
             self.bot.guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['meetup']['end'] = end
             topicstr += _('Ends on {end}').format(end=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
             endtime = end.strftime(_('%B %d at %I:%M %p (%H:%M)'))
+            field_name = "**Event Ends:**"
         elif self.bot.guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['type'] == 'egg':
             egglevel = self.bot.guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['egglevel']
             hatch = end
@@ -2842,17 +2844,25 @@ class Raid(commands.Cog):
             topicstr += _('Hatches on {expiry}').format(expiry=hatch.strftime(_('%B %d at %I:%M %p (%H:%M) | ')))
             topicstr += _('Ends on {end}').format(end=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
             endtime = hatch.strftime(_('%B %d at %I:%M %p (%H:%M)'))
+            field_name = "**Hatches:**"
         else:
             topicstr += _('Ends on {end}').format(end=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
             endtime = end.strftime(_('%B %d at %I:%M %p (%H:%M)'))
+            field_name = "**Expires:**"
         timerstr = await self.print_raid_timer(raidchannel)
         await raidchannel.send(timerstr)
-        await raidchannel.edit(topic=topicstr)
+        await raidchannel.edit(name=raidchannel.name.replace("expired-", ""), topic=topicstr)
         report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['reportcity'])
         try:
             raidmsg = await raidchannel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][raidchannel.id]['raidmessage'])
             embed = raidmsg.embeds[0]
-            embed.set_field_at(3, name=embed.fields[3].name, value=endtime, inline=True)
+            index = 0
+            for field in embed.fields:
+                if _("expires") in field.name.lower() or _("hatches") in field.name.lower() or _("event ends") in field.name.lower():
+                    embed.set_field_at(index, name=field_name, value=endtime, inline=field.inline)
+                    break
+                else:
+                    index += 1
             await raidmsg.edit(content=raidmsg.content, embed=embed)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError, AttributeError):
             pass
@@ -2990,7 +3000,13 @@ class Raid(commands.Cog):
             raidmsg = await channel.fetch_message(rc_d['raidmessage'])
             reportmsg = await report_channel.fetch_message(rc_d['raidreport'])
             embed = raidmsg.embeds[0]
-            embed.set_field_at(2, name=embed.fields[2].name, value=nextgroup, inline=True)
+            index = 0
+            for field in embed.fields:
+                if _("**Next Group:**") in field.name:
+                    embed.set_field_at(index, name=_("**Next Group:**"), value=nextgroup, inline=field.inline)
+                    break
+                else:
+                    index += 1
             try:
                 await raidmsg.edit(content=raidmsg.content, embed=embed)
             except discord.errors.NotFound:
@@ -3078,7 +3094,13 @@ class Raid(commands.Cog):
                 if (t not in field.name.lower()) and (s not in field.name.lower()) and (r not in field.name.lower()):
                     newembed.add_field(name=field.name, value=field.value, inline=field.inline)
             if report_meetup:
-                newembed.set_field_at(1, name=_("**Event Location:**"), value=raid_details, inline=True)
+                index = 0
+                for field in embed.fields:
+                    if _("**Event Location:**") in field.name:
+                        embed.set_field_at(index, name=_("**Event Location:**"), value=raid_details, inline=field.inline)
+                        break
+                    else:
+                        index += 1
             newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
             newembed.set_thumbnail(url=oldembed.thumbnail.url)
             newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
@@ -3458,7 +3480,9 @@ class Raid(commands.Cog):
                                 newembed = discord.Embed(title=oldembed.title, description=oldembed.description, url=dupeembed.url, colour=guild.me.colour)
                                 for field in oldembed.fields:
                                     newembed.add_field(name=field.name, value=field.value, inline=field.inline)
-                                newembed.add_field(name=dupeembed.fields[2].name, value=dupeembed.fields[2].value, inline=True)
+                                for field in dupeembed.fields:
+                                    if _('expires') in field.name.lower() or _('hatches') in field.name.lower() or _('event') in field.name.lower():
+                                        newembed.add_field(name=field.name, value=field.value, inline=field.inline)
                                 newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
                                 newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
                                 newembed.set_thumbnail(url=oldembed.thumbnail.url)
@@ -3729,7 +3753,7 @@ class Raid(commands.Cog):
         for moveset in ctrs_dict:
             ctrs_split = int(round(len(moveset_list)/2+0.1))
             ctrs_dict[moveset]['embed'].add_field(name=_("**Possible Movesets:**"), value=f"{''.join(moveset_list[:ctrs_split])}", inline=True)
-            ctrs_dict[moveset]['embed'].add_field(name="\u200b", value=f"{''.join(moveset_list[ctrs_split:])}", inline=True)
+            ctrs_dict[moveset]['embed'].add_field(name=_('**Possible Movesets:**'), value=f"{''.join(moveset_list[ctrs_split:])}", inline=True)
             ctrs_dict[moveset]['embed'].add_field(name="Difficulty Estimate", value=ctrs_dict[moveset]['estimator'], inline=True)
             ctrs_dict[moveset]['embed'].add_field(name=_("Results with Level 30 attackers"), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pokemon.name.replace('-', '_').upper()), inline=True)
         return ctrs_dict
@@ -3773,7 +3797,13 @@ class Raid(commands.Cog):
                     report_message = await report_channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['raidreport'])
                     raid_embed = raid_message.embeds[0]
                     if pokemon.is_boosted and "boosted" not in raid_embed.fields[0].value.lower():
-                        raid_embed.set_field_at(0, name=raid_embed.fields[0].name, value=f"{raid_embed.fields[0].value}\n{pokemon.is_boosted}")
+                        index = 0
+                        for field in embed.fields:
+                            if _("**Details:**") in field.name:
+                                embed.set_field_at(index, name=_("**Details:**"), value=f"{field.value}\n{pokemon.is_boosted}", inline=field.inline)
+                                break
+                            else:
+                                index += 1
                         await raid_message.edit(embed=raid_embed)
                         await report_message.edit(embed=raid_embed)
                 except Exception as e:
@@ -3875,6 +3905,10 @@ class Raid(commands.Cog):
 
     async def _maybe(self, channel, author, count, party, entered_interest=None, boss_list=None):
         trainer_dict = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].get(author.id, {})
+        meetup = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('meetup', None)
+        egglevel = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['egglevel']
+        pokemon = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('pkmn_obj', None)
+        boss_list = []
         allblue = 0
         allred = 0
         allyellow = 0
@@ -3894,6 +3928,16 @@ class Raid(commands.Cog):
             else:
                 allunknown = count
             party = {'mystic':allblue, 'valor':allred, 'instinct':allyellow, 'unknown':allunknown}
+        if not entered_interest:
+            if not meetup:
+                if not pokemon:
+                    for boss in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
+                        boss_list.append(str(pokemon).lower())
+                else:
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                    boss_list.append(str(pokemon).lower())
+            entered_interest = boss_list
         if entered_interest and len(entered_interest) != len(boss_list):
             interest_str = f" in {(', ').join([x.title() for x in entered_interest])}"
         if count == 1:
@@ -4016,6 +4060,10 @@ class Raid(commands.Cog):
         allunknown = 0
         interest_str = ""
         trainer_dict = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].get(author.id, {})
+        meetup = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('meetup', None)
+        egglevel = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['egglevel']
+        pokemon = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('pkmn_obj', None)
+        boss_list = []
         if (not party):
             for role in author.roles:
                 if role.id == self.bot.guild_dict[channel.guild.id]['configure_dict']['team']['team_roles']['mystic']:
@@ -4030,6 +4078,16 @@ class Raid(commands.Cog):
             else:
                 allunknown = count
             party = {'mystic':allblue, 'valor':allred, 'instinct':allyellow, 'unknown':allunknown}
+        if not entered_interest:
+            if not meetup:
+                if not pokemon:
+                    for boss in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
+                        boss_list.append(str(pokemon).lower())
+                else:
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                    boss_list.append(str(pokemon).lower())
+            entered_interest = boss_list
         if entered_interest and len(entered_interest) != len(boss_list):
             interest_str = f" for {(', ').join([x.title() for x in entered_interest])}"
         if count == 1:
@@ -4151,7 +4209,11 @@ class Raid(commands.Cog):
         allunknown = 0
         interest_str = ""
         trainer_dict = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'].get(author.id, {})
+        meetup = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('meetup', None)
+        egglevel = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['egglevel']
+        pokemon = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('pkmn_obj', None)
         lobby = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('lobby', {})
+        boss_list = []
         raidtype = _("event") if self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('meetup', False) else _("raid")
         if lobby:
             if author.id in lobby.get('starting_dict', {}).keys():
@@ -4175,6 +4237,16 @@ class Raid(commands.Cog):
             else:
                 allunknown = count
             party = {'mystic':allblue, 'valor':allred, 'instinct':allyellow, 'unknown':allunknown}
+        if not entered_interest:
+            if not meetup:
+                if not pokemon:
+                    for boss in self.bot.raid_info['raid_eggs'][egglevel]['pokemon']:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
+                        boss_list.append(str(pokemon).lower())
+                else:
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                    boss_list.append(str(pokemon).lower())
+            entered_interest = boss_list
         if entered_interest and len(entered_interest) != len(boss_list):
             interest_str = f" for {(', ').join([x.title() for x in entered_interest])}"
         if count == 1:
@@ -4364,25 +4436,22 @@ class Raid(commands.Cog):
                         break
         reportembed = raidmsg.embeds[0]
         newembed = discord.Embed(title=reportembed.title, description=reportembed.description, url=reportembed.url, colour=channel.guild.me.colour)
-        for field in reportembed.fields:
-            t = _('team')
-            s = _('status')
-            r = _('reaction')
-            if (t not in field.name.lower()) and (s not in field.name.lower()) and (r not in field.name.lower()):
-                newembed.add_field(name=field.name, value=field.value, inline=field.inline)
         if egglevel != "0" and not self.bot.guild_dict[channel.guild.id].get('raidchannel_dict', {}).get(channel.id, {}).get('meetup', {}):
             if len(boss_dict.keys()) == 1 or pokemon:
-                newembed.set_field_at(0, name=_("**Boss Interest:**") if channel_dict["boss"] > 0 else _("**Possible Bosses:**"), value=_('{bosslist1}').format(bosslist1='\n'.join(display_list)), inline=True)
-                newembed.set_field_at(1, name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=boss_dict[str(boss).lower()]['weakness']), inline=True)
+                newembed.add_field(name=_("**Boss Interest:**") if channel_dict["boss"] > 0 else _("**Possible Bosses:**"), value=_('{bosslist1}').format(bosslist1='\n'.join(display_list)), inline=True)
+                newembed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=boss_dict[str(boss).lower()]['weakness']), inline=True)
             elif len(boss_dict.keys()) > 1:
-                newembed.set_field_at(0, name=_("**Boss Interest:**") if channel_dict["boss"] > 0 else _("**Possible Bosses:**"), value=_('{bosslist1}').format(bosslist1='\n'.join(display_list[::2])), inline=True)
-                newembed.set_field_at(1, name='\u200b', value=_('{bosslist2}').format(bosslist2='\n'.join(display_list[1::2])), inline=True)
+                newembed.add_field(name=_("**Boss Interest:**") if channel_dict["boss"] > 0 else _("**Possible Bosses:**"), value=_('{bosslist1}').format(bosslist1='\n'.join(display_list[::2])), inline=True)
+                newembed.add_field(name=_("**Boss Interest:**") if channel_dict["boss"] > 0 else _("**Possible Bosses:**"), value=_('{bosslist2}').format(bosslist2='\n'.join(display_list[1::2])), inline=True)
             else:
-                newembed.set_field_at(0, name=_("**Boss Interest:**") if channel_dict["boss"] > 0 else _("**Possible Bosses:**"), value=_('{bosslist}').format(bosslist=''.join(display_list)), inline=True)
-                newembed.set_field_at(1, name='\u200b', value='\u200b', inline=True)
+                newembed.add_field(name=_("**Boss Interest:**") if channel_dict["boss"] > 0 else _("**Possible Bosses:**"), value=_('{bosslist}').format(bosslist=''.join(display_list)), inline=True)
+                newembed.add_field(name=_('**Weaknesses:**'), value='\u200b', inline=True)
+        for field in reportembed.fields:
+            if _('possible') not in field.name.lower() and _('weakness') not in field.name.lower() and _('details') not in field.name.lower() and _('interest') not in field.name.lower() and _('list') not in field.name.lower():
+                newembed.add_field(name=field.name, value=field.value, inline=field.inline)
         if channel_dict["total"] > 0:
-            newembed.add_field(name=_('**Status List**'), value=_('Maybe: **{channelmaybe}** | Coming: **{channelcoming}** | Here: **{channelhere}**').format(channelmaybe=channel_dict["maybe"], channelcoming=channel_dict["coming"], channelhere=channel_dict["here"]), inline=True)
-            newembed.add_field(name=_('**Team List**'), value='{blue_emoji}: **{channelblue}** | {red_emoji}: **{channelred}** | {yellow_emoji}: **{channelyellow}** | {grey_emoji}: **{channelunknown}**'.format(blue_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['mystic']), channelblue=channel_dict["mystic"], red_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['valor']), channelred=channel_dict["valor"], yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['instinct']), channelyellow=channel_dict["instinct"], grey_emoji=utils.parse_emoji(channel.guild, self.bot.config.unknown), channelunknown=channel_dict["unknown"]), inline=True)
+            newembed.add_field(name=_('**Status List:**'), value=_('Maybe: **{channelmaybe}** | Coming: **{channelcoming}** | Here: **{channelhere}**').format(channelmaybe=channel_dict["maybe"], channelcoming=channel_dict["coming"], channelhere=channel_dict["here"]), inline=True)
+            newembed.add_field(name=_('**Team List:**'), value='{blue_emoji}: **{channelblue}** | {red_emoji}: **{channelred}** | {yellow_emoji}: **{channelyellow}** | {grey_emoji}: **{channelunknown}**'.format(blue_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['mystic']), channelblue=channel_dict["mystic"], red_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['valor']), channelred=channel_dict["valor"], yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['instinct']), channelyellow=channel_dict["instinct"], grey_emoji=utils.parse_emoji(channel.guild, self.bot.config.unknown), channelunknown=channel_dict["unknown"]), inline=True)
         newembed.set_footer(text=reportembed.footer.text, icon_url=reportembed.footer.icon_url)
         newembed.set_thumbnail(url=reportembed.thumbnail.url)
         newembed.set_author(name=reportembed.author.name, icon_url=reportembed.author.icon_url)
@@ -4708,7 +4777,13 @@ class Raid(commands.Cog):
                 raidmsg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['raidmessage'])
                 reportmsg = await report_channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['raidreport'])
                 embed = raidmsg.embeds[0]
-                embed.set_field_at(2, name=_("**Next Group**"), value=_("Set with **!starttime**"), inline=True)
+                index = 0
+                for field in embed.fields:
+                    if _("**Next Group:**") in field.name:
+                        embed.set_field_at(index, name=_("**Next Group:**"), value=_("Set with **!starttime**"), inline=field.inline)
+                        break
+                    else:
+                        index += 1
                 try:
                     await raidmsg.edit(content=raidmsg.content, embed=embed)
                 except discord.errors.NotFound:
