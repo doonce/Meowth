@@ -554,7 +554,7 @@ class Wild(commands.Cog):
             stop_str = iv_str
         details = {
             'pkmn_obj':str(pokemon),
-            'location': nearest_stop,
+            'location': f"{nearest_stop if nearest_stop else wild_details}",
             'expire':'45 min 0 sec',
             'gender':pokemon.gender,
             'wild_iv':wild_iv

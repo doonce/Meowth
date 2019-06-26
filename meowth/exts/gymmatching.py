@@ -95,11 +95,11 @@ class GymMatching(commands.Cog):
         address = channel_dict.get('address', None)
         gyms = self.get_gyms(guild_id)
         if address in gyms:
-            egglevel = channel_dict.get('egglevel', 0)
+            egg_level = channel_dict.get('egg_level', 0)
             pokemon = channel_dict.get('pokemon', "")
             boss = channel_dict.get('pkmn_obj', "Egg")
-            if egglevel == "0":
-                egglevel = utils.get_level(self.bot, pokemon)
+            if egg_level == "0":
+                egg_level = utils.get_level(self.bot, pokemon)
             if channel_dict.get('battling', []):
                 for lobby in channel_dict.get('battling', []):
                     for trainer in lobby['starting_dict']:
@@ -116,26 +116,26 @@ class GymMatching(commands.Cog):
                     data = json.load(fd)
             except:
                     data = {}
-            test_var = data.setdefault(str(guild_id), {}).setdefault(address, {"total_raids":0, "completed_raids":0, "completed_trainers":0}).setdefault(egglevel, {"total_raids":0, "completed_raids":0, "completed_trainers":0}).setdefault(boss, {"total_raids":0, "completed_raids":0, "completed_trainers":0})
+            test_var = data.setdefault(str(guild_id), {}).setdefault(address, {"total_raids":0, "completed_raids":0, "completed_trainers":0}).setdefault(egg_level, {"total_raids":0, "completed_raids":0, "completed_trainers":0}).setdefault(boss, {"total_raids":0, "completed_raids":0, "completed_trainers":0})
             gym_total = data[str(guild_id)][address]['total_raids'] + 1
-            level_total = data[str(guild_id)][address][egglevel]['total_raids'] + 1
-            boss_total = data[str(guild_id)][address][egglevel][boss]['total_raids'] + 1
+            level_total = data[str(guild_id)][address][egg_level]['total_raids'] + 1
+            boss_total = data[str(guild_id)][address][egg_level][boss]['total_raids'] + 1
             gym_trainers = data[str(guild_id)][address]['completed_trainers'] + trainers
-            level_trainers = data[str(guild_id)][address][egglevel]['completed_trainers'] + trainers
-            boss_trainers = data[str(guild_id)][address][egglevel][boss]['completed_trainers'] + trainers
+            level_trainers = data[str(guild_id)][address][egg_level]['completed_trainers'] + trainers
+            boss_trainers = data[str(guild_id)][address][egg_level][boss]['completed_trainers'] + trainers
             if trainers:
                 gym_complete = data[str(guild_id)][address]['completed_raids'] + 1
-                level_complete = data[str(guild_id)][address][egglevel]['completed_raids'] + 1
-                boss_complete = data[str(guild_id)][address][egglevel][boss]['completed_raids'] + 1
+                level_complete = data[str(guild_id)][address][egg_level]['completed_raids'] + 1
+                boss_complete = data[str(guild_id)][address][egg_level][boss]['completed_raids'] + 1
                 data[str(guild_id)][address]['completed_raids'] = gym_complete
-                data[str(guild_id)][address][egglevel]['completed_raids'] = level_complete
-                data[str(guild_id)][address][egglevel][boss]['completed_raids'] = boss_complete
+                data[str(guild_id)][address][egg_level]['completed_raids'] = level_complete
+                data[str(guild_id)][address][egg_level][boss]['completed_raids'] = boss_complete
             data[str(guild_id)][address]['total_raids'] = gym_total
-            data[str(guild_id)][address][egglevel]['total_raids'] = level_total
-            data[str(guild_id)][address][egglevel][boss]['total_raids'] = boss_total
+            data[str(guild_id)][address][egg_level]['total_raids'] = level_total
+            data[str(guild_id)][address][egg_level][boss]['total_raids'] = boss_total
             data[str(guild_id)][address]['completed_trainers'] = gym_trainers
-            data[str(guild_id)][address][egglevel]['completed_trainers'] = level_trainers
-            data[str(guild_id)][address][egglevel][boss]['completed_trainers'] = boss_trainers
+            data[str(guild_id)][address][egg_level]['completed_trainers'] = level_trainers
+            data[str(guild_id)][address][egg_level][boss]['completed_trainers'] = boss_trainers
             with open(os.path.join('data', 'gym_stats.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
 
@@ -553,12 +553,12 @@ class GymMatching(commands.Cog):
             poi_info = _("**Gym:** {0}{1}").format(details, poi_note)
             for raid in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
                 raid_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid]['address']
-                raid_reportcity = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid]['reportcity']
-                if self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid]['type'] == "exraid" or self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid]['egglevel'] == "EX":
+                raid_report_channel = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid]['report_channel']
+                if self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid]['type'] == "exraid" or self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid]['egg_level'] == "EX":
                     raid_type = "exraid"
                 else:
                     raid_type = "raid"
-                if (details == raid_address) and ctx.channel.id == raid_reportcity and raid_type == type:
+                if (details == raid_address) and ctx.channel.id == raid_report_channel and raid_type == type:
                     if message.author.bot:
                         return "", False, False
                     dupe_channel = self.bot.get_channel(raid)

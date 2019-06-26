@@ -49,7 +49,7 @@ class Huntr(commands.Cog):
                         if report_dict_dict[report_dict][reportid].get('exp', 0) <= time.time():
                             report_channel = self.bot.get_channel(report_dict_dict[report_dict][reportid].get('reportchannel'))
                             if report_channel:
-                                user_report = report_dict_dict[report_dict][reportid].get('reportmessage', None)
+                                user_report = report_dict_dict[report_dict][reportid].get('report_message', None)
                                 if user_report:
                                     report_delete_dict[user_report] = {"action":"delete", "channel":report_channel}
                                 if report_dict_dict[report_dict][reportid].get('expedit') == "delete":
@@ -206,7 +206,7 @@ class Huntr(commands.Cog):
                     await utils.safe_delete(message)
                     auto_report = True if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['egglvls'] else False
                 for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
-                    channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('gymhuntrgps', None)
+                    channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('coordinates', None)
                     channel_address = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('address', None)
                     if not channel_gps:
                         continue
@@ -214,7 +214,7 @@ class Huntr(commands.Cog):
                         channel = self.bot.get_channel(channelid)
                         if self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['type'] == 'egg':
                             await raid_cog._eggtoraid(entered_raid.lower().strip(), channel, author=message.author, huntr=moveset)
-                        raidmsg = await channel.fetch_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
+                        raidmsg = await channel.fetch_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raid_message'])
                         if moveset and raidmsg.embeds[0].fields[2].name != moveset:
                             await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=entered_raid.title(), moves=moveset))
                         return
@@ -261,7 +261,6 @@ class Huntr(commands.Cog):
                         "raidexp":raidexp,
                         'expedit': {"content":ctx.raidreport.content.split(" React")[0], "embedcontent":_('**This {pokemon} raid has expired!**').format(pokemon=entered_raid)},
                         "reporttype":"raid",
-                        "reportchannel":message.channel.id,
                         'report_channel':message.channel.id,
                         "level":0,
                         "pokemon":entered_raid,
@@ -293,7 +292,6 @@ class Huntr(commands.Cog):
                         "raidexp":raidexp,
                         'expedit': {"content":ctx.raidreport.content.split(" React")[0], "embedcontent": _('**This level {level} raid egg has hatched!**').format(level=egg_level)},
                         "reporttype":"egg",
-                        "reportchannel":message.channel.id,
                         "report_channel":message.channel.id,
                         "level":egg_level,
                         "pokemon":None,
@@ -403,9 +401,9 @@ class Huntr(commands.Cog):
                     logger.error("Raid Cog not loaded")
                     return
                 for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
-                    channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('gymhuntrgps', None)
+                    channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('coordinates', None)
                     channel_address = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('address', None)
-                    channel_level = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('egglevel', None)
+                    channel_level = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('egg_level', None)
                     channel_type = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('type', None)
                     channel_meetup = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('meetup', {})
                     if channel_level == "EX" or channel_meetup:
@@ -422,7 +420,7 @@ class Huntr(commands.Cog):
                         elif channel and report_details.get('moves', None):
                             await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=report_details.get('pokemon', None).title(), moves=report_details.get('moves', None)))
                             try:
-                                raid_msg = await channel.fetch_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raidmessage'])
+                                raid_msg = await channel.fetch_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raid_message'])
                             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                                 return
                             raid_embed = raid_msg.embeds[0]
@@ -495,7 +493,6 @@ class Huntr(commands.Cog):
                     "exp":time.time() + timeout,
                     'expedit': {"content":raidmsg.split("React")[0], "embedcontent":expiremsg},
                     "reporttype":reporttype,
-                    "reportchannel":message.channel.id,
                     "report_channel":message.channel.id,
                     "level":egg_level,
                     "pokemon":str(pokemon) if pokemon else None,
@@ -630,10 +627,10 @@ class Huntr(commands.Cog):
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
-            raid_embed.add_field(name='\u200b', value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
+            raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
         else:
             raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist}').format(bosslist=''.join(boss_list)), inline=True)
-            raid_embed.add_field(name='\u200b', value='\u200b', inline=True)
+            raid_embed.add_field(name=_('**Weaknesses:**'), value='\u200b', inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Hatches:**'), value=_('Set with **!timerset**'), inline=True)
         if reporter == "huntr":
@@ -782,16 +779,14 @@ class Huntr(commands.Cog):
         ctx.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'exp':time.time() + despawn,
             'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
-            'reportmessage':message.id,
             'report_message':message.id,
-            'reportchannel':message.channel.id,
             'report_channel':message.channel.id,
-            'reportauthor':message.author.id,
             'report_author':message.author.id,
             'report_guild':message.guild.id,
             'dm_dict':dm_dict,
             'location':wild_details,
             'gps':wild_coordinates,
+            'coordinates':wild_coordinates,
             'url':wild_gmaps_link,
             'pokemon':entered_wild,
             'pkmn_obj':str(pokemon),
@@ -871,15 +866,14 @@ class Huntr(commands.Cog):
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
         raidmsg = f"{roletest}Meowth! {str(pokemon).title()} raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
-        raidmessage = await raid_channel.send(content=raidmsg, embed=raid_embed)
-        await utils.safe_reaction(raidmessage, help_reaction)
+        raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
+        await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
-            await utils.safe_reaction(raidmessage, reaction)
+            await utils.safe_reaction(raid_message, reaction)
             await utils.safe_reaction(ctx.raidreport, reaction)
-        await raidmessage.pin()
+        await raid_message.pin()
         level = utils.get_level(self.bot, entered_raid)
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
-            'reportcity': message.channel.id,
             'report_channel':message.channel.id,
             'report_guild':message.guild.id,
             'report_author':message.author.id,
@@ -887,21 +881,17 @@ class Huntr(commands.Cog):
             'exp': time.time() + (60 * ctx.bot.raid_info['raid_eggs'][str(level)]['raidtime']),
             'manual_timer': False,
             'active': True,
-            'raidmessage': raidmessage.id,
-            'raid_message':raidmessage.id,
-            'raidreport': ctx.raidreport.id,
+            'raid_message':raid_message.id,
             'raid_report':ctx.raidreport.id,
-            'reportmessage': message.id,
             'report_message':message.id,
             'address': raid_details,
+            'location':raid_details,
             'type': 'raid',
             'pokemon': entered_raid,
             'pkmn_obj': str(pokemon),
-            'egglevel': '0',
-            'egg_level':"0",
+            'egg_level': '0',
             'moveset': 0,
             'weather': weather,
-            'gymhuntrgps': raid_coordinates,
             'coordinates':raid_coordinates
         }
         await raid_cog._timerset(raid_channel, raidexp)
@@ -972,14 +962,13 @@ class Huntr(commands.Cog):
         await asyncio.sleep(1)
         ctx.raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
         raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
-        raidmessage = await raid_channel.send(content=raidmsg, embed=raid_embed)
-        await utils.safe_reaction(raidmessage, help_reaction)
+        raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
+        await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
-            await utils.safe_reaction(raidmessage, reaction)
+            await utils.safe_reaction(raid_message, reaction)
             await utils.safe_reaction(ctx.raidreport, reaction)
-        await raidmessage.pin()
+        await raid_message.pin()
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
-            'reportcity': message.channel.id,
             'report_channel':message.channel.id,
             'report_guild':message.guild.id,
             'report_author':message.author.id,
@@ -987,20 +976,16 @@ class Huntr(commands.Cog):
             'exp': time.time() + (60 * ctx.bot.raid_info['raid_eggs'][egg_level]['hatchtime']),
             'manual_timer': False,
             'active': True,
-            'raidmessage': raidmessage.id,
-            'raid_message':raidmessage.id,
-            'raidreport': ctx.raidreport.id,
+            'raid_message':raid_message.id,
+            'raid_report': ctx.raidreport.id,
             'raid_report':ctx.raidreport.id,
-            'reportmessage': message.id,
             'report_message':message.id,
             'address': raid_details,
             'type': 'egg',
             'pokemon': '',
-            'egglevel': egg_level,
             'egg_level':egg_level,
             'weather': weather,
             'moveset': 0,
-            'gymhuntrgps': raid_coordinates,
             'coordinates':raid_coordinates
         }
         if raidexp is not False:

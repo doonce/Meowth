@@ -67,13 +67,13 @@ class Listing(commands.Cog):
                             pass
                     await utils.safe_bulk_delete(ctx.channel, delete_list)
                     for r in rc_d:
-                        reportcity = self.bot.get_channel(rc_d[r]['reportcity'])
-                        if not reportcity:
+                        report_channel = self.bot.get_channel(rc_d[r]['report_channel'])
+                        if not report_channel:
                             continue
-                        if (reportcity.name == cty) and rc_d[r]['active'] and discord.utils.get(guild.text_channels, id=r):
+                        if (report_channel.name == cty) and rc_d[r]['active'] and discord.utils.get(guild.text_channels, id=r):
                             exp = rc_d[r]['exp']
                             type = rc_d[r]['type']
-                            level = rc_d[r]['egglevel']
+                            level = rc_d[r]['egg_level']
                             if (type == 'egg') and level.isdigit():
                                 egg_dict[r] = exp
                             elif rc_d[r].get('meetup', {}):
@@ -106,9 +106,9 @@ class Listing(commands.Cog):
                             start_str = _('\nNext group: **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
                         else:
                             starttime = False
-                        if rc_d[r]['egglevel'].isdigit() and (int(rc_d[r]['egglevel']) > 0):
+                        if rc_d[r]['egg_level'].isdigit() and (int(rc_d[r]['egg_level']) > 0):
                             expirytext = _(' - {train_str}Hatches: {expiry}{is_assumed}').format(train_str=train_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                        elif ((rc_d[r]['egglevel'] == 'EX') or (rc_d[r]['type'] == 'exraid')) and not meetup:
+                        elif ((rc_d[r]['egg_level'] == 'EX') or (rc_d[r]['type'] == 'exraid')) and not meetup:
                             expirytext = _(' - {train_str}Hatches: {expiry}{is_assumed}').format(train_str=train_str, expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
                         elif meetup:
                             meetupstart = meetup['start']
@@ -221,7 +221,7 @@ class Listing(commands.Cog):
                         tag = True
                     starttime = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime', None)
                     meetup = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('meetup', {})
-                    raid_message = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raidmessage']
+                    raid_message = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raid_message']
                     try:
                         raid_message = await channel.fetch_message(raid_message)
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
@@ -643,8 +643,8 @@ class Listing(commands.Cog):
     async def _bosslist(self, ctx):
         message = ctx.message
         channel = ctx.channel
-        egglevel = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channel.id]['egglevel']
-        egg_level = str(egglevel)
+        egg_level = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channel.id]['egg_level']
+        egg_level = str(egg_level)
         if egg_level == "0":
             listmsg = _(' The egg has already hatched!')
             return listmsg
