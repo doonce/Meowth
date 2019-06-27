@@ -2990,8 +2990,8 @@ class Raid(commands.Cog):
             embed = raidmsg.embeds[0]
             index = 0
             for field in embed.fields:
-                if _("**Next Group:**") in field.name:
-                    embed.set_field_at(index, name=_("**Next Group:**"), value=nextgroup, inline=field.inline)
+                if _("**Next Group:**") in field.name or _("**Event Starts:**") in field.name:
+                    embed.set_field_at(index, name=field.name, value=nextgroup, inline=field.inline)
                     break
                 else:
                     index += 1

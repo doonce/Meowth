@@ -60,9 +60,9 @@ def run_bot(debug=False, launcher=None, from_restart=False):
     custom_error_handling(Meowth, logger)
 
     # load the required core modules
-    required_exts = ['admin', 'utilities', 'pokemon', 'configure']
-    optional_exts = ['want', 'wild', 'raid', 'list', 'gymmatching', 'tutorial', 'silph', 'trade', 'research', 'nest', 'huntr', 'trainers', 'lure', 'pvp']
-    meowth_exts = required_exts + optional_exts
+    Meowth.required_exts = ['admin', 'utilities', 'pokemon', 'configure']
+    Meowth.optional_exts = ['want', 'wild', 'raid', 'list', 'gymmatching', 'tutorial', 'silph', 'trade', 'research', 'nest', 'huntr', 'trainers', 'lure', 'pvp']
+    meowth_exts = Meowth.required_exts + Meowth.optional_exts
 
     for ext in meowth_exts:
         try:

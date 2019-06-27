@@ -67,6 +67,7 @@ class Nest(commands.Cog):
                     report_channel = self.bot.get_channel(channel)
                     if not report_channel:
                         del self.bot.guild_dict[guildid]['nest_dict'][channel]
+                        logger.info(f"Deleted Nest Channel {report_channel}")
                         continue
                     for nest in nest_dict[channel]:
                         if nest == 'list':

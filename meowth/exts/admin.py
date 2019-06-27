@@ -154,7 +154,7 @@ class Admin(commands.Cog):
         """Unload an extension"""
         exts = [e for e in extensions if f"meowth.exts.{e}" in self.bot.extensions]
         for ext in exts:
-            if ext in required_exts:
+            if ext in self.bot.required_exts:
                 exts.remove(ext)
                 continue
             try:
@@ -208,7 +208,7 @@ class Admin(commands.Cog):
         else:
             value = stdout.getvalue()
             try:
-                await utils.safe_reaction(ctx.message, config['command_done'])
+                await utils.safe_reaction(ctx.message, ctx.bot.custom_emoji.get('command_done'))
             except:
                 pass
             if ret is None:

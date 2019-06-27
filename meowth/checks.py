@@ -174,7 +174,7 @@ def check_exraidchannel(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    level = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('egglevel', False)
+    level = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('egg_level', False)
     type =  ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('type', False)
     return (level == 'EX') or (type == 'exraid')
 
