@@ -930,7 +930,7 @@ class Raid(commands.Cog):
             data['raid_eggs'][edit_level]['pokemon'] = new_list
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
-            pkmn_class.Pokemon.generate_lists(self.bot)
+            await pkmn_class.Pokemon.generate_lists(self.bot)
             self.bot.raid_list = await utils.get_raidlist(self.bot)
             self.reset_raid_roles.restart()
             guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)

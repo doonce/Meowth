@@ -236,7 +236,7 @@ class Trading(commands.Cog):
             await utils.safe_reaction(listermsg, self.bot.custom_emoji.get('trade_stop', '\u23f9'))
             for offerid in trade_dict['offers'].keys():
                 if offerid != buyer_id:
-                    reject = self.guild.get_member(offerid)
+                    reject = guild.get_member(offerid)
                     try:
                         await reject.send(f"Meowth... {lister.display_name} accepted a competing offer for their {offered_pokemon}.")
                     except discord.HTTPException:

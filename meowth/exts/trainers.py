@@ -84,6 +84,7 @@ class Trainers(commands.Cog):
                 await ctx.channel.send(_("Meowth! I can't add roles!"), delete_after=10)
 
     @commands.command(aliases=['whois'])
+    @checks.guildchannel()
     async def profile(self, ctx, *, member=""):
         """Displays a member's social and reporting profile.
 
