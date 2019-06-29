@@ -163,7 +163,7 @@ class Pokemon():
                 self.shiny = False
             if self.alolan and "alolan" not in bot.shiny_dict.get(self.id, {}):
                 self.shiny = False
-            elif str(self.form).lower() not in bot.shiny_dict.get(self.id, {}):
+            elif self.form and str(self.form).lower() not in bot.shiny_dict.get(self.id, {}):
                 self.shiny = False
         if self.id in bot.legendary_list:
             self.legendary = True
@@ -878,7 +878,6 @@ class Pokedex(commands.Cog):
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['shiny'] = pkmn_shiny
             with open(self.bot.pkmn_info_path, 'w', encoding="utf8") as fd:
                 json.dump(pkmn_info, fd, indent=2, separators=(', ', ': '))
-            self.bot.pkmn_info = pkmn_info
             await Pokemon.generate_lists(self.bot)
             pkmn_embed.clear_fields()
             pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {pokemon.name.title()} Settings**:\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}", inline=False)

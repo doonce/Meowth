@@ -126,6 +126,15 @@ def check_raidreport(ctx):
     channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('raid', {}).get('report_channels', {}).keys()]
     return channel.id in channel_list
 
+def check_rsvpchannel(ctx):
+    if ctx.guild is None:
+        return False
+    channel = ctx.channel
+    guild = ctx.guild
+    raid_channels = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).keys()
+    meetup_channels = ctx.bot.guild_dict[guild.id].setdefault('meetup_dict', {}).keys()
+    return channel.id in raid_channels or channel.id in meetup_channels
+
 def check_raidchannel(ctx):
     if ctx.guild is None:
         return False
@@ -197,8 +206,8 @@ def check_meetupchannel(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    meetup =  ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('meetup', False)
-    return meetup
+    meetup_channels = ctx.bot.guild_dict[guild.id].setdefault('meetup_dict', {}).keys()
+    return channel.id in meetup_channels
 
 def check_tradeset(ctx):
     if ctx.guild is None:
@@ -540,7 +549,7 @@ def allowarchive():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_archiveset(ctx):
-            if check_raidchannel(ctx):
+            if check_rsvpchannel(ctx):
                 return True
         raise errors.ArchiveSetCheckFail()
     return commands.check(predicate)
@@ -552,6 +561,15 @@ def citychannel():
         if check_citychannel(ctx):
             return True
         raise errors.CityChannelCheckFail()
+    return commands.check(predicate)
+
+def rsvpchannel():
+    def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
+        if check_raidchannel(ctx) or check_meetupchannel(ctx):
+            return True
+        raise errors.RSVPChannelCheckFail()
     return commands.check(predicate)
 
 def raidchannel():

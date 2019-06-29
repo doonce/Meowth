@@ -220,6 +220,7 @@ class Lure(commands.Cog):
         expire_time = "30"
         if timer:
             expire_time = timer
+        lure_dict = self.bot.guild_dict[ctx.guild.id].setdefault('lure_dict', {})
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
         end = now + datetime.timedelta(minutes=int(expire_time))
@@ -250,7 +251,6 @@ class Lure(commands.Cog):
         lure_embed.add_field(name=f"**Lure Type:**", value=item.title())
         lure_embed.add_field(name=f"**{'Expires' if timer else 'Expire Estimate'}:**", value=end.strftime(_('%I:%M %p (%H:%M)')))
         confirmation = await ctx.channel.send(lure_msg, embed=lure_embed)
-        test_var = self.bot.guild_dict[ctx.guild.id].setdefault('lure_dict', {}).setdefault(confirmation.id, {})
         self.bot.guild_dict[ctx.guild.id]['lure_dict'][confirmation.id] = {
             'exp':time.time() + int(expire_time)*60,
             'report_message':ctx.message.id,

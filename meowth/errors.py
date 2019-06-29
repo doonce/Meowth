@@ -72,6 +72,10 @@ class RaidChannelCheckFail(CommandError):
     'Exception raised checks.raidchannel fails'
     pass
 
+class RSVPChannelCheckFail(CommandError):
+    'Exception raised checks.rsvpchannel fails'
+    pass
+
 class EggChannelCheckFail(CommandError):
     'Exception raised checks.eggchannel fails'
     pass
@@ -207,6 +211,10 @@ def custom_error_handling(bot, logger):
     @bot.event
     async def on_command_error(ctx, error):
         channel = ctx.channel
+        if channel and channel.id in ctx.bot.guild_dict[channel.guild.id].setdefault('meetup_dict', {}):
+            report_dict = 'meetup_dict'
+        elif channel and channel.id in ctx.bot.guild_dict[channel.guild.id].setdefault('raidchannel_dict', {}):
+            report_dict = 'raidchannel_dict'
         if ctx.prefix:
             prefix = ctx.prefix.replace(ctx.bot.user.mention, '@' + ctx.bot.user.name)
         else:
@@ -371,6 +379,28 @@ def custom_error_handling(bot, logger):
             error = await ctx.channel.send(msg)
             await asyncio.sleep(10)
             await delete_error(ctx.message, error)
+        elif isinstance(error, RSVPChannelCheckFail):
+            guild = ctx.guild
+            msg = _('Meowth! Please use **{prefix}{cmd_name}** in a Raid channel. Use **{prefix}list** in any ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
+            raid_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
+            meetup_channels = bot.guild_dict[guild.id]['configure_dict']['meetup']['report_channels']
+            city_channels = {**raid_channels, **meetup_channels}
+            if len(city_channels) > 10:
+                msg += _('Region report channel to see active channels.')
+            else:
+                msg += _('of the following channels to see active channels:')
+                for c in city_channels:
+                    channel = discord.utils.get(guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
+                    if channel:
+                        msg += '\n' + channel.mention
+                    else:
+                        msg += '\n#deleted-channel'
+            error = await ctx.channel.send(msg)
+            await asyncio.sleep(10)
+            await delete_error(ctx.message, error)
         elif isinstance(error, EggChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in an Egg channel. Use **{prefix}list** in any ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
@@ -400,12 +430,8 @@ def custom_error_handling(bot, logger):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in an Active Raid channel. Use **{prefix}list** in any ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
-            try:
-                egg_check = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('type', None)
-                meetup = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('meetup', {})
-            except:
-                egg_check = ""
-                meetup = False
+            egg_check = bot.guild_dict[guild.id][report_dict].get(ctx.channel.id, {}).get('type', "")
+            meetup = bot.guild_dict[guild.id][report_dict].get(ctx.channel.id, {}).get('meetup', {})
             if len(city_channels) > 10:
                 msg += _('Region report channel to see active channels.')
             else:
@@ -428,12 +454,8 @@ def custom_error_handling(bot, logger):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in an Active channel. Use **{prefix}list** in any ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
-            try:
-                egg_check = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('type', None)
-                meetup = bot.guild_dict[guild.id]['raidchannel_dict'][ctx.channel.id].get('meetup', {})
-            except:
-                egg_check = ""
-                meetup = False
+            egg_check = bot.guild_dict[guild.id][report_dict].get(ctx.channel.id, {}).get('type', "")
+            meetup = bot.guild_dict[guild.id][report_dict].get(ctx.channel.id, {}).get('meetup', {})
             if len(city_channels) > 10:
                 msg += _('Region report channel to see active raids.')
             else:

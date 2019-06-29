@@ -470,6 +470,12 @@ def get_category(bot, channel, level, category_type="raid"):
     else:
         return None
 
+async def get_report_dict(bot, channel):
+    if channel and channel.id in bot.guild_dict[channel.guild.id].setdefault('meetup_dict', {}):
+        return 'meetup_dict'
+    elif channel and channel.id in bot.guild_dict[channel.guild.id].setdefault('raidchannel_dict', {}):
+        return 'raidchannel_dict'
+
 async def get_object(ctx, snowflake, return_type="object"):
     iterables = [ctx.guild.text_channels, ctx.guild.categories, ctx.guild.roles, ctx.guild.members, ctx.bot.guilds]
     object = None

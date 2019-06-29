@@ -39,7 +39,7 @@ class Wild(commands.Cog):
         guild = message.guild
         can_manage = channel.permissions_for(user).manage_messages
         try:
-            wildreport_dict = self.bot.guild_dict[guild.id]['wildreport_dict']
+            wildreport_dict = self.bot.guild_dict[guild.id].setdefault('wildreport_dict', {})
         except KeyError:
             wildreport_dict = {}
         if message.id in wildreport_dict and user.id != self.bot.user.id:
@@ -415,6 +415,7 @@ class Wild(commands.Cog):
         wild_iv = None
         wild_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1')
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        wild_dict = self.bot.guild_dict[ctx.guild.id].setdefault('wildreport_dict', {})
         while True:
             async with ctx.typing():
                 if pokemon and location:

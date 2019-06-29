@@ -399,6 +399,7 @@ class Pvp(commands.Cog):
 
     async def _pvp(self, ctx, pvp_type, location, timer):
         dm_dict = {}
+        pvp_dict = self.bot.guild_dict[ctx.guild.id].setdefault('pvp_dict', {})
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
         end = now + datetime.timedelta(minutes=int(timer))
@@ -427,7 +428,6 @@ class Pvp(commands.Cog):
         pvp_embed.add_field(name=f"**PVP Type:**", value=pvp_type.title())
         pvp_embed.add_field(name=f"**Available Until:**", value=end.strftime(_('%I:%M %p (%H:%M)')))
         confirmation = await ctx.channel.send(pvp_msg, embed=pvp_embed)
-        test_var = self.bot.guild_dict[ctx.guild.id].setdefault('pvp_dict', {}).setdefault(confirmation.id, {})
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][confirmation.id] = {
             'exp':time.time() + int(timer)*60,
             'expedit':"delete",

@@ -52,7 +52,7 @@ class Listing(commands.Cog):
                         await utils.safe_delete(tag_error)
                         return
                     cty = channel.name
-                    rc_d = self.bot.guild_dict[guild.id]['raidchannel_dict']
+                    rc_d = {**self.bot.guild_dict[guild.id]['raidchannel_dict'], **self.bot.guild_dict[guild.id]['meetup_dict']}
                     raid_dict = {}
                     egg_dict = {}
                     exraid_list = []
@@ -210,7 +210,8 @@ class Listing(commands.Cog):
                             index += 1
                     self.bot.guild_dict[ctx.guild.id]['list_dict']['raid'][ctx.channel.id] = list_messages
 
-                elif checks.check_raidactive(ctx):
+                elif checks.check_rsvpchannel(ctx):
+                    report_dict = await utils.get_report_dict(self.bot, ctx.channel)
                     if not raid_cog:
                         return
                     team_list = ["mystic", "valor", "instinct", "unknown"]
@@ -219,14 +220,14 @@ class Listing(commands.Cog):
                     list_messages = []
                     if ctx.invoked_with.lower() == "tag":
                         tag = True
-                    starttime = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('starttime', None)
-                    meetup = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('meetup', {})
-                    raid_message = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['raid_message']
+                    starttime = self.bot.guild_dict[guild.id][report_dict][channel.id].get('starttime', None)
+                    meetup = self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', {})
+                    raid_message = self.bot.guild_dict[guild.id][report_dict][channel.id]['raid_message']
                     try:
                         raid_message = await channel.fetch_message(raid_message)
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                         raid_message = None
-                    rc_d = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]
+                    rc_d = self.bot.guild_dict[guild.id][report_dict][channel.id]
                     list_split = ctx.message.clean_content.lower().split()
                     list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
                     delete_list = []
@@ -337,7 +338,7 @@ class Listing(commands.Cog):
                     raise checks.errors.CityRaidChannelCheckFail()
 
     @_list.command()
-    @checks.activechannel()
+    @checks.rsvpchannel()
     async def interested(self, ctx, tags: str = ''):
         """Lists the number and users who are interested in the raid.
 
@@ -356,7 +357,8 @@ class Listing(commands.Cog):
     async def _interest(self, ctx, tag=False, team=False):
         ctx_maybecount = 0
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
-        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'])
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
+        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
         maybe_exstr = ''
         maybe_list = []
         name_list = []
@@ -388,7 +390,7 @@ class Listing(commands.Cog):
         return listmsg
 
     @_list.command()
-    @checks.activechannel()
+    @checks.rsvpchannel()
     async def coming(self, ctx, tags: str = ''):
         """Lists the number and users who are coming to a raid.
 
@@ -406,8 +408,9 @@ class Listing(commands.Cog):
 
     async def _otw(self, ctx, tag=False, team=False):
         ctx_comingcount = 0
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
-        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'])
+        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
         otw_exstr = ''
         otw_list = []
         name_list = []
@@ -439,7 +442,7 @@ class Listing(commands.Cog):
         return listmsg
 
     @_list.command()
-    @checks.activechannel()
+    @checks.rsvpchannel()
     async def here(self, ctx, tags: str = ''):
         """List the number and users who are present at a raid.
 
@@ -457,9 +460,10 @@ class Listing(commands.Cog):
 
     async def _waiting(self, ctx, tag=False, team=False):
         ctx_herecount = 0
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
-        raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id])
-        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'])
+        raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id])
+        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
         here_exstr = ''
         here_list = []
         name_list = []
@@ -483,7 +487,7 @@ class Listing(commands.Cog):
                 ctx_herecount += trainer_dict[trainer]['party'][team]
                 if raid_dict.get('lobby', {"team":"all"})['team'] == team or raid_dict.get('lobby', {"team":"all"})['team'] == "all":
                     ctx_herecount -= trainer_dict[trainer]['status']['lobby']
-        raidtype = _("event") if self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].get('meetup', False) else _("raid")
+        raidtype = _("event") if self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('meetup', False) else _("raid")
         if ctx_herecount > 0:
             if (now.time() >= datetime.time(5, 0)) and (now.time() <= datetime.time(21, 0)) and (tag == True):
                 here_exstr = _(" including {trainer_list} and the people with them! Be considerate and let them know if and when you'll be there").format(trainer_list=', '.join(here_list))
@@ -511,9 +515,10 @@ class Listing(commands.Cog):
 
     async def _lobbylist(self, ctx, tag=False, team=False):
         ctx_lobbycount = 0
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
-        raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id])
-        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'])
+        raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id])
+        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
         lobby_exstr = ''
         lobby_list = []
         name_list = []
@@ -553,8 +558,9 @@ class Listing(commands.Cog):
         Usage: !list groups
         Works only in raid channels."""
         ctx_lobbycount = 0
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
-        raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id])
+        raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id])
         raid_lobby = raid_dict.get("lobby", None)
         raid_active = raid_dict.get("battling", None)
         raid_complete = raid_dict.get("completed", None)
@@ -681,7 +687,7 @@ class Listing(commands.Cog):
         return listmsg
 
     @_list.command(aliases=['team'])
-    @checks.activechannel()
+    @checks.rsvpchannel()
     async def teams(self, ctx):
         """List the teams for the users that have RSVP'd to a raid.
 
@@ -702,7 +708,8 @@ class Listing(commands.Cog):
         status_list = ["here", "coming", "maybe"]
         team_list = ["mystic", "valor", "instinct", "unknown"]
         teamliststr = ''
-        trainer_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][message.channel.id]['trainer_dict'])
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
+        trainer_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['trainer_dict'])
         for trainer in trainer_dict.keys():
             if not ctx.guild.get_member(trainer):
                 continue

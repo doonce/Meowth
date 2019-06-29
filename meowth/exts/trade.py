@@ -364,6 +364,7 @@ class Trading(commands.Cog):
     async def trade(self, ctx, *, offered_pokemon=''):
         """Create a trade listing."""
         await utils.safe_delete(ctx.message)
+        trade_dict = self.bot.guild_dict[ctx.guild.id].setdefault('trade_dict', {})
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         error = False
         details = None
