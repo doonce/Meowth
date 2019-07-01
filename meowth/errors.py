@@ -211,10 +211,9 @@ def custom_error_handling(bot, logger):
     @bot.event
     async def on_command_error(ctx, error):
         channel = ctx.channel
-        if channel and channel.id in ctx.bot.guild_dict[channel.guild.id].setdefault('meetup_dict', {}):
-            report_dict = 'meetup_dict'
-        elif channel and channel.id in ctx.bot.guild_dict[channel.guild.id].setdefault('raidchannel_dict', {}):
-            report_dict = 'raidchannel_dict'
+        for report_dict in ctx.bot.channel_report_dicts:
+            if channel and channel.id in ctx.bot.guild_dict[channel.guild.id].setdefault(report_dict, {}):
+                break
         if ctx.prefix:
             prefix = ctx.prefix.replace(ctx.bot.user.mention, '@' + ctx.bot.user.name)
         else:

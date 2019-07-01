@@ -36,13 +36,15 @@ class Wild(commands.Cog):
             user = guild.get_member(payload.user_id)
         except AttributeError:
             return
+        if user == self.bot.user:
+            return
         guild = message.guild
         can_manage = channel.permissions_for(user).manage_messages
         try:
             wildreport_dict = self.bot.guild_dict[guild.id].setdefault('wildreport_dict', {})
         except KeyError:
             wildreport_dict = {}
-        if message.id in wildreport_dict and user.id != self.bot.user.id:
+        if message.id in wildreport_dict:
             wild_dict = self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
             if str(payload.emoji) == self.bot.custom_emoji.get('wild_omw', '\U0001F3CE'):
                 wild_dict['omw'].append(user.mention)
@@ -377,7 +379,7 @@ class Wild(commands.Cog):
                     embed.remove_field(index)
                 else:
                     index += 1
-        for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
+        for trainer in copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('trainers', {})):
             if not checks.dm_check(ctx, trainer):
                 continue
             if trainer in dm_dict:
