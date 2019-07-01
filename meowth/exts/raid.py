@@ -53,14 +53,19 @@ class Raid(commands.Cog):
         guild = message.guild
         if user == self.bot.user:
             return
+        ctx = await self.bot.get_context(message)
         react_message = None
         for report_dict in self.bot.channel_report_dicts:
             for report_channel in self.bot.guild_dict[guild.id][report_dict]:
                 if message.id == self.bot.guild_dict[guild.id][report_dict][report_channel].get('raid_report'):
+                    await message.remove_reaction(payload.emoji, user)
                     channel = guild.get_channel(report_channel)
+                    ctx.message.author, ctx.author = user, user
+                    ctx.message.channel, ctx.channel = channel, channel
                     react_message = "raid_report"
                     break
                 elif message.id == self.bot.guild_dict[guild.id][report_dict][report_channel].get('raid_message'):
+                    ctx.message.author, ctx.author = user, user
                     react_message = "raid_message"
                     break
                 elif message.id == self.bot.guild_dict[guild.id][report_dict][report_channel].get('ctrsmessage'):
@@ -91,14 +96,13 @@ class Raid(commands.Cog):
                 avatar = self.bot.user.avatar_url
                 await utils.get_raid_help(prefix, avatar, user)
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', '\u2753'):
-                await self._maybe(channel, user, 1, None)
+                await self._rsvp(ctx, "maybe", "1")
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce'):
-                await self._coming(channel, user, 1, None)
+                await self._rsvp(ctx, "coming", "1")
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_here', '\U0001F4CD'):
-                await self._here(channel, user, 1, None)
+                await self._rsvp(ctx, "here", "1")
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_cancel', '\u274C'):
                 await self._cancel(channel, user)
-            await message.remove_reaction(payload.emoji, user)
         elif react_message == "next_trains":
             if str(payload.emoji) == self.bot.custom_emoji.get('train_emoji', "\U0001F682"):
                 next_train = self.bot.guild_dict[guild.id].get(report_dict, {})[channel.id]['next_trains'][message.id]
@@ -136,17 +140,11 @@ class Raid(commands.Cog):
                                 break
                 if not teamcounts:
                     teamcounts = "1"
-                teamcounts = teamcounts.split()
-                ctx = await self.bot.get_context(message)
-                ctx.author = user
-                ctx.channel = next_channel
-                result = await self._party_status(ctx, int(teamcounts.pop(0)), (' ').join(teamcounts))
-                if isinstance(result, list):
-                    count = result[0]
-                    partylist = result[1]
-                    await self._coming(next_channel, user, count, partylist)
-                    await asyncio.sleep(1)
-                    self.bot.guild_dict[guild.id].get(report_dict, {})[next_channel.id]['trainer_dict'][user.id]['train'] = True
+                ctx.message.author, ctx.author = user, user
+                ctx.message.channel, ctx.channel = next_channel, next_channel
+                await self._rsvp(ctx, "coming", teamcounts)
+                await asyncio.sleep(1)
+                self.bot.guild_dict[guild.id].get(report_dict, {})[next_channel.id]['trainer_dict'][user.id]['train'] = True
             await message.remove_reaction(payload.emoji, user)
 
     @commands.Cog.listener()
@@ -177,6 +175,7 @@ class Raid(commands.Cog):
                             await self._archive(message.channel)
                 if self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['active']:
                     trainer_dict = self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['trainer_dict']
+                    ctx = await self.bot.get_context(message)
                     if message.author.id in trainer_dict:
                         count = trainer_dict[message.author.id].get('count', 1)
                     else:
@@ -184,16 +183,16 @@ class Raid(commands.Cog):
                     omw_emoji = utils.parse_emoji(message.guild, self.bot.config.omw_id)
                     if message.content.startswith(omw_emoji):
                         emoji_count = message.content.count(omw_emoji)
-                        await self._coming(message.channel, message.author, emoji_count, party=None)
+                        await self._rsvp(ctx, "maybe", str(emoji_count))
                         return
                     here_emoji = utils.parse_emoji(message.guild, self.bot.config.here_id)
                     if message.content.startswith(here_emoji):
                         emoji_count = message.content.count(here_emoji)
-                        await self._here(message.channel, message.author, emoji_count, party=None)
+                        await self._rsvp(ctx, "coming", str(emoji_count))
                         return
                     if message.content.startswith("🚁"):
                         emoji_count = message.content.count("🚁")
-                        await self._here(message.channel, message.author, emoji_count, party=None)
+                        await self._rsvp(ctx, "here", str(emoji_count))
                         return
                     if "/maps" in message.content and "http" in message.content and report_dict == 'raidchannel_dict':
                         newcontent = message.content.replace("<", "").replace(">", "")
@@ -2346,7 +2345,7 @@ class Raid(commands.Cog):
         invite_embed.add_field(name=_('**New Invite**'), value=f"Meowth! Alright {author.mention}, you can now send messages in {exraid_channel.mention}! Make sure you let the trainers in there know if you can make it to the EX Raid!'", inline=False)
         exraidmsg = await channel.send(embed=invite_embed, delete_after=30)
         maybe_command = self.bot.get_command("interested")
-        ctx.channel = exraid_channel
+        ctx.message.channel, ctx.channel = exraid_channel, exraid_channel
         await maybe_command.invoke(ctx)
         await asyncio.sleep(30)
         await utils.safe_delete(exraidmsg)
@@ -2610,22 +2609,19 @@ class Raid(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif party_msg:
-                        teamcounts = party_msg.clean_content.lower().split()
-                        if not teamcounts[0].isdigit():
+                        teamcounts = party_msg.clean_content.lower()
+                        if not teamcounts.split()[0].isdigit():
                             error = _("entered an invalid party count")
                             break
-                        result = await self._party_status(ctx, int(teamcounts.pop(0)), (' ').join(teamcounts))
-                        if isinstance(result, list):
-                            count = result[0]
-                            partylist = result[1]
-                            await self._coming(channel_or_gym, ctx.author, count, partylist)
-                            train_embed.clear_fields()
-                            train_embed.add_field(name=_('**New Raid Train Report**'), value=_("Meowth! Your raid train has been started in {raid_channel}").format(raid_channel=channel_or_gym.mention), inline=False)
-                            confirmation = await channel.send(embed=train_embed, delete_after=10)
-                            await utils.safe_delete(message)
-                            await asyncio.sleep(1)
-                            self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'][author.id]['train'] = True
-                            return
+                        ctx.message.channel, ctx.channel = channel_or_gym, channel_or_gym
+                        await self._rsvp(ctx, "coming", teamcounts)
+                        train_embed.clear_fields()
+                        train_embed.add_field(name=_('**New Raid Train Report**'), value=_("Meowth! Your raid train has been started in {raid_channel}").format(raid_channel=channel_or_gym.mention), inline=False)
+                        confirmation = await channel.send(embed=train_embed, delete_after=10)
+                        await utils.safe_delete(message)
+                        await asyncio.sleep(1)
+                        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'][author.id]['train'] = True
+                        return
                 elif checks.check_raidchannel(ctx) and not checks.check_exraidchannel(ctx):
                     train_emoji = self.bot.custom_emoji.get('train_emoji', "\U0001F682")
                     train_msg = await ctx.send(f"Meowth! {ctx.author.mention} wants to keep this **raid train** moving in {channel_or_gym.mention}!\n\nReact to this message with {train_emoji} to automatically RSVP in {channel_or_gym.mention} with your current party.")
@@ -2661,16 +2657,12 @@ class Raid(commands.Cog):
                                     break
                     if not teamcounts:
                         teamcounts = "1"
-                    teamcounts = teamcounts.split()
-                    result = await self._party_status(ctx, int(teamcounts.pop(0)), (' ').join(teamcounts))
-                    if isinstance(result, list):
-                        count = result[0]
-                        partylist = result[1]
-                        await self._coming(channel_or_gym, ctx.author, count, partylist)
-                        await asyncio.sleep(1)
-                        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'][author.id]['train'] = True
-                        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('next_trains', {})[train_msg.id] = {'author':ctx.author.id, 'channel':channel_or_gym.id}
-                        return
+                    ctx.message.channel, ctx.channel = channel_or_gym, channel_or_gym
+                    await self._rsvp(ctx, "coming", teamcounts)
+                    await asyncio.sleep(1)
+                    self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'][author.id]['train'] = True
+                    self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('next_trains', {})[train_msg.id] = {'author':ctx.author.id, 'channel':channel_or_gym.id}
+                    return
         if error:
             train_embed.clear_fields()
             train_embed.add_field(name=_('**Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
