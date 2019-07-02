@@ -215,28 +215,18 @@ class Wild(commands.Cog):
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
-        level = wild_dict.get('level', None)
-        wild_iv = wild_dict.get('wild_iv', None)
-        cp = wild_dict.get('cp', None)
-        gender = wild_dict.get('gender', None)
-        weather = wild_dict.get('weather', "")
-        if all([level, wild_iv, cp, gender]):
-            return
+        success = []
         reply_msg = ""
-        if not wild_iv:
-            reply_msg += f"**iv <pokemon iv>**\n"
-        if not level:
-            reply_msg += f"**level <pokemon level>**\n"
-        if not gender:
-            reply_msg += f"**gender <male or female>**\n"
-        if not cp:
-            reply_msg += f"**cp <pokemon cp>**\n"
+        reply_msg += f"**iv <pokemon iv>**\n"
+        reply_msg += f"**level <pokemon level>**\n"
+        reply_msg += f"**gender <male or female>**\n"
+        reply_msg += f"**cp <pokemon cp>**\n"
         reply_msg += f"**weather <game weather>**"
         wild_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1')
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                wild_embed.add_field(name=_('**Edit Wild Info**'), value=f"Meowth! I'll help you add information to a wild! **NOTE:** Please make sure you are above level 30 before setting these.\n\nI'll need to know what **value** you'd like to add. Reply **cancel** to stop anytime or reply with __one__ of the following options `Ex: iv 100` to add that value:\n\n{reply_msg}", inline=False)
+                wild_embed.add_field(name=_('**Edit Wild Info**'), value=f"Meowth! I'll help you add information to a wild!\n**NOTE:** Please make sure you are at least level 30 before setting IV, level, and CP.\n\nI'll need to know what **value** you'd like to add. Reply **cancel** to stop anytime or reply with a comma separated list of the following options `Ex: iv 100, level 30` to edit those value:\n\n{reply_msg}", inline=False)
                 value_wait = await channel.send(embed=wild_embed)
                 def check(reply):
                     if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == ctx.author:
@@ -257,62 +247,63 @@ class Wild(commands.Cog):
                     error = _("cancelled the report")
                     break
                 else:
-                    value_split = value_msg.clean_content.lower().split()
-                    try:
-                        test_var = value_split[1]
-                    except IndexError:
-                        error = _("entered something invalid")
-                        break
-                if "cp" in value_msg.clean_content.lower() and not cp:
-                    if value_split[1] and value_split[1].isdigit():
-                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['cp'] = int(value_split[1])
-                    else:
-                        error = _("entered something invalid")
+                    entered_values = value_msg.clean_content.lower().split(',')
+                    entered_values = [x.strip() for x in entered_values]
+                    for value in entered_values:
+                        value_split = value.split()
+                        if len(value_split) != 2:
+                            error = _("entered something invalid")
+                            continue
+                        if "cp" in value and "cp" not in success:
+                            if value_split[1] and value_split[1].isdigit():
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['cp'] = int(value_split[1])
+                                success.append("cp")
+                        elif "gender" in value and "gender" not in success:
+                            if value_split[1] and (value_split[1] == "male" or value_split[1] == "female"):
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['gender'] = value_split[1]
+                                success.append("gender")
+                        elif "iv" in value and "iv" not in success:
+                            if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 100:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv'] = int(value_split[1])
+                                success.append("iv")
+                        elif "level" in value and "level" not in success:
+                            if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 40:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['level'] = int(value_split[1])
+                                success.append("level")
+                        elif "weather" in value and "weather" not in success:
+                            if "rain" in value:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "rainy"
+                                success.append("weather")
+                            elif "partly" in value:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "partlycloudy"
+                                success.append("weather")
+                            elif "clear" in value or "sunny" in value:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "clear"
+                                success.append("weather")
+                            elif "cloudy" in value or "overcast" in value:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "cloudy"
+                                success.append("weather")
+                            elif "wind" in value:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "windy"
+                                success.append("weather")
+                            elif "snow" in value:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "snowy"
+                                success.append("weather")
+                            elif "fog" in value:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "foggy"
+                                success.append("weather")
+                            else:
+                                error = _("entered something invalid. Choose from rainy, partly cloudy, clear, sunny, cloudy, overcast, windy, snowy, foggy")
+                        else:
+                            error = _("entered something invalid")
                     break
-                elif "gender" in value_msg.clean_content.lower() and not gender:
-                    if value_split[1] and (value_split[1] == "male" or value_split[1] == "female"):
-                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['gender'] = value_split[1]
-                    else:
-                        error = _("entered something invalid")
-                    break
-                elif "iv" in value_msg.clean_content.lower() and not wild_iv:
-                    if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 100:
-                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv'] = int(value_split[1])
-                    else:
-                        error = _("entered something invalid")
-                    break
-                elif "level" in value_msg.clean_content.lower() and not level:
-                    if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 40:
-                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['level'] = int(value_split[1])
-                    else:
-                        error = _("entered something invalid")
-                    break
-                elif "weather" in value_msg.clean_content.lower():
-                    if "rain" in value_msg.clean_content.lower():
-                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "rainy"
-                    elif "partly" in value_msg.clean_content.lower():
-                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "partlycloudy"
-                    elif "clear" in value_msg.clean_content.lower() or "sunny" in value_msg.clean_content.lower():
-                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "clear"
-                    elif "cloudy" in value_msg.clean_content.lower() or "overcast" in value_msg.clean_content.lower():
-                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "cloudy"
-                    elif "wind" in value_msg.clean_content.lower():
-                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "windy"
-                    elif "snow" in value_msg.clean_content.lower():
-                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "snowy"
-                    elif "fog" in value_msg.clean_content.lower():
-                        self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "foggy"
-                    else:
-                        error = _("entered something invalid. Please choose from rainy, partly cloudy, clear, sunny, cloudy, overcast, windy, snowy, foggy")
-                    break
-                else:
-                    error = _("entered something invalid")
-                    break
-        if not error:
+        if success:
             await self.edit_wild_messages(ctx, message)
-        else:
+        if error:
             wild_embed.clear_fields()
-            wild_embed.add_field(name=_('**Wild Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            wild_embed.add_field(name=_('**Wild Edit Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
+            if success:
+                wild_embed.set_field_at(0, name="**Wild Edit Error**", value=f"Meowth! Your **{(', ').join(success)}** edits were successful, but others were skipped because you **{error}**! Retry when you're ready.", inline=False)
             confirmation = await channel.send(embed=wild_embed, delete_after=10)
 
     async def edit_wild_messages(self, ctx, message):
