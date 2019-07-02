@@ -2350,7 +2350,7 @@ class Raid(commands.Cog):
         await asyncio.sleep(30)
         await utils.safe_delete(exraidmsg)
 
-    @commands.command(aliases=['event'])
+    @commands.group(aliases=['event'], case_insensitive=True, invoke_without_command=True)
     @checks.allowmeetupreport()
     async def meetup(self, ctx, *, location:commands.clean_content(fix_channel_mentions=True)=""):
         """Report an upcoming event.
@@ -2371,57 +2371,7 @@ class Raid(commands.Cog):
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                if checks.check_meetupchannel(ctx):
-                    if location:
-                        report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id]['meetup_dict'][channel.id]['report_channel'])
-                        oldraidmsg = await message.channel.fetch_message(self.bot.guild_dict[guild.id]['meetup_dict'][channel.id]['raid_message'])
-                        oldreportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id]['meetup_dict'][channel.id]['raid_report'])
-                        oldembed = oldraidmsg.embeds[0]
-                        newembed = discord.Embed(title=oldembed.title, description=oldembed.description, url=oldembed.url, colour=oldembed.colour)
-                        for field in oldembed.fields:
-                            newembed.add_field(name=field.name, value=field.value, inline=field.inline)
-                        index = 0
-                        for field in newembed.fields:
-                            if _("**Event Title:**") in field.name:
-                                newembed.set_field_at(index, name=_("**Event Title:**"), value=location, inline=field.inline)
-                                break
-                            else:
-                                index += 1
-                        newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
-                        newembed.set_thumbnail(url=oldembed.thumbnail.url)
-                        newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
-                        try:
-                            await oldraidmsg.edit(embed=newembed, content=oldraidmsg.content)
-                        except:
-                            pass
-                        try:
-                            await oldreportmsg.edit(embed=newembed, content=oldreportmsg.content)
-                        except:
-                            pass
-                        self.bot.guild_dict[message.guild.id]['meetup_dict'][message.channel.id]['raid_message'] = oldraidmsg.id
-                        self.bot.guild_dict[message.guild.id]['meetup_dict'][message.channel.id]['raid_report'] = oldreportmsg.id
-                        self.bot.guild_dict[message.guild.id]['meetup_dict'][message.channel.id]['meetup']['title'] = location
-                        if can_manage:
-                            raid_channel_name = _('meetup-') + utils.sanitize_channel_name(location)
-                            question = await ctx.channel.send(f"Would you like to change the channel name to {raid_channel_name}?")
-                            try:
-                                timeout = False
-                                res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
-                            except TypeError:
-                                timeout = True
-                            if timeout:
-                                return
-                            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
-                                await utils.safe_delete(question)
-                                return
-                            elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
-                                await utils.safe_delete(question)
-                            await ctx.channel.edit(name=raid_channel_name)
-                        return
-                    else:
-                        await ctx.send("Meowth! I'm missing some details! Usage: {prefix}meetup **<meetup title>**".format(prefix=ctx.prefix))
-                        return
-                elif location:
+                if location:
                     new_channel = await self._meetup(ctx, location)
                     ctx.raid_channel = new_channel
                     return
@@ -2476,10 +2426,10 @@ class Raid(commands.Cog):
             return
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/meetup.png?cache=1'
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the event!'), description="", url=raid_gmaps_link, colour=message.guild.me.colour)
-        raid_embed.add_field(name=_('**Event Title:**'), value=_('Set with **!meetup [title]**'), inline=True)
+        raid_embed.add_field(name=_('**Event Title:**'), value=_('Set with **!meetup title**'), inline=True)
         raid_embed.add_field(name=_('**Event Location:**'), value=raid_details, inline=True)
-        raid_embed.add_field(name=_('**Event Starts:**'), value=_('Set with **!starttime**'), inline=True)
-        raid_embed.add_field(name=_('**Event Ends:**'), value=_('Set with **!timerset**'), inline=True)
+        raid_embed.add_field(name=_('**Event Starts:**'), value=_('Set with **!meetup start**'), inline=True)
+        raid_embed.add_field(name=_('**Event Ends:**'), value=_('Set with **!meetup end**'), inline=True)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=raid_img_url)
         raid_embed.set_author(name=f"Meetup Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/meetup.png?cache=1")
@@ -2510,8 +2460,84 @@ class Raid(commands.Cog):
             'meetup': {'start':None, 'end':None}
         }
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
-        await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time that the event starts with **!starttime <date and time>** and also set the time that the event ends using **!timerset <date and time>**. You can also set the title of the event using **!meetup <title>**.').format(member=message.author.mention))
+        await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time that the event starts with **!meetup start <date and time>** and also set the time that the event ends using **!meetup end <date and time>**. You can also set the title of the event using **!meetup title <title>**. If you would like to use this meetup channel for raiding, send **!meetup raid**').format(member=message.author.mention))
         self.bot.loop.create_task(self.expiry_check(raid_channel))
+
+    @meetup.command()
+    @checks.allowmeetupreport()
+    async def title(self, ctx, *, title):
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        can_manage = ctx.channel.permissions_for(ctx.author).manage_channels
+        report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id]['meetup_dict'][channel.id]['report_channel'])
+        oldraidmsg = await message.channel.fetch_message(self.bot.guild_dict[guild.id]['meetup_dict'][channel.id]['raid_message'])
+        oldreportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id]['meetup_dict'][channel.id]['raid_report'])
+        oldembed = oldraidmsg.embeds[0]
+        newembed = discord.Embed(title=oldembed.title, description=oldembed.description, url=oldembed.url, colour=oldembed.colour)
+        for field in oldembed.fields:
+            newembed.add_field(name=field.name, value=field.value, inline=field.inline)
+        index = 0
+        for field in newembed.fields:
+            if _("**Event Title:**") in field.name:
+                newembed.set_field_at(index, name=_("**Event Title:**"), value=title, inline=field.inline)
+                break
+            else:
+                index += 1
+        newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
+        newembed.set_thumbnail(url=oldembed.thumbnail.url)
+        newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
+        try:
+            await oldraidmsg.edit(embed=newembed, content=oldraidmsg.content)
+        except:
+            pass
+        try:
+            await oldreportmsg.edit(embed=newembed, content=oldreportmsg.content)
+        except:
+            pass
+        self.bot.guild_dict[message.guild.id]['meetup_dict'][message.channel.id]['raid_message'] = oldraidmsg.id
+        self.bot.guild_dict[message.guild.id]['meetup_dict'][message.channel.id]['raid_report'] = oldreportmsg.id
+        self.bot.guild_dict[message.guild.id]['meetup_dict'][message.channel.id]['meetup']['title'] = title
+        if can_manage:
+            raid_channel_name = _('meetup-') + utils.sanitize_channel_name(title)
+            question = await ctx.channel.send(f"Would you like to change the channel name to {raid_channel_name}?")
+            try:
+                timeout = False
+                res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
+            except TypeError:
+                timeout = True
+            if timeout:
+                return
+            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+                await utils.safe_delete(question)
+                return
+            elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+                await utils.safe_delete(question)
+            await ctx.channel.edit(name=raid_channel_name)
+
+    @meetup.command(aliases=['raids'])
+    @checks.allowmeetupreport()
+    async def raid(self, ctx, true_or_false=True):
+        if str(true_or_false).lower() != "false":
+            true_or_false = True
+            self.bot.guild_dict[ctx.guild.id]['meetup_dict'][ctx.channel.id]['meetup']['raid'] = True
+        elif str(true_or_false).lower() == "false":
+            true_or_false = False
+            self.bot.guild_dict[ctx.guild.id]['meetup_dict'][ctx.channel.id]['meetup']['raid'] = False
+        await ctx.send(f"This meetup {'will' if true_or_false else 'will not'} be used for raids! **{ctx.prefix}starting** is turned {'on' if true_or_false else 'off'} for this channel.")
+
+    @meetup.command()
+    @checks.allowmeetupreport()
+    async def start(self, ctx, *, timer):
+        await ctx.invoke(self.bot.get_command("starttime"), start_time=timer)
+
+    @meetup.command()
+    @checks.allowmeetupreport()
+    async def end(self, ctx, *, timer):
+        await ctx.invoke(self.bot.get_command("timerset"), timer=timer)
 
     @commands.command()
     @checks.allowtrainreport()
@@ -2714,7 +2740,7 @@ class Raid(commands.Cog):
         return timerstr
 
     @commands.command()
-    @checks.rsvpchannel()
+    @checks.raidchannel()
     async def timerset(self, ctx, *, timer):
         """Set the remaining duration on a raid.
 
@@ -2893,7 +2919,7 @@ class Raid(commands.Cog):
         await ctx.channel.send(timerstr)
 
     @commands.command()
-    @checks.rsvpchannel()
+    @checks.raidchannel()
     async def starttime(self, ctx, *, start_time=""):
         """Set a time for a group to start a raid
 
@@ -4407,6 +4433,9 @@ class Raid(commands.Cog):
         if can_manage and ctx.author.id not in id_startinglist:
             id_startinglist.append(ctx.author.id)
         if checks.check_meetupchannel(ctx):
+            if not self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('meetup', {}).get('raid', False):
+                await utils.safe_delete(ctx.message)
+                return
             all_trainers = []
             for trainer in trainer_dict:
                 user = ctx.guild.get_member(trainer)
