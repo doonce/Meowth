@@ -547,6 +547,8 @@ class Configure(commands.Cog):
         if not ctx.config_dict_temp['settings']['done']:
             firstconfig = True
         config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+        if not hasattr(ctx, "configure_channel"):
+            ctx.configure_channel = await self.create_configure_channel(ctx)
         if ctx.configure_channel.id not in config_sessions:
             config_sessions.append(ctx.configure_channel.id)
         self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -687,8 +689,8 @@ class Configure(commands.Cog):
         """All settings"""
         await self._configure(ctx, "all")
 
-    @configure.command()
-    async def team(self, ctx):
+    @configure.command(name="team")
+    async def configure_team(self, ctx):
         """!team command settings"""
         try:
             guild = ctx.message.guild
@@ -806,8 +808,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def welcome(self, ctx):
+    @configure.command(name="welcome")
+    async def configure_welcome(self, ctx):
         """Welcome message settings"""
         try:
             guild = ctx.message.guild
@@ -993,8 +995,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def raid(self, ctx):
+    @configure.command(name="raid")
+    async def configure_raid(self, ctx):
         """!raid reporting settings"""
         try:
             guild = ctx.message.guild
@@ -1033,8 +1035,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def exraid(self, ctx):
+    @configure.command(name="exraid")
+    async def configure_exraid(self, ctx):
         """!exraid reporting settings"""
         try:
             guild = ctx.message.guild
@@ -1098,8 +1100,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def invite(self, ctx):
+    @configure.command(name="invite")
+    async def configure_invite(self, ctx):
         """!invite command settings"""
         try:
             guild = ctx.message.guild
@@ -1160,8 +1162,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def counters(self, ctx):
+    @configure.command(name="counters")
+    async def configure_counters(self, ctx):
         """Automatic counters settings"""
         try:
             guild = ctx.message.guild
@@ -1230,8 +1232,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def wild(self, ctx):
+    @configure.command(name="wild")
+    async def configure_wild(self, ctx):
         """!wild reporting settings"""
         try:
             guild = ctx.message.guild
@@ -1270,8 +1272,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def research(self, ctx):
+    @configure.command(name="research")
+    async def configure_research(self, ctx):
         """!research reporting settings"""
         try:
             guild = ctx.message.guild
@@ -1310,8 +1312,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def lure(self, ctx):
+    @configure.command(name="lure")
+    async def configure_lure(self, ctx):
         """!lure reporting settings"""
         try:
             guild = ctx.message.guild
@@ -1350,8 +1352,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def pvp(self, ctx):
+    @configure.command(name="pvp")
+    async def configure_pvp(self, ctx):
         """!pvp reporting settings"""
         try:
             guild = ctx.message.guild
@@ -1390,8 +1392,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command(aliases=['event'])
-    async def meetup(self, ctx):
+    @configure.command(name="meetup", aliases=['event'])
+    async def configure_meetup(self, ctx):
         """!meetup reporting settings"""
         try:
             guild = ctx.message.guild
@@ -1431,8 +1433,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def want(self, ctx):
+    @configure.command(name="want")
+    async def configure_want(self, ctx):
         """!want/!unwant settings"""
         try:
             guild = ctx.message.guild
@@ -1512,8 +1514,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def archive(self, ctx):
+    @configure.command(name="archive")
+    async def configure_archive(self, ctx):
         """Configure !archive command settings"""
         try:
             guild = ctx.message.guild
@@ -1608,8 +1610,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command(aliases=['settings'])
-    async def timezone(self, ctx):
+    @configure.command(name="timezone", aliases=['settings'])
+    async def configure_timezone(self, ctx):
         """Configure timezone and other settings"""
         try:
             guild = ctx.message.guild
@@ -1665,8 +1667,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def trade(self, ctx):
+    @configure.command(name="trade")
+    async def configure_trade(self, ctx):
         """!trade reporting settings"""
         try:
             guild = ctx.message.guild
@@ -1705,8 +1707,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def nest(self, ctx):
+    @configure.command(name="nest")
+    async def configure_nest(self, ctx):
         """!nest reporting settings"""
         try:
             guild = ctx.message.guild
@@ -1745,8 +1747,8 @@ class Configure(commands.Cog):
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
-    @configure.command()
-    async def scanners(self, ctx):
+    @configure.command(name="scanners")
+    async def configure_scanners(self, ctx):
         """Configure scanner settings"""
         try:
             guild = ctx.message.guild

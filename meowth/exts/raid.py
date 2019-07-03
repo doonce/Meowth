@@ -1287,6 +1287,7 @@ class Raid(commands.Cog):
     """
     Reporting
     """
+
     @commands.command(aliases=['r', 're', 'egg', 'regg', 'raidegg'])
     @checks.allowraidreport()
     async def raid(self, ctx, pokemon_or_level=None, *, location:commands.clean_content(fix_channel_mentions=True)="", weather=None, timer=None):
@@ -2448,9 +2449,9 @@ class Raid(commands.Cog):
         await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time that the event starts with **!meetup start <date and time>** and also set the time that the event ends using **!meetup end <date and time>**. You can also set the title of the event using **!meetup title <title>**. If you would like to use this meetup channel for raiding, send **!meetup raid**').format(member=message.author.mention))
         self.bot.loop.create_task(self.expiry_check(raid_channel))
 
-    @meetup.command()
+    @meetup.command(name="title")
     @checks.allowmeetupreport()
-    async def title(self, ctx, *, title):
+    async def meetup_title(self, ctx, *, title):
         message = ctx.message
         channel = message.channel
         author = message.author
@@ -2503,9 +2504,9 @@ class Raid(commands.Cog):
                 await utils.safe_delete(question)
             await ctx.channel.edit(name=raid_channel_name)
 
-    @meetup.command(aliases=['raids'])
+    @meetup.command(name="raid", aliases=['raids'])
     @checks.allowmeetupreport()
-    async def raid(self, ctx, true_or_false=True):
+    async def meetup_raid(self, ctx, true_or_false=True):
         if str(true_or_false).lower() != "false":
             true_or_false = True
             self.bot.guild_dict[ctx.guild.id]['meetup_dict'][ctx.channel.id]['meetup']['raid'] = True
