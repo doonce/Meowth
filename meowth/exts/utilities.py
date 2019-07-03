@@ -1,7 +1,7 @@
 
 import asyncio
 import re
-import hastebin
+from aiohttp import ClientSession
 import os
 import functools
 import textwrap
@@ -671,14 +671,19 @@ class Utilities(commands.Cog):
         """Get current Meowth log.
 
         Usage: !outputlog
-        Output is a link to hastebin."""
+        Output is a link to mystbin."""
         with open(os.path.join('logs', 'meowth.log'), 'r', encoding='latin-1', errors='replace') as logfile:
             logdata = logfile.read()
         try:
-            await ctx.channel.send(hastebin.post(logdata))
+            async def post(content, url='https://mystb.in/'):
+                async with ClientSession() as session:
+                    async with session.post(f'{url}/documents', data=content.encode('utf-8')) as post:
+                        return '<' + url + (await post.json(content_type=None))['key'] + '>'
+            log_file = await post(logdata)
+            await ctx.channel.send(log_file)
         except Exception as e:
             print(e)
-            await ctx.channel.send(f"Hastebin Error\n{e}", delete_after=10)
+            await ctx.channel.send(f"Mystbin Error\n{e}", delete_after=10)
 
     @commands.command(aliases=['say'])
     @commands.has_permissions(manage_guild=True)
@@ -839,7 +844,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.7.3.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.7.3.1 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
