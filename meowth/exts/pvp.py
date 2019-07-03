@@ -28,44 +28,42 @@ class Pvp(commands.Cog):
 
     @tasks.loop(seconds=0)
     async def pvp_cleanup(self, loop=True):
-        while True:
-            logger.info('------ BEGIN ------')
-            guilddict_temp = copy.deepcopy(self.bot.guild_dict)
-            expire_list = []
-            count = 0
-            for guildid in guilddict_temp.keys():
-                pvp_dict = guilddict_temp[guildid].setdefault('pvp_dict', {})
-                for reportid in pvp_dict.keys():
-                    if pvp_dict[reportid].get('exp', 0) <= time.time():
-                        report_channel = self.bot.get_channel(pvp_dict[reportid].get('report_channel'))
-                        if report_channel:
-                            try:
-                                report_message = await report_channel.fetch_message(reportid)
-                                self.bot.loop.create_task(self.expire_pvp(report_message))
-                                count += 1
-                                continue
-                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                                pass
+        logger.info('------ BEGIN ------')
+        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+        expire_list = []
+        count = 0
+        for guildid in guilddict_temp.keys():
+            pvp_dict = guilddict_temp[guildid].setdefault('pvp_dict', {})
+            for reportid in pvp_dict.keys():
+                if pvp_dict[reportid].get('exp', 0) <= time.time():
+                    report_channel = self.bot.get_channel(pvp_dict[reportid].get('report_channel'))
+                    if report_channel:
                         try:
-                            del self.bot.guild_dict[guildid]['pvp_dict'][reportid]
-                        except KeyError:
+                            report_message = await report_channel.fetch_message(reportid)
+                            self.bot.loop.create_task(self.expire_pvp(report_message))
+                            count += 1
                             continue
-                    to_expire = pvp_dict[reportid].get('exp', 0) - time.time()
-                    expire_list.append(to_expire)
-            # save server_dict changes after cleanup
-            logger.info('SAVING CHANGES')
-            try:
-                await self.bot.save
-            except Exception as err:
-                logger.info('SAVING FAILED' + err)
-                pass
-            if not expire_list:
-                expire_list = [600]
-            logger.info(f"------ END - {count} PVPs Cleaned - Waiting {min(expire_list)} seconds. ------")
-            if not loop:
-                return
-            await asyncio.sleep(min(expire_list))
-            continue
+                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                            pass
+                    try:
+                        del self.bot.guild_dict[guildid]['pvp_dict'][reportid]
+                    except KeyError:
+                        continue
+                to_expire = pvp_dict[reportid].get('exp', 0) - time.time()
+                expire_list.append(to_expire)
+        # save server_dict changes after cleanup
+        logger.info('SAVING CHANGES')
+        try:
+            await self.bot.save
+        except Exception as err:
+            logger.info('SAVING FAILED' + err)
+            pass
+        if not expire_list:
+            expire_list = [600]
+        logger.info(f"------ END - {count} PVPs Cleaned - Waiting {min(expire_list)} seconds. ------")
+        if not loop:
+            return
+        self.pvp_cleanup.change_interval(seconds=min(expire_list))
 
     @pvp_cleanup.before_loop
     async def before_cleanup(self):

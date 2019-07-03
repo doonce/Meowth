@@ -27,44 +27,42 @@ class Research(commands.Cog):
 
     @tasks.loop(seconds=0)
     async def research_cleanup(self, loop=True):
-        while True:
-            logger.info('------ BEGIN ------')
-            guilddict_temp = copy.deepcopy(self.bot.guild_dict)
-            midnight_list = []
-            count = 0
-            for guildid in guilddict_temp.keys():
-                utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guildid]['configure_dict']['settings']['offset']))
-                to_midnight = 24*60*60 - ((utcnow-utcnow.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
-                midnight_list.append(to_midnight)
-                research_dict = guilddict_temp[guildid].setdefault('questreport_dict', {})
-                for reportid in research_dict.keys():
-                    if research_dict[reportid].get('exp', 0) <= time.time():
-                        report_channel = self.bot.get_channel(research_dict[reportid].get('report_channel'))
-                        if report_channel:
-                            try:
-                                report_message = await report_channel.fetch_message(reportid)
-                                self.bot.loop.create_task(self.expire_research(report_message))
-                                count += 1
-                                continue
-                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                                pass
+        logger.info('------ BEGIN ------')
+        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+        midnight_list = []
+        count = 0
+        for guildid in guilddict_temp.keys():
+            utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guildid]['configure_dict']['settings']['offset']))
+            to_midnight = 24*60*60 - ((utcnow-utcnow.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+            midnight_list.append(to_midnight)
+            research_dict = guilddict_temp[guildid].setdefault('questreport_dict', {})
+            for reportid in research_dict.keys():
+                if research_dict[reportid].get('exp', 0) <= time.time():
+                    report_channel = self.bot.get_channel(research_dict[reportid].get('report_channel'))
+                    if report_channel:
                         try:
-                            del self.bot.guild_dict[guildid]['questreport_dict'][reportid]
-                        except KeyError:
+                            report_message = await report_channel.fetch_message(reportid)
+                            self.bot.loop.create_task(self.expire_research(report_message))
+                            count += 1
+                            continue
+                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                             pass
-            # save server_dict changes after cleanup
-            logger.info('SAVING CHANGES')
-            try:
-                await self.bot.save
-            except Exception as err:
-                logger.info('SAVING FAILED' + err)
-            if not midnight_list:
-                midnight_list = [600]
-            logger.info(f"------ END - {count} Tasks Cleaned - Waiting {min(midnight_list)} seconds. ------")
-            await asyncio.sleep(min(midnight_list))
-            if not loop:
-                return
-            continue
+                    try:
+                        del self.bot.guild_dict[guildid]['questreport_dict'][reportid]
+                    except KeyError:
+                        pass
+        # save server_dict changes after cleanup
+        logger.info('SAVING CHANGES')
+        try:
+            await self.bot.save
+        except Exception as err:
+            logger.info('SAVING FAILED' + err)
+        if not midnight_list:
+            midnight_list = [600]
+        logger.info(f"------ END - {count} Tasks Cleaned - Waiting {min(midnight_list)} seconds. ------")
+        self.research_cleanup.change_interval(seconds=min(midnight_list))
+        if not loop:
+            return
 
     @research_cleanup.before_loop
     async def before_cleanup(self):

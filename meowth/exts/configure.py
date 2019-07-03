@@ -23,56 +23,53 @@ class Configure(commands.Cog):
     def cog_unload(self):
         self.configure_cleanup.cancel()
 
-    @tasks.loop(seconds=0)
+    @tasks.loop(seconds=21600)
     async def configure_cleanup(self, loop=True):
-        while True:
-            logger.info('------ BEGIN ------')
-            guilddict_temp = copy.deepcopy(self.bot.guild_dict)
-            count = 0
-            for guildid in guilddict_temp.keys():
-                guild = self.bot.get_guild(guildid)
-                session_dict = guilddict_temp[guildid]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {})
-                for trainer in session_dict:
-                    if not session_dict[trainer] or not guild.get_member(trainer):
-                        try:
-                            del self.bot.guild_dict[guildid]['configure_dict']['settings']['config_sessions'][trainer]
-                        except KeyError:
-                            pass
-                    else:
-                        for channelid in session_dict[trainer]:
-                            channel_exists = self.bot.get_channel(channelid)
-                            if not channel_exists:
+        logger.info('------ BEGIN ------')
+        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+        count = 0
+        for guildid in guilddict_temp.keys():
+            guild = self.bot.get_guild(guildid)
+            session_dict = guilddict_temp[guildid]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {})
+            for trainer in session_dict:
+                if not session_dict[trainer] or not guild.get_member(trainer):
+                    try:
+                        del self.bot.guild_dict[guildid]['configure_dict']['settings']['config_sessions'][trainer]
+                    except KeyError:
+                        pass
+                else:
+                    for channelid in session_dict[trainer]:
+                        channel_exists = self.bot.get_channel(channelid)
+                        if not channel_exists:
+                            try:
+                                self.bot.guild_dict[guildid]['configure_dict']['settings']['config_sessions'][trainer].remove(channelid)
+                            except ValueError:
+                                pass
+                        else:
+                            ctx = None
+                            author = False
+                            for overwrite in channel_exists.overwrites:
+                                if isinstance(overwrite, discord.Member):
+                                    if not overwrite.bot:
+                                        author = overwrite
+                            async for message in channel_exists.history(limit=500, oldest_first=True):
+                                if message.author.id == self.bot.user.id:
+                                    ctx = await self.bot.get_context(message)
+                            if ctx and author:
+                                count += 1
+                                ctx.author = author
+                                ctx.configure_channel = channel_exists
+                                if not ctx.prefix:
+                                    prefix = self.bot._get_prefix(self.bot, ctx.message)
+                                    ctx.prefix = prefix[-1]
                                 try:
-                                    self.bot.guild_dict[guildid]['configure_dict']['settings']['config_sessions'][trainer].remove(channelid)
-                                except ValueError:
+                                    await ctx.configure_channel.send(f"Hey {ctx.author.mention} I think we were cut off due to a disconnection, let's try to start over.")
+                                    ctx.bot.loop.create_task(self._configure(ctx, ""))
+                                except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden, AttributeError):
                                     pass
-                            else:
-                                ctx = None
-                                author = False
-                                for overwrite in channel_exists.overwrites:
-                                    if isinstance(overwrite, discord.Member):
-                                        if not overwrite.bot:
-                                            author = overwrite
-                                async for message in channel_exists.history(limit=500, oldest_first=True):
-                                    if message.author.id == self.bot.user.id:
-                                        ctx = await self.bot.get_context(message)
-                                if ctx and author:
-                                    count += 1
-                                    ctx.author = author
-                                    ctx.configure_channel = channel_exists
-                                    if not ctx.prefix:
-                                        prefix = self.bot._get_prefix(self.bot, ctx.message)
-                                        ctx.prefix = prefix[-1]
-                                    try:
-                                        await ctx.configure_channel.send(f"Hey {ctx.author.mention} I think we were cut off due to a disconnection, let's try to start over.")
-                                        ctx.bot.loop.create_task(self._configure(ctx, ""))
-                                    except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden, AttributeError):
-                                        pass
-            logger.info(f"------ END - {count} Config Sessions Cleaned ------")
-            if not loop:
-                return
-            await asyncio.sleep(21600)
-            continue
+        logger.info(f"------ END - {count} Config Sessions Cleaned ------")
+        if not loop:
+            return
 
     @configure_cleanup.before_loop
     async def before_cleanup(self):

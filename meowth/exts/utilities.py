@@ -472,8 +472,9 @@ def get_category(bot, channel, level, category_type="raid"):
 
 async def get_report_dict(bot, channel):
     for report_dict in bot.channel_report_dicts:
-        if channel and channel.id in bot.guild_dict[channel.guild.id].setdefault(report_dict, {}):
-            return report_dict
+        if hasattr(channel, "guild"):
+            if channel and channel.id in bot.guild_dict[channel.guild.id].setdefault(report_dict, {}):
+                return report_dict
 
 async def get_object(ctx, snowflake, return_type="object"):
     iterables = [ctx.guild.text_channels, ctx.guild.categories, ctx.guild.roles, ctx.guild.members, ctx.bot.guilds]
@@ -537,9 +538,7 @@ class Utilities(commands.Cog):
 
     @tasks.loop(seconds=0)
     async def dm_cleanup(self, loop=True):
-        while True:
-            await self.dm_cleanup_func(loop)
-            continue
+        await self.dm_cleanup_func(loop)
 
     async def dm_cleanup_func(self, loop=True):
         if loop:
@@ -840,7 +839,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.7.2.1 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.7.3.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

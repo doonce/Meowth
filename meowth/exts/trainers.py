@@ -90,6 +90,7 @@ class Trainers(commands.Cog):
 
         Usage:!profile [member]"""
         converter = commands.MemberConverter()
+        msg = ""
         if member:
             try:
                 member = await converter.convert(ctx, member)
@@ -123,6 +124,7 @@ class Trainers(commands.Cog):
                 if member_found:
                     member = ctx.guild.get_member(member)
                 else:
+                    msg = f"{ctx.author.mention}, I couldn't find your search, but here is your profile:"
                     member = None
         if not member:
             member = ctx.message.author
@@ -177,9 +179,12 @@ class Trainers(commands.Cog):
         if member.is_on_mobile():
             status_emoji = "\U0001F4F1"
         embed.set_footer(text=f"User Registered: {member.created_at.strftime(_('%b %d, %Y %I:%M %p'))} | Status: {str(member.status).title()} {status_emoji}")
-        embed.add_field(name=_("Silph Road"), value=silph, inline=True)
-        embed.add_field(name=_("Pokebattler"), value=pokebattler, inline=True)
-        embed.add_field(name=_("Trainer Code"), value=trainercode, inline=True)
+        if "set with" not in silph.lower() or member == ctx.author:
+            embed.add_field(name=_("Silph Road"), value=silph, inline=True)
+        if "set with" not in pokebattler.lower() or member == ctx.author:
+            embed.add_field(name=_("Pokebattler"), value=pokebattler, inline=True)
+        if "set with" not in trainercode.lower() or member == ctx.author:
+            embed.add_field(name=_("Trainer Code"), value=trainercode, inline=True)
         embed.add_field(name=_("Member Since"), value=f"{member.joined_at.strftime(_('%b %d, %Y %I:%M %p'))}", inline=True)
         if ign:
             embed.add_field(name="In-Game Name(s)", value=ign)
@@ -207,7 +212,7 @@ class Trainers(commands.Cog):
         if roles:
             embed.add_field(name=_("Roles"), value=f"{(' ').join(roles)[:2000]}", inline=False)
 
-        await ctx.send(embed=embed)
+        await ctx.send(msg, embed=embed)
 
     @commands.group(case_insensitive=True, invoke_without_command=True)
     @checks.guildchannel()

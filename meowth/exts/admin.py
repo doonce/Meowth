@@ -27,38 +27,35 @@ class Admin(commands.Cog):
     def cog_unload(self):
         self.guild_cleanup.cancel()
 
-    @tasks.loop(seconds=0)
+    @tasks.loop(seconds=7200)
     async def guild_cleanup(self, loop=True):
-        while True:
-            guilddict_srvtemp = copy.deepcopy(self.bot.guild_dict)
-            logger.info('------ BEGIN ------')
-            dict_guild_list = []
-            bot_guild_list = []
-            dict_guild_delete = []
-            for guildid in guilddict_srvtemp.keys():
-                dict_guild_list.append(guildid)
-            for guild in self.bot.guilds:
-                bot_guild_list.append(guild.id)
-            guild_diff = set(dict_guild_list) - set(bot_guild_list)
-            for s in guild_diff:
-                dict_guild_delete.append(s)
-            for s in dict_guild_delete:
-                try:
-                    del self.guild_dict[s]
-                    logger.info(('Cleared ' + str(s)) +
-                                ' from save data')
-                except KeyError:
-                    pass
-            logger.info('SAVING CHANGES')
+        guilddict_srvtemp = copy.deepcopy(self.bot.guild_dict)
+        logger.info('------ BEGIN ------')
+        dict_guild_list = []
+        bot_guild_list = []
+        dict_guild_delete = []
+        for guildid in guilddict_srvtemp.keys():
+            dict_guild_list.append(guildid)
+        for guild in self.bot.guilds:
+            bot_guild_list.append(guild.id)
+        guild_diff = set(dict_guild_list) - set(bot_guild_list)
+        for s in guild_diff:
+            dict_guild_delete.append(s)
+        for s in dict_guild_delete:
             try:
-                await self.bot.save
-            except Exception as err:
-                logger.info('SAVING FAILED' + err)
-            logger.info('------ END ------')
-            if not loop:
-                return
-            await asyncio.sleep(7200)
-            continue
+                del self.guild_dict[s]
+                logger.info(('Cleared ' + str(s)) +
+                            ' from save data')
+            except KeyError:
+                pass
+        logger.info('SAVING CHANGES')
+        try:
+            await self.bot.save
+        except Exception as err:
+            logger.info('SAVING FAILED' + err)
+        logger.info('------ END ------')
+        if not loop:
+            return
 
     @guild_cleanup.before_loop
     async def before_cleanup(self):

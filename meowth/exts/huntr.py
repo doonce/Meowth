@@ -30,62 +30,59 @@ class Huntr(commands.Cog):
     def cog_unload(self):
         self.huntr_cleanup.cancel()
 
-    @tasks.loop(seconds=0)
+    @tasks.loop(seconds=600)
     async def huntr_cleanup(self, loop=True):
-        while True:
-            logger.info('------ BEGIN ------')
-            guilddict_temp = copy.deepcopy(self.bot.guild_dict)
-            for guildid in guilddict_temp.keys():
-                report_edit_dict = {}
-                report_delete_dict = {}
-                pokealarm_dict = guilddict_temp[guildid].get('pokealarm_dict', {})
-                pokehuntr_dict = guilddict_temp[guildid].get('pokehuntr_dict', {})
-                report_dict_dict = {
-                    'pokealarm_dict':pokealarm_dict,
-                    'pokehuntr_dict':pokehuntr_dict
-                }
-                for report_dict in report_dict_dict:
-                    for reportid in report_dict_dict[report_dict].keys():
-                        if report_dict_dict[report_dict][reportid].get('exp', 0) <= time.time():
-                            report_channel = self.bot.get_channel(report_dict_dict[report_dict][reportid].get('reportchannel'))
-                            if report_channel:
-                                user_report = report_dict_dict[report_dict][reportid].get('report_message', None)
-                                if user_report:
-                                    report_delete_dict[user_report] = {"action":"delete", "channel":report_channel}
-                                if report_dict_dict[report_dict][reportid].get('expedit') == "delete":
-                                    report_delete_dict[reportid] = {"action":"delete", "channel":report_channel}
-                                else:
-                                    report_edit_dict[reportid] = {"action":report_dict_dict[report_dict][reportid]['expedit'], "channel":report_channel}
-                                if report_dict_dict[report_dict][reportid].get('dm_dict', False):
-                                    await utils.expire_dm_reports(self.bot, report_dict_dict[report_dict][reportid]['dm_dict'])
-                            try:
-                                del self.bot.guild_dict[guildid][report_dict][reportid]
-                            except KeyError:
-                                pass
-                for messageid in report_delete_dict.keys():
-                    try:
-                        report_message = await report_delete_dict[messageid]['channel'].fetch_message(messageid)
-                        await utils.safe_delete(report_message)
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
-                        pass
-                for messageid in report_edit_dict.keys():
-                    try:
-                        report_message = await report_edit_dict[messageid]['channel'].fetch_message(messageid)
-                        await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=report_message.embeds[0].colour.value))
-                        await report_message.clear_reactions()
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError, KeyError):
-                        pass
-            # save server_dict changes after cleanup
-            logger.info('SAVING CHANGES')
-            try:
-                await self.bot.save
-            except Exception as err:
-                logger.info('SAVING FAILED' + err)
-            logger.info('------ END ------')
-            if not loop:
-                return
-            await asyncio.sleep(600)
-            continue
+        logger.info('------ BEGIN ------')
+        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+        for guildid in guilddict_temp.keys():
+            report_edit_dict = {}
+            report_delete_dict = {}
+            pokealarm_dict = guilddict_temp[guildid].get('pokealarm_dict', {})
+            pokehuntr_dict = guilddict_temp[guildid].get('pokehuntr_dict', {})
+            report_dict_dict = {
+                'pokealarm_dict':pokealarm_dict,
+                'pokehuntr_dict':pokehuntr_dict
+            }
+            for report_dict in report_dict_dict:
+                for reportid in report_dict_dict[report_dict].keys():
+                    if report_dict_dict[report_dict][reportid].get('exp', 0) <= time.time():
+                        report_channel = self.bot.get_channel(report_dict_dict[report_dict][reportid].get('reportchannel'))
+                        if report_channel:
+                            user_report = report_dict_dict[report_dict][reportid].get('report_message', None)
+                            if user_report:
+                                report_delete_dict[user_report] = {"action":"delete", "channel":report_channel}
+                            if report_dict_dict[report_dict][reportid].get('expedit') == "delete":
+                                report_delete_dict[reportid] = {"action":"delete", "channel":report_channel}
+                            else:
+                                report_edit_dict[reportid] = {"action":report_dict_dict[report_dict][reportid]['expedit'], "channel":report_channel}
+                            if report_dict_dict[report_dict][reportid].get('dm_dict', False):
+                                await utils.expire_dm_reports(self.bot, report_dict_dict[report_dict][reportid]['dm_dict'])
+                        try:
+                            del self.bot.guild_dict[guildid][report_dict][reportid]
+                        except KeyError:
+                            pass
+            for messageid in report_delete_dict.keys():
+                try:
+                    report_message = await report_delete_dict[messageid]['channel'].fetch_message(messageid)
+                    await utils.safe_delete(report_message)
+                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
+                    pass
+            for messageid in report_edit_dict.keys():
+                try:
+                    report_message = await report_edit_dict[messageid]['channel'].fetch_message(messageid)
+                    await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=report_message.embeds[0].colour.value))
+                    await report_message.clear_reactions()
+                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError, KeyError):
+                    pass
+        # save server_dict changes after cleanup
+        logger.info('SAVING CHANGES')
+        try:
+            await self.bot.save
+        except Exception as err:
+            logger.info('SAVING FAILED' + err)
+        logger.info('------ END ------')
+        if not loop:
+            return
 
     @huntr_cleanup.before_loop
     async def before_cleanup(self):

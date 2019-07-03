@@ -23,75 +23,72 @@ class Trading(commands.Cog):
     def cog_unload(self):
         self.trade_cleanup.cancel()
 
-    @tasks.loop(seconds=0)
+    @tasks.loop(seconds=86400)
     async def trade_cleanup(self, loop=True):
-        while True:
-            logger.info('------ BEGIN ------')
-            guilddict_temp = copy.deepcopy(self.bot.guild_dict)
-            yes_emoji = self.bot.custom_emoji.get('trade_complete', '\u2611')
-            no_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
-            for guildid in guilddict_temp.keys():
-                guild = self.bot.get_guild(guildid)
-                trade_dict = guilddict_temp[guild.id].setdefault('trade_dict', {})
-                for listing_id in trade_dict:
-                    if trade_dict[listing_id].get('exp', 0) <= time.time():
-                        trade_channel = self.bot.get_channel(trade_dict[listing_id].get('report_channel_id'))
-                        if trade_channel:
-                            if trade_dict[listing_id]['status'] == "active" and not trade_dict[listing_id].get('active_check', None):
-                                lister = guild.get_member(trade_dict[listing_id]['lister_id'])
-                                try:
-                                    listing_msg = await trade_channel.fetch_message(listing_id)
-                                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                                    await self.close_trade(guild.id, listing_id)
-                                if not lister:
-                                    await self.close_trade(guild.id, listing_id)
-                                    continue
-                                embed = listing_msg.embeds[0]
-                                embed.description = f"**Trade:** [Jump to Message]({listing_msg.jump_url})"
-                                active_check_msg = await lister.send(f"Meowth... Is this trade listing still active? React with {yes_emoji} to extend trade for 30 more days or react with {no_emoji} to cancel trade. I'll automatically cancel it in seven days if I don't hear from you.", embed=embed)
-                                self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['active_check'] = active_check_msg.id
-                                self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['exp'] = time.time() + 7*24*60*60
-                                await utils.safe_reaction(active_check_msg, yes_emoji)
-                                await utils.safe_reaction(active_check_msg, no_emoji)
-                            elif trade_dict[listing_id]['status'] == "active" and trade_dict[listing_id].get('active_check', None):
-                                dm_dict = {trade_dict[listing_id]['lister_id'] : trade_dict[listing_id]['active_check']}
-                                await utils.expire_dm_reports(self.bot, dm_dict)
-                                await self.cancel_trade(guild.id, listing_id)
-                            elif trade_dict[listing_id]['status'] == "accepted" and not trade_dict[listing_id].get('active_check', None):
-                                lister = guild.get_member(trade_dict[listing_id]['lister_id'])
-                                buyer = guild.get_member(trade_dict[listing_id]['accepted']['buyer_id'])
-                                try:
-                                    listing_msg = await trade_channel.fetch_message(listing_id)
-                                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                                    await self.close_trade(guild_id, listing_id)
-                                embed = listing_msg.embeds[0]
-                                embed.description = f"**Trade:** [Jump to Message]({listing_msg.jump_url})"
-                                active_check_msg = await lister.send(f"Meowth... Did you complete this trade with {buyer.display_name}? React with {yes_emoji} to extend trade for 30 more days or react with {no_emoji} to confirm trade. I'll automatically cancel it in seven days if I don't hear from you.", embed=embed)
-                                self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['active_check'] = active_check_msg.id
-                                self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['exp'] = time.time() + 7*24*60*60
-                                await utils.safe_reaction(active_check_msg, yes_emoji)
-                                await utils.safe_reaction(active_check_msg, no_emoji)
-                            elif trade_dict[listing_id]['status'] == "accepted" and trade_dict[listing_id].get('active_check', None):
-                                dm_dict = {trade_dict[listing_id]['lister_id'] : trade_dict[listing_id]['active_check']}
-                                await utils.expire_dm_reports(self.bot, dm_dict)
-                                dm_dict = {
-                                    trade_dict[listing_id]['lister_id'] : trade_dict[listing_id]['accepted']['lister_msg'],
-                                    trade_dict[listing_id]['accepted']['buyer_id'] : trade_dict[listing_id]['accepted']['buyer_msg'],
-                                }
-                                await utils.expire_dm_reports(self.bot, dm_dict)
-                                await self.cancel_trade(guild.id, listing_id)
-            # save server_dict changes after cleanup
-            logger.info('SAVING CHANGES')
-            try:
-                await self.bot.save
-            except Exception as err:
-                logger.info('SAVING FAILED' + err)
-                pass
-            logger.info(f"------ END ------")
-            if not loop:
-                return
-            await asyncio.sleep(86400)
-            continue
+        logger.info('------ BEGIN ------')
+        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+        yes_emoji = self.bot.custom_emoji.get('trade_complete', '\u2611')
+        no_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
+        for guildid in guilddict_temp.keys():
+            guild = self.bot.get_guild(guildid)
+            trade_dict = guilddict_temp[guild.id].setdefault('trade_dict', {})
+            for listing_id in trade_dict:
+                if trade_dict[listing_id].get('exp', 0) <= time.time():
+                    trade_channel = self.bot.get_channel(trade_dict[listing_id].get('report_channel_id'))
+                    if trade_channel:
+                        if trade_dict[listing_id]['status'] == "active" and not trade_dict[listing_id].get('active_check', None):
+                            lister = guild.get_member(trade_dict[listing_id]['lister_id'])
+                            try:
+                                listing_msg = await trade_channel.fetch_message(listing_id)
+                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                await self.close_trade(guild.id, listing_id)
+                            if not lister:
+                                await self.close_trade(guild.id, listing_id)
+                                continue
+                            embed = listing_msg.embeds[0]
+                            embed.description = f"**Trade:** [Jump to Message]({listing_msg.jump_url})"
+                            active_check_msg = await lister.send(f"Meowth... Is this trade listing still active? React with {yes_emoji} to extend trade for 30 more days or react with {no_emoji} to cancel trade. I'll automatically cancel it in seven days if I don't hear from you.", embed=embed)
+                            self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['active_check'] = active_check_msg.id
+                            self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['exp'] = time.time() + 7*24*60*60
+                            await utils.safe_reaction(active_check_msg, yes_emoji)
+                            await utils.safe_reaction(active_check_msg, no_emoji)
+                        elif trade_dict[listing_id]['status'] == "active" and trade_dict[listing_id].get('active_check', None):
+                            dm_dict = {trade_dict[listing_id]['lister_id'] : trade_dict[listing_id]['active_check']}
+                            await utils.expire_dm_reports(self.bot, dm_dict)
+                            await self.cancel_trade(guild.id, listing_id)
+                        elif trade_dict[listing_id]['status'] == "accepted" and not trade_dict[listing_id].get('active_check', None):
+                            lister = guild.get_member(trade_dict[listing_id]['lister_id'])
+                            buyer = guild.get_member(trade_dict[listing_id]['accepted']['buyer_id'])
+                            try:
+                                listing_msg = await trade_channel.fetch_message(listing_id)
+                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                await self.close_trade(guild_id, listing_id)
+                            embed = listing_msg.embeds[0]
+                            embed.description = f"**Trade:** [Jump to Message]({listing_msg.jump_url})"
+                            active_check_msg = await lister.send(f"Meowth... Did you complete this trade with {buyer.display_name}? React with {yes_emoji} to extend trade for 30 more days or react with {no_emoji} to confirm trade. I'll automatically cancel it in seven days if I don't hear from you.", embed=embed)
+                            self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['active_check'] = active_check_msg.id
+                            self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['exp'] = time.time() + 7*24*60*60
+                            await utils.safe_reaction(active_check_msg, yes_emoji)
+                            await utils.safe_reaction(active_check_msg, no_emoji)
+                        elif trade_dict[listing_id]['status'] == "accepted" and trade_dict[listing_id].get('active_check', None):
+                            dm_dict = {trade_dict[listing_id]['lister_id'] : trade_dict[listing_id]['active_check']}
+                            await utils.expire_dm_reports(self.bot, dm_dict)
+                            dm_dict = {
+                                trade_dict[listing_id]['lister_id'] : trade_dict[listing_id]['accepted']['lister_msg'],
+                                trade_dict[listing_id]['accepted']['buyer_id'] : trade_dict[listing_id]['accepted']['buyer_msg'],
+                            }
+                            await utils.expire_dm_reports(self.bot, dm_dict)
+                            await self.cancel_trade(guild.id, listing_id)
+        # save server_dict changes after cleanup
+        logger.info('SAVING CHANGES')
+        try:
+            await self.bot.save
+        except Exception as err:
+            logger.info('SAVING FAILED' + err)
+            pass
+        logger.info(f"------ END ------")
+        if not loop:
+            return
 
     @trade_cleanup.before_loop
     async def before_cleanup(self):

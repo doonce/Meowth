@@ -238,8 +238,7 @@ class Raid(commands.Cog):
         channel = self.bot.get_channel(channel.id)
         if channel not in self.bot.active_channels:
             self.bot.active_channels.append(channel)
-            logger.info(
-                'Channel Added To Watchlist - ' + channel.name)
+            logger.info('Channel Added To Watchlist - ' + channel.name)
             await asyncio.sleep(0.5)
             while True:
                 try:
@@ -261,10 +260,8 @@ class Raid(commands.Cog):
                             try:
                                 self.bot.active_channels.remove(channel)
                             except ValueError:
-                                logger.info(
-                                    'Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
-                            logger.info(
-                                'Channel Expired And Removed From Watchlist - ' + channel.name)
+                                logger.info('Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
+                            logger.info('Channel Expired And Removed From Watchlist - ' + channel.name)
                             break
                     else:
                         if self.bot.guild_dict[guild.id][report_dict][channel.id]['active']:
@@ -279,8 +276,7 @@ class Raid(commands.Cog):
                                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['regional'])
                                         pokemon = pokemon.name.lower()
                                     if pokemon:
-                                        logger.info(
-                                            'Egg Auto Hatched - ' + channel.name)
+                                        logger.info('Egg Auto Hatched - ' + channel.name)
                                         try:
                                             self.bot.active_channels.remove(channel)
                                         except ValueError:
@@ -292,8 +288,7 @@ class Raid(commands.Cog):
                                     self.bot.active_channels.remove(channel)
                                 except ValueError:
                                     pass
-                                logger.info(
-                                    'Channel Expired And Removed From Watchlist - ' + channel.name)
+                                logger.info('Channel Expired And Removed From Watchlist - ' + channel.name)
                                 break
                         else:
                             self.bot.loop.create_task(self.expire_channel(channel))
@@ -301,14 +296,13 @@ class Raid(commands.Cog):
                                 self.bot.active_channels.remove(channel)
                             except ValueError:
                                 pass
-                            logger.info(
-                                    'Channel Expired And Removed From Watchlist - ' + channel.name)
+                            logger.info('Channel Expired And Removed From Watchlist - ' + channel.name)
                             break
                 except KeyError:
                     pass
                 except Exception as e:
                     logger.critical('Fatal exception', exc_info=e)
-                await asyncio.sleep(30)
+                await asyncio.sleep(20)
                 continue
 
     async def expire_channel(self, channel):
@@ -376,8 +370,7 @@ class Raid(commands.Cog):
                         await self._eggtoraid(pkmn, channel)
                         return
                     maybe_list = []
-                    trainer_dict = copy.deepcopy(
-                        self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'])
+                    trainer_dict = copy.deepcopy(self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'])
                     for trainer in trainer_dict.keys():
                         if trainer_dict[trainer]['status']['maybe'] or trainer_dict[trainer]['status']['coming'] or trainer_dict[trainer]['status']['here']:
                             user = guild.get_member(trainer)
@@ -400,8 +393,7 @@ class Raid(commands.Cog):
                         expire_embed = None
                     await channel.send(f"**This egg has hatched!** Trainers {(', ').join(maybe_list)}: Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**.", embed=expire_embed)
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (45 * 60)) - time.time()
-                expiremsg = _('**This level {level} raid egg has expired!**').format(
-                    level=self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level'])
+                expiremsg = _('**This level {level} raid egg has expired!**').format(level=self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level'])
             else:
                 if (not alreadyexpired):
                     channel = self.bot.get_channel(channel.id)
@@ -417,8 +409,7 @@ class Raid(commands.Cog):
                     await channel.send(embed=expire_embed)
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (5 * 60)) - time.time()
                 raidtype = _("event") if self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', False) else _(" raid")
-                expiremsg = _('**This {pokemon}{raidtype} has expired!**').format(
-                    pokemon=self.bot.guild_dict[guild.id][report_dict][channel.id]['pokemon'].capitalize(), raidtype=raidtype)
+                expiremsg = _('**This {pokemon}{raidtype} has expired!**').format(pokemon=self.bot.guild_dict[guild.id][report_dict][channel.id]['pokemon'].capitalize(), raidtype=raidtype)
             await asyncio.sleep(delete_time)
             # If the channel has already been deleted from the dict, someone
             # else got to it before us, so don't do anything.
@@ -537,99 +528,96 @@ class Raid(commands.Cog):
             except KeyError:
                 pass
 
-    @tasks.loop(seconds=0)
+    @tasks.loop(seconds=600)
     async def channel_cleanup(self, loop=True):
-        while True:
-            guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)
-            logger.info('------ BEGIN ------')
-            gym_matching_cog = self.bot.cogs.get('GymMatching')
-            # clean up active_channels
-            for channel in self.bot.active_channels:
-                channelmatch = self.bot.get_channel(channel.id)
-                if not channelmatch:
-                    try:
-                        self.bot.active_channels.remove(channel)
-                    except ValueError:
-                        pass
-            # for every server in save data
-            for guildid in guilddict_chtemp.keys():
-                guild = self.bot.get_guild(guildid)
-                if not guild:
-                    logger.info(f"Server: {guildid} = CHECKING FOR SERVER: NOT FOUND")
-                    continue
-                logger.info(f"Server: ({guild.name}) - BEGIN CHECKING SERVER")
-                # clear channel lists
-                dict_channel_delete = []
-                # check every raid channel data for each server
-                report_channel_dict = {}
-                for report_dict in self.bot.channel_report_dicts:
-                    report_channel_dict = {**report_channel_dict, **guilddict_chtemp[guildid].setdefault(report_dict, {})}
-                for channelid in report_channel_dict:
-                    channel = self.bot.get_channel(channelid)
-                    report_dict = await utils.get_report_dict(self.bot, channel)
-                    logger.info(f"Server: {guild.name} : Channel: {channelid} - CHECKING")
-                    channel_dict = guilddict_chtemp[guildid].get(report_dict, {}).get(channelid, {})
-                    report_author = guild.get_member(channel_dict.get('report_author'))
-                    if channel == None:
-                        for report_dict in self.bot.channel_report_dicts:
-                            channel_dict = guilddict_chtemp[guildid].get(report_dict, {}).get(channelid, {})
-                            if channel_dict:
-                                break
-                        # list channel for deletion from save data
-                        dict_channel_delete.append(channelid)
-                        report_author = guild.get_member(channel_dict.get('report_author'))
-                        if channel_dict and report_dict == 'raidchannel_dict':
-                            if gym_matching_cog:
-                                gym_matching_cog.do_gym_stats(guildid, channel_dict)
-                            await utils.expire_dm_reports(self.bot, guilddict_chtemp[guildid][report_dict].get(channelid, {}).get('dm_dict', {}))
-                            raid_bonus = channel_dict.get('completed', []) or channel_dict.get('battling', [])
-                            if raid_bonus and report_author and not report_author.bot:
-                                raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('raid_reports', 0) + 1
-                                self.bot.guild_dict[guild.id]['trainers'][report_author.id]['raid_reports'] = raid_reports
-                        logger.info(f"Server: {guild.name} : Channel: {channelid} - DOESN'T EXIST IN DISCORD -> DELETING")
-                    # otherwise, if meowth can still see the channel in discord
-                    else:
-                        logger.info(f"Server: {guild.name} : Channel: {channelid} ({channel.name}) - EXISTS IN DISCORD")
-                        # if the channel save data shows it's not an active raid
-                        if channel_dict['active'] == False:
-                            if channel_dict['type'] == 'egg':
-                                # and if it has been expired for longer than 45 minutes already
-                                if channel_dict['exp'] < (time.time() - (45 * 60)):
-                                    logger.info(f"Server: {guild.name} : Channel: {channelid} ({channel.name}) - 45+ MIN EXPIRY NONACTIVE EGG -> Expire_Channel")
-                                # and if it has been expired for longer than 5 minutes already
-                            elif channel_dict['exp'] < (time.time() - (5 * 60)):
-                                    #list the channel to be deleted
-                                logger.info(f"Server: {guild.name} : Channel: {channelid} ({channel.name}) - 5+ MIN EXPIRY NONACTIVE RAID -> Expire_Channel")
-                            logger.info(f"Server: {guild.name} : Channel: {channelid} ({channel.name}) - RECENTLY EXPIRED NONACTIVE RAID -> Expire_Channel")
-                        # if the channel save data shows it as an active raid still
-                        elif channel_dict['active'] == True:
-                            # if channel is still active, make sure it's expiry is being monitored
-                            if channel not in self.bot.active_channels:
-                                logger.info(f"Server: {guild.name} : Channel: {channelid} ({channel.name}) - MISSING FROM EXPIRY CHECK -> Expiry_Check")
-                        self.bot.loop.create_task(self.expiry_check(channel))
-                # for every channel listed to have save data deleted
-                for c in dict_channel_delete:
+        guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)
+        logger.info('------ BEGIN ------')
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        # clean up active_channels
+        for channel in self.bot.active_channels:
+            channelmatch = self.bot.get_channel(channel.id)
+            if not channelmatch:
+                try:
+                    self.bot.active_channels.remove(channel)
+                except ValueError:
+                    pass
+        # for every server in save data
+        for guildid in guilddict_chtemp.keys():
+            guild = self.bot.get_guild(guildid)
+            if not guild:
+                logger.info(f"Server: {guildid} = CHECKING FOR SERVER: NOT FOUND")
+                continue
+            logger.info(f"Server: ({guild.name}) - BEGIN CHECKING SERVER")
+            # clear channel lists
+            dict_channel_delete = []
+            # check every raid channel data for each server
+            report_channel_dict = {}
+            for report_dict in self.bot.channel_report_dicts:
+                report_channel_dict = {**report_channel_dict, **guilddict_chtemp[guildid].setdefault(report_dict, {})}
+            for channelid in report_channel_dict:
+                channel = self.bot.get_channel(channelid)
+                report_dict = await utils.get_report_dict(self.bot, channel)
+                logger.info(f"Server: {guild.name} : Channel: {channelid} - CHECKING")
+                channel_dict = guilddict_chtemp[guildid].get(report_dict, {}).get(channelid, {})
+                report_author = guild.get_member(channel_dict.get('report_author'))
+                if channel == None:
                     for report_dict in self.bot.channel_report_dicts:
-                        try:
-                            del self.bot.guild_dict[guildid][report_dict][c]
-                            logger.info(f"{guildid} - RaidChannel ({c}) Savedata Cleared")
-                        except KeyError:
-                            pass
+                        channel_dict = guilddict_chtemp[guildid].get(report_dict, {}).get(channelid, {})
+                        if channel_dict:
+                            break
+                    # list channel for deletion from save data
+                    dict_channel_delete.append(channelid)
+                    report_author = guild.get_member(channel_dict.get('report_author'))
+                    if channel_dict and report_dict == 'raidchannel_dict':
+                        if gym_matching_cog:
+                            gym_matching_cog.do_gym_stats(guildid, channel_dict)
+                        await utils.expire_dm_reports(self.bot, guilddict_chtemp[guildid][report_dict].get(channelid, {}).get('dm_dict', {}))
+                        raid_bonus = channel_dict.get('completed', []) or channel_dict.get('battling', [])
+                        if raid_bonus and report_author and not report_author.bot:
+                            raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('raid_reports', 0) + 1
+                            self.bot.guild_dict[guild.id]['trainers'][report_author.id]['raid_reports'] = raid_reports
+                    logger.info(f"Server: {guild.name} : Channel: {channelid} - DOESN'T EXIST IN DISCORD -> DELETING")
+                # otherwise, if meowth can still see the channel in discord
+                else:
+                    logger.info(f"Server: {guild.name} : Channel: {channelid} ({channel.name}) - EXISTS IN DISCORD")
+                    # if the channel save data shows it's not an active raid
+                    if channel_dict['active'] == False:
+                        if channel_dict['type'] == 'egg':
+                            # and if it has been expired for longer than 45 minutes already
+                            if channel_dict['exp'] < (time.time() - (45 * 60)):
+                                logger.info(f"Server: {guild.name} : Channel: {channelid} ({channel.name}) - 45+ MIN EXPIRY NONACTIVE EGG -> Expire_Channel")
+                            # and if it has been expired for longer than 5 minutes already
+                        elif channel_dict['exp'] < (time.time() - (5 * 60)):
+                                #list the channel to be deleted
+                            logger.info(f"Server: {guild.name} : Channel: {channelid} ({channel.name}) - 5+ MIN EXPIRY NONACTIVE RAID -> Expire_Channel")
+                        logger.info(f"Server: {guild.name} : Channel: {channelid} ({channel.name}) - RECENTLY EXPIRED NONACTIVE RAID -> Expire_Channel")
+                    # if the channel save data shows it as an active raid still
+                    elif channel_dict['active'] == True:
+                        # if channel is still active, make sure it's expiry is being monitored
+                        if channel not in self.bot.active_channels:
+                            logger.info(f"Server: {guild.name} : Channel: {channelid} ({channel.name}) - MISSING FROM EXPIRY CHECK -> Expiry_Check")
+                    self.bot.loop.create_task(self.expiry_check(channel))
+            # for every channel listed to have save data deleted
+            for c in dict_channel_delete:
+                for report_dict in self.bot.channel_report_dicts:
                     try:
-                        del self.bot.guild_dict[guildid]['list_dict']['raid'][c]
+                        del self.bot.guild_dict[guildid][report_dict][c]
+                        logger.info(f"{guildid} - RaidChannel ({c}) Savedata Cleared")
                     except KeyError:
                         pass
-            # save server_dict changes after cleanup
-            logger.info('SAVING CHANGES')
-            try:
-                await self.bot.save
-            except Exception as err:
-                logger.info('SAVING FAILED' + err)
-            logger.info('------ END ------')
-            if not loop:
-                return
-            await asyncio.sleep(600)
-            continue
+                try:
+                    del self.bot.guild_dict[guildid]['list_dict']['raid'][c]
+                except KeyError:
+                    pass
+        # save server_dict changes after cleanup
+        logger.info('SAVING CHANGES')
+        try:
+            await self.bot.save
+        except Exception as err:
+            logger.info('SAVING FAILED' + err)
+        logger.info('------ END ------')
+        if not loop:
+            return
 
     @channel_cleanup.before_loop
     async def before_channel_cleanup(self):
@@ -639,80 +627,77 @@ class Raid(commands.Cog):
     Helpers
     """
 
-    @tasks.loop(seconds=0)
+    @tasks.loop(seconds=7200)
     async def reset_raid_roles(self, loop=True):
-        while True:
-            boss_names = [str(word) for word in self.bot.raid_list]
-            boss_names = [word for word in boss_names if word.islower() and not word.isdigit()]
-            for guild_id in self.bot.guild_dict:
-                guild = self.bot.get_guild(guild_id)
-                if not guild:
-                    continue
-                for member in guild.members:
-                    if self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False):
-                        user_wants = []
-                    elif self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True):
-                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-                    else:
-                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-                    for role in member.roles:
-                        if role.name.lower() in self.bot.pkmn_list:
-                            number = utils.get_number(self.bot, role.name.lower())
-                            if number not in user_wants:
-                                user_wants.append(number)
-                for role in guild.roles:
-                    if role.name not in boss_names and role.name.lower() in self.bot.pkmn_list and role != guild.me.top_role:
-                        try:
-                            await role.delete()
-                            await asyncio.sleep(0.5)
-                        except:
-                            pass
-                for boss in boss_names:
-                    role = discord.utils.get(guild.roles, name=boss)
-                    if not role:
-                        try:
-                            role = await guild.create_role(name = boss, hoist = False, mentionable = True)
-                        except discord.errors.Forbidden:
-                            pass
+        boss_names = [str(word) for word in self.bot.raid_list]
+        boss_names = [word for word in boss_names if word.islower() and not word.isdigit()]
+        for guild_id in self.bot.guild_dict:
+            guild = self.bot.get_guild(guild_id)
+            if not guild:
+                continue
+            for member in guild.members:
+                if self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False):
+                    user_wants = []
+                elif self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True):
+                    user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+                else:
+                    user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+                for role in member.roles:
+                    if role.name.lower() in self.bot.pkmn_list:
+                        number = utils.get_number(self.bot, role.name.lower())
+                        if number not in user_wants:
+                            user_wants.append(number)
+            for role in guild.roles:
+                if role.name not in boss_names and role.name.lower() in self.bot.pkmn_list and role != guild.me.top_role:
+                    try:
+                        await role.delete()
                         await asyncio.sleep(0.5)
-                for trainer in self.bot.guild_dict[guild.id]['trainers']:
-                    add_list = []
-                    remove_list = []
-                    user = guild.get_member(trainer)
-                    if not user or user.bot:
-                        continue
-                    user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-                    user_mute = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
-                    if user_mute:
-                        user_wants = []
-                    elif user_link:
-                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-                    else:
-                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-                    want_names = [utils.get_name(self.bot, x) for x in user_wants]
-                    want_names = [x.lower() for x in want_names]
-                    for want in want_names:
-                        if want in self.bot.raid_list:
-                            role = discord.utils.get(guild.roles, name=want)
-                            if role and role not in user.roles:
-                                add_list.append(role)
-                    for role in user.roles:
-                        if role.name.lower() not in want_names and role.name.lower() in self.bot.pkmn_list:
-                            remove_list.append(role)
-                    if add_list:
-                        try:
-                            await user.add_roles(*add_list)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
-                    if remove_list:
-                        try:
-                            await user.remove_roles(*remove_list)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
-            if not loop:
-                return
-            await asyncio.sleep(7200)
-            continue
+                    except:
+                        pass
+            for boss in boss_names:
+                role = discord.utils.get(guild.roles, name=boss)
+                if not role:
+                    try:
+                        role = await guild.create_role(name = boss, hoist = False, mentionable = True)
+                    except discord.errors.Forbidden:
+                        pass
+                    await asyncio.sleep(0.5)
+            for trainer in self.bot.guild_dict[guild.id]['trainers']:
+                add_list = []
+                remove_list = []
+                user = guild.get_member(trainer)
+                if not user or user.bot:
+                    continue
+                user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
+                user_mute = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
+                if user_mute:
+                    user_wants = []
+                elif user_link:
+                    user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+                else:
+                    user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+                want_names = [utils.get_name(self.bot, x) for x in user_wants]
+                want_names = [x.lower() for x in want_names]
+                for want in want_names:
+                    if want in self.bot.raid_list:
+                        role = discord.utils.get(guild.roles, name=want)
+                        if role and role not in user.roles:
+                            add_list.append(role)
+                for role in user.roles:
+                    if role.name.lower() not in want_names and role.name.lower() in self.bot.pkmn_list:
+                        remove_list.append(role)
+                if add_list:
+                    try:
+                        await user.add_roles(*add_list)
+                    except (discord.errors.Forbidden, discord.errors.HTTPException):
+                        pass
+                if remove_list:
+                    try:
+                        await user.remove_roles(*remove_list)
+                    except (discord.errors.Forbidden, discord.errors.HTTPException):
+                        pass
+        if not loop:
+            return
 
     @reset_raid_roles.before_loop
     async def before_reset_roles(self):
@@ -4312,28 +4297,25 @@ class Raid(commands.Cog):
         t_dict['count'] = 1
         await self._edit_party(channel, author)
 
-    @tasks.loop(seconds=0)
+    @tasks.loop(seconds=21600)
     async def lobby_cleanup(self, loop=True):
-        while True:
-            for guild in self.bot.guilds:
-                guild_raids = copy.deepcopy(self.bot.guild_dict[guild.id]['raidchannel_dict'])
-                for raid in guild_raids:
-                    lobby = guild_raids[raid].get("lobby", False)
-                    battling = guild_raids[raid].get("battling", False)
-                    if not lobby and not battling:
-                        continue
-                    first_message = guild_raids[raid].get("raid_message", False)
-                    raid_channel = self.bot.get_channel(raid)
-                    try:
-                        raid_message = await raid_channel.fetch_message(first_message)
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                        continue
-                    ctx = await self.bot.get_context(raid_message)
-                    self.bot.loop.create_task(self.lobby_countdown(ctx))
-            if not loop:
-                return
-            await asyncio.sleep(21600)
-            continue
+        for guild in self.bot.guilds:
+            guild_raids = copy.deepcopy(self.bot.guild_dict[guild.id]['raidchannel_dict'])
+            for raid in guild_raids:
+                lobby = guild_raids[raid].get("lobby", False)
+                battling = guild_raids[raid].get("battling", False)
+                if not lobby and not battling:
+                    continue
+                first_message = guild_raids[raid].get("raid_message", False)
+                raid_channel = self.bot.get_channel(raid)
+                try:
+                    raid_message = await raid_channel.fetch_message(first_message)
+                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                    continue
+                ctx = await self.bot.get_context(raid_message)
+                self.bot.loop.create_task(self.lobby_countdown(ctx))
+        if not loop:
+            return
 
     @lobby_cleanup.before_loop
     async def before_lobby_cleanup(self):

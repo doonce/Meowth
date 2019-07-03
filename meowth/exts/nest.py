@@ -47,55 +47,53 @@ class Nest(commands.Cog):
 
     @tasks.loop(seconds=0)
     async def nest_cleanup(self, loop=True):
-        while True:
-            logger.info('------ BEGIN ------')
-            guilddict_temp = copy.deepcopy(self.bot.guild_dict)
-            migration_list = []
-            count = 0
-            for guildid in guilddict_temp.keys():
-                nest_dict = guilddict_temp[guildid].setdefault('nest_dict', {})
-                utcnow = datetime.datetime.utcnow()
-                migration_utc = guilddict_temp[guildid]['configure_dict']['nest']['migration']
-                new_migration = False
-                if utcnow > migration_utc:
-                    new_migration = migration_utc + datetime.timedelta(days=14)
-                    migration_local = new_migration + datetime.timedelta(hours=self.bot.guild_dict[guildid]['configure_dict']['settings']['offset'])
-                    self.bot.guild_dict[guildid]['configure_dict']['nest']['migration'] = new_migration
-                to_migration = migration_utc.timestamp() - utcnow.timestamp()
-                migration_list.append(to_migration)
-                for channel in nest_dict:
-                    report_channel = self.bot.get_channel(channel)
-                    if not report_channel:
-                        del self.bot.guild_dict[guildid]['nest_dict'][channel]
-                        logger.info(f"Deleted Nest Channel {report_channel}")
+        logger.info('------ BEGIN ------')
+        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+        migration_list = []
+        count = 0
+        for guildid in guilddict_temp.keys():
+            nest_dict = guilddict_temp[guildid].setdefault('nest_dict', {})
+            utcnow = datetime.datetime.utcnow()
+            migration_utc = guilddict_temp[guildid]['configure_dict']['nest']['migration']
+            new_migration = False
+            if utcnow > migration_utc:
+                new_migration = migration_utc + datetime.timedelta(days=14)
+                migration_local = new_migration + datetime.timedelta(hours=self.bot.guild_dict[guildid]['configure_dict']['settings']['offset'])
+                self.bot.guild_dict[guildid]['configure_dict']['nest']['migration'] = new_migration
+            to_migration = migration_utc.timestamp() - utcnow.timestamp()
+            migration_list.append(to_migration)
+            for channel in nest_dict:
+                report_channel = self.bot.get_channel(channel)
+                if not report_channel:
+                    del self.bot.guild_dict[guildid]['nest_dict'][channel]
+                    logger.info(f"Deleted Nest Channel {report_channel}")
+                    continue
+                for nest in nest_dict[channel]:
+                    if nest == 'list':
                         continue
-                    for nest in nest_dict[channel]:
-                        if nest == 'list':
-                            continue
-                        for report in nest_dict[channel][nest]['reports']:
-                            if nest_dict[channel][nest]['reports'][report].get('exp', 0) <= time.time():
-                                try:
-                                    report_message = await report_channel.fetch_message(report)
-                                    if new_migration and nest_dict[channel][nest]['reports'][report]['reporttime'] > migration_utc:
-                                        self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
-                                        self.bot.loop.create_task(self.edit_nest_reports(report_message, migration_local, nest_dict[channel][nest]['reports'][report]['dm_dict']))
-                                        count += 1
-                                        continue
-                                    await utils.safe_delete(report_message)
-                                except:
-                                    pass
-                                try:
-                                    self.bot.loop.create_task(utils.expire_dm_reports(self.bot, nest_dict[channel][nest]['reports'][report].get('dm_dict', {})))
-                                    del self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]
-                                except:
-                                    pass
-            if not migration_list:
-                migration_list = [600]
-            logger.info(f"------ END - {count} Nests Cleaned - Waiting {min(migration_list)} seconds. ------")
-            if not loop:
-                return
-            await asyncio.sleep(min(migration_list))
-            continue
+                    for report in nest_dict[channel][nest]['reports']:
+                        if nest_dict[channel][nest]['reports'][report].get('exp', 0) <= time.time():
+                            try:
+                                report_message = await report_channel.fetch_message(report)
+                                if new_migration and nest_dict[channel][nest]['reports'][report]['reporttime'] > migration_utc:
+                                    self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
+                                    self.bot.loop.create_task(self.edit_nest_reports(report_message, migration_local, nest_dict[channel][nest]['reports'][report]['dm_dict']))
+                                    count += 1
+                                    continue
+                                await utils.safe_delete(report_message)
+                            except:
+                                pass
+                            try:
+                                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, nest_dict[channel][nest]['reports'][report].get('dm_dict', {})))
+                                del self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]
+                            except:
+                                pass
+        if not migration_list:
+            migration_list = [600]
+        logger.info(f"------ END - {count} Nests Cleaned - Waiting {min(migration_list)} seconds. ------")
+        if not loop:
+            return
+        self.nest_cleanup.change_interval(seconds=min(migration_list))
 
     @nest_cleanup.before_loop
     async def before_cleanup(self):

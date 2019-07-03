@@ -73,46 +73,45 @@ class Wild(commands.Cog):
                 ctx.author = user
                 await self.add_wild_info(ctx, message)
 
-    @tasks.loop(seconds=0)
+    @tasks.loop(seconds=10)
     async def wild_cleanup(self, loop=True):
-        while True:
-            logger.info('------ BEGIN ------')
-            guilddict_temp = copy.deepcopy(self.bot.guild_dict)
-            despawn_list = []
-            count = 0
-            for guildid in guilddict_temp.keys():
-                wild_dict = guilddict_temp[guildid].setdefault('wildreport_dict', {})
-                for reportid in wild_dict.keys():
-                    if wild_dict[reportid].get('exp', 0) <= time.time():
-                        report_channel = self.bot.get_channel(wild_dict[reportid].get('report_channel'))
-                        if report_channel:
-                            try:
-                                report_message = await report_channel.fetch_message(reportid)
-                                self.bot.loop.create_task(self.expire_wild(report_message))
-                                count += 1
-                                continue
-                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                                pass
+        logger.info('------ BEGIN ------')
+        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+        despawn_list = []
+        count = 0
+        for guildid in guilddict_temp.keys():
+            wild_dict = guilddict_temp[guildid].setdefault('wildreport_dict', {})
+            for reportid in wild_dict.keys():
+                if wild_dict[reportid].get('exp', 0) <= time.time():
+                    report_channel = self.bot.get_channel(wild_dict[reportid].get('report_channel'))
+                    if report_channel:
                         try:
-                            del self.bot.guild_dict[guildid]['wildreport_dict'][reportid]
-                        except KeyError:
+                            report_message = await report_channel.fetch_message(reportid)
+                            self.bot.loop.create_task(self.expire_wild(report_message))
+                            count += 1
                             continue
-                    to_despawn = wild_dict[reportid].get('exp', 0) - time.time()
+                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                            pass
+                    try:
+                        del self.bot.guild_dict[guildid]['wildreport_dict'][reportid]
+                    except KeyError:
+                        continue
+                to_despawn = wild_dict[reportid].get('exp', 0) - time.time()
+                if to_despawn > 10:
                     despawn_list.append(to_despawn)
-            # save server_dict changes after cleanup
-            logger.info('SAVING CHANGES')
-            try:
-                await self.bot.save
-            except Exception as err:
-                logger.info('SAVING FAILED' + err)
-                pass
-            if not despawn_list:
-                despawn_list = [600]
-            logger.info(f"------ END - {count} Wilds Cleaned - Waiting {min(despawn_list)} seconds. ------")
-            if not loop:
-                return
-            await asyncio.sleep(min(despawn_list))
-            continue
+        # save server_dict changes after cleanup
+        logger.info('SAVING CHANGES')
+        try:
+            await self.bot.save
+        except Exception as err:
+            logger.info('SAVING FAILED' + err)
+            pass
+        if not despawn_list:
+            despawn_list = [600]
+        logger.info(f"------ END - {count} Wilds Cleaned - Waiting {min(despawn_list)} seconds. ------")
+        if not loop:
+            return
+        self.wild_cleanup.change_interval(seconds=min(despawn_list))
 
     @wild_cleanup.before_loop
     async def before_cleanup(self):

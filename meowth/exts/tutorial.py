@@ -82,55 +82,52 @@ class Tutorial(commands.Cog):
             'message', check=check, timeout=300)
         return cmd_ctx
 
-    @tasks.loop(seconds=0)
+    @tasks.loop(seconds=21600)
     async def tutorial_cleanup(self, loop=True):
-        while True:
-            logger.info('------ BEGIN ------')
-            guilddict_temp = copy.deepcopy(self.bot.guild_dict)
-            count = 0
-            for guildid in guilddict_temp.keys():
-                tutorial_dict = guilddict_temp[guildid]['configure_dict'].setdefault('tutorial', {}).setdefault('report_channels', {})
-                for channelid in tutorial_dict:
-                    channel_exists = self.bot.get_channel(channelid)
-                    if not channel_exists:
+        logger.info('------ BEGIN ------')
+        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
+        count = 0
+        for guildid in guilddict_temp.keys():
+            tutorial_dict = guilddict_temp[guildid]['configure_dict'].setdefault('tutorial', {}).setdefault('report_channels', {})
+            for channelid in tutorial_dict:
+                channel_exists = self.bot.get_channel(channelid)
+                if not channel_exists:
+                    try:
+                        del self.bot.guild_dict[guildid]['configure_dict']['tutorial']['report_channels'][channelid]
+                    except KeyError:
+                        pass
+                    try:
+                        del self.bot.guild_dict[guildid]['configure_dict']['raid']['category_dict'][channelid]
+                    except KeyError:
+                        pass
+                else:
+                    newbie = False
+                    ctx = False
+                    for overwrite in channel_exists.overwrites:
+                        if isinstance(overwrite, discord.Member):
+                            if not overwrite.bot:
+                                newbie = overwrite
+                    try:
+                        tutorial_message = await channel_exists.fetch_message(tutorial_dict[channelid])
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                        pass
+                    if tutorial_message:
+                        ctx = await self.bot.get_context(tutorial_message)
+                    if ctx and newbie:
+                        count += 1
+                        ctx.author = newbie
+                        ctx.tutorial_channel = channel_exists
+                        if not ctx.prefix:
+                            prefix = self.bot._get_prefix(self.bot, ctx.message)
+                            ctx.prefix = prefix[-1]
                         try:
-                            del self.bot.guild_dict[guildid]['configure_dict']['tutorial']['report_channels'][channelid]
-                        except KeyError:
-                            pass
-                        try:
-                            del self.bot.guild_dict[guildid]['configure_dict']['raid']['category_dict'][channelid]
-                        except KeyError:
-                            pass
-                    else:
-                        newbie = False
-                        ctx = False
-                        for overwrite in channel_exists.overwrites:
-                            if isinstance(overwrite, discord.Member):
-                                if not overwrite.bot:
-                                    newbie = overwrite
-                        try:
-                            tutorial_message = await channel_exists.fetch_message(tutorial_dict[channelid])
+                            await ctx.tutorial_channel.send(f"Hey {newbie.mention} I think we were cut off due to a disconnection, let's try to start over.")
                         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                             pass
-                        if tutorial_message:
-                            ctx = await self.bot.get_context(tutorial_message)
-                        if ctx and newbie:
-                            count += 1
-                            ctx.author = newbie
-                            ctx.tutorial_channel = channel_exists
-                            if not ctx.prefix:
-                                prefix = self.bot._get_prefix(self.bot, ctx.message)
-                                ctx.prefix = prefix[-1]
-                            try:
-                                await ctx.tutorial_channel.send(f"Hey {newbie.mention} I think we were cut off due to a disconnection, let's try to start over.")
-                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                                pass
-                            ctx.bot.loop.create_task(self._tutorial(ctx, ""))
-            logger.info(f"------ END - {count} Tutorials Cleaned ------")
-            if not loop:
-                return
-            await asyncio.sleep(21600)
-            continue
+                        ctx.bot.loop.create_task(self._tutorial(ctx, ""))
+        logger.info(f"------ END - {count} Tutorials Cleaned ------")
+        if not loop:
+            return
 
     @tutorial_cleanup.before_loop
     async def before_cleanup(self):
