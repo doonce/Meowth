@@ -309,8 +309,6 @@ class Wild(commands.Cog):
         wild_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'].get(message.id, {})
         dm_dict = wild_dict.get('dm_dict', {})
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict['pkmn_obj'])
-        wild_types = copy.deepcopy(pokemon.types)
-        wild_types.append('None')
         wild_iv = wild_dict.get('wild_iv', None)
         level = wild_dict.get('level', None)
         old_embed = message.embeds[0]
@@ -354,10 +352,10 @@ class Wild(commands.Cog):
             except:
                 pass
         ctx.wildreportmsg = message
-        dm_dict = await self.send_dm_messages(ctx, pokemon.id, nearest_stop, wild_types[0], wild_types[1], wild_iv, level, content, copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, wild_iv, level, content, copy.deepcopy(wild_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['dm_dict'] = dm_dict
 
-    async def send_dm_messages(self, ctx, wild_number, wild_details, wild_type_1, wild_type_2, wild_iv, wild_level, content, embed, dm_dict):
+    async def send_dm_messages(self, ctx, wild_pokemon, wild_details, wild_iv, wild_level, content, embed, dm_dict):
         if embed:
             if isinstance(embed.description, discord.embeds._EmptyEmbed):
                 embed.description = ""
@@ -369,6 +367,9 @@ class Wild(commands.Cog):
                     embed.remove_field(index)
                 else:
                     index += 1
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_pokemon)
+        wild_types = copy.deepcopy(pokemon.types)
+        wild_types.append('None')
         for trainer in copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('trainers', {})):
             if not checks.dm_check(ctx, trainer):
                 continue
@@ -379,7 +380,8 @@ class Wild(commands.Cog):
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
             user_ivs = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('ivs', [])
             user_levels = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('levels', [])
-            if wild_number in user_wants or wild_type_1.lower() in user_types or wild_type_2.lower() in user_types or str(wild_details).lower() in user_stops or wild_iv in user_ivs or wild_level in user_levels:
+            user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
+            if pokemon.id in user_wants or str(pokemon) in user_forms or wild_types[1].lower() in user_types or wild_types[2].lower() in user_types or str(wild_details).lower() in user_stops or wild_iv in user_ivs or wild_level in user_levels:
                 try:
                     user = ctx.guild.get_member(trainer)
                     wilddmmsg = await user.send(content=content, embed=embed)
@@ -522,8 +524,6 @@ class Wild(commands.Cog):
                 wild_details = wild_details.replace(wild_details.split()[-1], "").strip()
             else:
                 wild_iv = None
-        wild_types = copy.deepcopy(pokemon.types)
-        wild_types.append('None')
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=pokemon.name.title())
         wild_gmaps_link = utils.create_gmaps_query(self.bot, wild_details, message.channel, type="wild")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -556,7 +556,7 @@ class Wild(commands.Cog):
         wild_embed = await self.make_wild_embed(ctx, details)
         ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}{stop_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details, iv_str=iv_str, stop_str=stop_str), embed=wild_embed)
         dm_dict = {}
-        dm_dict = await self.send_dm_messages(ctx, pokemon.id, nearest_stop, wild_types[0], wild_types[1], wild_iv, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, wild_iv, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
         await utils.safe_reaction(ctx.wildreportmsg, self.bot.custom_emoji.get('wild_omw', '\U0001F3CE'))
         await asyncio.sleep(0.25)

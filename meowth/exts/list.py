@@ -763,6 +763,7 @@ class Listing(commands.Cog):
         user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
         user_mute = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', False)
         mute_mentions = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
+        user_forms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
         user_wants = sorted(user_wants)
         wantlist = [utils.get_name(self.bot, x).title() for x in user_wants]
@@ -786,21 +787,23 @@ class Listing(commands.Cog):
         wantmsg = ""
         if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels):
             if wantlist:
-                wantmsg += _('**Pokemon:** (wilds, research, nests{raid_link})\n{want_list}').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids" if user_link else "")
+                wantmsg += _('**Pokemon:** (wilds, research, nests{raid_link})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids" if user_link else "")
+            if user_forms:
+                wantmsg += _('**Pokemon Forms:** (wilds)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_forms), width=80)))
             if bosslist and not user_link:
-                wantmsg += _('\n\n**Bosses:** (raids)\n{want_list}').format(want_list='\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
+                wantmsg += _('**Bosses:** (raids)\n{want_list}').format(want_list='\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
             if user_gyms:
-                wantmsg += _('\n\n**Gyms:** (raids)\n{user_gyms}').format(user_gyms='\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
+                wantmsg += _('**Gyms:** (raids)\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
             if user_stops:
-                wantmsg += _('\n\n**Stops:** (research, wilds, lures)\n{user_stops}').format(user_stops='\n'.join(textwrap.wrap(', '.join(user_stops), width=80)))
+                wantmsg += _('**Stops:** (research, wilds, lures)\n{user_stops}\n\n').format(user_stops='\n'.join(textwrap.wrap(', '.join(user_stops), width=80)))
             if user_items:
-                wantmsg += _('\n\n**Items:** (research, lures)\n{user_items}').format(user_items='\n'.join(textwrap.wrap(', '.join(user_items), width=80)))
+                wantmsg += _('**Items:** (research, lures)\n{user_items}\n\n').format(user_items='\n'.join(textwrap.wrap(', '.join(user_items), width=80)))
             if user_types:
-                wantmsg += _('\n\n**Types:** (wilds, research, nests)\n{user_types}').format(user_types='\n'.join(textwrap.wrap(', '.join(user_types), width=80)))
+                wantmsg += _('**Types:** (wilds, research, nests)\n{user_types}\n\n').format(user_types='\n'.join(textwrap.wrap(', '.join(user_types), width=80)))
             if user_ivs:
-                wantmsg += _('\n\n**IVs:** (wilds)\n{user_ivs}').format(user_ivs='\n'.join(textwrap.wrap(', '.join(user_ivs), width=80)))
+                wantmsg += _('**IVs:** (wilds)\n{user_ivs}\n\n').format(user_ivs='\n'.join(textwrap.wrap(', '.join(user_ivs), width=80)))
             if user_levels:
-                wantmsg += _('\n\n**Levels:** (wilds)\n{user_levels}').format(user_levels='\n'.join(textwrap.wrap(', '.join(user_levels), width=80)))
+                wantmsg += _('**Levels:** (wilds)\n{user_levels}\n\n').format(user_levels='\n'.join(textwrap.wrap(', '.join(user_levels), width=80)))
         if wantmsg:
             if user_mute and mute_mentions:
                 listmsg = _('Meowth! {author}, your notifications and @mentions are muted, so you will not receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
@@ -846,6 +849,7 @@ class Listing(commands.Cog):
 
     async def _allwantlist(self, ctx):
         want_list = []
+        form_list = []
         stop_list = []
         gym_list = []
         boss_list = []
@@ -857,6 +861,9 @@ class Listing(commands.Cog):
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('wants', []):
                 if want not in want_list:
                     want_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('forms', []):
+                if want not in form_list:
+                    form_list.append(want)
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('stops', []):
                 if want not in stop_list:
                     stop_list.append(want)
@@ -893,21 +900,23 @@ class Listing(commands.Cog):
         wantmsg = ""
         if len(want_list) > 0 or len(gym_list) > 0 or len(stop_list) > 0 or len(item_list) > 0 or len(boss_list) > 0 or len(type_list) > 0 or len(iv_list) > 0 or len(level_list):
             if want_list:
-                wantmsg += _('**Pokemon:**\n{want_list}').format(want_list='\n'.join(textwrap.wrap(', '.join(want_list), width=80)))
+                wantmsg += _('**Pokemon:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(want_list), width=80)))
+            if want_list:
+                wantmsg += _('**Pokemon Forms:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(form_list), width=80)))
             if boss_list:
-                wantmsg += _('\n\n**Bosses:**\n{want_list}').format(want_list='\n'.join(textwrap.wrap(', '.join(boss_list), width=80)))
+                wantmsg += _('**Bosses:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(boss_list), width=80)))
             if gym_list:
-                wantmsg += _('\n\n**Gyms:**\n{user_gyms}').format(user_gyms='\n'.join(textwrap.wrap(', '.join(gym_list), width=80)))
+                wantmsg += _('**Gyms:**\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(gym_list), width=80)))
             if stop_list:
-                wantmsg += _('\n\n**Stops:**\n{user_stops}').format(user_stops='\n'.join(textwrap.wrap(', '.join(stop_list), width=80)))
+                wantmsg += _('**Stops:**\n{user_stops}\n\n').format(user_stops='\n'.join(textwrap.wrap(', '.join(stop_list), width=80)))
             if item_list:
-                wantmsg += _('\n\n**Items:**\n{user_items}').format(user_items='\n'.join(textwrap.wrap(', '.join(item_list), width=80)))
+                wantmsg += _('**Items:**\n{user_items}\n\n').format(user_items='\n'.join(textwrap.wrap(', '.join(item_list), width=80)))
             if type_list:
-                wantmsg += _('\n\n**Types:**\n{user_types}').format(user_types='\n'.join(textwrap.wrap(', '.join(type_list), width=80)))
+                wantmsg += _('**Types:**\n{user_types}\n\n').format(user_types='\n'.join(textwrap.wrap(', '.join(type_list), width=80)))
             if iv_list:
-                wantmsg += _('\n\n**IVs:**\n{user_ivs}').format(user_ivs='\n'.join(textwrap.wrap(', '.join(iv_list), width=80)))
+                wantmsg += _('**IVs:**\n{user_ivs}\n\n').format(user_ivs='\n'.join(textwrap.wrap(', '.join(iv_list), width=80)))
             if level_list:
-                wantmsg += _('\n\n**Levels:**\n{user_levels}').format(user_levels='\n'.join(textwrap.wrap(', '.join(level_list), width=80)))
+                wantmsg += _('**Levels:**\n{user_levels}\n\n').format(user_levels='\n'.join(textwrap.wrap(', '.join(level_list), width=80)))
         if wantmsg:
             listmsg = _('**Meowth!** The server **!want** list is:')
             paginator = commands.Paginator(prefix="", suffix="")

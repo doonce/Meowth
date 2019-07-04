@@ -51,10 +51,7 @@ class Want(commands.Cog):
         if gym_matching_cog:
             gyms = gym_matching_cog.get_gyms(ctx.guild.id)
             stops = gym_matching_cog.get_stops(ctx.guild.id)
-            if gyms:
-                want_embed.add_field(name=_('**Gym**'), value=f"Reply with **gym** to want raids and eggs at specific gyms.", inline=False)
-            if stops:
-                want_embed.add_field(name=_('**Stop**'), value=f"Reply with **stop** to want research and wild spawns at specific pokestops.", inline=False)
+            want_embed.add_field(name=f"**{'Gym' if gyms else ''}{' / ' if gyms and stops else ''}{'Stop' if stops else ''}**", value=f"{'Reply with **gym** to want raids and eggs at specific gyms.' if gyms else ''} {'Reply with **stop** to want research and wild spawns at specific pokestops.' if stops else ''}", inline=False)
         if role_list:
             want_embed.add_field(name=_('**Role**'), value=f"Reply with **role** to subscribe to server roles.", inline=False)
         want_embed.add_field(name=_('**IV** / **Level**'), value=f"Reply with **iv** or **level** to want wild spawns of a specific IV / level.", inline=False)
@@ -90,7 +87,7 @@ class Want(commands.Cog):
                     elif want_category_msg.clean_content.lower() == "pokemon":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
                         want_embed.clear_fields()
-                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to subscribe to. You can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to subscribe to. You can use any forms, genders, or sizes for specific control. Use **{ctx.prefix}pokedex <pokemon>** to see if there are gender or form differences available. You can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -339,6 +336,7 @@ class Want(commands.Cog):
         guild = message.guild
         channel = message.channel
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+        user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
         want_split = pokemon.lower().split(',')
         want_list = []
@@ -352,7 +350,7 @@ class Want(commands.Cog):
         for entered_want in want_split:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_want.strip())
             if pokemon:
-                want_list.append(pokemon.name.lower())
+                want_list.append(pokemon)
             elif len(want_split) == 1 and "list" in entered_want:
                 await utils.safe_delete(ctx.message)
                 list_command = self.bot.get_command("list")
@@ -364,12 +362,13 @@ class Want(commands.Cog):
                 match, score = utils.get_match(ctx.bot.pkmn_list, entered_want)
                 spellcheck_dict[entered_want] = match
         for entered_want in want_list:
+            entered_want.shiny = False
             role_str = ""
-            if entered_want in self.bot.raid_list and user_link:
-                role = discord.utils.get(guild.roles, name=entered_want)
+            if entered_want.name.lower() in self.bot.raid_list and user_link:
+                role = discord.utils.get(guild.roles, name=entered_want.name.lower())
                 if not role:
                     try:
-                        role = await guild.create_role(name = entered_want.lower(), hoist = False, mentionable = True)
+                        role = await guild.create_role(name = entered_want.name.lower(), hoist = False, mentionable = True)
                     except discord.errors.HTTPException:
                         await message.channel.send(_('Maximum guild roles reached. Pokemon not added.'), delete_after=10)
                         return
@@ -377,13 +376,22 @@ class Want(commands.Cog):
                 if role not in ctx.author.roles:
                     role_list.append(role)
                 role_str = f" ({role.mention})"
-            if utils.get_number(self.bot, entered_want) in user_wants:
-                already_want_list.append(entered_want.capitalize())
-                already_want_count += 1
+            if entered_want.gender or entered_want.form or entered_want.alolan or entered_want.size:
+                if str(entered_want) in user_forms:
+                    already_want_list.append(str(entered_want))
+                    already_want_count += 1
+                else:
+                    user_forms.append(str(entered_want))
+                    added_list.append(f"{str(entered_want)}{role_str}")
+                    added_count += 1
             else:
-                user_wants.append(utils.get_number(self.bot, entered_want))
-                added_list.append(f"{entered_want.capitalize()}{role_str}")
-                added_count += 1
+                if entered_want.id in user_wants:
+                    already_want_list.append(entered_want.name.title())
+                    already_want_count += 1
+                else:
+                    user_wants.append(entered_want.id)
+                    added_list.append(f"{entered_want.name.title()}{role_str}")
+                    added_count += 1
         await ctx.author.add_roles(*role_list)
         want_count = added_count + already_want_count + len(spellcheck_dict)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** pokemon:\n').format(member=ctx.author.display_name, count=want_count)
@@ -1009,6 +1017,7 @@ class Want(commands.Cog):
         user_bosses = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
         user_bosses = sorted(user_bosses)
         bosslist = [utils.get_name(self.bot, x).title() for x in user_bosses]
+        user_forms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         user_gyms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
         user_gyms = [x.title() for x in user_gyms]
         user_stops = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
@@ -1043,10 +1052,8 @@ class Want(commands.Cog):
         if gym_matching_cog:
             gyms = gym_matching_cog.get_gyms(ctx.guild.id)
             stops = gym_matching_cog.get_stops(ctx.guild.id)
-            if gyms and user_gyms:
-                want_embed.add_field(name=_('**Gym**'), value=f"Reply with **gym** to unwant raids and eggs at specific gyms.", inline=False)
-            if stops and user_stops:
-                want_embed.add_field(name=_('**Stop**'), value=f"Reply with **stop** to unwant research and wild spawns at specific pokestops.", inline=False)
+            if user_gyms or user_stops:
+                want_embed.add_field(name=f"**{'Gym' if gyms and user_gyms else ''}{' / ' if gyms and user_gyms and stops and user_stops else ''}{'Stop' if stops and user_stops else ''}**", value=f"{'Reply with **gym** to unwant raids and eggs at specific gyms.' if gyms else ''} {'Reply with **stop** to unwant research and wild spawns at specific pokestops.' if stops else ''}", inline=False)
         if user_roles:
             want_embed.add_field(name=_('**Role**'), value=f"Reply with **role** to unwant server roles.", inline=False)
         if user_ivs:
@@ -1089,7 +1096,7 @@ class Want(commands.Cog):
                             break
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
                         want_embed.clear_fields()
-                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(wantlist)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(wantlist+user_forms)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1355,6 +1362,7 @@ class Want(commands.Cog):
         guild = message.guild
         channel = message.channel
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+        user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
         unwant_split = pokemon.lower().split(',')
         unwant_list = []
@@ -1368,7 +1376,7 @@ class Want(commands.Cog):
         for entered_unwant in unwant_split:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_unwant.strip())
             if pokemon:
-                unwant_list.append(pokemon.name.lower())
+                unwant_list.append(pokemon)
             elif len(unwant_split) == 1 and "list" in entered_unwant:
                 await utils.safe_delete(ctx.message)
                 list_command = self.bot.get_command("list")
@@ -1380,19 +1388,29 @@ class Want(commands.Cog):
                 match, score = utils.get_match(ctx.bot.pkmn_list, entered_unwant)
                 spellcheck_dict[entered_unwant] = match
         for entered_unwant in unwant_list:
+            entered_unwant.shiny = False
             role_str = ""
-            if entered_unwant in self.bot.raid_list and user_link:
-                role = discord.utils.get(guild.roles, name=entered_unwant)
+            if entered_unwant.name.lower() in self.bot.raid_list and user_link:
+                role = discord.utils.get(guild.roles, name=entered_unwant.name.lower())
                 if role and role in ctx.author.roles:
                     role_list.append(role)
                     role_str = f" ({role.mention})"
-            if utils.get_number(self.bot, entered_unwant) not in user_wants:
-                not_wanted_list.append(entered_unwant.capitalize())
-                not_wanted_count += 1
+            if entered_unwant.gender or entered_unwant.form or entered_unwant.alolan or entered_unwant.size:
+                if str(entered_unwant) not in user_forms:
+                    not_wanted_list.append(str(entered_unwant))
+                    not_wanted_count += 1
+                else:
+                    user_forms.remove(str(entered_unwant))
+                    removed_list.append(f"{str(entered_unwant)}{role_str}")
+                    removed_count += 1
             else:
-                user_wants.remove(utils.get_number(self.bot, entered_unwant))
-                removed_list.append(f"{entered_unwant.capitalize()}{role_str}")
-                removed_count += 1
+                if entered_unwant.id not in user_wants:
+                    not_wanted_list.append(entered_unwant.name.title())
+                    not_wanted_count += 1
+                else:
+                    user_wants.remove(entered_unwant.id)
+                    removed_list.append(f"{entered_unwant.name.title()}{role_str}")
+                    removed_count += 1
         await ctx.author.remove_roles(*role_list)
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** pokemon:\n').format(member=ctx.author.display_name, count=unwant_count)
@@ -1487,6 +1505,8 @@ class Want(commands.Cog):
         want_count = len(user_wants)
         user_bosses = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
         boss_count = len(user_bosses)
+        user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
+        form_count = len(user_forms)
         user_gyms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
         gym_count = len(user_gyms)
         user_stops = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
@@ -1502,7 +1522,7 @@ class Want(commands.Cog):
         user_roles = [x for x in join_roles if x in author.roles]
         level_count = len(user_levels)
         unwant_msg = ""
-        count = want_count + boss_count + gym_count + stop_count + item_count + type_count + iv_count + level_count
+        count = want_count + boss_count + gym_count + stop_count + item_count + type_count + iv_count + level_count + form_count
         if count == 0:
             await channel.send(content=_('{0}, you have no pokemon, gyms, stops, types, IVs, levels, or items in your want list.').format(author.mention), delete_after=10)
             return
@@ -1537,6 +1557,9 @@ class Want(commands.Cog):
         if level_count > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['levels'] = []
             unwant_msg += _(" I've removed {0} levels from your want list.").format(level_count)
+        if form_count > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['forms'] = []
+            unwant_msg += _(" I've removed {0} forms from your want list.").format(form_count)
         if len(user_roles) > 0:
             remove_roles = []
             for role in author.roles:

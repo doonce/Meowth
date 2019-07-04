@@ -737,8 +737,6 @@ class Huntr(commands.Cog):
         nearest_poi = ""
         poi_info = ""
         wild_cog = self.bot.get_cog("Wild")
-        wild_types = copy.deepcopy(pokemon.types)
-        wild_types.append('None')
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=entered_wild.title())
         if reporter == "huntr":
             huntr_url = wild_details
@@ -769,7 +767,7 @@ class Huntr(commands.Cog):
             wild_embed.set_field_at(len(wild_embed.fields)-1, name="**Spawn Reactions:**", value=wild_embed.fields[-1].value.replace(f"{despawn_emoji}: The Pokemon despawned!\n", ""))
             reaction_list.remove(despawn_emoji)
         ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}!{stop_str}Coordinates: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, stop_str=stop_str, location_details=wild_coordinates, iv_str=iv_str), embed=wild_embed)
-        dm_dict = await wild_cog.send_dm_messages(ctx, pokemon.id, str(nearest_stop), wild_types[0], wild_types[1], wild_iv, level, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
+        dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), wild_iv, level, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
         for reaction in reaction_list:
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.wildreportmsg, reaction)
