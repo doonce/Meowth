@@ -126,6 +126,7 @@ class Pokemon():
         form_list.extend(c for c in [' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !'])
         form_dict['list'] = form_list
         form_dict['two_words'] = two_words
+        bot.size_list = [19, 129]
         bot.alolan_list = alolan_list
         bot.gender_dict = gender_dict
         bot.legendary_list = legendary_list
@@ -205,7 +206,7 @@ class Pokemon():
 
     def __str__(self):
         name = self.name.title()
-        if self.size:
+        if self.size and self.id in self.bot.size_list:
             name = f"{self.size} {name}"
         if self.form:
             name = name + f" {self.form.title()}"
