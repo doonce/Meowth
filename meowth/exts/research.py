@@ -34,7 +34,8 @@ class Research(commands.Cog):
         for guildid in guilddict_temp.keys():
             utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guildid]['configure_dict']['settings']['offset']))
             to_midnight = 24*60*60 - ((utcnow-utcnow.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
-            midnight_list.append(to_midnight)
+            if to_midnight > 0:
+                midnight_list.append(to_midnight)
             research_dict = guilddict_temp[guildid].setdefault('questreport_dict', {})
             for reportid in research_dict.keys():
                 if research_dict[reportid].get('exp', 0) <= time.time():
@@ -49,8 +50,10 @@ class Research(commands.Cog):
                             pass
                     try:
                         del self.bot.guild_dict[guildid]['questreport_dict'][reportid]
+                        count += 1
+                        continue
                     except KeyError:
-                        pass
+                        continue
         # save server_dict changes after cleanup
         logger.info('SAVING CHANGES')
         try:

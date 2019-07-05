@@ -85,6 +85,7 @@ class Pokemon():
         shiny_dict = {}
         alolan_list = []
         gender_dict = {}
+        size_dict = {}
         legendary_list = []
         mythical_list = []
         form_dict = {}
@@ -92,6 +93,7 @@ class Pokemon():
         two_words = []
         for k, v in bot.pkmn_info.items():
             gender_forms = []
+            size_forms = []
             for form in v['forms']:
                 if form == "list":
                     continue
@@ -101,6 +103,8 @@ class Pokemon():
                     shiny_dict[v['number']][form] = v['forms'][form].get('shiny', [])
                 if v['forms'][form].get('gender', False):
                     gender_forms.append(form)
+                if v['forms'][form].get('size', False):
+                    size_forms.append(form)
                 if v['forms'][form].get('available', []):
                     if len(v['forms']) > 1:
                         if form not in form_list:
@@ -110,6 +114,8 @@ class Pokemon():
                         available_dict[v['number']][form] = v['forms'][form].get('available', [])
             if gender_forms:
                 gender_dict[v['number']] = gender_forms
+            if size_forms:
+                size_dict[v['number']] = size_forms
             if v['forms'].get('alolan', {}):
                 alolan_list.append(bot.pkmn_info[k]['number'])
             if v['legendary']:
@@ -126,13 +132,14 @@ class Pokemon():
         form_list.extend(c for c in [' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !'])
         form_dict['list'] = form_list
         form_dict['two_words'] = two_words
-        bot.size_list = [19, 129]
+        bot.size_dict = size_dict
         bot.alolan_list = alolan_list
         bot.gender_dict = gender_dict
         bot.legendary_list = legendary_list
         bot.mythical_list = mythical_list
         bot.form_dict = form_dict
         bot.shiny_dict = shiny_dict
+        bot.gamemaster = {}
         async with aiohttp.ClientSession() as sess:
             async with sess.get("http://raw.githubusercontent.com/ZeChrales/PogoAssets/master/gamemaster/gamemaster.json") as resp:
                 data = await resp.json(content_type=None)
@@ -166,16 +173,16 @@ class Pokemon():
                 self.shiny = False
             elif self.form and str(self.form).lower() not in bot.shiny_dict.get(self.id, {}):
                 self.shiny = False
+        self.legendary = False
+        self.mythical = False
         if self.id in bot.legendary_list:
             self.legendary = True
-        elif self.id in bot.mythical_list:
+        if self.id in bot.mythical_list:
             self.mythical = True
-        else:
-            self.legendary = False
-            self.mythical = False
         self.gender = attribs.get('gender', None)
         self.types = self._get_type()
         self.emoji = self._get_emoji()
+        self.weather = None
         template = {}
         search_term = ""
         search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}".lower()
@@ -184,11 +191,9 @@ class Pokemon():
             search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}_{self.form.strip()}".lower()
         if self.alolan:
             search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}_alola".lower()
-        self.weather = None
-        if hasattr(self.bot, 'gamemaster'):
-            for template in self.bot.gamemaster['itemTemplates']:
-                if search_term in template['templateId'].lower() and "form" not in template['templateId'].lower() and "spawn" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
-                    break
+        for template in self.bot.gamemaster.get('itemTemplates', {}):
+            if search_term in template['templateId'].lower() and "form" not in template['templateId'].lower() and "spawn" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
+                break
         self.base_stamina = template.get('pokemonSettings', {}).get('stats', {}).get('baseStamina', None)
         self.base_attack = template.get('pokemonSettings', {}).get('stats', {}).get('baseAttack', None)
         self.base_defense = template.get('pokemonSettings', {}).get('stats', {}).get('baseDefense', None)
@@ -206,16 +211,18 @@ class Pokemon():
 
     def __str__(self):
         name = self.name.title()
-        if self.size and self.id in self.bot.size_list:
-            name = f"{self.size} {name}"
+        if self.id in self.bot.size_dict and self.size:
+            if (self.alolan and "alolan" in self.bot.size_dict[self.id]) or str(self.form).lower() in self.bot.size_dict[self.id]:
+                name = f"{self.size} {name}"
         if self.form:
             name = name + f" {self.form.title()}"
         if self.alolan:
             name = 'Alolan ' + name
         if self.shiny:
             name = 'Shiny ' + name
-        if self.gender and self.id in self.bot.gender_dict:
-            name = str(self.gender).title() + ' ' + name
+        if self.id in self.bot.gender_dict and self.gender:
+            if (self.alolan and "alolan" in self.bot.gender_dict[self.id]) or str(self.form).lower() in self.bot.gender_dict[self.id]:
+                name = str(self.gender).title() + ' ' + name
         return name
 
     async def get_pb_raid(self, weather=None, userid=None, moveset=None):
@@ -776,7 +783,7 @@ class Pokedex(commands.Cog):
             async with ctx.typing():
                 if not pokemon:
                     pkmn_embed.clear_fields()
-                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"{'Meowth! I will help you edit Pokemon information!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **pokemon** you'd like to edit. Reply with **name** of the pokemon and include any **form or gender** if applicable. You can reply with **cancel** to stop anytime.", inline=False)
+                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"{'Meowth! I will help you edit Pokemon information!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **pokemon** you'd like to edit. Reply with **name** of the pokemon and include any **form** if applicable. You can reply with **cancel** to stop anytime.", inline=False)
                     pkmn_name_wait = await channel.send(embed=pkmn_embed)
                     try:
                         pkmn_name_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -809,14 +816,17 @@ class Pokedex(commands.Cog):
                     if self.bot.pkmn_info.get(pokemon.name.lower(), {}).get('forms', {}).get(pkmn_form, {}).get('available', False):
                         pkmn_available = True
                     if len(self.bot.form_dict.get(pokemon.id, {}).keys()) > 1:
-                        form_str = f" Current {pokemon} forms include: `{(', ').join(self.bot.form_dict.get(pokemon.id, {}).keys())}`"
+                        form_str = f" Current {pokemon.name} forms include: `{(', ').join(self.bot.form_dict.get(pokemon.id, {}).keys())}`"
                     pkmn_shiny = []
                     pkmn_shiny = self.bot.shiny_dict.get(pokemon.id, {}).get(pkmn_form, [])
                     pkmn_gender = False
                     if pkmn_form in self.bot.gender_dict.get(pokemon.id, []):
                         pkmn_gender = True
+                    pkmn_size = False
+                    if pkmn_form in self.bot.size_dict.get(pokemon.id, []):
+                        pkmn_size = True
                     pkmn_embed.clear_fields()
-                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **available** to toggle in-game availability, **shiny** to set shiny availability, or **gender** to toggle gender differences. You can reply with **cancel** to stop anytime.\n\n**Current Settings**\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}", inline=False)
+                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **available** to toggle in-game availability, **shiny** to set shiny availability, **gender** to toggle gender differences, or **size** to toggle size relevance. You can reply with **cancel** to stop anytime.\n\n**Current {str(pokemon)} Settings**\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}\nSize Relevant: {pkmn_size}", inline=False)
                     attr_type_wait = await channel.send(embed=pkmn_embed)
                     try:
                         attr_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -833,6 +843,9 @@ class Pokedex(commands.Cog):
                         break
                     elif attr_type_msg.clean_content.lower() == "gender":
                         pkmn_gender = not pkmn_gender
+                        break
+                    elif attr_type_msg.clean_content.lower() == "size":
+                        pkmn_size = not pkmn_size
                         break
                     elif attr_type_msg.clean_content.lower() == "available":
                         pkmn_available = not pkmn_available
@@ -877,11 +890,12 @@ class Pokedex(commands.Cog):
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['available'] = pkmn_available
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['gender'] = pkmn_gender
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['shiny'] = pkmn_shiny
+            pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['size'] = pkmn_size
             with open(self.bot.pkmn_info_path, 'w', encoding="utf8") as fd:
                 json.dump(pkmn_info, fd, indent=2, separators=(', ', ': '))
             await Pokemon.generate_lists(self.bot)
             pkmn_embed.clear_fields()
-            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {pokemon.name.title()} Settings**:\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}", inline=False)
+            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}\nSize Relevant: {pkmn_size}", inline=False)
             confirmation = await channel.send(embed=pkmn_embed)
             await utils.safe_delete(message)
 

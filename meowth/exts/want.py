@@ -376,7 +376,7 @@ class Want(commands.Cog):
                 if role not in ctx.author.roles:
                     role_list.append(role)
                 role_str = f" ({role.mention})"
-            if (entered_want.size or entered_want.gender or entered_want.form or entered_want.alolan) and len(str(entered_want).split()) > 1:
+            if (entered_want.size or entered_want.gender or entered_want.form or entered_want.alolan) and len(str(entered_want).split()) > 1:                    
                 if str(entered_want) in user_forms:
                     already_want_list.append(str(entered_want))
                     already_want_count += 1

@@ -94,6 +94,8 @@ class Wild(commands.Cog):
                             pass
                     try:
                         del self.bot.guild_dict[guildid]['wildreport_dict'][reportid]
+                        count += 1
+                        continue
                     except KeyError:
                         continue
                 to_despawn = wild_dict[reportid].get('exp', 0) - time.time()
@@ -107,7 +109,7 @@ class Wild(commands.Cog):
             logger.info('SAVING FAILED' + err)
             pass
         if not despawn_list:
-            despawn_list = [600]
+            despawn_list = [300]
         logger.info(f"------ END - {count} Wilds Cleaned - Waiting {min(despawn_list)} seconds. ------")
         if not loop:
             return

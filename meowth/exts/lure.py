@@ -46,10 +46,13 @@ class Lure(commands.Cog):
                             pass
                     try:
                         del self.bot.guild_dict[guildid]['lure_dict'][reportid]
+                        count += 1
+                        continue
                     except KeyError:
                         continue
                 to_expire = lure_dict[reportid].get('exp', 0) - time.time()
-                expire_list.append(to_expire)
+                if to_expire > 0:
+                    expire_list.append(to_expire)
         # save server_dict changes after cleanup
         logger.info('SAVING CHANGES')
         try:

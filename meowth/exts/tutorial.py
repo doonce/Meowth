@@ -107,6 +107,7 @@ class Tutorial(commands.Cog):
                         if isinstance(overwrite, discord.Member):
                             if not overwrite.bot:
                                 newbie = overwrite
+                                break
                     try:
                         tutorial_message = await channel_exists.fetch_message(tutorial_dict[channelid])
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
@@ -621,7 +622,7 @@ class Tutorial(commands.Cog):
         await raid_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Great! You are now listed as being 'in the lobby', where you will remain for two minutes until the raid begins. In that time, anyone can request a backout with the **{prefix}backout** command. If the person requesting is in the lobby, the backout is automatic. If it is someone who arrived at the raid afterward, confirmation will be requested from a lobby member. When a backout is confirmed, all members will be returned to the 'here' list."))
 
         await asyncio.sleep(1)
-        await raid_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"A couple of notes about raid channels. Meowth has partnered with Pokebattler to give you the best counters for each raid boss in every situation. You can set the weather in the initial raid report, or with the **{prefix}weather** command. You can select the moveset using the reactions in the initial counters message. If you have a Pokebattler account, you can use **{prefix}set pokebattler <id>** to link them! After that, the **{prefix}counters**  command will DM you your own counters pulled from your Pokebox."))
+        await raid_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"A couple of notes about raid channels. Meowth has partnered with Pokebattler to give you the best counters for each raid boss in every situation. You can set the weather in the initial raid report, or with the **{prefix}weather** command. You can select the moveset using the reactions in the initial counters message. If you have a Pokebattler account, you can use **{prefix}pokebattler <id>** to link them! After that, the **{prefix}counters**  command will DM you your own counters pulled from your Pokebox."))
 
         await asyncio.sleep(1)
         await raid_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Last thing: if you need to update the expiry time, use **{prefix}timerset <minutes left>**\n\nFeel free to play around with the commands here for a while. When you're finished, type `{prefix}timerset 0` and the raid will expire."))

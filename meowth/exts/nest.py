@@ -61,7 +61,8 @@ class Nest(commands.Cog):
                 migration_local = new_migration + datetime.timedelta(hours=self.bot.guild_dict[guildid]['configure_dict']['settings']['offset'])
                 self.bot.guild_dict[guildid]['configure_dict']['nest']['migration'] = new_migration
             to_migration = migration_utc.timestamp() - utcnow.timestamp()
-            migration_list.append(to_migration)
+            if to_migration > 0:
+                migration_list.append(to_migration)
             for channel in nest_dict:
                 report_channel = self.bot.get_channel(channel)
                 if not report_channel:
@@ -86,8 +87,10 @@ class Nest(commands.Cog):
                             try:
                                 self.bot.loop.create_task(utils.expire_dm_reports(self.bot, nest_dict[channel][nest]['reports'][report].get('dm_dict', {})))
                                 del self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]
+                                count += 1
+                                continue
                             except:
-                                pass
+                                continue
         if not migration_list:
             migration_list = [600]
         logger.info(f"------ END - {count} Nests Cleaned - Waiting {min(migration_list)} seconds. ------")
