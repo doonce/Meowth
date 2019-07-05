@@ -135,7 +135,6 @@ class Tutorial(commands.Cog):
         await self.bot.wait_until_ready()
 
     @commands.group(case_insensitive=True, invoke_without_command=True)
-    @commands.has_permissions(manage_guild=True)
     async def tutorial(self, ctx, *, tutorial_list: str=""):
         """Launches an interactive tutorial session for Meowth.
 
