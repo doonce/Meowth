@@ -49,6 +49,7 @@ class Research(commands.Cog):
                         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                             pass
                     try:
+                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, research_dict.get(reportid, {}).get('dm_dict', {})))
                         del self.bot.guild_dict[guildid]['questreport_dict'][reportid]
                         count += 1
                         continue

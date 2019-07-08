@@ -56,7 +56,7 @@ class Huntr(commands.Cog):
                             else:
                                 report_edit_dict[reportid] = {"action":report_dict_dict[report_dict][reportid]['expedit'], "channel":report_channel}
                             if report_dict_dict[report_dict][reportid].get('dm_dict', False):
-                                await utils.expire_dm_reports(self.bot, report_dict_dict[report_dict][reportid]['dm_dict'])
+                                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, report_dict_dict[report_dict][reportid]['dm_dict']))
                         try:
                             del self.bot.guild_dict[guildid][report_dict][reportid]
                         except KeyError:

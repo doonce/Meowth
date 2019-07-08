@@ -45,6 +45,7 @@ class Lure(commands.Cog):
                         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                             pass
                     try:
+                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, lure_dict.get(reportid, {}).get('dm_dict', {})))
                         del self.bot.guild_dict[guildid]['lure_dict'][reportid]
                         count += 1
                         continue

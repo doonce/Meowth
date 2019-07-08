@@ -93,6 +93,7 @@ class Wild(commands.Cog):
                         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                             pass
                     try:
+                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, wild_dict.get(reportid, {}).get('dm_dict', {})))
                         del self.bot.guild_dict[guildid]['wildreport_dict'][reportid]
                         count += 1
                         continue
@@ -256,7 +257,7 @@ class Wild(commands.Cog):
                             error = _("entered something invalid")
                             continue
                         if "cp" in value and "cp" not in success:
-                            if value_split[1] and value_split[1].isdigit():
+                            if value_split[1] and value_split[1].isdigit() and int(value_split[1]) < 5000:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['cp'] = int(value_split[1])
                                 success.append("cp")
                         elif "gender" in value and "gender" not in success:

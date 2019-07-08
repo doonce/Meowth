@@ -129,7 +129,7 @@ class Nest(commands.Cog):
         migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
-        nest_embed = discord.Embed(colour=guild.me.colour, title="Click here to open the Silph Road Nest Atlas!", url="https://thesilphroad.com/atlas", description="")
+        nest_embed = discord.Embed(colour=guild.me.colour, title="Click here to open the Silph Road Nest Atlas!", url="https://thesilphroad.com/atlas", description=f"Use **{ctx.prefix}nest info** for more information about a nest.")
         nest_embed.set_footer(text=f"Next Migration: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}")
         char_count = len(nest_embed.title) + len(nest_embed.footer.text)
         paginator = commands.Paginator(prefix="", suffix="")

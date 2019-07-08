@@ -38,7 +38,7 @@ class Tutorial(commands.Cog):
         await ctx.send(
             ("Meowth! I've created a private tutorial channel for "
              f"you! Continue in {tutorial_channel.mention}"),
-            delete_after=20.0)
+            delete_after=30)
         return tutorial_channel
 
     async def delete_tutorial_channel(self, ctx):

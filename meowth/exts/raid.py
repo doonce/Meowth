@@ -107,7 +107,7 @@ class Raid(commands.Cog):
             if str(payload.emoji) == self.bot.custom_emoji.get('train_emoji', "\U0001F682"):
                 next_train = self.bot.guild_dict[guild.id].get(report_dict, {})[channel.id]['next_trains'][message.id]
                 if user.id == next_train['author']:
-                    return
+                    return await message.remove_reaction(payload.emoji, user)
                 next_channel = self.bot.get_channel(next_train['channel'])
                 teamcounts = ""
                 def get_teamcounts(raid_channel, trainer, lobby):
@@ -323,7 +323,7 @@ class Raid(commands.Cog):
             pass
         if (not channel_exists) and (not self.bot.is_closed()):
             try:
-                await utils.expire_dm_reports(self.bot, copy.deepcopy(self.bot.guild_dict[guild.id][report_dict].get(channel.id, {}).get('dm_dict', {})))
+                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, copy.deepcopy(self.bot.guild_dict[guild.id][report_dict].get(channel.id, {}).get('dm_dict', {}))))
                 del self.bot.guild_dict[guild.id][report_dict][channel.id]
             except (KeyError, AttributeError):
                 pass
@@ -435,7 +435,7 @@ class Raid(commands.Cog):
                         # channel doesn't exist anymore in serverdict
                     archive = self.bot.guild_dict[guild.id][report_dict][channel.id].get('archive', False)
                     logs = self.bot.guild_dict[guild.id][report_dict][channel.id].get('logs', {})
-                    await utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id][report_dict][channel.id].get('dm_dict', {}))
+                    self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id][report_dict][channel.id].get('dm_dict', {})))
                     raid_bonus = channel_dict.get('completed', []) or channel_dict.get('battling', [])
                     if raid_bonus and report_author and not report_author.bot:
                         raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('raid_reports', 0) + 1
@@ -571,7 +571,7 @@ class Raid(commands.Cog):
                     if channel_dict and report_dict == 'raidchannel_dict':
                         if gym_matching_cog:
                             gym_matching_cog.do_gym_stats(guildid, channel_dict)
-                        await utils.expire_dm_reports(self.bot, guilddict_chtemp[guildid][report_dict].get(channelid, {}).get('dm_dict', {}))
+                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, guilddict_chtemp[guildid][report_dict].get(channelid, {}).get('dm_dict', {})))
                         raid_bonus = channel_dict.get('completed', []) or channel_dict.get('battling', [])
                         if raid_bonus and report_author and not report_author.bot:
                             raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('raid_reports', 0) + 1
@@ -2547,8 +2547,9 @@ class Raid(commands.Cog):
             for trainer in self.bot.guild_dict[guild.id]['raidchannel_dict'][raid_channel]['trainer_dict']:
                 if self.bot.guild_dict[guild.id]['raidchannel_dict'][raid_channel]['trainer_dict'][trainer].get('train', False):
                     raid_channel = self.bot.get_channel(raid_channel)
-                    active_trains.append(raid_channel.mention)
-                    break
+                    if raid_channel:
+                        active_trains.append(raid_channel.mention)
+                        break
         def check(reply):
             if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
                 return True
@@ -2669,11 +2670,10 @@ class Raid(commands.Cog):
                                     break
                     if not teamcounts:
                         teamcounts = "1"
-                    ctx.message.channel, ctx.channel = channel_or_gym, channel_or_gym
-                    await self._rsvp(ctx, "coming", teamcounts)
-                    await asyncio.sleep(1)
                     self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'][author.id]['train'] = True
                     self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('next_trains', {})[train_msg.id] = {'author':ctx.author.id, 'channel':channel_or_gym.id}
+                    ctx.message.channel, ctx.channel = channel_or_gym, channel_or_gym
+                    await self._rsvp(ctx, "coming", teamcounts)
                     return
         if error:
             train_embed.clear_fields()
@@ -3611,7 +3611,7 @@ class Raid(commands.Cog):
             async with sess.get(url) as resp:
                 data = await resp.json()
         if data.get('error', None):
-            url = url.replace(f"_{form.upper()}_FORM", "")
+            url = url.replace(f"_{str(form).upper()}_FORM", "")
             pkmn.form = None
             pkmn.alolan = False
             async with aiohttp.ClientSession() as sess:
@@ -3713,7 +3713,7 @@ class Raid(commands.Cog):
             async with sess.get(url) as resp:
                 data = await resp.json()
         if data.get('error', None):
-            url = url.replace(f"_{form.upper()}_FORM", "")
+            url = url.replace(f"_{str(form).upper()}_FORM", "")
             pokemon.form = None
             pokemon.alolan = False
             async with aiohttp.ClientSession() as sess:

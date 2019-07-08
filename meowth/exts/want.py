@@ -376,7 +376,7 @@ class Want(commands.Cog):
                 if role not in ctx.author.roles:
                     role_list.append(role)
                 role_str = f" ({role.mention})"
-            if (entered_want.size or entered_want.gender or entered_want.form or entered_want.alolan) and len(str(entered_want).split()) > 1:                    
+            if (entered_want.size or entered_want.gender or entered_want.form or entered_want.alolan) and len(str(entered_want).split()) > 1:
                 if str(entered_want) in user_forms:
                     already_want_list.append(str(entered_want))
                     already_want_count += 1
@@ -717,13 +717,13 @@ class Want(commands.Cog):
                         want_list.append(str(iv))
             elif "-" in entered_want.lower():
                 range_split = entered_want.split("-")
-                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]):
+                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]) and int(range_split[1]) <= 100:
                     for iv in range(int(range_split[0]), int(range_split[1])+1):
                         want_list.append(str(iv))
                 else:
                     error_list.append(entered_want)
             else:
-                if not entered_want.strip().isdigit():
+                if not entered_want.strip().isdigit() or int(entered_want.strip()) > 100:
                     error_list.append(entered_want)
                     continue
                 if entered_want not in want_list:
@@ -779,13 +779,13 @@ class Want(commands.Cog):
                         want_list.append(str(level))
             elif "-" in entered_want.lower():
                 range_split = entered_want.split("-")
-                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]):
+                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]) and int(range_split[1] <= 40):
                     for level in range(int(range_split[0]), int(range_split[1])+1):
                         want_list.append(str(level))
                 else:
                     error_list.append(entered_want)
             else:
-                if not entered_want.strip().isdigit():
+                if not entered_want.strip().isdigit() or int(entered_want.strip()) > 40:
                     error_list.append(entered_want)
                     continue
                 if entered_want not in want_list:
