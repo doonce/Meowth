@@ -699,6 +699,7 @@ class Huntr(commands.Cog):
                 return
         gender = report_details.setdefault("gender", pokemon.gender)
         wild_details = report_details['coordinates']
+        wild_iv = {}
         iv_percent = report_details.get("iv_percent", '')
         iv_long = report_details.get("iv_long", 'X / X / X')
         iv_atk = iv_long.split('/')[0].strip()
@@ -709,13 +710,12 @@ class Huntr(commands.Cog):
                 iv_percent = int(round(float(iv_percent)))
             else:
                 iv_percent = None
-            report_details['wild_iv'] = {'percent':iv_percent, 'iv_atk':iv_atk, 'iv_def':iv_def, 'iv_sta':iv_sta}
+        report_details['wild_iv'] = {'percent':iv_percent, 'iv_atk':iv_atk, 'iv_def':iv_def, 'iv_sta':iv_sta}
+        wild_iv = {'percent':iv_percent, 'iv_atk':iv_atk, 'iv_def':iv_def, 'iv_sta':iv_sta}
         if iv_percent or iv_percent == 0:
             iv_str = f" - **{iv_percent}IV**"
-            wild_iv = {'percent':iv_percent, 'iv_atk':iv_atk, 'iv_def':iv_def, 'iv_sta':iv_sta}
         else:
             iv_str = ""
-            wild_iv = {}
         level = str(report_details.get("level", ''))
         cp = str(report_details.get("cp", ''))
         weather = report_details.get("weather", '')

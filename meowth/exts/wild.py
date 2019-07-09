@@ -154,7 +154,7 @@ class Wild(commands.Cog):
         iv_def = wild_iv.get('iv_def', "X")
         iv_sta = wild_iv.get('iv_sta', "X")
         iv_long = None
-        if iv_percent or iv_atk != "X" or iv_def != "X" or iv_sta != "X":
+        if iv_atk != "X" or iv_def != "X" or iv_sta != "X":
             iv_long = f"{iv_atk} / {iv_def} / {iv_sta}"
         level = details.get('level', None)
         cp = details.get('cp', None)
@@ -197,7 +197,7 @@ class Wild(commands.Cog):
             wild_embed.description = poi_info
         wild_embed.add_field(name=_('**Details:**'), value=details_str, inline=True)
         if iv_long or iv_percent or level or cp or pokemon.is_boosted:
-            wild_embed.add_field(name=f"**IV{' / Level' if level or cp or pokemon.is_boosted else ''}:**", value=f"{iv_long + ' (' if iv_long else ''}{str(iv_percent)+'%' if iv_percent else ''}{')' if iv_long else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
+            wild_embed.add_field(name=f"**IV{' / Level' if level or cp or pokemon.is_boosted else ''}:**", value=f"{iv_long if iv_long else ''}{' (' if iv_long and iv_percent else ' (X%)'}{str(iv_percent)+'%' if iv_percent else ''}{')' if iv_long and iv_percent else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         if height or weight or moveset:
             wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height if height else ''} {'W: '+weight if weight else ''}\n{moveset if moveset else ''}", inline=True)
         elif iv_long or iv_percent or level or cp or pokemon.is_boosted:
@@ -227,9 +227,9 @@ class Wild(commands.Cog):
         success = []
         reply_msg = ""
         reply_msg += f"**iv <pokemon iv percentage>**\n"
-        reply_msg += f"**atk <pokemon attack stat>**\n"
-        reply_msg += f"**def <pokemon defense stat>**\n"
-        reply_msg += f"**sta <pokemon stamina stat>**\n"
+        reply_msg += f"**attack <pokemon attack stat>**\n"
+        reply_msg += f"**defense <pokemon defense stat>**\n"
+        reply_msg += f"**stamina <pokemon stamina stat>**\n"
         reply_msg += f"**level <pokemon level>**\n"
         reply_msg += f"**gender <male or female>**\n"
         reply_msg += f"**cp <pokemon cp>**\n"
@@ -284,19 +284,19 @@ class Wild(commands.Cog):
                                 success.append("iv")
                             else:
                                 error = _('entered something invalid. IVs can\'t be higher than 100')
-                        elif "atk" in value and "atk" not in success:
+                        elif "attack" in value and "attack" not in success:
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 15:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_atk'] = int(value_split[1])
                                 success.append("atk")
                             else:
                                 error = _('entered something invalid. Stats can\'t be higher than 15')
-                        elif "def" in value and "def" not in success:
+                        elif "defense" in value and "defense" not in success:
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 15:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_def'] = int(value_split[1])
                                 success.append("def")
                             else:
                                 error = _('entered something invalid. Stats can\'t be higher than 15')
-                        elif "sta" in value and "sta" not in success:
+                        elif "stamina" in value and "sstamina" not in success:
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 15:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_sta'] = int(value_split[1])
                                 success.append("sta")
