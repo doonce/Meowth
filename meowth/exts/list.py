@@ -1390,7 +1390,7 @@ class Listing(commands.Cog):
                     if wildauthor and not wildauthor.bot:
                         reported_by = f" | **Reported By**: {wildauthor.display_name}"
                     shiny_str = ""
-                    iv_check = wild_dict[wildid].get('wild_iv', None)
+                    iv_check = wild_dict[wildid].get('wild_iv', {})
                     pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
                     if pokemon.id in self.bot.shiny_dict:
                         if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
@@ -1399,8 +1399,8 @@ class Listing(commands.Cog):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                     wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('wild_bullet', '\U0001F539')))
                     wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
-                    if iv_check or iv_check == 0:
-                        wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv']}"
+                    if iv_check:
+                        wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv'].get('percent', iv_check}"
                 except Exception as e:
                     print(e)
                     continue

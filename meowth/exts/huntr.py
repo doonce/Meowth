@@ -699,18 +699,23 @@ class Huntr(commands.Cog):
                 return
         gender = report_details.setdefault("gender", pokemon.gender)
         wild_details = report_details['coordinates']
-        wild_iv = report_details.get("iv_percent", '')
-        iv_long = report_details.get("iv_long", '')
-        if wild_iv:
-            if utils.is_number(wild_iv) and float(wild_iv) >= 0 and float(wild_iv) <= 100:
-                wild_iv = int(round(float(wild_iv)))
+        iv_percent = report_details.get("iv_percent", '')
+        iv_long = report_details.get("iv_long", 'X / X / X')
+        iv_atk = iv_long.split('/')[0].strip()
+        iv_def = iv_long.split('/')[1].strip()
+        iv_sta = iv_long.split('/')[2].strip()
+        if iv_percent:
+            if utils.is_number(iv_percent) and float(iv_percent) >= 0 and float(iv_percent) <= 100:
+                iv_percent = int(round(float(iv_percent)))
             else:
-                wild_iv = None
-            report_details['wild_iv'] = wild_iv
-        if wild_iv or wild_iv == 0:
-            iv_str = f" - **{wild_iv}IV**"
+                iv_percent = None
+            report_details['wild_iv'] = {'percent':iv_percent, 'iv_atk':iv_atk, 'iv_def':iv_def, 'iv_sta':iv_sta}
+        if iv_percent or iv_percent == 0:
+            iv_str = f" - **{iv_percent}IV**"
+            wild_iv = {'percent':iv_percent, 'iv_atk':iv_atk, 'iv_def':iv_def, 'iv_sta':iv_sta}
         else:
             iv_str = ""
+            wild_iv = {}
         level = str(report_details.get("level", ''))
         cp = str(report_details.get("cp", ''))
         weather = report_details.get("weather", '')
@@ -767,7 +772,7 @@ class Huntr(commands.Cog):
             wild_embed.set_field_at(len(wild_embed.fields)-1, name="**Spawn Reactions:**", value=wild_embed.fields[-1].value.replace(f"{despawn_emoji}: The Pokemon despawned!\n", ""))
             reaction_list.remove(despawn_emoji)
         ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}!{stop_str}Coordinates: {location_details}{iv_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, stop_str=stop_str, location_details=wild_coordinates, iv_str=iv_str), embed=wild_embed)
-        dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), wild_iv, level, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
+        dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), iv_percent, level, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
         for reaction in reaction_list:
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.wildreportmsg, reaction)
@@ -780,7 +785,6 @@ class Huntr(commands.Cog):
             'report_guild':message.guild.id,
             'dm_dict':dm_dict,
             'location':wild_details,
-            'gps':wild_coordinates,
             'coordinates':wild_coordinates,
             'url':wild_gmaps_link,
             'pokemon':entered_wild,

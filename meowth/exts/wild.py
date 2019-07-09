@@ -147,8 +147,15 @@ class Wild(commands.Cog):
     async def make_wild_embed(self, ctx, details):
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         gender = details.get('gender', None)
-        iv_long = details.get('iv_long', None)
-        wild_iv = details.get('wild_iv', None)
+        wild_iv = details.get('wild_iv', {})
+        iv_percent = wild_iv.get('percent', None)
+        iv_percent = "0" if iv_percent == 0 else iv_percent
+        iv_atk = wild_iv.get('iv_atk', "X")
+        iv_def = wild_iv.get('iv_def', "X")
+        iv_sta = wild_iv.get('iv_sta', "X")
+        iv_long = None
+        if iv_percent or iv_atk != "X" or iv_def != "X" or iv_sta != "X":
+            iv_long = f"{iv_atk} / {iv_def} / {iv_sta}"
         level = details.get('level', None)
         cp = details.get('cp', None)
         weather = details.get('weather', None)
@@ -189,11 +196,11 @@ class Wild(commands.Cog):
         if nearest_stop:
             wild_embed.description = poi_info
         wild_embed.add_field(name=_('**Details:**'), value=details_str, inline=True)
-        if iv_long or wild_iv or level or cp or pokemon.is_boosted:
-            wild_embed.add_field(name=f"**IV{' / Level' if level or cp or pokemon.is_boosted else ''}:**", value=f"{iv_long + ' (' if iv_long else ''}{str(wild_iv)+'%' if wild_iv else ''}{')' if iv_long else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
+        if iv_long or iv_percent or level or cp or pokemon.is_boosted:
+            wild_embed.add_field(name=f"**IV{' / Level' if level or cp or pokemon.is_boosted else ''}:**", value=f"{iv_long + ' (' if iv_long else ''}{str(iv_percent)+'%' if iv_percent else ''}{')' if iv_long else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         if height or weight or moveset:
             wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height if height else ''} {'W: '+weight if weight else ''}\n{moveset if moveset else ''}", inline=True)
-        elif iv_long or wild_iv or level or cp or pokemon.is_boosted:
+        elif iv_long or iv_percent or level or cp or pokemon.is_boosted:
             wild_embed.add_field(name=_('**Other Info (Base):**'), value=f"H: {round(pokemon.height, 2)}m W: {round(pokemon.weight, 2)}kg\n{ctx.prefix}dex stats {str(pokemon).lower()}", inline=True)
         wild_embed.add_field(name=f"{'**Est. Despawn:**' if int(expire.split()[0]) == 45 and int(expire.split()[2]) == 0 else '**Despawns in:**'}", value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=expire.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
         wild_embed.set_thumbnail(url=pokemon.img_url)
@@ -219,7 +226,10 @@ class Wild(commands.Cog):
         error = False
         success = []
         reply_msg = ""
-        reply_msg += f"**iv <pokemon iv>**\n"
+        reply_msg += f"**iv <pokemon iv percentage>**\n"
+        reply_msg += f"**atk <pokemon attack stat>**\n"
+        reply_msg += f"**def <pokemon defense stat>**\n"
+        reply_msg += f"**sta <pokemon stamina stat>**\n"
         reply_msg += f"**level <pokemon level>**\n"
         reply_msg += f"**gender <male or female>**\n"
         reply_msg += f"**cp <pokemon cp>**\n"
@@ -260,18 +270,44 @@ class Wild(commands.Cog):
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) < 5000:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['cp'] = int(value_split[1])
                                 success.append("cp")
+                            else:
+                                error = _('entered something invalid. CPs can\'t be higher than 5000')
                         elif "gender" in value and "gender" not in success:
                             if value_split[1] and (value_split[1] == "male" or value_split[1] == "female"):
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['gender'] = value_split[1]
                                 success.append("gender")
+                            else:
+                                error = _('entered something invalid. Please enter male or female')
                         elif "iv" in value and "iv" not in success:
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 100:
-                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv'] = int(value_split[1])
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['percent'] = int(value_split[1])
                                 success.append("iv")
+                            else:
+                                error = _('entered something invalid. IVs can\'t be higher than 100')
+                        elif "atk" in value and "atk" not in success:
+                            if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 15:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_atk'] = int(value_split[1])
+                                success.append("atk")
+                            else:
+                                error = _('entered something invalid. Stats can\'t be higher than 15')
+                        elif "def" in value and "def" not in success:
+                            if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 15:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_def'] = int(value_split[1])
+                                success.append("def")
+                            else:
+                                error = _('entered something invalid. Stats can\'t be higher than 15')
+                        elif "sta" in value and "sta" not in success:
+                            if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 15:
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_sta'] = int(value_split[1])
+                                success.append("sta")
+                            else:
+                                error = _('entered something invalid. Stats can\'t be higher than 15')
                         elif "level" in value and "level" not in success:
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 40:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['level'] = int(value_split[1])
                                 success.append("level")
+                            else:
+                                error = _('entered something invalid. Levels can\'t be higher than 40')
                         elif "weather" in value and "weather" not in success:
                             if "rain" in value:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "rainy"
@@ -312,7 +348,7 @@ class Wild(commands.Cog):
         wild_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'].get(message.id, {})
         dm_dict = wild_dict.get('dm_dict', {})
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict['pkmn_obj'])
-        wild_iv = wild_dict.get('wild_iv', None)
+        iv_percent = wild_dict.get('wild_iv', {}).get('percent', None)
         level = wild_dict.get('level', None)
         old_embed = message.embeds[0]
         wild_gmaps_link = old_embed.url
@@ -323,8 +359,10 @@ class Wild(commands.Cog):
             ctx.author = author
         wild_embed = await self.make_wild_embed(ctx, wild_dict)
         content = message.content
-        if wild_dict.get('wild_iv') and "IV**" not in message.content:
-            content = message.content + f" - **{wild_dict.get('wild_iv')}IV**"
+        if (iv_percent or iv_percent == 0) and "IV**" in content:
+            content = re.sub(r" - \*\*[0-9]{1,3}IV\*\*", f" - **{iv_percent}IV**", message.content, flags=re.IGNORECASE)
+        elif iv_percent or iv_percent == 0:
+            content = content + f" - **{iv_percent}IV**"
         try:
             await message.edit(content=content, embed=wild_embed)
         except:
@@ -349,13 +387,15 @@ class Wild(commands.Cog):
                     continue
                 dm_message = await dm_channel.fetch_message(dm_message)
                 content = dm_message.content
-                if wild_dict.get('wild_iv') and "IV**" not in dm_message.content:
-                    content = dm_message.content + f" - **{wild_dict.get('wild_iv')}IV**"
+                if (iv_percent or iv_percent == 0) and "IV**" in content:
+                    content = re.sub(r" - \*\*[0-9]{1,3}IV\*\*", f" - **{iv_percent}IV**", dm_message.content, flags=re.IGNORECASE)
+                elif iv_percent or iv_percent == 0:
+                    content = content + f" - **{iv_percent}IV**"
                 await dm_message.edit(content=content, embed=wild_embed)
             except:
                 pass
         ctx.wildreportmsg = message
-        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, wild_iv, level, content, copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, level, content, copy.deepcopy(wild_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['dm_dict'] = dm_dict
 
     async def send_dm_messages(self, ctx, wild_pokemon, wild_details, wild_iv, wild_level, content, embed, dm_dict):
@@ -542,8 +582,12 @@ class Wild(commands.Cog):
             return
         if wild_iv or wild_iv == 0:
             iv_str = f" - **{wild_iv}IV**"
+            iv_percent = copy.copy(wild_iv)
+            wild_iv = {'percent':wild_iv, 'iv_atk':None, 'iv_def':None, 'iv_sta':None}
         else:
             iv_str = ""
+            iv_percent = None
+            wild_iv = {}
         if nearest_stop and nearest_stop != wild_details:
             stop_str = f" | Nearest Pokestop: {nearest_stop}{iv_str}"
         else:
@@ -559,7 +603,7 @@ class Wild(commands.Cog):
         wild_embed = await self.make_wild_embed(ctx, details)
         ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}{stop_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details, iv_str=iv_str, stop_str=stop_str), embed=wild_embed)
         dm_dict = {}
-        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, wild_iv, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         await asyncio.sleep(0.25)
         await utils.safe_reaction(ctx.wildreportmsg, self.bot.custom_emoji.get('wild_omw', '\U0001F3CE'))
         await asyncio.sleep(0.25)

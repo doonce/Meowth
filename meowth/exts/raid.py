@@ -670,14 +670,19 @@ class Raid(commands.Cog):
                     continue
                 user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
                 user_mute = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
+                user_forms = []
                 if user_mute:
                     user_wants = []
                 elif user_link:
                     user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+                    user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('forms', [])
                 else:
                     user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
                 want_names = [utils.get_name(self.bot, x) for x in user_wants]
                 want_names = [x.lower() for x in want_names]
+                form_names = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in user_forms]
+                form_names = [x.name.lower() for x in form_names]
+                want_names = want_names + form_names
                 for want in want_names:
                     if want in self.bot.raid_list:
                         role = discord.utils.get(guild.roles, name=want)
