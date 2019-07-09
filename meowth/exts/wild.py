@@ -150,9 +150,12 @@ class Wild(commands.Cog):
         wild_iv = details.get('wild_iv', {})
         iv_percent = wild_iv.get('percent', None)
         iv_percent = "0" if iv_percent == 0 else iv_percent
-        iv_atk = wild_iv.get('iv_atk', "X")
-        iv_def = wild_iv.get('iv_def', "X")
-        iv_sta = wild_iv.get('iv_sta', "X")
+        iv_atk = wild_iv.get('iv_atk')
+        iv_atk = "X" if not iv_atk else iv_atk
+        iv_def = wild_iv.get('iv_def')
+        iv_def = "X" if not iv_def else iv_def
+        iv_sta = wild_iv.get('iv_sta')
+        iv_sta = "X" if not iv_sta else iv_sta
         iv_long = None
         if iv_atk != "X" or iv_def != "X" or iv_sta != "X":
             iv_long = f"{iv_atk} / {iv_def} / {iv_sta}"
@@ -197,7 +200,7 @@ class Wild(commands.Cog):
             wild_embed.description = poi_info
         wild_embed.add_field(name=_('**Details:**'), value=details_str, inline=True)
         if iv_long or iv_percent or level or cp or pokemon.is_boosted:
-            wild_embed.add_field(name=f"**IV{' / Level' if level or cp or pokemon.is_boosted else ''}:**", value=f"{iv_long if iv_long else ''}{' (' if iv_long and iv_percent else ' (X%)'}{str(iv_percent)+'%' if iv_percent else ''}{')' if iv_long and iv_percent else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
+            wild_embed.add_field(name=f"**IV{' / Level' if level or cp or pokemon.is_boosted else ''}:**", value=f"{iv_long if iv_long else ''}{' (' if iv_long and iv_percent else ''}{str(iv_percent)+'%' if iv_percent else 'X%'}{')' if iv_long and iv_percent else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         if height or weight or moveset:
             wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height if height else ''} {'W: '+weight if weight else ''}\n{moveset if moveset else ''}", inline=True)
         elif iv_long or iv_percent or level or cp or pokemon.is_boosted:
