@@ -200,7 +200,7 @@ class Wild(commands.Cog):
             wild_embed.description = poi_info
         wild_embed.add_field(name=_('**Details:**'), value=details_str, inline=True)
         if iv_long or iv_percent or level or cp or pokemon.is_boosted:
-            wild_embed.add_field(name=f"**IV{' / Level' if level or cp or pokemon.is_boosted else ''}:**", value=f"{iv_long if iv_long else ''}{' (' if iv_long and iv_percent else ''}{str(iv_percent)+'%' if iv_percent else 'X%'}{')' if iv_long and iv_percent else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
+            wild_embed.add_field(name=f"**IV{' / Level' if level or cp or pokemon.is_boosted else ''}:**", value=f"{iv_long if iv_long else ''}{' (' if iv_long and iv_percent else ''}{str(iv_percent)+'%' if iv_percent else ''}{')' if iv_long and iv_percent else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         if height or weight or moveset:
             wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height if height else ''} {'W: '+weight if weight else ''}\n{moveset if moveset else ''}", inline=True)
         elif iv_long or iv_percent or level or cp or pokemon.is_boosted:
@@ -223,25 +223,25 @@ class Wild(commands.Cog):
         channel = message.channel
         guild = message.guild
         author = guild.get_member(wild_dict.get('report_author', None))
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict.get('pkmn_obj', None))
         if not author:
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
         success = []
-        reply_msg = ""
-        reply_msg += f"**iv <pokemon iv percentage>**\n"
-        reply_msg += f"**attack <pokemon attack stat>**\n"
-        reply_msg += f"**defense <pokemon defense stat>**\n"
-        reply_msg += f"**stamina <pokemon stamina stat>**\n"
-        reply_msg += f"**level <pokemon level>**\n"
-        reply_msg += f"**gender <male or female>**\n"
-        reply_msg += f"**cp <pokemon cp>**\n"
-        reply_msg += f"**weather <game weather>**"
+        reply_msg = f"**iv <pokemon iv percentage>** - Current: {wild_dict.get('wild_iv', {}).get('percent', None)}\n"
+        reply_msg += f"**attack <pokemon attack stat>** - Current: {wild_dict.get('wild_iv', {}).get('iv_atk', None)}\n"
+        reply_msg += f"**defense <pokemon defense stat>** - Current: {wild_dict.get('wild_iv', {}).get('iv_def', None)}\n"
+        reply_msg += f"**stamina <pokemon stamina stat>** - Current: {wild_dict.get('wild_iv', {}).get('iv_sta', None)}\n"
+        reply_msg += f"**level <pokemon level>** - Current: {wild_dict.get('level', None)}\n"
+        reply_msg += f"**cp <pokemon cp>** - Current: {wild_dict.get('cp', None)}\n"
+        reply_msg += f"**gender <male or female>** - Current: {wild_dict.get('gender', None)}\n"
+        reply_msg += f"**weather <game weather>** - Current: {wild_dict.get('weather', None)}"
         wild_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1')
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                wild_embed.add_field(name=_('**Edit Wild Info**'), value=f"Meowth! I'll help you add information to a wild!\n**NOTE:** Please make sure you are at least level 30 before setting IV, level, and CP.\n\nI'll need to know what **value** you'd like to add. Reply **cancel** to stop anytime or reply with a comma separated list of the following options `Ex: iv 100, level 30` to edit those value:\n\n{reply_msg}", inline=False)
+                wild_embed.add_field(name=_('**Edit Wild Info**'), value=f"Meowth! I'll help you add information to the wild **{str(pokemon)}**!\n**NOTE:** Please make sure you are at least level 30 before setting IV, level, and CP.\n\nI'll need to know what **values** you'd like to edit. Reply **cancel** to stop anytime or reply with a comma separated list of the following options `Ex: iv 100, level 30, weather none`:\n\n{reply_msg}", inline=False)
                 value_wait = await channel.send(embed=wild_embed)
                 def check(reply):
                     if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == ctx.author:
@@ -273,11 +273,17 @@ class Wild(commands.Cog):
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) < 5000:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['cp'] = int(value_split[1])
                                 success.append("cp")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['cp'] = None
+                                success.append("cp")
                             else:
                                 error = _('entered something invalid. CPs can\'t be higher than 5000')
                         elif "gender" in value and "gender" not in success:
                             if value_split[1] and (value_split[1] == "male" or value_split[1] == "female"):
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['gender'] = value_split[1]
+                                success.append("gender")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['gender'] = None
                                 success.append("gender")
                             else:
                                 error = _('entered something invalid. Please enter male or female')
@@ -285,29 +291,44 @@ class Wild(commands.Cog):
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 100:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['percent'] = int(value_split[1])
                                 success.append("iv")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['percent'] = None
+                                success.append("iv")
                             else:
                                 error = _('entered something invalid. IVs can\'t be higher than 100')
                         elif "attack" in value and "attack" not in success:
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 15:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_atk'] = int(value_split[1])
-                                success.append("atk")
+                                success.append("attack")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_atk'] = None
+                                success.append("attack")
                             else:
                                 error = _('entered something invalid. Stats can\'t be higher than 15')
                         elif "defense" in value and "defense" not in success:
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 15:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_def'] = int(value_split[1])
-                                success.append("def")
+                                success.append("defense")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_def'] = None
+                                success.append("defense")
                             else:
                                 error = _('entered something invalid. Stats can\'t be higher than 15')
                         elif "stamina" in value and "sstamina" not in success:
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 15:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_sta'] = int(value_split[1])
-                                success.append("sta")
+                                success.append("stamina")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['wild_iv']['iv_sta'] = None
+                                success.append("stamina")
                             else:
                                 error = _('entered something invalid. Stats can\'t be higher than 15')
                         elif "level" in value and "level" not in success:
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 40:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['level'] = int(value_split[1])
+                                success.append("level")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['level'] = None
                                 success.append("level")
                             else:
                                 error = _('entered something invalid. Levels can\'t be higher than 40')
@@ -332,6 +353,9 @@ class Wild(commands.Cog):
                                 success.append("weather")
                             elif "fog" in value:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = "foggy"
+                                success.append("weather")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['weather'] = None
                                 success.append("weather")
                             else:
                                 error = _("entered something invalid. Choose from rainy, partly cloudy, clear, sunny, cloudy, overcast, windy, snowy, foggy")

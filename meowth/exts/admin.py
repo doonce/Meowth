@@ -133,6 +133,7 @@ class Admin(commands.Cog):
     async def _load(self, ctx, *extensions):
         """Load or reload an extension"""
         for ext in extensions:
+            ext = ext.replace(',','')
             try:
                 if f"meowth.exts.{ext}" in self.bot.extensions:
                     ctx.bot.reload_extension(f"meowth.exts.{ext}")

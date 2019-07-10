@@ -65,13 +65,16 @@ class Raid(commands.Cog):
                     react_message = "raid_report"
                     break
                 elif message.id == self.bot.guild_dict[guild.id][report_dict][report_channel].get('raid_message'):
+                    await message.remove_reaction(payload.emoji, user)
                     ctx.message.author, ctx.author = user, user
                     react_message = "raid_message"
                     break
                 elif message.id == self.bot.guild_dict[guild.id][report_dict][report_channel].get('ctrsmessage'):
+                    await message.remove_reaction(payload.emoji, user)
                     react_message = "ctrsmessage"
                     break
                 elif message.id in self.bot.guild_dict[guild.id][report_dict][report_channel].get('next_trains', {}):
+                    await message.remove_reaction(payload.emoji, user)
                     react_message = "next_trains"
                     break
             if react_message:
@@ -88,7 +91,6 @@ class Raid(commands.Cog):
                 return
             await message.edit(embed=newembed)
             self.bot.guild_dict[guild.id].get(report_dict, {})[channel.id]['moveset'] = moveset
-            await message.remove_reaction(payload.emoji, user)
         elif react_message == "raid_report" or react_message == "raid_message":
             if str(payload.emoji) == self.bot.custom_emoji.get('raid_info', '\u2139') and react_message == "raid_message":
                 prefix = self.bot.guild_dict[guild.id]['configure_dict']['settings']['prefix']
@@ -107,7 +109,7 @@ class Raid(commands.Cog):
             if str(payload.emoji) == self.bot.custom_emoji.get('train_emoji', "\U0001F682"):
                 next_train = self.bot.guild_dict[guild.id].get(report_dict, {})[channel.id]['next_trains'][message.id]
                 if user.id == next_train['author']:
-                    return await message.remove_reaction(payload.emoji, user)
+                    return
                 next_channel = self.bot.get_channel(next_train['channel'])
                 teamcounts = ""
                 def get_teamcounts(raid_channel, trainer, lobby):
@@ -145,7 +147,6 @@ class Raid(commands.Cog):
                 await self._rsvp(ctx, "coming", teamcounts)
                 await asyncio.sleep(1)
                 self.bot.guild_dict[guild.id].get(report_dict, {})[next_channel.id]['trainer_dict'][user.id]['train'] = True
-            await message.remove_reaction(payload.emoji, user)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -176,23 +177,28 @@ class Raid(commands.Cog):
                 if self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['active']:
                     trainer_dict = self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['trainer_dict']
                     ctx = await self.bot.get_context(message)
+                    omw_emoji = utils.parse_emoji(message.guild, self.bot.config.omw_id)
+                    here_emoji = utils.parse_emoji(message.guild, self.bot.config.here_id)
                     if message.author.id in trainer_dict:
                         count = trainer_dict[message.author.id].get('count', 1)
                     else:
                         count = 1
-                    omw_emoji = utils.parse_emoji(message.guild, self.bot.config.omw_id)
-                    if message.content.startswith(omw_emoji):
-                        emoji_count = message.content.count(omw_emoji)
+                    if message.content.startswith("❓"):
+                        emoji_count = message.content.count("❓")
                         await self._rsvp(ctx, "maybe", str(emoji_count))
                         return
-                    here_emoji = utils.parse_emoji(message.guild, self.bot.config.here_id)
-                    if message.content.startswith(here_emoji):
-                        emoji_count = message.content.count(here_emoji)
+                    elif message.content.startswith(omw_emoji):
+                        emoji_count = message.content.count(omw_emoji)
                         await self._rsvp(ctx, "coming", str(emoji_count))
                         return
-                    if message.content.startswith("🚁"):
-                        emoji_count = message.content.count("🚁")
+                    elif message.content.startswith(here_emoji) or message.content.startswith("🚁"):
+                        emoji_count = message.content.count(here_emoji)
+                        if not emoji_count:
+                            emoji_count = message.content.count("🚁")
                         await self._rsvp(ctx, "here", str(emoji_count))
+                        return
+                    elif message.content.startswith("❌"):
+                        await self._cancel(message.channel, message.author)
                         return
                     if "/maps" in message.content and "http" in message.content and report_dict == 'raidchannel_dict':
                         newcontent = message.content.replace("<", "").replace(">", "")
@@ -226,7 +232,6 @@ class Raid(commands.Cog):
                                     continue
                                 otw_list.append(user.mention)
                         await message.channel.send(content=_('Meowth! Someone has suggested a different location for the raid! Trainers {trainer_list}: make sure you are headed to the right place!').format(trainer_list=', '.join(otw_list)), embed=newembed)
-                        return
 
 
     """
@@ -3822,9 +3827,9 @@ class Raid(commands.Cog):
                     raid_embed = raid_message.embeds[0]
                     if pokemon.is_boosted and "boosted" not in raid_embed.fields[0].value.lower():
                         index = 0
-                        for field in embed.fields:
+                        for field in raid_embed.fields:
                             if _("**Details:**") in field.name:
-                                embed.set_field_at(index, name=_("**Details:**"), value=f"{field.value}\n{pokemon.is_boosted}", inline=field.inline)
+                                raid_embed.set_field_at(index, name=_("**Details:**"), value=f"{field.value}\n{pokemon.is_boosted}", inline=field.inline)
                                 break
                             else:
                                 index += 1

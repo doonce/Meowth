@@ -186,7 +186,7 @@ class Pokemon():
         template = {}
         search_term = ""
         search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}".lower()
-        excluded_forms = list(self.bot.pkmn_info['pikachu']['forms'].keys()) + list(self.bot.pkmn_info['unown']['forms'].keys()) + list(self.bot.pkmn_info['spinda']['forms'].keys()) + ["sunglasses"]
+        excluded_forms = list(self.bot.pkmn_info['pikachu']['forms'].keys()) + list(self.bot.pkmn_info['unown']['forms'].keys()) + list(self.bot.pkmn_info['spinda']['forms'].keys()) + ["sunglasses"] + ["armored"]
         if self.form and not self.alolan and self.form not in excluded_forms:
             search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}_{self.form.strip()}".lower()
         if self.alolan:
