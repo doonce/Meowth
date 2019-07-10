@@ -167,7 +167,7 @@ class Wild(commands.Cog):
         moveset = details.get('moveset', None)
         expire = details.get('expire', "45 min 0 sec")
         pkmn_obj = details.get('pkmn_obj', None)
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn_obj)
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender} {pkmn_obj}")
         pokemon.weather = weather
         location = details.get('location', None)
         wild_gmaps_link = utils.create_gmaps_query(self.bot, location, ctx.channel, type="wild")
@@ -374,7 +374,7 @@ class Wild(commands.Cog):
     async def edit_wild_messages(self, ctx, message):
         wild_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'].get(message.id, {})
         dm_dict = wild_dict.get('dm_dict', {})
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict['pkmn_obj'])
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{wild_dict.get('gender', '')} {wild_dict['pkmn_obj']}")
         iv_percent = wild_dict.get('wild_iv', {}).get('percent', None)
         level = wild_dict.get('level', None)
         old_embed = message.embeds[0]
@@ -386,8 +386,10 @@ class Wild(commands.Cog):
             ctx.author = author
         wild_embed = await self.make_wild_embed(ctx, wild_dict)
         content = message.content
+        result = re.search('Wild (.*) reported by', content).group(1)
+        content = content.replace(result, str(pokemon))
         if (iv_percent or iv_percent == 0) and "IV**" in content:
-            content = re.sub(r" - \*\*[0-9]{1,3}IV\*\*", f" - **{iv_percent}IV**", message.content, flags=re.IGNORECASE)
+            content = re.sub(r" - \*\*[0-9]{1,3}IV\*\*", f" - **{iv_percent}IV**", content, flags=re.IGNORECASE)
         elif iv_percent or iv_percent == 0:
             content = content + f" - **{iv_percent}IV**"
         try:
@@ -414,8 +416,9 @@ class Wild(commands.Cog):
                     continue
                 dm_message = await dm_channel.fetch_message(dm_message)
                 content = dm_message.content
+                content = content.replace(result, str(pokemon))
                 if (iv_percent or iv_percent == 0) and "IV**" in content:
-                    content = re.sub(r" - \*\*[0-9]{1,3}IV\*\*", f" - **{iv_percent}IV**", dm_message.content, flags=re.IGNORECASE)
+                    content = re.sub(r" - \*\*[0-9]{1,3}IV\*\*", f" - **{iv_percent}IV**", content, flags=re.IGNORECASE)
                 elif iv_percent or iv_percent == 0:
                     content = content + f" - **{iv_percent}IV**"
                 await dm_message.edit(content=content, embed=wild_embed)
