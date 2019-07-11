@@ -463,8 +463,7 @@ class Raid(commands.Cog):
                             await channel_exists.delete()
                         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                             pass
-                        logger.info(
-                            'Channel Deleted - ' + channel.name)
+                        logger.info('Channel Deleted - ' + channel.name)
                     elif gymhuntrdupe and not archive:
                         for overwrite in channel.overwrites:
                             try:
@@ -1219,7 +1218,6 @@ class Raid(commands.Cog):
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['ctrs_dict'] = {}
             if egg_level == "0":
                 egg_level = utils.get_level(self.bot, newraid)
-            else:
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] -= 60 * self.bot.raid_info['raid_eggs'][egg_level]['raidtime']
             await self._eggtoraid(newraid, channel, author=message.author)
 

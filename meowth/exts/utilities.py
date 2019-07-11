@@ -844,7 +844,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.7.11.2 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.7.11.3 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
