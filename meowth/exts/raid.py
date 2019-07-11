@@ -869,7 +869,7 @@ class Raid(commands.Cog):
                     new_list = re.sub(r'\[|\]|\'|\"', '', str(new_list)).split(',')
                     new_list = [str(item.title().strip()) for item in new_list]
                     for pokemon in new_list:
-                        pokemon = re.sub('[^a-zA-Z0-9]' , '' , pokemon)
+                        pokemon = re.sub('[^a-zA-Z0-9 ]' , '' , pokemon)
                         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
                         if pokemon:
                             edit_list.append(str(pokemon))
