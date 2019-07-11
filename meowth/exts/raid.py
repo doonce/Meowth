@@ -4123,7 +4123,7 @@ class Raid(commands.Cog):
         pkmn_match = None
         if party_info:
             if "all" in party_info.lower():
-                party_info = "{party_info} {bosslist}".format(party_info=party_info, bosslist=" ".join(boss_list))
+                party_info = "{party_info} {bosslist}".format(party_info=party_info, bosslist=", ".join(boss_list))
                 party_info = party_info.lower().replace("all", "").strip()
             pkmn_match = next((p for p in self.bot.pkmn_list if re.sub(rgx, '', p) in re.sub(rgx, '', party_info.lower())), None)
             pkmn_interest = copy.copy(party_info.lower())
