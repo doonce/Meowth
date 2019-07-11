@@ -127,9 +127,6 @@ class Pokemon():
                     two_words.append(word)
                     two_words.append(re.sub('[^a-zA-Z0-9]', '', word))
         form_dict = available_dict
-        form_list = list(set(form_list) - set(ascii_lowercase) - set(['1', '2', '3', '4', '5', '6', '7', '8', '?', '!']))
-        form_list.extend(' ' + c for c in ascii_lowercase)
-        form_list.extend(c for c in [' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !'])
         form_dict['list'] = form_list
         form_dict['two_words'] = two_words
         bot.size_dict = size_dict
@@ -183,31 +180,20 @@ class Pokemon():
         self.types = self._get_type()
         self.emoji = self._get_emoji()
         self.weather = None
-        template = {}
-        search_term = ""
-        search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}".lower()
-        excluded_forms = list(self.bot.pkmn_info['pikachu']['forms'].keys()) + list(self.bot.pkmn_info['unown']['forms'].keys()) + list(self.bot.pkmn_info['spinda']['forms'].keys()) + ["sunglasses"] + ["armored"]
-        if self.form and not self.alolan and self.form not in excluded_forms:
-            search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}_{self.form.strip()}".lower()
-        if self.alolan:
-            search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.name}_alola".lower()
-        for template in self.bot.gamemaster.get('itemTemplates', {}):
-            if search_term in template['templateId'].lower() and "form" not in template['templateId'].lower() and "spawn" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
-                break
-        self.base_stamina = template.get('pokemonSettings', {}).get('stats', {}).get('baseStamina', None)
-        self.base_attack = template.get('pokemonSettings', {}).get('stats', {}).get('baseAttack', None)
-        self.base_defense = template.get('pokemonSettings', {}).get('stats', {}).get('baseDefense', None)
+        self.base_stamina = self.game_template.get('pokemonSettings', {}).get('stats', {}).get('baseStamina', None)
+        self.base_attack = self.game_template.get('pokemonSettings', {}).get('stats', {}).get('baseAttack', None)
+        self.base_defense = self.game_template.get('pokemonSettings', {}).get('stats', {}).get('baseDefense', None)
         if self.form == "armored":
             self.base_stamina = 214
             self.base_attack = 182
             self.base_defense = 278
-        self.charge_moves = template.get('pokemonSettings', {}).get('cinematicMoves', None)
-        self.quick_moves = template.get('pokemonSettings', {}).get('quickMoves', None)
-        self.height = template.get('pokemonSettings', {}).get('pokedexHeightM', None)
-        self.weight = template.get('pokemonSettings', {}).get('pokedexWeightKg', None)
-        self.evolves = template.get('pokemonSettings', {}).get('evolutionIds', None)
-        self.evolve_candy = template.get('pokemonSettings', {}).get('candyToEvolve', None)
-        self.buddy_distance = template.get('pokemonSettings', {}).get('kmBuddyDistance', None)
+        self.charge_moves = self.game_template.get('pokemonSettings', {}).get('cinematicMoves', None)
+        self.quick_moves = self.game_template.get('pokemonSettings', {}).get('quickMoves', None)
+        self.height = self.game_template.get('pokemonSettings', {}).get('pokedexHeightM', None)
+        self.weight = self.game_template.get('pokemonSettings', {}).get('pokedexWeightKg', None)
+        self.evolves = self.game_template.get('pokemonSettings', {}).get('evolutionIds', None)
+        self.evolve_candy = self.game_template.get('pokemonSettings', {}).get('candyToEvolve', None)
+        self.buddy_distance = self.game_template.get('pokemonSettings', {}).get('kmBuddyDistance', None)
         self.research_cp = f"{self._get_cp(15, 10, 10, 10)}-{self._get_cp(15, 15, 15, 15)}"
         self.raid_cp = f"{self._get_cp(20, 10, 10, 10)}-{self._get_cp(20, 15, 15, 15)}"
         self.boost_raid_cp = f"{self._get_cp(25, 10, 10, 10)}-{self._get_cp(25, 15, 15, 15)}"
@@ -338,6 +324,35 @@ class Pokemon():
 
         return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{form_str}{shiny_str}.png?cache=2")
 
+    @property
+    def game_name(self):
+        template = {}
+        search_term = f"{self.name}".lower()
+        excluded_forms = list(self.bot.pkmn_info['pikachu']['forms'].keys()) + ["sunglasses"]
+        if self.id == 201:
+            excluded_forms.extend(list(self.bot.pkmn_info['unown']['forms'].keys()))
+        elif self.id == 327:
+            excluded_forms.extend(list(self.bot.pkmn_info['spinda']['forms'].keys()))
+        form = copy.copy(self.form)
+        if form == "armored":
+            form = "a"
+        if self.alolan:
+            form = "alola"
+        if form and form not in excluded_forms:
+            search_term = f"{self.name}_{str(form).strip()}".lower()
+        return search_term
+
+    @property
+    def game_template(self):
+        template = {}
+        search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.game_name}".lower()
+        if self.form == "armored":
+            search_term = search_term.replace("_a", "")
+        for template in self.bot.gamemaster.get('itemTemplates', {}):
+            if search_term in template['templateId'].lower() and "form" not in template['templateId'].lower() and "spawn" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
+                break
+        return template
+
     # async def colour(self):
     #     """:class:`discord.Colour` : Discord colour based on Pokemon sprite."""
     #     return await url_color(self.img_url)
@@ -345,7 +360,7 @@ class Pokemon():
     @property
     def is_raid(self):
         """:class:`bool` : Indicates if the pokemon can show in Raids"""
-        return str(self) in self.bot.raid_list
+        return str(self) in self.bot.raid_list or str(self).lower() in self.bot.raid_list
 
     @property
     def is_exraid(self):
@@ -513,28 +528,17 @@ class Pokemon():
 
     def query_pokemon(bot, argument):
         argument = str(argument)
-        shiny = re.search(r'shiny ', argument, re.IGNORECASE)
-        alolan = re.search(r'alolan* ', argument, re.IGNORECASE)
-        male = re.search(r'(?<!fe)male ', argument, re.IGNORECASE)
-        female = re.search(r'female ', argument, re.IGNORECASE)
-        large = re.search(r'large |big |xl ', argument, re.IGNORECASE)
-        small = re.search(r'small |tiny |xs ', argument, re.IGNORECASE)
+        shiny = re.search(r'\bshiny\b', argument, re.IGNORECASE)
+        alolan = re.search(r'\balolan*\b', argument, re.IGNORECASE)
+        male = re.search(r'\b(?<!fe)male\b', argument, re.IGNORECASE)
+        female = re.search(r'\bfemale\b', argument, re.IGNORECASE)
+        large = re.search(r'\blarge\b|\bbig\b|\bxl\b', argument, re.IGNORECASE)
+        small = re.search(r'\bsmall\b|\btin\by\b|xs\b', argument, re.IGNORECASE)
         form_list = bot.form_dict['list']
         try:
             form_list.remove("none")
         except ValueError:
             pass
-        unown_form = re.search(r'{unown}|201'.format(unown=bot.pkmn_list[200]), argument, re.IGNORECASE)
-        spinda_form = re.search(r'{spinda}|327'.format(spinda=bot.pkmn_list[326]), argument, re.IGNORECASE)
-        if not spinda_form and not unown_form:
-            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' ?', ' !']))
-        elif spinda_form:
-            form_list = list(set(form_list) - set([' ' + c for c in ascii_lowercase]) - set([' ?', ' !']))
-        elif unown_form:
-            form_list = list(set(form_list) - set([' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8']))
-        ash_forms = re.search(r'{pichu}|172|{pikachu}|25|{raichu}|26|{greninja}|658'.format(pichu=bot.pkmn_list[171], pikachu=bot.pkmn_list[24], raichu=bot.pkmn_list[25], greninja=bot.pkmn_list[657]), argument, re.IGNORECASE)
-        if not ash_forms:
-            form_list = list(set(form_list) - set(['ash']))
         pokemon = False
         match_list = []
         if shiny:
@@ -571,13 +575,11 @@ class Pokemon():
             size = None
 
         for form in form_list:
-            form = re.search(re.escape(form), argument, re.IGNORECASE)
+            form = re.search(r"\b"+re.escape(form)+r"\b", argument, re.IGNORECASE)
             if form:
                 match_list.append(form.group(0))
                 argument = re.sub(form.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
                 form = form.group(0).lower().strip()
-                argument = re.sub("(?i)spinda","spinda ", argument)
-                argument = re.sub("(?i)unown","unown ", argument)
                 break
             else:
                 form = None

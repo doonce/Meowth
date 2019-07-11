@@ -3595,13 +3595,8 @@ class Raid(commands.Cog):
             if not pkmn or not pkmn.is_raid:
                 await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon that appears in raids! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
                 return
-        form = pkmn.form
-        if pkmn.alolan:
-            form = "alola"
-        if pkmn.form == "armored":
-            form = "a"
         level = utils.get_level(self.bot, pkmn.name.lower()) if utils.get_level(self.bot, pkmn.name.lower()).isdigit() else "5"
-        url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.name.upper()}{'_'+form.upper()+'_FORM' if form else ''}/levels/RAID_LEVEL_{level}/attackers/"
+        url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.game_name.upper()}{'_FORM' if pkmn.form else ''}/levels/RAID_LEVEL_{level}/attackers/"
         if user:
             url += "users/{user}/".format(user=user)
             userstr = _("user #{user}'s").format(user=user)
@@ -3623,7 +3618,7 @@ class Raid(commands.Cog):
             async with sess.get(url) as resp:
                 data = await resp.json()
         if data.get('error', None):
-            url = url.replace(f"_{str(form).upper()}_FORM", "")
+            url = url.replace(f"_{pkmn.game_name.upper()}_FORM", "")
             pkmn.form = None
             pkmn.alolan = False
             async with aiohttp.ClientSession() as sess:
@@ -3696,11 +3691,6 @@ class Raid(commands.Cog):
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
         if not pokemon:
             return
-        form = pokemon.form
-        if pokemon.alolan:
-            form = "alola"
-        if pokemon.form == "armored":
-            form = "a"
         emoji_dict = {0: '0\u20e3', 1: '1\u20e3', 2: '2\u20e3', 3: '3\u20e3', 4: '4\u20e3', 5: '5\u20e3', 6: '6\u20e3', 7: '7\u20e3', 8: '8\u20e3', 9: '9\u20e3', 10: '\U0001f51f'}
         ctrs_dict = {}
         ctrs_index = 0
@@ -3718,7 +3708,7 @@ class Raid(commands.Cog):
         else:
             index = weather_list.index(weather)
         weather = match_list[index]
-        url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.name.upper()}{'_'+form.upper()+'_FORM' if form else ''}/levels/RAID_LEVEL_{level}/attackers/"
+        url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.game_name.upper()}{'_FORM' if pokemon.form else ''}/levels/RAID_LEVEL_{level}/attackers/"
         url += "levels/30/"
         url += "strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=OVERALL&"
         url += "weatherCondition={weather}&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE".format(weather=weather)
@@ -3729,7 +3719,7 @@ class Raid(commands.Cog):
             async with sess.get(url) as resp:
                 data = await resp.json()
         if data.get('error', None):
-            url = url.replace(f"_{str(form).upper()}_FORM", "")
+            url = url.replace(f"_{str(pokemon.form).upper()}_FORM", "")
             pokemon.form = None
             pokemon.alolan = False
             async with aiohttp.ClientSession() as sess:
