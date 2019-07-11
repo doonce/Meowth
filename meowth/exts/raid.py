@@ -4129,6 +4129,8 @@ class Raid(commands.Cog):
             pkmn_interest = copy.copy(party_info.lower())
             for sep in pkmn_interest.split(','):
                 for word in sep.split():
+                    if word.isdigit():
+                        continue
                     if word.lower() not in self.bot.form_dict['list'] and word.lower() not in self.bot.pkmn_list:
                         pkmn_interest = pkmn_interest.replace(word.lower(), "").strip()
                     else:
@@ -4136,7 +4138,7 @@ class Raid(commands.Cog):
         if pkmn_match and self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['type'] == "egg":
             entered_interest = []
             for mon in pkmn_interest.lower().split(','):
-                pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, mon.lower().strip())
+                pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, mon.lower().strip(), allow_digits=False)
                 if pkmn and str(pkmn).lower() in boss_list:
                     if str(pkmn).lower() not in entered_interest:
                         entered_interest.append(str(pkmn).lower())
