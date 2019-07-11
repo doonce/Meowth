@@ -147,6 +147,7 @@ class Wild(commands.Cog):
     async def make_wild_embed(self, ctx, details):
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         gender = details.get('gender', None)
+        gender = gender if gender else ''
         wild_iv = details.get('wild_iv', {})
         iv_percent = wild_iv.get('percent', None)
         iv_percent = "0" if iv_percent == 0 else iv_percent
@@ -167,7 +168,7 @@ class Wild(commands.Cog):
         moveset = details.get('moveset', None)
         expire = details.get('expire', "45 min 0 sec")
         pkmn_obj = details.get('pkmn_obj', None)
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender} {pkmn_obj}")
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender.lower()} {pkmn_obj.lower()}")
         pokemon.weather = weather
         location = details.get('location', None)
         wild_gmaps_link = utils.create_gmaps_query(self.bot, location, ctx.channel, type="wild")
@@ -374,7 +375,8 @@ class Wild(commands.Cog):
     async def edit_wild_messages(self, ctx, message):
         wild_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'].get(message.id, {})
         dm_dict = wild_dict.get('dm_dict', {})
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{wild_dict.get('gender', '')} {wild_dict['pkmn_obj']}")
+        gender = wild_dict.get('gender') if wild_dict.get('gender') else ''
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender.lower()} {wild_dict['pkmn_obj'].lower()}")
         iv_percent = wild_dict.get('wild_iv', {}).get('percent', None)
         level = wild_dict.get('level', None)
         old_embed = message.embeds[0]

@@ -3598,6 +3598,8 @@ class Raid(commands.Cog):
         form = pkmn.form
         if pkmn.alolan:
             form = "alola"
+        if pkmn.form == "armored":
+            form = "a"
         level = utils.get_level(self.bot, pkmn.name.lower()) if utils.get_level(self.bot, pkmn.name.lower()).isdigit() else "5"
         url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.name.upper()}{'_'+form.upper()+'_FORM' if form else ''}/levels/RAID_LEVEL_{level}/attackers/"
         if user:
@@ -3627,6 +3629,8 @@ class Raid(commands.Cog):
             async with aiohttp.ClientSession() as sess:
                 async with sess.get(url) as resp:
                     data = await resp.json()
+        if data.get('error', None):
+            return None
         title_url = url.replace('https://fight', 'https://www')
         hyperlink_icon = 'https://i.imgur.com/fn9E5nb.png'
         pbtlr_icon = 'https://www.pokebattler.com/favicon-32x32.png'
@@ -3695,6 +3699,8 @@ class Raid(commands.Cog):
         form = pokemon.form
         if pokemon.alolan:
             form = "alola"
+        if pokemon.form == "armored":
+            form = "a"
         emoji_dict = {0: '0\u20e3', 1: '1\u20e3', 2: '2\u20e3', 3: '3\u20e3', 4: '4\u20e3', 5: '5\u20e3', 6: '6\u20e3', 7: '7\u20e3', 8: '8\u20e3', 9: '9\u20e3', 10: '\U0001f51f'}
         ctrs_dict = {}
         ctrs_index = 0
@@ -3729,6 +3735,8 @@ class Raid(commands.Cog):
             async with aiohttp.ClientSession() as sess:
                 async with sess.get(url) as resp:
                     data = await resp.json()
+        if data.get('error', None):
+            return None
         data = data['attackers'][0]
         raid_cp = data['cp']
         atk_levels = '30'

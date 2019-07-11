@@ -197,6 +197,10 @@ class Pokemon():
         self.base_stamina = template.get('pokemonSettings', {}).get('stats', {}).get('baseStamina', None)
         self.base_attack = template.get('pokemonSettings', {}).get('stats', {}).get('baseAttack', None)
         self.base_defense = template.get('pokemonSettings', {}).get('stats', {}).get('baseDefense', None)
+        if self.form == "armored":
+            self.base_stamina = 214
+            self.base_attack = 182
+            self.base_defense = 278
         self.charge_moves = template.get('pokemonSettings', {}).get('cinematicMoves', None)
         self.quick_moves = template.get('pokemonSettings', {}).get('quickMoves', None)
         self.height = template.get('pokemonSettings', {}).get('pokedexHeightM', None)
@@ -509,12 +513,12 @@ class Pokemon():
 
     def query_pokemon(bot, argument):
         argument = str(argument)
-        shiny = re.search(r'shiny', argument, re.IGNORECASE)
-        alolan = re.search(r'alolan', argument, re.IGNORECASE)
-        male = re.search(r'(?<!fe)male', argument, re.IGNORECASE)
-        female = re.search(r'female', argument, re.IGNORECASE)
-        large = re.search(r'large|big|xl', argument, re.IGNORECASE)
-        small = re.search(r'small|tiny|xs', argument, re.IGNORECASE)
+        shiny = re.search(r'shiny ', argument, re.IGNORECASE)
+        alolan = re.search(r'alolan* ', argument, re.IGNORECASE)
+        male = re.search(r'(?<!fe)male ', argument, re.IGNORECASE)
+        female = re.search(r'female ', argument, re.IGNORECASE)
+        large = re.search(r'large |big |xl ', argument, re.IGNORECASE)
+        small = re.search(r'small |tiny |xs ', argument, re.IGNORECASE)
         form_list = bot.form_dict['list']
         try:
             form_list.remove("none")
@@ -535,34 +539,34 @@ class Pokemon():
         match_list = []
         if shiny:
             match_list.append(shiny.group(0))
-            argument = argument.replace(shiny.group(0), '').strip()
+            argument = re.sub(shiny.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
             shiny = True
         else:
             shiny = False
         if alolan:
             match_list.append(alolan.group(0))
-            argument = argument.replace(alolan.group(0), '').strip()
+            argument = re.sub(alolan.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
             alolan = True
         else:
             alolan = False
         if male:
             match_list.append(male.group(0))
-            argument = argument.replace(male.group(0), '').strip()
+            argument = re.sub(male.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
             gender = "male"
         elif female:
             match_list.append(female.group(0))
-            argument = argument.replace(female.group(0), '').strip()
+            argument = re.sub(female.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
             gender = "female"
         else:
             gender = None
         if large:
             size = "XL"
             match_list.append(large.group(0))
-            argument = argument.replace(large.group(0), '').strip()
+            argument = re.sub(large.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
         elif small:
             size = "XS"
             match_list.append(small.group(0))
-            argument = argument.replace(small.group(0), '').strip()
+            argument = re.sub(small.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
         else:
             size = None
 
@@ -570,7 +574,7 @@ class Pokemon():
             form = re.search(re.escape(form), argument, re.IGNORECASE)
             if form:
                 match_list.append(form.group(0))
-                argument = argument.replace(form.group(0), '', 1).strip()
+                argument = re.sub(form.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
                 form = form.group(0).lower().strip()
                 argument = re.sub("(?i)spinda","spinda ", argument)
                 argument = re.sub("(?i)unown","unown ", argument)
