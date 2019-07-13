@@ -17,6 +17,7 @@ import pkg_resources
 import platform
 import logging
 import aiohttp
+import itertools
 
 from discord.ext import commands
 from contextlib import redirect_stdout
@@ -165,7 +166,8 @@ class MeowthBot(commands.AutoShardedBot):
         self.launch_time = datetime.datetime.utcnow()
         await self.change_presence(status=discord.Status.idle)
         await pkmn_class.Pokemon.generate_lists(self)
-        self.raid_list = await utils.get_raidlist(self)
+        self.raid_dict = await utils.get_raid_dict(self)
+        self.raid_list = list(itertools.chain.from_iterable(self.raid_dict.values()))
 
     async def on_ready(self):
         print(_('Starting up...'))

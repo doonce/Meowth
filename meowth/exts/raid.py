@@ -9,6 +9,7 @@ import logging
 import aiohttp
 import os
 import json
+import itertools
 from dateutil.relativedelta import relativedelta
 
 import discord
@@ -946,7 +947,8 @@ class Raid(commands.Cog):
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
             await pkmn_class.Pokemon.generate_lists(self.bot)
-            self.bot.raid_list = await utils.get_raidlist(self.bot)
+            self.bot.raid_dict = await utils.get_raid_dict(self.bot)
+            self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
             self.reset_raid_roles.restart()
             guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)
             for guild_id in guilddict_chtemp:
@@ -1609,8 +1611,9 @@ class Raid(commands.Cog):
         if str(level) in self.bot.guild_dict[message.guild.id]['configure_dict']['counters']['auto_levels']:
             try:
                 ctrs_dict = await self._get_generic_counters(message.guild, str(pokemon), weather)
+                embed = ctrs_dict[0]['embed'] if ctrs_dict else None
                 ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
-                ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
+                ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=embed)
                 ctrsmessage_id = ctrsmessage.id
                 await ctrsmessage.pin()
                 for moveset in ctrs_dict:
@@ -1888,8 +1891,9 @@ class Raid(commands.Cog):
         await raid_channel.send(_('{roletest}Meowth! This egg will be assumed to be {pokemon} when it hatches!').format(roletest=roletest, pokemon=str(pokemon).title()))
         if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels']:
             ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), weather)
+            embed = ctrs_dict[0]['embed'] if ctrs_dict else None
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
-            ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
+            ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=embed)
             ctrsmessage_id = ctrsmessage.id
             await ctrsmessage.pin()
             for moveset in ctrs_dict:
@@ -2067,8 +2071,9 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['moveset'] = 0
         if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and str(pokemon) and not ctrsmessage:
             ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), eggdetails.get('weather', None))
+            embed = ctrs_dict[0]['embed'] if ctrs_dict else None
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
-            ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
+            ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=embed)
             ctrsmessage_id = ctrsmessage.id
             await ctrsmessage.pin()
             for moveset in ctrs_dict:
@@ -3584,16 +3589,15 @@ class Raid(commands.Cog):
             else:
                 pkmn = next((str(p) for p in self.bot.raid_list if not str(p).isdigit() and re.sub(rgx, '', str(p)) in re.sub(rgx, '', args.lower())), None)
                 if not pkmn:
-                    await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon that appears in raids! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
-                    return
+                    return await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
         else:
             moveset = 0
             movesetstr = "Unknown Moveset"
             pkmn, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, args)
-            if not pkmn or not pkmn.is_raid:
-                await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon that appears in raids! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
-                return
-        level = utils.get_level(self.bot, pkmn.name.lower()) if utils.get_level(self.bot, pkmn.name.lower()).isdigit() else "5"
+            if not pkmn:
+                return await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
+        level = utils.get_level(self.bot, pkmn.name.lower())
+        redirect_url = ""
         url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.game_name.upper()}{'_FORM' if pkmn.form else ''}/levels/RAID_LEVEL_{level}/attackers/"
         if user:
             url += "users/{user}/".format(user=user)
@@ -3612,9 +3616,16 @@ class Raid(commands.Cog):
         weather = match_list[index]
         url += "strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=OVERALL&"
         url += "weatherCondition={weather}&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE".format(weather=weather)
+        if not level:
+            redirect_url = f"https://www.pokebattler.com/raids/{pkmn.name.upper()}"
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get(redirect_url, allow_redirects=True) as resp:
+                    redirect_url = str(resp.url)
+                url = redirect_url.replace("/levels/35", "/levels/30")
+                url = url.replace("https://www", "https://fight")
         async with aiohttp.ClientSession() as sess:
             async with sess.get(url) as resp:
-                data = await resp.json()
+                data = await resp.json(content_type=None)
         if data.get('error', None):
             url = url.replace(f"_{pkmn.game_name.upper()}_FORM", "")
             pkmn.form = None

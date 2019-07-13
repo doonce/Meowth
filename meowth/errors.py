@@ -212,7 +212,7 @@ def custom_error_handling(bot, logger):
     async def on_command_error(ctx, error):
         channel = ctx.channel
         for report_dict in ctx.bot.channel_report_dicts:
-            if channel and channel.id in ctx.bot.guild_dict[channel.guild.id].setdefault(report_dict, {}):
+            if channel and hasattr(channel, "guild") and channel.id in ctx.bot.guild_dict[channel.guild.id].setdefault(report_dict, {}):
                 break
         if ctx.prefix:
             prefix = ctx.prefix.replace(ctx.bot.user.mention, '@' + ctx.bot.user.name)

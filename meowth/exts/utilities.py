@@ -247,14 +247,20 @@ async def get_raidlist(bot):
             raid_tuple = (*pkmn_tuple, *raid_tuple)
     return raid_tuple
 
+async def get_raid_dict(bot):
+    raid_dict = {}
+    for level in bot.raid_info['raid_eggs']:
+        raid_dict[level] = []
+        for pkmn in bot.raid_info['raid_eggs'][level]['pokemon']:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(bot, pkmn)
+            raid_dict[level].extend([pokemon, str(pokemon), pokemon.name, pokemon.id])
+    return raid_dict
+
 def get_level(bot, pkmn):
     entered_pkmn = pkmn_class.Pokemon.get_pokemon(bot, pkmn)
-    for level in bot.raid_info['raid_eggs']:
-        for level, pkmn_list in bot.raid_info['raid_eggs'].items():
-            for pokemon in pkmn_list['pokemon']:
-                pokemon = pkmn_class.Pokemon.get_pokemon(bot, pokemon)
-                if pokemon and entered_pkmn and pokemon.id == entered_pkmn.id:
-                    return level
+    for level in bot.raid_dict:
+        if str(entered_pkmn) in bot.raid_dict[level] or entered_pkmn.id in bot.raid_dict[level]:
+            return level
 
 async def ask(bot, message, user_list=None, timeout=60, *, react_list=[]):
     if not react_list:
@@ -844,7 +850,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.7.11.5 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.7.13.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
