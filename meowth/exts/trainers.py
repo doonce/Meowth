@@ -103,6 +103,7 @@ class Trainers(commands.Cog):
                         continue
                     search_list.append(user.name.lower())
                     search_list.append(user.display_name.lower())
+                    search_list.append(str(user.id))
                     pbid = str(self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pokebattlerid', "")).lower()
                     if pbid:
                         search_list.append(pbid)

@@ -738,7 +738,7 @@ class Huntr(commands.Cog):
         weight = report_details.get("weight", '')
         moveset = report_details.get("moveset", '')
         expire = report_details.setdefault("expire", "45 min 00 sec")
-        nearest_stop = ""
+        nearest_stop = str(wild_details)
         nearest_poi = ""
         poi_info = ""
         wild_cog = self.bot.get_cog("Wild")
@@ -1135,7 +1135,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"1", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}')
+        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"5", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

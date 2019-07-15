@@ -898,7 +898,7 @@ class Raid(commands.Cog):
                         new_list = re.sub(r'\[|\]|\'|\"', '', str(boss_list_msg.clean_content.lower())).split(',')
                         new_list = [str(item.title().strip()) for item in new_list]
                         for pokemon in new_list:
-                            pokemon = re.sub('[^a-zA-Z0-9]' , '' , pokemon)
+                            pokemon = re.sub('[^a-zA-Z0-9 ]' , '' , pokemon)
                             pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
                             if pokemon:
                                 edit_list.append(str(pokemon))
@@ -943,6 +943,8 @@ class Raid(commands.Cog):
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
             tmp = data['raid_eggs'][edit_level]['pokemon']
+            new_list = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in new_list]
+            new_list = [str(x) for x in new_list if x]
             data['raid_eggs'][edit_level]['pokemon'] = new_list
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
@@ -3728,14 +3730,14 @@ class Raid(commands.Cog):
             async with sess.get(url) as resp:
                 data = await resp.json()
         if data.get('error', None):
-            url = url.replace(f"_{str(pokemon.form).upper()}_FORM", "")
+            url = url.replace(f"_{str(pokemon.game_name).upper()}_FORM", "")
             pokemon.form = None
             pokemon.alolan = False
             async with aiohttp.ClientSession() as sess:
                 async with sess.get(url) as resp:
                     data = await resp.json()
         if data.get('error', None):
-            return None
+            return {}
         data = data['attackers'][0]
         raid_cp = data['cp']
         atk_levels = '30'
