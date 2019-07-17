@@ -440,7 +440,7 @@ class GymMatching(commands.Cog):
         if match_type == "gym":
             active_raids = []
             index = 1
-            for channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
+            for channel in self.bot.guild_dict[ctx.guild.id].setdefault('raidchannel_dict', {}):
                 if self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('address', "") == location:
                     raid_channel = self.bot.get_channel(channel)
                     active_raids.append(f"{index}. {raid_channel.mention}")
@@ -450,32 +450,35 @@ class GymMatching(commands.Cog):
         elif match_type == "stop":
             active_quests = []
             index = 1
-            for report in self.bot.guild_dict[ctx.guild.id]['questreport_dict']:
+            for report in self.bot.guild_dict[ctx.guild.id].setdefault('questreport_dict', {}):
                 if self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('location', "") == location:
                     report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'])
                     report_message = await report_channel.fetch_message(report)
                     reward = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['reward']
                     active_quests.append(f"{index}. [{reward.title()}]({report_message.jump_url})")
+                    index += 1
             if active_quests:
                 poi_embed.add_field(name="Current Research", value=('\n').join(active_quests), inline=False)
             active_lures = []
             index = 1
-            for report in self.bot.guild_dict[ctx.guild.id]['lure_dict']:
+            for report in self.bot.guild_dict[ctx.guild.id].setdefault('lure_dict', {}):
                 if self.bot.guild_dict[ctx.guild.id]['lure_dict'][report].get('location', "") == location:
                     report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['report_channel'])
                     report_message = await report_channel.fetch_message(report)
                     type = self.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['type']
                     active_lures.append(f"{index}. [{type.title()}]({report_message.jump_url})")
+                    index += 1
             if active_lures:
                 poi_embed.add_field(name="Current Lures", value=('\n').join(active_lures), inline=False)
             active_wilds = []
             index = 1
-            for report in self.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
+            for report in self.bot.guild_dict[ctx.guild.id].setdefault('wildreport_dict', {}):
                 if self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('location', "") == location:
                     report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'])
                     report_message = await report_channel.fetch_message(report)
                     pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['pkmn_obj']
                     active_wilds.append(f"{index}. [{pokemon.title()}]({report_message.jump_url})")
+                    index += 1
             if active_wilds:
                 poi_embed.add_field(name="Current Wilds", value=('\n').join(active_wilds), inline=False)
         await ctx.send(embed=poi_embed)

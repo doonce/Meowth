@@ -230,14 +230,14 @@ class Wild(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
         success = []
-        reply_msg = f"**iv <pokemon iv percentage>** - Current: {wild_dict.get('wild_iv', {}).get('percent', None)}\n"
-        reply_msg += f"**attack <pokemon attack stat>** - Current: {wild_dict.get('wild_iv', {}).get('iv_atk', None)}\n"
-        reply_msg += f"**defense <pokemon defense stat>** - Current: {wild_dict.get('wild_iv', {}).get('iv_def', None)}\n"
-        reply_msg += f"**stamina <pokemon stamina stat>** - Current: {wild_dict.get('wild_iv', {}).get('iv_sta', None)}\n"
-        reply_msg += f"**level <pokemon level>** - Current: {wild_dict.get('level', None)}\n"
-        reply_msg += f"**cp <pokemon cp>** - Current: {wild_dict.get('cp', None)}\n"
-        reply_msg += f"**gender <male or female>** - Current: {wild_dict.get('gender', None)}\n"
-        reply_msg += f"**weather <game weather>** - Current: {wild_dict.get('weather', None)}"
+        reply_msg = f"**iv <pokemon iv percentage>** - Current: {wild_dict.get('wild_iv', {}).get('percent', 'X')}\n"
+        reply_msg += f"**attack <pokemon attack stat>** - Current: {wild_dict.get('wild_iv', {}).get('iv_atk', 'X')}\n"
+        reply_msg += f"**defense <pokemon defense stat>** - Current: {wild_dict.get('wild_iv', {}).get('iv_def', 'X')}\n"
+        reply_msg += f"**stamina <pokemon stamina stat>** - Current: {wild_dict.get('wild_iv', {}).get('iv_sta', 'X')}\n"
+        reply_msg += f"**level <pokemon level>** - Current: {wild_dict.get('level', 'X')}\n"
+        reply_msg += f"**cp <pokemon cp>** - Current: {wild_dict.get('cp', 'X')}\n"
+        reply_msg += f"**gender <male or female>** - Current: {wild_dict.get('gender', 'X')}\n"
+        reply_msg += f"**weather <game weather>** - Current: {wild_dict.get('weather', 'X')}"
         wild_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1')
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:

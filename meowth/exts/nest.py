@@ -523,6 +523,12 @@ class Nest(commands.Cog):
             return
         elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
             await utils.safe_delete(rusure)
+            for report in copy.deepcopy(self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name].get('reports', {})):
+                try:
+                    report_message = await channel.fetch_message(report)
+                    await self.expire_nest(nest_name, report_message)
+                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                    pass
             del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name]
             self.bot.guild_dict[guild.id]['nest_dict'][channel.id]['list'].remove(nest_name)
             confirmation = await channel.send(_('Nest deleted.'), delete_after=10)
@@ -611,7 +617,7 @@ class Nest(commands.Cog):
         channel = message.channel
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
         await utils.safe_delete(message)
-        await utils.expire_dm_reports(self.bot, nest_dict[nest]['reports'][message.id].get('dm_dict', {}))
+        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, nest_dict[nest]['reports'][message.id].get('dm_dict', {})))
         try:
             del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][message.id]
         except KeyError:
