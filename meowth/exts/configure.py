@@ -927,7 +927,7 @@ class Configure(commands.Cog):
                         channel = "DM"
                     else:
                         channel = ctx.bot.get_channel(config_dict_temp['welcome']['welcomechan'])
-                        channel = channel.name
+                        channel = channel.name if channel else "Not Found"
                     await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=channel).set_author(name=_("Current Welcome Channel"), icon_url=self.bot.user.avatar_url), delete_after=300)
                 while True:
                     try:
@@ -1474,7 +1474,7 @@ class Configure(commands.Cog):
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("**!want** and **!unwant** can also be used for joining and leaving custom server roles unrelated to pokemon notifications. Would you like to add joinable roles? Reply with a comma separated list of role names or IDs to add joinable roles, or reply with **N** to disable joinable roles.")).set_author(name=_('Joinable Roles'), icon_url=self.bot.user.avatar_url))
         if join_roles:
             join_roles = [guild.get_role(x) for x in join_roles]
-            join_roles = [x.mention for x in join_roles]
+            join_roles = [x.mention for x in join_roles if x]
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=(", ").join(join_roles)).set_author(name=_("Current Joinable Roles"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             try:
