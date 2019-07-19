@@ -423,11 +423,11 @@ class Raid(commands.Cog):
             try:
                 if self.bot.guild_dict[guild.id][report_dict].get(channel.id, {}).get('active', False):
                     return
-                if (self.bot.guild_dict[guild.id][report_dict][channel.id]['active'] == False) and (not self.bot.is_closed()):
+                elif (self.bot.guild_dict[guild.id][report_dict][channel.id]['active'] == False) and (not self.bot.is_closed()):
                     if report_channel:
                         if dupechannel:
                             await utils.safe_delete(reportmsg)
-                        else:
+                        elif reportmsg:
                             try:
                                 await reportmsg.edit(embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
                                 await reportmsg.clear_reactions()
@@ -3365,6 +3365,20 @@ class Raid(commands.Cog):
                         else:
                             continue
             report_dict = await utils.get_report_dict(self.bot, channel)
+            if not report_dict:
+                question = await ctx.channel.send(f"{ctx.author.mention} Is this a raid \u2694 or a meetup \U0001F46A channel?")
+                try:
+                    timeout = False
+                    res, reactuser = await utils.ask(self.bot, question, ctx.author.id, react_list=['\u2694', '\U0001F46A'])
+                except TypeError:
+                    timeout = True
+                if timeout:
+                    report_dict = 'raidchannel_dict'
+                if res.emoji == '\u2694':
+                    report_dict = 'raidchannel_dict'
+                elif res.emoji == '\U0001F46A':
+                    report_dict = 'meetup_dict'
+                await utils.safe_delete(question)
             self.bot.guild_dict[channel.guild.id][report_dict][channel.id] = {
                 'report_channel':reportchannel,
                 'report_guild':channel.guild.id,
@@ -3582,7 +3596,7 @@ class Raid(commands.Cog):
                         ctrsembed.remove_field(6)
                         await channel.send(content=ctrsmessage.content, embed=ctrsembed)
                         return
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError):
                         pass
                 moveset = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('moveset', 0)
                 movesetstr = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('ctrs_dict', {}).get(moveset, {}).get('moveset', "Unknown Moveset")
@@ -3600,7 +3614,7 @@ class Raid(commands.Cog):
                 return await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
         level = utils.get_level(self.bot, pkmn.name.lower())
         redirect_url = ""
-        url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.game_name.upper()}{'_FORM' if pkmn.form else ''}/levels/RAID_LEVEL_{level}/attackers/"
+        url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.game_name.upper()}{'_FORM' if pkmn.form or pkmn.alolan else ''}/levels/RAID_LEVEL_{level}/attackers/"
         if user:
             url += "users/{user}/".format(user=user)
             userstr = _("user #{user}'s").format(user=user)
@@ -3719,7 +3733,7 @@ class Raid(commands.Cog):
         else:
             index = weather_list.index(weather)
         weather = match_list[index]
-        url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.game_name.upper()}{'_FORM' if pokemon.form else ''}/levels/RAID_LEVEL_{level}/attackers/"
+        url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.game_name.upper()}{'_FORM' if pokemon.form or pokemon.alolan else ''}/levels/RAID_LEVEL_{level}/attackers/"
         url += "levels/30/"
         url += "strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=OVERALL&"
         url += "weatherCondition={weather}&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE".format(weather=weather)
@@ -4271,6 +4285,7 @@ class Raid(commands.Cog):
         trainer_dict['party'] = party
         self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict'][author.id] = trainer_dict
         await self._edit_party(channel, author)
+        # await ctx.invoke(self.bot.get_command("list"))
 
     @commands.command(aliases=['x'])
     @checks.rsvpchannel()
@@ -4318,6 +4333,7 @@ class Raid(commands.Cog):
         t_dict['interest'] = []
         t_dict['count'] = 1
         await self._edit_party(channel, author)
+        # await ctx.invoke(self.bot.get_command("list"))
 
     @tasks.loop(seconds=21600)
     async def lobby_cleanup(self, loop=True):

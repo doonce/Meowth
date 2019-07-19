@@ -31,7 +31,8 @@ class Listing(commands.Cog):
         Usage: !list
         Works only in raid or city channels. Calls the interested, waiting, and here lists. Also prints
         the raid timer. In city channels, lists all active raids."""
-        await utils.safe_delete(ctx.message)
+        if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'tag']:
+            await utils.safe_delete(ctx.message)
         if ctx.invoked_subcommand == None:
             async with ctx.typing():
                 listmsg = _('**Meowth!** ')
@@ -45,7 +46,7 @@ class Listing(commands.Cog):
                 if (checks.check_raidreport(ctx) or checks.check_exraidreport(ctx) or checks.check_meetupreport(ctx)):
                     if not raid_cog:
                         return
-                    if ctx.invoked_with.lower() == "tag":
+                    if str(ctx.invoked_with).lower() == "tag":
                         tag_error = await channel.send(f"Please use **{ctx.prefix}{ctx.invoked_with}** in an active raid channel.", delete_after=10)
                         await asyncio.sleep(10)
                         await utils.safe_delete(ctx.message)
@@ -218,7 +219,7 @@ class Listing(commands.Cog):
                     tag = False
                     team = False
                     list_messages = []
-                    if ctx.invoked_with.lower() == "tag":
+                    if str(ctx.invoked_with).lower() == "tag":
                         tag = True
                     starttime = self.bot.guild_dict[guild.id][report_dict][channel.id].get('starttime', None)
                     meetup = self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', {})

@@ -107,8 +107,7 @@ class Wild(commands.Cog):
         try:
             await self.bot.save
         except Exception as err:
-            logger.info('SAVING FAILED' + err)
-            pass
+            logger.info('SAVING FAILED' + str(err))
         if not despawn_list:
             despawn_list = [300]
         logger.info(f"------ END - {count} Wilds Cleaned - Waiting {min(despawn_list)} seconds. ------")
@@ -443,7 +442,7 @@ class Wild(commands.Cog):
                 else:
                     index += 1
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_pokemon)
-        wild_types = copy.deepcopy(pokemon.types)
+        wild_types = pokemon.types.copy()
         wild_types.append('None')
         for trainer in copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('trainers', {})):
             if not checks.dm_check(ctx, trainer):

@@ -25,24 +25,24 @@ here_id = ":here:"
 # type emoji; These can be custom or discord alias
 # Example:  Custom: `<:emojiname:emojiid>` | Alias: `:emojiname`
 type_id_dict = {
-    "normal"   : "<:normal:346750029152780288>",
-    "fire"     : "<:fire1:346750028863242240>",
-    "water"    : "<:water:346750028733480964>",
-    "electric" : "<:electric:346750028511182850>",
-    "grass"    : "<:grass:346750029681262592>",
-    "ice"      : "<:ice:346750029115162624>",
-    "fighting" : "<:fighting:346750028817367040>",
-    "poison"   : "<:poison:346750028964036619>",
-    "ground"   : "<:ground:346750028767035404>",
-    "flying"   : "<:flying:346750029001654272>",
-    "psychic"  : "<:psychic:346750028678692866>",
-    "bug"      : "<:bug1:346750028494143488>",
-    "rock"     : "<:rock:346750029123551233>",
-    "ghost"    : "<:ghost1:346750028406325259>",
-    "dragon"   : "<:dragon1:346750028892733440>",
-    "dark"     : "<:dark:346750028506988544>",
-    "steel"    : "<:steel:346750029177815050>",
-    "fairy"    : "<:fairy:346750028431228930>"
+    "normal"   : "<:normal:123123123123123123>",
+    "fire"     : "<:fire1:123123123123123123>",
+    "water"    : "<:water:123123123123123123>",
+    "electric" : "<:electric:123123123123123123>",
+    "grass"    : "<:grass:123123123123123123>",
+    "ice"      : "<:ice:123123123123123123>",
+    "fighting" : "<:fighting:123123123123123123>",
+    "poison"   : "<:poison:123123123123123123>",
+    "ground"   : "<:ground:123123123123123123>",
+    "flying"   : "<:flying:123123123123123123>",
+    "psychic"  : "<:psychic:123123123123123123>",
+    "bug"      : "<:bug1:123123123123123123>",
+    "rock"     : "<:rock:123123123123123123>",
+    "ghost"    : "<:ghost1:123123123123123123>",
+    "dragon"   : "<:dragon1:123123123123123123>",
+    "dark"     : "<:dark:123123123123123123>",
+    "steel"    : "<:steel:123123123123123123>",
+    "fairy"    : "<:fairy:123123123123123123>"
 }
 
 # custom_emoji for reactions and general use; These must be unicode or custom emoji. Not discord alias

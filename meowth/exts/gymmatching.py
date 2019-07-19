@@ -291,7 +291,7 @@ class GymMatching(commands.Cog):
                 if poi_target and poi_action == "remove":
                     poi_data_name = list(data[str(guild.id)].keys())[data_keys.index(poi_name.lower())]
                     del data[str(guild.id)][poi_data_name]
-                    for k in copy.deepcopy(list(data[str(guild.id)].keys())):
+                    for k in list(data[str(guild.id)].keys()):
                         if data[str(guild.id)][k].get('alias', None) == poi_data_name:
                             del data[str(guild.id)][k]
                     with open(os.path.join('data', file_name), 'w') as fd:
