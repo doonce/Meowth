@@ -236,6 +236,7 @@ class Wild(commands.Cog):
         reply_msg += f"**level <pokemon level>** - Current: {wild_dict.get('level', 'X')}\n"
         reply_msg += f"**cp <pokemon cp>** - Current: {wild_dict.get('cp', 'X')}\n"
         reply_msg += f"**gender <male or female>** - Current: {wild_dict.get('gender', 'X')}\n"
+        reply_msg += f"**size <xl or xs>** - Current: {wild_dict.get('size', 'X')}\n"
         reply_msg += f"**weather <game weather>** - Current: {wild_dict.get('weather', 'X')}"
         wild_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1')
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -285,6 +286,15 @@ class Wild(commands.Cog):
                             elif value_split[1] and value_split[1].lower() == "none":
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['gender'] = None
                                 success.append("gender")
+                            else:
+                                error = _('entered something invalid. Please enter male or female')
+                        elif "size" in value and "size" not in success:
+                            if value_split[1] and (value_split[1] == "xl" or value_split[1] == "xs"):
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['size'] = value_split[1].upper()
+                                success.append("size")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['size'] = None
+                                success.append("size")
                             else:
                                 error = _('entered something invalid. Please enter male or female')
                         elif "iv" in value and "iv" not in success:
@@ -375,7 +385,8 @@ class Wild(commands.Cog):
         wild_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'].get(message.id, {})
         dm_dict = wild_dict.get('dm_dict', {})
         gender = wild_dict.get('gender') if wild_dict.get('gender') else ''
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender.lower()} {wild_dict['pkmn_obj'].lower()}")
+        size = wild_dict.get('size') if wild_dict.get('size') else ''
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender.lower()} {size.lower()} {wild_dict['pkmn_obj'].lower()}")
         iv_percent = wild_dict.get('wild_iv', {}).get('percent', None)
         level = wild_dict.get('level', None)
         old_embed = message.embeds[0]
@@ -658,6 +669,7 @@ class Wild(commands.Cog):
             'wild_iv':wild_iv,
             'level':None,
             'cp':None,
+            'size':pokemon.size,
             'gender':pokemon.gender,
             'omw':[],
             'caught_by':[]

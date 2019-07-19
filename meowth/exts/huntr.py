@@ -793,6 +793,7 @@ class Huntr(commands.Cog):
             'level':level,
             'cp':cp,
             'gender':gender,
+            'size':pokemon.size,
             'weather':pokemon.weather,
             'omw':[]
         }
