@@ -531,7 +531,7 @@ class Configure(commands.Cog):
         Meowth will DM you instructions on how to configure Meowth for your server.
         If it is not your first time configuring, you can choose a section to jump to.
         You can also include a comma separated [list] of sections from the following:
-        all, team, welcome, raid, exraid, invite, counters, wild, research, lure, pvp, want, archive, timezone"""
+        all, team, welcome, raid, exraid, invite, counters, wild, research, lure, pvp, invasion, want, archive, timezone"""
         ctx.configure_channel = await self.create_configure_channel(ctx)
         await self._configure(ctx, configlist)
 
@@ -570,7 +570,7 @@ class Configure(commands.Cog):
                 if ctx.config_dict_temp[commandconfig].get('enabled', False):
                     enabled_commands.append(commandconfig)
             configmessage += _("\n\n**Enabled Commands:**\n{enabled_commands}").format(enabled_commands=", ".join(enabled_commands))
-            configmessage += _("\n\n**All Commands:**\n**all** - To redo configuration\n**team** - For Team Assignment configuration\n**welcome** - For Welcome Message configuration\n**raid** - for raid command configuration\n**exraid** - for EX raid command configuration\n**invite** - for invite command configuration\n**counters** - for automatic counters configuration\n**wild** - for wild command configuration\n**research** - for !research command configuration\n**lure** - for !lure command configuration\n**pvp** - for !pvp command configuration\n**meetup** - for !meetup command configuration\n**want** - for want/unwant command configuration\n**archive** - For !archive configuration\n**trade** - For trade command configuration\n**nest** - For nest command configuration\n**timezone** - For timezone configuration\n**scanners** - For scanner bot integration configuration")
+            configmessage += _("\n\n**All Commands:**\n**all** - To redo configuration\n**team** - For Team Assignment configuration\n**welcome** - For Welcome Message configuration\n**raid** - for raid command configuration\n**exraid** - for EX raid command configuration\n**invite** - for invite command configuration\n**counters** - for automatic counters configuration\n**wild** - for wild command configuration\n**research** - for !research command configuration\n**lure** - for !lure command configuration\n**invasion** - for !invasion command configuration\n**pvp** - for !pvp command configuration\n**meetup** - for !meetup command configuration\n**want** - for want/unwant command configuration\n**archive** - For !archive configuration\n**trade** - For trade command configuration\n**nest** - For nest command configuration\n**timezone** - For timezone configuration\n**scanners** - For scanner bot integration configuration")
             configmessage += _('\n\nReply with **cancel** at any time throughout the questions to cancel the configure process.')
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=configmessage).set_author(name=_('Meowth Configuration - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
             while True:
@@ -647,6 +647,10 @@ class Configure(commands.Cog):
                     return None
             if "lure" in configreplylist:
                 ctx = await self._configure_lure(ctx)
+                if not ctx:
+                    return None
+            if "invasion" in configreplylist:
+                ctx = await self._configure_invasion(ctx)
                 if not ctx:
                     return None
             if "pvp" in configreplylist:
@@ -1347,6 +1351,46 @@ class Configure(commands.Cog):
             return ctx
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Lure Reporting allows users to report lures with **!lure**. Lure reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-lures, hull-lures, sydney-lures`\n\nIf you do not require **lure** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Lure Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "lure", [], output="dict")
+        if not config_dict_temp:
+            return None
+        ctx.config_dict_temp = config_dict_temp
+        return ctx
+
+    @configure.command(name="invasion")
+    async def configure_invasion(self, ctx):
+        """!invasion reporting settings"""
+        try:
+            guild = ctx.message.guild
+            await utils.safe_delete(ctx.message)
+            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+                await self._configure(ctx, "all")
+                return
+            ctx.configure_channel = await self.create_configure_channel(ctx)
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            if ctx.configure_channel.id not in config_sessions:
+                config_sessions.append(ctx.configure_channel.id)
+            self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
+            await self.check_sessions(ctx)
+            ctx = await self._configure_invasion(ctx)
+            if ctx:
+                self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
+            await self.end_configure(ctx)
+        except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
+            await self.end_configure(ctx)
+            return None
+
+    async def _configure_invasion(self, ctx):
+        guild = ctx.message.guild
+        config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        invasion_cog = self.bot.cogs.get('Invasion')
+        if not invasion_cog:
+            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Invasion Cog is not loaded. Invasion cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Invasion Reporting allows users to report invasions with **!invasion**. Invasion reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-invasions, hull-invasions, sydney-invasions`\n\nIf you do not require **invasion** reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Invasion Reporting Channels'), icon_url=self.bot.user.avatar_url))
+        config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "invasion", [], output="dict")
         if not config_dict_temp:
             return None
         ctx.config_dict_temp = config_dict_temp

@@ -2540,7 +2540,7 @@ class Raid(commands.Cog):
     async def end(self, ctx, *, timer):
         await ctx.invoke(self.bot.get_command("timerset"), timer=timer)
 
-    @commands.command()
+    @commands.group(case_insensitive=True, invoke_without_command=True)
     @checks.allowtrainreport()
     async def train(self, ctx, *, channel_or_gym=None):
         """Report an ongoing raid train.
@@ -2599,6 +2599,7 @@ class Raid(commands.Cog):
                     gym_matching_cog = self.bot.cogs.get('GymMatching')
                     gym_info = ""
                     location = ""
+                    gym_search = str(channel_or_gym)
                     if gym_matching_cog:
                         gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, str(channel_or_gym), "raid", dupe_check=False)
                     if location:
@@ -2608,49 +2609,78 @@ class Raid(commands.Cog):
                         raid_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['address']
                         raid_type = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['type']
                         raid_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['egg_level']
-                        if channel_or_gym == raid_address and raid_type != "exraid" and raid_level != "EX":
+                        if str(gym_search).lower() == str(raid_address).lower() and raid_type != "exraid" and raid_level != "EX":
                             channel_or_gym = raid_channel
                             break
                         else:
                             channel_or_gym = None
-                    if not channel_or_gym:
+                    if not channel_or_gym and not location:
                         error = _("entered an invalid location or channel")
                         break
                 if channel_or_gym == ctx.channel:
                     error = _("entered this channel")
                     break
                 if checks.check_raidreport(ctx):
-                    train_embed.clear_fields()
-                    train_embed.add_field(name=_('**New Raid Train Report**'), value=f"Great! Now, reply with your **party and team counts** `Ex: 5 2m 2v 1i` or reply with **1** if it's just you. You can reply with **cancel** to stop anytime.", inline=False)
-                    party_wait = await channel.send(embed=train_embed)
-                    try:
-                        party_msg = await self.bot.wait_for('message', timeout=60, check=check)
-                    except asyncio.TimeoutError:
-                        party_msg = None
-                    await utils.safe_delete(party_wait)
-                    if not party_msg:
-                        error = _("took too long to respond")
-                        break
-                    else:
-                        await utils.safe_delete(party_msg)
-                    if party_msg.clean_content.lower() == "cancel":
-                        error = _("cancelled the report")
-                        break
-                    elif party_msg:
-                        teamcounts = party_msg.clean_content.lower()
-                        if not teamcounts.split()[0].isdigit():
-                            error = _("entered an invalid party count")
+                    # train_embed.clear_fields()
+                    # train_embed.add_field(name=_('**New Raid Train Report**'), value=f"Great! Now, would you like to create a new channel to manage this raid train, or move between current raid channels? Reply with **channel** to create a channel, **current** to keep coordination in raid channels, or **cancel** to stop anytime.", inline=False)
+                    # channel_wait = await channel.send(embed=train_embed)
+                    # try:
+                    #     channel_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    # except asyncio.TimeoutError:
+                    #     channel_msg = None
+                    # await utils.safe_delete(channel_wait)
+                    # if not channel_msg:
+                    #     error = _("took too long to respond")
+                    #     break
+                    # else:
+                    #     await utils.safe_delete(channel_msg)
+                    # if channel_msg.clean_content.lower() == "cancel":
+                    #     error = _("cancelled the report")
+                    #     break
+                    # elif channel_msg.clean_content.lower() == "current":
+                    if channel_or_gym:
+                        if not isinstance(channel_or_gym, discord.TextChannel):
+                            error = _("entered a location without a raid channel")
                             break
-                        ctx.message.channel, ctx.channel = channel_or_gym, channel_or_gym
-                        await self._rsvp(ctx, "coming", teamcounts)
                         train_embed.clear_fields()
-                        train_embed.add_field(name=_('**New Raid Train Report**'), value=_("Meowth! Your raid train has been started in {raid_channel}").format(raid_channel=channel_or_gym.mention), inline=False)
-                        confirmation = await channel.send(embed=train_embed, delete_after=10)
-                        await utils.safe_delete(message)
-                        await asyncio.sleep(1)
-                        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'][author.id]['train'] = True
-                        return
+                        train_embed.add_field(name=_('**New Raid Train Report**'), value=f"Great! Now, reply with your **party and team counts** `Ex: 5 2m 2v 1i` or reply with **1** if it's just you. You can reply with **cancel** to stop anytime.", inline=False)
+                        party_wait = await channel.send(embed=train_embed)
+                        try:
+                            party_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            party_msg = None
+                        await utils.safe_delete(party_wait)
+                        if not party_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(party_msg)
+                        if party_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif party_msg:
+                            teamcounts = party_msg.clean_content.lower()
+                            if not teamcounts.split()[0].isdigit():
+                                error = _("entered an invalid party count")
+                                break
+                            ctx.message.channel, ctx.channel = channel_or_gym, channel_or_gym
+                            await self._rsvp(ctx, "coming", teamcounts)
+                            train_embed.clear_fields()
+                            train_embed.add_field(name=_('**New Raid Train Report**'), value=_("Meowth! Your raid train has been started in {raid_channel}").format(raid_channel=channel_or_gym.mention), inline=False)
+                            confirmation = await channel.send(embed=train_embed, delete_after=10)
+                            await utils.safe_delete(message)
+                            await asyncio.sleep(1)
+                            self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'][author.id]['train'] = True
+                            return
+                    # elif channel_msg.clean_content.lower() == "channel":
+                    #     return await self._train_channel(ctx, channel_or_gym)
+                    else:
+                        error = _("entered something invalid")
+                        break
                 elif checks.check_raidchannel(ctx) and not checks.check_exraidchannel(ctx):
+                    if not isinstance(channel_or_gym, discord.TextChannel):
+                        error = _("entered a location without a raid channel")
+                        break
                     train_emoji = self.bot.custom_emoji.get('train_emoji', "\U0001F682")
                     train_msg = await ctx.send(f"Meowth! {ctx.author.mention} wants to keep this **raid train** moving in {channel_or_gym.mention}!\n\nReact to this message with {train_emoji} to automatically RSVP in {channel_or_gym.mention} with your current party.")
                     await utils.safe_reaction(train_msg, train_emoji)
@@ -2695,6 +2725,24 @@ class Raid(commands.Cog):
             train_embed.add_field(name=_('**Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=train_embed, delete_after=10)
             await utils.safe_delete(message)
+
+    # @train.command(name="channel")
+    # async def train_channel(self, ctx, *, channel_or_gym):
+    #     await self._train_channel(ctx, channel_or_gym)
+    #
+    # async def _train_channel(self, ctx, channel_or_gym):
+    #     if isinstance(channel_or_gym, discord.TextChannel):
+    #         if channel_or_gym.id in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
+    #             location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['address']
+    #     gym_matching_cog = self.bot.cogs.get('GymMatching')
+    #     gym_info = ""
+    #     location = ""
+    #     if gym_matching_cog:
+    #         gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, str(channel_or_gym), "raid", dupe_check=False)
+    #     if location:
+    #         channel_or_gym = location
+    #     train_location = str(channel_or_gym)
+    #     print(train_location)
 
     """
     Raid Channel Management
@@ -3234,6 +3282,7 @@ class Raid(commands.Cog):
                         break
             if egg:
                 raidtype = 'egg'
+                report_dict = 'raidchannel_dict'
                 chsplit = egg.string.split('-')
                 del chsplit[0]
                 egg_level = chsplit[0]
@@ -3256,6 +3305,7 @@ class Raid(commands.Cog):
                     pokemon = pokemon.name.lower()
             elif name.split('-')[0] in self.bot.raid_list:
                 raidtype = 'raid'
+                report_dict = 'raidchannel_dict'
                 egg_level = '0'
                 chsplit = name.split('-')
                 pokemon = chsplit[0]
@@ -3275,6 +3325,7 @@ class Raid(commands.Cog):
                     pkmn_obj = str(pokemon)
             elif name.split('-')[0] == 'ex':
                 raidtype = 'egg'
+                report_dict = 'raidchannel_dict'
                 egg_level = 'EX'
                 chsplit = name.split('-')
                 del chsplit[0]
@@ -3297,6 +3348,7 @@ class Raid(commands.Cog):
                     pokemon = pokemon.name.lower()
             elif meetup:
                 raidtype = 'egg'
+                report_dict = 'meetup_dict'
                 egg_level = 'EX'
                 chsplit = name.split('-')
                 del chsplit[0]
@@ -3364,7 +3416,6 @@ class Raid(commands.Cog):
                                 continue
                         else:
                             continue
-            report_dict = await utils.get_report_dict(self.bot, channel)
             if not report_dict:
                 question = await ctx.channel.send(f"{ctx.author.mention} Is this a raid \u2694 or a meetup \U0001F46A channel?")
                 try:

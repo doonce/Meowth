@@ -408,6 +408,23 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
+    @want.command(name='shadow')
+    @checks.allowwant()
+    async def want_shadow(self, ctx):
+        await ctx.trigger_typing()
+        message = ctx.message
+        author = message.author
+        guild = message.guild
+        channel = message.channel
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+        user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
+        if "shadow" not in user_forms:
+            user_forms.append("shadow")
+            confirmation_msg = f"{ctx.author.display_name}, Shadow pokemon notifications have been added."
+        else:
+            confirmation_msg = f"{ctx.author.display_name}, you already want Shadow pokemon notifications.."
+        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+
     @want.command(name='boss')
     @checks.allowwant()
     async def want_boss(self, ctx, *, bosses):
@@ -1426,6 +1443,23 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+
+    @unwant.command(name='shadow')
+    @checks.allowwant()
+    async def unwant_shadow(self, ctx):
+        await ctx.trigger_typing()
+        message = ctx.message
+        author = message.author
+        guild = message.guild
+        channel = message.channel
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+        user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
+        if "shadow" in user_forms:
+            user_forms.remove("shadow")
+            confirmation_msg = f"{ctx.author.display_name}, Shadow pokemon notifications have been removed."
+        else:
+            confirmation_msg = f"{ctx.author.display_name}, you haven't subscribed to Shadow pokemon notifications."
+        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @unwant.command(name='boss')
     @checks.allowwant()

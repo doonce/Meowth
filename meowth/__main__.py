@@ -61,7 +61,7 @@ def run_bot(debug=False, launcher=None, from_restart=False):
 
     # load the required core modules
     Meowth.required_exts = ['admin', 'utilities', 'pokemon', 'configure']
-    Meowth.optional_exts = ['want', 'wild', 'raid', 'list', 'gymmatching', 'tutorial', 'silph', 'trade', 'research', 'nest', 'huntr', 'trainers', 'lure', 'pvp']
+    Meowth.optional_exts = ['want', 'wild', 'raid', 'list', 'gymmatching', 'tutorial', 'silph', 'trade', 'research', 'nest', 'huntr', 'trainers', 'lure', 'pvp', 'invasion']
     meowth_exts = Meowth.required_exts + Meowth.optional_exts
 
     for ext in meowth_exts:

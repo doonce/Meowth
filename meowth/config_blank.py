@@ -87,5 +87,7 @@ custom_emoji = {
     'rainy':"\u2614",
     'foggy':"\U0001F301",
     'cloudy':"\u2601",
-    'clear':"\u2600"
+    'clear':"\u2600",
+    'invasion_complete':"\U0001f1f7",
+    'invasion_expired':"\U0001F4A8"
 }
