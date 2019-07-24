@@ -349,6 +349,14 @@ class Want(commands.Cog):
         role_list = []
         for entered_want in want_split:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_want.strip())
+            if str(pokemon) == "XS Rattata":
+                sizes = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in ["Male Alolan XS Rattata", "Female Alolan XS Rattata", "Alolan XS Rattata", "Male XS Rattata", "Female XS Rattata", "XS Rattata"]]
+                want_list.extend(sizes)
+                continue
+            if str(pokemon) == "XL Magikarp":
+                sizes = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in ["Male XL Magikarp", "Female XL Magikarp", "XL Magikarp"]]
+                want_list.extend(sizes)
+                continue
             if pokemon:
                 want_list.append(pokemon)
             elif len(want_split) == 1 and "list" in entered_want:
@@ -411,6 +419,7 @@ class Want(commands.Cog):
     @want.command(name='shadow')
     @checks.allowwant()
     async def want_shadow(self, ctx):
+        """Adds all invasions to your want list. TEMPORARY"""
         await ctx.trigger_typing()
         message = ctx.message
         author = message.author
@@ -1055,7 +1064,7 @@ class Want(commands.Cog):
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         want_msg = f"Meowth! I'll help you remove an alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to unsubscribe from. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=want_msg, inline=False)
-        if not any([user_wants, user_bosses, user_gyms, user_stops, user_ivs, user_levels, user_items, user_types]):
+        if not any([user_wants, user_bosses, user_gyms, user_stops, user_ivs, user_levels, user_items, user_types, user_forms, user_roles]):
             want_embed.clear_fields()
             want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
             want_embed.add_field(name=_('**Alert Unsubscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you don't have any subscriptions! Add some with **!want**.").format(error=error), inline=False)
@@ -1392,6 +1401,14 @@ class Want(commands.Cog):
         role_list = []
         for entered_unwant in unwant_split:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_unwant.strip())
+            if str(pokemon) == "XS Rattata":
+                sizes = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in ["Male Alolan XS Rattata", "Female Alolan XS Rattata", "Alolan XS Rattata", "Male XS Rattata", "Female XS Rattata", "XS Rattata"]]
+                unwant_list.extend(sizes)
+                continue
+            if str(pokemon) == "XL Magikarp":
+                sizes = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in ["Male XL Magikarp", "Female XL Magikarp", "XL Magikarp"]]
+                unwant_list.extend(sizes)
+                continue
             if pokemon:
                 unwant_list.append(pokemon)
             elif len(unwant_split) == 1 and "list" in entered_unwant:
@@ -1447,6 +1464,7 @@ class Want(commands.Cog):
     @unwant.command(name='shadow')
     @checks.allowwant()
     async def unwant_shadow(self, ctx):
+        """Removes all invasions from your want list. TEMPORARY"""
         await ctx.trigger_typing()
         message = ctx.message
         author = message.author
