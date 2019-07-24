@@ -533,7 +533,7 @@ class Pokemon():
         male = re.search(r'\b(?<!fe)male\b', argument, re.IGNORECASE)
         female = re.search(r'\bfemale\b', argument, re.IGNORECASE)
         large = re.search(r'\blarge\b|\bbig\b|\bxl\b', argument, re.IGNORECASE)
-        small = re.search(r'\bsmall\b|\btin\by\b|xs\b', argument, re.IGNORECASE)
+        small = re.search(r'\bsmall\b|\btiny\b|xs\b', argument, re.IGNORECASE)
         form_list = bot.form_dict['list']
         try:
             form_list.remove("none")

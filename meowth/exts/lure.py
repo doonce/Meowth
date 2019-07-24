@@ -134,7 +134,7 @@ class Lure(commands.Cog):
                         location = location.replace(timer, '').strip()
                     if timer.isdigit() and int(timer) > 720:
                         timer = "720"
-                    await self._lure(ctx, lure_type, location, timer)
+                    await self.send_lure(ctx, lure_type, location, timer)
                     return
                 else:
                     lure_embed.add_field(name=_('**New Lure Report**'), value=_("Meowth! I'll help you report a lure!\n\nFirst, I'll need to know what **type** the lure is. Reply with the **normal, mossy, magnetic, or glacial**. You can reply with **cancel** to stop anytime."), inline=False)
@@ -210,14 +210,14 @@ class Lure(commands.Cog):
                     lure_embed.remove_field(0)
                     break
         if not error:
-            await self._lure(ctx, lure_type, location, timer)
+            await self.send_lure(ctx, lure_type, location, timer)
         else:
             lure_embed.clear_fields()
             lure_embed.add_field(name=_('**Lure Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=lure_embed, delete_after=10)
             await utils.safe_delete(message)
 
-    async def _lure(self, ctx, lure_type, location, timer):
+    async def send_lure(self, ctx, lure_type, location, timer):
         dm_dict = {}
         expire_time = "30"
         if timer:
@@ -281,8 +281,9 @@ class Lure(commands.Cog):
                 except:
                     continue
         self.bot.guild_dict[ctx.guild.id]['lure_dict'][confirmation.id]['dm_dict'] = dm_dict
-        lure_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('lure_reports', 0) + 1
-        self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['lure_reports'] = lure_reports
+        if not ctx.message.author.bot:
+            lure_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('lure_reports', 0) + 1
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['lure_reports'] = lure_reports
 
     @lure.command(aliases=['expire'])
     @checks.allowlurereport()

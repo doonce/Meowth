@@ -10,6 +10,7 @@ import textwrap
 import logging
 import string
 import json
+import random
 
 import discord
 from discord.ext import commands, tasks
@@ -539,6 +540,35 @@ class Huntr(commands.Cog):
                     return
                 await self.huntr_research(ctx, report_details)
                 return
+            elif report_details.get('type', None) == "lure":
+                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoquest', True):
+                    return
+                lure_cog = self.bot.cogs.get('Lure')
+                if not lure_cog:
+                    logger.error("Lure Cog not loaded")
+                    return
+                reporttype = "lure"
+                pokestop = report_details.get('pokestop', None)
+                coordinates = report_details.get('gps', None)
+                lure_type = report_details.get('lure_type', None)
+                if not all([pokestop, coordinates, lure_type]):
+                    return
+                await self.huntr_lure(ctx, report_details)
+                return
+            elif report_details.get('type', None) == "invasion":
+                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoquest', True):
+                    return
+                invasion_cog = self.bot.cogs.get('Invasion')
+                if not invasion_cog:
+                    logger.error("Invasion Cog not loaded")
+                    return
+                reporttype = "invasion"
+                pokestop = report_details.get('pokestop', None)
+                coordinates = report_details.get('gps', None)
+                if not all([pokestop, coordinates]):
+                    return
+                await self.huntr_invasion(ctx, report_details)
+                return
         else:
             await utils.safe_delete(message)
             pokealarm_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id].get('pokealarm_dict', {}))
@@ -1063,6 +1093,50 @@ class Huntr(commands.Cog):
             research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
         await research_cog.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)
 
+    async def huntr_lure(self, ctx, report_details):
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        lure_cog = self.bot.cogs.get('Lure')
+        nearest_stop = ""
+        location = report_details['pokestop']
+        gps = report_details['gps']
+        lure_type = report_details['lure_type'].lower()
+        timer = report_details.get('expire', 30)
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        stop_info = ""
+        if gym_matching_cog:
+            nearest_stop = await gym_matching_cog.find_nearest_stop((gps.split(",")[0],gps.split(",")[1]), guild.id)
+            if nearest_stop:
+                location = nearest_stop
+            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "lure")
+        if not location:
+            return
+        await lure_cog.send_lure(ctx, lure_type, location, timer)
+
+    async def huntr_invasion(self, ctx, report_details):
+        message = ctx.message
+        channel = message.channel
+        author = message.author
+        guild = message.guild
+        invasion_cog = self.bot.cogs.get('Invasion')
+        nearest_stop = ""
+        location = report_details['pokestop']
+        gps = report_details['gps']
+        timer = report_details.get('expire', 30)
+        reward = None
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        stop_info = ""
+        if gym_matching_cog:
+            nearest_stop = await gym_matching_cog.find_nearest_stop((gps.split(",")[0],gps.split(",")[1]), guild.id)
+            if nearest_stop:
+                location = nearest_stop
+            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "invasion")
+        if not location:
+            return
+        await invasion_cog.send_invasion(ctx, location, reward, timer)
+
     @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def huntrraid(self, ctx):
@@ -1161,6 +1235,32 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         huntrmessage = await ctx.channel.send('!alarm {"type":"research", "pokestop":"Marilla Park", "gps":"39.645742,-79.96908", "quest":"Catch 5 Electric Pokemon", "reward":"Pikachu Encounter"}')
+        ctx = await self.bot.get_context(huntrmessage)
+        await self.on_pokealarm(ctx)
+
+    @commands.command(hidden=True)
+    @commands.has_permissions(manage_guild=True)
+    async def alarmlure(self, ctx):
+        author = ctx.author
+        guild = ctx.guild
+        message = ctx.message
+        channel = ctx.channel
+        lures = ['normal', 'mossy', 'glacial', 'magnetic']
+        random_lure = random.choice(lures)
+        await utils.safe_delete(message)
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"lure", "pokestop":"Marilla Park", "gps":"39.645742,-79.96908", "lure_type":random_lure, "expire":25}).replace("'", '"'))
+        ctx = await self.bot.get_context(huntrmessage)
+        await self.on_pokealarm(ctx)
+
+    @commands.command(hidden=True)
+    @commands.has_permissions(manage_guild=True)
+    async def alarminv(self, ctx):
+        author = ctx.author
+        guild = ctx.guild
+        message = ctx.message
+        channel = ctx.channel
+        await utils.safe_delete(message)
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"invasion", "pokestop":"Marilla Park", "gps":"39.645742,-79.96908", "expire":25}).replace("'", '"'))
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
