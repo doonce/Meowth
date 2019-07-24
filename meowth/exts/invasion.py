@@ -308,9 +308,7 @@ class Invasion(commands.Cog):
             async with ctx.typing():
                 if details:
                     invasion_split = details.rsplit(",", 2)
-                    if len(invasion_split) !=2:
-                        error = _("entered an incorrect amount of arguments.\n\nUsage: **!invasion** or **!invasion <pokestop>, <reward>**")
-                        break
+                    invasion_split.append("None")
                     location, reward = invasion_split
                     gym_matching_cog = self.bot.cogs.get('GymMatching')
                     stop_info = ""
