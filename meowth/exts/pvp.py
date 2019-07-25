@@ -33,7 +33,7 @@ class Pvp(commands.Cog):
         count = 0
         for guild in list(self.bot.guilds):
             pvp_dict = self.bot.guild_dict[guild.id].setdefault('pvp_dict', {})
-            for reportid in pvp_dict.keys():
+            for reportid in list(pvp_dict.keys()):
                 if pvp_dict[reportid].get('exp', 0) <= time.time():
                     report_channel = self.bot.get_channel(pvp_dict[reportid].get('report_channel'))
                     if report_channel:

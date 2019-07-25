@@ -36,7 +36,7 @@ class Research(commands.Cog):
             if to_midnight > 0:
                 midnight_list.append(to_midnight)
             research_dict = self.bot.guild_dict[guild.id].setdefault('questreport_dict', {})
-            for reportid in research_dict.keys():
+            for reportid in list(research_dict.keys()):
                 if research_dict[reportid].get('exp', 0) <= time.time():
                     report_channel = self.bot.get_channel(research_dict[reportid].get('report_channel'))
                     if report_channel:

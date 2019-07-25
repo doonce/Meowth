@@ -32,7 +32,7 @@ class Lure(commands.Cog):
         count = 0
         for guild in list(self.bot.guilds):
             lure_dict = self.bot.guild_dict[guild.id].setdefault('lure_dict', {})
-            for reportid in lure_dict.keys():
+            for reportid in list(lure_dict.keys()):
                 if lure_dict[reportid].get('exp', 0) <= time.time():
                     report_channel = self.bot.get_channel(lure_dict[reportid].get('report_channel'))
                     if report_channel:

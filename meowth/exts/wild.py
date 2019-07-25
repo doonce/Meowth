@@ -80,7 +80,7 @@ class Wild(commands.Cog):
         count = 0
         for guild in list(self.bot.guilds):
             wild_dict = self.bot.guild_dict[guild.id].setdefault('wildreport_dict', {})
-            for reportid in wild_dict.keys():
+            for reportid in list(wild_dict.keys()):
                 if wild_dict[reportid].get('exp', 0) <= time.time():
                     report_channel = self.bot.get_channel(wild_dict[reportid].get('report_channel'))
                     if report_channel:
@@ -125,7 +125,7 @@ class Wild(commands.Cog):
         try:
             await message.edit(embed=discord.Embed(description=wild_dict[message.id]['expedit']['embedcontent'], colour=message.embeds[0].colour.value))
             await message.clear_reactions()
-        except (discord.errors.NotFound, KeyError):
+        except (discord.errors.NotFound, discord.errors.Forbidden, KeyError):
             pass
         try:
             user_message = await channel.fetch_message(wild_dict[message.id]['report_message'])

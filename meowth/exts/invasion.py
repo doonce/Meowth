@@ -32,7 +32,7 @@ class Invasion(commands.Cog):
         count = 0
         for guild in list(self.bot.guilds):
             invasion_dict = self.bot.guild_dict[guild.id].setdefault('invasion_dict', {})
-            for reportid in invasion_dict.keys():
+            for reportid in list(invasion_dict.keys()):
                 if invasion_dict[reportid].get('exp', 0) <= time.time():
                     report_channel = self.bot.get_channel(invasion_dict[reportid].get('report_channel'))
                     if report_channel:
