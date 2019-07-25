@@ -108,7 +108,7 @@ class Invasion(commands.Cog):
                 await message.remove_reaction(payload.emoji, user)
                 ctx.author = user
                 if not invasion_dict.get('pkmn_obj', None):
-                    await self.add_invasion_info(ctx, message)
+                    await self.add_invasion_info(ctx, message, user)
 
     async def expire_invasion(self, message):
         guild = message.channel.guild
@@ -130,7 +130,7 @@ class Invasion(commands.Cog):
         except KeyError:
             pass
 
-    async def add_invasion_info(self, ctx, message):
+    async def add_invasion_info(self, ctx, message, user):
         invasion_dict = self.bot.guild_dict[ctx.guild.id]['invasion_dict'].get(message.id, {})
         message = ctx.message
         channel = message.channel
@@ -175,6 +175,9 @@ class Invasion(commands.Cog):
                         pokemon.size = None
                         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward'] = pokemon.name.lower()
                         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['pkmn_obj'] = str(pokemon)
+                        if not user.bot:
+                            invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('invasion_reports', 0) + 0.5
+                            self.bot.guild_dict[ctx.guild.id]['trainers'][user.id]['invasion_reports'] = invasion_reports
                     break
         if error:
             invasion_embed.clear_fields()
@@ -456,8 +459,11 @@ class Invasion(commands.Cog):
         if pokemon:
             self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['pkmn_obj'] = str(pokemon)
         if not ctx.author.bot:
-            invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('invasion_reports', 0) + 1
+            invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('invasion_reports', 0) + 0.5
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['invasion_reports'] = invasion_reports
+            if pokemon:
+                invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('invasion_reports', 0) + 0.5
+                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['invasion_reports'] = invasion_reports
 
     @invasion.command(aliases=['expire'])
     @checks.allowinvasionreport()

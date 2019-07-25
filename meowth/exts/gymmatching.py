@@ -470,6 +470,17 @@ class GymMatching(commands.Cog):
                     index += 1
             if active_lures:
                 poi_embed.add_field(name="Current Lures", value=('\n').join(active_lures), inline=False)
+            active_invasions = []
+            index = 1
+            for report in self.bot.guild_dict[ctx.guild.id].setdefault('invasion_dict', {}):
+                if self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report].get('location', "") == location:
+                    report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['report_channel'])
+                    report_message = await report_channel.fetch_message(report)
+                    reward = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['reward']
+                    active_invasions.append(f"{index}. [{reward.title()}]({report_message.jump_url})")
+                    index += 1
+            if active_invasions:
+                poi_embed.add_field(name="Current Invasions", value=('\n').join(active_invasions), inline=False)
             active_wilds = []
             index = 1
             for report in self.bot.guild_dict[ctx.guild.id].setdefault('wildreport_dict', {}):
@@ -524,6 +535,7 @@ class GymMatching(commands.Cog):
         match_type = None
         duplicate_raids = []
         duplicate_research = []
+        duplicate_invasions = []
         if not gyms and not stops:
             return poi_info, details, False
         if type == "raid" or type == "exraid":
@@ -594,9 +606,29 @@ class GymMatching(commands.Cog):
                 if not dupe_check:
                     return poi_info, details, poi_gmaps_link
                 rusure = await message.channel.send(_('Meowth! It looks like that quest might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_research)))
-        elif type == "wild" or type == "lure" or type == "pvp" or type == "whereis" or type == "invasion":
+        elif type == "invasion":
+            poi_info = poi_note
+            counter = 1
+            for quest in self.bot.guild_dict[ctx.guild.id]['invasion_dict']:
+                inv_details = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][quest]
+                invasion_location = inv_details['location']
+                invasion_channel = inv_details['report_channel']
+                invasion_reward = inv_details['reward'].strip()
+                if (details == invasion_location) and ctx.channel.id == invasion_channel:
+                    if message.author.bot:
+                        return "", False, False
+                    invasion_details = f"`{counter}. Pokestop: {invasion_location} Reward: {invasion_reward}`"
+                    duplicate_invasions.append(invasion_details)
+                    counter += 1
+            if duplicate_invasions:
+                if ctx.author.bot:
+                    return "", False, False
+                if not dupe_check:
+                    return poi_info, details, poi_gmaps_link
+                rusure = await message.channel.send(_('Meowth! It looks like that invasion might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_invasions)))
+        elif type == "wild" or type == "lure" or type == "pvp" or type == "whereis":
             poi_info = f"**{match_type.title()}:** {details}{poi_note}"
-        if duplicate_raids or duplicate_research:
+        if duplicate_raids or duplicate_research or duplicate_invasions:
             try:
                 timeout = False
                 res, reactuser = await utils.ask(self.bot, rusure, message.author.id)
