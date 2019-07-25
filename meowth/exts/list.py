@@ -255,7 +255,7 @@ class Listing(commands.Cog):
                         listmsg += ('\n' + bulletpoint) + (await self._interest(ctx, tag, team))
                     if " 0 on the way!" not in await self._otw(ctx, tag, team):
                         listmsg += ('\n' + bulletpoint) + (await self._otw(ctx, tag, team))
-                    if " 0 waiting at the raid!" not in await self._waiting(ctx, tag, team):
+                    if " 0 waiting at the" not in await self._waiting(ctx, tag, team):
                         listmsg += ('\n' + bulletpoint) + (await self._waiting(ctx, tag, team))
                     if " 0 in the lobby!" not in await self._lobbylist(ctx, tag, team):
                         listmsg += ('\n' + bulletpoint) + (await self._lobbylist(ctx, tag, team))

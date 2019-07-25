@@ -2014,7 +2014,7 @@ class Raid(commands.Cog):
         raid_embed.set_thumbnail(url=pokemon.img_url)
         raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1")
         for field in oldembed.fields:
-            if _('expires') in field.name.lower() or _('hatches') in field.name.lower() or _('list') in field.name.lower() or _('reaction') in field.name.lower() or _('event') in field.name.lower():
+            if _('group') in field.name.lower() or _('list') in field.name.lower() or _('reaction') in field.name.lower() or _('event') in field.name.lower():
                 raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
         raid_embed.add_field(name=_('**Expires:**'), value=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
         if eggdetails.get('coordinates', False):
