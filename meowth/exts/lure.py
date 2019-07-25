@@ -234,7 +234,7 @@ class Lure(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
-            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "lure", dupe_check=False)
+            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "lure")
             if stop_url:
                 loc_url = stop_url
                 lure_embed.description = stop_info
