@@ -140,7 +140,6 @@ class Research(commands.Cog):
         research_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
         research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pokemon = False
-        reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module"]
         research_dict = self.bot.guild_dict[ctx.guild.id].setdefault('questreport_dict', {})
         while True:
             async with ctx.typing():
@@ -160,22 +159,6 @@ class Research(commands.Cog):
                             loc_url = stop_url
                     if not location:
                         return
-                    research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
-                    research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, " "), inline=True)
-                    other_reward = any(x in reward.lower() for x in reward_list)
-                    shiny_str = ""
-                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
-                    if pokemon and pokemon.id in self.bot.shiny_dict:
-                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                    if pokemon and not other_reward:
-                        reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
-                        research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
-                        reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
-                    else:
-                        research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, " "), inline=True)
                     break
                 else:
                     research_embed.add_field(name=_('**New Research Report**'), value=_("Meowth! I'll help you report a research quest!\n\nFirst, I'll need to know what **pokestop** you received the quest from. Reply with the name of the **pokestop**. You can reply with **cancel** to stop anytime."), inline=False)
@@ -243,37 +226,24 @@ class Research(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif rewardmsg:
-                        research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
-                        research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, " "), inline=True)
                         reward = rewardmsg.clean_content
-                        other_reward = any(x in reward.lower() for x in reward_list)
-                        shiny_str = ""
-                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
-                        if pokemon and not other_reward:
-                            if pokemon.id in self.bot.shiny_dict:
-                                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                            reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
-                            research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
-                            reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
-                        else:
-                            research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, " "), inline=True)
-                    research_embed.remove_field(0)
                     break
         if not error:
-            await self.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)
+            await self.send_research(ctx, location, quest, reward)
         else:
             research_embed.clear_fields()
             research_embed.add_field(name=_('**Research Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=research_embed, delete_after=10)
             await utils.safe_delete(message)
 
-    async def send_research(self, ctx, research_embed, location, quest, reward, other_reward, loc_url):
+    async def send_research(self, ctx, location, quest, reward):
         dm_dict = {}
+        research_dict = self.bot.guild_dict[ctx.guild.id].setdefault('questreport_dict', {})
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
         to_midnight = 24*60*60 - ((timestamp-timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+        complete_emoji = self.bot.custom_emoji.get('research_complete', '\u2705')
+        expire_emoji = self.bot.custom_emoji.get('research_expired', '\ud83d\udca8')
+        research_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
         dust = re.search(r'(?i)dust', reward)
         candy = re.search(r'(?i)candy|(?i)candies', reward)
@@ -298,16 +268,32 @@ class Research(commands.Cog):
         fasttm = re.search(r'(?i)fast tm', reward)
         chargetm = re.search(r'(?i)charged? tm', reward)
         starpiece = re.search(r'(?i)star piece', reward)
-        research_msg = _("Field Research reported by {author}").format(author=ctx.author.mention)
+        reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module"]
+        other_reward = any(x in reward.lower() for x in reward_list)
+        research_msg = f"Field Research reported by {ctx.author.mention}! Use {complete_emoji} if you completed the quest or {expire_emoji} if the quest has disappeared!"
         research_embed.title = _('Meowth! Click here for my directions to the research!')
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=ctx.author.name)
+        loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="research")
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        stop_info = ""
+        if gym_matching_cog:
+            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "research", dupe_check=False)
+            if stop_url:
+                loc_url = stop_url
+        if not location:
+            return
         research_embed.url = loc_url
         item = None
-        pkmn_types = ["None", "None"]
+        shiny_str = ""
+        if pokemon and pokemon.id in self.bot.shiny_dict:
+            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         if pokemon and not other_reward:
+            reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
+            pokemon.shiny = False
             research_embed.set_thumbnail(url=pokemon.img_url)
-            pkmn_types = copy.deepcopy(pokemon.types)
-            pkmn_types.append('None')
         elif dust:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png")
             item = "stardust"
@@ -377,11 +363,17 @@ class Research(commands.Cog):
         elif lure and mossylure:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_mossy.png")
             item = "mossy lure module"
+        research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
+        research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, " "), inline=True)
+        research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, " "), inline=True)
+        if pokemon:
+            reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
+        research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
-        confirmation = await ctx.channel.send(research_msg, embed=research_embed)
-        await utils.safe_reaction(confirmation, self.bot.custom_emoji.get('research_complete', '\u2705'))
-        await utils.safe_reaction(confirmation, self.bot.custom_emoji.get('research_expired', '\ud83d\udca8'))
-        self.bot.guild_dict[ctx.guild.id]['questreport_dict'][confirmation.id] = {
+        ctx.resreportmsg = await ctx.channel.send(research_msg, embed=research_embed)
+        await utils.safe_reaction(ctx.resreportmsg, complete_emoji)
+        await utils.safe_reaction(ctx.resreportmsg, expire_emoji)
+        self.bot.guild_dict[ctx.guild.id]['questreport_dict'][ctx.resreportmsg.id] = {
             'exp':time.time() + to_midnight - 60,
             'expedit':"delete",
             'report_message':ctx.message.id,
@@ -395,11 +387,31 @@ class Research(commands.Cog):
             'reward':reward,
             'completed_by':[]
         }
+        dm_dict = await self.send_dm_messages(ctx, pokemon, location, item, copy.deepcopy(research_embed), dm_dict)
+        self.bot.guild_dict[ctx.guild.id]['questreport_dict'][ctx.resreportmsg.id]['dm_dict'] = dm_dict
         if not ctx.author.bot:
             research_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('research_reports', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['research_reports'] = research_reports
 
-        research_embed.description = research_embed.description + f"\n**Report:** [Jump to Message]({confirmation.jump_url})"
+    async def send_dm_messages(self, ctx, res_pokemon, location, item, embed, dm_dict):
+        if embed:
+            if isinstance(embed.description, discord.embeds._EmptyEmbed):
+                embed.description = ""
+            if "Jump to Message" not in embed.description:
+                embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.resreportmsg.jump_url})"
+            index = 0
+            for field in embed.fields:
+                if "reaction" in field.name.lower():
+                    embed.remove_field(index)
+                else:
+                    index += 1
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, res_pokemon)
+        if pokemon:
+            pkmn_types = pokemon.types.copy()
+        else:
+            pkmn_types = ['None']
+        pkmn_types.append('None')
+        embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.resreportmsg.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
@@ -411,13 +423,13 @@ class Research(commands.Cog):
                 try:
                     user = ctx.guild.get_member(trainer)
                     if pokemon:
-                        resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=string.capwords(pokemon.name, ' '), author=ctx.author.display_name, channel=ctx.channel.mention), embed=research_embed)
+                        resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=string.capwords(pokemon.name, ' '), author=ctx.author.display_name, channel=ctx.channel.mention), embed=embed)
                     else:
-                        resdmmsg = await user.send(_("Field Research reported by {author} in {channel}").format(author=ctx.author.display_name, channel=ctx.channel.mention), embed=research_embed)
+                        resdmmsg = await user.send(_("Field Research reported by {author} in {channel}").format(author=ctx.author.display_name, channel=ctx.channel.mention), embed=embed)
                     dm_dict[user.id] = resdmmsg.id
                 except:
                     continue
-        self.bot.guild_dict[ctx.guild.id]['questreport_dict'][confirmation.id]['dm_dict'] = dm_dict
+        return dm_dict
 
     @research.command(aliases=['expire'])
     @checks.allowresearchreport()

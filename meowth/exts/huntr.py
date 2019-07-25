@@ -785,7 +785,10 @@ class Huntr(commands.Cog):
             if nearest_poi:
                 wild_details = nearest_poi
                 poi_info, __, __ = await gym_matching_cog.get_poi_info(ctx, wild_details.strip(), "wild")
-        report_details['location'] = nearest_stop
+        if nearest_stop:
+            report_details['location'] = nearest_stop
+        else:
+            report_details['location'] = str(wild_details)
         report_details['pkmn_obj'] = str(pokemon)
         stop_str = ""
         if nearest_stop or nearest_poi:
@@ -1058,11 +1061,6 @@ class Huntr(commands.Cog):
         reward = report_details['reward']
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         to_midnight = 24*60*60 - ((timestamp-timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
-        loc_url = f"https://www.google.com/maps/search/?api=1&query={gps}"
-        research_embed = discord.Embed(description="", colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
-        research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
-        pokemon = False
-        reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
@@ -1074,23 +1072,7 @@ class Huntr(commands.Cog):
                 loc_url = stop_url
         if not location:
             return
-        research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
-        research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, ' '), inline=True)
-        other_reward = any(x in reward.lower() for x in reward_list)
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
-        if pokemon and not other_reward:
-            shiny_str = ""
-            if pokemon.id in self.bot.shiny_dict:
-                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-            reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
-            research_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
-            reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
-        else:
-            research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, ' '), inline=True)
-        await research_cog.send_research(ctx, research_embed, location, quest, reward, other_reward, loc_url)
+        await research_cog.send_research(ctx, location, quest, reward)
 
     async def huntr_lure(self, ctx, report_details):
         message = ctx.message

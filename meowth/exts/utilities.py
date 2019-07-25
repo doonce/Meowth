@@ -432,6 +432,7 @@ def create_gmaps_query(bot, details, channel, type="raid"):
         report = "raid"
     else:
         report = type
+    details = str(details)
     if "/maps" in details and "http" in details:
         mapsindex = details.find('/maps')
         newlocindex = details.rfind('http', 0, mapsindex)
@@ -843,7 +844,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.7.25.3 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.7.19.1 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
