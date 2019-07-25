@@ -34,12 +34,11 @@ class Huntr(commands.Cog):
     @tasks.loop(seconds=600)
     async def huntr_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
-        for guildid in guilddict_temp.keys():
+        for guild in list(self.bot.guilds):
             report_edit_dict = {}
             report_delete_dict = {}
-            pokealarm_dict = guilddict_temp[guildid].get('pokealarm_dict', {})
-            pokehuntr_dict = guilddict_temp[guildid].get('pokehuntr_dict', {})
+            pokealarm_dict = self.bot.guild_dict[guild.id].get('pokealarm_dict', {})
+            pokehuntr_dict = self.bot.guild_dict[guild.id].get('pokehuntr_dict', {})
             report_dict_dict = {
                 'pokealarm_dict':pokealarm_dict,
                 'pokehuntr_dict':pokehuntr_dict
@@ -59,7 +58,7 @@ class Huntr(commands.Cog):
                             if report_dict_dict[report_dict][reportid].get('dm_dict', False):
                                 self.bot.loop.create_task(utils.expire_dm_reports(self.bot, report_dict_dict[report_dict][reportid]['dm_dict']))
                         try:
-                            del self.bot.guild_dict[guildid][report_dict][reportid]
+                            del self.bot.guild_dict[guild.id][report_dict][reportid]
                         except KeyError:
                             pass
             for messageid in report_delete_dict.keys():

@@ -28,11 +28,10 @@ class Lure(commands.Cog):
     @tasks.loop(seconds=0)
     async def lure_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
         expire_list = []
         count = 0
-        for guildid in guilddict_temp.keys():
-            lure_dict = guilddict_temp[guildid].setdefault('lure_dict', {})
+        for guild in list(self.bot.guilds):
+            lure_dict = self.bot.guild_dict[guild.id].setdefault('lure_dict', {})
             for reportid in lure_dict.keys():
                 if lure_dict[reportid].get('exp', 0) <= time.time():
                     report_channel = self.bot.get_channel(lure_dict[reportid].get('report_channel'))
@@ -46,7 +45,7 @@ class Lure(commands.Cog):
                             pass
                     try:
                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, lure_dict.get(reportid, {}).get('dm_dict', {})))
-                        del self.bot.guild_dict[guildid]['lure_dict'][reportid]
+                        del self.bot.guild_dict[guild.id]['lure_dict'][reportid]
                         count += 1
                         continue
                     except KeyError:

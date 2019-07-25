@@ -794,7 +794,7 @@ class Listing(commands.Cog):
         user_levels = sorted(user_levels)
         user_levels = [str(x) for x in user_levels]
         wantmsg = ""
-        if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels):
+        if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels) or len(user_forms) > 0:
             if wantlist:
                 wantmsg += _('**Pokemon:** (wilds, research, invasions, nests{raid_link})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids" if user_link else "")
             if user_forms:

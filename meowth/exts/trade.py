@@ -26,12 +26,10 @@ class Trading(commands.Cog):
     @tasks.loop(seconds=86400)
     async def trade_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
         yes_emoji = self.bot.custom_emoji.get('trade_complete', '\u2611')
         no_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
-        for guildid in guilddict_temp.keys():
-            guild = self.bot.get_guild(guildid)
-            trade_dict = guilddict_temp[guild.id].setdefault('trade_dict', {})
+        for guild in list(self.bot.guilds):
+            trade_dict = self.bot.guild_dict[guild.id].setdefault('trade_dict', {})
             for listing_id in trade_dict:
                 if trade_dict[listing_id].get('exp', 0) <= time.time():
                     trade_channel = self.bot.get_channel(trade_dict[listing_id].get('report_channel_id'))

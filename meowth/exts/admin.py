@@ -29,14 +29,13 @@ class Admin(commands.Cog):
 
     @tasks.loop(seconds=7200)
     async def guild_cleanup(self, loop=True):
-        guilddict_srvtemp = copy.deepcopy(self.bot.guild_dict)
         logger.info('------ BEGIN ------')
         dict_guild_list = []
         bot_guild_list = []
         dict_guild_delete = []
-        for guildid in guilddict_srvtemp.keys():
+        for guildid in self.bot.guild_dict.keys():
             dict_guild_list.append(guildid)
-        for guild in self.bot.guilds:
+        for guild in list(self.bot.guilds):
             bot_guild_list.append(guild.id)
         guild_diff = set(dict_guild_list) - set(bot_guild_list)
         for s in guild_diff:

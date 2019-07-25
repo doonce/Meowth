@@ -28,11 +28,10 @@ class Invasion(commands.Cog):
     @tasks.loop(seconds=10)
     async def invasion_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
         expire_list = []
         count = 0
-        for guildid in guilddict_temp.keys():
-            invasion_dict = guilddict_temp[guildid].setdefault('invasion_dict', {})
+        for guild in list(self.bot.guilds):
+            invasion_dict = self.bot.guild_dict[guild.id].setdefault('invasion_dict', {})
             for reportid in invasion_dict.keys():
                 if invasion_dict[reportid].get('exp', 0) <= time.time():
                     report_channel = self.bot.get_channel(invasion_dict[reportid].get('report_channel'))
@@ -46,7 +45,7 @@ class Invasion(commands.Cog):
                             pass
                     try:
                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, invasion_dict.get(reportid, {}).get('dm_dict', {})))
-                        del self.bot.guild_dict[guildid]['wildreport_dict'][reportid]
+                        del self.bot.guild_dict[guild.id]['wildreport_dict'][reportid]
                         count += 1
                         continue
                     except KeyError:
@@ -201,6 +200,8 @@ class Invasion(commands.Cog):
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
         if not pokemon:
             return
+        pokemon.shiny = False
+        pokemon.form = "shadow"
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
@@ -271,7 +272,9 @@ class Invasion(commands.Cog):
                 continue
             if trainer in dm_dict:
                 continue
-            if (pokemon and pokemon.id in user_wants) or str(pokemon) in user_forms or "shadow" in user_forms or str(location).lower() in user_stops or pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types:
+            if "shadow" in user_forms:
+                user_forms.remove("shadow")
+            if (pokemon and pokemon.id in user_wants) or str(pokemon) in user_forms or str(location).lower() in user_stops or pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types:
                 try:
                     user = ctx.guild.get_member(trainer)
                     if pokemon:
@@ -403,10 +406,11 @@ class Invasion(commands.Cog):
             reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
             invasion_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
-            invasion_embed.set_thumbnail(url=pokemon.img_url)
             pkmn_types = copy.deepcopy(pokemon.types)
             pkmn_types.append('None')
             pokemon.shiny = False
+            pokemon.form = "shadow"
+            invasion_embed.set_thumbnail(url=pokemon.img_url)
             invasion_msg = f"Invasion reported by {ctx.author.mention}! Use {complete_emoji} if you completed the invasion or {expire_emoji} if the invasion has disappeared!"
         else:
             reward = "Unknown Pokemon"

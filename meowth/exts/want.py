@@ -348,9 +348,19 @@ class Want(commands.Cog):
         added_list = []
         role_list = []
         for entered_want in want_split:
+            if entered_want.lower() in self.bot.form_dict['list']:
+                forms = []
+                for pokemon in self.bot.form_dict:
+                    if pokemon == "list" or pokemon == "two_words":
+                        continue
+                    if self.bot.form_dict[pokemon].get(entered_want.lower()):
+                        forms.append(f"{entered_want} {utils.get_name(self.bot, pokemon)}")
+                forms = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in forms]
+                want_list.extend([x for x in forms if x])
+                continue
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_want.strip())
             if str(pokemon) == "XS Rattata":
-                sizes = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in ["Male Alolan XS Rattata", "Female Alolan XS Rattata", "Alolan XS Rattata", "Male XS Rattata", "Female XS Rattata", "XS Rattata"]]
+                sizes = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in ["Alolan XS Rattata", "Male XS Rattata", "Female XS Rattata", "XS Rattata"]]
                 want_list.extend(sizes)
                 continue
             if str(pokemon) == "XL Magikarp":
@@ -414,24 +424,6 @@ class Want(commands.Cog):
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-
-    @want.command(name='shadow')
-    @checks.allowwant()
-    async def want_shadow(self, ctx):
-        """Adds all invasions to your want list. TEMPORARY"""
-        await ctx.trigger_typing()
-        message = ctx.message
-        author = message.author
-        guild = message.guild
-        channel = message.channel
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-        user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
-        if "shadow" not in user_forms:
-            user_forms.append("shadow")
-            confirmation_msg = f"{ctx.author.display_name}, Shadow pokemon notifications have been added."
-        else:
-            confirmation_msg = f"{ctx.author.display_name}, you already want Shadow pokemon notifications.."
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @want.command(name='boss')
@@ -1400,9 +1392,19 @@ class Want(commands.Cog):
         removed_list = []
         role_list = []
         for entered_unwant in unwant_split:
+            if entered_unwant.lower() in self.bot.form_dict['list']:
+                forms = []
+                for pokemon in self.bot.form_dict:
+                    if pokemon == "list" or pokemon == "two_words":
+                        continue
+                    if self.bot.form_dict[pokemon].get(entered_unwant.lower()):
+                        forms.append(f"{entered_unwant} {utils.get_name(self.bot, pokemon)}")
+                forms = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in forms]
+                unwant_list.extend([x for x in forms if x])
+                continue
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_unwant.strip())
             if str(pokemon) == "XS Rattata":
-                sizes = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in ["Male Alolan XS Rattata", "Female Alolan XS Rattata", "Alolan XS Rattata", "Male XS Rattata", "Female XS Rattata", "XS Rattata"]]
+                sizes = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in ["Alolan XS Rattata", "Male XS Rattata", "Female XS Rattata", "XS Rattata"]]
                 unwant_list.extend(sizes)
                 continue
             if str(pokemon) == "XL Magikarp":
@@ -1460,24 +1462,6 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-
-    @unwant.command(name='shadow')
-    @checks.allowwant()
-    async def unwant_shadow(self, ctx):
-        """Removes all invasions from your want list. TEMPORARY"""
-        await ctx.trigger_typing()
-        message = ctx.message
-        author = message.author
-        guild = message.guild
-        channel = message.channel
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-        user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
-        if "shadow" in user_forms:
-            user_forms.remove("shadow")
-            confirmation_msg = f"{ctx.author.display_name}, Shadow pokemon notifications have been removed."
-        else:
-            confirmation_msg = f"{ctx.author.display_name}, you haven't subscribed to Shadow pokemon notifications."
-        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @unwant.command(name='boss')
     @checks.allowwant()

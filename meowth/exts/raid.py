@@ -535,7 +535,6 @@ class Raid(commands.Cog):
 
     @tasks.loop(seconds=600)
     async def channel_cleanup(self, loop=True):
-        guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)
         logger.info('------ BEGIN ------')
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         # clean up active_channels
@@ -547,27 +546,23 @@ class Raid(commands.Cog):
                 except ValueError:
                     pass
         # for every server in save data
-        for guildid in guilddict_chtemp.keys():
-            guild = self.bot.get_guild(guildid)
-            if not guild:
-                logger.info(f"Server: {guildid} = CHECKING FOR SERVER: NOT FOUND")
-                continue
+        for guild in list(self.bot.guilds):
             logger.info(f"Server: ({guild.name}) - BEGIN CHECKING SERVER")
             # clear channel lists
             dict_channel_delete = []
             # check every raid channel data for each server
             report_channel_dict = {}
             for report_dict in self.bot.channel_report_dicts:
-                report_channel_dict = {**report_channel_dict, **guilddict_chtemp[guildid].setdefault(report_dict, {})}
+                report_channel_dict = {**report_channel_dict, **self.bot.guild_dict[guild.id].setdefault(report_dict, {})}
             for channelid in report_channel_dict:
                 channel = self.bot.get_channel(channelid)
                 report_dict = await utils.get_report_dict(self.bot, channel)
                 logger.info(f"Server: {guild.name} : Channel: {channelid} - CHECKING")
-                channel_dict = guilddict_chtemp[guildid].get(report_dict, {}).get(channelid, {})
+                channel_dict = self.bot.guild_dict[guild.id].get(report_dict, {}).get(channelid, {})
                 report_author = guild.get_member(channel_dict.get('report_author'))
                 if channel == None:
                     for report_dict in self.bot.channel_report_dicts:
-                        channel_dict = guilddict_chtemp[guildid].get(report_dict, {}).get(channelid, {})
+                        channel_dict = self.bot.guild_dict[guild.id].get(report_dict, {}).get(channelid, {})
                         if channel_dict:
                             break
                     # list channel for deletion from save data
@@ -575,8 +570,8 @@ class Raid(commands.Cog):
                     report_author = guild.get_member(channel_dict.get('report_author'))
                     if channel_dict and report_dict == 'raidchannel_dict':
                         if gym_matching_cog:
-                            gym_matching_cog.do_gym_stats(guildid, channel_dict)
-                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, guilddict_chtemp[guildid][report_dict].get(channelid, {}).get('dm_dict', {})))
+                            gym_matching_cog.do_gym_stats(guild.id, channel_dict)
+                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id][report_dict].get(channelid, {}).get('dm_dict', {})))
                         raid_bonus = channel_dict.get('completed', []) or channel_dict.get('battling', [])
                         if raid_bonus and report_author and not report_author.bot:
                             raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('raid_reports', 0) + 1
@@ -606,12 +601,12 @@ class Raid(commands.Cog):
             for c in dict_channel_delete:
                 for report_dict in self.bot.channel_report_dicts:
                     try:
-                        del self.bot.guild_dict[guildid][report_dict][c]
-                        logger.info(f"{guildid} - RaidChannel ({c}) Savedata Cleared")
+                        del self.bot.guild_dict[guild.id][report_dict][c]
+                        logger.info(f"{guild.id} - RaidChannel ({c}) Savedata Cleared")
                     except KeyError:
                         pass
                 try:
-                    del self.bot.guild_dict[guildid]['list_dict']['raid'][c]
+                    del self.bot.guild_dict[guild.id]['list_dict']['raid'][c]
                 except KeyError:
                     pass
         # save server_dict changes after cleanup
@@ -636,8 +631,7 @@ class Raid(commands.Cog):
     async def reset_raid_roles(self, loop=True):
         boss_names = [str(word) for word in self.bot.raid_list]
         boss_names = [word for word in boss_names if word.islower() and not word.isdigit()]
-        for guild_id in self.bot.guild_dict:
-            guild = self.bot.get_guild(guild_id)
+        for guild in list(self.bot.guilds):
             if not guild:
                 continue
             for member in guild.members:
@@ -686,7 +680,7 @@ class Raid(commands.Cog):
                 want_names = [utils.get_name(self.bot, x) for x in user_wants]
                 want_names = [x.lower() for x in want_names]
                 form_names = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in user_forms]
-                form_names = [x.name.lower() for x in form_names]
+                form_names = [x.name.lower() for x in form_names if x]
                 want_names = want_names + form_names
                 for want in want_names:
                     if want in self.bot.raid_list:
@@ -952,18 +946,17 @@ class Raid(commands.Cog):
             self.bot.raid_dict = await utils.get_raid_dict(self.bot)
             self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
             self.reset_raid_roles.restart()
-            guilddict_chtemp = copy.deepcopy(self.bot.guild_dict)
-            for guild_id in guilddict_chtemp:
-                for channel_id in guilddict_chtemp[guild_id]['raidchannel_dict']:
-                    if guilddict_chtemp[guild_id]['raidchannel_dict'][channel_id]['egg_level'] == str(edit_level):
-                        for trainer_id in guilddict_chtemp[guild_id]['raidchannel_dict'][channel_id]['trainer_dict']:
-                            interest = copy.copy(guilddict_chtemp[guild_id]['raidchannel_dict'][channel_id]['trainer_dict'][trainer_id]['interest'])
+            for guild in list(self.bot.guilds):
+                for channel_id in guilddict_chtemp[guild.id]['raidchannel_dict']:
+                    if guilddict_chtemp[guild.id]['raidchannel_dict'][channel_id]['egg_level'] == str(edit_level):
+                        for trainer_id in guilddict_chtemp[guild.id]['raidchannel_dict'][channel_id]['trainer_dict']:
+                            interest = copy.copy(guilddict_chtemp[guild.id]['raidchannel_dict'][channel_id]['trainer_dict'][trainer_id]['interest'])
                             new_bosses = list(set(new_list) - set(tmp))
                             new_bosses = [x.lower() for x in new_bosses]
-                            self.bot.guild_dict[guild_id]['raidchannel_dict'][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
-                        self.bot.guild_dict[guild_id]['raidchannel_dict'][channel_id]['pokemon'] = ''
-                        self.bot.guild_dict[guild_id]['raidchannel_dict'][channel_id]['ctrs_dict'] = {}
-                        self.bot.guild_dict[guild_id]['raidchannel_dict'][channel_id]['ctrsmessage'] = None
+                            self.bot.guild_dict[guild.id]['raidchannel_dict'][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
+                        self.bot.guild_dict[guild.id]['raidchannel_dict'][channel_id]['pokemon'] = ''
+                        self.bot.guild_dict[guild.id]['raidchannel_dict'][channel_id]['ctrs_dict'] = {}
+                        self.bot.guild_dict[guild.id]['raidchannel_dict'][channel_id]['ctrsmessage'] = None
                         channel = self.bot.get_channel(channel_id)
                         await self._edit_party(channel)
             await utils.safe_delete(message)

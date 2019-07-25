@@ -48,25 +48,24 @@ class Nest(commands.Cog):
     @tasks.loop(seconds=0)
     async def nest_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
         migration_list = []
         count = 0
-        for guildid in guilddict_temp.keys():
-            nest_dict = guilddict_temp[guildid].setdefault('nest_dict', {})
+        for guild in list(self.bot.guilds):
+            nest_dict = self.bot.guild_dict[guild.id].setdefault('nest_dict', {})
             utcnow = datetime.datetime.utcnow()
-            migration_utc = guilddict_temp[guildid]['configure_dict']['nest']['migration']
+            migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest']['migration']
             new_migration = False
             if utcnow > migration_utc:
                 new_migration = migration_utc + datetime.timedelta(days=14)
-                migration_local = new_migration + datetime.timedelta(hours=self.bot.guild_dict[guildid]['configure_dict']['settings']['offset'])
-                self.bot.guild_dict[guildid]['configure_dict']['nest']['migration'] = new_migration
+                migration_local = new_migration + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                self.bot.guild_dict[guild.id]['configure_dict']['nest']['migration'] = new_migration
             to_migration = migration_utc.timestamp() - utcnow.timestamp()
             if to_migration > 0:
                 migration_list.append(to_migration)
             for channel in nest_dict:
                 report_channel = self.bot.get_channel(channel)
                 if not report_channel:
-                    del self.bot.guild_dict[guildid]['nest_dict'][channel]
+                    del self.bot.guild_dict[guild.id]['nest_dict'][channel]
                     logger.info(f"Deleted Nest Channel {report_channel}")
                     continue
                 for nest in nest_dict[channel]:
@@ -77,7 +76,7 @@ class Nest(commands.Cog):
                             try:
                                 report_message = await report_channel.fetch_message(report)
                                 if new_migration and nest_dict[channel][nest]['reports'][report]['reporttime'] > migration_utc:
-                                    self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
+                                    self.bot.guild_dict[guild.id]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
                                     self.bot.loop.create_task(self.edit_nest_reports(report_message, migration_local, nest_dict[channel][nest]['reports'][report]['dm_dict']))
                                     count += 1
                                     continue
@@ -86,7 +85,7 @@ class Nest(commands.Cog):
                                 pass
                             try:
                                 self.bot.loop.create_task(utils.expire_dm_reports(self.bot, nest_dict[channel][nest]['reports'][report].get('dm_dict', {})))
-                                del self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]
+                                del self.bot.guild_dict[guild.id]['nest_dict'][channel][nest]['reports'][report]
                                 count += 1
                                 continue
                             except:

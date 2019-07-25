@@ -76,11 +76,10 @@ class Wild(commands.Cog):
     @tasks.loop(seconds=10)
     async def wild_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
         despawn_list = []
         count = 0
-        for guildid in guilddict_temp.keys():
-            wild_dict = guilddict_temp[guildid].setdefault('wildreport_dict', {})
+        for guild in list(self.bot.guilds):
+            wild_dict = self.bot.guild_dict[guild.id].setdefault('wildreport_dict', {})
             for reportid in wild_dict.keys():
                 if wild_dict[reportid].get('exp', 0) <= time.time():
                     report_channel = self.bot.get_channel(wild_dict[reportid].get('report_channel'))
@@ -94,7 +93,7 @@ class Wild(commands.Cog):
                             pass
                     try:
                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, wild_dict.get(reportid, {}).get('dm_dict', {})))
-                        del self.bot.guild_dict[guildid]['wildreport_dict'][reportid]
+                        del self.bot.guild_dict[guild.id]['wildreport_dict'][reportid]
                         count += 1
                         continue
                     except KeyError:

@@ -211,7 +211,7 @@ class Pokemon():
         if self.shiny:
             name = 'Shiny ' + name
         if self.id in self.bot.gender_dict and self.gender:
-            if (self.alolan and "alolan" in self.bot.gender_dict[self.id]) or str(self.form).lower() in self.bot.gender_dict[self.id]:
+            if (self.alolan and "alolan" in self.bot.gender_dict[self.id]) or (not self.alolan and str(self.form).lower() in self.bot.gender_dict[self.id]):
                 name = str(self.gender).title() + ' ' + name
         return name
 

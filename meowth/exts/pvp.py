@@ -29,11 +29,10 @@ class Pvp(commands.Cog):
     @tasks.loop(seconds=0)
     async def pvp_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
         expire_list = []
         count = 0
-        for guildid in guilddict_temp.keys():
-            pvp_dict = guilddict_temp[guildid].setdefault('pvp_dict', {})
+        for guild in list(self.bot.guilds):
+            pvp_dict = self.bot.guild_dict[guild.id].setdefault('pvp_dict', {})
             for reportid in pvp_dict.keys():
                 if pvp_dict[reportid].get('exp', 0) <= time.time():
                     report_channel = self.bot.get_channel(pvp_dict[reportid].get('report_channel'))
@@ -47,7 +46,7 @@ class Pvp(commands.Cog):
                             pass
                     try:
                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, pvp_dict.get(reportid, {}).get('dm_dict', {})))
-                        del self.bot.guild_dict[guildid]['pvp_dict'][reportid]
+                        del self.bot.guild_dict[guild.id]['pvp_dict'][reportid]
                         count += 1
                         continue
                     except KeyError:

@@ -449,7 +449,7 @@ def create_gmaps_query(bot, details, channel, type="raid"):
     #then channel location hints are not needed in the  maps query
     if re.match(r'^\s*-?\d{1,2}\.?\d*,\s*-?\d{1,3}\.?\d*\s*$', details): #regex looks for lat/long in the format similar to 42.434546, -83.985195.
         return "https://www.google.com/maps/search/?api=1&query={0}".format('+'.join(details_list))
-    loc_list = bot.guild_dict[channel.guild.id]['configure_dict'][report]['report_channels'].get(channel.id, "").split()
+    loc_list = bot.guild_dict[channel.guild.id]['configure_dict'].get(report, {}).get('report_channels', {}).get(channel.id, "").split()
     return 'https://www.google.com/maps/search/?api=1&query={0}+{1}'.format('+'.join(details_list), '+'.join(loc_list))
 
 def get_category(bot, channel, level, category_type="raid"):
@@ -544,38 +544,37 @@ class Utilities(commands.Cog):
         if loop:
             await asyncio.sleep(302400)
         logger.info('------ BEGIN ------')
-        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
         count = 0
         def build_dm_list(guildid):
             global_dm_list = []
-            for channel in guilddict_temp[guildid].get('nest_dict', {}):
-                for nest in guilddict_temp[guildid]['nest_dict'][channel]:
+            for channel in self.bot.guild_dict[guildid].get('nest_dict', {}):
+                for nest in self.bot.guild_dict[guildid]['nest_dict'][channel]:
                     if nest == "list":
                         continue
-                    for report in guilddict_temp[guildid]['nest_dict'][channel][nest]['reports']:
-                        for k,v in guilddict_temp[guildid]['nest_dict'][channel][nest]['reports'][report]['dm_dict'].items():
+                    for report in self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports']:
+                        for k,v in self.bot.guild_dict[guildid]['nest_dict'][channel][nest]['reports'][report]['dm_dict'].items():
                             global_dm_list.append(v)
-            for listing_id in guilddict_temp[guildid].get('trade_dict', {}):
-                if guilddict_temp[guildid]['trade_dict'][listing_id].get('offers', {}):
-                    for offer in guilddict_temp[guildid]['trade_dict'][listing_id].get('offers', {}):
-                        global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['offers'][offer]['lister_msg'])
-                if guilddict_temp[guildid]['trade_dict'][listing_id].get('active_check', 0):
-                    global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['active_check'])
-                if guilddict_temp[guildid]['trade_dict'][listing_id].get('accepted', {}):
-                    global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['accepted']['lister_msg'])
-                    global_dm_list.append(guilddict_temp[guildid]['trade_dict'][listing_id]['accepted']['buyer_msg'])
+            for listing_id in self.bot.guild_dict[guildid].get('trade_dict', {}):
+                if self.bot.guild_dict[guildid]['trade_dict'][listing_id].get('offers', {}):
+                    for offer in self.bot.guild_dict[guildid]['trade_dict'][listing_id].get('offers', {}):
+                        global_dm_list.append(self.bot.guild_dict[guildid]['trade_dict'][listing_id]['offers'][offer]['lister_msg'])
+                if self.bot.guild_dict[guildid]['trade_dict'][listing_id].get('active_check', 0):
+                    global_dm_list.append(self.bot.guild_dict[guildid]['trade_dict'][listing_id]['active_check'])
+                if self.bot.guild_dict[guildid]['trade_dict'][listing_id].get('accepted', {}):
+                    global_dm_list.append(self.bot.guild_dict[guildid]['trade_dict'][listing_id]['accepted']['lister_msg'])
+                    global_dm_list.append(self.bot.guild_dict[guildid]['trade_dict'][listing_id]['accepted']['buyer_msg'])
             report_list = ["questreport_dict", "wildreport_dict", "pokealarm_dict", "pokehuntr_dict", "raidchannel_dict", "lure_dict"]
             for report_dict in report_list:
-                for report in guilddict_temp[guildid].get(report_dict, {}):
-                    for k,v in guilddict_temp[guildid][report_dict][report].get('dm_dict', {}).items():
+                for report in self.bot.guild_dict[guildid].get(report_dict, {}):
+                    for k,v in self.bot.guild_dict[guildid][report_dict][report].get('dm_dict', {}).items():
                         global_dm_list.append(v)
             return global_dm_list
-        for guildid in guilddict_temp.keys():
-            dm_list = build_dm_list(guildid)
+        for guild in list(self.bot.guilds):
+            dm_list = build_dm_list(guild.id)
             if not dm_list:
                 continue
             delete_list = []
-            trainers = guilddict_temp[guildid].get('trainers', {}).keys()
+            trainers = self.bot.guild_dict[guild.id].get('trainers', {}).keys()
             for trainer in trainers:
                 user = self.bot.get_user(trainer)
                 if not user or user == self.bot.user:
@@ -604,7 +603,7 @@ class Utilities(commands.Cog):
                             if "pokebattler.com" in str(message.embeds[0].author.url).lower() or "raid coordination help" in str(message.embeds[0].author.name).lower():
                                 if (datetime.datetime.now() - message.created_at).days >= 7:
                                     delete_list.append(message)
-            dm_list = build_dm_list(guildid)
+            dm_list = build_dm_list(guild.id)
             for message in delete_list:
                 if message.id not in dm_list:
                     try:
@@ -844,7 +843,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.7.25.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.7.25.1 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

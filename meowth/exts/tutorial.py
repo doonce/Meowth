@@ -85,19 +85,18 @@ class Tutorial(commands.Cog):
     @tasks.loop(seconds=21600)
     async def tutorial_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
         count = 0
-        for guildid in guilddict_temp.keys():
-            tutorial_dict = guilddict_temp[guildid]['configure_dict'].setdefault('tutorial', {}).setdefault('report_channels', {})
+        for guild in list(self.bot.guilds):
+            tutorial_dict = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('tutorial', {}).setdefault('report_channels', {})
             for channelid in tutorial_dict:
                 channel_exists = self.bot.get_channel(channelid)
                 if not channel_exists:
                     try:
-                        del self.bot.guild_dict[guildid]['configure_dict']['tutorial']['report_channels'][channelid]
+                        del self.bot.guild_dict[guild.id]['configure_dict']['tutorial']['report_channels'][channelid]
                     except KeyError:
                         pass
                     try:
-                        del self.bot.guild_dict[guildid]['configure_dict']['raid']['category_dict'][channelid]
+                        del self.bot.guild_dict[guild.id]['configure_dict']['raid']['category_dict'][channelid]
                     except KeyError:
                         pass
                 else:

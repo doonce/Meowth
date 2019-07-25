@@ -28,15 +28,14 @@ class Research(commands.Cog):
     @tasks.loop(seconds=0)
     async def research_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
         midnight_list = []
         count = 0
-        for guildid in guilddict_temp.keys():
-            utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guildid]['configure_dict']['settings']['offset']))
+        for guild in list(self.bot.guilds):
+            utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
             to_midnight = 24*60*60 - ((utcnow-utcnow.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
             if to_midnight > 0:
                 midnight_list.append(to_midnight)
-            research_dict = guilddict_temp[guildid].setdefault('questreport_dict', {})
+            research_dict = self.bot.guild_dict[guild.id].setdefault('questreport_dict', {})
             for reportid in research_dict.keys():
                 if research_dict[reportid].get('exp', 0) <= time.time():
                     report_channel = self.bot.get_channel(research_dict[reportid].get('report_channel'))
@@ -50,7 +49,7 @@ class Research(commands.Cog):
                             pass
                     try:
                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, research_dict.get(reportid, {}).get('dm_dict', {})))
-                        del self.bot.guild_dict[guildid]['questreport_dict'][reportid]
+                        del self.bot.guild_dict[guild.id]['questreport_dict'][reportid]
                         count += 1
                         continue
                     except KeyError:

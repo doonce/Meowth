@@ -26,15 +26,13 @@ class Configure(commands.Cog):
     @tasks.loop(seconds=21600)
     async def configure_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        guilddict_temp = copy.deepcopy(self.bot.guild_dict)
         count = 0
-        for guildid in guilddict_temp.keys():
-            guild = self.bot.get_guild(guildid)
-            session_dict = guilddict_temp[guildid]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {})
+        for guild in list(self.bot.guilds):
+            session_dict = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {})
             for trainer in session_dict:
                 if not session_dict[trainer] or not guild.get_member(trainer):
                     try:
-                        del self.bot.guild_dict[guildid]['configure_dict']['settings']['config_sessions'][trainer]
+                        del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][trainer]
                     except KeyError:
                         pass
                 else:
@@ -42,7 +40,7 @@ class Configure(commands.Cog):
                         channel_exists = self.bot.get_channel(channelid)
                         if not channel_exists:
                             try:
-                                self.bot.guild_dict[guildid]['configure_dict']['settings']['config_sessions'][trainer].remove(channelid)
+                                self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][trainer].remove(channelid)
                             except ValueError:
                                 pass
                         else:
