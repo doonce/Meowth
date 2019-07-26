@@ -182,7 +182,7 @@ class Lure(commands.Cog):
                     elif location_msg:
                         location = location_msg.clean_content
                     lure_embed.clear_fields()
-                    lure_embed.add_field(name="**New Lure Report**", value=f"Fantastic! Now, reply with the **minutes remaining** before the **{lure_type} lure** ends. This is usually 30 minutes from when the lure started unless there is an event. If you don't know, reply with **N**. You can reply with **cancel** to stop anytime.", inline=False)
+                    lure_embed.add_field(name="**New Lure Report**", value=f"Fantastic! Now, reply with the **minutes remaining** before the **{lure_type} lure** at **{location}** ends. This is usually 30 minutes from when the lure started unless there is an event. If you don't know, reply with **N**. You can reply with **cancel** to stop anytime.", inline=False)
                     expire_wait = await channel.send(embed=lure_embed)
                     try:
                         expire_msg = await self.bot.wait_for('message', timeout=60, check=check)

@@ -62,7 +62,7 @@ class Nest(commands.Cog):
             to_migration = migration_utc.timestamp() - utcnow.timestamp()
             if to_migration > 0:
                 migration_list.append(to_migration)
-            for channel in nest_dict:
+            for channel in list(nest_dict.keys()):
                 report_channel = self.bot.get_channel(channel)
                 if not report_channel:
                     del self.bot.guild_dict[guild.id]['nest_dict'][channel]

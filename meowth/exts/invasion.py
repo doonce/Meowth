@@ -136,6 +136,7 @@ class Invasion(commands.Cog):
         channel = message.channel
         guild = message.guild
         author = guild.get_member(invasion_dict.get('report_author', None))
+        location = invasion_dict.get('location', '')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, invasion_dict.get('pkmn_obj', None))
         if not author:
@@ -146,7 +147,7 @@ class Invasion(commands.Cog):
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                invasion_embed.add_field(name=_('**Edit Invasion Info**'), value=f"Meowth! I'll help you add the reward to the invasion! Reply with the **pokemon** Team Rocket is rewarding at this invasion. You can reply with **cancel** to stop anytime.", inline=False)
+                invasion_embed.add_field(name=_('**Edit Invasion Info**'), value=f"Meowth! I'll help you add the reward to the invasion! Reply with the **pokemon** Team Rocket is rewarding at the **{location}** invasion. You can reply with **cancel** to stop anytime.", inline=False)
                 value_wait = await channel.send(embed=invasion_embed)
                 def check(reply):
                     if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == ctx.author:
@@ -173,10 +174,14 @@ class Invasion(commands.Cog):
                     else:
                         pokemon.shiny = False
                         pokemon.size = None
+                        pokemon.form = "shadow"
                         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward'] = pokemon.name.lower()
                         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['pkmn_obj'] = str(pokemon)
                         if not user.bot:
-                            invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('invasion_reports', 0) + 0.5
+                            if author.bot:
+                                invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('invasion_reports', 0) + 1
+                            else:
+                                invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('invasion_reports', 0) + 0.5
                             self.bot.guild_dict[ctx.guild.id]['trainers'][user.id]['invasion_reports'] = invasion_reports
                     break
         if error:

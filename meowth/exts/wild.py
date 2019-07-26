@@ -222,6 +222,7 @@ class Wild(commands.Cog):
         channel = message.channel
         guild = message.guild
         author = guild.get_member(wild_dict.get('report_author', None))
+        location = wild_dict.get('location', '')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict.get('pkmn_obj', None))
         if not author:
             return
@@ -241,7 +242,7 @@ class Wild(commands.Cog):
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                wild_embed.add_field(name=_('**Edit Wild Info**'), value=f"Meowth! I'll help you add information to the wild **{str(pokemon)}**!\n**NOTE:** Please make sure you are at least level 30 before setting IV, level, and CP.\n\nI'll need to know what **values** you'd like to edit. Reply **cancel** to stop anytime or reply with a comma separated list of the following options `Ex: iv 100, level 30, weather none`:\n\n{reply_msg}", inline=False)
+                wild_embed.add_field(name=_('**Edit Wild Info**'), value=f"Meowth! I'll help you add information to the wild **{str(pokemon)}** near **{location}**!\n**NOTE:** Please make sure you are at least level 30 before setting IV, level, and CP.\n\nI'll need to know what **values** you'd like to edit. Reply **cancel** to stop anytime or reply with a comma separated list of the following options `Ex: iv 100, level 30, weather none`:\n\n{reply_msg}", inline=False)
                 value_wait = await channel.send(embed=wild_embed)
                 def check(reply):
                     if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == ctx.author:
@@ -546,7 +547,7 @@ class Wild(commands.Cog):
                         break
                     elif location_msg:
                         location = location_msg.clean_content
-                    wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Fantastic! Now, did you check the **IV** for the {str(pokemon)}? Reply with the **IV** or **N** to report without IV. You can reply with **cancel** to stop anytime.", inline=False)
+                    wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Fantastic! Now, did you check the **IV** for the {str(pokemon)} near {location}? Reply with the **IV** or **N** to report without IV. You can reply with **cancel** to stop anytime.", inline=False)
                     iv_wait = await channel.send(embed=wild_embed)
                     try:
                         iv_msg = await self.bot.wait_for('message', timeout=60, check=check)

@@ -29,7 +29,7 @@ class Configure(commands.Cog):
         count = 0
         for guild in list(self.bot.guilds):
             session_dict = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {})
-            for trainer in session_dict:
+            for trainer in list(session_dict.keys()):
                 if not session_dict[trainer] or not guild.get_member(trainer):
                     try:
                         del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][trainer]

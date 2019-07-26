@@ -43,8 +43,8 @@ class Huntr(commands.Cog):
                 'pokealarm_dict':pokealarm_dict,
                 'pokehuntr_dict':pokehuntr_dict
             }
-            for report_dict in report_dict_dict:
-                for reportid in report_dict_dict[report_dict].keys():
+            for report_dict in list(report_dict_dict.keys()):
+                for reportid in list(report_dict_dict[report_dict].keys()):
                     if report_dict_dict[report_dict][reportid].get('exp', 0) <= time.time():
                         report_channel = self.bot.get_channel(report_dict_dict[report_dict][reportid].get('reportchannel'))
                         if report_channel:

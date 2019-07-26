@@ -366,7 +366,7 @@ class Pvp(commands.Cog):
                     elif location_msg:
                         location = location_msg.clean_content
                     pvp_embed.clear_fields()
-                    pvp_embed.add_field(name="**New PVP Request**", value=f"Fantastic! Now, reply with the **minutes remaining** that you'll be available for **{pvp_type} PVP** battles. You can reply with **cancel** to stop anytime.", inline=False)
+                    pvp_embed.add_field(name="**New PVP Request**", value=f"Fantastic! Now, reply with the **minutes remaining** that you'll be available for **{pvp_type} PVP** battles at {location}. You can reply with **cancel** to stop anytime.", inline=False)
                     expire_wait = await channel.send(embed=pvp_embed)
                     try:
                         expire_msg = await self.bot.wait_for('message', timeout=60, check=check)

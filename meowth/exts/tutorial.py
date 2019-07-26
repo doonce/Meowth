@@ -241,6 +241,12 @@ class Tutorial(commands.Cog):
                 if not completed:
                     return
 
+            # start invasion
+            if 'invasion' in tutorial_reply_list:
+                completed = await self.invasion_tutorial(ctx, cfg)
+                if not completed:
+                    return
+
             # start pvp
             if 'pvp' in tutorial_reply_list:
                 completed = await self.pvp_tutorial(ctx, cfg)
@@ -774,6 +780,70 @@ class Tutorial(commands.Cog):
         # if no response for 5 minutes, close tutorial
         except asyncio.TimeoutError:
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}lure** command! This channel will be deleted in ten seconds."))
+            await asyncio.sleep(10)
+            return False
+        except:
+            await self.delete_tutorial_channel(ctx)
+
+        # clean up by removing tutorial from report channel config
+        finally:
+            try:
+                del report_channels[ctx.tutorial_channel.id]
+            except KeyError:
+                pass
+
+        return True
+
+    @tutorial.command()
+    @checks.feature_enabled('invasion')
+    async def invasion(self, ctx):
+        """Launches an tutorial session for the invasion feature.
+
+        Meowth will create a private channel and initiate a
+        conversation that walks you through the invasion command."""
+        try:
+            ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
+
+            # get tutorial settings
+            cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+
+            tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
+            await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
+            completed = await self.invasion_tutorial(ctx, cfg)
+            if completed:
+                await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+                await asyncio.sleep(30)
+        except:
+            await self.delete_tutorial_channel(ctx)
+        finally:
+            await self.delete_tutorial_channel(ctx)
+
+    async def invasion_tutorial(self, ctx, config):
+        try:
+            report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
+
+            msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}invasion** command to report invasions!\n\nTry out the invasion command by sending **{ctx.prefix}invasion** and following the prompts. You can use downtown, and Bulbasaur in this example.").set_author(name="Invasion Tutorial", icon_url=ctx.bot.user.avatar_url))
+
+            report_channels[ctx.tutorial_channel.id] = msg.id
+
+            # wait for invasion command completion
+            invasion_ctx = await self.wait_for_cmd(
+                ctx.tutorial_channel, ctx.author, 'invasion')
+
+            # acknowledge and wait a second before continuing
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Great job!"))
+
+            await asyncio.sleep(1)
+
+            for report in ctx.bot.guild_dict[ctx.guild.id]['questreport_dict']:
+                if ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'] == ctx.tutorial_channel.id:
+                    await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {}))
+
+            await asyncio.sleep(1)
+
+        # if no response for 5 minutes, close tutorial
+        except asyncio.TimeoutError:
+            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}invasion** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
             return False
         except:

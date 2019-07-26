@@ -33,7 +33,7 @@ class Admin(commands.Cog):
         dict_guild_list = []
         bot_guild_list = []
         dict_guild_delete = []
-        for guildid in self.bot.guild_dict.keys():
+        for guildid in list(self.bot.guild_dict.keys()):
             dict_guild_list.append(guildid)
         for guild in list(self.bot.guilds):
             bot_guild_list.append(guild.id)

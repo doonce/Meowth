@@ -1403,7 +1403,7 @@ class Raid(commands.Cog):
                         if not location:
                             return
                     raid_embed.clear_fields()
-                    raid_embed.add_field(name=_('**New Raid Report**'), value=f"Fantastic! Now, reply with the **minutes remaining** before the **{'level '+pokemon_or_level if str(pokemon_or_level).isdigit() else str(pokemon_or_level).title()}** raid {'hatches' if str(pokemon_or_level).isdigit() else 'ends'}. You can reply with **cancel** to stop anytime.", inline=False)
+                    raid_embed.add_field(name=_('**New Raid Report**'), value=f"Fantastic! Now, reply with the **minutes remaining** before the **{'level '+pokemon_or_level if str(pokemon_or_level).isdigit() else str(pokemon_or_level).title()}** raid {'hatches' if str(pokemon_or_level).isdigit() else 'ends'} at **{location}**. You can reply with **cancel** to stop anytime.", inline=False)
                     expire_wait = await channel.send(embed=raid_embed)
                     try:
                         expire_msg = await self.bot.wait_for('message', timeout=60, check=check)

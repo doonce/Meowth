@@ -1325,19 +1325,24 @@ class Listing(commands.Cog):
                 try:
                     invasionreportmsg = await ctx.message.channel.fetch_message(invasionid)
                     invasionauthor = ctx.channel.guild.get_member(invasion_dict[invasionid]['report_author'])
-                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, invasion_dict[invasionid]['reward'])
+                    reward = invasion_dict[invasionid]['reward']
+                    if invasion_dict[invasionid]['reward'] == "Unknown Pokemon":
+                        pokemon = None
+                    else:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, invasion_dict[invasionid]['pkmn_obj'])
                     invasion_expire = datetime.datetime.utcfromtimestamp(invasion_dict[invasionid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
                     reported_by = ""
                     if invasionauthor and not invasionauthor.bot:
                         reported_by = f" | **Reported By**: {invasionauthor.display_name}"
                     shiny_str = ""
-                    if pokemon.id in self.bot.shiny_dict:
+                    if pokemon and pokemon.id in self.bot.shiny_dict:
                         if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                         elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                        reward = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
                     invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', '\U0001F539')))
-                    invasionmsg += f"**Location**: [{invasion_dict[invasionid]['location'].title()}]({invasion_dict[invasionid].get('url', None)}) | **Reward**: {shiny_str}{invasion_dict[invasionid]['reward'].title()} {pokemon.emoji} | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    invasionmsg += f"**Location**: [{invasion_dict[invasionid]['location'].title()}]({invasion_dict[invasionid].get('url', None)}) | **Reward**: {reward} | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
                 except Exception as e:
                     print(e)
                     continue
