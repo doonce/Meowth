@@ -174,7 +174,7 @@ class Invasion(commands.Cog):
                     else:
                         pokemon.shiny = False
                         pokemon.size = None
-                        pokemon.form = "shadow"
+                        pokemon.form = "shadow" if "shadow" in self.bot.form_dict[pokemon.id] else None
                         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward'] = pokemon.name.lower()
                         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['pkmn_obj'] = str(pokemon)
                         if not user.bot:
@@ -201,6 +201,7 @@ class Invasion(commands.Cog):
         nearest_stop = invasion_dict.get('location', None)
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\ud83d\udca8')
+        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         author = ctx.guild.get_member(invasion_dict.get('report_author', None))
         if author:
             ctx.author = author
@@ -209,13 +210,13 @@ class Invasion(commands.Cog):
         if not pokemon:
             return
         pokemon.shiny = False
-        pokemon.form = "shadow"
+        pokemon.form = "shadow" if "shadow" in self.bot.form_dict[pokemon.id] else None
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-        reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
+        reward = f"{shiny_str}{string.capwords(pokemon.name, ' ')} {pokemon.emoji}"
         index = 0
         for field in old_embed.fields:
             if "reward" in field.name.lower():
@@ -225,7 +226,7 @@ class Invasion(commands.Cog):
         reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
         invasion_embed = old_embed
         invasion_embed.set_thumbnail(url=pokemon.img_url)
-        content = f"Invasion reported by {ctx.author.mention}! Use {complete_emoji} if you completed the invasion or {expire_emoji} if the invasion has disappeared!"
+        content = message.content.replace(f" or {info_emoji} to add the reward", "")
         try:
             await message.edit(content=content, embed=invasion_embed)
         except:
@@ -406,25 +407,28 @@ class Invasion(commands.Cog):
         invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
         shiny_str = ""
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
-        if pokemon and pokemon.id in self.bot.shiny_dict:
-            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+        if pokemon:
+            pokemon.shiny = False
+            pokemon.form = "shadow" if "shadow" in self.bot.form_dict[pokemon.id] else None
+            if pokemon.id in self.bot.shiny_dict:
+                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         if pokemon:
             reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
             invasion_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
             pkmn_types = copy.deepcopy(pokemon.types)
             pkmn_types.append('None')
-            pokemon.shiny = False
-            pokemon.form = "shadow"
             invasion_embed.set_thumbnail(url=pokemon.img_url)
             invasion_msg = f"Invasion reported by {ctx.author.mention}! Use {complete_emoji} if you completed the invasion or {expire_emoji} if the invasion has disappeared!"
         else:
             reward = "Unknown Pokemon"
             invasion_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
             invasion_msg = f"Invasion reported by {ctx.author.mention}! Use {complete_emoji} if you completed the invasion or {expire_emoji} if the invasion has disappeared or {info_emoji} to add the reward!"
+        if timer:
+            invasion_msg = invasion_msg.replace(f" or {expire_emoji} if the invasion has disappeared", "")
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         invasion_embed.title = _('Meowth! Click here for my directions to the invasion!')
         invasion_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
@@ -440,7 +444,7 @@ class Invasion(commands.Cog):
             return
         pkmn_types = ["None", "None"]
         invasion_embed.url = loc_url
-        invasion_embed.add_field(name=f"**{'Expires' if timer else 'Expire Estimate'}:**", value=end.strftime(_('%I:%M %p (%H:%M)')))
+        invasion_embed.add_field(name=f"**{'Expires' if timer else 'Expire Estimate'}:**", value=f"{expire_time} mins {end.strftime(_('(%I:%M %p)'))}")
         invasion_embed.set_author(name="Invasion Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_shadow.png?cache=1")
         ctx.invreportmsg = await ctx.channel.send(invasion_msg, embed=invasion_embed)
         await utils.safe_reaction(ctx.invreportmsg, complete_emoji)

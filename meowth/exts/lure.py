@@ -254,7 +254,7 @@ class Lure(commands.Cog):
             lure_embed.set_author(name=f"{lure_type.title()} Lure Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png?cache=1")
             item = f"{lure_type} lure module"
         lure_embed.add_field(name=f"**Lure Type:**", value=item.title())
-        lure_embed.add_field(name=f"**{'Expires' if timer else 'Expire Estimate'}:**", value=end.strftime(_('%I:%M %p (%H:%M)')))
+        lure_embed.add_field(name=f"**{'Expires' if timer else 'Expire Estimate'}:**", value=f"{expire_time} mins {end.strftime(_('(%I:%M %p)'))}")
         confirmation = await ctx.channel.send(lure_msg, embed=lure_embed)
         self.bot.guild_dict[ctx.guild.id]['lure_dict'][confirmation.id] = {
             'exp':time.time() + int(expire_time)*60,
