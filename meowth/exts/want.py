@@ -895,6 +895,7 @@ class Want(commands.Cog):
 
         Usage: !want settings"""
         await ctx.trigger_typing()
+        categories = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
         mute = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', False)
         mute_mentions = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
         start_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_start', None)
@@ -917,8 +918,9 @@ class Want(commands.Cog):
         settings_embed.add_field(name=f"**{'mention' if mute_mentions else 'unmention'}**", value=f"{mention_str}", inline=False)
         settings_embed.add_field(name=f"**time**", value=f"Reply with **time** to set your active hours. Your start time setting will be when Meowth can start sending DMs each day and your end time setting will be when Meowth will stop sending DMs each day. If you set these to **none**, meowth will DM you regardless of time unless DMs are muted.", inline=False)
         settings_embed.add_field(name=f"**{'unlink' if user_link else 'link'}**", value=f"{link_str}", inline=False)
+        settings_embed.add_field(name=f"**categories**", value=f"Reply with **categories** to set your alert categories. These are global switches. For example, if you want a certain pokestop but only want wild alerts but no lures or invasions, use this setting.", inline=False)
         settings_embed.add_field(name=f"**cancel**", value=f"Reply with **cancel** to stop changing settings.", inline=False)
-        settings_embed.add_field(name="**Current Settings**", value=f"DMs Muted: {mute}\n@mentions Muted: {mute_mentions}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}", inline=False)
+        settings_embed.add_field(name="**Current Settings**", value=f"DMs Muted: {mute}\n@mentions Muted: {mute_mentions}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}\nCategories: {(', ').join(categories)}", inline=False)
         settings_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
         settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:", embed=settings_embed, delete_after=120)
         def check(reply):
@@ -980,6 +982,23 @@ class Want(commands.Cog):
             await ctx.send(f"{ctx.author.mention} - Your DM alerts will start at {start_set.time().strftime('%I:%M %p')} and stop at {end_set.time().strftime('%I:%M %p')} each day.")
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_start'] = start_set.time()
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_end'] = end_set.time()
+        elif reply.content.lower() == "categories":
+            category_list = ["research", "wild", "raid", "lure", "invasion", "nest"]
+            await ctx.send(f"Please enter the categories you would like to receive DMs for. These are ***global switches***, so if `research` isn't in your list, you will not receive any DMs for `research`, regardless of your other wants.\n\nPlease choose from: **{(', ').join(category_list)}** to turn these categories **ON**. Or reply with **all** to turn all categories **ON**.", delete_after=120)
+            try:
+                cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
+            except asyncio.TimeoutError:
+                await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+                return
+            await utils.safe_delete(cat_reply)
+            if cat_reply.content.lower() == "all":
+                want_categories = category_list
+            else:
+                want_categories = cat_reply.clean_content.lower().split(',')
+                want_categories = [x.strip() for x in want_categories]
+                want_categories = [x for x in want_categories if x in category_list]
+            await ctx.send(f"{ctx.author.mention} - You will only receive DM alerts for the following categories: **{(', ').join(want_categories)}**")
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['categories'] = want_categories
         elif reply.content.lower() == "link":
             await ctx.send(f"{ctx.author.mention} - Your **!want** list controls all pokemon notifications.")
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link'] = True

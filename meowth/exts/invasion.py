@@ -272,6 +272,7 @@ class Invasion(commands.Cog):
             pkmn_types = ['None']
         pkmn_types.append('None')
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
+            user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
@@ -280,8 +281,8 @@ class Invasion(commands.Cog):
                 continue
             if trainer in dm_dict:
                 continue
-            if "shadow" in user_forms:
-                user_forms.remove("shadow")
+            if "invasion" not in user_categories:
+                continue
             if (pokemon and pokemon.id in user_wants) or str(pokemon) in user_forms or str(location).lower() in user_stops or pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types:
                 try:
                     user = ctx.guild.get_member(trainer)

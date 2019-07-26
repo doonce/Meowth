@@ -460,12 +460,15 @@ class Wild(commands.Cog):
                 continue
             if trainer in dm_dict:
                 continue
+            user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
             user_ivs = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('ivs', [])
             user_levels = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('levels', [])
             user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
+            if "wild" not in user_categories:
+                continue
             if pokemon.id in user_wants or str(pokemon) in user_forms or wild_types[0].lower() in user_types or wild_types[1].lower() in user_types or str(wild_details).lower() in user_stops or wild_iv in user_ivs or wild_level in user_levels:
                 try:
                     user = ctx.guild.get_member(trainer)

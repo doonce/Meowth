@@ -272,9 +272,12 @@ class Lure(commands.Cog):
             await utils.safe_reaction(confirmation, expire_emoji)
         lure_embed.description = lure_embed.description + f"\n**Report:** [Jump to Message]({confirmation.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
+            user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
             user_items = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('items', [])
             if not checks.dm_check(ctx, trainer):
+                continue
+            if "lure" not in user_categories:
                 continue
             if location.lower() in user_stops or item in user_items:
                 try:

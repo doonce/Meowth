@@ -280,8 +280,11 @@ class Nest(commands.Cog):
             for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
                 if not checks.dm_check(ctx, trainer):
                     continue
+                user_categories = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
                 user_wants = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
                 user_types = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
+                if "nest" not in user_categories:
+                    continue
                 if nest_number in user_wants or nest_types[0].lower() in user_types or nest_types[1].lower() in user_types:
                     try:
                         user = ctx.guild.get_member(trainer)

@@ -413,11 +413,14 @@ class Research(commands.Cog):
         pkmn_types.append('None')
         embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.resreportmsg.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
+            user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
             user_items = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('items', [])
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
             if not checks.dm_check(ctx, trainer):
+                continue
+            if "research" not in user_categories:
                 continue
             if (pokemon and pokemon.id in user_wants) or location.lower() in user_stops or item in user_items or pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types:
                 try:

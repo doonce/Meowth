@@ -717,7 +717,10 @@ class Raid(commands.Cog):
                 continue
             if trainer in dm_dict:
                 continue
+            user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_gyms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', [])
+            if "raid" not in user_categories:
+                continue
             if raid_details.lower() in user_gyms:
                 try:
                     user = ctx.guild.get_member(trainer)
