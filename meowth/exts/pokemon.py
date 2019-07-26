@@ -349,7 +349,7 @@ class Pokemon():
         if self.form == "armored":
             search_term = search_term.replace("_a", "")
         for template in self.bot.gamemaster.get('itemTemplates', {}):
-            if search_term in template['templateId'].lower() and "form" not in template['templateId'].lower() and "spawn" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
+            if search_term in template['templateId'].lower() and "forms_" not in template['templateId'].lower() and "spawn_" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
                 break
         return template
 
