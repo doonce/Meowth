@@ -203,7 +203,7 @@ class Wild(commands.Cog):
         if height or weight or moveset:
             wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height if height else ''} {'W: '+weight if weight else ''}\n{moveset if moveset else ''}", inline=True)
         elif iv_long or iv_percent or level or cp or pokemon.is_boosted:
-            wild_embed.add_field(name=_('**Other Info (Base):**'), value=f"H: {round(pokemon.height, 2)}m W: {round(pokemon.weight, 2)}kg\n{ctx.prefix}dex stats {str(pokemon).lower()}", inline=True)
+            wild_embed.add_field(name=_('**Other Info (Base):**'), value=f"H: {round(pokemon.height, 2) if pokemon.height else 'X'}m W: {round(pokemon.weight, 2) if pokemon.weight else 'X'}kg\n{ctx.prefix}dex stats {str(pokemon).lower()}", inline=True)
         wild_embed.add_field(name=f"{'**Est. Despawn:**' if int(expire.split()[0]) == 45 and int(expire.split()[2]) == 0 else '**Despawns in:**'}", value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=expire.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
         wild_embed.set_thumbnail(url=pokemon.img_url)
         wild_embed.set_author(name=f"Wild {pokemon.name.title()} Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
