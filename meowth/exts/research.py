@@ -411,7 +411,6 @@ class Research(commands.Cog):
         else:
             pkmn_types = ['None']
         pkmn_types.append('None')
-        embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.resreportmsg.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
