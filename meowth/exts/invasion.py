@@ -107,8 +107,7 @@ class Invasion(commands.Cog):
                     ctx.prefix = prefix[-1]
                 await message.remove_reaction(payload.emoji, user)
                 ctx.author = user
-                if not invasion_dict.get('pkmn_obj', None):
-                    await self.add_invasion_info(ctx, message, user)
+                await self.add_invasion_info(ctx, message, user)
 
     async def expire_invasion(self, message):
         guild = message.channel.guild
@@ -136,9 +135,9 @@ class Invasion(commands.Cog):
         channel = message.channel
         guild = message.guild
         author = guild.get_member(invasion_dict.get('report_author', None))
+        reward = invasion_dict.get('reward', [])
         location = invasion_dict.get('location', '')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, invasion_dict.get('pkmn_obj', None))
         if not author:
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
@@ -147,7 +146,7 @@ class Invasion(commands.Cog):
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                invasion_embed.add_field(name=_('**Edit Invasion Info**'), value=f"Meowth! I'll help you add the reward to the invasion! Reply with the **pokemon** Team Rocket is rewarding at the **{location}** invasion. You can reply with **cancel** to stop anytime.", inline=False)
+                invasion_embed.add_field(name=_('**Edit Invasion Info**'), value=f"Meowth! I'll help you add rewards to the invasion! Reply with a comma separated list of the **pokemon** Team Rocket is using at the **{location}** invasion. You can reply with **cancel** to stop anytime.", inline=False)
                 value_wait = await channel.send(embed=invasion_embed)
                 def check(reply):
                     if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == ctx.author:
@@ -168,36 +167,43 @@ class Invasion(commands.Cog):
                     error = _("cancelled the report")
                     break
                 else:
-                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, value_msg.clean_content.lower())
-                    if not pokemon:
-                        error = _("didn't enter a pokemon")
-                    else:
+                    pkmn_list = value_msg.clean_content.lower().split(',')
+                    pkmn_list = [x.strip() for x in pkmn_list]
+                    index = 0
+                    for pokemon in pkmn_list:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                         pokemon.shiny = False
                         pokemon.size = None
                         pokemon.form = "shadow" if "shadow" in self.bot.form_dict[pokemon.id] else None
-                        self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward'] = pokemon.name.lower()
-                        self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['pkmn_obj'] = str(pokemon)
-                        if not user.bot:
-                            if author.bot:
-                                invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('invasion_reports', 0) + 1
-                            else:
-                                invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('invasion_reports', 0) + 0.5
-                            self.bot.guild_dict[ctx.guild.id]['trainers'][user.id]['invasion_reports'] = invasion_reports
+                        if not pokemon or str(pokemon) in reward:
+                            pkmn_list.remove(pkmn_list[index])
+                            continue
+                        reward.append(str(pokemon))
+                        index += 1
+                    if not reward or not pkmn_list:
+                        error = _("didn't enter a new pokemon")
+                        break
+                    elif len(reward) > 3:
+                        error = _("entered too many pokemon")
+                        break
+                    if not user.bot:
+                        invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('invasion_reports', 0) + 1
+                        self.bot.guild_dict[ctx.guild.id]['trainers'][user.id]['invasion_reports'] = invasion_reports
+                    self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward'] = reward
                     break
         if error:
             invasion_embed.clear_fields()
             invasion_embed.add_field(name=_('**Invasion Edit Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
             confirmation = await channel.send(embed=invasion_embed, delete_after=10)
         else:
-            await message.remove_reaction(info_emoji, self.bot.user)
             await self.edit_invasion_messages(ctx, message)
 
     async def edit_invasion_messages(self, ctx, message):
         invasion_dict = self.bot.guild_dict[ctx.guild.id]['invasion_dict'].get(message.id, {})
-        reward = invasion_dict.get('pkmn_obj', {})
+        reward = invasion_dict.get('reward', [])
         dm_dict = invasion_dict.get('dm_dict', {})
-        old_embed = message.embeds[0]
-        invasion_gmaps_link = old_embed.url
+        invasion_embed = message.embeds[0]
+        invasion_gmaps_link = invasion_embed.url
         nearest_stop = invasion_dict.get('location', None)
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\ud83d\udca8')
@@ -206,29 +212,35 @@ class Invasion(commands.Cog):
         if author:
             ctx.author = author
         shiny_str = ""
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
-        if not pokemon:
-            return
-        pokemon.shiny = False
-        pokemon.form = "shadow" if "shadow" in self.bot.form_dict[pokemon.id] else None
-        if pokemon.id in self.bot.shiny_dict:
-            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-        reward = f"{shiny_str}{string.capwords(pokemon.name, ' ')} {pokemon.emoji}"
+        reward_str = ""
+        reward_list = []
+        if not reward:
+            reward_str = "Unknown Pokemon"
+        else:
+            for pokemon in reward:
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=False)
+                if pokemon:
+                    pokemon.shiny = False
+                    pokemon.form = "shadow" if "shadow" in self.bot.form_dict[pokemon.id] else None
+                    if pokemon.id in self.bot.shiny_dict:
+                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                    reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
+                    reward_list.append(str(pokemon))
+            if not reward_list:
+                reward_str = "Unknown Pokemon"
+            else:
+                invasion_embed.set_thumbnail(url=pokemon.img_url)
         index = 0
-        for field in old_embed.fields:
+        for field in invasion_embed.fields:
             if "reward" in field.name.lower():
-                old_embed.set_field_at(index, name=field.name, value=reward)
+                invasion_embed.set_field_at(index, name=field.name, value=reward_str)
             else:
                 index += 1
-        reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
-        invasion_embed = old_embed
-        invasion_embed.set_thumbnail(url=pokemon.img_url)
-        content = message.content.replace(f" or {info_emoji} to add the reward", "")
         try:
-            await message.edit(content=content, embed=invasion_embed)
+            await message.edit(embed=invasion_embed)
         except:
             pass
         if isinstance(invasion_embed.description, discord.embeds._EmptyEmbed):
@@ -249,7 +261,7 @@ class Invasion(commands.Cog):
             except:
                 pass
         ctx.invreportmsg = message
-        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, copy.deepcopy(invasion_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, reward_list, nearest_stop, copy.deepcopy(invasion_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['dm_dict'] = dm_dict
 
     async def send_dm_messages(self, ctx, inv_pokemon, location, embed, dm_dict):
@@ -264,27 +276,32 @@ class Invasion(commands.Cog):
                     embed.remove_field(index)
                 else:
                     index += 1
-        pokemon = None
-        if inv_pokemon != "Unknown Pokemon":
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, inv_pokemon)
-        if pokemon:
-            pkmn_types = pokemon.types.copy()
-        else:
-            pkmn_types = ['None']
-        pkmn_types.append('None')
+        pkmn_list = []
+        if inv_pokemon:
+            for pokemon in inv_pokemon:
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                if pokemon:
+                    pkmn_list.append(pokemon)
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
             user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
+            send_pokemon = False
             if not checks.dm_check(ctx, trainer):
                 continue
             if trainer in dm_dict:
                 continue
             if "invasion" not in user_categories:
                 continue
-            if (pokemon and pokemon.id in user_wants) or str(pokemon) in user_forms or str(location).lower() in user_stops or pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types:
+            for pokemon in pkmn_list:
+                pkmn_types = pokemon.types.copy()
+                pkmn_types.append("None")
+                if pokemon.id in user_wants or str(pokemon) in user_forms or pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types:
+                    send_pokemon = True
+                    break
+            if send_pokemon or str(location).lower() in user_stops:
                 try:
                     user = ctx.guild.get_member(trainer)
                     if pokemon:
@@ -321,7 +338,7 @@ class Invasion(commands.Cog):
             async with ctx.typing():
                 if details:
                     invasion_split = details.rsplit(",", 2)
-                    invasion_split.append("None")
+                    invasion_split.append([])
                     location, reward = invasion_split
                     gym_matching_cog = self.bot.cogs.get('GymMatching')
                     stop_info = ""
@@ -364,7 +381,7 @@ class Invasion(commands.Cog):
                                 loc_url = stop_url
                         if not location:
                             return
-                    invasion_embed.set_field_at(0, name=invasion_embed.fields[0].name, value=_("Fantastic! Now, reply with the **reward** you earned for the invasion at the **{location}** pokestop. If you don't know the reward, reply with **N**. It is usually Team Rocket's first pokemon. You can reply with **cancel** to stop anytime").format(location=location), inline=False)
+                    invasion_embed.set_field_at(0, name=invasion_embed.fields[0].name, value=_("Fantastic! Now, reply with a comma separated list of the **pokemon** Team Rocket is using at the **{location}** invasion. If you don't know the reward, reply with **N**, otherwise reply with as many as you know. You can reply with **cancel** to stop anytime").format(location=location), inline=False)
                     rewardwait = await channel.send(embed=invasion_embed)
                     try:
                         rewardmsg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -380,9 +397,10 @@ class Invasion(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif rewardmsg.clean_content.lower() == "n":
-                        reward = ''
+                        reward = []
                     elif rewardmsg:
-                        reward = rewardmsg.clean_content
+                        reward = rewardmsg.clean_content.split(',')
+                        reward = [x.strip() for x in reward]
                     break
         if not error:
             await self.send_invasion(ctx, location, reward)
@@ -392,7 +410,7 @@ class Invasion(commands.Cog):
             confirmation = await channel.send(embed=invasion_embed, delete_after=10)
             await utils.safe_delete(message)
 
-    async def send_invasion(self, ctx, location, reward='', timer=None):
+    async def send_invasion(self, ctx, location, reward=None, timer=None):
         dm_dict = {}
         expire_time = "30"
         if timer:
@@ -406,27 +424,31 @@ class Invasion(commands.Cog):
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
         shiny_str = ""
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
-        if pokemon:
-            pokemon.shiny = False
-            pokemon.form = "shadow" if "shadow" in self.bot.form_dict[pokemon.id] else None
-            if pokemon.id in self.bot.shiny_dict:
-                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-        if pokemon:
-            reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
-            invasion_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
-            reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
-            pkmn_types = copy.deepcopy(pokemon.types)
-            pkmn_types.append('None')
-            invasion_embed.set_thumbnail(url=pokemon.img_url)
-            invasion_msg = f"Invasion reported by {ctx.author.mention}! Use {complete_emoji} if you completed the invasion or {expire_emoji} if the invasion has disappeared!"
+        reward_str = ""
+        reward_list = []
+        invasion_msg = f"Invasion reported by {ctx.author.mention}! Use {complete_emoji} if you completed the invasion or {expire_emoji} if the invasion has disappeared or {info_emoji} to add rewards!"
+        if not reward:
+            reward = []
+            invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknown Pokemon", inline=True)
         else:
-            reward = "Unknown Pokemon"
-            invasion_embed.add_field(name=_("**Reward:**"), value=reward, inline=True)
-            invasion_msg = f"Invasion reported by {ctx.author.mention}! Use {complete_emoji} if you completed the invasion or {expire_emoji} if the invasion has disappeared or {info_emoji} to add the reward!"
+            for pokemon in reward:
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=False)
+                if pokemon:
+                    pokemon.shiny = False
+                    pokemon.form = "shadow" if "shadow" in self.bot.form_dict[pokemon.id] else None
+                    if pokemon.id in self.bot.shiny_dict:
+                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                    reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
+                    reward_list.append(str(pokemon))
+            if not reward_list:
+                invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknowm Pokemon", inline=True)
+            else:
+                reward = reward_list
+                invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward_str}", inline=True)
+                invasion_embed.set_thumbnail(url=pokemon.img_url)
         if timer:
             invasion_msg = invasion_msg.replace(f" or {expire_emoji} if the invasion has disappeared", "")
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -442,15 +464,13 @@ class Invasion(commands.Cog):
                 invasion_embed.description = stop_info
         if not location:
             return
-        pkmn_types = ["None", "None"]
         invasion_embed.url = loc_url
         invasion_embed.add_field(name=f"**{'Expires' if timer else 'Expire Estimate'}:**", value=f"{expire_time} mins {end.strftime(_('(%I:%M %p)'))}")
         invasion_embed.set_author(name="Invasion Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_shadow.png?cache=1")
         ctx.invreportmsg = await ctx.channel.send(invasion_msg, embed=invasion_embed)
         await utils.safe_reaction(ctx.invreportmsg, complete_emoji)
         await utils.safe_reaction(ctx.invreportmsg, expire_emoji)
-        if reward == "Unknown Pokemon":
-            await utils.safe_reaction(ctx.invreportmsg, info_emoji)
+        await utils.safe_reaction(ctx.invreportmsg, info_emoji)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id] = {
             'exp':time.time() + int(expire_time)*60,
             'expedit':"delete",
@@ -466,14 +486,9 @@ class Invasion(commands.Cog):
         }
         dm_dict = await self.send_dm_messages(ctx, reward, location, copy.deepcopy(invasion_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['dm_dict'] = dm_dict
-        if pokemon:
-            self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['pkmn_obj'] = str(pokemon)
         if not ctx.author.bot:
-            invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('invasion_reports', 0) + 0.5
+            invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('invasion_reports', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['invasion_reports'] = invasion_reports
-            if pokemon:
-                invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('invasion_reports', 0) + 0.5
-                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['invasion_reports'] = invasion_reports
 
     @invasion.command(aliases=['expire'])
     @checks.allowinvasionreport()

@@ -477,7 +477,10 @@ class GymMatching(commands.Cog):
                     report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['report_channel'])
                     report_message = await report_channel.fetch_message(report)
                     reward = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['reward']
-                    active_invasions.append(f"{index}. [{reward.title()}]({report_message.jump_url})")
+                    reward_str = (', ').join(reward)
+                    if not reward_str:
+                        reward_str = "Unknown Pokemon"
+                    active_invasions.append(f"{index}. [{reward_str}]({report_message.jump_url})")
                     index += 1
             if active_invasions:
                 poi_embed.add_field(name="Current Invasions", value=('\n').join(active_invasions), inline=False)
@@ -614,7 +617,7 @@ class GymMatching(commands.Cog):
                 inv_details = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]
                 invasion_location = inv_details['location']
                 invasion_channel = inv_details['report_channel']
-                invasion_reward = inv_details['reward'].strip()
+                invasion_reward = (', ').join(inv_details['reward'])
                 if (details == invasion_location) and ctx.channel.id == invasion_channel:
                     if message.author.bot:
                         return "", False, False

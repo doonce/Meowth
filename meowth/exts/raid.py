@@ -2470,7 +2470,10 @@ class Raid(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
         can_manage = ctx.channel.permissions_for(ctx.author).manage_channels
-        report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id]['meetup_dict'][channel.id]['report_channel'])
+        try:
+            report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id]['meetup_dict'][channel.id]['report_channel'])
+        except KeyError:
+            return
         oldraidmsg = await message.channel.fetch_message(self.bot.guild_dict[guild.id]['meetup_dict'][channel.id]['raid_message'])
         oldreportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id]['meetup_dict'][channel.id]['raid_report'])
         oldembed = oldraidmsg.embeds[0]
