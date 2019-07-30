@@ -500,7 +500,7 @@ class Invasion(commands.Cog):
         }
         dm_dict = await self.send_dm_messages(ctx, reward, location, copy.deepcopy(invasion_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['dm_dict'] = dm_dict
-        if reward.lower() in type_list:
+        if str(reward).lower() in type_list:
             self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['reward'] = []
         if not ctx.author.bot:
             invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('invasion_reports', 0) + 1
