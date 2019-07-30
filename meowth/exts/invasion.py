@@ -174,7 +174,7 @@ class Invasion(commands.Cog):
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                         pokemon.shiny = False
                         pokemon.size = None
-                        pokemon.form = "shadow" if "shadow" in self.bot.form_dict[pokemon.id] else None
+                        pokemon.form = "shadow" if "shadow" in self.bot.form_dict.get(pokemon.id, {}) else None
                         if not pokemon or str(pokemon) in reward:
                             pkmn_list.remove(pkmn_list[index])
                             continue
@@ -221,7 +221,7 @@ class Invasion(commands.Cog):
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=False)
                 if pokemon:
                     pokemon.shiny = False
-                    pokemon.form = "shadow" if "shadow" in self.bot.form_dict[pokemon.id] else None
+                    pokemon.form = "shadow" if "shadow" in self.bot.form_dict.get(pokemon.id, {}) else None
                     if pokemon.id in self.bot.shiny_dict:
                         if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
@@ -276,12 +276,19 @@ class Invasion(commands.Cog):
                     embed.remove_field(index)
                 else:
                     index += 1
+        invasion_type = None
+        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
+        pokemon = None
         pkmn_list = []
-        if inv_pokemon:
+        if inv_pokemon in type_list:
+            invasion_type = inv_pokemon
+        elif inv_pokemon:
             for pokemon in inv_pokemon:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 if pokemon:
                     pkmn_list.append(pokemon)
+        else:
+            return
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
@@ -301,7 +308,7 @@ class Invasion(commands.Cog):
                 if pokemon.id in user_wants or str(pokemon) in user_forms or pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types:
                     send_pokemon = True
                     break
-            if send_pokemon or str(location).lower() in user_stops:
+            if send_pokemon or str(location).lower() in user_stops or invasion_type in user_types:
                 try:
                     user = ctx.guild.get_member(trainer)
                     if pokemon:
@@ -436,13 +443,13 @@ class Invasion(commands.Cog):
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknown Pokemon", inline=True)
         elif isinstance(reward, str) and reward.lower() in type_list:
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward.title()} Invasion {self.bot.config.type_id_dict[reward.lower()]}", inline=True)
-            reward = []
+            reward = reward.strip().lower()
         else:
             for pokemon in reward:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=False)
                 if pokemon:
                     pokemon.shiny = False
-                    pokemon.form = "shadow" if "shadow" in self.bot.form_dict[pokemon.id] else None
+                    pokemon.form = "shadow" if "shadow" in self.bot.form_dict.get(pokemon.id, {}) else None
                     if pokemon.id in self.bot.shiny_dict:
                         if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
@@ -493,6 +500,8 @@ class Invasion(commands.Cog):
         }
         dm_dict = await self.send_dm_messages(ctx, reward, location, copy.deepcopy(invasion_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['dm_dict'] = dm_dict
+        if reward.lower() in type_list:
+            self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['reward'] = []
         if not ctx.author.bot:
             invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('invasion_reports', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['invasion_reports'] = invasion_reports
