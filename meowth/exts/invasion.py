@@ -401,12 +401,15 @@ class Invasion(commands.Cog):
                     elif rewardmsg:
                         reward = rewardmsg.clean_content.split(',')
                         reward = [x.strip() for x in reward]
+                        if len(reward) > 3:
+                            error = _("entered too many pokemon")
+                            break
                     break
         if not error:
             await self.send_invasion(ctx, location, reward)
         else:
             invasion_embed.clear_fields()
-            invasion_embed.add_field(name=_('**Invasion Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            invasion_embed.add_field(name=_('**Invasion Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you **{error}**! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=invasion_embed, delete_after=10)
             await utils.safe_delete(message)
 
@@ -423,6 +426,7 @@ class Invasion(commands.Cog):
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\ud83d\udca8')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
+        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         shiny_str = ""
         reward_str = ""
         reward_list = []
@@ -430,6 +434,9 @@ class Invasion(commands.Cog):
         if not reward:
             reward = []
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknown Pokemon", inline=True)
+        elif isinstance(reward, str) and reward.lower() in type_list:
+            invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward.title()} Invasion {self.bot.config.type_id_dict[reward.lower()]}", inline=True)
+            reward = []
         else:
             for pokemon in reward:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=False)

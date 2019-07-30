@@ -1106,7 +1106,7 @@ class Huntr(commands.Cog):
         location = report_details['pokestop']
         gps = report_details['gps']
         timer = report_details.get('expire', 30)
-        reward = None
+        reward = report_details.get('reward', None)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
@@ -1241,7 +1241,9 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"invasion", "pokestop":"Marilla Park", "gps":"39.645742,-79.96908", "expire":25}).replace("'", '"'))
+        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
+        random_type = random.choice(type_list)
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"invasion", "pokestop":"Marilla Park", "reward":random_type, "gps":"39.645742,-79.96908", "expire":25}).replace("'", '"'))
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
