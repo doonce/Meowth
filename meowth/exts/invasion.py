@@ -445,6 +445,7 @@ class Invasion(commands.Cog):
         shiny_str = ""
         reward_str = ""
         reward_list = []
+        reward_type = None
         invasion_msg = f"Invasion reported by {ctx.author.mention}! Use {complete_emoji} if you completed the invasion or {expire_emoji} if the invasion has disappeared or {info_emoji} to add rewards!"
         if not reward:
             reward = []
@@ -452,6 +453,7 @@ class Invasion(commands.Cog):
         elif isinstance(reward, str) and reward.lower() in type_list:
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward.title()} Invasion {self.bot.config.type_id_dict[reward.lower()]}", inline=True)
             reward = reward.strip().lower()
+            reward_type = f"{reward.title()} Invasion {self.bot.config.type_id_dict[reward.lower()]}"
         else:
             for pokemon in reward:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=False)
@@ -504,7 +506,8 @@ class Invasion(commands.Cog):
             'location':location,
             'url':loc_url,
             'reward':reward,
-            'completed_by':[]
+            'completed_by':[],
+            'reward_type':reward_type
         }
         dm_dict = await self.send_dm_messages(ctx, reward, location, copy.deepcopy(invasion_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['dm_dict'] = dm_dict

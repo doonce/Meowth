@@ -1343,6 +1343,7 @@ class Listing(commands.Cog):
                     invasionreportmsg = await ctx.message.channel.fetch_message(invasionid)
                     invasionauthor = ctx.channel.guild.get_member(invasion_dict[invasionid]['report_author'])
                     reward = invasion_dict[invasionid]['reward']
+                    reward_type = invasion_dict[invasionid].get('reward_type', None)
                     if reward:
                         for pokemon in reward:
                             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
@@ -1352,7 +1353,9 @@ class Listing(commands.Cog):
                                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                                 elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                                reward_list.append(f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}")
+                            reward_list.append(f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}")
+                    elif reward_type:
+                        reward_list = [reward_type]
                     else:
                         reward_list = ["Unknown Pokemon"]
                     invasion_expire = datetime.datetime.utcfromtimestamp(invasion_dict[invasionid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
