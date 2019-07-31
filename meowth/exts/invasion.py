@@ -45,7 +45,7 @@ class Invasion(commands.Cog):
                             pass
                     try:
                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, invasion_dict.get(reportid, {}).get('dm_dict', {})))
-                        del self.bot.guild_dict[guild.id]['wildreport_dict'][reportid]
+                        del self.bot.guild_dict[guild.id]['invasion_dict'][reportid]
                         count += 1
                         continue
                     except KeyError:
@@ -122,8 +122,8 @@ class Invasion(commands.Cog):
         await utils.expire_dm_reports(self.bot, invasion_dict[message.id].get('dm_dict', {}))
         invasion_bonus = invasion_dict.get(message.id, {}).get('completed_by', [])
         if len(invasion_bonus) >= 3 and not message.author.bot:
-            invasion_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('invasion_reports', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['invasion_reports'] = invasion_reports
+            invasion_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('invasion', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['invasion'] = invasion_reports
         try:
             del self.bot.guild_dict[guild.id]['invasion_dict'][message.id]
         except KeyError:
@@ -187,8 +187,8 @@ class Invasion(commands.Cog):
                         error = _("entered too many pokemon")
                         break
                     if not user.bot:
-                        invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('invasion_reports', 0) + 1
-                        self.bot.guild_dict[ctx.guild.id]['trainers'][user.id]['invasion_reports'] = invasion_reports
+                        invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('reports', {}).setdefault('invasion', 0) + 1
+                        self.bot.guild_dict[ctx.guild.id]['trainers'][user.id]['reports']['invasion'] = invasion_reports
                     self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward'] = reward
                     break
         if error:
@@ -290,25 +290,33 @@ class Invasion(commands.Cog):
         else:
             return
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
-            user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
-            user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
-            user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
-            user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
-            user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
-            send_pokemon = False
-            if not checks.dm_check(ctx, trainer):
+            user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('wants', [])
+            user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('forms', [])
+            pokemon_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokemon', {}).get('invasion', True)
+            user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('stops', [])
+            stop_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokestop', {}).get('invasion', True)
+            user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('types', [])
+            type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('invasion', True)
+            if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_types, type_setting]):
                 continue
-            if trainer in dm_dict:
+            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
                 continue
-            if "invasion" not in user_categories:
-                continue
-            for pokemon in pkmn_list:
-                pkmn_types = pokemon.types.copy()
-                pkmn_types.append("None")
-                if pokemon.id in user_wants or str(pokemon) in user_forms or pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types:
-                    send_pokemon = True
-                    break
-            if send_pokemon or str(location).lower() in user_stops or invasion_type in user_types:
+            send_invasion = False
+            if pokemon_setting or type_setting:
+                for pokemon in pkmn_list:
+                    pkmn_types = pokemon.types.copy()
+                    pkmn_types.append("None")
+                    if pokemon_setting and (pokemon.id in user_wants or str(pokemon) in user_forms):
+                        send_invasion = True
+                        break
+                    if type_setting and (pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types):
+                        send_invasion = True
+                        break
+            if stop_setting and str(location).lower() in user_stops:
+                send_invasion = True
+            if type_setting and invasion_type in user_types:
+                send_invasion = True
+            if send_invasion:
                 try:
                     user = ctx.guild.get_member(trainer)
                     if pokemon:
@@ -503,8 +511,8 @@ class Invasion(commands.Cog):
         if str(reward).lower() in type_list:
             self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['reward'] = []
         if not ctx.author.bot:
-            invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('invasion_reports', 0) + 1
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['invasion_reports'] = invasion_reports
+            invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('invasion', 0) + 1
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['invasion'] = invasion_reports
 
     @invasion.command(aliases=['expire'])
     @checks.allowinvasionreport()

@@ -341,8 +341,8 @@ class Raid(commands.Cog):
                 gym_matching_cog.do_gym_stats(guild.id, channel_dict)
             raid_bonus = channel_dict.get('completed', []) or channel_dict.get('battling', [])
             if raid_bonus and report_author and not report_author.bot:
-                raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('raid_reports', 0) + 1
-                self.bot.guild_dict[guild.id]['trainers'][report_author.id]['raid_reports'] = raid_reports
+                raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('reports', {}).setdefault('raid', 0) + 1
+                self.bot.guild_dict[guild.id]['trainers'][report_author.id]['reports']['raid'] = raid_reports
             return
         elif (channel_exists):
             if self.bot.guild_dict[guild.id][report_dict][channel.id]['active'] == False:
@@ -444,8 +444,8 @@ class Raid(commands.Cog):
                     self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id][report_dict][channel.id].get('dm_dict', {})))
                     raid_bonus = channel_dict.get('completed', []) or channel_dict.get('battling', [])
                     if raid_bonus and report_author and not report_author.bot:
-                        raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('raid_reports', 0) + 1
-                        self.bot.guild_dict[guild.id]['trainers'][report_author.id]['raid_reports'] = raid_reports
+                        raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('reports', {}).setdefault('raid', 0) + 1
+                        self.bot.guild_dict[guild.id]['trainers'][report_author.id]['reports']['raid'] = raid_reports
                     if gym_matching_cog:
                         gym_matching_cog.do_gym_stats(guild.id, channel_dict)
                     channel_exists = self.bot.get_channel(channel.id)
@@ -574,8 +574,8 @@ class Raid(commands.Cog):
                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id][report_dict].get(channelid, {}).get('dm_dict', {})))
                         raid_bonus = channel_dict.get('completed', []) or channel_dict.get('battling', [])
                         if raid_bonus and report_author and not report_author.bot:
-                            raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('raid_reports', 0) + 1
-                            self.bot.guild_dict[guild.id]['trainers'][report_author.id]['raid_reports'] = raid_reports
+                            raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('reports', {}).setdefault('raid', 0) + 1
+                            self.bot.guild_dict[guild.id]['trainers'][report_author.id]['reports']['raid'] = raid_reports
                     logger.info(f"Server: {guild.name} : Channel: {channelid} - DOESN'T EXIST IN DISCORD -> DELETING")
                 # otherwise, if meowth can still see the channel in discord
                 else:
@@ -717,10 +717,7 @@ class Raid(commands.Cog):
                 continue
             if trainer in dm_dict:
                 continue
-            user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_gyms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', [])
-            if "raid" not in user_categories:
-                continue
             if raid_details.lower() in user_gyms:
                 try:
                     user = ctx.guild.get_member(trainer)
@@ -1627,8 +1624,9 @@ class Raid(commands.Cog):
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrsmessage'] = ctrsmessage_id
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrs_dict'] = ctrs_dict
         self.bot.loop.create_task(self.expiry_check(raid_channel))
-        raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('raid_reports', 0) + 1
-        self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['raid_reports'] = raid_reports
+        if not ctx.author.bot:
+            raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('raid', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['raid'] = raid_reports
         dm_dict = {}
         index = 0
         for field in raid_embed.fields:
@@ -1792,8 +1790,9 @@ class Raid(commands.Cog):
             else:
                 await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
             self.bot.loop.create_task(self.expiry_check(raid_channel))
-            egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('egg_reports', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['egg_reports'] = egg_reports
+            if not ctx.author.bot:
+                egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('egg', 0) + 1
+                self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['egg'] = egg_reports
             dm_dict = {}
             dm_dict = await self.send_dm_messages(ctx, raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
             self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
@@ -2080,8 +2079,8 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['ctrs_dict'] = ctrs_dict
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['ctrsmessage'] = ctrsmessage_id
         if author and not author.bot:
-            raid_reports = self.bot.guild_dict[raid_channel.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('raid_reports', 0) + 1
-            self.bot.guild_dict[raid_channel.guild.id]['trainers'][author.id]['raid_reports'] = raid_reports
+            raid_reports = self.bot.guild_dict[raid_channel.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('reports', {}).setdefault('raid', 0) + 1
+            self.bot.guild_dict[raid_channel.guild.id]['trainers'][author.id]['reports']['raid'] = raid_reports
             await self._edit_party(raid_channel, author)
         self.bot.loop.create_task(self.expiry_check(raid_channel))
 
@@ -2245,8 +2244,8 @@ class Raid(commands.Cog):
         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
             pass
         await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <date and time>** so others can check it with **!timer**. **<date and time>** can just be written exactly how it appears on your EX Raid Pass.').format(member=message.author.mention))
-        ex_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('ex_reports', 0) + 1
-        self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['ex_reports'] = ex_reports
+        ex_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('ex', 0) + 1
+        self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['ex'] = ex_reports
         self.bot.loop.create_task(self.expiry_check(raid_channel))
         return raid_channel
 

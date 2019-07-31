@@ -162,13 +162,13 @@ class Trainers(commands.Cog):
                 except:
                     want_message = None
         ign = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('ign', None)
-        raids = trainers.get(member.id, {}).get('raid_reports', 0)
-        eggs = trainers.get(member.id, {}).get('egg_reports', 0)
-        exraids = trainers.get(member.id, {}).get('ex_reports', 0)
-        wilds = trainers.get(member.id, {}).get('wild_reports', 0)
-        research = trainers.get(member.id, {}).get('research_reports', 0)
-        nests = trainers.get(member.id, {}).get('nest_reports', 0)
-        lures = trainers.get(member.id, {}).get('lure_reports', 0)
+        raids = trainers.get(member.id, {}).get('reports', {}).get('raid', 0)
+        eggs = trainers.get(member.id, {}).get('reports', {}).get('egg', 0)
+        exraids = trainers.get(member.id, {}).get('reports', {}).get('ex', 0)
+        wilds = trainers.get(member.id, {}).get('reports', {}).get('wild', 0)
+        research = trainers.get(member.id, {}).get('reports', {}).get('research', 0)
+        nests = trainers.get(member.id, {}).get('reports', {}).get('nest', 0)
+        lures = trainers.get(member.id, {}).get('reports', {}).get('lure', 0)
         roles = [x.mention for x in sorted(member.roles, reverse=True) if ctx.guild.id != x.id]
         embed = discord.Embed(title=_("{member}\'s Trainer Profile").format(member=member.display_name), colour=member.colour)
         embed.set_thumbnail(url=member.avatar_url)
@@ -241,13 +241,13 @@ class Trainers(commands.Cog):
             return
         for trainer in trainers.keys():
             user = ctx.guild.get_member(trainer)
-            raid = trainers[trainer].get('raid_reports', 0)
-            wild = trainers[trainer].get('wild_reports', 0)
-            exraid = trainers[trainer].get('ex_reports', 0)
-            egg = trainers[trainer].get('egg_reports', 0)
-            research = trainers[trainer].get('research_reports', 0)
-            nest = trainers[trainer].get('nest_reports', 0)
-            lure = trainers[trainer].get('lure_reports', 0)
+            raid = trainers[trainer].get('reports', {}).get('raid', 0)
+            wild = trainers[trainer].get('reports', {}).get('wild', 0)
+            exraid = trainers[trainer].get('reports', {}).get('ex', 0)
+            egg = trainers[trainer].get('reports', {}).get('egg', 0)
+            research = trainers[trainer].get('reports', {}).get('research', 0)
+            nest = trainers[trainer].get('reports', {}).get('nest', 0)
+            lure = trainers[trainer].get('reports', {}).get('lure', 0)
             total_reports = raid + wild + exraid + egg + research + nest + lure
             trainer_stats = {'trainer':trainer, 'total':total_reports, 'raid':raid, 'wild':wild, 'research':research, 'exraid':exraid, 'egg':egg, 'nest':nest, 'lure':lure}
             if trainer_stats[type] > 0 and user:
@@ -284,6 +284,7 @@ class Trainers(commands.Cog):
         trainers = self.bot.guild_dict[guild.id]['trainers']
         tgt_string = ""
         tgt_trainer = None
+        type_list = ["raid", "egg", "ex", "wild", "research", "nest", "lure", "invasion", "trade", "pvp"]
         if user:
             converter = commands.MemberConverter()
             for argument in user.split():
@@ -298,25 +299,25 @@ class Trainers(commands.Cog):
                     break
             for argument in user.split():
                 if "raid" in argument.lower():
-                    type = "raid_reports"
+                    type = "raid"
                     break
                 elif "egg" in argument.lower():
-                    type = "egg_reports"
+                    type = "egg"
                     break
                 elif "ex" in argument.lower():
-                    type = "ex_reports"
+                    type = "ex"
                     break
                 elif "wild" in argument.lower():
-                    type = "wild_reports"
+                    type = "wild"
                     break
                 elif "res" in argument.lower():
-                    type = "research_reports"
+                    type = "research"
                     break
                 elif "nest" in argument.lower():
-                    type = "nest_reports"
+                    type = "nest"
                     break
                 elif "lure" in argument.lower():
-                    type = "lure_reports"
+                    type = "lure"
                     break
         if not type:
             type = "total_reports"
@@ -340,15 +341,16 @@ class Trainers(commands.Cog):
             if tgt_trainer:
                 trainer = tgt_trainer.id
             if type == "total_reports":
-                trainers[trainer]['raid_reports'] = 0
-                trainers[trainer]['wild_reports'] = 0
-                trainers[trainer]['ex_reports'] = 0
-                trainers[trainer]['egg_reports'] = 0
-                trainers[trainer]['research_reports'] = 0
-                trainers[trainer]['nest_reports'] = 0
-                trainers[trainer]['lure_reports'] = 0
+                for item in type_list:
+                    try:
+                        del trainers[trainer]['reports'][item]
+                    except KeyError:
+                        continue
             else:
-                trainers[trainer][type] = 0
+                try:
+                    del trainers[trainer]['reports'][type]
+                except KeyError:
+                    continue
             if tgt_trainer:
                 await ctx.send(_("{trainer}'s report stats have been cleared!").format(trainer=tgt_trainer.display_name), delete_after=10)
                 return

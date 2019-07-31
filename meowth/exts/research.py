@@ -113,8 +113,8 @@ class Research(commands.Cog):
         await utils.expire_dm_reports(self.bot, research_dict[message.id].get('dm_dict', {}))
         research_bonus = research_dict.get(message.id, {}).get('completed_by', [])
         if len(research_bonus) >= 3 and not message.author.bot:
-            research_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('research_reports', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['research_reports'] = research_reports
+            research_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('research', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['research'] = research_reports
         try:
             del self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
         except KeyError:
@@ -390,8 +390,8 @@ class Research(commands.Cog):
         dm_dict = await self.send_dm_messages(ctx, pokemon, location, item, copy.deepcopy(research_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][ctx.resreportmsg.id]['dm_dict'] = dm_dict
         if not ctx.author.bot:
-            research_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('research_reports', 0) + 1
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['research_reports'] = research_reports
+            research_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('research', 0) + 1
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['research'] = research_reports
 
     async def send_dm_messages(self, ctx, res_pokemon, location, item, embed, dm_dict):
         if embed:
@@ -412,16 +412,29 @@ class Research(commands.Cog):
             pkmn_types = ['None']
         pkmn_types.append('None')
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
-            user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+            user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
+            pokemon_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokemon', {}).get('research', True)
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
+            stop_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokestop', {}).get('research', True)
             user_items = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('items', [])
+            item_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('item', {}).get('research', True)
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
-            if not checks.dm_check(ctx, trainer):
+            type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('research', True)
+            if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_items, item_setting, user_types, type_setting]):
                 continue
-            if "research" not in user_categories:
+            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
                 continue
-            if (pokemon and pokemon.id in user_wants) or location.lower() in user_stops or item in user_items or pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types:
+            send_research = False
+            if pokemon_setting and pokemon and (pokemon.id in user_wants or str(pokemon) in user_forms):
+                send_research = True
+            if stop_setting and location.lower() in user_stops:
+                send_research = True
+            if item_setting and item in user_items:
+                send_research = True
+            if type_setting and (pkmn_types[0] in user_types or pkmn_types[1] in user_types):
+                send_research = True
+            if send_research:
                 try:
                     user = ctx.guild.get_member(trainer)
                     if pokemon:

@@ -71,7 +71,7 @@ class Nest(commands.Cog):
                 for nest in nest_dict[channel]:
                     if nest == 'list':
                         continue
-                    for report in nest_dict[channel][nest]['reports']:
+                    for report in list(nest_dict[channel][nest]['reports'].keys()):
                         if nest_dict[channel][nest]['reports'][report].get('exp', 0) <= time.time():
                             try:
                                 report_message = await report_channel.fetch_message(report)
@@ -262,7 +262,6 @@ class Nest(commands.Cog):
         if not error:
             nest_loc = nest_dict[nest_name]['location'].split()
             nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
-            nest_number = pokemon.id
             nest_img_url = pokemon.img_url
             shiny_str = ""
             if pokemon.id in self.bot.shiny_dict:
@@ -278,14 +277,21 @@ class Nest(commands.Cog):
             pokemon.shiny = False
             dm_dict = {}
             for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
-                if not checks.dm_check(ctx, trainer):
-                    continue
-                user_categories = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
                 user_wants = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+                user_forms = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
+                pokemon_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokemon', {}).get('nest', True)
                 user_types = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
-                if "nest" not in user_categories:
+                type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('nest', True)
+                if not any([user_wants, user_forms, pokemon_setting, user_types, type_setting]):
                     continue
-                if nest_number in user_wants or nest_types[0].lower() in user_types or nest_types[1].lower() in user_types:
+                if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
+                    continue
+                send_nest = False
+                if pokemon_setting and pokemon and (pokemon.id in user_wants or str(pokemon) in user_forms):
+                    send_nest = True
+                if type_setting and (nest_types[0].lower() in user_types or nest_types[1].lower() in user_types):
+                    send_nest = True
+                if send_nest:
                     try:
                         user = ctx.guild.get_member(trainer)
                         nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest in {channel.mention}!", embed=nest_embed)
@@ -308,8 +314,8 @@ class Nest(commands.Cog):
                 'pokemon':str(pokemon)
             }
             self.bot.guild_dict[guild.id]['nest_dict'][channel.id] = nest_dict
-            nest_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('nest_reports', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['nest_reports'] = nest_reports
+            nest_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('nest', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['nest'] = nest_reports
         else:
             nest_embed.clear_fields()
             nest_embed.description = ""

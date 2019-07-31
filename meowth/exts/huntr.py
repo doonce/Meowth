@@ -955,8 +955,8 @@ class Huntr(commands.Cog):
         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         if report_user:
-            raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(report_user.id, {}).setdefault('raid_reports', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][report_user.id]['raid_reports'] = raid_reports
+            raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(report_user.id, {}).setdefault('reports', {}).setdefault('raid', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][report_user.id]['reports']['raid'] = raid_reports
         await self.auto_counters(raid_channel, moves)
         return raid_channel
 
@@ -1044,8 +1044,8 @@ class Huntr(commands.Cog):
         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         if report_user:
-            egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(report_user.id, {}).setdefault('egg_reports', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][report_user.id]['egg_reports'] = egg_reports
+            egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(report_user.id, {}).setdefault('reports', {}).setdefault('egg', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][report_user.id]['reports']['egg'] = egg_reports
         return raid_channel
 
     async def huntr_research(self, ctx, report_details):

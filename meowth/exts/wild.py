@@ -135,8 +135,8 @@ class Wild(commands.Cog):
         await utils.expire_dm_reports(self.bot, wild_dict.get(message.id, {}).get('dm_dict', {}))
         wild_bonus = self.bot.guild_dict[guild.id]['wildreport_dict'].get(message.id, {}).get('caught_by', [])
         if len(wild_bonus) >= 3 and not message.author.bot:
-            wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wild_reports', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports
+            wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('wild', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['wild'] = wild_reports
         try:
             del self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
         except KeyError:
@@ -456,20 +456,29 @@ class Wild(commands.Cog):
         wild_types = pokemon.types.copy()
         wild_types.append('None')
         for trainer in copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('trainers', {})):
-            if not checks.dm_check(ctx, trainer):
-                continue
-            if trainer in dm_dict:
-                continue
-            user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+            user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
+            pokemon_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokemon', {}).get('wild', True)
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
+            stop_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokestop', {}).get('wild', True)
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
+            type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('wild', True)
             user_ivs = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('ivs', [])
             user_levels = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('levels', [])
-            user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
-            if "wild" not in user_categories:
+            if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_types, type_setting, user_ivs, user_levels]):
                 continue
-            if pokemon.id in user_wants or str(pokemon) in user_forms or wild_types[0].lower() in user_types or wild_types[1].lower() in user_types or str(wild_details).lower() in user_stops or wild_iv in user_ivs or wild_level in user_levels:
+            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
+                continue
+            send_wild = False
+            if pokemon_setting and pokemon and (pokemon.id in user_wants or str(pokemon) in user_forms):
+                send_wild = True
+            if stop_setting and str(wild_details).lower() in user_stops:
+                send_wild = True
+            if type_setting and (wild_types[0] in user_types or wild_types[1] in user_types):
+                send_wild = True
+            if wild_iv in user_ivs or wild_level in user_levels:
+                send_wild = True
+            if send_wild:
                 try:
                     user = ctx.guild.get_member(trainer)
                     wilddmmsg = await user.send(content=content, embed=embed)
@@ -677,8 +686,9 @@ class Wild(commands.Cog):
             'omw':[],
             'caught_by':[]
         }
-        wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('wild_reports', 0) + 1
-        self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['wild_reports'] = wild_reports
+        if not ctx.author.bot:
+            wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('wild', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['wild'] = wild_reports
         if "ditto" in str(pokemon).lower():
             await message.channel.send(f"{ctx.author.mention}, what was the Ditto hiding as?", delete_after=30)
 

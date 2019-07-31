@@ -895,7 +895,6 @@ class Want(commands.Cog):
 
         Usage: !want settings"""
         await ctx.trigger_typing()
-        categories = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
         mute = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', False)
         mute_mentions = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
         start_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_start', None)
@@ -918,9 +917,9 @@ class Want(commands.Cog):
         settings_embed.add_field(name=f"**{'mention' if mute_mentions else 'unmention'}**", value=f"{mention_str}", inline=False)
         settings_embed.add_field(name=f"**time**", value=f"Reply with **time** to set your active hours. Your start time setting will be when Meowth can start sending DMs each day and your end time setting will be when Meowth will stop sending DMs each day. If you set these to **none**, meowth will DM you regardless of time unless DMs are muted.", inline=False)
         settings_embed.add_field(name=f"**{'unlink' if user_link else 'link'}**", value=f"{link_str}", inline=False)
-        settings_embed.add_field(name=f"**categories**", value=f"Reply with **categories** to set your alert categories. These are global switches. For example, if you want a certain pokestop but only want wild alerts but no lures or invasions, use this setting.", inline=False)
+        settings_embed.add_field(name=f"**categories**", value=f"Reply with **categories** to set your alert categories. For example, if you want a certain pokestop but only want wild alerts but no lures or invasions, use this setting.", inline=False)
         settings_embed.add_field(name=f"**cancel**", value=f"Reply with **cancel** to stop changing settings.", inline=False)
-        settings_embed.add_field(name="**Current Settings**", value=f"DMs Muted: {mute}\n@mentions Muted: {mute_mentions}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}\nCategories: {(', ').join(categories)}", inline=False)
+        settings_embed.add_field(name="**Current Settings**", value=f"DMs Muted: {mute}\n@mentions Muted: {mute_mentions}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}", inline=False)
         settings_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
         settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:", embed=settings_embed, delete_after=120)
         def check(reply):
@@ -983,22 +982,7 @@ class Want(commands.Cog):
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_start'] = start_set.time()
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_end'] = end_set.time()
         elif reply.content.lower() == "categories":
-            category_list = ["research", "wild", "raid", "lure", "invasion", "nest"]
-            await ctx.send(f"Please enter the categories you would like to receive DMs for. These are ***global switches***, so if `research` isn't in your list, you will not receive any DMs for `research`, regardless of your other wants.\n\nPlease choose from: **{(', ').join(category_list)}** to turn these categories **ON**. Or reply with **all** to turn all categories **ON**.", delete_after=120)
-            try:
-                cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
-            except asyncio.TimeoutError:
-                await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-                return
-            await utils.safe_delete(cat_reply)
-            if cat_reply.content.lower() == "all":
-                want_categories = category_list
-            else:
-                want_categories = cat_reply.clean_content.lower().split(',')
-                want_categories = [x.strip() for x in want_categories]
-                want_categories = [x for x in want_categories if x in category_list]
-            await ctx.send(f"{ctx.author.mention} - You will only receive DM alerts for the following categories: **{(', ').join(want_categories)}**")
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['categories'] = want_categories
+            return await ctx.invoke(self.bot.get_command("want categories"))
         elif reply.content.lower() == "link":
             await ctx.send(f"{ctx.author.mention} - Your **!want** list controls all pokemon notifications.")
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link'] = True
@@ -1031,6 +1015,136 @@ class Want(commands.Cog):
                 await ctx.author.remove_roles(*remove_list)
             if add_list:
                 await ctx.author.add_roles(*add_list)
+
+    @want.command(hidden=True)
+    @checks.allowwant()
+    async def categories(self, ctx):
+        categories = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {})
+        category_list = ["pokemon", "pokestop", "item", "type"]
+        pokemon_options = ["wild", "research", "invasion", "nest"]
+        pokestop_options = ["research", "wild", "lure", "invasion"]
+        type_options = ["wild", "research", "nest", "invasion"]
+        item_options = ["research", "lure"]
+        pokemon_settings = categories.get('pokemon', {})
+        if not pokemon_settings:
+            pokemon_settings = {k:True for k in pokemon_options}
+        pokestop_settings = categories.get('stop', {})
+        if not pokestop_settings:
+            pokestop_settings = {k:True for k in pokestop_options}
+        item_settings = categories.get('item', {})
+        if not item_settings:
+            item_settings = {k:True for k in item_options}
+        type_settings = categories.get('type', {})
+        if not type_settings:
+            type_settings = {k:True for k in type_options}
+        user_setting = {}
+        settings_embed = discord.Embed(description=f"If your desired want list category isn't listed, that list is exclusive to one alert type. Use **{ctx.prefix}want** or **{ctx.prefix}unwant** to control that alert type. Raid bosses are controlled through your **{ctx.prefix}want settings** Link.", colour=ctx.me.colour)
+        settings_embed.add_field(name=f"**pokemon**", value=f"Reply with **pokemon** to set which alert types will use your wanted pokemon list. Currently: {(', ').join([x for x in pokemon_options if pokemon_settings.get(x)])}", inline=False)
+        settings_embed.add_field(name=f"**pokestop**", value=f"Reply with **pokestop** to set which alert types will use your wanted pokestop list. Currently: {(', ').join([x for x in pokestop_options if pokestop_settings.get(x)])}", inline=False)
+        settings_embed.add_field(name=f"**item**", value=f"Reply with **item** to set which alert types will use your wanted item list. Currently: {(', ').join([x for x in item_options if item_settings.get(x)])}", inline=False)
+        settings_embed.add_field(name=f"**type**", value=f"Reply with **type** to set which alert types will use your wanted type list. Currently: {(', ').join([x for x in type_options if type_settings.get(x)])}", inline=False)
+        settings_embed.add_field(name=f"**reset**", value=f"Reply with **reset** to reset all alerts to default.", inline=False)
+        settings_embed.add_field(name=f"**cancel**", value=f"Reply with **cancel** to stop changing settings.", inline=False)
+        settings_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
+        settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:", embed=settings_embed, delete_after=120)
+        try:
+            cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
+        except asyncio.TimeoutError:
+            await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+            return
+        await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message])
+        if cat_reply.content.lower() in category_list:
+            if cat_reply.content.lower() == "pokemon":
+                settings_msg = await ctx.send(f"{ctx.author.mention} reply with the alert types you would like to receive **pokemon** alerts for. Any not listed will be disabled. List from the following options: **{(', ').join(pokemon_options)}** or reply with **all** to enable all.", delete_after=120)
+                try:
+                    cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
+                except asyncio.TimeoutError:
+                    await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+                    return
+                if cat_reply.content.lower() == "all":
+                    cat_reply.content = (', ').join(pokemon_options)
+                reply_list = cat_reply.content.lower().split(',')
+                reply_list = [x.strip() for x in reply_list]
+                reply_list = [x for x in reply_list if x in pokemon_options]
+                disable_list = set(pokemon_options) - set(reply_list)
+                enable_list = set(pokemon_options) - set(disable_list)
+                for item in disable_list:
+                    user_setting[item] = False
+                for item in enable_list:
+                    user_setting[item] = True
+                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['categories']['pokemon'] = user_setting
+                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message])
+                await ctx.send(f"{ctx.author.mention} - Your DM settings for **pokemon** have been set to **{(', ').join(enable_list)}**.", delete_after=30)
+            elif cat_reply.content.lower() == "pokestop":
+                settings_msg = await ctx.send(f"{ctx.author.mention} reply with the alert types you would like to receive **pokestop** alerts for. Any not listed will be disabled. List from the following options: **{(', ').join(pokestop_options)}** or reply with **all** to enable all.", delete_after=120)
+                try:
+                    cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
+                except asyncio.TimeoutError:
+                    await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+                    return
+                if cat_reply.content.lower() == "all":
+                    cat_reply.content = (', ').join(pokestop_options)
+                reply_list = cat_reply.content.lower().split(',')
+                reply_list = [x.strip() for x in reply_list]
+                reply_list = [x for x in reply_list if x in pokestop_options]
+                disable_list = set(pokestop_options) - set(reply_list)
+                enable_list = set(pokestop_options) - set(disable_list)
+                for item in disable_list:
+                    user_setting[item] = False
+                for item in enable_list:
+                    user_setting[item] = True
+                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['categories']['pokestop'] = user_setting
+                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message])
+                await ctx.send(f"{ctx.author.mention} - Your DM settings for **pokestop** have been set to **{(', ').join(enable_list)}**.", delete_after=30)
+            elif cat_reply.content.lower() == "item":
+                settings_msg = await ctx.send(f"{ctx.author.mention} reply with the alert types you would like to receive **item** alerts for. Any not listed will be disabled. List from the following options: **{(', ').join(item_options)}** or reply with **all** to enable all.", delete_after=120)
+                try:
+                    cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
+                except asyncio.TimeoutError:
+                    await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+                    return
+                if cat_reply.content.lower() == "all":
+                    cat_reply.content = (', ').join(item_options)
+                reply_list = cat_reply.content.lower().split(',')
+                reply_list = [x.strip() for x in reply_list]
+                reply_list = [x for x in reply_list if x in item_options]
+                disable_list = set(item_options) - set(reply_list)
+                enable_list = set(item_options) - set(disable_list)
+                for item in disable_list:
+                    user_setting[item] = False
+                for item in enable_list:
+                    user_setting[item] = True
+                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['categories']['item'] = user_setting
+                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message])
+                await ctx.send(f"{ctx.author.mention} - Your DM settings for **item** have been set to **{(', ').join(enable_list)}**.", delete_after=30)
+            elif cat_reply.content.lower() == "type":
+                settings_msg = await ctx.send(f"{ctx.author.mention} reply with the alert types you would like to receive **type** alerts for. Any not listed will be disabled. List from the following options: **{(', ').join(type_options)}** or reply with **all** to enable all.", delete_after=120)
+                try:
+                    cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
+                except asyncio.TimeoutError:
+                    await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+                    return
+                if cat_reply.content.lower() == "all":
+                    cat_reply.content = (', ').join(type_options)
+                reply_list = cat_reply.content.lower().split(',')
+                reply_list = [x.strip() for x in reply_list]
+                reply_list = [x for x in reply_list if x in type_options]
+                disable_list = set(type_options) - set(reply_list)
+                enable_list = set(type_options) - set(disable_list)
+                for item in disable_list:
+                    user_setting[item] = False
+                for item in enable_list:
+                    user_setting[item] = True
+                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['categories']['type'] = user_setting
+                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message])
+                await ctx.send(f"{ctx.author.mention} - Your DM settings for **type** have been set to **{(', ').join(enable_list)}**.", delete_after=30)
+            else:
+                await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed.", delete_after=30)
+        elif cat_reply.content.lower() == "reset":
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['categories'] = {}
+            await ctx.send(f"{ctx.author.mention} - Your DM settings for all categories has been reset.", delete_after=30)
+        else:
+            await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed.", delete_after=30)
 
     @commands.group(case_insensitive=True, invoke_without_command=True)
     @checks.allowwant()

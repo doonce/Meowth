@@ -768,7 +768,6 @@ class Listing(commands.Cog):
                 return
 
     async def _wantlist(self, ctx):
-        wantlist = []
         user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
         user_mute = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', False)
         mute_mentions = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
@@ -793,22 +792,39 @@ class Listing(commands.Cog):
         user_levels = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
         user_levels = sorted(user_levels)
         user_levels = [str(x) for x in user_levels]
+        categories = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {})
+        pokemon_options = ["wild", "research", "invasion", "nest"]
+        pokestop_options = ["research", "wild", "lure", "invasion"]
+        type_options = ["wild", "research", "nest", "invasion"]
+        item_options = ["research", "lure"]
+        pokemon_settings = categories.get('pokemon', {})
+        if not pokemon_settings:
+            pokemon_settings = {k:True for k in pokemon_options}
+        pokestop_settings = categories.get('stop', {})
+        if not pokestop_settings:
+            pokestop_settings = {k:True for k in pokestop_options}
+        item_settings = categories.get('item', {})
+        if not item_settings:
+            item_settings = {k:True for k in item_options}
+        type_settings = categories.get('type', {})
+        if not type_settings:
+            type_settings = {k:True for k in type_options}
         wantmsg = ""
         if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels) or len(user_forms) > 0:
             if wantlist:
-                wantmsg += _('**Pokemon:** (wilds, research, invasions, nests{raid_link})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids" if user_link else "")
+                wantmsg += _('**Pokemon:** ({cat_options}{raid_link})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids" if user_link else "", cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
             if user_forms:
-                wantmsg += _('**Pokemon Forms:** (wilds, invasions)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_forms), width=80)))
+                wantmsg += _('**Pokemon Forms:** ({cat_options})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_forms), width=80)), cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
             if bosslist and not user_link:
                 wantmsg += _('**Bosses:** (raids)\n{want_list}').format(want_list='\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
             if user_gyms:
                 wantmsg += _('**Gyms:** (raids)\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
             if user_stops:
-                wantmsg += _('**Stops:** (research, wilds, lures, invasions)\n{user_stops}\n\n').format(user_stops='\n'.join(textwrap.wrap(', '.join(user_stops), width=80)))
+                wantmsg += _('**Stops:** ({cat_options})\n{user_stops}\n\n').format(user_stops='\n'.join(textwrap.wrap(', '.join(user_stops), width=80)), cat_options=(', ').join([x for x in pokestop_options if pokestop_settings.get(x)]))
             if user_items:
-                wantmsg += _('**Items:** (research, lures)\n{user_items}\n\n').format(user_items='\n'.join(textwrap.wrap(', '.join(user_items), width=80)))
+                wantmsg += _('**Items:** ({cat_options})\n{user_items}\n\n').format(user_items='\n'.join(textwrap.wrap(', '.join(user_items), width=80)), cat_options=(', ').join([x for x in item_options if item_settings.get(x)]))
             if user_types:
-                wantmsg += _('**Types:** (wilds, research, nests, invasions)\n{user_types}\n\n').format(user_types='\n'.join(textwrap.wrap(', '.join(user_types), width=80)))
+                wantmsg += _('**Types:** ({cat_options})\n{user_types}\n\n').format(user_types='\n'.join(textwrap.wrap(', '.join(user_types), width=80)), cat_options=(', ').join([x for x in type_options if type_settings.get(x)]))
             if user_ivs:
                 wantmsg += _('**IVs:** (wilds)\n{user_ivs}\n\n').format(user_ivs='\n'.join(textwrap.wrap(', '.join(user_ivs), width=80)))
             if user_levels:

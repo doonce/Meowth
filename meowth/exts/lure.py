@@ -272,14 +272,20 @@ class Lure(commands.Cog):
             await utils.safe_reaction(confirmation, expire_emoji)
         lure_embed.description = lure_embed.description + f"\n**Report:** [Jump to Message]({confirmation.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
-            user_categories = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', ["wild", "research", "invasion", "lure", "nest", "raid"])
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
+            stop_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokestop', {}).get('lure', True)
             user_items = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('items', [])
-            if not checks.dm_check(ctx, trainer):
+            item_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('item', {}).get('lure', True)
+            if not any([user_stops, stop_setting, user_items, item_setting]):
                 continue
-            if "lure" not in user_categories:
+            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
                 continue
-            if location.lower() in user_stops or item in user_items:
+            send_lure = False
+            if stop_setting and location.lower() in user_stops:
+                send_lure = True
+            if item_setting and item in user_items:
+                send_lure = True
+            if send_lure:
                 try:
                     user = ctx.guild.get_member(trainer)
                     luredmmsg = await user.send(f"{lure_msg} in {ctx.channel.mention}", embed=lure_embed)
@@ -288,8 +294,8 @@ class Lure(commands.Cog):
                     continue
         self.bot.guild_dict[ctx.guild.id]['lure_dict'][confirmation.id]['dm_dict'] = dm_dict
         if not ctx.message.author.bot:
-            lure_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('lure_reports', 0) + 1
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['lure_reports'] = lure_reports
+            lure_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('lure', 0) + 1
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['lure'] = lure_reports
 
     @lure.command(aliases=['expire'])
     @checks.allowlurereport()

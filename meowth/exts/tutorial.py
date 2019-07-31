@@ -419,8 +419,8 @@ class Tutorial(commands.Cog):
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"The {omw_emoji} emoji adds you to a list of trainers chasing the wild spawn\nThe {despawn_emoji} emoji alerts others that it has despawned.\nThe {catch_emoji} removes you from the chasing list.\nThe {info_emoji} can be used to add wild details."))
 
             try:
-                wild_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports']
-                ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['wild_reports'] = wild_reports - 1
+                wild_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['reports']['wild']
+                ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['reports']['wild'] = wild_reports - 1
             except KeyError:
                 pass
 
@@ -539,11 +539,11 @@ class Tutorial(commands.Cog):
 
         try:
             if "level" in raid_channel.name:
-                egg_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['egg_reports']
-                ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['egg_reports'] = egg_reports - 1
+                egg_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['reports']['egg']
+                ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['reports']['egg'] = egg_reports - 1
             else:
-                raid_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['raid_reports']
-                ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['raid_reports'] = raid_reports - 1
+                raid_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['reports']['raid']
+                ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['reports']['raid'] = raid_reports - 1
         except KeyError:
             pass
 
@@ -700,8 +700,8 @@ class Tutorial(commands.Cog):
             # acknowledge and wait a second before continuing
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Great job!"))
             try:
-                research_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['research_reports']
-                ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['research_reports'] = research_reports - 1
+                research_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['reports']['research']
+                ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['reports']['research'] = research_reports - 1
             except KeyError:
                 pass
 

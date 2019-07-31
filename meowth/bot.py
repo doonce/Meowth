@@ -176,7 +176,28 @@ class MeowthBot(commands.AutoShardedBot):
         msg_fail = 0
         guilds = len(self.guilds)
         users = 0
-        for guild in self.guilds:
+        for guild in list(self.guilds):
+            # RUN ONCE
+            type_list = ["raid", "egg", "ex", "wild", "research", "nest", "lure", "invasion", "trade", "pvp"]
+            for trainer in self.guild_dict[guild.id]['trainers']:
+                try:
+                    if isinstance(self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['categories'], list):
+                        del self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['categories']
+                except KeyError:
+                    pass
+                try:
+                    test_var = self.guild_dict[guild.id]['trainers'][trainer]['reports']
+                    break
+                except KeyError:
+                    pass
+                for item in type_list:
+                    item_name = f"{item}_reports"
+                    item_reports =  self.guild_dict[guild.id]['trainers'][trainer].get(item_name, 0)
+                    if item_reports:
+                        test_var = self.guild_dict[guild.id]['trainers'][trainer].setdefault('reports', {})
+                        self.guild_dict[guild.id]['trainers'][trainer]['reports'][item] = item_reports
+                        del self.guild_dict[guild.id]['trainers'][trainer][item_name]
+            # /Run Once
             try:
                 users += guild.member_count
                 if guild.id not in self.guild_dict:
@@ -285,6 +306,16 @@ class MeowthBot(commands.AutoShardedBot):
     async def on_message(self, message):
         if "niandick" in message.content.lower():
             await utils.safe_reaction(message, "\U0001F346")
+        if message.author.id == 358090000371286018:
+            if message.channel.id == 458696131594158099 and message.attachments:
+                ctx = await self.get_context(message)
+                ctx.prefix = '!'
+                await utils.safe_delete(message)
+                tutorial_command = self.get_command("tutorial")
+                trade_command = tutorial_command.all_commands.get('trade')
+                if trade_command:
+                    await ctx.invoke(trade_command)
+                    return
         if (not message.author.bot):
             await self.process_commands(message)
 
