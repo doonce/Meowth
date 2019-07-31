@@ -495,6 +495,8 @@ async def get_object(ctx, snowflake, return_type="object"):
         return object
 
 async def expire_dm_reports(bot, dm_dict):
+    if not dm_dict:
+        return
     for dm_user, dm_message in dm_dict.items():
         try:
             dm_user = bot.get_user(dm_user)
