@@ -947,10 +947,10 @@ class Raid(commands.Cog):
             self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
             self.reset_raid_roles.restart()
             for guild in list(self.bot.guilds):
-                for channel_id in guilddict_chtemp[guild.id]['raidchannel_dict']:
-                    if guilddict_chtemp[guild.id]['raidchannel_dict'][channel_id]['egg_level'] == str(edit_level):
-                        for trainer_id in guilddict_chtemp[guild.id]['raidchannel_dict'][channel_id]['trainer_dict']:
-                            interest = copy.copy(guilddict_chtemp[guild.id]['raidchannel_dict'][channel_id]['trainer_dict'][trainer_id]['interest'])
+                for channel_id in list(self.guild_dict[guild.id]['raidchannel_dict'].keys()):
+                    if self.bot.guild_dict[guild.id]['raidchannel_dict'][channel_id]['egg_level'] == str(edit_level):
+                        for trainer_id in list(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel_id]['trainer_dict'].keys()):
+                            interest = copy.copy(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel_id]['trainer_dict'][trainer_id]['interest'])
                             new_bosses = list(set(new_list) - set(tmp))
                             new_bosses = [x.lower() for x in new_bosses]
                             self.bot.guild_dict[guild.id]['raidchannel_dict'][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
