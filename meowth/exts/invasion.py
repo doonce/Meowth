@@ -348,6 +348,7 @@ class Invasion(commands.Cog):
         invasion_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pokemon = False
+        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         invasion_dict = self.bot.guild_dict[ctx.guild.id].setdefault('invasion_dict', {})
         while True:
             async with ctx.typing():
@@ -396,7 +397,7 @@ class Invasion(commands.Cog):
                                 loc_url = stop_url
                         if not location:
                             return
-                    invasion_embed.set_field_at(0, name=invasion_embed.fields[0].name, value=_("Fantastic! Now, reply with a comma separated list of the **pokemon** Team Rocket is using at the **{location}** invasion. If you don't know the reward, reply with **N**, otherwise reply with as many as you know. You can reply with **cancel** to stop anytime").format(location=location), inline=False)
+                    invasion_embed.set_field_at(0, name=invasion_embed.fields[0].name, value=_("Fantastic! Now, reply with a comma separated list of the **pokemon** Team Rocket is using at the **{location}** invasion. If you don't know the pokemon, reply with **N**, otherwise reply with as many as you know.\n\nYou can also reply with the **type** of invasion from the Team Rocket member's dialogue. You can reply with **cancel** to stop anytime").format(location=location), inline=False)
                     rewardwait = await channel.send(embed=invasion_embed)
                     try:
                         rewardmsg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -413,6 +414,8 @@ class Invasion(commands.Cog):
                         break
                     elif rewardmsg.clean_content.lower() == "n":
                         reward = []
+                    elif rewardmsg.clean_content.lower().strip() in type_list:
+                        reward = rewardmsg.clean_content.lower().strip()
                     elif rewardmsg:
                         reward = rewardmsg.clean_content.split(',')
                         reward = [x.strip() for x in reward]

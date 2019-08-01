@@ -1363,7 +1363,7 @@ class Listing(commands.Cog):
                     if invasionauthor and not invasionauthor.bot:
                         reported_by = f" | **Reported By**: {invasionauthor.display_name}"
                     invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', '\U0001F539')))
-                    invasionmsg += f"**Location**: [{invasion_dict[invasionid]['location'].title()}]({invasion_dict[invasionid].get('url', None)}) | **Possible Rewards**: {(', ').join(reward_list)} | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{invasion_dict[invasionid]['location'].title()}]({invasion_dict[invasionid].get('url', None)}) | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
                 except Exception as e:
                     print(e)
                     continue
