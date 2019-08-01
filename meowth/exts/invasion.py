@@ -468,7 +468,7 @@ class Invasion(commands.Cog):
                     reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
                     reward_list.append(str(pokemon))
             if not reward_list:
-                invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknowm Pokemon", inline=True)
+                invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknown Pokemon", inline=True)
             else:
                 reward = reward_list
                 invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward_str}", inline=True)
