@@ -1098,7 +1098,6 @@ class Listing(commands.Cog):
         item_quests = []
         encounter_quests = []
         dust_quests = []
-        dust_dict = {}
         candy_quests = []
         berry_quests = []
         potion_quests = []
@@ -1218,10 +1217,10 @@ class Listing(commands.Cog):
         if item_quests:
             questmsg += "\n\n**Other Rewards**\n{itemlist}".format(itemlist="\n".join(item_quests))
         for dust in sorted(reward_dict['dust']):
-            for quest in dust_dict:
-                if dust_dict[quest]['reward'] == dust and not dust_dict[quest].get('listed', False):
-                    dust_quests.append(f"{dust_emoji} **Reward**: {dust_dict[quest]['reward']} | **Pokestop**: {dust_dict[quest]['location']} | **Quest**: {dust_dict[quest]['quest']}{dust_dict[quest]['reporter']}")
-                    dust_dict[quest]['listed'] = True
+            for quest in quest_dict['dust']:
+                if quest_dict['dust'][quest]['reward'] == dust and not quest_dict['dust'][quest].get('listed', False):
+                    dust_quests.append(f"{dust_emoji} **Reward**: {quest_dict['dust'][quest]['reward']} | **Pokestop**: {quest_dict['dust'][quest]['location']} | **Quest**: {quest_dict['dust'][quest]['quest']}{quest_dict['dust'][quest]['reporter']}")
+                    quest_dict['dust'][quest]['listed'] = True
         if dust_quests:
             questmsg += "\n\n**Stardust**\n{dustlist}".format(dustlist="\n".join(dust_quests))
         if questmsg:
@@ -1494,15 +1493,20 @@ class Listing(commands.Cog):
                     if wildauthor and not wildauthor.bot:
                         reported_by = f" | **Reported By**: {wildauthor.display_name}"
                     shiny_str = ""
+                    disguise_str = ""
                     iv_check = wild_dict[wildid].get('wild_iv', {}).get('percent', None)
+                    disguise = wild_dict[wildid].get('disguise', None)
                     pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
+                    if pokemon.name.lower() == "ditto" and disguise:
+                        disguise = await pkmn_class.Pokemon.async_get_pokemon(self.bot, disguise)
+                        disguise_str = f" | **Disguise**: {disguise.name.title()} {disguise.emoji}"
                     if pokemon.id in self.bot.shiny_dict:
                         if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                         elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                     wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('wild_bullet', '\U0001F539')))
-                    wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
+                    wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}{disguise_str} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
                     if iv_check:
                         wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv'].get('percent', iv_check)}"
                 except Exception as e:

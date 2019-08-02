@@ -797,7 +797,7 @@ class Want(commands.Cog):
                         want_list.append(str(level))
             elif "-" in entered_want.lower():
                 range_split = entered_want.split("-")
-                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]) and int(range_split[1] <= 40):
+                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]) and int(range_split[1]) <= 40:
                     for level in range(int(range_split[0]), int(range_split[1])+1):
                         want_list.append(str(level))
                 else:

@@ -166,6 +166,9 @@ class Wild(commands.Cog):
         moveset = details.get('moveset', None)
         expire = details.get('expire', "45 min 0 sec")
         pkmn_obj = details.get('pkmn_obj', None)
+        disguise = details.get('disguise', None)
+        if disguise:
+            disguise = await pkmn_class.Pokemon.async_get_pokemon(self.bot, disguise)
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender.lower()} {pkmn_obj.lower()}")
         pokemon.weather = weather
         location = details.get('location', None)
@@ -194,6 +197,8 @@ class Wild(commands.Cog):
         elif gender and "male" in gender.lower():
             details_str += f" ♂"
         details_str += f" ({pokemon.id}) {pokemon.emoji}"
+        if pokemon.name.lower() == "ditto" and disguise:
+            details_str += f"\nDisguise: {disguise.name.title()} {disguise.emoji}"
         wild_embed = discord.Embed(description="", title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=pokemon.name.title()), url=wild_gmaps_link, colour=ctx.guild.me.colour)
         if nearest_stop:
             wild_embed.description = poi_info
@@ -238,6 +243,8 @@ class Wild(commands.Cog):
         reply_msg += f"**gender <male or female>** - Current: {wild_dict.get('gender', 'X')}\n"
         reply_msg += f"**size <xl or xs>** - Current: {wild_dict.get('size', 'X')}\n"
         reply_msg += f"**weather <game weather>** - Current: {wild_dict.get('weather', 'X')}"
+        if pokemon.name.lower() == "ditto":
+            reply_msg += f"\n**disguise <ditto disguise>** - Current: {wild_dict.get('disguise', 'X')}"
         wild_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1')
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
@@ -340,6 +347,15 @@ class Wild(commands.Cog):
                             elif value_split[1] and value_split[1].lower() == "none":
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['level'] = None
                                 success.append("level")
+                            else:
+                                error = _('entered something invalid. Levels can\'t be higher than 40')
+                        elif "disguise" in value and "disguise" not in success and pokemon.name.lower() == "ditto":
+                            if value_split[1] and value_split[1].lower() in self.bot.pkmn_info.keys():
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['disguise'] = value_split[1].title()
+                                success.append("disguise")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['disguise'] = None
+                                success.append("disguise")
                             else:
                                 error = _('entered something invalid. Levels can\'t be higher than 40')
                         elif "weather" in value and "weather" not in success:
@@ -690,7 +706,21 @@ class Wild(commands.Cog):
             wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('wild', 0) + 1
             self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['wild'] = wild_reports
         if "ditto" in str(pokemon).lower():
-            await message.channel.send(f"{ctx.author.mention}, what was the Ditto hiding as?", delete_after=30)
+            ditto_wait = await message.channel.send(f"{ctx.author.mention}, what was the Ditto hiding as?", delete_after=30)
+            def check(reply):
+                if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.author:
+                    return True
+                else:
+                    return False
+            try:
+                ditto_msg = await self.bot.wait_for('message', timeout=60, check=check)
+            except asyncio.TimeoutError:
+                ditto_msg = None
+            await utils.safe_bulk_delete(ctx.channel, [ditto_wait, ditto_msg])
+            if ditto_msg:
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, ditto_msg.clean_content.lower())
+                self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['disguise'] = str(pokemon)
+                await self.edit_wild_messages(ctx, ctx.wildreportmsg)
 
     @wild.command(aliases=['expire'])
     @checks.allowwildreport()
