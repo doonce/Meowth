@@ -449,6 +449,7 @@ class Invasion(commands.Cog):
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\ud83d\udca8')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        react_list = [complete_emoji, expire_emoji, info_emoji]
         invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
         type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         shiny_str = ""
@@ -483,6 +484,7 @@ class Invasion(commands.Cog):
                 invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward_str}", inline=True)
                 invasion_embed.set_thumbnail(url=pokemon.img_url)
         if timer:
+            react_list.remove(expire_emoji)
             invasion_msg = invasion_msg.replace(f" or {expire_emoji} if the invasion has disappeared", "")
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         invasion_embed.title = _('Meowth! Click here for my directions to the invasion!')
@@ -501,9 +503,9 @@ class Invasion(commands.Cog):
         invasion_embed.add_field(name=f"**{'Expires' if timer else 'Expire Estimate'}:**", value=f"{expire_time} mins {end.strftime(_('(%I:%M %p)'))}")
         invasion_embed.set_author(name="Invasion Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_shadow.png?cache=1")
         ctx.invreportmsg = await ctx.channel.send(invasion_msg, embed=invasion_embed)
-        await utils.safe_reaction(ctx.invreportmsg, complete_emoji)
-        await utils.safe_reaction(ctx.invreportmsg, expire_emoji)
-        await utils.safe_reaction(ctx.invreportmsg, info_emoji)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.safe_reaction(ctx.invreportmsg, reaction)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id] = {
             'exp':time.time() + int(expire_time)*60,
             'expedit':"delete",

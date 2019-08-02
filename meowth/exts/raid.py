@@ -1983,7 +1983,7 @@ class Raid(commands.Cog):
         raid_gmaps_link = oldembed.url
         if egg_level.isdigit():
             hatchtype = 'raid'
-            raidreportcontent = _('Meowth! The egg has hatched into a {pokemon} raid! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=eggdetails['address'], raid_channel=raid_channel.mention)
+            raidreportcontent = f"Meowth! The egg has hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel"
             raidmsg = f"Meowth! The egg reported by {raid_messageauthor.mention} in {report_channelchannel.mention} hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel.\n\nThis channel will be deleted five minutes after the timer expires."
         elif egg_level == 'EX':
             hatchtype = 'exraid'
