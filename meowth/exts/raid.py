@@ -429,7 +429,7 @@ class Raid(commands.Cog):
                             await utils.safe_delete(reportmsg)
                         elif reportmsg:
                             try:
-                                await reportmsg.edit(embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
+                                await reportmsg.edit(content=reportmsg.content.splitlines()[0], embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
                                 await reportmsg.clear_reactions()
                             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                                 pass
@@ -712,6 +712,7 @@ class Raid(commands.Cog):
             if isinstance(embed.description, discord.embeds._EmptyEmbed):
                 embed.description = ""
             embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
+        content = content.splitlines()[0]
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             if not checks.dm_check(ctx, trainer):
                 continue
@@ -1575,9 +1576,9 @@ class Raid(commands.Cog):
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=pokemon.img_url)
         raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1")
-        ctx.raidreport = await message.channel.send(content=_('Meowth! {pokemon} raid reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
+        ctx.raidreport = await message.channel.send(content=f"Meowth! {str(pokemon).title()} raid reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel", embed=raid_embed)
         await asyncio.sleep(1)
-        raidmsg = f"{roletest}Meowth! {str(pokemon).title()} raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
+        raidmsg = f"{roletest}Meowth! {str(pokemon).title()} raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel.\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await raid_message.pin()
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
@@ -1762,9 +1763,9 @@ class Raid(commands.Cog):
             raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
             raid_embed.set_thumbnail(url=raid_img_url)
             raid_embed.set_author(name=f"Level {egg_level} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1")
-            ctx.raidreport = await message.channel.send(content=_('Meowth! Level {level} raid egg reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(level=egg_level, member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
+            ctx.raidreport = await message.channel.send(f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel", embed=raid_embed)
             await asyncio.sleep(1)
-            raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
+            raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel.\n\nThis channel will be deleted five minutes after the timer expires."
             raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
             await raid_message.pin()
             self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
@@ -1938,6 +1939,10 @@ class Raid(commands.Cog):
         weather = eggdetails.get('weather', None)
         pokemon.weather = weather
         help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
+        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
+        cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
         try:
             report_channelchannel = self.bot.get_channel(eggdetails['report_channel'])
             report_channel = report_channelchannel.name
@@ -1979,7 +1984,7 @@ class Raid(commands.Cog):
         if egg_level.isdigit():
             hatchtype = 'raid'
             raidreportcontent = _('Meowth! The egg has hatched into a {pokemon} raid! Details: {location_details}. Coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=eggdetails['address'], raid_channel=raid_channel.mention)
-            raidmsg = f"Meowth! The egg reported by {raid_messageauthor.mention} in {report_channelchannel.mention} hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate here!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
+            raidmsg = f"Meowth! The egg reported by {raid_messageauthor.mention} in {report_channelchannel.mention} hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel.\n\nThis channel will be deleted five minutes after the timer expires."
         elif egg_level == 'EX':
             hatchtype = 'exraid'
             if self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['invite']['enabled']:
@@ -1989,7 +1994,7 @@ class Raid(commands.Cog):
                 invitemsgstr = _("Coordinate")
                 invitemsgstr2 = ""
             raidreportcontent = _('Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. {invitemsgstr} coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=eggdetails['address'], invitemsgstr=invitemsgstr, raid_channel=raid_channel.mention)
-            raidmsg = f"Meowth! {str(pokemon)} EX raid reported by {raid_messageauthor.mention} in {report_channelchannel.mention}! Details: {eggdetails['address']}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
+            raidmsg = f"Meowth! {str(pokemon)} EX raid reported by {raid_messageauthor.mention} in {report_channelchannel.mention}! Details: {eggdetails['address']}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands.\n\nThis channel will be deleted five minutes after the timer expires."
         raid_channel_name = (entered_raid + '-') + utils.sanitize_channel_name(eggdetails['address'])
         raid = discord.utils.get(raid_channel.guild.roles, name=entered_raid)
         if raid == None:
@@ -2211,7 +2216,7 @@ class Raid(commands.Cog):
             invitemsgstr2 = ""
         ctx.raidreport = await channel.send(content=_('Meowth! EX raid egg reported by {member}! Details: {location_details}. {invitemsgstr} in {raid_channel}').format(member=message.author.mention, location_details=raid_details, invitemsgstr=invitemsgstr, raid_channel=raid_channel.mention), embed=raid_embed)
         await asyncio.sleep(1)
-        raidmsg = f"Meowth! EX raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
+        raidmsg = f"Meowth! EX raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands.\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await utils.safe_reaction(raid_message, '\u2754')
         await raid_message.pin()
@@ -2431,7 +2436,7 @@ class Raid(commands.Cog):
         raid_embed.set_author(name=f"Meetup Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/meetup.png?cache=1")
         ctx.raidreport = await channel.send(content=_('Meowth! Meetup reported by {member}! Details: {location_details}. Coordinate in {raid_channel}').format(member=message.author.mention, location_details=raid_details, raid_channel=raid_channel.mention), embed=raid_embed)
         await asyncio.sleep(1)
-        raidmsg = f"Meowth! Meetup reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on the commands that work in here.\n\nThis channel will be deleted five minutes after the timer expires."
+        raidmsg = f"Meowth! Meetup reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands.\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:

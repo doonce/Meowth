@@ -123,7 +123,7 @@ class Wild(commands.Cog):
         channel = message.channel
         wild_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['wildreport_dict'])
         try:
-            await message.edit(embed=discord.Embed(description=wild_dict[message.id]['expedit']['embedcontent'], colour=message.embeds[0].colour.value))
+            await message.edit(content=message.content.splitlines()[0], embed=discord.Embed(description=wild_dict[message.id]['expedit']['embedcontent'], colour=message.embeds[0].colour.value))
             await message.clear_reactions()
         except (discord.errors.NotFound, discord.errors.Forbidden, KeyError):
             pass
@@ -216,8 +216,8 @@ class Wild(commands.Cog):
         despawn_emoji = ctx.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
-        wild_embed.add_field(name='**Status Reactions:**', value=f"{omw_emoji}: I'm on my way!\n{catch_emoji}: I caught it!", inline=True)
-        wild_embed.add_field(name='**Spawn Reactions:**', value=f"{despawn_emoji}: The Pokemon despawned!\n{info_emoji}: Edit wild details", inline=True)
+        # wild_embed.add_field(name='**Status Reactions:**', value=f"{omw_emoji}: I'm on my way!\n{catch_emoji}: I caught it!", inline=True)
+        # wild_embed.add_field(name='**Spawn Reactions:**', value=f"{despawn_emoji}: The Pokemon despawned!\n{info_emoji}: Edit wild details", inline=True)
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         return wild_embed
 
@@ -469,6 +469,7 @@ class Wild(commands.Cog):
                 else:
                     index += 1
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_pokemon)
+        content = content.splitlines()[0]
         wild_types = pokemon.types.copy()
         wild_types.append('None')
         for trainer in copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('trainers', {})):
@@ -616,6 +617,11 @@ class Wild(commands.Cog):
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, content)
         wild_iv = None
         nearest_stop = ""
+        omw_emoji = self.bot.custom_emoji.get('wild_omw', '\U0001F3CE')
+        despawn_emoji = self.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
+        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
+        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        react_list = [omw_emoji, despawn_emoji, catch_emoji, info_emoji]
         if pokemon:
             pokemon.shiny = False
         else:
@@ -671,17 +677,12 @@ class Wild(commands.Cog):
         }
         despawn = 2700
         wild_embed = await self.make_wild_embed(ctx, details)
-        ctx.wildreportmsg = await message.channel.send(content=_('Meowth! Wild {pokemon} reported by {member}! Details: {location_details}{stop_str}').format(pokemon=str(pokemon).title(), member=message.author.mention, location_details=wild_details, iv_str=iv_str, stop_str=stop_str), embed=wild_embed)
+        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\nUse {omw_emoji} if you are on your way, {catch_emoji} if you caught it, {despawn_emoji} if it has despawned, or {info_emoji} to edit details", embed=wild_embed)
         dm_dict = {}
         dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, self.bot.custom_emoji.get('wild_omw', '\U0001F3CE'))
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, self.bot.custom_emoji.get('wild_despawn', '\U0001F4A8'))
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.custom_emoji.get('wild_catch', '\u26BE'))
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.wildreportmsg, ctx.bot.custom_emoji.get('wild_info', '\u2139'))
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.safe_reaction(ctx.wildreportmsg, reaction)
         self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'exp':time.time() + despawn,
             'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
