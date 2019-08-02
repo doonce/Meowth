@@ -138,6 +138,7 @@ class Invasion(commands.Cog):
         reward = invasion_dict.get('reward', [])
         location = invasion_dict.get('location', '')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         if not author:
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
@@ -146,7 +147,7 @@ class Invasion(commands.Cog):
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                invasion_embed.add_field(name=_('**Edit Invasion Info**'), value=f"Meowth! I'll help you add rewards to the invasion! Reply with a comma separated list of the **pokemon** Team Rocket is using at the **{location}** invasion. You can reply with **cancel** to stop anytime.", inline=False)
+                invasion_embed.add_field(name=_('**Edit Invasion Info**'), value=f"Meowth! I'll help you add rewards to the invasion! Reply with a comma separated list of the **pokemon** Team Rocket is using at the **{location}** invasion.\n\nYou can also reply with the **type** of invasion from the Team Rocket grunt's dialogue. You can reply with **cancel** to stop anytime.", inline=False)
                 value_wait = await channel.send(embed=invasion_embed)
                 def check(reply):
                     if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == ctx.author:
@@ -166,6 +167,8 @@ class Invasion(commands.Cog):
                 if value_msg.clean_content.lower() == "cancel":
                     error = _("cancelled the report")
                     break
+                elif value_msg.clean_content.lower().strip() in type_list:
+                    self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward_type'] = value_msg.clean_content.lower().strip()
                 else:
                     pkmn_list = value_msg.clean_content.lower().split(',')
                     pkmn_list = [x.strip() for x in pkmn_list]
@@ -186,11 +189,11 @@ class Invasion(commands.Cog):
                     elif len(reward) > 3:
                         error = _("entered too many pokemon")
                         break
-                    if not user.bot:
-                        invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('reports', {}).setdefault('invasion', 0) + 1
-                        self.bot.guild_dict[ctx.guild.id]['trainers'][user.id]['reports']['invasion'] = invasion_reports
                     self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward'] = reward
-                    break
+                if not user.bot:
+                    invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('reports', {}).setdefault('invasion', 0) + 1
+                    self.bot.guild_dict[ctx.guild.id]['trainers'][user.id]['reports']['invasion'] = invasion_reports
+                break
         if error:
             invasion_embed.clear_fields()
             invasion_embed.add_field(name=_('**Invasion Edit Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
@@ -201,6 +204,7 @@ class Invasion(commands.Cog):
     async def edit_invasion_messages(self, ctx, message):
         invasion_dict = self.bot.guild_dict[ctx.guild.id]['invasion_dict'].get(message.id, {})
         reward = invasion_dict.get('reward', [])
+        reward_type = invasion_dict.get('reward_type', '')
         dm_dict = invasion_dict.get('dm_dict', {})
         invasion_embed = message.embeds[0]
         invasion_gmaps_link = invasion_embed.url
@@ -214,8 +218,10 @@ class Invasion(commands.Cog):
         shiny_str = ""
         reward_str = ""
         reward_list = []
-        if not reward:
+        if not reward and not reward_type:
             reward_str = "Unknown Pokemon"
+        elif not reward and reward_type:
+            reward_str = f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"
         else:
             for pokemon in reward:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=False)
@@ -288,7 +294,7 @@ class Invasion(commands.Cog):
                 if pokemon:
                     pkmn_list.append(pokemon)
         else:
-            return
+            return dm_dict
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('wants', [])
             user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('forms', [])
@@ -397,7 +403,7 @@ class Invasion(commands.Cog):
                                 loc_url = stop_url
                         if not location:
                             return
-                    invasion_embed.set_field_at(0, name=invasion_embed.fields[0].name, value=_("Fantastic! Now, reply with a comma separated list of the **pokemon** Team Rocket is using at the **{location}** invasion. If you don't know the pokemon, reply with **N**, otherwise reply with as many as you know.\n\nYou can also reply with the **type** of invasion from the Team Rocket member's dialogue. You can reply with **cancel** to stop anytime").format(location=location), inline=False)
+                    invasion_embed.set_field_at(0, name=invasion_embed.fields[0].name, value=_("Fantastic! Now, reply with a comma separated list of the **pokemon** Team Rocket is using at the **{location}** invasion. If you don't know the pokemon, reply with **N**, otherwise reply with as many as you know.\n\nYou can also reply with the **type** of invasion from the Team Rocket grunt's dialogue. You can reply with **cancel** to stop anytime").format(location=location), inline=False)
                     rewardwait = await channel.send(embed=invasion_embed)
                     try:
                         rewardmsg = await self.bot.wait_for('message', timeout=60, check=check)
