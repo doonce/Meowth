@@ -293,7 +293,9 @@ class Silph(commands.Cog):
     @commands.command()
     @checks.guildchannel()
     async def silph(self, ctx, silph_user: str = ""):
-        """Links a server member to a Silph Road Travelers Card."""
+        """Links a server member to a Silph Road Travelers Card.
+
+        To reset use !silph clear"""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
         author = trainers.get(ctx.author.id, {})
         silph_command = self.bot.get_command("silphcard")

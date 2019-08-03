@@ -86,7 +86,7 @@ class Trainers(commands.Cog):
     @commands.command(aliases=['whois'])
     @checks.guildchannel()
     async def profile(self, ctx, *, member=""):
-        """Displays a member's social and reporting profile.
+        """Displays a member's social and reporting profile. Searches in-game names, trainerodes, etc.
 
         Usage:!profile [member]"""
         converter = commands.MemberConverter()
@@ -221,7 +221,7 @@ class Trainers(commands.Cog):
         """Displays the top ten reporters of a server.
 
         Usage: !leaderboard [type] [page]
-        Accepted types: raids, eggs, exraids, wilds, research, nest, lure
+        Accepted types: raids, eggs, exraids, wilds, research, nest, lure, invasion
         Page: 1 = 1 through 10, 2 = 11 through 20, etc."""
         trainers = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['trainers'])
         leaderboard = []
@@ -248,8 +248,9 @@ class Trainers(commands.Cog):
             research = trainers[trainer].get('reports', {}).get('research', 0)
             nest = trainers[trainer].get('reports', {}).get('nest', 0)
             lure = trainers[trainer].get('reports', {}).get('lure', 0)
-            total_reports = raid + wild + exraid + egg + research + nest + lure
-            trainer_stats = {'trainer':trainer, 'total':total_reports, 'raid':raid, 'wild':wild, 'research':research, 'exraid':exraid, 'egg':egg, 'nest':nest, 'lure':lure}
+            invasion = trainers[trainer].get('reports', {}).get('invasion', 0)
+            total_reports = sum(trainers[trainer].get('reports', {0:0}).values())
+            trainer_stats = {'trainer':trainer, 'total':total_reports, 'raid':raid, 'wild':wild, 'research':research, 'exraid':exraid, 'egg':egg, 'nest':nest, 'lure':lure, 'invasion':invasion}
             if trainer_stats[type] > 0 and user:
                 leaderboard.append(trainer_stats)
         leaderboard = sorted(leaderboard, key= lambda x: x[type], reverse=True)[begin_range:int(range)]
@@ -268,8 +269,10 @@ class Trainers(commands.Cog):
                     field_value += _("Quest: **{research}** | ").format(research=trainer['research'])
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
                     field_value += _("Nest: **{nest}** | ").format(nest=trainer['nest'])
-                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
+                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['lure']['enabled']:
                     field_value += _("Lure: **{lure}** | ").format(lure=trainer['lure'])
+                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['invasion']['enabled']:
+                    field_value += _("Invasion: **{invasion}** | ").format(invasion=trainer['invasion'])
                 embed.add_field(name=f"{rank}. {user.display_name} - {type.title()}: **{trainer[type]}**", value=field_value[:-3], inline=False)
                 field_value = ""
                 rank += 1
@@ -280,6 +283,9 @@ class Trainers(commands.Cog):
     @leaderboard.command(name='reset')
     @commands.has_permissions(manage_guild=True)
     async def reset(self, ctx, *, user=None, type=None):
+        """Resets Leaderboard
+
+        Usage: !leaderboard reset [user] [type]"""
         guild = ctx.guild
         trainers = self.bot.guild_dict[guild.id]['trainers']
         tgt_string = ""
@@ -361,7 +367,7 @@ class Trainers(commands.Cog):
     async def pokebattler(self, ctx, *, pbid: str = ""):
         """Links a server member to a PokeBattler ID.
 
-        To clear, enter 'clear' as an argument."""
+        To clear your setting, use !pokebattler clear."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
         author = trainers.get(ctx.author.id, {})
         if author.get('pokebattlerid') and (pbid.lower() == "clear" or pbid.lower() == "reset"):
@@ -398,7 +404,7 @@ class Trainers(commands.Cog):
     async def trainercode(self, ctx, *, trainercode: str = ""):
         """Links a server member to a Pokemon Go Trainer Code.
 
-        To clear, enter 'clear' as an argument."""
+        To clear your setting, use !trainercode clear."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
         author = trainers.get(ctx.author.id, {})
         if author.get('trainercode') and (trainercode.lower() == "clear" or trainercode.lower() == "reset"):
@@ -436,7 +442,7 @@ class Trainers(commands.Cog):
     async def ign(self, ctx, *, ign: str = ""):
         """Links a server member to a comma separated list of Pokemon Go in-game name(s).
 
-        To clear, enter 'clear' as an argument."""
+        To clear your setting, use !ign clear."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
         author = trainers.get(ctx.author.id, {})
         if author.get('ign') and (ign.lower() == "clear" or ign.lower() == "reset"):

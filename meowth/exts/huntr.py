@@ -1121,6 +1121,7 @@ class Huntr(commands.Cog):
     @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def huntrraid(self, ctx):
+        """Simulates a huntr raid"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
@@ -1139,6 +1140,7 @@ class Huntr(commands.Cog):
     @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def huntregg(self, ctx):
+        """Simulates a huntr raid egg"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
@@ -1156,6 +1158,7 @@ class Huntr(commands.Cog):
     @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def huntrwild(self, ctx):
+        """Simulates a huntr wild"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
@@ -1173,6 +1176,7 @@ class Huntr(commands.Cog):
     @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def alarmraid(self, ctx):
+        """Simulates an alarm raid"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
@@ -1186,6 +1190,7 @@ class Huntr(commands.Cog):
     @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def alarmegg(self, ctx):
+        """Simulates an alarm raid egg"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
@@ -1198,6 +1203,7 @@ class Huntr(commands.Cog):
     @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def alarmwild(self, ctx):
+        """Simulates an alarm wild"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
@@ -1210,6 +1216,7 @@ class Huntr(commands.Cog):
     @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def alarmquest(self, ctx):
+        """Simulates an alarm quest"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
@@ -1222,6 +1229,7 @@ class Huntr(commands.Cog):
     @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def alarmlure(self, ctx):
+        """Simulates an alarm lure"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
@@ -1236,6 +1244,7 @@ class Huntr(commands.Cog):
     @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def alarminv(self, ctx):
+        """Simulates an alarm invasion"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message

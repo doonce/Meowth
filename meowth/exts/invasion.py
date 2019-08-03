@@ -360,7 +360,8 @@ class Invasion(commands.Cog):
             async with ctx.typing():
                 if details:
                     invasion_split = details.rsplit(",", 2)
-                    invasion_split.append([])
+                    if len(invasion_split) == 1:
+                        invasion_split.append([])
                     location, reward = invasion_split
                     gym_matching_cog = self.bot.cogs.get('GymMatching')
                     stop_info = ""
@@ -371,6 +372,7 @@ class Invasion(commands.Cog):
                             invasion_embed.description = stop_info
                     if not location:
                         return
+                    reward = reward.strip()
                     break
                 else:
                     invasion_embed.add_field(name=_('**New Invasion Report**'), value=_("Meowth! I'll help you report a Team Rocket invasion!\n\nFirst, I'll need to know what **pokestop** Team Rocket has invaded. Reply with the name of the **pokestop**. You can reply with **cancel** to stop anytime."), inline=False)

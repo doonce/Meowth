@@ -385,6 +385,7 @@ class GymMatching(commands.Cog):
 
     @commands.command(hidden=True)
     async def gym_match_test(self, ctx, *, gym_name):
+        """Tests matching for a gym"""
         gyms = self.get_gyms(ctx.guild.id)
         if not gyms:
             await ctx.send('Gym matching has not been set up for this server.')
@@ -403,6 +404,7 @@ class GymMatching(commands.Cog):
 
     @commands.command(hidden=True)
     async def stop_match_test(self, ctx, *, stop_name):
+        """Tests matching for a pokestop"""
         stops = self.get_stops(ctx.guild.id)
         if not stops:
             await ctx.send('Stop matching has not been set up for this server.')
@@ -421,6 +423,7 @@ class GymMatching(commands.Cog):
 
     @commands.command(hidden=True)
     async def whereis(self, ctx, *, poi_name):
+        """Matches and shows information for a POI"""
         stops = self.get_stops(ctx.guild.id)
         gyms = self.get_gyms(ctx.guild.id)
         if not stops and not gyms:

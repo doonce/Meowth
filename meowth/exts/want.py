@@ -23,14 +23,13 @@ class Want(commands.Cog):
     @commands.group(case_insensitive=True, invoke_without_command=True)
     @checks.allowwant()
     async def want(self, ctx, *, pokemon=None):
-        """Add a Pokemon to your wanted list. Currently used for wild, raid, research, nest reports.
+        """Add a Pokemon to your wanted list. Currently used for wild, raid, research, invasion, nest reports.
 
         Usage: !want <species>
-        Meowth will mention you if anyone reports seeing
-        this species in their !wild or !raid command."""
+        Meowth will DM you if anyone reports something on your want list."""
 
         """Behind the scenes, Meowth tracks user !wants by
-        storing information in a database."""
+        storing information."""
         message = ctx.message
         author = message.author
         guild = message.guild
@@ -552,7 +551,7 @@ class Want(commands.Cog):
     @want.command(name='stop')
     @checks.allowwant()
     async def want_stop(self, ctx, *, stops):
-        """Add a gym to your want list. Currently used for wild and research reports.
+        """Add a pokestop to your want list. Currently used for wild, invasion, lure, and research reports.
 
         Usage: !want stop <stop list>"""
         await ctx.trigger_typing()
@@ -606,7 +605,7 @@ class Want(commands.Cog):
     @want.command(name='item')
     @checks.allowwant()
     async def want_item(self, ctx, *, items):
-        """Add a item to your want list. Currently used research reports.
+        """Add a item to your want list. Currently used research and lure reports.
 
         Item List = incense, poke ball, great ball, ultra ball, master ball, potion, super potion, hyper potion, max potion, revive, max revive, razz berry, golden razz berry, nanab berry, pinap berry, silver pinap berry, fast tm, charged tm, rare candy, lucky egg, stardust, lure module, glacial lure module, magnetic lure module, mossy lure module, star piece, premium raid pass, egg incubator, super incubator, team medallion, sun stone, metal coat, dragon scale, up-grade, sinnoh stone
 
@@ -658,7 +657,7 @@ class Want(commands.Cog):
     @want.command(name='type')
     @checks.allowwant()
     async def want_type(self, ctx, *, types):
-        """Add a pokemon type to your want list. Currently used for wild, research, nest reports.
+        """Add a pokemon type to your want list. Currently used for wild, research, invasion, and nest reports.
 
         Usage: !want type <type list>"""
         await ctx.trigger_typing()
@@ -1019,6 +1018,9 @@ class Want(commands.Cog):
     @want.command(hidden=True)
     @checks.allowwant()
     async def categories(self, ctx):
+        """Changes your want category (pokemon, type, item, etc.) preferences per report type (research, wild, invasion, etc.).
+
+        Usage: !want categories"""
         categories = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {})
         category_list = ["pokemon", "pokestop", "item", "type"]
         pokemon_options = ["wild", "research", "invasion", "nest"]
@@ -1149,9 +1151,9 @@ class Want(commands.Cog):
     @commands.group(case_insensitive=True, invoke_without_command=True)
     @checks.allowwant()
     async def unwant(self, ctx, *, pokemon=""):
-        """Remove a Pokemon from your wanted list.
+        """Remove a subscription from your wanted list.
 
-        Usage: !unwant <species>
+        Usage: !unwant [pokemon]
         You will no longer be notified of reports about this Pokemon."""
         message = ctx.message
         author = message.author
@@ -1953,7 +1955,7 @@ class Want(commands.Cog):
     @unwant.command(name='iv', aliases=['ivs'])
     @checks.allowwant()
     async def unwant_iv(self, ctx, *, ivs):
-        """Remove a IV from your wanted list.
+        """Remove an IV from your wanted list.
 
         Usage: !unwant iv <iv list>
         You will no longer be notified of reports about this IV."""

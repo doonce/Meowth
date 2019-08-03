@@ -907,12 +907,14 @@ class Pokedex(commands.Cog):
 
     @commands.command(hidden=True)
     async def sprite(self, ctx, *, sprite: Pokemon):
+        """Displays a pokemon sprite"""
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
         preview_embed.set_image(url=sprite.img_url)
         sprite_msg = await ctx.send(embed=preview_embed)
 
     @commands.group(hidden=True, aliases=['dex'], invoke_without_command=True, case_insensitive=True)
     async def pokedex(self, ctx, *, pokemon: Pokemon):
+        """Pokedex information for a pokemon"""
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
         pokemon.gender = False
         pokemon.size = None
@@ -952,6 +954,7 @@ class Pokedex(commands.Cog):
 
     @pokedex.command(hidden=True)
     async def stats(self, ctx, *, pokemon: Pokemon):
+        """Detailed Pokedex information for a pokemon"""
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
         pokemon.gender = False
         pokemon.size = None
