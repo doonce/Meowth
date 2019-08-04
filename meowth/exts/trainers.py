@@ -221,12 +221,12 @@ class Trainers(commands.Cog):
         """Displays the top ten reporters of a server.
 
         Usage: !leaderboard [type] [page]
-        Accepted types: raids, eggs, exraids, wilds, research, nest, lure, invasion
+        Accepted types: raid, egg, exraid, wild, research, nest, lure, invasion
         Page: 1 = 1 through 10, 2 = 11 through 20, etc."""
         trainers = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['trainers'])
         leaderboard = []
         field_value = ""
-        typelist = ["total", "raid", "exraid", "wild", "research", "eggs", "nest", "lure"]
+        typelist = ["total", "raid", "exraid", "wild", "research", "egg", "nest", "lure"]
         type = type.lower()
         if type.isdigit():
             range = type
@@ -260,19 +260,17 @@ class Trainers(commands.Cog):
             user = ctx.guild.get_member(trainer['trainer'])
             if user:
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled']:
-                    field_value += _("Raid: **{raids}** | Egg: **{eggs}** | ").format(raids=trainer['raid'], eggs=trainer['egg'])
-                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['enabled']:
-                    field_value += _("EX: **{exraids}** | ").format(exraids=trainer['exraid'])
+                    field_value += f"Raid: **{trainer['raid']+trainer['egg']+trainer['exraid']}** | "
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled']:
-                    field_value += _("Wild: **{wilds}** | ").format(wilds=trainer['wild'])
+                    field_value += f"Wild: **{trainer['exraid']}** | "
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['research']['enabled']:
-                    field_value += _("Quest: **{research}** | ").format(research=trainer['research'])
+                    field_value += f"Research: **{trainer['research']}** | "
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
-                    field_value += _("Nest: **{nest}** | ").format(nest=trainer['nest'])
+                    field_value += f"Nest: **{trainer['nest']}** | "
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['lure']['enabled']:
-                    field_value += _("Lure: **{lure}** | ").format(lure=trainer['lure'])
+                    field_value += f"Lure: **{trainer['lure']}** | "
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['invasion']['enabled']:
-                    field_value += _("Invasion: **{invasion}** | ").format(invasion=trainer['invasion'])
+                    field_value += f"Invasion: **{trainer['invasion']}** | "
                 embed.add_field(name=f"{rank}. {user.display_name} - {type.title()}: **{trainer[type]}**", value=field_value[:-3], inline=False)
                 field_value = ""
                 rank += 1
