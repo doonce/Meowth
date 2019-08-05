@@ -3353,7 +3353,7 @@
         "gender": true,
         "available": true
       },
-      "none": {
+      "shadow": {
         "type": [
           "Water",
           "Flying"
