@@ -137,6 +137,7 @@ class Tutorial(commands.Cog):
     async def tutorial(self, ctx, *, tutorial_list: str=""):
         """Launches an interactive tutorial session for Meowth.
 
+        Usage: !tutorial
         Meowth will create a private channel and initiate a
         conversation that walks you through the various commands
         that are enabled on the current server."""

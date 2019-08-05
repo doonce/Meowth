@@ -608,7 +608,9 @@ class Pvp(commands.Cog):
     @checks.allowpvpreport()
     @commands.has_permissions(manage_channels=True)
     async def reset(self, ctx, *, report_message=None):
-        """Resets all PVP requests."""
+        """Resets all PVP requests.
+
+        Usage: !pvp reset"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message

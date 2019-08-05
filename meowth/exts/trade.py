@@ -357,7 +357,10 @@ class Trading(commands.Cog):
     @commands.command()
     @checks.allowtrade()
     async def trade(self, ctx, *, offered_pokemon=''):
-        """Create a trade listing."""
+        """Create a trade listing.
+
+        Usage: !trade [pokemon list]
+        Meowth will guide you through listing pokemon for trade"""
         await utils.safe_delete(ctx.message)
         trade_dict = self.bot.guild_dict[ctx.guild.id].setdefault('trade_dict', {})
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
@@ -380,7 +383,7 @@ class Trading(commands.Cog):
                 def check(m):
                     return m.author == ctx.author and m.channel == ctx.channel
                 if not all_offered:
-                    preview_embed.add_field(name=_('**New Trade Listing**'), value=f"Meowth! I'll help you list a new trade! What pokemon are you wanting to list for trade? Reply with your **pokemon** or reply with **cancel** to cancel.\n\nYour **pokemon** can contain any forms, shiny, or gender. I'll try to match it as close as possible.", inline=False)
+                    preview_embed.add_field(name=_('**New Trade Listing**'), value=f"Meowth! I'll help you list a new trade! What pokemon are you wanting to list for trade? Reply with your **pokemon** or reply with **cancel** to cancel.\n\nYour **pokemon** can contain any forms, shiny, or gender. I'll try to match it as close as possible.\n\nIf you have pokemon that you are *looking for*, enter a pokemon you would be willing to trade for them.", inline=False)
                     trade_listing = await ctx.send(embed=preview_embed)
                     try:
                         listing_msg = await self.bot.wait_for('message', timeout=60, check=check)

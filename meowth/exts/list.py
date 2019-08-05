@@ -29,8 +29,8 @@ class Listing(commands.Cog):
         """Lists all info for the current channel depending on channel type.
 
         Usage: !list
-        Works only in raid or reporting channels. Calls the interested, waiting, and here lists. Also prints
-        the raid timer. In reporting channels, lists all active reports."""
+        Works only in raid or reporting channels. In raid channels this calls the interested, waiting, and here list and prints
+        the raid timer. In reporting channels, this lists all active reports."""
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'tag']:
             await utils.safe_delete(ctx.message)
         if ctx.invoked_subcommand == None:
@@ -957,8 +957,9 @@ class Listing(commands.Cog):
     async def trades(self, ctx, *, search=None):
         """List the trades for the user or pokemon
 
-        Usage: !list trades [user or pokemon]
-        Works only in trading channels."""
+        Usage: !list trades [user or pokemon or shiny]
+        Works only in trading channels. Will search for supplied search term, showing
+        all pokemon that match or all trades for specific user"""
         async with ctx.typing():
             if not search:
                 search = ctx.author

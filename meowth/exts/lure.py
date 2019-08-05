@@ -301,7 +301,9 @@ class Lure(commands.Cog):
     @checks.allowlurereport()
     @commands.has_permissions(manage_channels=True)
     async def reset(self, ctx, *, report_message=None):
-        """Resets all lure reports."""
+        """Resets all lure reports.
+
+        Usage: !lure reset"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message

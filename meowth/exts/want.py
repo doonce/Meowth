@@ -26,10 +26,9 @@ class Want(commands.Cog):
         """Add a Pokemon to your wanted list. Currently used for wild, raid, research, invasion, nest reports.
 
         Usage: !want <species>
-        Meowth will DM you if anyone reports something on your want list."""
-
-        """Behind the scenes, Meowth tracks user !wants by
-        storing information."""
+        Meowth will DM you if anyone reports something on your want list.
+        Behind the scenes, Meowth tracks user !wants by storing information.
+        Guided version available with just !want"""
         message = ctx.message
         author = message.author
         guild = message.guild
@@ -1154,7 +1153,8 @@ class Want(commands.Cog):
         """Remove a subscription from your wanted list.
 
         Usage: !unwant [pokemon]
-        You will no longer be notified of reports about this Pokemon."""
+        You will no longer be notified of reports about this Pokemon.
+        Guided version available with just !unwant"""
         message = ctx.message
         author = message.author
         guild = message.guild

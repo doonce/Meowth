@@ -2098,6 +2098,7 @@ class Raid(commands.Cog):
         Meowth will insert the details (really just everything after the species name) into a
         Google maps link and post the link to the same channel the report was made in.
         Meowth's message will also include the type weaknesses of the boss.
+        Guided report available with just !exraid
 
         Finally, Meowth will create a separate channel for the raid report, for the purposes of organizing the raid."""
         message = ctx.message
@@ -3620,8 +3621,7 @@ class Raid(commands.Cog):
         Usage: !counters [pokemon] [weather] [user]
         See !help weather for acceptable values for weather.
         If [user] is a valid Pokebattler user id, Meowth will simulate the Raid with that user's Pokebox.
-        Uses current boss and weather by default if available.
-        """
+        Uses current boss and weather by default if available."""
         async with ctx.typing():
             await self._counters(ctx, args)
 

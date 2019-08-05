@@ -830,7 +830,7 @@ class Utilities(commands.Cog):
         yourguild = ctx.guild.name
         yourmembers = len(ctx.guild.members)
         embed_colour = ctx.guild.me.colour or discord.Colour.lighter_grey()
-        about = _("I'm Meowth! A Pokemon Go helper bot for Discord!\n\nHuntr integration was implemented by [{huntr_name}]({huntr_repo}).\n\n[Join our server]({server_invite}) if you have any questions or feedback.\n\n").format(huntr_name=huntr_name, huntr_repo=huntr_repo, server_invite=guild_url)
+        about = _("I'm Meowth! A Pokemon Go helper bot for Discord!\n\nScanner integration was implemented by [{huntr_name}]({huntr_repo}), who currently maintains and continues my development.\n\n[Join our server]({server_invite}) if you have any questions or feedback.\n\n").format(huntr_name=huntr_name, huntr_repo=huntr_repo, server_invite=guild_url)
         member_count = 0
         guild_count = 0
         for guild in self.bot.guilds:
@@ -845,7 +845,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.8.4.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.8.5.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

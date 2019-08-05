@@ -26,7 +26,7 @@ class Trainers(commands.Cog):
         """Set your team role.
 
         Usage: !team <team name>
-        The team roles have to be created manually beforehand by the server administrator."""
+        This command can be used only once. Moderators will have to manually change teams."""
         guild = ctx.guild
         toprole = guild.me.top_role.name
         position = guild.me.top_role.position
@@ -86,9 +86,10 @@ class Trainers(commands.Cog):
     @commands.command(aliases=['whois'])
     @checks.guildchannel()
     async def profile(self, ctx, *, member=""):
-        """Displays a member's social and reporting profile. Searches in-game names, trainerodes, etc.
+        """Displays a member's social and reporting profile.
 
-        Usage:!profile [member]"""
+        Usage:!profile [member]
+        Searches in-game names, trainerodes, etc. to find other trainers."""
         converter = commands.MemberConverter()
         msg = ""
         if member:

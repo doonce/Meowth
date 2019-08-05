@@ -108,7 +108,7 @@ class Admin(commands.Cog):
                 error_title = _('**Error when loading extension')
                 await ctx.send(f'{error_title} {ext}:**\n'
                                f'{type(e).__name__}: {e}')
-                return
+                continue
         await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Reloaded the following extensions:\n\n{(', ').join(reload_str)}"))
 
     @commands.command(name="shutdown", aliases=["exit"])
@@ -130,7 +130,9 @@ class Admin(commands.Cog):
     @commands.command(name='load')
     @checks.is_owner()
     async def _load(self, ctx, *extensions):
-        """Load or reload an extension"""
+        """Load or reload an extension
+
+        Usage: !load [extension list]"""
         for ext in extensions:
             ext = ext.replace(',','')
             try:
@@ -148,7 +150,9 @@ class Admin(commands.Cog):
     @commands.command(name='unload')
     @checks.is_owner()
     async def _unload(self, ctx, *extensions):
-        """Unload an extension"""
+        """Unload an extension
+
+        Usage: !unload [extension list]"""
         exts = [e for e in extensions if f"meowth.exts.{e}" in self.bot.extensions]
         for ext in exts:
             if ext in self.bot.required_exts:
@@ -169,7 +173,9 @@ class Admin(commands.Cog):
     @commands.command(hidden=True, name="eval")
     @checks.is_owner()
     async def _eval(self, ctx, *, body: str):
-        """Evaluates a code"""
+        """Evaluates a code
+
+        Usage: !eval <python code>"""
         env = {
             'Meowth': ctx.bot,
             'guild_dict':self.bot.guild_dict,

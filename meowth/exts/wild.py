@@ -727,7 +727,10 @@ class Wild(commands.Cog):
     @checks.allowwildreport()
     @commands.has_permissions(manage_channels=True)
     async def reset(self, ctx, *, report_message=None):
-        """Resets all wild reports."""
+        """Resets all wild reports.
+
+        Usage: !wild reset [message ID]
+        Will either reset [message] or all if no message is supplied"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message

@@ -145,9 +145,9 @@ class Huntr(commands.Cog):
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime('%I:%M %p')
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
-        auto_raid = self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoraid', False)
-        auto_egg = self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoegg', False)
-        auto_wild = self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autowild', False)
+        auto_raid = self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['reports'].get('raid', False)
+        auto_egg = self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['reports'].get('egg', False)
+        auto_wild = self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['reports'].get('wild', False)
         raid_channel = None
         maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
@@ -432,7 +432,7 @@ class Huntr(commands.Cog):
                         await self.auto_counters(channel, report_details.get('moves', None))
                         return
                 if report_details.get('type', None) == "raid":
-                    if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoraid', False):
+                    if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports', {}).get('raid'):
                         return
                     reporttype = "raid"
                     pokemon = report_details.setdefault('pokemon', None)
@@ -464,7 +464,7 @@ class Huntr(commands.Cog):
                         ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
                         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {pokemon.name.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                 elif report_details.get('type', None) == "egg":
-                    if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoegg', False):
+                    if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports').get('egg'):
                         return
                     reporttype = "egg"
                     egg_level = report_details.setdefault('level', None)
@@ -506,7 +506,7 @@ class Huntr(commands.Cog):
                     await utils.safe_reaction(ctx.raidreport, reaction)
                 return
             elif report_details.get('type', None) == "wild":
-                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autowild', False):
+                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports').get('wild'):
                     return
                 wild_cog = self.bot.cogs.get('Wild')
                 if not wild_cog:
@@ -524,7 +524,7 @@ class Huntr(commands.Cog):
                 await self.huntr_wild(ctx, report_details)
                 return
             elif report_details.get('type', None) == "research":
-                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoquest', True):
+                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports', {}).get('research'):
                     return
                 research_cog = self.bot.cogs.get('Research')
                 if not research_cog:
@@ -540,7 +540,7 @@ class Huntr(commands.Cog):
                 await self.huntr_research(ctx, report_details)
                 return
             elif report_details.get('type', None) == "lure":
-                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoquest', True):
+                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports', {}).get('lure'):
                     return
                 lure_cog = self.bot.cogs.get('Lure')
                 if not lure_cog:
@@ -555,7 +555,7 @@ class Huntr(commands.Cog):
                 await self.huntr_lure(ctx, report_details)
                 return
             elif report_details.get('type', None) == "invasion":
-                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('autoquest', True):
+                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports', {}).get('invasion'):
                     return
                 invasion_cog = self.bot.cogs.get('Invasion')
                 if not invasion_cog:

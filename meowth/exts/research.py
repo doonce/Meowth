@@ -450,7 +450,10 @@ class Research(commands.Cog):
     @checks.allowresearchreport()
     @commands.has_permissions(manage_channels=True)
     async def reset(self, ctx, *, report_message=None):
-        """Resets all research reports."""
+        """Resets all research reports.
+
+        Usage: !research reset [message]
+        Will either reset [message] or all if no message is supplied"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message

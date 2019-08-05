@@ -326,8 +326,9 @@ class Nest(commands.Cog):
     @nest.command()
     @checks.allownestreport()
     async def info(self, ctx):
-        """Shows all reports and location for a nest."""
+        """Shows all reports and location for a nest.
 
+        Usage: !nest info"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
@@ -548,8 +549,10 @@ class Nest(commands.Cog):
     @checks.allownestreport()
     @commands.has_permissions(manage_channels=True)
     async def reset(self, ctx, *, report = None):
-        """Migrates all nests manually, resetting all reports."""
+        """Migrates all nests manually, resetting all reports.
 
+        Usage: !nest reset [message ID]
+        Will either reset [message], or ask which nest to reset if no message is supplied"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message

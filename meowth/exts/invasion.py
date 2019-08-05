@@ -342,7 +342,8 @@ class Invasion(commands.Cog):
         line, avoid commas in anything but your separations between pokestop,
         and reward. Order matters if you supply arguments.
 
-        Usage: !invasion [pokestop name [optional URL], reward]"""
+        Usage: !invasion [pokestop name [optional URL], reward or type]
+        Guided report available with just !invasion"""
         message = ctx.message
         channel = message.channel
         author = message.author

@@ -178,6 +178,31 @@ class MeowthBot(commands.AutoShardedBot):
         users = 0
         for guild in list(self.guilds):
             # RUN ONCE
+            while True:
+                try:
+                    test_var = self.guild_dict[guild.id]['configure_dict']['scanners']['reports']['raid']
+                    break
+                except KeyError:
+                    pass
+                report_dict = {}
+                try:
+                    test_Var = self.guild_dict[guild.id]['configure_dict']['scanners']['autoraid']
+                except KeyError:
+                    break
+                auto_raid = self.guild_dict[guild.id]['configure_dict']['scanners']['autoraid']
+                auto_egg = self.guild_dict[guild.id]['configure_dict']['scanners']['autoegg']
+                auto_wild = self.guild_dict[guild.id]['configure_dict']['scanners']['autowild']
+                auto_quest = self.guild_dict[guild.id]['configure_dict']['scanners']['autoquest']
+                auto_inv = self.guild_dict[guild.id]['configure_dict']['scanners']['autoquest']
+                auto_lure = self.guild_dict[guild.id]['configure_dict']['scanners']['autoquest']
+                report_dict = {"raid":auto_raid, "egg":auto_egg, "wild":auto_wild, "research":auto_quest, "invasion":auto_quest, "lure":auto_lure}
+                self.guild_dict[guild.id]['configure_dict']['scanners']['reports'] = report_dict
+                for item in ["autoraid", "autoegg", "autowild", "autoquest"]:
+                    try:
+                        del self.guild_dict[guild.id]['configure_dict']['scanners'][item]
+                    except KeyError:
+                        continue
+                break
             type_list = ["raid", "egg", "ex", "wild", "research", "nest", "lure", "invasion", "trade", "pvp"]
             for trainer in self.guild_dict[guild.id]['trainers']:
                 try:
@@ -218,7 +243,7 @@ class MeowthBot(commands.AutoShardedBot):
                             'invite': {'enabled':False},
                             'team':{'enabled':False, 'team_roles':{}},
                             'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':self.default_prefix, 'config_sessions':{}},
-                            'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'wildfilter':[], 'autoquest':False, 'alarmaction':False}
+                            'scanners':{'reports':{'raid':False, 'egg':False, 'wild':False, 'research':False, 'invasion':False, 'lure':False}, 'raidlvls':[0], 'egglvls':[0], 'wildfilter':[], 'alarmaction':False}
                         },
                         'wildreport_dict':{},
                         'questreport_dict':{},
@@ -250,7 +275,7 @@ class MeowthBot(commands.AutoShardedBot):
                 'invite': {'enabled':False},
                 'team':{'enabled':False, 'team_roles':{}},
                 'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':self.default_prefix, 'config_sessions':{}},
-                'scanners':{'autoraid':False, 'raidlvls':[0], 'autoegg':False, 'egglvls':[0], 'autowild':False, 'wildfilter':[], 'autoquest':False, 'alarmaction':False}
+                'scanners':{'reports':{'raid':False, 'egg':False, 'wild':False, 'research':False, 'invasion':False, 'lure':False}, 'raidlvls':[0], 'egglvls':[0], 'wildfilter':[], 'alarmaction':False}
             },
             'wildreport_dict:':{},
             'questreport_dict':{},

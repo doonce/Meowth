@@ -423,7 +423,9 @@ class GymMatching(commands.Cog):
 
     @commands.command(hidden=True)
     async def whereis(self, ctx, *, poi_name):
-        """Matches and shows information for a POI"""
+        """Matches and shows information for a POI
+
+        Usage: !whereis <POI name>"""
         stops = self.get_stops(ctx.guild.id)
         gyms = self.get_gyms(ctx.guild.id)
         if not stops and not gyms:

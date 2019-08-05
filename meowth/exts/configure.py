@@ -1821,34 +1821,47 @@ class Configure(commands.Cog):
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Huntr Cog is not loaded. Scanners cannot be configured.")))
             ctx.config_dict_temp = config_dict_temp
             return ctx
-        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raid** reports using supported bots enabled?\n\nAny raid that a bot posts in a channel that Meowth also has access to will be converted to a **!raid** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Raid Reports', icon_url=self.bot.user.avatar_url)
-        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm, PokeBot, etc.'))
-        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!alarm {"type":"raid", "pokemon":"[form] <pokemon name>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<end minutes>", "moves":"<move name 1> / <move name 2>"}`'))
+        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Do you want automatic reports using supported bots enabled?\n\nAny report that a bot posts in a channel that Meowth also has access to will be converted to a Meowth report. If enabled, there are more options available for configuring this setting.\n\nRespond with a comma separated list of available report types to enable or **N** to disable all.").set_author(name='Automatic Reports', icon_url=self.bot.user.avatar_url)
+        scanner_embed.add_field(name=f"**Raid**", value='**Supported Nots:** GymHuntrBot, NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"raid", "pokemon":"[form] <pokemon name>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<end minutes>", "moves":"<move name 1> / <move name 2>"}`')
+        scanner_embed.add_field(name=f"**Egg**", value='**Supported Nots:** GymHuntrBot, NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"egg", "level":"<raid_level>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<hatch minutes>"}`')
+        scanner_embed.add_field(name=f"**Wild**", value='**Supported Nots:** HuntrBot, NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"wild", "pokemon":"[gender] [form] <pokemon name>", "gps":"<latitude>,<longitude>, "weather":"[weather boost]"}`')
+        scanner_embed.add_field(name=f"**Research**", value='**Supported Nots:** NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"research", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "quest":"<quest task>", "reward":"<quest reward>"`')
+        scanner_embed.add_field(name=f"**Invasion**", value='**Supported Nots:** NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"invasion", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "reward":"<invasion reward>"`')
+        scanner_embed.add_field(name=f"**Lure**", value='**Supported Nots:** NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"lure", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "lure_type":"<lure_type>"`')
         await ctx.configure_channel.send(embed=scanner_embed)
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['autoraid'])).set_author(name=_("Current AutoRaid Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['reports'])).set_author(name=_("Current Settings"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        report_types = ["raid", "egg", "wild", "research", "invasion", "lure"]
+        report_dict = config_dict_temp.setdefault('scanners', {}).setdefault('reports', {k:True for k in report_types})
         while True:
             try:
-                autoraidset = await self.wait_for_msg(ctx.configure_channel, ctx.author)
+                autoset_wait = await self.wait_for_msg(ctx.configure_channel, ctx.author)
             except asyncio.TimeoutError:
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG TIMEOUT!**\n\nNo changes have been made.')))
                 await self.end_configure(ctx)
                 return None
-            if autoraidset.content.lower() == 'y':
-                config_dict_temp['scanners']['autoraid'] = True
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Raid Reports enabled'))
+            autoset_list = autoset_wait.clean_content.lower().split(',')
+            autoset_list = [x.strip() for x in autoset_list]
+            if autoset_list[0] == "n":
+                config_dict_temp['scanners']['reports'] = {k:False for k in report_types}
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Reports disabled'))
                 break
-            elif autoraidset.content.lower() == 'n':
-                config_dict_temp['scanners']['autoraid'] = False
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Raid Reports disabled'))
-                break
-            elif autoraidset.content.lower() == 'cancel':
+            elif autoset_list[0] == "cancel":
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
                 await self.end_configure(ctx)
                 return None
+            elif autoset_list[0] in report_types:
+                autoset_list = [x for x in autoset_list if x in report_types]
+                disable_list = set(report_types) - set(autoset_list)
+                enable_list = set(report_types) - set(disable_list)
+                for item in disable_list:
+                    config_dict_temp['scanners']['reports'][item] = False
+                for item in enable_list:
+                    config_dict_temp['scanners']['reports'][item] = True
+                break
             else:
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
                 continue
-        if config_dict_temp['scanners']['autoraid']:
+        if config_dict_temp['scanners']['reports']['raid']:
             scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create raid channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. Use both this configuration and the other bot's configuration to customize your needs. See below.").set_author(name='Automatic Raid Report Levels', icon_url=self.bot.user.avatar_url)
             scanner_embed.add_field(name=_('**GymhuntrBot:**'), value=_("For example: `3, 4, 5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created."))
             scanner_embed.add_field(name=_('**NovaBot and PokeAlarm:**'), value=_("For example: `3, 4, 5`\n\nIn this example, only 3+ raids will auto reported. You can customize the other levels manually in your alarm settings. "))
@@ -1882,34 +1895,7 @@ class Configure(commands.Cog):
                     else:
                         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1, 2, 3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic raids."))
                         continue
-        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!raidegg** reports using supported bots enabled?\n\nAny egg that a bot posts in a channel that Meowth also has access to will be converted to a **!raidegg** report. If enabled, there are more options available for configuring this setting.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Egg Reports', icon_url=self.bot.user.avatar_url)
-        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm, PokeBot, etc.'))
-        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!alarm {"type":"egg", "level":"<raid_level>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<hatch minutes>"}`'))
-        await ctx.configure_channel.send(embed=scanner_embed)
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['autoegg'])).set_author(name=_("Current AutoEgg Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
-        while True:
-            try:
-                autoeggset = await self.wait_for_msg(ctx.configure_channel, ctx.author)
-            except asyncio.TimeoutError:
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG TIMEOUT!**\n\nNo changes have been made.')))
-                await self.end_configure(ctx)
-                return None
-            if autoeggset.content.lower() == 'y':
-                config_dict_temp['scanners']['autoegg'] = True
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Egg Reports enabled'))
-                break
-            elif autoeggset.content.lower() == 'n':
-                config_dict_temp['scanners']['autoegg'] = False
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Egg Reports disabled'))
-                break
-            elif autoeggset.content.lower() == 'cancel':
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
-                await self.end_configure(ctx)
-                return None
-            else:
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
-                continue
-        if config_dict_temp['scanners']['autoegg']:
+        if config_dict_temp['scanners']['reports']['egg']:
             scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="Please enter the levels that you would like Meowth to create egg channels automatically for, separated by a comma. Any level not included will be a reformatted report and will allow users to react to create a channel. You can also enter '0' to reformat all reports with no automatic channels. Use both this configuration and the other bot's configuration to customize your needs. See below.").set_author(name='Automatic Egg Report Levels', icon_url=self.bot.user.avatar_url)
             scanner_embed.add_field(name=_('**GymhuntrBot:**'), value=_("For example: `3, 4, 5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created."))
             scanner_embed.add_field(name=_('**NovaBot and PokeAlarm:**'), value=_("For example: `3, 4, 5`\n\nIn this example, only 3+ raids will auto reported. You can customize the other levels manually in your alarm settings. "))
@@ -1943,34 +1929,7 @@ class Configure(commands.Cog):
                     else:
                         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1, 2, 3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic eggs."))
                         continue
-        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!wild** reports using supported bots enabled?\n\nAny wild that a bot posts in a channel that Meowth also has access to will be converted to a **!wild** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Wild Reports', icon_url=self.bot.user.avatar_url)
-        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('GymHuntrBot, NovaBot, PokeAlarm'))
-        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!alarm {"type":"wild", "pokemon":"[gender] [form] <pokemon name>", "gps":"<latitude>,<longitude>, "weather":"[weather boost]"}`'))
-        await ctx.configure_channel.send(embed=scanner_embed)
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('autowild', False))).set_author(name=_("Current AutoWild Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
-        while True:
-            try:
-                wildconfigset = await self.wait_for_msg(ctx.configure_channel, ctx.author)
-            except asyncio.TimeoutError:
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG TIMEOUT!**\n\nNo changes have been made.')))
-                await self.end_configure(ctx)
-                return None
-            if wildconfigset.content.lower() == 'y':
-                config_dict_temp['scanners']['autowild'] = True
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Wild Reports enabled'))
-                break
-            elif wildconfigset.content.lower() == 'n':
-                config_dict_temp['scanners']['autowild'] = False
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Wild Reports disabled'))
-                break
-            elif wildconfigset.content.lower() == 'cancel':
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
-                await self.end_configure(ctx)
-                return None
-            else:
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
-                continue
-        if config_dict_temp['scanners']['autowild']:
+        if config_dict_temp['scanners']['reports']['wild']:
             scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Reports with IV will still be posted. Please enter a list of wild pokemon to block automatic reports of or reply with **N** to disable the filter.").set_author(name='Automatic Wild Report Filter', icon_url=self.bot.user.avatar_url)
             await ctx.configure_channel.send(embed=scanner_embed)
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['wildfilter'])).set_author(name=_("Current AutoWild Filter"), icon_url=self.bot.user.avatar_url), delete_after=300)
@@ -2005,33 +1964,6 @@ class Configure(commands.Cog):
                     else:
                         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one pokemon or **N** to turn off automatic wild filter."))
                         continue
-        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description='Do you want automatic **!research** reports using supported bots enabled?\n\nAny quest that a bot posts in a channel that Meowth also has access to will be converted to a **!research** report.\n\nRespond with: **N** to disable, or **Y** to enable:').set_author(name='Automatic Research Reports', icon_url=self.bot.user.avatar_url)
-        scanner_embed.add_field(name=_('**Supported Bots:**'), value=_('NovaBot, PokeAlarm'))
-        scanner_embed.add_field(name=_('**NovaBot / PokeAlarm Syntax:**'), value=_('Content must include: `!alarm {"type":"research", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "quest":"<quest task>", "reward":"<quest reward>"`'))
-        await ctx.configure_channel.send(embed=scanner_embed)
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('autoquest', False))).set_author(name=_("Current AutoQuest Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
-        while True:
-            try:
-                wildconfigset = await self.wait_for_msg(ctx.configure_channel, ctx.author)
-            except asyncio.TimeoutError:
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG TIMEOUT!**\n\nNo changes have been made.')))
-                await self.end_configure(ctx)
-                return None
-            if wildconfigset.content.lower() == 'y':
-                config_dict_temp['scanners']['autoquest'] = True
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description='Automatic Quest Reports enabled'))
-                break
-            elif wildconfigset.content.lower() == 'n':
-                config_dict_temp['scanners']['autoquest'] = False
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Quest Reports disabled'))
-                break
-            elif wildconfigset.content.lower() == 'cancel':
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
-                await self.end_configure(ctx)
-                return None
-            else:
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))
-                continue
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
