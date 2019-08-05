@@ -1349,9 +1349,9 @@ class Listing(commands.Cog):
                             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                             shiny_str = ""
                             if pokemon and pokemon.id in self.bot.shiny_dict:
-                                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "invasion" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "invasion" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                             reward_list.append(f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}")
                     elif reward_type:

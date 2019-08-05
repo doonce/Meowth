@@ -26,15 +26,10 @@
           "Poison"
         ],
         "pokedex": "Bulbasaur can be seen napping in bright sunlight. There is a seed on its back. By soaking up the sun's rays, the seed grows progressively larger.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research",
-          "nest"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Bulbasaur ] \u2192 [ Ivysaur ] \u2192 [ Venusaur ]"
@@ -62,11 +57,10 @@
           "Poison"
         ],
         "pokedex": "There is a bud on this Pokemon's back. To support its weight, Ivysaur's legs and trunk grow thick and strong. If it starts spending more time lying in the sunlight, it's a sign that the bud will bloom into a large flower soon.",
-        "shiny": [
-          "evolution"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Bulbasaur ] \u2192 [ Ivysaur ] \u2192 [ Venusaur ]"
@@ -94,11 +88,10 @@
           "Poison"
         ],
         "pokedex": "There is a large flower on Venusaur's back. The flower is said to take on vivid colors if it gets plenty of nutrition and sunlight. The flower's aroma soothes the emotions of people.",
-        "shiny": [
-          "evolution"
-        ],
+        "shiny": [],
         "gender": true,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Bulbasaur ] \u2192 [ Ivysaur ] \u2192 [ Venusaur ]"
@@ -128,15 +121,10 @@
           "Fire"
         ],
         "pokedex": "The flame that burns at the tip of its tail is an indication of its emotions. The flame wavers when Charmander is enjoying itself. If the Pokemon becomes enraged, the flame burns fiercely.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research",
-          "nest"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Charmander ] \u2192 [ Charmeleon ] \u2192 [ Charizard ]"
@@ -162,11 +150,10 @@
           "Fire"
         ],
         "pokedex": "Charmeleon mercilessly destroys its foes using its sharp claws. If it encounters a strong foe, it turns aggressive. In this excited state, the flame at the tip of its tail flares with a bluish white color.",
-        "shiny": [
-          "evolution"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Charmander ] \u2192 [ Charmeleon ] \u2192 [ Charizard ]"
@@ -194,11 +181,10 @@
           "Flying"
         ],
         "pokedex": "Charizard flies around the sky in search of powerful opponents. It breathes fire of such great heat that it melts anything. However, it never turns its fiery breath on any opponent weaker than itself.",
-        "shiny": [
-          "evolution"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Charmander ] \u2192 [ Charmeleon ] \u2192 [ Charizard ]"
@@ -228,15 +214,10 @@
           "Water"
         ],
         "pokedex": "Squirtle's shell is not merely used for protection. The shell's rounded shape and the grooves on its surface help minimize resistance in water, enabling this Pokemon to swim at high speeds.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research",
-          "nest"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       },
       "sunglasses": {
         "type": [
@@ -277,11 +258,10 @@
           "Water"
         ],
         "pokedex": "Its tail is large and covered with a rich, thick fur. The tail becomes increasingly deeper in color as Wartortle ages. The scratches on its shell are evidence of this Pokemon's toughness as a battler.",
-        "shiny": [
-          "evolution"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       },
       "sunglasses": {
         "type": [
@@ -318,11 +298,10 @@
           "Water"
         ],
         "pokedex": "Blastoise has water spouts that protrude from its shell. The water spouts are very accurate. They can shoot bullets of water with enough accuracy to strike empty cans from a distance of over 160 feet.",
-        "shiny": [
-          "evolution"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       },
       "sunglasses": {
         "type": [
@@ -544,13 +523,7 @@
           "Normal"
         ],
         "pokedex": "Rattata is cautious in the extreme. Even while it is asleep, it constantly listens by moving its ears around. It is not picky about where it lives\u2014it will make its nest anywhere.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research",
-          "nest"
-        ],
+        "shiny": [],
         "gender": true,
         "available": true,
         "size": true
@@ -595,11 +568,10 @@
           "Normal"
         ],
         "pokedex": "Raticate's sturdy fangs grow steadily. To keep them ground down, it gnaws on rocks and logs. It may even chew on the walls of houses.",
-        "shiny": [
-          "evolution"
-        ],
+        "shiny": [],
         "gender": true,
-        "available": true
+        "available": true,
+        "size": false
       },
       "alolan": {
         "type": [
@@ -662,9 +634,15 @@
           "Poison"
         ],
         "pokedex": "Ekans curls itself up in a spiral while it rests. Assuming this position allows it to quickly respond to a threat from any direction with a glare from its upraised head.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Ekans ] \u2192 [ Arbok ]"
@@ -679,9 +657,12 @@
           "Poison"
         ],
         "pokedex": "This Pokemon is terrifically strong in order to constrict things with its body. It can even flatten steel oil drums. Once Arbok wraps its body around its foe, escaping its crunching embrace is impossible.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Ekans ] \u2192 [ Arbok ]"
@@ -1349,9 +1330,15 @@
           "Flying"
         ],
         "pokedex": "Zubat remains quietly unmoving in a dark spot during the bright daylight hours. It does so because prolonged exposure to the sun causes its body to become slightly burned.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
         "gender": true,
-        "available": true
+        "available": true,
+        "size": false
       },
       "shadow": {
         "type": [
@@ -1361,7 +1348,8 @@
         "pokedex": "Zubat remains quietly unmoving in a dark spot during the bright daylight hours. It does so because prolonged exposure to the sun causes its body to become slightly burned.",
         "shiny": [],
         "gender": true,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Zubat ] \u2192 [ Golbat ] \u2192 [ Crobat ]"
@@ -1377,9 +1365,12 @@
           "Flying"
         ],
         "pokedex": "Golbat loves to drink the blood of living things. It is particularly active in the pitch black of night. This Pokemon flits around in the night skies, seeking fresh blood.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": true,
-        "available": true
+        "available": true,
+        "size": false
       },
       "shadow": {
         "type": [
@@ -1389,7 +1380,8 @@
         "pokedex": "Golbat loves to drink the blood of living things. It is particularly active in the pitch black of night. This Pokemon flits around in the night skies, seeking fresh blood.",
         "shiny": [],
         "gender": true,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Zubat ] \u2192 [ Golbat ] \u2192 [ Crobat ]"
@@ -1789,6 +1781,15 @@
         "shiny": [],
         "gender": false,
         "available": true
+      },
+      "shadow": {
+        "type": [
+          "Water"
+        ],
+        "pokedex": "Poliwag has a very thin skin. It is possible to see the Pokemon's spiral innards right through the skin. Despite its thinness, however, the skin is also very flexible. Even sharp fangs bounce right off it.",
+        "shiny": [],
+        "gender": false,
+        "available": true
       }
     },
     "evolution": "[ Poliwag ] \u2192 [ Poliwhirl ] \u2192 [ Poliwrath, Politoed ]"
@@ -1806,6 +1807,15 @@
         "shiny": [],
         "gender": false,
         "available": true
+      },
+      "shadow": {
+        "type": [
+          "Water"
+        ],
+        "pokedex": "The surface of Poliwhirl's body is always wet and slick with an oily fluid. Because of this greasy covering, it can easily slip and slide out of the clutches of any enemy in battle.",
+        "shiny": [],
+        "gender": false,
+        "available": true
       }
     },
     "evolution": "[ Poliwag ] \u2192 [ Poliwhirl ] \u2192 [ Poliwrath, Politoed ]"
@@ -1816,6 +1826,16 @@
     "mythical": false,
     "forms": {
       "none": {
+        "type": [
+          "Water",
+          "Fighting"
+        ],
+        "pokedex": "Poliwrath's highly developed, brawny muscles never grow fatigued, however much it exercises. It is so tirelessly strong, this Pokemon can swim back and forth across the ocean without effort.",
+        "shiny": [],
+        "gender": false,
+        "available": true
+      },
+      "shadow": {
         "type": [
           "Water",
           "Fighting"
@@ -2382,6 +2402,15 @@
         "gender": false,
         "available": true
       },
+      "shadow": {
+        "type": [
+          "Poison"
+        ],
+        "pokedex": "Grimer's sludgy and rubbery body can be forced through any opening, however small it may be. This Pokemon enters sewer pipes to drink filthy wastewater.",
+        "shiny": [],
+        "gender": false,
+        "available": true
+      },
       "alolan": {
         "type": [
           "Poison",
@@ -2414,6 +2443,15 @@
         "shiny": [
           "evolution"
         ],
+        "gender": false,
+        "available": true
+      },
+      "shadow": {
+        "type": [
+          "Poison"
+        ],
+        "pokedex": "From Muk's body seeps a foul fluid that gives off a nose-bendingly horrible stench. Just one drop of this Pokemon's body fluid can turn a pool stagnant and rancid.",
+        "shiny": [],
         "gender": false,
         "available": true
       },
@@ -2582,6 +2620,15 @@
         ],
         "gender": false,
         "available": true
+      },
+      "shadow": {
+        "type": [
+          "Psychic"
+        ],
+        "pokedex": "If your nose becomes itchy while you are sleeping, it's a sure sign that one of these Pokemon is standing above your pillow and trying to eat you dream through your nostrils.",
+        "shiny": [],
+        "gender": false,
+        "available": true
       }
     },
     "evolution": "[ Drowzee ] \u2192 [ Hypno ]"
@@ -2599,6 +2646,15 @@
         "shiny": [
           "evolution"
         ],
+        "gender": true,
+        "available": true
+      },
+      "shadow": {
+        "type": [
+          "Psychic"
+        ],
+        "pokedex": "Hypno holds a pendulum in its hand. The arcing movement and glitter of the pendulum lull the foe into a deep state of hypnosis. While this Pokemon searches for prey, it polishes the pendulum.",
+        "shiny": [],
         "gender": true,
         "available": true
       }
@@ -2750,6 +2806,15 @@
         ],
         "gender": false,
         "available": true
+      },
+      "shadow": {
+        "type": [
+          "Ground"
+        ],
+        "pokedex": "Cubone pines for the mother it will never see again. Seeing a likeness of its mother in the full moon, it cries. The stains on the skull the Pokemon wears are made by the tears it sheds.",
+        "shiny": [],
+        "gender": false,
+        "available": true
       }
     },
     "evolution": "[ Cubone ] \u2192 [ Marowak ]"
@@ -2767,6 +2832,15 @@
         "shiny": [
           "evolution"
         ],
+        "gender": false,
+        "available": true
+      },
+      "shadow": {
+        "type": [
+          "Ground"
+        ],
+        "pokedex": "Marowak is the evolved form of a Cubone that has overcome its sadness at the loss of its mother and grown tough. This Pokemon's tempered and hardened spirit is not easily broken.",
+        "shiny": [],
         "gender": false,
         "available": true
       },
@@ -2846,9 +2920,16 @@
           "Poison"
         ],
         "pokedex": "If Koffing becomes agitated, it raises the toxicity of its internal gases and then jets them out from all over its body. This Pokemon may also overinflate its round body, then explode.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research",
+          "nest"
+        ],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Koffing ] \u2192 [ Weezing ]"
@@ -2863,9 +2944,12 @@
           "Poison"
         ],
         "pokedex": "Weezing loves the gases given off by rotted kitchen garbage. This Pokemon will find a dirty, unkempt house and make it its home. At night, when the people in the house are asleep, it will go through the trash.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Koffing ] \u2192 [ Weezing ]"
@@ -3106,6 +3190,16 @@
         ],
         "gender": true,
         "available": true
+      },
+      "shadow": {
+        "type": [
+          "Bug",
+          "Flying"
+        ],
+        "pokedex": "Scyther is blindingly fast. Its blazing speed enhances the effectiveness of the twin scythes on its forearms. This Pokemon's scythes are so effective, they can slice through thick logs in one wicked stroke.",
+        "shiny": [],
+        "gender": true,
+        "available": true
       }
     },
     "evolution": "[ Scyther ] \u2192 [ Scizor ]"
@@ -3228,6 +3322,16 @@
         "gender": true,
         "available": true,
         "size": true
+      },
+      "shadow": {
+        "type": [
+          "Water"
+        ],
+        "pokedex": "Magikarp is a pathetic excuse for a Pokemon that is only capable of flopping and splashing. This behavior prompted scientists to undertake research into it.",
+        "shiny": [],
+        "gender": true,
+        "available": true,
+        "size": true
       }
     },
     "evolution": "[ Magikarp ] \u2192 [ Gyarados ]"
@@ -3246,6 +3350,16 @@
         "shiny": [
           "evolution"
         ],
+        "gender": true,
+        "available": true
+      },
+      "none": {
+        "type": [
+          "Water",
+          "Flying"
+        ],
+        "pokedex": "When Magikarp evolves into Gyarados, its brain cells undergo a structural transformation. It is said that this transformation is to blame for this Pokemon's wildly violent nature.",
+        "shiny": [],
         "gender": true,
         "available": true
       }
@@ -3569,7 +3683,8 @@
         "pokedex": "Snorlax's typical day consists of nothing more than eating and sleeping. It is such a docile Pokemon that there are children who use its expansive belly as a place to play.",
         "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Munchlax ] \u2192 [ Snorlax ]"
@@ -3661,14 +3776,10 @@
           "Dragon"
         ],
         "pokedex": "Dratini continually molts and sloughs off its old skin. It does so because the life energy within its body steadily builds to reach uncontrollable levels.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Dratini ] \u2192 [ Dragonair ] \u2192 [ Dragonite ]"
@@ -3694,11 +3805,10 @@
           "Dragon"
         ],
         "pokedex": "Dragonair stores an enormous amount of energy inside its body. It is said to alter weather conditions in its vicinity by discharging energy from its crystals on its neck and tail.",
-        "shiny": [
-          "evolution"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Dratini ] \u2192 [ Dragonair ] \u2192 [ Dragonite ]"
@@ -3726,11 +3836,10 @@
           "Flying"
         ],
         "pokedex": "Dragonite is capable of circling the globe in just 16 hours. It is a kindhearted Pokemon that leads lost and foundering ships in a storm to the safety of land.",
-        "shiny": [
-          "evolution"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Dratini ] \u2192 [ Dragonair ] \u2192 [ Dragonite ]"
@@ -4114,9 +4223,12 @@
           "Flying"
         ],
         "pokedex": "If this Pokemon is flying by fluttering only a pair of wings on either the forelegs or hind legs, it's proof that Crobat has been flying a long distance. It switches the wings it uses if it is tired.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       },
       "shadow": {
         "type": [
@@ -4126,7 +4238,8 @@
         "pokedex": "If this Pokemon is flying by fluttering only a pair of wings on either the forelegs or hind legs, it's proof that Crobat has been flying a long distance. It switches the wings it uses if it is tired.",
         "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Zubat ] \u2192 [ Golbat ] \u2192 [ Crobat ]"
@@ -4542,6 +4655,15 @@
     "mythical": false,
     "forms": {
       "none": {
+        "type": [
+          "Water"
+        ],
+        "pokedex": "The curled hair on Politoed's head is proof of its status as a king. It is said that the longer and more curled the hair, the more respect this Pokemon earns from its peers.",
+        "shiny": [],
+        "gender": true,
+        "available": true
+      },
+      "shadow": {
         "type": [
           "Water"
         ],
@@ -5328,6 +5450,16 @@
         ],
         "gender": true,
         "available": true
+      },
+      "shadow": {
+        "type": [
+          "Bug",
+          "Steel"
+        ],
+        "pokedex": "Scizor has a body with the hardness of steel. It is not easily fazed by ordinary sorts of attacks. This Pokemon flaps its wings to regulate its body temperature.",
+        "shiny": [],
+        "gender": true,
+        "available": true
       }
     },
     "evolution": "[ Scyther ] \u2192 [ Scizor ]"
@@ -5384,9 +5516,15 @@
           "Ice"
         ],
         "pokedex": "Sneasel scales trees by punching its hooked claws into the bark. This Pokemon seeks out unguarded nests and steals eggs for food while the parents are away.",
-        "shiny": [],
+        "shiny": [
+          "wild",
+          "raid",
+          "hatch",
+          "research"
+        ],
         "gender": true,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Sneasel ] \u2192 [ Weavile ]"
@@ -5635,6 +5773,16 @@
         ],
         "gender": false,
         "available": true
+      },
+      "shadow": {
+        "type": [
+          "Dark",
+          "Fire"
+        ],
+        "pokedex": "Houndour hunt as a coordinated pack. They communicate with each other using a variety of cries to corner their prey. This Pokemon's remarkable teamwork is unparalleled.",
+        "shiny": [],
+        "gender": false,
+        "available": true
       }
     },
     "evolution": "[ Houndour ] \u2192 [ Houndoom ]"
@@ -5653,6 +5801,16 @@
         "shiny": [
           "evolution"
         ],
+        "gender": true,
+        "available": true
+      },
+      "shadow": {
+        "type": [
+          "Dark",
+          "Fire"
+        ],
+        "pokedex": "In a Houndoom pack, the one with its horns raked sharply toward the back serves a leadership role. These Pokemon choose their leader by fighting among themselves.",
+        "shiny": [],
         "gender": true,
         "available": true
       }
@@ -6206,15 +6364,10 @@
           "Water"
         ],
         "pokedex": "In water, Mudkip breathes using the gills on its cheeks. If it is faced with a tight situation in battle, this Pokemon will unleash its amazing power\u2014it can crush rocks bigger than itself.",
-        "shiny": [
-          "hatch",
-          "raid",
-          "wild",
-          "research",
-          "nest"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Mudkip ] \u2192 [ Marshtomp ] \u2192 [ Swampert ]"
@@ -6243,11 +6396,10 @@
           "Ground"
         ],
         "pokedex": "Marshtomp is much faster at traveling through mud than it is at swimming. This Pokemon's hindquarters exhibit obvious development, giving it the ability to walk on just its hind legs.",
-        "shiny": [
-          "evolution"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Mudkip ] \u2192 [ Marshtomp ] \u2192 [ Swampert ]"
@@ -6276,11 +6428,10 @@
           "Ground"
         ],
         "pokedex": "Swampert predicts storms by sensing subtle differences in the sounds of waves and tidal winds with its fins. If a storm is approaching, it piles up boulders to protect itself.",
-        "shiny": [
-          "evolution"
-        ],
+        "shiny": [],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Mudkip ] \u2192 [ Marshtomp ] \u2192 [ Swampert ]"
@@ -6671,9 +6822,15 @@
           "Fairy"
         ],
         "pokedex": "Ralts has the ability to sense the emotions of people. If its Trainer is in a cheerful mood, this Pokemon grows cheerful and joyous in the same way.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
         "gender": true,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Ralts ] \u2192 [ Kirlia ] \u2192 [ Gardevoir, Gallade ]"
@@ -6689,9 +6846,12 @@
           "Fairy"
         ],
         "pokedex": "Kirlia uses the horns on its head to amplify its psychokinetic power. When the Pokemon uses its power, the air around it becomes distorted, creating mirages of nonexistent scenery.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": true,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Ralts ] \u2192 [ Kirlia ] \u2192 [ Gardevoir, Gallade ]"
@@ -6707,9 +6867,12 @@
           "Fairy"
         ],
         "pokedex": "Gardevoir has the psychokinetic power to distort the dimensions and create a small black hole. This Pokemon will try to protect its Trainer even at the risk of its own life.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Ralts ] \u2192 [ Kirlia ] \u2192 [ Gardevoir, Gallade ]"
@@ -8796,9 +8959,12 @@
           "Flying"
         ],
         "pokedex": "It flies forever through the ozone layer, consuming meteoroids for sustenance. The many meteoroids in its body provide the energy it needs to Mega Evolve.",
-        "shiny": [],
+        "shiny": [
+          "raid"
+        ],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Rayquaza ]"
@@ -10344,9 +10510,12 @@
           "Ice"
         ],
         "pokedex": "They live in cold regions, forming groups of four or five that hunt prey with impressive coordination.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": true,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Sneasel ] \u2192 [ Weavile ]"
@@ -10625,9 +10794,12 @@
           "Fighting"
         ],
         "pokedex": "A master of courtesy and swordsmanship, it fights using extending swords on its elbows.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": false,
-        "available": true
+        "available": true,
+        "size": false
       }
     },
     "evolution": "[ Ralts ] \u2192 [ Kirlia ] \u2192 [ Gardevoir, Gallade ]"

@@ -845,7 +845,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.8.5.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.8.5.1 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
@@ -855,6 +855,7 @@ class Utilities(commands.Cog):
     async def _set(self, ctx):
         """Changes a setting.
 
+        Users: None available
         Manager: timezone, regional, prefix
         Owner: avatar, username, activity, status"""
         if ctx.invoked_subcommand == None:

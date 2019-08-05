@@ -874,7 +874,7 @@ class Pokedex(commands.Cog):
                             error = _("cancelled the report")
                             break
                         else:
-                            shiny_options = ["hatch", "raid", "wild", "research", "nest", "evolution"]
+                            shiny_options = ["hatch", "raid", "wild", "research", "nest", "invasion", "evolution"]
                             shiny_split = shiny_type_msg.clean_content.lower().split(',')
                             shiny_split = [x.strip() for x in shiny_split]
                             shiny_split = [x for x in shiny_split if x in shiny_options]
