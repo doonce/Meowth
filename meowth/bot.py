@@ -331,16 +331,6 @@ class MeowthBot(commands.AutoShardedBot):
     async def on_message(self, message):
         if "niandick" in message.content.lower():
             await utils.safe_reaction(message, "\U0001F346")
-        if message.author.id == 358090000371286018:
-            if message.channel.id == 458696131594158099 and message.attachments:
-                ctx = await self.get_context(message)
-                ctx.prefix = '!'
-                await utils.safe_delete(message)
-                tutorial_command = self.get_command("tutorial")
-                trade_command = tutorial_command.all_commands.get('trade')
-                if trade_command:
-                    await ctx.invoke(trade_command)
-                    return
         if (not message.author.bot):
             await self.process_commands(message)
 
