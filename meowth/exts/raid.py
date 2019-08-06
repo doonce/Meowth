@@ -81,6 +81,13 @@ class Raid(commands.Cog):
             if react_message:
                 break
         report_dict = await utils.get_report_dict(self.bot, channel)
+        def get_teamcounts(raid_channel, trainer, lobby):
+            total = lobby[trainer]['count']
+            mystic = lobby[trainer]['party']['mystic']
+            valor = lobby[trainer]['party']['valor']
+            instinct = lobby[trainer]['party']['instinct']
+            unknown = lobby[trainer]['party']['unknown']
+            return f"{total} {mystic}m {valor}v {instinct}i {unknown}u"
         if react_message == "ctrsmessage":
             ctrs_dict = self.bot.guild_dict[guild.id].get(report_dict, {})[channel.id]['ctrs_dict']
             for i in ctrs_dict:
@@ -93,33 +100,29 @@ class Raid(commands.Cog):
             await message.edit(embed=newembed)
             self.bot.guild_dict[guild.id].get(report_dict, {})[channel.id]['moveset'] = moveset
         elif react_message == "raid_report" or react_message == "raid_message":
+            teamcounts = "1"
+            if user.id in self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict']:
+                teamcounts = get_teamcounts(channel, user.id, self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'])
             if str(payload.emoji) == self.bot.custom_emoji.get('raid_info', '\u2139') and react_message == "raid_message":
                 prefix = self.bot.guild_dict[guild.id]['configure_dict']['settings']['prefix']
                 prefix = prefix or self.bot.default_prefix
                 avatar = self.bot.user.avatar_url
                 await utils.get_raid_help(prefix, avatar, user)
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', '\u2753'):
-                await self._rsvp(ctx, "maybe", "1")
+                await self._rsvp(ctx, "maybe", teamcounts)
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce'):
-                await self._rsvp(ctx, "coming", "1")
+                await self._rsvp(ctx, "coming", teamcounts)
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_here', '\U0001F4CD'):
-                await self._rsvp(ctx, "here", "1")
+                await self._rsvp(ctx, "here", teamcounts)
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_cancel', '\u274C'):
                 await self._cancel(channel, user)
         elif react_message == "next_trains":
             if str(payload.emoji) == self.bot.custom_emoji.get('train_emoji', "\U0001F682"):
                 next_train = self.bot.guild_dict[guild.id].get(report_dict, {})[channel.id]['next_trains'][message.id]
-                if user.id == next_train['author']:
+                if user.id == next_train.get('author'):
                     return
                 next_channel = self.bot.get_channel(next_train['channel'])
                 teamcounts = ""
-                def get_teamcounts(raid_channel, trainer, lobby):
-                    total = lobby[trainer]['count']
-                    mystic = lobby[trainer]['party']['mystic']
-                    valor = lobby[trainer]['party']['valor']
-                    instinct = lobby[trainer]['party']['instinct']
-                    unknown = lobby[trainer]['party']['unknown']
-                    return f"{total} {mystic}m {valor}v {instinct}i {unknown}u"
                 for trainer in self.bot.guild_dict[guild.id].get(report_dict, {})[channel.id]['trainer_dict']:
                     if trainer == user.id:
                         teamcounts = get_teamcounts(channel, trainer, self.bot.guild_dict[guild.id].get(report_dict, {})[channel.id]['trainer_dict'])
@@ -2719,8 +2722,10 @@ class Raid(commands.Cog):
                                     break
                     if not teamcounts:
                         teamcounts = "1"
+                    trainer_set = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'].setdefault(author.id, {}).setdefault('train', True)
                     self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['trainer_dict'][author.id]['train'] = True
-                    self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('next_trains', {})[train_msg.id] = {'author':ctx.author.id, 'channel':channel_or_gym.id}
+                    channel_set = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id].setdefault('next_trains', {}).setdefault(train_msg.id, {})
+                    self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['next_trains'][train_msg.id] = {'author':ctx.author.id, 'channel':channel_or_gym.id}
                     ctx.message.channel, ctx.channel = channel_or_gym, channel_or_gym
                     await self._rsvp(ctx, "coming", teamcounts)
                     return
