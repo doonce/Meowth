@@ -101,6 +101,12 @@ class Raid(commands.Cog):
             self.bot.guild_dict[guild.id].get(report_dict, {})[channel.id]['moveset'] = moveset
         elif react_message == "raid_report" or react_message == "raid_message":
             teamcounts = "1"
+            if channel.id in self.bot.guild_dict[guild.id]['raidchannel_dict']:
+                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['invite']['enabled']:
+                    if self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['egg_level'] == "EX" or self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['type'] == "exraid":
+                        if user not in channel.overwrites:
+                            if not channel.permissions_for(user).manage_guild and not channel.permissions_for(user).manage_channels and not channel.permissions_for(user).manage_messages:
+                                return
             if user.id in self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict']:
                 teamcounts = get_teamcounts(channel, user.id, self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'])
             if str(payload.emoji) == self.bot.custom_emoji.get('raid_info', '\u2139') and react_message == "raid_message":
@@ -2171,6 +2177,11 @@ class Raid(commands.Cog):
         channel = message.channel
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
+        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
+        cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
+        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         fromegg = False
         exraid_split = location.split()
         raid_details = ' '.join(exraid_split)
@@ -2222,7 +2233,6 @@ class Raid(commands.Cog):
         await asyncio.sleep(1)
         raidmsg = f"Meowth! EX raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands.\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
-        await utils.safe_reaction(raid_message, '\u2754')
         await raid_message.pin()
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
             'report_channel':channel.id,
@@ -2256,6 +2266,10 @@ class Raid(commands.Cog):
         ex_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('ex', 0) + 1
         self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['ex'] = ex_reports
         self.bot.loop.create_task(self.expiry_check(raid_channel))
+        await utils.safe_reaction(raid_message, help_reaction)
+        for reaction in react_list:
+            await utils.safe_reaction(raid_message, reaction)
+            await utils.safe_reaction(ctx.raidreport, reaction)
         return raid_channel
 
     @commands.command()
