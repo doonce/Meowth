@@ -2229,9 +2229,9 @@ class Raid(commands.Cog):
         else:
             invitemsgstr = _("Coordinate")
             invitemsgstr2 = ""
-        ctx.raidreport = await channel.send(content=_('Meowth! EX raid egg reported by {member}! Details: {location_details}. {invitemsgstr} in {raid_channel}').format(member=message.author.mention, location_details=raid_details, invitemsgstr=invitemsgstr, raid_channel=raid_channel.mention), embed=raid_embed)
+        ctx.raidreport = await channel.send(content=f"Meowth! EX raid egg reported by {message.author.mention}! Details: {raid_details}. {invitemsgstr} in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel", embed=raid_embed)
         await asyncio.sleep(1)
-        raidmsg = f"Meowth! EX raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands.\n\nThis channel will be deleted five minutes after the timer expires."
+        raidmsg = f"Meowth! EX raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel.\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await raid_message.pin()
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
