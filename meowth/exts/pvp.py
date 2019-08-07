@@ -34,8 +34,8 @@ class Pvp(commands.Cog):
         for guild in list(self.bot.guilds):
             pvp_dict = self.bot.guild_dict[guild.id].setdefault('pvp_dict', {})
             for reportid in list(pvp_dict.keys()):
-                if pvp_dict[reportid].get('exp', 0) <= time.time():
-                    report_channel = self.bot.get_channel(pvp_dict[reportid].get('report_channel'))
+                if pvp_dict.get(reportid, {}).get('exp', 0) <= time.time():
+                    report_channel = self.bot.get_channel(pvp_dict.get(reportid, {}).get('report_channel'))
                     if report_channel:
                         try:
                             report_message = await report_channel.fetch_message(reportid)
@@ -51,7 +51,7 @@ class Pvp(commands.Cog):
                         continue
                     except KeyError:
                         continue
-                to_expire = pvp_dict[reportid].get('exp', 0) - time.time()
+                to_expire = pvp_dict.get(reportid, {}).get('exp', 0) - time.time()
                 if to_expire > 0:
                     expire_list.append(to_expire)
         # save server_dict changes after cleanup

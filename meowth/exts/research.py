@@ -37,8 +37,8 @@ class Research(commands.Cog):
                 midnight_list.append(to_midnight)
             research_dict = self.bot.guild_dict[guild.id].setdefault('questreport_dict', {})
             for reportid in list(research_dict.keys()):
-                if research_dict[reportid].get('exp', 0) <= time.time():
-                    report_channel = self.bot.get_channel(research_dict[reportid].get('report_channel'))
+                if research_dict.get(reportid, {}).get('exp', 0) <= time.time():
+                    report_channel = self.bot.get_channel(research_dict.get(reportid, {}).get('report_channel'))
                     if report_channel:
                         try:
                             report_message = await report_channel.fetch_message(reportid)

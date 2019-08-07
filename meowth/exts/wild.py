@@ -81,8 +81,8 @@ class Wild(commands.Cog):
         for guild in list(self.bot.guilds):
             wild_dict = self.bot.guild_dict[guild.id].setdefault('wildreport_dict', {})
             for reportid in list(wild_dict.keys()):
-                if wild_dict[reportid].get('exp', 0) <= time.time():
-                    report_channel = self.bot.get_channel(wild_dict[reportid].get('report_channel'))
+                if wild_dict.get(reportid, {}).get('exp', 0) <= time.time():
+                    report_channel = self.bot.get_channel(wild_dict.get(reportid, {}).get('report_channel'))
                     if report_channel:
                         try:
                             report_message = await report_channel.fetch_message(reportid)
@@ -98,7 +98,7 @@ class Wild(commands.Cog):
                         continue
                     except KeyError:
                         continue
-                to_despawn = wild_dict[reportid].get('exp', 0) - time.time()
+                to_despawn = wild_dict.get(reportid, {}).get('exp', 0) - time.time()
                 if to_despawn > 10:
                     despawn_list.append(to_despawn)
         # save server_dict changes after cleanup

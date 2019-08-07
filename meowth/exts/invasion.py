@@ -33,8 +33,8 @@ class Invasion(commands.Cog):
         for guild in list(self.bot.guilds):
             invasion_dict = self.bot.guild_dict[guild.id].setdefault('invasion_dict', {})
             for reportid in list(invasion_dict.keys()):
-                if invasion_dict[reportid].get('exp', 0) <= time.time():
-                    report_channel = self.bot.get_channel(invasion_dict[reportid].get('report_channel'))
+                if invasion_dict.get(reportid, {}).get('exp', 0) <= time.time():
+                    report_channel = self.bot.get_channel(invasion_dict.get(reportid, {}).get('report_channel'))
                     if report_channel:
                         try:
                             report_message = await report_channel.fetch_message(reportid)
@@ -50,7 +50,7 @@ class Invasion(commands.Cog):
                         continue
                     except KeyError:
                         continue
-                to_expire = invasion_dict[reportid].get('exp', 0) - time.time()
+                to_expire = invasion_dict.get(reportid, {}).get('exp', 0) - time.time()
                 if to_expire > 10:
                     expire_list.append(to_expire)
         # save server_dict changes after cleanup

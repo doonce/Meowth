@@ -30,13 +30,13 @@ class Configure(commands.Cog):
         for guild in list(self.bot.guilds):
             session_dict = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {})
             for trainer in list(session_dict.keys()):
-                if not session_dict[trainer] or not guild.get_member(trainer):
+                if not session_dict.get(trainer, {}) or not guild.get_member(trainer):
                     try:
                         del self.bot.guild_dict[guild.id]['configure_dict']['settings']['config_sessions'][trainer]
                     except KeyError:
                         pass
                 else:
-                    for channelid in session_dict[trainer]:
+                    for channelid in session_dict.get(trainer, {}):
                         channel_exists = self.bot.get_channel(channelid)
                         if not channel_exists:
                             try:

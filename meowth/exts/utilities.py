@@ -683,7 +683,7 @@ class Utilities(commands.Cog):
             log_file = await post(logdata)
             await ctx.channel.send(log_file)
         except Exception as e:
-            print(e)
+            print("outputlog", e)
             await ctx.channel.send(f"Mystbin Error\n{e}", delete_after=10)
 
     @commands.command(aliases=['say'])

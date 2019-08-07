@@ -288,7 +288,7 @@ class Tutorial(commands.Cog):
             ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
             await self._tutorial(ctx, "all")
         except Exception as e:
-            print(e)
+            print("tutorial_all", e)
             await self.delete_tutorial_channel(ctx)
 
     @tutorial.command()
@@ -973,7 +973,7 @@ class Tutorial(commands.Cog):
             await asyncio.sleep(10)
             return False
         except Exception as e:
-            print(e)
+            print("trade_tutorial", e)
             await self.delete_tutorial_channel(ctx)
 
         # clean up by removing tutorial from report channel config

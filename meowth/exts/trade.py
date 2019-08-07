@@ -31,7 +31,7 @@ class Trading(commands.Cog):
         for guild in list(self.bot.guilds):
             trade_dict = self.bot.guild_dict[guild.id].setdefault('trade_dict', {})
             for listing_id in list(trade_dict.keys()):
-                if trade_dict[listing_id].get('exp', 0) <= time.time():
+                if trade_dict.get(listing_id, {}).get('exp', 0) <= time.time():
                     trade_channel = self.bot.get_channel(trade_dict[listing_id].get('report_channel_id'))
                     if trade_channel:
                         if trade_dict[listing_id]['status'] == "active" and not trade_dict[listing_id].get('active_check', None):

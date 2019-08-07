@@ -957,7 +957,7 @@ class Raid(commands.Cog):
             self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
             self.reset_raid_roles.restart()
             for guild in list(self.bot.guilds):
-                for channel_id in list(self.guild_dict[guild.id]['raidchannel_dict'].keys()):
+                for channel_id in list(self.bot.guild_dict[guild.id]['raidchannel_dict'].keys()):
                     if self.bot.guild_dict[guild.id]['raidchannel_dict'][channel_id]['egg_level'] == str(edit_level):
                         for trainer_id in list(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel_id]['trainer_dict'].keys()):
                             interest = copy.copy(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel_id]['trainer_dict'][trainer_id]['interest'])
@@ -1625,7 +1625,7 @@ class Raid(commands.Cog):
                     await utils.safe_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
                     await asyncio.sleep(0.25)
             except Exception as e:
-                print(e)
+                print("_raid", e)
                 ctrs_dict = {}
                 ctrsmessage_id = None
         else:
@@ -1960,7 +1960,7 @@ class Raid(commands.Cog):
         raid_message = await raid_channel.fetch_message(eggdetails['raid_message'])
         if not report_channelchannel:
             async for message in raid_channel.history(limit=500, oldest_first=True):
-                if message.author.id == guild.me.id:
+                if message.author.id == message.guild.me.id:
                     c = _('Coordinate here')
                     if c in message.content:
                         report_channelchannel = message.raw_channel_mentions[0]
@@ -3932,7 +3932,7 @@ class Raid(commands.Cog):
                         await raid_message.edit(embed=raid_embed)
                         await report_message.edit(embed=raid_embed)
                 except Exception as e:
-                    print(e)
+                    print("weather", e)
                 if str(utils.get_level(self.bot, pkmn)) in self.bot.guild_dict[ctx.guild.id]['configure_dict']['counters']['auto_levels']:
                     ctrs_dict = await self._get_generic_counters(ctx.guild, pkmn, weather.lower())
                     try:

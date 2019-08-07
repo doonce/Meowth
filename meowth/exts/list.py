@@ -1285,7 +1285,7 @@ class Listing(commands.Cog):
                     luremsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('lure_bullet', '\U0001F539')))
                     luremsg += f"**Lure Type**: {lure_dict[lureid]['type'].title()} | **Location**: [{lure_dict[lureid]['location'].title()}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
                 except Exception as e:
-                    print(e)
+                    print("lurelist", e)
                     continue
         if luremsg:
             listmsg = _('**Meowth! Here\'s the current lure reports for {channel}**').format(channel=ctx.message.channel.mention)
@@ -1365,7 +1365,7 @@ class Listing(commands.Cog):
                     invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', '\U0001F539')))
                     invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{invasion_dict[invasionid]['location'].title()}]({invasion_dict[invasionid].get('url', None)}) | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
                 except Exception as e:
-                    print(e)
+                    print("invasionlist", e)
                     continue
         if invasionmsg:
             listmsg = _('**Meowth! Here\'s the current invasion reports for {channel}**').format(channel=ctx.message.channel.mention)
@@ -1433,7 +1433,7 @@ class Listing(commands.Cog):
                     else:
                         pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Available Until**: {pvp_expire.strftime(_('%I:%M %p'))}{reported_by}"
                 except Exception as e:
-                    print(e)
+                    print("pvplist", e)
                     continue
         if pvpmsg:
             listmsg = _('**Meowth! Here\'s the current PVP Requests for {channel}**').format(channel=ctx.message.channel.mention)
@@ -1511,7 +1511,7 @@ class Listing(commands.Cog):
                     if iv_check:
                         wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv'].get('percent', iv_check)}"
                 except Exception as e:
-                    print(e)
+                    print("wildlist", e)
                     continue
         if wildmsg:
             listmsg = _('**Meowth! Here\'s the current wild reports for {channel}**').format(channel=ctx.message.channel.mention)

@@ -44,19 +44,19 @@ class Huntr(commands.Cog):
                 'pokehuntr_dict':pokehuntr_dict
             }
             for report_dict in list(report_dict_dict.keys()):
-                for reportid in list(report_dict_dict[report_dict].keys()):
-                    if report_dict_dict[report_dict][reportid].get('exp', 0) <= time.time():
-                        report_channel = self.bot.get_channel(report_dict_dict[report_dict][reportid].get('reportchannel'))
+                for reportid in list(report_dict_dict.get(report_dict, {}).keys()):
+                    if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('exp', 0) <= time.time():
+                        report_channel = self.bot.get_channel(report_dict_dict.get(report_dict, {}).get(reportid, {}).get('reportchannel'))
                         if report_channel:
-                            user_report = report_dict_dict[report_dict][reportid].get('report_message', None)
+                            user_report = report_dict_dict.get(report_dict, {}).get(reportid, {}).get('report_message', None)
                             if user_report:
                                 report_delete_dict[user_report] = {"action":"delete", "channel":report_channel}
-                            if report_dict_dict[report_dict][reportid].get('expedit') == "delete":
+                            if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('expedit') == "delete":
                                 report_delete_dict[reportid] = {"action":"delete", "channel":report_channel}
                             else:
-                                report_edit_dict[reportid] = {"action":report_dict_dict[report_dict][reportid]['expedit'], "channel":report_channel}
-                            if report_dict_dict[report_dict][reportid].get('dm_dict', False):
-                                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, report_dict_dict[report_dict][reportid]['dm_dict']))
+                                report_edit_dict[reportid] = {"action":report_dict_dict.get(report_dict, {}).get(reportid, {}).get('expedit', ''), "channel":report_channel}
+                            if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('dm_dict', False):
+                                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, report_dict_dict.get(report_dict, {}).get(reportid, {}).get('dm_dict', {})))
                         try:
                             del self.bot.guild_dict[guild.id][report_dict][reportid]
                         except KeyError:

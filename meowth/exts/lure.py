@@ -33,8 +33,8 @@ class Lure(commands.Cog):
         for guild in list(self.bot.guilds):
             lure_dict = self.bot.guild_dict[guild.id].setdefault('lure_dict', {})
             for reportid in list(lure_dict.keys()):
-                if lure_dict[reportid].get('exp', 0) <= time.time():
-                    report_channel = self.bot.get_channel(lure_dict[reportid].get('report_channel'))
+                if lure_dict.get(reportid, {}).get('exp', 0) <= time.time():
+                    report_channel = self.bot.get_channel(lure_dict.get(reportid, {}).get('report_channel'))
                     if report_channel:
                         try:
                             report_message = await report_channel.fetch_message(reportid)
@@ -50,7 +50,7 @@ class Lure(commands.Cog):
                         continue
                     except KeyError:
                         continue
-                to_expire = lure_dict[reportid].get('exp', 0) - time.time()
+                to_expire = lure_dict.get(reportid, {}).get('exp', 0) - time.time()
                 if to_expire > 0:
                     expire_list.append(to_expire)
         # save server_dict changes after cleanup

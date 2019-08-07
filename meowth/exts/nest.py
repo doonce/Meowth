@@ -68,10 +68,10 @@ class Nest(commands.Cog):
                     del self.bot.guild_dict[guild.id]['nest_dict'][channel]
                     logger.info(f"Deleted Nest Channel {report_channel}")
                     continue
-                for nest in nest_dict[channel]:
+                for nest in nest_dict.get(channel, {}):
                     if nest == 'list':
                         continue
-                    for report in list(nest_dict[channel][nest]['reports'].keys()):
+                    for report in list(nest_dict.get(channel, {}).get(nest, {}).get('reports', {}).keys()):
                         if nest_dict[channel][nest]['reports'][report].get('exp', 0) <= time.time():
                             try:
                                 report_message = await report_channel.fetch_message(report)
