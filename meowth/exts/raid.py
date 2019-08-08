@@ -51,7 +51,6 @@ class Raid(commands.Cog):
             user = guild.get_member(payload.user_id)
         except AttributeError:
             return
-        guild = message.guild
         if user == self.bot.user:
             return
         ctx = await self.bot.get_context(message)

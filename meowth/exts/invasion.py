@@ -84,7 +84,6 @@ class Invasion(commands.Cog):
             return
         if user == self.bot.user:
             return
-        guild = message.guild
         can_manage = channel.permissions_for(user).manage_messages
         try:
             invasion_dict = self.bot.guild_dict[guild.id]['invasion_dict']

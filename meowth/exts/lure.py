@@ -83,7 +83,6 @@ class Lure(commands.Cog):
             user = guild.get_member(payload.user_id)
         except AttributeError:
             return
-        guild = message.guild
         try:
             lure_dict = self.bot.guild_dict[guild.id]['lure_dict']
         except KeyError:

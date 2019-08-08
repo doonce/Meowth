@@ -101,7 +101,6 @@ class Pvp(commands.Cog):
             user = guild.get_member(payload.user_id)
         except AttributeError:
             return
-        guild = message.guild
         emoji = payload.emoji.name
         try:
             pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict']

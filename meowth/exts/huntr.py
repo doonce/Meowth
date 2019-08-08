@@ -116,7 +116,6 @@ class Huntr(commands.Cog):
             user = guild.get_member(payload.user_id)
         except AttributeError:
             return
-        guild = message.guild
         if user == self.bot.user:
             return
         ctx = await self.bot.get_context(message)
@@ -483,7 +482,7 @@ class Huntr(commands.Cog):
                         ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
                         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {pokemon.name.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                 elif report_details.get('type', None) == "egg":
-                    if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports').get('egg'):
+                    if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports', {}).get('egg'):
                         return
                     reporttype = "egg"
                     egg_level = report_details.setdefault('level', None)
@@ -525,7 +524,7 @@ class Huntr(commands.Cog):
                     await utils.safe_reaction(ctx.raidreport, reaction)
                 return
             elif report_details.get('type', None) == "wild":
-                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports').get('wild'):
+                if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports', {}).get('wild'):
                     return
                 wild_cog = self.bot.cogs.get('Wild')
                 if not wild_cog:

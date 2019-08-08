@@ -83,7 +83,6 @@ class Research(commands.Cog):
             user = guild.get_member(payload.user_id)
         except AttributeError:
             return
-        guild = message.guild
         can_manage = channel.permissions_for(user).manage_messages
         try:
             research_dict = self.bot.guild_dict[guild.id]['questreport_dict']
