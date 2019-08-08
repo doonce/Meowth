@@ -407,8 +407,9 @@ class Raid(commands.Cog):
                     else:
                         expire_embed = None
                     await channel.send(f"**This egg has hatched!** Trainers {(', ').join(maybe_list)}: Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**.", embed=expire_embed)
-                delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (45 * 60)) - time.time()
-                expiremsg = _('**This level {level} raid egg has expired!**').format(level=self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level'])
+                egg_level = self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level']
+                raid_time = int(self.bot.raid_info['raid_eggs'][str(egg_level)]['raidtime'])
+                delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (raid_time * 60)) - time.time()
             else:
                 if (not alreadyexpired):
                     channel = self.bot.get_channel(channel.id)
@@ -424,7 +425,6 @@ class Raid(commands.Cog):
                     await channel.send(embed=expire_embed)
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (5 * 60)) - time.time()
                 raidtype = _("event") if self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', False) else _(" raid")
-                expiremsg = _('**This {pokemon}{raidtype} has expired!**').format(pokemon=self.bot.guild_dict[guild.id][report_dict][channel.id]['pokemon'].capitalize(), raidtype=raidtype)
             await asyncio.sleep(delete_time)
             # If the channel has already been deleted from the dict, someone
             # else got to it before us, so don't do anything.
@@ -434,6 +434,16 @@ class Raid(commands.Cog):
                     return
                 elif (self.bot.guild_dict[guild.id][report_dict][channel.id]['active'] == False) and (not self.bot.is_closed()):
                     if report_channel:
+                        # Check message again in case it was edited or hatched
+                        if "level" in reportmsg.embeds[0].author.name.lower():
+                            try:
+                                reportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][channel.id]['raid_report'])
+                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                reportmsg = None
+                        if self.bot.guild_dict[guild.id][report_dict][channel.id]['type'] == "egg":
+                            expiremsg = _('**This level {level} raid egg has expired!**').format(level=egg_level)
+                        else:
+                            expiremsg = _('**This {pokemon}{raidtype} has expired!**').format(pokemon=self.bot.guild_dict[guild.id][report_dict][channel.id]['pokemon'].capitalize(), raidtype=raidtype)
                         if dupechannel:
                             await utils.safe_delete(reportmsg)
                         elif reportmsg:
@@ -1625,7 +1635,6 @@ class Raid(commands.Cog):
                     await utils.safe_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
                     await asyncio.sleep(0.25)
             except Exception as e:
-                print("_raid", e)
                 ctrs_dict = {}
                 ctrsmessage_id = None
         else:
