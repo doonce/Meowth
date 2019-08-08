@@ -46,7 +46,7 @@ class Huntr(commands.Cog):
             for report_dict in list(report_dict_dict.keys()):
                 for reportid in list(report_dict_dict.get(report_dict, {}).keys()):
                     if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('exp', 0) <= time.time():
-                        report_channel = self.bot.get_channel(report_dict_dict.get(report_dict, {}).get(reportid, {}).get('reportchannel'))
+                        report_channel = self.bot.get_channel(report_dict_dict.get(report_dict, {}).get(reportid, {}).get('report_channel'))
                         if report_channel:
                             user_report = report_dict_dict.get(report_dict, {}).get(reportid, {}).get('report_message', None)
                             if user_report:
@@ -65,14 +65,18 @@ class Huntr(commands.Cog):
                 try:
                     report_message = await report_delete_dict[messageid]['channel'].fetch_message(messageid)
                     await utils.safe_delete(report_message)
-                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
+                except:
                     pass
             for messageid in report_edit_dict.keys():
                 try:
                     report_message = await report_edit_dict[messageid]['channel'].fetch_message(messageid)
-                    await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=report_message.embeds[0].colour.value))
+                    if isinstance(report_message.embeds[0].colour, discord.embeds._EmptyEmbed):
+                        colour = discord.Colour.lighter_grey()
+                    else:
+                        colour = report_meetup.embeds[0].colour.value
+                    await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=colour))
                     await report_message.clear_reactions()
-                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError, KeyError):
+                except:
                     pass
         # save server_dict changes after cleanup
         logger.info('SAVING CHANGES')
@@ -107,12 +111,15 @@ class Huntr(commands.Cog):
             message = await channel.fetch_message(payload.message_id)
         except (discord.errors.NotFound, AttributeError, discord.Forbidden):
             return
-        ctx = await self.bot.get_context(message)
         guild = message.guild
         try:
             user = guild.get_member(payload.user_id)
         except AttributeError:
             return
+        guild = message.guild
+        if user == self.bot.user:
+            return
+        ctx = await self.bot.get_context(message)
         pokealarm_dict = copy.deepcopy(ctx.bot.guild_dict[channel.guild.id].get('pokealarm_dict', {}))
         pokehuntr_dict = copy.deepcopy(ctx.bot.guild_dict[channel.guild.id].get('pokehuntr_dict', {}))
         raid_cog = self.bot.cogs.get('Raid')
@@ -121,25 +128,37 @@ class Huntr(commands.Cog):
                 await self.on_pokealarm(ctx, user)
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', '\u2753'):
                 raid_channel = await self.on_pokealarm(ctx, user)
-                await raid_cog._maybe(raid_channel, user, 1, None)
+                ctx.message.author, ctx.author = user, user
+                ctx.channel, ctx.message.channel = raid_channel, raid_channel
+                await raid_cog._rsvp(ctx, "maybe", "1")
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce'):
                 raid_channel = await self.on_pokealarm(ctx, user)
-                await raid_cog._coming(raid_channel, user, 1, None)
+                ctx.message.author, ctx.author = user, user
+                ctx.channel, ctx.message.channel = raid_channel, raid_channel
+                await raid_cog._rsvp(ctx, "coming", "1")
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_here', '\U0001F4CD'):
                 raid_channel = await self.on_pokealarm(ctx, user)
-                await raid_cog._here(raid_channel, user, 1, None)
+                ctx.message.author, ctx.author = user, user
+                ctx.channel, ctx.message.channel = raid_channel, raid_channel
+                await raid_cog._rsvp(ctx, "here", "1")
         elif message.id in pokehuntr_dict.keys() and not user.bot:
             if str(payload.emoji) == self.bot.custom_emoji.get('huntr_report', '\u2705'):
                 await self.on_huntr(ctx, user)
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', '\u2753'):
                 raid_channel = await self.on_huntr(ctx, user)
-                await raid_cog._maybe(raid_channel, user, 1, None)
+                ctx.message.author, ctx.author = user, user
+                ctx.channel, ctx.message.channel = raid_channel, raid_channel
+                await raid_cog._rsvp(ctx, "maybe", "1")
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce'):
                 raid_channel = await self.on_huntr(ctx, user)
-                await raid_cog._coming(raid_channel, user, 1, None)
+                ctx.message.author, ctx.author = user, user
+                ctx.channel, ctx.message.channel = raid_channel, raid_channel
+                await raid_cog._rsvp(ctx, "coming", "1")
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_here', '\U0001F4CD'):
                 raid_channel = await self.on_huntr(ctx, user)
-                await raid_cog._here(raid_channel, user, 1, None)
+                ctx.message.author, ctx.author = user, user
+                ctx.channel, ctx.message.channel = raid_channel, raid_channel
+                await raid_cog._rsvp(ctx, "here", "1")
 
     async def on_huntr(self, ctx, reactuser=None):
         message = ctx.message
@@ -1183,7 +1202,8 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":tier5, "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":"Move 1 / Move 2", "raidexp":38}).replace("'", '"'))
+        embed = discord.Embed(title="Title", description="Embed Description")
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":tier5, "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":"Move 1 / Move 2", "raidexp":38}).replace("'", '"'), embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
@@ -1196,7 +1216,8 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"5", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}')
+        embed = discord.Embed(title="Title", description="Embed Description")
+        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"5", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}', embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

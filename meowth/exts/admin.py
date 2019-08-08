@@ -139,7 +139,7 @@ class Admin(commands.Cog):
                 if f"meowth.exts.{ext}" in self.bot.extensions:
                     ctx.bot.reload_extension(f"meowth.exts.{ext}")
                     await ctx.send(_('**Extension {ext} Reloaded.**\n').format(ext=ext))
-                    return
+                    continue
                 ctx.bot.load_extension(f"meowth.exts.{ext}")
                 await ctx.send(_('**Extension {ext} Loaded.**\n').format(ext=ext))
             except Exception as e:
