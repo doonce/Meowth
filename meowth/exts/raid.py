@@ -2533,7 +2533,7 @@ class Raid(commands.Cog):
         self.bot.guild_dict[message.guild.id]['meetup_dict'][message.channel.id]['meetup']['title'] = title
         if can_manage:
             raid_channel_name = _('meetup-') + utils.sanitize_channel_name(title)
-            question = await ctx.channel.send(f"Would you like to change the channel name to {raid_channel_name}?")
+            question = await ctx.channel.send(f"Would you like to change the channel name to {raid_channel_name.lower()}?")
             try:
                 timeout = False
                 res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
@@ -3257,7 +3257,7 @@ class Raid(commands.Cog):
                     raid_channel_name = _('level-{egg_level}-egg-').format(egg_level=report_level)
                 raid_channel_name += utils.sanitize_channel_name(raid_details)
                 if report_meetup:
-                    question = await ctx.channel.send(f"Would you like to change the channel name to {raid_channel_name}?")
+                    question = await ctx.channel.send(f"Would you like to change the channel name to {raid_channel_name.lower()}?")
                     try:
                         timeout = False
                         res, reactuser = await utils.ask(self.bot, question, ctx.author.id)

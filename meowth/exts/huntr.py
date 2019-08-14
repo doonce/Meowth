@@ -99,7 +99,7 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(message)
         if not ctx.guild:
             return
-        if (ctx.author.bot or message.webhook_id or ctx.author.id in self.bot.managers or ctx.author.id == self.bot.owner) and ctx.author != ctx.guild.me and "!alarm" in message.content.lower():
+        if (ctx.author.bot or message.webhook_id or ctx.author.id in self.bot.managers or ctx.author.id == self.bot.owner) and ctx.author != ctx.guild.me and message.content.lower().startswith("!alarm"):
             await self.on_pokealarm(ctx)
         if (str(ctx.author) == 'GymHuntrBot#7279') or (str(ctx.author) == 'HuntrBot#1845'):
             await self.on_huntr(ctx)
@@ -1125,6 +1125,7 @@ class Huntr(commands.Cog):
         gps = report_details['gps']
         timer = report_details.get('expire', 30)
         reward = report_details.get('reward', None)
+        gender = report_details.get('gender', None)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
@@ -1134,7 +1135,7 @@ class Huntr(commands.Cog):
             stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "invasion")
         if not location:
             return
-        await invasion_cog.send_invasion(ctx, location, reward, timer)
+        await invasion_cog.send_invasion(ctx, location, reward, gender, timer)
 
     @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
@@ -1272,7 +1273,7 @@ class Huntr(commands.Cog):
         await utils.safe_delete(message)
         type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         random_type = random.choice(type_list)
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"invasion", "pokestop":"Marilla Park", "reward":random_type, "gps":"39.645742,-79.96908", "expire":25}).replace("'", '"'))
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"invasion", "pokestop":"Marilla Park", "reward":random_type, "gps":"39.645742,-79.96908", "gender":"male", "expire":25}).replace("'", '"'))
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

@@ -142,11 +142,15 @@ class Invasion(commands.Cog):
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
+        success = []
+        reply_msg = f"**reward <encounter>** - Current: {invasion_dict.get('reward', 'X')}\n"
+        reply_msg += f"**type <grunt type>** - Current: {invasion_dict.get('reward_type', 'X')}\n"
+        reply_msg += f"**gender <grunt gender>** - Current: {invasion_dict.get('gender', 'X')}\n"
         invasion_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                invasion_embed.add_field(name=_('**Edit Invasion Info**'), value=f"Meowth! I'll help you add rewards to the invasion! Reply with a comma separated list of the **pokemon** Team Rocket is using at the **{location}** invasion.\n\nYou can also reply with the **type** of invasion from the Team Rocket grunt's dialogue. You can reply with **cancel** to stop anytime.", inline=False)
+                invasion_embed.add_field(name=_('**Edit Invasion Info**'), value=f"Meowth! I'll help you add information to the invasion at {location}! I'll need to know what **values** you'd like to edit. Reply **cancel** to stop anytime or reply with a comma separated list of the following options `Ex: reward charizard, snorlax, gender male, type water`:\n\n{reply_msg}", inline=False)
                 value_wait = await channel.send(embed=invasion_embed)
                 def check(reply):
                     if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == ctx.author:
@@ -166,47 +170,67 @@ class Invasion(commands.Cog):
                 if value_msg.clean_content.lower() == "cancel":
                     error = _("cancelled the report")
                     break
-                elif value_msg.clean_content.lower().strip() in type_list:
-                    self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward_type'] = value_msg.clean_content.lower().strip()
                 else:
-                    pkmn_list = value_msg.clean_content.lower().split(',')
-                    pkmn_list = [x.strip() for x in pkmn_list]
-                    index = 0
-                    for pokemon in pkmn_list:
-                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
-                        pokemon.shiny = False
-                        pokemon.size = None
-                        pokemon.form = "shadow" if "shadow" in self.bot.form_dict.get(pokemon.id, {}) else None
-                        if not pokemon or str(pokemon) in reward:
-                            pkmn_list.remove(pkmn_list[index])
-                            continue
-                        reward.append(str(pokemon))
-                        index += 1
-                    if not reward or not pkmn_list:
-                        error = _("didn't enter a new pokemon")
-                        break
-                    elif len(reward) > 3:
-                        error = _("entered too many pokemon")
-                        break
-                    self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward'] = reward
-                if not user.bot:
-                    invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('reports', {}).setdefault('invasion', 0) + 1
-                    self.bot.guild_dict[ctx.guild.id]['trainers'][user.id]['reports']['invasion'] = invasion_reports
-                break
+                    entered_values = value_msg.clean_content.lower().split(',')
+                    entered_values = [x.strip() for x in entered_values]
+                    for value in entered_values:
+                        value_split = value.split()
+                        if "type" in value and "type" not in success:
+                            if value_split[1] and value_split[1].lower() in type_list:
+                                self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward_type'] = value_split[1]
+                                success.append("type")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward_type'] = None
+                                success.append("type")
+                            else:
+                                error = _('entered something invalid. Please enter a pokemon type')
+                        elif "gender" in value and "gender" not in success:
+                            if value_split[1] and (value_split[1] == "male" or value_split[1] == "female"):
+                                self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['gender'] = value_split[1]
+                                success.append("gender")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['gender'] = None
+                                success.append("gender")
+                            else:
+                                error = _('entered something invalid. Please enter male or female')
+                        else:
+                            pkmn_list = value.replace('reward', '').split()
+                            pkmn_list = [x.strip() for x in pkmn_list]
+                            for pokemon in pkmn_list:
+                                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                                if not pokemon:
+                                    continue
+                                pokemon.shiny = False
+                                pokemon.size = None
+                                pokemon.form = "shadow" if "shadow" in self.bot.form_dict.get(pokemon.id, {}) else None
+                                if str(pokemon) in reward:
+                                    continue
+                                reward.append(str(pokemon))
+                            if not reward or not pkmn_list:
+                                error = _("didn't enter a new pokemon")
+                                break
+                            elif len(reward) > 3:
+                                error = _("entered too many pokemon")
+                                break
+                            elif "reward" not in success:
+                                success.append("reward")
+                    break
+        if success:
+            await self.edit_invasion_messages(ctx, message)
         if error:
             invasion_embed.clear_fields()
             invasion_embed.add_field(name=_('**Invasion Edit Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
+            if success:
+                invasion_embed.set_field_at(0, name="**Invasion Edit Error**", value=f"Meowth! Your **{(', ').join(success)}** edits were successful, but others were skipped because you **{error}**! Retry when you're ready.", inline=False)
             confirmation = await channel.send(embed=invasion_embed, delete_after=10)
-        else:
-            await self.edit_invasion_messages(ctx, message)
 
     async def edit_invasion_messages(self, ctx, message):
         invasion_dict = self.bot.guild_dict[ctx.guild.id]['invasion_dict'].get(message.id, {})
         reward = invasion_dict.get('reward', [])
         reward_type = invasion_dict.get('reward_type', '')
+        gender = invasion_dict.get('gender', '')
         dm_dict = invasion_dict.get('dm_dict', {})
         invasion_embed = message.embeds[0]
-        invasion_gmaps_link = invasion_embed.url
         nearest_stop = invasion_dict.get('location', None)
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\ud83d\udca8')
@@ -214,6 +238,8 @@ class Invasion(commands.Cog):
         author = ctx.guild.get_member(invasion_dict.get('report_author', None))
         if author:
             ctx.author = author
+        if gender:
+            invasion_embed.set_author(name=f"Invasion Report {' (♀)' if gender == 'female' else ''}{' (♂)' if gender == 'male' else ''}", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_shadow.png?cache=2")
         shiny_str = ""
         reward_str = ""
         reward_list = []
@@ -354,6 +380,7 @@ class Invasion(commands.Cog):
         invasion_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pokemon = False
+        gender = None
         type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         invasion_dict = self.bot.guild_dict[ctx.guild.id].setdefault('invasion_dict', {})
         while True:
@@ -372,7 +399,6 @@ class Invasion(commands.Cog):
                             invasion_embed.description = stop_info
                     if not location:
                         return
-                    reward = reward.strip()
                     break
                 else:
                     invasion_embed.add_field(name=_('**New Invasion Report**'), value=_("Meowth! I'll help you report a Team Rocket invasion!\n\nFirst, I'll need to know what **pokestop** Team Rocket has invaded. Reply with the name of the **pokestop**. You can reply with **cancel** to stop anytime."), inline=False)
@@ -432,14 +458,14 @@ class Invasion(commands.Cog):
                             break
                     break
         if not error:
-            await self.send_invasion(ctx, location, reward)
+            await self.send_invasion(ctx, location, reward, gender)
         else:
             invasion_embed.clear_fields()
             invasion_embed.add_field(name=_('**Invasion Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you **{error}**! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=invasion_embed, delete_after=10)
             await utils.safe_delete(message)
 
-    async def send_invasion(self, ctx, location, reward=None, timer=None):
+    async def send_invasion(self, ctx, location, reward=None, gender=None, timer=None):
         dm_dict = {}
         expire_time = "30"
         if timer:
@@ -503,7 +529,7 @@ class Invasion(commands.Cog):
             return
         invasion_embed.url = loc_url
         invasion_embed.add_field(name=f"**{'Expires' if timer else 'Expire Estimate'}:**", value=f"{expire_time} mins {end.strftime(_('(%I:%M %p)'))}")
-        invasion_embed.set_author(name="Invasion Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_shadow.png?cache=1")
+        invasion_embed.set_author(name=f"Invasion Report {' (♀)' if gender == 'female' else ''}{' (♂)' if gender == 'male' else ''}", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_shadow.png?cache=2")
         ctx.invreportmsg = await ctx.channel.send(invasion_msg, embed=invasion_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
