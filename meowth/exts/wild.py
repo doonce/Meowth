@@ -389,6 +389,8 @@ class Wild(commands.Cog):
                     break
         if success:
             await self.edit_wild_messages(ctx, message)
+        else:
+            error = _("didn't change anything")
         if error:
             wild_embed.clear_fields()
             wild_embed.add_field(name=_('**Wild Edit Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)

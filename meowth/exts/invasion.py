@@ -135,6 +135,7 @@ class Invasion(commands.Cog):
         guild = message.guild
         author = guild.get_member(invasion_dict.get('report_author', None))
         reward = invasion_dict.get('reward', [])
+        reward_type = invasion_dict.get('reward_type', '')
         location = invasion_dict.get('location', '')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
@@ -194,6 +195,11 @@ class Invasion(commands.Cog):
                             else:
                                 error = _('entered something invalid. Please enter male or female')
                         else:
+                            if "reward" in value.lower() and "none" in value.lower():
+                                reward = []
+                                reward_type = None
+                                success.append("reward")
+                                continue
                             pkmn_list = value.replace('reward', '').split()
                             pkmn_list = [x.strip() for x in pkmn_list]
                             for pokemon in pkmn_list:
@@ -210,13 +216,15 @@ class Invasion(commands.Cog):
                                 error = _("didn't enter a new pokemon")
                                 break
                             elif len(reward) > 3:
-                                error = _("entered too many pokemon")
+                                error = _("entered too many pokemon, but the first 3 were added. Use `reward none` to clear reward")
                                 break
                             elif "reward" not in success:
                                 success.append("reward")
                     break
         if success:
             await self.edit_invasion_messages(ctx, message)
+        else:
+            error = _("didn't change anything")
         if error:
             invasion_embed.clear_fields()
             invasion_embed.add_field(name=_('**Invasion Edit Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
@@ -491,7 +499,7 @@ class Invasion(commands.Cog):
         elif isinstance(reward, str) and reward.lower() in type_list:
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward.title()} Invasion {self.bot.config.type_id_dict[reward.lower()]}", inline=True)
             reward = reward.strip().lower()
-            reward_type = f"{reward.title()} Invasion {self.bot.config.type_id_dict[reward.lower()]}"
+            reward_type = reward.strip().lower()
         else:
             for pokemon in reward:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=False)
