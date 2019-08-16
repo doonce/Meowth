@@ -1358,7 +1358,7 @@ class Listing(commands.Cog):
                                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                             reward_list.append(f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}")
                     elif reward_type:
-                        reward_list = [reward_type]
+                        reward_list = [f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"]
                     else:
                         reward_list = ["Unknown Pokemon"]
                     invasion_expire = datetime.datetime.utcfromtimestamp(invasion_dict[invasionid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
