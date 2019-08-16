@@ -106,6 +106,7 @@ class Raid(commands.Cog):
                 await message.remove_reaction(payload.emoji, self.bot.user)
                 await asyncio.sleep(0.25)
                 await message.remove_reaction(payload.emoji, user)
+                ctx.message.content = ""
                 await ctx.invoke(self.bot.get_command("list"))
                 await asyncio.sleep(5)
                 return await utils.safe_reaction(message, payload.emoji)
@@ -1472,8 +1473,8 @@ class Raid(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction, list_emoji]
+        list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         if self.bot.guild_dict[message.channel.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('type') == "egg":
             fromegg = True
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
@@ -1667,8 +1668,11 @@ class Raid(commands.Cog):
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
+            await asyncio.sleep(0.25)
             await utils.safe_reaction(raid_message, reaction)
+            await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.raidreport, reaction)
+        await utils.safe_reaction(ctx.raidreport, list_emoji)
         return raid_channel
 
     async def _raidegg(self, ctx, content):
@@ -1681,8 +1685,8 @@ class Raid(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction, list_emoji]
+        list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         raidegg_split = content.split()
         if raidegg_split[0].lower() == 'egg':
             del raidegg_split[0]
@@ -1836,8 +1840,11 @@ class Raid(commands.Cog):
                 await self._eggassume(ctx, 'assume ' + pokemon, raid_channel)
             await utils.safe_reaction(raid_message, help_reaction)
             for reaction in react_list:
+                await asyncio.sleep(0.25)
                 await utils.safe_reaction(raid_message, reaction)
+                await asyncio.sleep(0.25)
                 await utils.safe_reaction(ctx.raidreport, reaction)
+            await utils.safe_reaction(ctx.raidreport, list_emoji)
             return raid_channel
 
     async def _eggassume(self, ctx, args, raid_channel, author=None):
@@ -1972,7 +1979,7 @@ class Raid(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         try:
             report_channelchannel = self.bot.get_channel(eggdetails['report_channel'])
             report_channel = report_channelchannel.name
@@ -2202,8 +2209,8 @@ class Raid(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction, list_emoji]
+        list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         fromegg = False
         exraid_split = location.split()
         raid_details = ' '.join(exraid_split)
@@ -2290,8 +2297,11 @@ class Raid(commands.Cog):
         self.bot.loop.create_task(self.expiry_check(raid_channel))
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
+            await asyncio.sleep(0.25)
             await utils.safe_reaction(raid_message, reaction)
+            await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.raidreport, reaction)
+        await utils.safe_reaction(ctx.raidreport, list_emoji)
         return raid_channel
 
     @commands.command()
@@ -2458,8 +2468,8 @@ class Raid(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction, list_emoji]
+        list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         raid_details = location
         raid_details = raid_details.strip()
         raid_gmaps_link = utils.create_gmaps_query(self.bot, raid_details, message.channel, type="meetup")
@@ -2481,8 +2491,11 @@ class Raid(commands.Cog):
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
+            await asyncio.sleep(0.25)
             await utils.safe_reaction(raid_message, reaction)
+            await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.raidreport, reaction)
+        await utils.safe_reaction(ctx.raidreport, list_emoji)
         await raid_message.pin()
         self.bot.guild_dict[message.guild.id]['meetup_dict'][raid_channel.id] = {
             'report_channel':channel.id,

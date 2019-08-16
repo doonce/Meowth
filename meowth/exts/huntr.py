@@ -861,7 +861,7 @@ class Huntr(commands.Cog):
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction, list_emoji]
+        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
         entered_raid = report_details['pokemon']
@@ -920,8 +920,11 @@ class Huntr(commands.Cog):
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
+            await asyncio.sleep(0.25)
             await utils.safe_reaction(raid_message, reaction)
+            await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.raidreport, reaction)
+        await utils.safe_reaction(ctx.raidreport, list_emoji)
         await raid_message.pin()
         level = utils.get_level(self.bot, entered_raid)
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
@@ -992,7 +995,7 @@ class Huntr(commands.Cog):
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction, list_emoji]
+        react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
         egg_level = str(report_details.get('level'))
@@ -1017,8 +1020,11 @@ class Huntr(commands.Cog):
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
+            await asyncio.sleep(0.25)
             await utils.safe_reaction(raid_message, reaction)
+            await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.raidreport, reaction)
+        await utils.safe_reaction(ctx.raidreport, list_emoji)
         await raid_message.pin()
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
             'report_channel':message.channel.id,
