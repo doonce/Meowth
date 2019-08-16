@@ -71,6 +71,15 @@ class Wild(commands.Cog):
                 await message.remove_reaction(payload.emoji, user)
                 ctx.author = user
                 await self.add_wild_info(ctx, message)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+                ctx = await self.bot.get_context(message)
+                await asyncio.sleep(0.25)
+                await message.remove_reaction(payload.emoji, self.bot.user)
+                await asyncio.sleep(0.25)
+                await message.remove_reaction(payload.emoji, user)
+                await ctx.invoke(self.bot.get_command("list wild"))
+                await asyncio.sleep(5)
+                await utils.safe_reaction(message, payload.emoji)
 
     @tasks.loop(seconds=10)
     async def wild_cleanup(self, loop=True):
@@ -211,12 +220,6 @@ class Wild(commands.Cog):
         wild_embed.add_field(name=f"{'**Est. Despawn:**' if int(expire.split()[0]) == 45 and int(expire.split()[2]) == 0 else '**Despawns in:**'}", value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=expire.split()[0], huntrexpstamp=huntrexpstamp), inline=True)
         wild_embed.set_thumbnail(url=pokemon.img_url)
         wild_embed.set_author(name=f"Wild {pokemon.name.title()} Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
-        omw_emoji = ctx.bot.custom_emoji.get('wild_omw', '\U0001F3CE')
-        despawn_emoji = ctx.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
-        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
-        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
-        # wild_embed.add_field(name='**Status Reactions:**', value=f"{omw_emoji}: I'm on my way!\n{catch_emoji}: I caught it!", inline=True)
-        # wild_embed.add_field(name='**Spawn Reactions:**', value=f"{despawn_emoji}: The Pokemon despawned!\n{info_emoji}: Edit wild details", inline=True)
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         return wild_embed
 
@@ -622,7 +625,8 @@ class Wild(commands.Cog):
         despawn_emoji = self.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
-        react_list = [omw_emoji, despawn_emoji, catch_emoji, info_emoji]
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        react_list = [omw_emoji, despawn_emoji, catch_emoji, info_emoji, list_emoji]
         if pokemon:
             pokemon.shiny = False
         else:
@@ -678,7 +682,7 @@ class Wild(commands.Cog):
         }
         despawn = 2700
         wild_embed = await self.make_wild_embed(ctx, details)
-        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\nUse {omw_emoji} if you are on your way, {catch_emoji} if you caught it, {despawn_emoji} if it has despawned, or {info_emoji} to edit details", embed=wild_embed)
+        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\nUse {omw_emoji} if you are on your way, {catch_emoji} if you caught it, {despawn_emoji} if it has despawned, {info_emoji} to edit details, or {list_emoji} to list all wilds!", embed=wild_embed)
         dm_dict = {}
         dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         for reaction in react_list:

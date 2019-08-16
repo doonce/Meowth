@@ -83,15 +83,28 @@ class Lure(commands.Cog):
             user = guild.get_member(payload.user_id)
         except AttributeError:
             return
+        if user == self.bot.user:
+            return
+        can_manage = channel.permissions_for(user).manage_messages
         try:
             lure_dict = self.bot.guild_dict[guild.id]['lure_dict']
         except KeyError:
-            lure_dict = []
-        if message.id in lure_dict and user.id != self.bot.user.id:
-            wild_dict = self.bot.guild_dict[guild.id]['lure_dict'][message.id]
+            lure_dict = {}
+        if message.id in lure_dict:
+            lure_dict =  self.bot.guild_dict[guild.id]['lure_dict'][message.id]
             if str(payload.emoji) == self.bot.custom_emoji.get('lure_expire', '\U0001F4A8'):
                 for reaction in message.reactions:
-                    await self.expire_lure(message)
+                    if reaction.emoji == self.bot.custom_emoji.get('lure_expire', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
+                        await self.expire_lure(message)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+                ctx = await self.bot.get_context(message)
+                await asyncio.sleep(0.25)
+                await message.remove_reaction(payload.emoji, self.bot.user)
+                await asyncio.sleep(0.25)
+                await message.remove_reaction(payload.emoji, user)
+                await ctx.invoke(self.bot.get_command("list lures"))
+                await asyncio.sleep(5)
+                await utils.safe_reaction(message, payload.emoji)
 
     async def expire_lure(self, message):
         guild = message.channel.guild
@@ -225,12 +238,13 @@ class Lure(commands.Cog):
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
         end = now + datetime.timedelta(minutes=int(expire_time))
         expire_emoji = self.bot.custom_emoji.get('lure_expire', '\U0001F4A8')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         lure_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         if timer:
-            lure_msg = f"Lure reported by {ctx.author.mention}"
+            lure_msg = f"Lure reported by {ctx.author.mention}! Use {list_emoji} to list all lures!"
         else:
-            lure_msg = f"Lure reported by {ctx.author.mention}! Use {expire_emoji} if the lure has disappeared!"
+            lure_msg = f"Lure reported by {ctx.author.mention}! Use {expire_emoji} if the lure has disappeared, or {list_emoji} to list all lures!!"
         lure_embed.title = _('Meowth! Click here for my directions to the lure!')
         lure_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="lure")
@@ -269,6 +283,7 @@ class Lure(commands.Cog):
         }
         if not timer:
             await utils.safe_reaction(confirmation, expire_emoji)
+        await utils.safe_reaction(confirmation, list_emoji)
         lure_embed.description = lure_embed.description + f"\n**Report:** [Jump to Message]({confirmation.jump_url})"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])

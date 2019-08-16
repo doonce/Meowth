@@ -1193,6 +1193,62 @@ class Huntr(commands.Cog):
         await self.on_huntr(ctx)
 
     @commands.command(hidden=True)
+    async def alarmrecover(self, ctx):
+        message_list = []
+        await utils.safe_delete(ctx.message)
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
+        async with ctx.channel.typing():
+            async for message in ctx.channel.history(limit=500, oldest_first=False):
+                if len(message_list) > 90:
+                    await utils.safe_bulk_delete(ctx.channel, message_list)
+                    message_list = []
+                if message.content.lower().startswith('!alarm') and "{" in message.content and "}" in message.content:
+                    message.content = message.content.replace("!alarm","").strip()
+                    timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+                    try:
+                        report_details = json.loads(message.content)
+                    except:
+                        return
+                    if report_details['type'] == "research":
+                        if timestamp.day == now.day:
+                            ctx.message = message
+                            await self.on_pokealarm(ctx)
+                        elif relativedelta(now, timestamp).days < 14:
+                            message_list.append(message)
+                    elif report_details['type'] == "raid" or report_details['type'] == "egg":
+                        raid_expire = timestamp + datetime.timedelta(minutes=report_details.get('raidexp', 0))
+                        if raid_expire > now:
+                            timediff = relativedelta(raid_expire, now)
+                            report_details['raidexp'] = timediff.minutes
+                            ctx.message = message
+                            ctx.message.content = "!alarm " + str(report_details).replace("'", '"')
+                            await self.on_pokealarm(ctx)
+                        elif relativedelta(now, timestamp).days < 14:
+                            message_list.append(message)
+                    elif report_details['type'] == "invasion" or report_details['type'] == "lure":
+                        report_expire = timestamp + datetime.timedelta(minutes=report_details.get('expire', 0))
+                        if report_expire > now:
+                            timediff = relativedelta(report_expire, now)
+                            report_details['expire'] = timediff.minutes
+                            ctx.message = message
+                            ctx.message.content = "!alarm " + str(report_details).replace("'", '"')
+                            await self.on_pokealarm(ctx)
+                        elif relativedelta(now, timestamp).days < 14:
+                            message_list.append(message)
+                    elif report_details['type'] == "wild":
+                        report_expire = report_details.get('expire', "0 min 0 sec")
+                        report_expire = timestamp + datetime.timedelta(minutes=int(report_expire.split()[0]), seconds=int(report_expire.split()[2]))
+                        if report_expire > now:
+                            timediff = relativedelta(report_expire, now)
+                            report_details['expire'] = f"{timediff.minutes} min {timediff.seconds} sec"
+                            ctx.message = message
+                            ctx.message.content = "!alarm " + str(report_details).replace("'", '"')
+                            await self.on_pokealarm(ctx)
+                        elif relativedelta(now, timestamp).days < 14:
+                            message_list.append(message)
+            await utils.safe_bulk_delete(ctx.channel, message_list)        
+
+    @commands.command(hidden=True)
     @commands.has_permissions(manage_guild=True)
     async def alarmraid(self, ctx):
         """Simulates an alarm raid"""

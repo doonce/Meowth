@@ -101,6 +101,40 @@ class Nest(commands.Cog):
     async def before_cleanup(self):
         await self.bot.wait_until_ready()
 
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except (discord.errors.NotFound, AttributeError, discord.Forbidden):
+            return
+        guild = message.guild
+        try:
+            user = guild.get_member(payload.user_id)
+        except AttributeError:
+            return
+        if user == self.bot.user:
+            return
+        can_manage = channel.permissions_for(user).manage_messages
+        try:
+            nest_dict = self.bot.guild_dict[guild.id]['nest_dict']
+        except KeyError:
+            nest_dict = {}
+        if channel.id in nest_dict:
+            for nest in nest_dict[channel.id]:
+                if nest == "list":
+                    continue
+                if message.id in nest_dict[channel.id][nest].get('reports'):
+                    if str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+                        ctx = await self.bot.get_context(message)
+                        await asyncio.sleep(0.25)
+                        await message.remove_reaction(payload.emoji, self.bot.user)
+                        await asyncio.sleep(0.25)
+                        await message.remove_reaction(payload.emoji, user)
+                        await ctx.invoke(self.bot.get_command("list nests"))
+                        await asyncio.sleep(5)
+                        return await utils.safe_reaction(message, payload.emoji)
+
     async def edit_nest_reports(self, report_message, migration_local, dm_dict):
         try:
             nest_embed = report_message.embeds[0]
@@ -260,6 +294,7 @@ class Nest(commands.Cog):
                     error = _("entered something invalid")
                 break
         if not error:
+            list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
             nest_loc = nest_dict[nest_name]['location'].split()
             nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
             nest_img_url = pokemon.img_url
@@ -298,7 +333,9 @@ class Nest(commands.Cog):
                         dm_dict[user.id] = nestdmmsg.id
                     except:
                         continue
-            nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest!", embed=nest_embed)
+            nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest! Use {list_emoji} to list all nests!", embed=nest_embed)
+            await asyncio.sleep(0.25)
+            await utils.safe_reaction(nestreportmsg, list_emoji)
             nest_dict[nest_name]['reports'][nestreportmsg.id] = {
                 'exp':migration_exp,
                 'expedit': "delete",

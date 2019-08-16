@@ -83,12 +83,14 @@ class Research(commands.Cog):
             user = guild.get_member(payload.user_id)
         except AttributeError:
             return
+        if user == self.bot.user:
+            return
         can_manage = channel.permissions_for(user).manage_messages
         try:
             research_dict = self.bot.guild_dict[guild.id]['questreport_dict']
         except KeyError:
             research_dict = {}
-        if message.id in research_dict and user.id != self.bot.user.id:
+        if message.id in research_dict:
             research_dict =  self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
             if str(payload.emoji) == self.bot.custom_emoji.get('research_complete', '\u2705'):
                 if user.id not in research_dict.get('completed_by', []):
@@ -98,6 +100,15 @@ class Research(commands.Cog):
                 for reaction in message.reactions:
                     if reaction.emoji == self.bot.custom_emoji.get('research_expired', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         await self.expire_research(message)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+                ctx = await self.bot.get_context(message)
+                await asyncio.sleep(0.25)
+                await message.remove_reaction(payload.emoji, self.bot.user)
+                await asyncio.sleep(0.25)
+                await message.remove_reaction(payload.emoji, user)
+                await ctx.invoke(self.bot.get_command("list research"))
+                await asyncio.sleep(5)
+                await utils.safe_reaction(message, payload.emoji)
 
     async def expire_research(self, message):
         guild = message.channel.guild
@@ -242,6 +253,8 @@ class Research(commands.Cog):
         to_midnight = 24*60*60 - ((timestamp-timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
         complete_emoji = self.bot.custom_emoji.get('research_complete', '\u2705')
         expire_emoji = self.bot.custom_emoji.get('research_expired', '\ud83d\udca8')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        react_list = [complete_emoji, expire_emoji, list_emoji]
         research_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
         dust = re.search(r'(?i)dust', reward)
@@ -269,7 +282,7 @@ class Research(commands.Cog):
         starpiece = re.search(r'(?i)star piece', reward)
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module"]
         other_reward = any(x in reward.lower() for x in reward_list)
-        research_msg = f"Field Research reported by {ctx.author.mention}! Use {complete_emoji} if you completed the quest or {expire_emoji} if the quest has disappeared!"
+        research_msg = f"Field Research reported by {ctx.author.mention}! Use {complete_emoji} if you completed the quest, {expire_emoji} if the quest has disappeared, or {list_emoji} to list all research!"
         research_embed.title = _('Meowth! Click here for my directions to the research!')
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=ctx.author.name)
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="research")
@@ -370,6 +383,9 @@ class Research(commands.Cog):
         research_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         research_embed.set_author(name="Field Research Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1")
         ctx.resreportmsg = await ctx.channel.send(research_msg, embed=research_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.safe_reaction(ctx.resreportmsg, reaction)
         await utils.safe_reaction(ctx.resreportmsg, complete_emoji)
         await utils.safe_reaction(ctx.resreportmsg, expire_emoji)
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][ctx.resreportmsg.id] = {

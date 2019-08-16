@@ -177,45 +177,25 @@ def sanitize_channel_name(name):
 async def get_raid_help(prefix, avatar, user=None):
     helpembed = discord.Embed(colour=discord.Colour.lighter_grey())
     helpembed.set_author(name="Raid Coordination Help", icon_url=avatar)
-    helpembed.add_field(
-        name="Key",
-        value="<> denote required arguments, [] denote optional arguments",
-        inline=False)
-    helpembed.add_field(
-        name="Raid MGMT Commands",
-        value=(
-            f"`{prefix}raid <species>`\n"
-            f"`{prefix}weather <weather>`\n"
-            f"`{prefix}timerset <minutes>`\n"
-            f"`{prefix}starttime <time>`\n"
-            "`<google maps link>`\n"
-            "**RSVP**\n"
-            f"`{prefix}i, {prefix}c, {prefix}h, {prefix}x...\n"
-            "[total]...\n"
-            "[team counts]`\n"
-            "**Lists**\n"
-            f"`{prefix}list [status]`\n"
-            f"`{prefix}list [status] tags`\n"
-            f"`{prefix}list teams`\n\n"
-            f"`{prefix}starting [team]`"))
-    helpembed.add_field(
-        name="Description",
-        value=(
-            "`Hatches Egg channel`\n"
-            "`Sets in-game weather`\n"
-            "`Sets hatch/raid timer`\n"
-            "`Sets start time`\n"
-            "`Updates raid location`\n\n"
-            "`interested, coming, here, cancel`\n"
-            "`# of trainers`\n"
-            "`# from each team (ex. 3m for 3 Mystic)`\n\n"
-            "`Lists trainers by status`\n"
-            "`@mentions trainers by status`\n"
-            "`Lists trainers by team`\n\n"
-            "`Moves trainers on 'here' list to a lobby.`"))
+    helpembed.add_field(name="Key", value="<> denote required arguments, [] denote optional arguments", inline=False)
+    helpembed.add_field(name="**Raid Channel Management Commands**", value="These commands control details of the raid and channel", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}raid <species>**", value="Will hatch an egg channel into a <species> raid", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}weather <weather>**", value="Will set a raid channel's weather to <weather> to determine counters", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}timerset <minutes remaining>**", value="Sets a hatch or end timer to <minutes remaining>", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}starttime <time>**", value="Sets a start time for the next group", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}location**", value=f"Displays location of raid. You can change raid location by sending a Google Maps URL or by using {prefix}location new <location>", inline=False)
+    helpembed.add_field(name=f"**RSVP Commands**", value="These commands control your status for the raid", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}i/c/h [total] [teamcounts] [boss list] | {prefix}x**", value="Sets your status to **i**nterested, **c**oming, **h**ere, or cancels your status (x)\n[total] is your total party count, [teamcounts] format looks like `2m 2v 1i` where `m/v/i` tells me your mystic, valor, instinct counts. You can also add [boss list] if you are interested in certain bosses only. This is all optional and Meowth will assume a party of 1 if not provided.", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}starting [team]**", value="Starts a raid, moving all trainers from 'here' list to 'lobby'. Optionally you can start a [team] only.", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}backout**", value="Asks the lobby or the battling trainers to back out of a raid", inline=False)
+    helpembed.add_field(name=f"**List Commands**", value="These commands list aspects of the raid", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}list [status] [tag]**", value="Main listing function that will show all trainers that have RSVP'd by default. Optionally supply a [status] of interested, coming, here, lobby to see that status. Optionally add `tag` to command to @mention to get trainers' attention", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}list teams**", value="Lists trainers by team", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}list bosses**", value="Lists trainers by boss interest for eggs", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}list groups**", value="Lists trainers in lobby as well as previous groups that are currently battling or have completed the raid. You can use this to tag previous groups.", inline=False)
     helpembed.add_field(
         name="README",
-        value="Visit our [README](https://github.com/doonce/meowth#directions-for-using-meowth) for a full list of commands.",
+        value=f"Visit our [README](https://github.com/doonce/meowth#directions-for-using-meowth) for a full list of commands. You can also use {prefix}tutorial raid to learn more",
         inline=False)
     if not user:
         return helpembed
@@ -845,7 +825,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.8.15.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.8.16.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

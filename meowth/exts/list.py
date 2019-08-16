@@ -329,17 +329,17 @@ class Listing(commands.Cog):
                         return
                 elif checks.check_pvpreport(ctx):
                     if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx) or checks.check_invasionreport(ctx)):
-                        trade_command = ctx.command.all_commands.get('pvp')
-                        if trade_command:
-                            await trade_command.invoke(ctx)
+                        pvp_command = ctx.command.all_commands.get('pvp')
+                        if pvp_command:
+                            await pvp_command.invoke(ctx)
                     else:
                         await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, !list pvp, !list invasions, or !list trades**", delete_after=10)
                         return
-                elif checks.check_pvpreport(ctx):
+                elif checks.check_invasionreport(ctx):
                     if not (checks.check_researchreport(ctx) or checks.check_wildreport(ctx) or checks.check_wantchannel(ctx) or checks.check_nestreport(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx) or checks.check_pvpreport(ctx)):
-                        trade_command = ctx.command.all_commands.get('invasions')
-                        if trade_command:
-                            await trade_command.invoke(ctx)
+                        invasion_command = ctx.command.all_commands.get('invasions')
+                        if invasion_command:
+                            await invasion_command.invoke(ctx)
                     else:
                         await ctx.send("**Meowth!** I don't know what list you wanted. Try **!list research, !list wilds, !list wants, !list nests, !list lures, !list pvp, !list invasions, or !list trades**", delete_after=10)
                         return
@@ -1062,7 +1062,8 @@ class Listing(commands.Cog):
         """List the quests for the channel
 
         Usage: !list research"""
-        await utils.safe_delete(ctx.message)
+        if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'research']:
+            await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('research', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -1241,7 +1242,8 @@ class Listing(commands.Cog):
         """List the lures for the channel
 
         Usage: !list lures"""
-        await utils.safe_delete(ctx.message)
+        if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'lures']:
+            await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('lure', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -1304,7 +1306,8 @@ class Listing(commands.Cog):
         """List the invasions for the channel
 
         Usage: !list invasions"""
-        await utils.safe_delete(ctx.message)
+        if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'invasions']:
+            await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('invasion', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -1365,7 +1368,6 @@ class Listing(commands.Cog):
                     invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', '\U0001F539')))
                     invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{invasion_dict[invasionid]['location'].title()}]({invasion_dict[invasionid].get('url', None)}) | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
                 except Exception as e:
-                    print("invasionlist", e)
                     continue
         if invasionmsg:
             listmsg = _('**Meowth! Here\'s the current invasion reports for {channel}**').format(channel=ctx.message.channel.mention)
@@ -1384,7 +1386,8 @@ class Listing(commands.Cog):
         """List the pvps for the channel
 
         Usage: !list pvps"""
-        await utils.safe_delete(ctx.message)
+        if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'pvp']:
+            await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('pvp', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -1452,7 +1455,8 @@ class Listing(commands.Cog):
         """List the wilds for the channel
 
         Usage: !list wilds"""
-        await utils.safe_delete(ctx.message)
+        if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'wilds', 'wild']:
+            await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('wild', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -1530,7 +1534,8 @@ class Listing(commands.Cog):
         """List the nests for the channel
 
         Usage: !list nests"""
-        await utils.safe_delete(ctx.message)
+        if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'nests', 'nest']:
+            await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('nest', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():

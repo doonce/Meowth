@@ -107,6 +107,15 @@ class Invasion(commands.Cog):
                 await message.remove_reaction(payload.emoji, user)
                 ctx.author = user
                 await self.add_invasion_info(ctx, message, user)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+                ctx = await self.bot.get_context(message)
+                await asyncio.sleep(0.25)
+                await message.remove_reaction(payload.emoji, self.bot.user)
+                await asyncio.sleep(0.25)
+                await message.remove_reaction(payload.emoji, user)
+                await ctx.invoke(self.bot.get_command("list invasions"))
+                await asyncio.sleep(5)
+                await utils.safe_reaction(message, payload.emoji)
 
     async def expire_invasion(self, message):
         guild = message.channel.guild
@@ -485,14 +494,15 @@ class Invasion(commands.Cog):
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\ud83d\udca8')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
-        react_list = [complete_emoji, expire_emoji, info_emoji]
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        react_list = [complete_emoji, expire_emoji, info_emoji, list_emoji]
         invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
         type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         shiny_str = ""
         reward_str = ""
         reward_list = []
         reward_type = None
-        invasion_msg = f"Invasion reported by {ctx.author.mention}! Use {complete_emoji} if you completed the invasion or {expire_emoji} if the invasion has disappeared or {info_emoji} to add rewards!"
+        invasion_msg = f"Invasion reported by {ctx.author.mention}! Use {complete_emoji} if you completed the invasion, {expire_emoji} if the invasion has disappeared, {info_emoji} to edit details, or {list_emoji} to list all invasions!"
         if not reward:
             reward = []
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknown Pokemon", inline=True)
@@ -521,7 +531,7 @@ class Invasion(commands.Cog):
                 invasion_embed.set_thumbnail(url=pokemon.img_url)
         if timer:
             react_list.remove(expire_emoji)
-            invasion_msg = invasion_msg.replace(f" or {expire_emoji} if the invasion has disappeared", "")
+            invasion_msg = invasion_msg.replace(f", {expire_emoji} if the invasion has disappeared", "")
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         invasion_embed.title = _('Meowth! Click here for my directions to the invasion!')
         invasion_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"

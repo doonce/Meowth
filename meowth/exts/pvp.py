@@ -101,94 +101,111 @@ class Pvp(commands.Cog):
             user = guild.get_member(payload.user_id)
         except AttributeError:
             return
+        if user == self.bot.user:
+            return
+        can_manage = channel.permissions_for(user).manage_messages
         emoji = payload.emoji.name
         try:
             pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict']
         except KeyError:
             pvp_dict = {}
-        if message.id in pvp_dict and pvp_dict.get(message.id, {}).get('tournament') and user.id != self.bot.user.id:
-            embed = message.embeds[0]
+        if message.id in pvp_dict:
             pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
-            round = pvp_dict['tournament']['round']
-            if pvp_dict['tournament']['round'] == 0:
-                if "\u20e3" in emoji and user.id not in pvp_dict['tournament']['trainers']:
-                    i = int(emoji[0])
-                    pvp_dict['tournament']['trainers'].append(user.id)
-                    user_list = [self.bot.get_user(x) for x in pvp_dict['tournament']['trainers']]
-                    user_list = [x.mention for x in user_list]
-                    await message.remove_reaction(emoji, self.bot.user)
-                    new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
-                    new_embed.add_field(name=embed.fields[0].name, value=embed.fields[0].value, inline=embed.fields[0].inline)
-                    new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
-                    new_embed.add_field(name="Trainers Joined", value=(', ').join(user_list), inline=False)
-                    await message.edit(embed=new_embed)
-                elif emoji == self.bot.custom_emoji.get('pvp_start', '\u25B6') and user.id == pvp_dict['tournament']['creator'] and len(pvp_dict['tournament']['trainers']) == pvp_dict['tournament']['size']:
-                    ctx = await self.bot.get_context(message)
-                    if len(pvp_dict['tournament']['trainers']) == 8:
-                        await self.bracket_8(ctx)
-                    elif len(pvp_dict['tournament']['trainers']) == 4:
-                        await self.bracket_4(ctx)
-                    elif len(pvp_dict['tournament']['trainers']) == 2:
-                        await self.bracket_2(ctx)
-                    return
-            else:
-                if "\u20e3" in emoji and user.id == pvp_dict['tournament']['creator']:
-                    trainer_list = copy.deepcopy(pvp_dict['tournament']['bracket'][0])
-                    i = int(emoji[0])
-                    winner_list = pvp_dict['tournament']['winners'].get(round, [])
-                    winner_list.append(trainer_list[i-1])
-                    pvp_dict['tournament']['winners'][round] = winner_list
-                    if i%2 == 0:
-                        try:
-                            await message.remove_reaction(f"{i-1}\u20e3", self.bot.user)
-                        except:
-                            pass
-                    else:
-                        try:
-                            await message.remove_reaction(f"{i+1}\u20e3", self.bot.user)
-                        except:
-                            pass
-                    await message.remove_reaction(emoji, self.bot.user)
-                    await message.remove_reaction(emoji, user)
-                    user_list = [self.bot.get_user(x) for x in winner_list]
-                    user_list = [x.mention for x in user_list]
-                    new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
-                    if pvp_dict['tournament']['next_size'] == 1:
-                        first_place = self.bot.get_user(pvp_dict['tournament']['trainers'][i-1])
-                        second_place = copy.deepcopy(pvp_dict['tournament']['bracket'][round-1])
-                        second_place.remove(first_place.id)
-                        second_place = self.bot.get_user(second_place[0])
-                        new_embed.clear_fields()
+            if str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+                ctx = await self.bot.get_context(message)
+                await asyncio.sleep(0.25)
+                await message.remove_reaction(payload.emoji, self.bot.user)
+                await asyncio.sleep(0.25)
+                await message.remove_reaction(payload.emoji, user)
+                await ctx.invoke(self.bot.get_command("list pvp"))
+                await asyncio.sleep(5)
+                return await utils.safe_reaction(message, payload.emoji)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('pvp_stop', '\u23f9'):
+                for reaction in message.reactions:
+                    if reaction.emoji == self.bot.custom_emoji.get('pvp_stop', '\u23f9') and (reaction.count >= 3 or can_manage or user.id == pvp_dict['report_author']):
+                        await self.expire_pvp(message)
+            if pvp_dict.get('tournament'):
+                embed = message.embeds[0]
+                round = pvp_dict['tournament']['round']
+                if pvp_dict['tournament']['round'] == 0:
+                    if "\u20e3" in emoji and user.id not in pvp_dict['tournament']['trainers']:
+                        i = int(emoji[0])
+                        pvp_dict['tournament']['trainers'].append(user.id)
+                        user_list = [self.bot.get_user(x) for x in pvp_dict['tournament']['trainers']]
+                        user_list = [x.mention for x in user_list]
+                        await message.remove_reaction(emoji, self.bot.user)
+                        new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
                         new_embed.add_field(name=embed.fields[0].name, value=embed.fields[0].value, inline=embed.fields[0].inline)
                         new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
-                        new_embed.add_field(name="\U0001F947 First Place \U0001F947", value=first_place.mention, inline=True)
-                        new_embed.add_field(name="\U0001F948 Second Place \U0001F948", value=second_place.mention, inline=True)
-                        pvp_dict['tournament']['status'] = "complete"
-                        await message.clear_reactions()
-                        edit_content = message.content.split("\n")[0] + " has ended! congratulations to the winner!"
-                    else:
-                        new_embed.clear_fields()
-                        for field in embed.fields:
-                            if "winners" not in field.name.lower():
-                                new_embed.add_field(name=field.name, value=field.value, inline=field.inline)
-                        new_embed.add_field(name="Round Winners", value=(', ').join(user_list), inline=False)
-                        edit_content = message.content
-                    await message.edit(content=edit_content, embed=new_embed)
-                    pvp_dict['tournament']['trainers'] = winner_list
-                elif emoji == self.bot.custom_emoji.get('pvp_start', '\u25B6') and user.id == pvp_dict['tournament']['creator'] and  len(pvp_dict['tournament']['trainers']) == pvp_dict['tournament']['next_size']:
-                    ctx = await self.bot.get_context(message)
-                    if len(pvp_dict['tournament']['trainers']) == 8:
-                        await self.bracket_8(ctx)
-                    elif len(pvp_dict['tournament']['trainers']) == 4:
-                        await self.bracket_4(ctx)
-                    elif len(pvp_dict['tournament']['trainers']) == 2:
-                        await self.bracket_2(ctx)
+                        new_embed.add_field(name="Trainers Joined", value=(', ').join(user_list), inline=False)
+                        await message.edit(embed=new_embed)
+                    elif emoji == self.bot.custom_emoji.get('pvp_start', '\u25B6') and user.id == pvp_dict['tournament']['creator'] and len(pvp_dict['tournament']['trainers']) == pvp_dict['tournament']['size']:
+                        ctx = await self.bot.get_context(message)
+                        if len(pvp_dict['tournament']['trainers']) == 8:
+                            await self.bracket_8(ctx)
+                        elif len(pvp_dict['tournament']['trainers']) == 4:
+                            await self.bracket_4(ctx)
+                        elif len(pvp_dict['tournament']['trainers']) == 2:
+                            await self.bracket_2(ctx)
+                        return
+                else:
+                    if "\u20e3" in emoji and user.id == pvp_dict['tournament']['creator']:
+                        trainer_list = copy.deepcopy(pvp_dict['tournament']['bracket'][0])
+                        i = int(emoji[0])
+                        winner_list = pvp_dict['tournament']['winners'].get(round, [])
+                        winner_list.append(trainer_list[i-1])
+                        pvp_dict['tournament']['winners'][round] = winner_list
+                        if i%2 == 0:
+                            try:
+                                await message.remove_reaction(f"{i-1}\u20e3", self.bot.user)
+                            except:
+                                pass
+                        else:
+                            try:
+                                await message.remove_reaction(f"{i+1}\u20e3", self.bot.user)
+                            except:
+                                pass
+                        await message.remove_reaction(emoji, self.bot.user)
+                        await message.remove_reaction(emoji, user)
+                        user_list = [self.bot.get_user(x) for x in winner_list]
+                        user_list = [x.mention for x in user_list]
+                        new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
+                        if pvp_dict['tournament']['next_size'] == 1:
+                            first_place = self.bot.get_user(pvp_dict['tournament']['trainers'][i-1])
+                            second_place = copy.deepcopy(pvp_dict['tournament']['bracket'][round-1])
+                            second_place.remove(first_place.id)
+                            second_place = self.bot.get_user(second_place[0])
+                            new_embed.clear_fields()
+                            new_embed.add_field(name=embed.fields[0].name, value=embed.fields[0].value, inline=embed.fields[0].inline)
+                            new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
+                            new_embed.add_field(name="\U0001F947 First Place \U0001F947", value=first_place.mention, inline=True)
+                            new_embed.add_field(name="\U0001F948 Second Place \U0001F948", value=second_place.mention, inline=True)
+                            pvp_dict['tournament']['status'] = "complete"
+                            await message.clear_reactions()
+                            edit_content = message.content.split("\n")[0] + " has ended! congratulations to the winner!"
+                        else:
+                            new_embed.clear_fields()
+                            for field in embed.fields:
+                                if "winners" not in field.name.lower():
+                                    new_embed.add_field(name=field.name, value=field.value, inline=field.inline)
+                            new_embed.add_field(name="Round Winners", value=(', ').join(user_list), inline=False)
+                            edit_content = message.content
+                        await message.edit(content=edit_content, embed=new_embed)
+                        pvp_dict['tournament']['trainers'] = winner_list
+                    elif emoji == self.bot.custom_emoji.get('pvp_start', '\u25B6') and user.id == pvp_dict['tournament']['creator'] and  len(pvp_dict['tournament']['trainers']) == pvp_dict['tournament']['next_size']:
+                        ctx = await self.bot.get_context(message)
+                        if len(pvp_dict['tournament']['trainers']) == 8:
+                            await self.bracket_8(ctx)
+                        elif len(pvp_dict['tournament']['trainers']) == 4:
+                            await self.bracket_4(ctx)
+                        elif len(pvp_dict['tournament']['trainers']) == 2:
+                            await self.bracket_2(ctx)
+                        return
+                if emoji == self.bot.custom_emoji.get('pvp_stop', '\u23f9') and user.id == pvp_dict['tournament']['creator']:
+                    await self.expire_pvp(message)
                     return
-            if emoji == self.bot.custom_emoji.get('pvp_stop', '\u23f9') and user.id == pvp_dict['tournament']['creator']:
-                await self.expire_pvp(message)
+                await message.remove_reaction(emoji, user)
                 return
-            await message.remove_reaction(emoji, user)
-            return
 
     async def bracket_8(self, ctx):
         message = ctx.message
@@ -405,7 +422,10 @@ class Pvp(commands.Cog):
         end = now + datetime.timedelta(minutes=int(timer))
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
-        pvp_msg = _("PVP Requested by {author}").format(author=ctx.author.mention)
+        stop_emoji = self.bot.custom_emoji.get('pvp_stop', '\u23f9')
+        list_emoji = ist_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        react_list = [stop_emoji, list_emoji]
+        pvp_msg = f"PVP Requested by {ctx.author.mention}. Use {stop_emoji} to cancel or {list_emoji} to list all PVP!"
         pvp_embed.title = _('Meowth! Click here for my directions to the PVP!')
         pvp_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="pvp")
@@ -428,6 +448,9 @@ class Pvp(commands.Cog):
         pvp_embed.add_field(name=f"**PVP Type:**", value=pvp_type.title())
         pvp_embed.add_field(name=f"**Available Until:**", value=end.strftime(_('%I:%M %p (%H:%M)')))
         confirmation = await ctx.channel.send(pvp_msg, embed=pvp_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.safe_reaction(confirmation, reaction)
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][confirmation.id] = {
             'exp':time.time() + int(timer)*60,
             'expedit':"delete",
