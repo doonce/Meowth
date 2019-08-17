@@ -11,6 +11,7 @@ import logging
 import string
 import json
 import random
+import functools
 
 import discord
 from discord.ext import commands, tasks
@@ -642,6 +643,22 @@ class Huntr(commands.Cog):
             await ctrs_message.edit(embed=newembed)
         self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['moveset'] = moveset
 
+    async def auto_weather(self, ctx, coord):
+        wild_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict']
+        wild_weather_dict = {}
+        for wild_report in list(wild_dict.keys()):
+            coordinates = wild_dict.get(wild_report, {}).get('coordinates', None)
+            weather = wild_dict.get(wild_report, {}).get('weather', None)
+            if weather and coordinates:
+                wild_weather_dict[coordinates] = weather
+        if not wild_weather_dict:
+            return None
+        weather_search = {k: (float(k.split(",")[0]), float(k.split(",")[1])) for k,v in wild_weather_dict.items()}
+        dist = lambda s, key: (float(s[0]) - float(weather_search[key][0])) ** 2 + \
+                              (float(s[1]) - float(weather_search[key][1])) ** 2
+        nearest_wild = min(weather_search, key=functools.partial(dist, coord))
+        return wild_weather_dict[nearest_wild]
+
     async def make_egg_embed(self, ctx, egg_level, raid_details, raidexp, raid_coordinates, reporter=None):
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
@@ -898,6 +915,8 @@ class Huntr(commands.Cog):
                     entered_raid = boss.name.lower()
                     break
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
+        if not weather:
+            weather = await self.auto_weather(ctx, raid_coordinates)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
             test_gym = await gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
@@ -1003,6 +1022,8 @@ class Huntr(commands.Cog):
         raidexp = report_details.get('raidexp', 60)
         raid_coordinates = report_details['gps']
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
+        if not weather:
+            weather = await self.auto_weather(ctx, raid_coordinates)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
             test_gym = await gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
