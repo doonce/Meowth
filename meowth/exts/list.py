@@ -1487,10 +1487,11 @@ class Listing(commands.Cog):
 
     async def _wildlist(self, ctx):
         wild_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('wildreport_dict', {}))
-        wildmsg = ""
+        listing_dict = {}
         for wildid in wild_dict:
             if wild_dict[wildid]['report_channel'] == ctx.message.channel.id:
                 try:
+                    wildmsg = ""
                     wildreportmsg = await ctx.message.channel.fetch_message(wildid)
                     wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['report_author'])
                     wild_despawn = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
@@ -1500,10 +1501,14 @@ class Listing(commands.Cog):
                     shiny_str = ""
                     disguise_str = ""
                     iv_check = wild_dict[wildid].get('wild_iv', {}).get('percent', None)
+                    level_check = wild_dict[wildid].get('level', None)
+                    weather_check = wild_dict[wildid].get('weather', None)
                     disguise = wild_dict[wildid].get('disguise', None)
                     pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
+                    pokemon.weather = weather_check
                     if pokemon.name.lower() == "ditto" and disguise:
                         disguise = await pkmn_class.Pokemon.async_get_pokemon(self.bot, disguise)
+                        disguise.weather = weather_check
                         disguise_str = f" | **Disguise**: {disguise.name.title()} {disguise.emoji}"
                     if pokemon.id in self.bot.shiny_dict:
                         if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
@@ -1512,15 +1517,27 @@ class Listing(commands.Cog):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                     wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('wild_bullet', '\U0001F539')))
                     wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}{disguise_str} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
+                    if (disguise and disguise.is_boosted) or (pokemon and pokemon.is_boosted):
+                        timestamp = wildreportmsg.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                        wildmsg += f" | {pokemon.is_boosted or disguise.is_boosted} *({timestamp.strftime('%I:%M %p')})*"
+                    if level_check:
+                        wildmsg += f" | **Level**: {level_check}"
                     if iv_check:
-                        wildmsg += f", **IV**: {wild_dict[wildid]['wild_iv'].get('percent', iv_check)}"
+                        wildmsg += f" | **IV**: {wild_dict[wildid]['wild_iv'].get('percent', iv_check)}"
+                    listing_dict[wildid] = {
+                        "message":wildmsg,
+                        "expire":wild_despawn
+                    }
                 except Exception as e:
                     print("wildlist", e)
                     continue
-        if wildmsg:
+        if listing_dict:
+            wild_list_msg = ""
+            for (k, v) in sorted(listing_dict.items(), key=lambda item: item[1]['expire']):
+                wild_list_msg += listing_dict[k]['message']
             listmsg = _('**Meowth! Here\'s the current wild reports for {channel}**').format(channel=ctx.message.channel.mention)
             paginator = commands.Paginator(prefix="", suffix="")
-            for line in wildmsg.splitlines():
+            for line in wild_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:

@@ -434,7 +434,7 @@ class Raid(commands.Cog):
                     expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_speedometer.png?cache=1")
                     await channel.send(embed=expire_embed)
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (5 * 60)) - time.time()
-                raidtype = _("event") if self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', False) else _(" raid")
+            raidtype = _("event") if self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', False) else _(" raid")
             await asyncio.sleep(delete_time)
             # If the channel has already been deleted from the dict, someone
             # else got to it before us, so don't do anything.
@@ -770,7 +770,7 @@ class Raid(commands.Cog):
                 if not dm_user or not dm_channel:
                     continue
                 dm_message = await dm_channel.fetch_message(dm_message)
-                await dm_message.edit(content=content, embed=embed)
+                await dm_message.edit(content=content.splitlines[0], embed=embed)
             except:
                 pass
 

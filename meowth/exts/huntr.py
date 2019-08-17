@@ -821,7 +821,7 @@ class Huntr(commands.Cog):
         despawn = (int(expire.split(' ')[0]) * 60) + int(expire.split(' ')[2])
         if despawn < 2700:
             reaction_list.remove(despawn_emoji)
-        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}!{stop_str}Coordinates: {wild_coordinates}{iv_str}\nUse {omw_emoji} if you are on your way, {catch_emoji} if you caught it{', ' + despawn_emoji + ' if it has despawned' if despawn >= 2700 else ''}, {info_emoji} to edit details, or {list_emoji} to list all wilds!", embed=wild_embed)
+        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}!{stop_str}Coordinates: {wild_coordinates}{iv_str}\nUse {omw_emoji} if on your way, {catch_emoji} if you caught it{', ' + despawn_emoji + ' if it despawned' if despawn >= 2700 else ''}, {info_emoji} to edit details, or {list_emoji} to list all wilds!", embed=wild_embed)
         dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), iv_percent, level, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
         for reaction in reaction_list:
             await asyncio.sleep(0.25)

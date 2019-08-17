@@ -632,22 +632,22 @@ class Wild(commands.Cog):
         else:
             await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**'), delete_after=10)
             return
+        converter = commands.clean_content()
+        iv_test = await converter.convert(ctx, content.split()[-1])
+        iv_test = iv_test.lower().strip()
+        if "iv" in iv_test or utils.is_number(iv_test):
+            wild_iv = iv_test.replace("iv", "").replace("@", "").replace("#", "")
+            if utils.is_number(wild_iv) and float(wild_iv) >= 0 and float(wild_iv) <= 100:
+                wild_iv = int(round(float(wild_iv)))
+                content = content.replace(content.split()[-1], "").strip()
+            else:
+                wild_iv = None
         for word in match_list:
             content = re.sub(word, "", content)
         wild_details = content.strip()
         if not wild_details:
             await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**'), delete_after=10)
             return
-        converter = commands.clean_content()
-        iv_test = await converter.convert(ctx, wild_details.split()[-1])
-        iv_test = iv_test.lower().strip()
-        if "iv" in iv_test or utils.is_number(iv_test):
-            wild_iv = iv_test.replace("iv", "").replace("@", "").replace("#", "")
-            if utils.is_number(wild_iv) and float(wild_iv) >= 0 and float(wild_iv) <= 100:
-                wild_iv = int(round(float(wild_iv)))
-                wild_details = wild_details.replace(wild_details.split()[-1], "").strip()
-            else:
-                wild_iv = None
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=pokemon.name.title())
         wild_gmaps_link = utils.create_gmaps_query(self.bot, wild_details, message.channel, type="wild")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -682,7 +682,7 @@ class Wild(commands.Cog):
         }
         despawn = 2700
         wild_embed = await self.make_wild_embed(ctx, details)
-        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\nUse {omw_emoji} if you are on your way, {catch_emoji} if you caught it, {despawn_emoji} if it has despawned, {info_emoji} to edit details, or {list_emoji} to list all wilds!", embed=wild_embed)
+        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\nUse {omw_emoji} if on your way, {catch_emoji} if you caught it, {despawn_emoji} if it despawned, {info_emoji} to edit details, or {list_emoji} to list all wilds!", embed=wild_embed)
         dm_dict = {}
         dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         for reaction in react_list:
