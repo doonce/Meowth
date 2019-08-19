@@ -1274,8 +1274,9 @@ class Listing(commands.Cog):
 
     async def _lurelist(self, ctx):
         lure_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('lure_dict', {}))
-        luremsg = ""
+        listing_dict = {}
         for lureid in lure_dict:
+            luremsg = ""
             if lure_dict[lureid]['report_channel'] == ctx.message.channel.id:
                 try:
                     lurereportmsg = await ctx.message.channel.fetch_message(lureid)
@@ -1286,13 +1287,20 @@ class Listing(commands.Cog):
                         reported_by = f" | **Reported By**: {lureauthor.display_name}"
                     luremsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('lure_bullet', '\U0001F539')))
                     luremsg += f"**Lure Type**: {lure_dict[lureid]['type'].title()} | **Location**: [{lure_dict[lureid]['location'].title()}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    listing_dict[lureid] = {
+                        "message":luremsg,
+                        "expire":lure_expire
+                    }
                 except Exception as e:
                     print("lurelist", e)
                     continue
-        if luremsg:
+        if listing_dict:
+            lure_list_msg = ""
+            for (k, v) in sorted(listing_dict.items(), key=lambda item: item[1]['expire']):
+                lure_list_msg += listing_dict[k]['message']
             listmsg = _('**Meowth! Here\'s the current lure reports for {channel}**').format(channel=ctx.message.channel.mention)
             paginator = commands.Paginator(prefix="", suffix="")
-            for line in luremsg.splitlines():
+            for line in lure_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:
@@ -1338,11 +1346,12 @@ class Listing(commands.Cog):
 
     async def _invasionlist(self, ctx):
         invasion_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('invasion_dict', {}))
-        invasionmsg = ""
-        reward_list = []
+        listing_dict = {}
         for invasionid in invasion_dict:
             if invasion_dict[invasionid]['report_channel'] == ctx.message.channel.id:
                 try:
+                    invasionmsg = ""
+                    reward_list = []
                     invasionreportmsg = await ctx.message.channel.fetch_message(invasionid)
                     invasionauthor = ctx.channel.guild.get_member(invasion_dict[invasionid]['report_author'])
                     reward = invasion_dict[invasionid]['reward']
@@ -1367,12 +1376,19 @@ class Listing(commands.Cog):
                         reported_by = f" | **Reported By**: {invasionauthor.display_name}"
                     invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', '\U0001F539')))
                     invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{invasion_dict[invasionid]['location'].title()}]({invasion_dict[invasionid].get('url', None)}) | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    listing_dict[invasionid] = {
+                        "message":invasionmsg,
+                        "expire":invasion_expire
+                    }
                 except Exception as e:
                     continue
-        if invasionmsg:
+        if listing_dict:
+            inv_list_msg = ""
+            for (k, v) in sorted(listing_dict.items(), key=lambda item: item[1]['expire']):
+                inv_list_msg += listing_dict[k]['message']
             listmsg = _('**Meowth! Here\'s the current invasion reports for {channel}**').format(channel=ctx.message.channel.mention)
             paginator = commands.Paginator(prefix="", suffix="")
-            for line in invasionmsg.splitlines():
+            for line in inv_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:
@@ -1418,10 +1434,11 @@ class Listing(commands.Cog):
 
     async def _pvplist(self, ctx):
         pvp_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('pvp_dict', {}))
-        pvpmsg = ""
+        listing_dict = {}
         for pvpid in pvp_dict:
             if pvp_dict[pvpid]['report_channel'] == ctx.message.channel.id:
                 try:
+                    pvpmsg = ""
                     pvpreportmsg = await ctx.message.channel.fetch_message(pvpid)
                     pvpauthor = ctx.channel.guild.get_member(pvp_dict[pvpid]['report_author'])
                     pvp_tournament = pvp_dict[pvpid].get('tournament', {})
@@ -1435,13 +1452,20 @@ class Listing(commands.Cog):
                         pass
                     else:
                         pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Available Until**: {pvp_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    listing_dict[pvpid] = {
+                        "message":pvpmsg,
+                        "expire":pvp_expire
+                    }
                 except Exception as e:
                     print("pvplist", e)
                     continue
-        if pvpmsg:
+        if listing_dict:
+            pvp_list_msg = ""
+            for (k, v) in sorted(listing_dict.items(), key=lambda item: item[1]['expire']):
+                pvp_list_msg += listing_dict[k]['message']
             listmsg = _('**Meowth! Here\'s the current PVP Requests for {channel}**').format(channel=ctx.message.channel.mention)
             paginator = commands.Paginator(prefix="", suffix="")
-            for line in pvpmsg.splitlines():
+            for line in pvp_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:

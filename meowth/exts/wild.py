@@ -689,6 +689,7 @@ class Wild(commands.Cog):
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.wildreportmsg, reaction)
         self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
+            'report_time':time.time(),
             'exp':time.time() + despawn,
             'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
             'report_message':message.id,

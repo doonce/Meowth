@@ -647,9 +647,10 @@ class Huntr(commands.Cog):
         wild_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict']
         wild_weather_dict = {}
         for wild_report in list(wild_dict.keys()):
+            report_time = datetime.datetime.utcfromtimestamp(wild_dict.get(wild_report, {}).get('report_time', time.time()))
             coordinates = wild_dict.get(wild_report, {}).get('coordinates', None)
             weather = wild_dict.get(wild_report, {}).get('weather', None)
-            if weather and coordinates:
+            if weather and coordinates and ctx.message.created_at.hour == report_time.hour:
                 wild_weather_dict[coordinates] = weather
         if not wild_weather_dict:
             return None
@@ -844,6 +845,7 @@ class Huntr(commands.Cog):
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.wildreportmsg, reaction)
         ctx.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
+            'report_time':time.time(),
             'exp':time.time() + despawn,
             'expedit': {"content":ctx.wildreportmsg.content, "embedcontent":expiremsg},
             'report_message':message.id,
@@ -951,6 +953,7 @@ class Huntr(commands.Cog):
             'report_guild':message.guild.id,
             'report_author':message.author.id,
             'trainer_dict': {},
+            'report_time':time.time(),
             'exp': time.time() + (60 * ctx.bot.raid_info['raid_eggs'][str(level)]['raidtime']),
             'manual_timer': False,
             'active': True,
@@ -968,7 +971,7 @@ class Huntr(commands.Cog):
             'coordinates':raid_coordinates
         }
         await raid_cog._timerset(raid_channel, raidexp)
-        await raid_channel.send("This raid was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
+        await raid_channel.send(f"This raid was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.\nThe weather may be inaccurate for this raid, use **{ctx.prefix}weather** to set the correct weather.")
         ctrs_dict = await raid_cog._get_generic_counters(message.guild, entered_raid, weather)
         if str(level) in ctx.bot.guild_dict[message.guild.id]['configure_dict']['counters']['auto_levels']:
             try:
@@ -1052,6 +1055,7 @@ class Huntr(commands.Cog):
             'report_guild':message.guild.id,
             'report_author':message.author.id,
             'trainer_dict': {},
+            'report_time':time.time(),
             'exp': time.time() + (60 * ctx.bot.raid_info['raid_eggs'][egg_level]['hatchtime']),
             'manual_timer': False,
             'active': True,
@@ -1071,7 +1075,7 @@ class Huntr(commands.Cog):
             await raid_cog._timerset(raid_channel, raidexp)
         else:
             await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
-        await raid_channel.send("This egg was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.")
+        await raid_channel.send(f"This egg was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.\nThe weather may be inaccurate for this raid, use **{ctx.prefix}weather** to set the correct weather.")
         if len(ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
             pokemon = pokemon.name.lower()
