@@ -53,7 +53,7 @@ class Listing(commands.Cog):
                         await utils.safe_delete(tag_error)
                         return
                     cty = channel.name
-                    rc_d = {**self.bot.guild_dict[guild.id]['raidchannel_dict'], **self.bot.guild_dict[guild.id]['meetup_dict']}
+                    rc_d = {**self.bot.guild_dict[guild.id]['raidchannel_dict'], **self.bot.guild_dict[guild.id]['meetup_dict'], **self.bot.guild_dict[guild.id]['raidtrain_dict']}
                     raid_dict = {}
                     egg_dict = {}
                     exraid_list = []
