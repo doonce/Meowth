@@ -133,7 +133,8 @@ def check_rsvpchannel(ctx):
     guild = ctx.guild
     raid_channels = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).keys()
     meetup_channels = ctx.bot.guild_dict[guild.id].setdefault('meetup_dict', {}).keys()
-    return channel.id in raid_channels or channel.id in meetup_channels
+    train_channels = ctx.bot.guild_dict[guild.id].setdefault('raidtrain_dict', {}).keys()
+    return channel.id in raid_channels or channel.id in meetup_channels or channel.id in train_channels
 
 def check_raidchannel(ctx):
     if ctx.guild is None:
@@ -208,6 +209,14 @@ def check_meetupchannel(ctx):
     guild = ctx.guild
     meetup_channels = ctx.bot.guild_dict[guild.id].setdefault('meetup_dict', {}).keys()
     return channel.id in meetup_channels
+
+def check_trainchannel(ctx):
+    if ctx.guild is None:
+        return False
+    channel = ctx.channel
+    guild = ctx.guild
+    train_channels = ctx.bot.guild_dict[guild.id].setdefault('raidtrain_dict', {}).keys()
+    return channel.id in train_channels
 
 def check_tradeset(ctx):
     if ctx.guild is None:
@@ -512,7 +521,7 @@ def allowmeetupreport():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_meetupset(ctx):
-            if check_meetupreport(ctx) or check_meetupchannel(ctx):
+            if check_meetupreport(ctx) or check_meetupchannel(ctx) or check_trainchannel(ctx):
                 return True
             else:
                 raise errors.MeetupReportChannelCheckFail()
@@ -594,7 +603,7 @@ def rsvpchannel():
     def predicate(ctx):
         if not ctx.guild:
             raise errors.GuildCheckFail()
-        if check_raidchannel(ctx) or check_meetupchannel(ctx):
+        if check_raidchannel(ctx) or check_meetupchannel(ctx) or check_trainchannel(ctx):
             return True
         raise errors.RSVPChannelCheckFail()
     return commands.check(predicate)

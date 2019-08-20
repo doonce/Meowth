@@ -2606,7 +2606,7 @@ class Raid(commands.Cog):
     async def meetup_end(self, ctx, *, timer):
         await ctx.invoke(self.bot.get_command("timerset"), timer=timer)
 
-    @commands.group(case_insensitive=True, invoke_without_command=True)
+    @commands.group(case_insensitive=True, invoke_without_command=True, aliases=['chain'])
     @checks.allowtrainreport()
     async def train(self, ctx, *, channel_or_gym=None):
         """Report an ongoing raid train.
@@ -2847,18 +2847,24 @@ class Raid(commands.Cog):
     async def train_next(self, ctx, *, channel_or_gym):
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers']:
             return
+        converter = commands.TextChannelConverter()
+        try:
+            channel_or_gym = await converter.convert(ctx, channel_or_gym)
+        except:
+            location = ""
         if isinstance(channel_or_gym, discord.TextChannel):
             if channel_or_gym.id in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
                 location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['address']
-        gym_matching_cog = self.bot.cogs.get('GymMatching')
-        gym_info = ""
-        location = ""
-        if gym_matching_cog:
-            gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, str(channel_or_gym), "raid", dupe_check=False)
+        if not location:
+            gym_matching_cog = self.bot.cogs.get('GymMatching')
+            gym_info = ""
+            if gym_matching_cog:
+                gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, str(channel_or_gym), "raid", dupe_check=False)
         if location:
             channel_or_gym = location
         train_location = str(channel_or_gym)
         await ctx.invoke(self.bot.get_command("location new"), content=train_location)
+        self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup']['next'] = train_location
         for channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
             channel_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['address']
             if channel_address == train_location:
