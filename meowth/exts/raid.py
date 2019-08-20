@@ -2836,16 +2836,22 @@ class Raid(commands.Cog):
     @train.command(name="title")
     @checks.allowmeetupreport()
     async def train_title(self, ctx, *, title):
+        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers']:
+            return
         await ctx.invoke(self.bot.get_command("meetup title"), title=title)
 
     @train.command(name="start")
     @checks.allowmeetupreport()
     async def train_start(self, ctx, *, timer):
+        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers']:
+            return
         await ctx.invoke(self.bot.get_command("starttime"), start_time=timer)
 
     @train.command(name="end")
     @checks.allowmeetupreport()
     async def train_end(self, ctx, *, timer):
+        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers']:
+            return
         await ctx.invoke(self.bot.get_command("timerset"), timer=timer)
 
     @train.command(name="next")
