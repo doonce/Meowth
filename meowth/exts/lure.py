@@ -302,7 +302,8 @@ class Lure(commands.Cog):
             if send_lure:
                 try:
                     user = ctx.guild.get_member(trainer)
-                    luredmmsg = await user.send(f"{lure_msg} in {ctx.channel.mention}", embed=lure_embed)
+                    lure_msg = lure_msg.split(f"{ctx.author.mention}!")[0]
+                    luredmmsg = await user.send(f"{lure_msg}{ctx.author.mention} in {ctx.channel.mention}!", embed=lure_embed)
                     dm_dict[user.id] = luredmmsg.id
                 except:
                     continue

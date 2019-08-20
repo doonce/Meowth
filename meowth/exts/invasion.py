@@ -335,8 +335,6 @@ class Invasion(commands.Cog):
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 if pokemon:
                     pkmn_list.append(pokemon)
-        else:
-            return dm_dict
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('wants', [])
             user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('forms', [])
