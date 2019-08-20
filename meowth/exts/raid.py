@@ -2620,7 +2620,7 @@ class Raid(commands.Cog):
         guild = message.guild
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
-        train_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1')
+        train_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/train.png?cache=1')
         train_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         active_trains = []
         train_msg = ""
@@ -2827,6 +2827,7 @@ class Raid(commands.Cog):
             utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))
             to_raidend = 24*60*60 - ((utcnow-utcnow.replace(hour=21, minute=0, second=0, microsecond=0)).seconds)
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['exp'] = time.time() + to_raidend
+            self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['history'] = [train_location]
             for channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
                 channel_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['address']
                 if channel_address == train_location:
@@ -2836,28 +2837,28 @@ class Raid(commands.Cog):
     @train.command(name="title")
     @checks.allowmeetupreport()
     async def train_title(self, ctx, *, title):
-        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers']:
+        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         await ctx.invoke(self.bot.get_command("meetup title"), title=title)
 
     @train.command(name="start")
     @checks.allowmeetupreport()
     async def train_start(self, ctx, *, timer):
-        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers']:
+        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         await ctx.invoke(self.bot.get_command("starttime"), start_time=timer)
 
     @train.command(name="end")
     @checks.allowmeetupreport()
     async def train_end(self, ctx, *, timer):
-        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers']:
+        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         await ctx.invoke(self.bot.get_command("timerset"), timer=timer)
 
     @train.command(name="next")
     @checks.allowmeetupreport()
     async def train_next(self, ctx, *, channel_or_gym):
-        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers']:
+        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         converter = commands.TextChannelConverter()
         try:
@@ -2876,7 +2877,7 @@ class Raid(commands.Cog):
             channel_or_gym = location
         train_location = str(channel_or_gym)
         await ctx.invoke(self.bot.get_command("location new"), content=train_location)
-        self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup']['next'] = train_location
+        self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup'].setdefault('history', []).append(train_location)
         for channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
             channel_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['address']
             if channel_address == train_location:
@@ -2886,15 +2887,30 @@ class Raid(commands.Cog):
     @train.command(name="manager")
     @checks.allowmeetupreport()
     async def train_manager(self, ctx, *, user):
-        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers']:
+        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         converter = commands.MemberConverter()
         try:
             member = await converter.convert(ctx, user)
         except:
             return
-        if member.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers']:
+        if member.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
+
+    @train.command(name="history")
+    @checks.allowmeetupreport()
+    async def train_history(self, ctx):
+        if ctx.channel.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict']:
+            return
+        history_str = ""
+        channel_history = self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup']['history']
+        index = 1
+        for item in channel_history:
+            history_str += f"**{index})** {item}\n"
+            index += 1
+        train_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/train.png?cache=1')
+        train_embed.add_field(name="Train Channel History", value=f"This raid train has been to:\n{history_str}")
+        await ctx.send(embed=train_embed)
 
     """
     Raid Channel Management
