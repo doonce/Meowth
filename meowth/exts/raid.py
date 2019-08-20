@@ -2659,13 +2659,22 @@ class Raid(commands.Cog):
                     else:
                         channel_or_gym = channel_or_gym_msg.content.lower()
                 converter = commands.TextChannelConverter()
-                try:
-                    channel_or_gym = await converter.convert(ctx, channel_or_gym)
-                except Exception as e:
+                location = ""
+                if not location:
+                    try:
+                        channel_or_gym = await converter.convert(ctx, channel_or_gym)
+                    except:
+                        pass
+                if isinstance(channel_or_gym, discord.TextChannel):
+                    if channel_or_gym == ctx.channel:
+                        error = _("entered this channel")
+                        break
+                    if channel_or_gym.id in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
+                        location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['address']
+                if not location:
                     gym_matching_cog = self.bot.cogs.get('GymMatching')
                     gym_info = ""
-                    location = ""
-                    if gym_matching_cog:
+                    if gym_matching_cog and not location:
                         gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, str(channel_or_gym), "raid", dupe_check=False)
                     if location:
                         channel_or_gym = location
@@ -2683,10 +2692,7 @@ class Raid(commands.Cog):
                     if not channel_or_gym and not location:
                         error = _("entered an invalid location or channel")
                         break
-                if channel_or_gym == ctx.channel:
-                    error = _("entered this channel")
-                    break
-                if checks.check_raidreport(ctx):
+                if checks.check_raidreport(ctx) or checks.check_meetupreport(ctx):
                     train_embed.clear_fields()
                     train_embed.add_field(name=_('**New Raid Train Report**'), value=f"Great! Now, would you like to create a new channel to manage this raid train, or move between current raid channels? Reply with **channel** to create a channel, **current** to keep coordination in raid channels, or **cancel** to stop anytime.", inline=False)
                     channel_wait = await channel.send(embed=train_embed)
@@ -2799,13 +2805,13 @@ class Raid(commands.Cog):
         await self._train_channel(ctx, channel_or_gym)
 
     async def _train_channel(self, ctx, channel_or_gym):
+        location = ""
         if isinstance(channel_or_gym, discord.TextChannel):
             if channel_or_gym.id in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
                 location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['address']
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
-        location = ""
-        if gym_matching_cog:
+        if not location and gym_matching_cog:
             gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, str(channel_or_gym), "raid", dupe_check=False)
         if location:
             channel_or_gym = location
