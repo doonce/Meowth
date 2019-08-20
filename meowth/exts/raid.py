@@ -373,7 +373,7 @@ class Raid(commands.Cog):
             report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id][report_dict][channel.id]['report_channel'])
             try:
                 reportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][channel.id]['raid_report'])
-            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, AttributeError):
                 reportmsg = None
             if dupecount >= 3:
                 if self.bot.guild_dict[guild.id][report_dict][channel.id].get('coordinates', False) is not False:
