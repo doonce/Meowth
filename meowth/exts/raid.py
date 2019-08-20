@@ -2579,7 +2579,7 @@ class Raid(commands.Cog):
         self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['raid_message'] = oldraidmsg.id
         self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['raid_report'] = oldreportmsg.id
         self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['meetup']['title'] = title
-        if can_manage:
+        if can_manage or meetup_type == "train":
             raid_channel_name = f"{meetup_type}-" + utils.sanitize_channel_name(title)
             question = await ctx.channel.send(f"Would you like to change the channel name to {raid_channel_name.lower()}?")
             try:
@@ -3393,7 +3393,7 @@ class Raid(commands.Cog):
             self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['raid_message'] = oldraidmsg.id
             self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['raid_report'] = oldreportmsg.id
             self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['address'] = raid_details
-            if can_manage:
+            if can_manage or report_train:
                 if report_train:
                     raid_channel_name = _('train-')
                 elif report_meetup:
