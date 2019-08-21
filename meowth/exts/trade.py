@@ -289,7 +289,7 @@ class Trading(commands.Cog):
         offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
         wanted_pokemon = trade_dict['wanted_pokemon']
         wanted_pokemon = wanted_pokemon.encode('ascii', 'ignore').decode("utf-8").replace(":", "")
-        wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want allow_digits=False) for want in wanted_pokemon.split("\n")]
+        wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want, allow_digits=False) for want in wanted_pokemon.split("\n")]
         buyer_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offers'][buyer_id]['offer'])
         cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
         await lister.send(f"Meowth... {buyer.display_name} withdrew their trade offer of {str(buyer_pokemon)}.")
