@@ -961,6 +961,7 @@ class Listing(commands.Cog):
         Works only in trading channels. Will search for supplied search term, showing
         all pokemon that match or all trades for specific user"""
         async with ctx.typing():
+            delete_list = []
             if not search:
                 search = ctx.author
             else:
@@ -969,6 +970,17 @@ class Listing(commands.Cog):
                     search = str(pokemon)
                 elif "shiny" in search.lower():
                     search = "shiny"
+                elif "all" in search.lower():
+                    search = "all"
+                    list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('trade', {}).setdefault(ctx.channel.id, [])
+                    delete_list = []
+                    for msg in list_dict:
+                        try:
+                            msg = await ctx.channel.fetch_message(msg)
+                            delete_list.append(msg)
+                        except:
+                            pass
+                    await utils.safe_bulk_delete(ctx.channel, delete_list)
                 else:
                     converter = commands.MemberConverter()
                     try:
@@ -988,6 +1000,8 @@ class Listing(commands.Cog):
                         listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                     list_messages.append(listmsg.id)
                     index += 1
+                if search == "all":
+                    self.bot.guild_dict[ctx.guild.id]['list_dict']['trade'][ctx.channel.id] = list_messages
             elif listmsg:
                 listmsg = await ctx.channel.send(listmsg)
                 list_messages.append(listmsg.id)
@@ -998,14 +1012,18 @@ class Listing(commands.Cog):
         tgt_trainer_trades = {}
         tgt_pokemon_trades = {}
         tgt_shiny_trades = {}
+        tgt_all_trades = {}
         target_trades = {}
         listmsg = ""
         trademsg = ""
         lister_str = ""
+        shiny_emoji = self.bot.custom_emoji.get('shiny_chance', '\u2728')
         for offer_id in self.bot.guild_dict[ctx.guild.id]['trade_dict']:
             if self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['report_channel_id'] != ctx.channel.id:
                 continue
-            if isinstance(search, discord.member.Member):
+            if search == "all":
+                tgt_all_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]
+            elif isinstance(search, discord.member.Member):
                 if self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['lister_id'] == search.id:
                     tgt_trainer_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]
             elif search == "shiny":
@@ -1016,12 +1034,14 @@ class Listing(commands.Cog):
                 if str(pokemon) in self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['offered_pokemon']:
                     tgt_pokemon_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]
         if tgt_trainer_trades:
-            listmsg = _("Meowth! Here are the current trades for {user}.").format(user=search.display_name)
+            listmsg = _("Meowth! Here are the current trades for {user}:").format(user=search.display_name)
         elif tgt_pokemon_trades:
-            listmsg = _("Meowth! Here are the current {pokemon} trades.").format(pokemon=str(pokemon))
+            listmsg = _("Meowth! Here are the current {pokemon} trades:").format(pokemon=str(pokemon))
         elif tgt_shiny_trades:
-            listmsg = _("Meowth! Here are the current Shiny trades.")
-        target_trades = {**tgt_trainer_trades, **tgt_shiny_trades, **tgt_pokemon_trades}
+            listmsg = _("Meowth! Here are the current Shiny trades:")
+        elif tgt_all_trades:
+            listmsg = f"Meowth! Here are all active trades in {ctx.channel.mention}:"
+        target_trades = {**tgt_trainer_trades, **tgt_shiny_trades, **tgt_pokemon_trades, **tgt_all_trades}
         if target_trades:
             for offer_id in target_trades:
                 offer_url = ""
@@ -1035,17 +1055,22 @@ class Listing(commands.Cog):
                 lister = ctx.guild.get_member(target_trades[offer_id]['lister_id'])
                 if not lister:
                     continue
-                if tgt_pokemon_trades:
-                    lister_str = f"**Lister**: {lister.display_name} | "
+                lister_str = f"**Lister**: {lister.display_name}"
+                offered_pokemon = target_trades[offer_id]['offered_pokemon']
+                offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, offered_pokemon, allow_digits=False)
+                offered_pokemon = f"{str(offered_pokemon)} {offered_pokemon.emoji}"
+                offered_pokemon = offered_pokemon.replace("Shiny", f"{shiny_emoji} Shiny")
                 wanted_pokemon = target_trades[offer_id]['wanted_pokemon']
-                if "Open Trade" in wanted_pokemon:
+                if "Open Trade" in wanted_pokemon or not wanted_pokemon:
                     wanted_pokemon = "Open Trade (DM User)"
                 else:
-                    wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in wanted_pokemon.split('\n')]
-                    wanted_pokemon = [str(x) for x in wanted_pokemon]
+                    wanted_pokemon = str(wanted_pokemon).encode('ascii', 'ignore').decode("utf-8").replace(":", "")
+                    wanted_pokemon = ''.join(x for x in wanted_pokemon if not x.isdigit())
+                    wanted_pokemon = [x.strip() for x in wanted_pokemon.split("\n")]
                     wanted_pokemon = ', '.join(wanted_pokemon)
+                trade_details = target_trades[offer_id].get('details', '')
                 trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('trade_bullet', '\U0001F539')))
-                trademsg += (f"{lister_str}**Offered Pokemon**: {target_trades[offer_id]['offered_pokemon']} | **Wanted Pokemon**: {wanted_pokemon} | [Jump To Message]({offer_url})")
+                trademsg += (f"**Offered Pokemon**: {offered_pokemon} | **Wanted Pokemon**: {wanted_pokemon}{' | **Details**: '+trade_details if trade_details else ''} | {lister_str} | [Jump To Message]({offer_url})")
         if trademsg:
             paginator = commands.Paginator(prefix="", suffix="")
             for line in trademsg.splitlines():
