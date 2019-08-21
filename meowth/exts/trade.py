@@ -564,7 +564,7 @@ class Trading(commands.Cog):
                             error = _("entered more than 9 pokemon")
                             await error_msg(error)
                             continue
-                        if "ask" in wanted_pokemon:
+                        if "ask" in wanted_pokemon or "open" in wanted_pokemon:
                             wanted_pokemon = "open trade"
                         else:
                             wanted_pokemon_list = []
@@ -610,11 +610,11 @@ class Trading(commands.Cog):
         trade_dict = self.bot.guild_dict[ctx.guild.id].setdefault('trade_dict', {})
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
-        if "open trade" not in wanted_pokemon:
+        if not wanted_pokemon or "open trade" in wanted_pokemon:
+            wanted_pokemon = "Open Trade (DM User)"
+        else:
             wanted_pokemon = [f'{i+1}\u20e3: {pkmn}' for i, pkmn in enumerate(wanted_pokemon)]
             wanted_pokemon = '\n'.join(wanted_pokemon)
-        else:
-            wanted_pokemon = "Open Trade (DM User)"
         offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, offered_pokemon)
         trade_embed = discord.Embed(colour=ctx.guild.me.colour)
         trade_embed.set_author(name="Pokemon Trade - {}".format(ctx.author.display_name), icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_icon_small.png")
