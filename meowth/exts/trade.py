@@ -139,7 +139,7 @@ class Trading(commands.Cog):
                 if user.id != trade_dict[message.id]['lister_id'] and '\u20e3' in emoji:
                     wanted_pokemon = trade_dict[message.id]['wanted_pokemon']
                     wanted_pokemon = wanted_pokemon.encode('ascii', 'ignore').decode("utf-8").replace(":", "")
-                    wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want) for want in wanted_pokemon.split("\n")]
+                    wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want, allow_digits=False) for want in wanted_pokemon.split("\n")]
                     i = int(emoji[0])
                     offer = wanted_pokemon[i-1]
                     await self.make_offer(message.guild.id, message.id, user.id, offer)
@@ -258,7 +258,7 @@ class Trading(commands.Cog):
         offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
         wanted_pokemon = trade_dict['wanted_pokemon']
         wanted_pokemon = wanted_pokemon.encode('ascii', 'ignore').decode("utf-8").replace(":", "")
-        wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want) for want in wanted_pokemon.split("\n")]
+        wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want, allow_digits=False) for want in wanted_pokemon.split("\n")]
         await buyer.send(f"Meowth... {lister.display_name} rejected your offer for their {offered_pokemon}.")
         cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
         offer_str = f"Meowth! {lister.display_name} offers a {str(offered_pokemon)} up for trade!"
@@ -289,7 +289,7 @@ class Trading(commands.Cog):
         offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
         wanted_pokemon = trade_dict['wanted_pokemon']
         wanted_pokemon = wanted_pokemon.encode('ascii', 'ignore').decode("utf-8").replace(":", "")
-        wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want) for want in wanted_pokemon.split("\n")]
+        wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want allow_digits=False) for want in wanted_pokemon.split("\n")]
         buyer_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offers'][buyer_id]['offer'])
         cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
         await lister.send(f"Meowth... {buyer.display_name} withdrew their trade offer of {str(buyer_pokemon)}.")
