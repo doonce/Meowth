@@ -132,7 +132,7 @@ class Lure(commands.Cog):
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
         await utils.expire_dm_reports(self.bot, lure_dict.get(message.id, {}).get('dm_dict', {}))
-        lure_bonus = nest_dict[nest]['reports'].get(message.id, {}).get('caught_by', [])
+        lure_bonus = lure_dict[message.id].get('caught_by', [])
         if len(lure_bonus) >= 3 and author and not author.bot:
             lure_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('reports', {}).setdefault('lure', 0) + 1
             self.bot.guild_dict[message.guild.id]['trainers'][author.id]['reports']['lure'] = lure_reports
