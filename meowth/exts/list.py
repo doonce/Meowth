@@ -1381,6 +1381,7 @@ class Listing(commands.Cog):
                     invasionauthor = ctx.channel.guild.get_member(invasion_dict[invasionid]['report_author'])
                     reward = invasion_dict[invasionid]['reward']
                     reward_type = invasion_dict[invasionid].get('reward_type', None)
+                    grunt_gender = invasion_dict[invasionid].get('gender', None)
                     if reward:
                         for pokemon in reward:
                             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
@@ -1399,8 +1400,11 @@ class Listing(commands.Cog):
                     reported_by = ""
                     if invasionauthor and not invasionauthor.bot:
                         reported_by = f" | **Reported By**: {invasionauthor.display_name}"
+                    gender_str = ""
+                    if grunt_gender:
+                        gender_str = f" | **Gender**: {grunt_gender.title()}"
                     invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', '\U0001F539')))
-                    invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{invasion_dict[invasionid]['location'].title()}]({invasion_dict[invasionid].get('url', None)}) | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{invasion_dict[invasionid]['location'].title()}]({invasion_dict[invasionid].get('url', None)}){gender_str} | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
                     listing_dict[invasionid] = {
                         "message":invasionmsg,
                         "expire":invasion_expire
@@ -1603,6 +1607,9 @@ class Listing(commands.Cog):
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'nests', 'nest']:
             await utils.safe_delete(ctx.message)
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('nest', {}).setdefault(ctx.channel.id, [])
+        if not ctx.prefix:
+            prefix = self.bot._get_prefix(self.bot, ctx.message)
+            ctx.prefix = prefix[-1]
         delete_list = []
         async with ctx.typing():
             for msg in list_dict:
@@ -1621,7 +1628,7 @@ class Listing(commands.Cog):
             for p in nest_pages:
                 nest_embed.description = p
                 if index == 0:
-                    listmsg = await ctx.channel.send(_('**Meowth!** Here\'s the current nests for {channel}').format(channel=ctx.channel.mention), embed=nest_embed)
+                    listmsg = await ctx.channel.send(f"**Meowth!** Here\'s the current nests for {ctx.channel.mention}. You can see more information about a nest using **{ctx.prefix}nest info**".format(channel=ctx.channel.mention), embed=nest_embed)
                 else:
                     listmsg = await ctx.channel.send(embed=nest_embed)
                 list_messages.append(listmsg.id)

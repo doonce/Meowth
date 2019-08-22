@@ -99,7 +99,7 @@ class Invasion(commands.Cog):
                 for reaction in message.reactions:
                     if reaction.emoji == self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         await self.expire_invasion(message)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_info', '\u2139'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('invasion_info', '\u2139'):
                 ctx = await self.bot.get_context(message)
                 if not ctx.prefix:
                     prefix = self.bot._get_prefix(self.bot, message)
@@ -146,7 +146,7 @@ class Invasion(commands.Cog):
         reward = invasion_dict.get('reward', [])
         reward_type = invasion_dict.get('reward_type', '')
         location = invasion_dict.get('location', '')
-        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        info_emoji = ctx.bot.custom_emoji.get('invasion_info', '\u2139')
         type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         if not author:
             return
@@ -250,8 +250,8 @@ class Invasion(commands.Cog):
         invasion_embed = message.embeds[0]
         nearest_stop = invasion_dict.get('location', None)
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
-        expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\ud83d\udca8')
-        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8')
+        info_emoji = ctx.bot.custom_emoji.get('invasion_info', '\u2139')
         author = ctx.guild.get_member(invasion_dict.get('report_author', None))
         if author:
             ctx.author = author
@@ -491,7 +491,7 @@ class Invasion(commands.Cog):
         end = now + datetime.timedelta(minutes=int(expire_time))
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\ud83d\udca8')
-        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        info_emoji = ctx.bot.custom_emoji.get('invasion_info', '\u2139')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [complete_emoji, expire_emoji, info_emoji, list_emoji]
         invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
@@ -557,6 +557,7 @@ class Invasion(commands.Cog):
             'report_channel':ctx.channel.id,
             'report_author':ctx.author.id,
             'report_guild':ctx.guild.id,
+            'report_time':time.time(),
             'dm_dict':dm_dict,
             'location':location,
             'url':loc_url,

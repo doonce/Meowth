@@ -85,7 +85,10 @@ class Lure(commands.Cog):
             return
         if user == self.bot.user:
             return
+        ctx = await self.bot.get_context(message)
         can_manage = channel.permissions_for(user).manage_messages
+        if not can_manage and user.id in self.bot.config.managers:
+            can_manage = True
         try:
             lure_dict = self.bot.guild_dict[guild.id]['lure_dict']
         except KeyError:
@@ -96,8 +99,15 @@ class Lure(commands.Cog):
                 for reaction in message.reactions:
                     if reaction.emoji == self.bot.custom_emoji.get('lure_expire', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         await self.expire_lure(message)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('lure_info', '\u2139'):
+                if not ctx.prefix:
+                    prefix = self.bot._get_prefix(self.bot, message)
+                    ctx.prefix = prefix[-1]
+                await message.remove_reaction(payload.emoji, user)
+                ctx.author = user
+                if user.id == lure_dict['report_author'] or can_manage:
+                    await self.edit_lure_info(ctx, message)
             elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
-                ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
                 await message.remove_reaction(payload.emoji, self.bot.user)
                 await asyncio.sleep(0.25)
@@ -121,6 +131,117 @@ class Lure(commands.Cog):
             del self.bot.guild_dict[guild.id]['lure_dict'][message.id]
         except KeyError:
             pass
+
+    async def edit_lure_info(self, ctx, message):
+        lure_dict = self.bot.guild_dict[ctx.guild.id]['lure_dict'].get(message.id, {})
+        message = ctx.message
+        channel = message.channel
+        guild = message.guild
+        author = guild.get_member(lure_dict.get('report_author', None))
+        location = lure_dict.get('location', '')
+        type_list = ["normal", "mossy", "magnetic", "glacial"]
+        if not author:
+            return
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        success = []
+        reply_msg = f"**type <lure type>** - Current: {lure_dict.get('type', 'X')}\n"
+        lure_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
+        lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        while True:
+            async with ctx.typing():
+                lure_embed.add_field(name=_('**Edit Lure Info**'), value=f"Meowth! I'll help you edit information of the lure at **{location}**!\n\nI'll need to know what **values** you'd like to edit. Reply **cancel** to stop anytime or reply with a comma separated list of the following options `Ex: type mossy`:\n\n{reply_msg}", inline=False)
+                value_wait = await channel.send(embed=lure_embed)
+                def check(reply):
+                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == ctx.author:
+                        return True
+                    else:
+                        return False
+                try:
+                    value_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    value_msg = None
+                await utils.safe_delete(value_wait)
+                if not value_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(value_msg)
+                if value_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                else:
+                    entered_values = value_msg.clean_content.lower().split(',')
+                    entered_values = [x.strip() for x in entered_values]
+                    for value in entered_values:
+                        value_split = value.split()
+                        if len(value_split) != 2:
+                            error = _("entered something invalid")
+                            continue
+                        if "type" in value and "type" not in success:
+                            if value_split[1] and value_split[1].lower() in type_list:
+                                self.bot.guild_dict[ctx.guild.id]['lure_dict'][message.id]['type'] = value_split[1]
+                                success.append("type")
+                            else:
+                                error = _('entered something invalid. Accepted types are Normal, Mossy, Glacial, Magnetic')
+                        else:
+                            error = _("entered something invalid")
+                    break
+        if success:
+            await self.edit_lure_messages(ctx, message)
+        else:
+            error = _("didn't change anything")
+        if error:
+            lure_embed.clear_fields()
+            lure_embed.add_field(name=_('**Lure Edit Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
+            if success:
+                lure_embed.set_field_at(0, name="**Lure Edit Error**", value=f"Meowth! Your **{(', ').join(success)}** edits were successful, but others were skipped because you **{error}**! Retry when you're ready.", inline=False)
+            confirmation = await channel.send(embed=lure_embed, delete_after=10)
+
+    async def edit_lure_messages(self, ctx, message):
+        lure_dict = self.bot.guild_dict[ctx.guild.id]['lure_dict'].get(message.id, {})
+        dm_dict = lure_dict.get('dm_dict', {})
+        lure_type = lure_dict.get('type')
+        level = lure_dict.get('level', None)
+        lure_embed = message.embeds[0]
+        location = lure_dict.get('location', None)
+        author = ctx.guild.get_member(lure_dict.get('report_author', None))
+        if author:
+            ctx.author = author
+        content = message.content
+        lure_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png")
+        lure_embed.set_author(name=f"Normal Lure Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1")
+        item = "lure module"
+        if lure_type != "normal":
+            lure_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png")
+            lure_embed.set_author(name=f"{lure_type.title()} Lure Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png?cache=1")
+            item = f"{lure_type} lure module"
+        lure_embed.set_field_at(0, name=f"**Lure Type:**", value=item.title())
+        try:
+            await message.edit(content=content, embed=lure_embed)
+        except:
+            pass
+        if isinstance(lure_embed.description, discord.embeds._EmptyEmbed):
+            lure_embed.description = ""
+        if "Jump to Message" not in lure_embed.description:
+            lure_embed.description = lure_embed.description + f"\n**Report:** [Jump to Message]({message.jump_url})"
+        index = 0
+        for dm_user, dm_message in dm_dict.items():
+            try:
+                dm_user = self.bot.get_user(dm_user)
+                dm_channel = dm_user.dm_channel
+                if not dm_channel:
+                    dm_channel = await dm_user.create_dm()
+                if not dm_user or not dm_channel:
+                    continue
+                dm_message = await dm_channel.fetch_message(dm_message)
+                content = dm_message.content
+                await dm_message.edit(content=content, embed=lure_embed)
+            except:
+                pass
+        ctx.lurereportmsg = message
+        dm_dict = await self.send_dm_messages(ctx, location, item, content, copy.deepcopy(lure_embed), dm_dict)
+        self.bot.guild_dict[ctx.guild.id]['lure_dict'][message.id]['dm_dict'] = dm_dict
 
     @commands.group(invoke_without_command=True, case_insensitive=True)
     @checks.allowlurereport()
@@ -237,14 +358,16 @@ class Lure(commands.Cog):
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
         end = now + datetime.timedelta(minutes=int(expire_time))
+        info_emoji = ctx.bot.custom_emoji.get('lure_info', '\u2139')
         expire_emoji = self.bot.custom_emoji.get('lure_expire', '\U0001F4A8')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        react_list = [expire_emoji, info_emoji, list_emoji]
         lure_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         if timer:
             lure_msg = f"Lure reported by {ctx.author.mention}! Use {list_emoji} to list all lures!"
         else:
-            lure_msg = f"Lure reported by {ctx.author.mention}! Use {expire_emoji} if the lure has disappeared, or {list_emoji} to list all lures!!"
+            lure_msg = f"Lure reported by {ctx.author.mention}! Use {expire_emoji} if the lure has disappeared, {info_emoji} to edit info, or {list_emoji} to list all lures!!"
         lure_embed.title = _('Meowth! Click here for my directions to the lure!')
         lure_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="lure")
@@ -268,8 +391,8 @@ class Lure(commands.Cog):
             item = f"{lure_type} lure module"
         lure_embed.add_field(name=f"**Lure Type:**", value=item.title())
         lure_embed.add_field(name=f"**{'Expires' if timer else 'Expire Estimate'}:**", value=f"{expire_time} mins {end.strftime(_('(%I:%M %p)'))}")
-        confirmation = await ctx.channel.send(lure_msg, embed=lure_embed)
-        self.bot.guild_dict[ctx.guild.id]['lure_dict'][confirmation.id] = {
+        ctx.lurereportmsg = await ctx.channel.send(lure_msg, embed=lure_embed)
+        self.bot.guild_dict[ctx.guild.id]['lure_dict'][ctx.lurereportmsg.id] = {
             'exp':time.time() + int(expire_time)*60,
             'report_message':ctx.message.id,
             'report_message':ctx.message.id,
@@ -282,14 +405,37 @@ class Lure(commands.Cog):
             'type':lure_type
         }
         if not timer:
-            await utils.safe_reaction(confirmation, expire_emoji)
-        await utils.safe_reaction(confirmation, list_emoji)
-        lure_embed.description = lure_embed.description + f"\n**Report:** [Jump to Message]({confirmation.jump_url})"
+            await utils.safe_reaction(ctx.lurereportmsg, expire_emoji)
+        await asyncio.sleep(0.25)
+        await utils.safe_reaction(ctx.lurereportmsg, info_emoji)
+        await asyncio.sleep(0.25)
+        await utils.safe_reaction(ctx.lurereportmsg, list_emoji)
+        if not ctx.message.author.bot:
+            lure_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('lure', 0) + 1
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['lure'] = lure_reports
+        dm_dict = await self.send_dm_messages(ctx, location, item, lure_msg, copy.deepcopy(lure_embed), dm_dict)
+        self.bot.guild_dict[ctx.guild.id]['lure_dict'][ctx.lurereportmsg.id]['dm_dict'] = dm_dict
+
+    async def send_dm_messages(self, ctx, location, item, content, embed, dm_dict):
+        if embed:
+            if isinstance(embed.description, discord.embeds._EmptyEmbed):
+                embed.description = ""
+            if "Jump to Message" not in embed.description:
+                embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.lurereportmsg.jump_url})"
+            index = 0
+            for field in embed.fields:
+                if "reaction" in field.name.lower():
+                    embed.remove_field(index)
+                else:
+                    index += 1
+        content = content.split(f"{ctx.author.mention}!")[0]
+        content = f"{content}{ctx.author.display_name} in {ctx.channel.mention}"
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
             stop_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokestop', {}).get('lure', True)
             user_items = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('items', [])
             item_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('item', {}).get('lure', True)
+
             if not any([user_stops, stop_setting, user_items, item_setting]):
                 continue
             if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
@@ -302,15 +448,11 @@ class Lure(commands.Cog):
             if send_lure:
                 try:
                     user = ctx.guild.get_member(trainer)
-                    lure_msg = lure_msg.split(f"{ctx.author.mention}!")[0]
-                    luredmmsg = await user.send(f"{lure_msg}{ctx.author.mention} in {ctx.channel.mention}!", embed=lure_embed)
+                    luredmmsg = await user.send(content, embed=embed)
                     dm_dict[user.id] = luredmmsg.id
                 except:
                     continue
-        self.bot.guild_dict[ctx.guild.id]['lure_dict'][confirmation.id]['dm_dict'] = dm_dict
-        if not ctx.message.author.bot:
-            lure_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('lure', 0) + 1
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['lure'] = lure_reports
+        return dm_dict
 
     @lure.command(aliases=['expire'])
     @checks.allowlurereport()

@@ -76,8 +76,9 @@ class Nest(commands.Cog):
                             try:
                                 report_message = await report_channel.fetch_message(report)
                                 if new_migration and nest_dict[channel][nest]['reports'][report]['reporttime'] > migration_utc:
+                                    ctx = self.bot.get_context(report_message)
                                     self.bot.guild_dict[guild.id]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
-                                    self.bot.loop.create_task(self.edit_nest_reports(report_message, migration_local, nest_dict[channel][nest]['reports'][report]['dm_dict']))
+                                    self.bot.loop.create_task(self.edit_nest_messages(ctx, nest, report_message))
                                     count += 1
                                     continue
                                 await utils.safe_delete(report_message)
@@ -115,7 +116,10 @@ class Nest(commands.Cog):
             return
         if user == self.bot.user:
             return
+        ctx = await self.bot.get_context(message)
         can_manage = channel.permissions_for(user).manage_messages
+        if not can_manage and user.id in self.bot.config.managers:
+            can_manage = True
         try:
             nest_dict = self.bot.guild_dict[guild.id]['nest_dict']
         except KeyError:
@@ -125,7 +129,19 @@ class Nest(commands.Cog):
                 if nest == "list":
                     continue
                 if message.id in nest_dict[channel.id][nest].get('reports'):
-                    if str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+                    if str(payload.emoji) == self.bot.custom_emoji.get('nest_expire', '\U0001F4A8'):
+                        for reaction in message.reactions:
+                            if reaction.emoji == self.bot.custom_emoji.get('nest_expire', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
+                                await self.expire_nest(nest, message)
+                    elif str(payload.emoji) == self.bot.custom_emoji.get('nest_info', '\u2139'):
+                        if not ctx.prefix:
+                            prefix = self.bot._get_prefix(self.bot, message)
+                            ctx.prefix = prefix[-1]
+                        await message.remove_reaction(payload.emoji, user)
+                        ctx.author = user
+                        if user.id == nest_dict[channel.id][nest]['reports'][message.id]['report_author'] or can_manage:
+                            await self.edit_nest_info(ctx, message)
+                    elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
                         ctx = await self.bot.get_context(message)
                         await asyncio.sleep(0.25)
                         await message.remove_reaction(payload.emoji, self.bot.user)
@@ -135,14 +151,114 @@ class Nest(commands.Cog):
                         await asyncio.sleep(5)
                         return await utils.safe_reaction(message, payload.emoji)
 
-    async def edit_nest_reports(self, report_message, migration_local, dm_dict):
+    async def edit_nest_info(self, ctx, message):
+        nest_dict = self.bot.guild_dict[ctx.guild.id]['nest_dict'].get(ctx.channel.id, {})
+        for nest in nest_dict:
+            if nest == "list":
+                continue
+            if message.id in list(nest_dict[nest].get('reports', {}).keys()):
+                location = nest
+                break
+        nest_dict = self.bot.guild_dict[ctx.guild.id]['nest_dict'].get(ctx.channel.id, {}).get(location, {}).get('reports', {}).get(message.id, {})
+        message = ctx.message
+        channel = message.channel
+        guild = message.guild
+        author = guild.get_member(nest_dict.get('report_author', None))
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, nest_dict.get('pokemon'))
+        if not author or not location:
+            return
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        entered_pokemon = None
+        success = []
+        reply_msg = f"**pokemin <nest species>** - Current: {nest_dict.get('pokemon', 'X')}\n"
+        nest_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url=pokemon.img_url)
+        nest_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        while True:
+            async with ctx.typing():
+                nest_embed.add_field(name=_('**Edit Nest Report Info**'), value=f"Meowth! I'll help you edit information of the **{str(pokemon)}** nest report at **{location.title()}**!\n\nI'll need to know what **values** you'd like to edit. Reply **cancel** to stop anytime or reply with a comma separated list of the following options `Ex: pokemon pikachu`:\n\n{reply_msg}", inline=False)
+                value_wait = await channel.send(embed=nest_embed)
+                def check(reply):
+                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == ctx.author:
+                        return True
+                    else:
+                        return False
+                try:
+                    value_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    value_msg = None
+                await utils.safe_delete(value_wait)
+                if not value_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(value_msg)
+                if value_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                else:
+                    entered_values = value_msg.clean_content.lower().split(',')
+                    entered_values = [x.strip() for x in entered_values]
+                    for value in entered_values:
+                        value_split = value.split()
+                        if len(value_split) < 2:
+                            error = _("entered something invalid")
+                            continue
+                        if "pokemon" in value and "pokemon" not in success:
+                            entered_pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, value.replace('pokemon', ''), allow_digits=False)
+                            if value_split[1] and entered_pokemon:
+                                self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel.id][location]['reports'][message.id]['pokemon'] = value_split[1]
+                                success.append("pokemon")
+                            else:
+                                error = _('entered something invalid. Check your pokemon spelling.')
+                        else:
+                            error = _("entered something invalid")
+                    break
+        if not entered_pokemon:
+            entered_pokemon = pokemon
+        if success:
+            await self.edit_nest_messages(ctx, location, message)
+        else:
+            error = _("didn't change anything")
+        if error:
+            nest_embed.clear_fields()
+            nest_embed.add_field(name=_('**Nest Report Edit Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
+            if success:
+                nest_embed.set_field_at(0, name="**Nest Report Edit Error**", value=f"Meowth! Your **{(', ').join(success)}** edits were successful, but others were skipped because you **{error}**! Retry when you're ready.", inline=False)
+            confirmation = await channel.send(embed=nest_embed, delete_after=10)
+
+    async def edit_nest_messages(self, ctx, location, message):
+        nest_dict = self.bot.guild_dict[ctx.guild.id]['nest_dict'].get(ctx.channel.id, {}).get(location, {}).get('reports', {}).get(message.id, {})
+        dm_dict = nest_dict.get('dm_dict', {})
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, nest_dict.get('pokemon'))
+        nest_embed = message.embeds[0]
+        author = ctx.guild.get_member(nest_dict.get('report_author', None))
+        if author:
+            ctx.author = author
+        migration_utc = self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
+        nest_embed.set_thumbnail(url=pokemon.img_url)
+        shiny_str = ""
+        if pokemon.id in self.bot.shiny_dict:
+            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+        nest_embed.description = f"**Nest**: {location.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
+        result = re.search(r'is a \*\*(.*)\*\* nest!', message.content).group(1)
+        message.content = message.content.replace(result, str(pokemon))
         try:
-            nest_embed = report_message.embeds[0]
-            edit_embed = nest_embed.description.splitlines()
-            edit_embed[2] = f"**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
-            nest_embed.description = ("\n").join(edit_embed)
-            await report_message.edit(content=report_message.content, embed=nest_embed)
-            for dm_user, dm_message in dm_dict.items():
+            await message.edit(content=message.content, embed=nest_embed)
+        except:
+            pass
+        if isinstance(nest_embed.description, discord.embeds._EmptyEmbed):
+            nest_embed.description = ""
+        if "Jump to Message" not in nest_embed.description:
+            nest_embed.description = nest_embed.description + f"\n**Report:** [Jump to Message]({message.jump_url})"
+        index = 0
+        for dm_user, dm_message in dm_dict.items():
+            try:
                 dm_user = self.bot.get_user(dm_user)
                 dm_channel = dm_user.dm_channel
                 if not dm_channel:
@@ -150,9 +266,13 @@ class Nest(commands.Cog):
                 if not dm_user or not dm_channel:
                     continue
                 dm_message = await dm_channel.fetch_message(dm_message)
-                await dm_message.edit(content=dm_message.content, embed=nest_embed)
-        except:
-            pass
+                content = dm_message.content.replace(result, str(pokemon))
+                await dm_message.edit(content=content, embed=nest_embed)
+            except:
+                pass
+        ctx.nestreportmsg = message
+        dm_dict = await self.send_dm_messages(ctx, location, pokemon, copy.deepcopy(nest_embed), dm_dict)
+        self.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.channel.id][location]['reports'][message.id]['dm_dict'] = dm_dict
 
     async def get_nest_reports(self, ctx):
         channel = ctx.channel
@@ -182,7 +302,7 @@ class Nest(commands.Cog):
                     pkmn_dict[report_pkmn] += 1
                 else:
                     pkmn_dict[report_pkmn] = 1
-            reported_pkmn = sorted(pkmn_dict.items(), key=lambda kv: kv[1], reverse=True)[:1]
+            reported_pkmn = sorted(pkmn_dict.items(), key=lambda kv: kv[1], reverse=True)[:2]
             if reported_pkmn:
                 embed_value = ""
             for pkmn in reported_pkmn:
@@ -194,10 +314,14 @@ class Nest(commands.Cog):
                     elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                         shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 if report_count == 0:
-                    embed_value += f"**{shiny_str}{pokemon.name.title()}** {pokemon.emoji} **({pkmn[1]})**"
+                    embed_value += f"**{shiny_str}{pokemon.name.title()}** {pokemon.emoji}"
+                    if len(reported_pkmn) > 1:
+                        embed_value += f" **({pkmn[1]})**"
                     report_count += 1
                 else:
-                    embed_value += f"{pokemon.name.title()} {pokemon.emoji} ({pkmn[1]})"
+                    embed_value += f", {shiny_str}{pokemon.name.title()} {pokemon.emoji}"
+                    if len(reported_pkmn) > 1:
+                        embed_value += f" ({pkmn[1]})"
             description += f"**{nest_count} \u2013 {nest.title()}** | {embed_value}\n"
 
         for line in description.splitlines():
@@ -220,9 +344,6 @@ class Nest(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
-        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
-        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
-        migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
         list_messages = []
         error = None
         await utils.safe_delete(message)
@@ -262,8 +383,6 @@ class Nest(commands.Cog):
                 pokemon.alolan = False
                 pokemon.gender = None
                 pokemon.form = None
-                nest_types = copy.copy(pokemon.types)
-                nest_types.append('None')
                 nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
                 nest_embed, nest_pages = await self.get_nest_reports(ctx)
                 nest_embed.set_thumbnail(url=pokemon.img_url)
@@ -294,71 +413,97 @@ class Nest(commands.Cog):
                     error = _("entered something invalid")
                 break
         if not error:
-            list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-            nest_loc = nest_dict[nest_name]['location'].split()
-            nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_loc)}"
-            nest_img_url = pokemon.img_url
-            shiny_str = ""
-            if pokemon.id in self.bot.shiny_dict:
-                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-            nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
-            nest_embed.title = f"Click here for directions to the nest!"
-            nest_embed.url = nest_url
-            nest_embed.description = nest_description
-            nest_embed.set_thumbnail(url=nest_img_url)
-            pokemon.shiny = False
-            dm_dict = {}
-            for trainer in self.bot.guild_dict[message.guild.id].get('trainers', {}):
-                user_wants = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
-                user_forms = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
-                pokemon_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokemon', {}).get('nest', True)
-                user_types = self.bot.guild_dict[message.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
-                type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('nest', True)
-                if not any([user_wants, user_forms, pokemon_setting, user_types, type_setting]):
-                    continue
-                if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
-                    continue
-                send_nest = False
-                if pokemon_setting and pokemon and (pokemon.id in user_wants or str(pokemon) in user_forms):
-                    send_nest = True
-                if type_setting and (nest_types[0].lower() in user_types or nest_types[1].lower() in user_types):
-                    send_nest = True
-                if send_nest:
-                    try:
-                        user = ctx.guild.get_member(trainer)
-                        nestdmmsg = await user.send(f"{author.display_name} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest in {channel.mention}!", embed=nest_embed)
-                        dm_dict[user.id] = nestdmmsg.id
-                    except:
-                        continue
-            nestreportmsg = await channel.send(f"{author.mention} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest! Use {list_emoji} to list all nests!", embed=nest_embed)
-            await asyncio.sleep(0.25)
-            await utils.safe_reaction(nestreportmsg, list_emoji)
-            nest_dict[nest_name]['reports'][nestreportmsg.id] = {
-                'exp':migration_exp,
-                'expedit': "delete",
-                'reportchannel':channel.id,
-                'report_channel':channel.id,
-                'reportauthor':author.id,
-                'report_author':author.id,
-                'report_guild':message.guild.id,
-                'reporttime':datetime.datetime.utcnow(),
-                'report_time':datetime.datetime.utcnow(),
-                'dm_dict': dm_dict,
-                'location':nest_name,
-                'pokemon':str(pokemon)
-            }
-            self.bot.guild_dict[guild.id]['nest_dict'][channel.id] = nest_dict
-            nest_reports = ctx.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('nest', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['nest'] = nest_reports
+            await self.send_nest(ctx, nest_name, pokemon)
         else:
             nest_embed.clear_fields()
             nest_embed.description = ""
             nest_embed.add_field(name=_('**Nest Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await ctx.send(embed=nest_embed, delete_after=10)
             await utils.safe_delete(ctx.message)
+
+    async def send_nest(self, ctx, nest_name, pokemon):
+        nest_dict = self.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.channel.id]
+        expire_emoji = self.bot.custom_emoji.get('nest_expire', '\U0001F4A8')
+        info_emoji = ctx.bot.custom_emoji.get('nest_info', '\u2139')
+        list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        react_list = [expire_emoji, info_emoji, list_emoji]
+        nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_name.split())}"
+        migration_utc = self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
+        shiny_str = ""
+        if pokemon.id in self.bot.shiny_dict:
+            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+        nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
+        nest_embed = discord.Embed(colour=ctx.guild.me.colour)
+        nest_embed.title = f"Click here for directions to the nest!"
+        nest_embed.url = nest_url
+        nest_embed.description = nest_description
+        nest_embed.set_thumbnail(url=pokemon.img_url)
+        pokemon.shiny = False
+        dm_dict = {}
+        ctx.nestreportmsg = await ctx.send(f"{ctx.author.mention} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest! Use {expire_emoji} if expired, {info_emoji} to edit details, or {list_emoji} to list all nests!", embed=nest_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.safe_reaction(ctx.nestreportmsg, reaction)
+        nest_dict[nest_name]['reports'][ctx.nestreportmsg.id] = {
+            'exp':migration_exp,
+            'expedit': "delete",
+            'report_channel':ctx.channel.id,
+            'report_author':ctx.author.id,
+            'report_guild':ctx.guild.id,
+            'report_time':time.time(),
+            'dm_dict': dm_dict,
+            'location':nest_name,
+            'pokemon':str(pokemon)
+        }
+        self.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.channel.id] = nest_dict
+        dm_dict = await self.send_dm_messages(ctx, nest_name, pokemon, copy.deepcopy(nest_embed), dm_dict)
+        self.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.channel.id][nest_name]['reports'][ctx.nestreportmsg.id]['dm_dict'] = dm_dict
+        if not ctx.author.bot:
+            nest_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('nest', 0) + 1
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['nest'] = nest_reports
+
+    async def send_dm_messages(self, ctx, nest_name, pokemon, embed, dm_dict):
+        if embed:
+            if isinstance(embed.description, discord.embeds._EmptyEmbed):
+                embed.description = ""
+            if "Jump to Message" not in embed.description:
+                embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.nestreportmsg.jump_url})"
+            index = 0
+            for field in embed.fields:
+                if "reaction" in field.name.lower():
+                    embed.remove_field(index)
+                else:
+                    index += 1
+        nest_types = copy.copy(pokemon.types)
+        nest_types.append('None')
+        for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
+            user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+            user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
+            pokemon_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokemon', {}).get('nest', True)
+            user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
+            type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('nest', True)
+            if not any([user_wants, user_forms, pokemon_setting, user_types, type_setting]):
+                continue
+            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
+                continue
+            send_nest = False
+            if pokemon_setting and pokemon and (pokemon.id in user_wants or str(pokemon) in user_forms):
+                send_nest = True
+            if type_setting and (nest_types[0].lower() in user_types or nest_types[1].lower() in user_types):
+                send_nest = True
+            if send_nest:
+                try:
+                    user = ctx.guild.get_member(trainer)
+                    nestdmmsg = await user.send(f"{ctx.author.display_name} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest in {ctx.channel.mention}!", embed=embed)
+                    dm_dict[user.id] = nestdmmsg.id
+                except:
+                    continue
+        return dm_dict
 
     @nest.command()
     @checks.allownestreport()
@@ -703,6 +848,8 @@ class Nest(commands.Cog):
         else:
             await utils.safe_delete(nest_time_reply)
         migration_local = dateparser.parse(nest_time_reply.clean_content, settings={'RETURN_AS_TIMEZONE_AWARE': False})
+        if not migration_local:
+            return await channel.send(f"I couldn't understand your time. Migration time set cancelled.")
         migration_utc = migration_local - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
         rusure = await channel.send(_('Are you sure you\'d like to set the next migration to **{time}**?\n\nThis will also set all current nest reports to expire at this new time.').format(time=migration_local.strftime(_('%B %d %Y at %I:%M %p (%H:%M)'))))
         try:
@@ -718,13 +865,15 @@ class Nest(commands.Cog):
             await utils.safe_delete(rusure)
             ctx.bot.guild_dict[guild.id]['configure_dict']['nest']['migration'] = migration_utc
             for nest in nest_dict:
+                if nest == "list":
+                    continue
                 for report in nest_dict[nest]['reports']:
                     self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report]['exp'] = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
                     try:
                         report_message = await channel.fetch_message(report)
                     except:
                         continue
-                    await self.edit_nest_reports(report_message, migration_local, nest_dict[nest]['reports'][report]['dm_dict'])
+                    await self.edit_nest_messages(ctx, nest, report_message)
             confirmation = await channel.send(_('Migration time set.'), delete_after=10)
             return
         else:

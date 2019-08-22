@@ -2687,8 +2687,6 @@ class Raid(commands.Cog):
                         if str(gym_search).lower() == str(raid_address).lower() and raid_type != "exraid" and raid_level != "EX":
                             channel_or_gym = raid_channel
                             break
-                        else:
-                            channel_or_gym = None
                     if not channel_or_gym and not location:
                         error = _("entered an invalid location or channel")
                         break
@@ -2827,6 +2825,7 @@ class Raid(commands.Cog):
             utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))
             to_raidend = 24*60*60 - ((utcnow-utcnow.replace(hour=21, minute=0, second=0, microsecond=0)).seconds)
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['exp'] = time.time() + to_raidend
+            self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['end'] = time.time() + to_raidend
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['history'] = [train_location]
             for channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
                 channel_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['address']
@@ -3655,7 +3654,7 @@ class Raid(commands.Cog):
             recovermsg += ('\n' + bulletpoint) + (await list_cog._interest(ctx))
             recovermsg += ('\n' + bulletpoint) + (await list_cog._otw(ctx))
             recovermsg += ('\n' + bulletpoint) + (await list_cog._waiting(ctx))
-            if (not manual_timer) and not meetup:
+            if (not manual_timer) and not meetup and not train:
                 if raidtype == 'egg':
                     action = _('hatch')
                     type = _('egg')
@@ -3971,9 +3970,9 @@ class Raid(commands.Cog):
         img_url = pokemon.img_url
         level = utils.get_level(self.bot, pokemon.name.lower()) if utils.get_level(self.bot, pokemon.name.lower()).isdigit() else "5"
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
-                        _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
+                        _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog'), _('foggy')]
         match_list = ['NO_WEATHER', 'NO_WEATHER', 'CLEAR', 'CLEAR', 'RAINY',
-                            'PARTLY_CLOUDY', 'OVERCAST', 'WINDY', 'SNOW', 'FOG']
+                            'PARTLY_CLOUDY', 'OVERCAST', 'WINDY', 'SNOW', 'FOG', 'FOG']
         if not weather:
             index = 0
         else:
