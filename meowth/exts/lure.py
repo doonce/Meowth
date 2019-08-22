@@ -95,7 +95,11 @@ class Lure(commands.Cog):
             lure_dict = {}
         if message.id in lure_dict:
             lure_dict =  self.bot.guild_dict[guild.id]['lure_dict'][message.id]
-            if str(payload.emoji) == self.bot.custom_emoji.get('lure_expire', '\U0001F4A8'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('wild_catch', '\U0001f1f7'):
+                if user.id not in lure_dict.get('caught_by', []):
+                    if user.id != lure_dict['report_author']:
+                        lure_dict.setdefault('caught_by', []).append(user.id)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('lure_expire', '\U0001F4A8'):
                 for reaction in message.reactions:
                     if reaction.emoji == self.bot.custom_emoji.get('lure_expire', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         await self.expire_lure(message)
@@ -120,6 +124,7 @@ class Lure(commands.Cog):
         guild = message.channel.guild
         channel = message.channel
         lure_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['lure_dict'])
+        author = guild.get_member(lure_dict.get(message.id, {}).get('report_author'))
         await utils.safe_delete(message)
         try:
             user_message = await channel.fetch_message(lure_dict[message.id]['report_message'])
@@ -127,6 +132,10 @@ class Lure(commands.Cog):
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
             pass
         await utils.expire_dm_reports(self.bot, lure_dict.get(message.id, {}).get('dm_dict', {}))
+        lure_bonus = nest_dict[nest]['reports'].get(message.id, {}).get('caught_by', [])
+        if len(lure_bonus) >= 3 and author and not author.bot:
+            lure_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('reports', {}).setdefault('lure', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][author.id]['reports']['lure'] = lure_reports
         try:
             del self.bot.guild_dict[guild.id]['lure_dict'][message.id]
         except KeyError:
@@ -358,16 +367,17 @@ class Lure(commands.Cog):
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
         end = now + datetime.timedelta(minutes=int(expire_time))
+        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
         info_emoji = ctx.bot.custom_emoji.get('lure_info', '\u2139')
         expire_emoji = self.bot.custom_emoji.get('lure_expire', '\U0001F4A8')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [expire_emoji, info_emoji, list_emoji]
+        react_list = [catch_emoji, expire_emoji, info_emoji, list_emoji]
         lure_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         if timer:
-            lure_msg = f"Lure reported by {ctx.author.mention}! Use {info_emoji} to edit info, or {list_emoji} to list all lures!"
+            lure_msg = f"Lure reported by {ctx.author.mention}! Use {catch_emoji} if you visited, {info_emoji} to edit info, or {list_emoji} to list all lures!"
         else:
-            lure_msg = f"Lure reported by {ctx.author.mention}! Use {expire_emoji} if the lure has disappeared, {info_emoji} to edit info, or {list_emoji} to list all lures!!"
+            lure_msg = f"Lure reported by {ctx.author.mention}! Use {catch_emoji} if you visited, {expire_emoji} if the lure has disappeared, {info_emoji} to edit info, or {list_emoji} to list all lures!!"
         lure_embed.title = _('Meowth! Click here for my directions to the lure!')
         lure_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="lure")
@@ -404,12 +414,11 @@ class Lure(commands.Cog):
             'url':loc_url,
             'type':lure_type
         }
-        if not timer:
-            await utils.safe_reaction(ctx.lurereportmsg, expire_emoji)
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.lurereportmsg, info_emoji)
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(ctx.lurereportmsg, list_emoji)
+        if timer:
+            react_list.remove(expire_emoji)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.safe_reaction(ctx.lurereportmsg, reaction)
         if not ctx.message.author.bot:
             lure_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('lure', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['lure'] = lure_reports

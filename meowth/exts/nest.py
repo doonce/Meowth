@@ -129,7 +129,11 @@ class Nest(commands.Cog):
                 if nest == "list":
                     continue
                 if message.id in nest_dict[channel.id][nest].get('reports'):
-                    if str(payload.emoji) == self.bot.custom_emoji.get('nest_expire', '\U0001F4A8'):
+                    if str(payload.emoji) == self.bot.custom_emoji.get('wild_catch', '\U0001f1f7'):
+                        if user.id not in nest_dict[channel.id][nest]['reports'][message.id].get('caught_by', []):
+                            if user.id != nest_dict[channel.id][nest]['reports'][message.id]['report_author']:
+                                nest_dict[channel.id][nest]['reports'][message.id].setdefault('caught_by', []).append(user.id)
+                    elif str(payload.emoji) == self.bot.custom_emoji.get('nest_expire', '\U0001F4A8'):
                         for reaction in message.reactions:
                             if reaction.emoji == self.bot.custom_emoji.get('nest_expire', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
                                 await self.expire_nest(nest, message)
@@ -424,9 +428,10 @@ class Nest(commands.Cog):
     async def send_nest(self, ctx, nest_name, pokemon):
         nest_dict = self.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.channel.id]
         expire_emoji = self.bot.custom_emoji.get('nest_expire', '\U0001F4A8')
+        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
         info_emoji = ctx.bot.custom_emoji.get('nest_info', '\u2139')
         list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [expire_emoji, info_emoji, list_emoji]
+        react_list = [catch_emoji, expire_emoji, info_emoji, list_emoji]
         nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_name.split())}"
         migration_utc = self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
@@ -445,7 +450,7 @@ class Nest(commands.Cog):
         nest_embed.set_thumbnail(url=pokemon.img_url)
         pokemon.shiny = False
         dm_dict = {}
-        ctx.nestreportmsg = await ctx.send(f"{ctx.author.mention} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest! Use {expire_emoji} if expired, {info_emoji} to edit details, or {list_emoji} to list all nests!", embed=nest_embed)
+        ctx.nestreportmsg = await ctx.send(f"{ctx.author.mention} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest! Use {catch_emoji} if you visited, {expire_emoji} if expired, {info_emoji} to edit details, or {list_emoji} to list all nests!", embed=nest_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.nestreportmsg, reaction)
@@ -809,8 +814,13 @@ class Nest(commands.Cog):
         guild = message.channel.guild
         channel = message.channel
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
+        author = guild.get_member(nest_dict.get(nest, {}).get('reports', {}).get(message.id, {}).get('report_author'))
         await utils.safe_delete(message)
         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, nest_dict[nest]['reports'][message.id].get('dm_dict', {})))
+        nest_bonus = nest_dict[nest]['reports'].get(message.id, {}).get('caught_by', [])
+        if len(nest_bonus) >= 3 and author and not author.bot:
+            nest_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('reports', {}).setdefault('nest', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][author.id]['reports']['nest'] = nest_reports
         try:
             del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][message.id]
         except KeyError:

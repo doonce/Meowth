@@ -130,6 +130,7 @@ class Wild(commands.Cog):
         guild = message.channel.guild
         channel = message.channel
         wild_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['wildreport_dict'])
+        author = guild.get_member(wild_dict.get(message.id, {}).get('report_author'))
         try:
             await message.edit(content=message.content.splitlines()[0], embed=discord.Embed(description=wild_dict[message.id]['expedit']['embedcontent'], colour=message.embeds[0].colour.value))
             await message.clear_reactions()
@@ -142,9 +143,9 @@ class Wild(commands.Cog):
             pass
         await utils.expire_dm_reports(self.bot, wild_dict.get(message.id, {}).get('dm_dict', {}))
         wild_bonus = self.bot.guild_dict[guild.id]['wildreport_dict'].get(message.id, {}).get('caught_by', [])
-        if len(wild_bonus) >= 3 and not message.author.bot:
-            wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('wild', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['wild'] = wild_reports
+        if len(wild_bonus) >= 3 and author and not author.bot:
+            wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('reports', {}).setdefault('wild', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][author.id]['reports']['wild'] = wild_reports
         try:
             del self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
         except KeyError:

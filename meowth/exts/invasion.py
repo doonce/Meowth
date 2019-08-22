@@ -121,6 +121,7 @@ class Invasion(commands.Cog):
         guild = message.channel.guild
         channel = message.channel
         invasion_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['invasion_dict'])
+        author = guild.get_member(invasion_dict.get(message.id, {}).get('report_author'))
         await utils.safe_delete(message)
         try:
             user_message = await channel.fetch_message(invasion_dict[message.id]['report_message'])
@@ -129,9 +130,9 @@ class Invasion(commands.Cog):
             pass
         await utils.expire_dm_reports(self.bot, invasion_dict[message.id].get('dm_dict', {}))
         invasion_bonus = invasion_dict.get(message.id, {}).get('completed_by', [])
-        if len(invasion_bonus) >= 3 and not message.author.bot:
-            invasion_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('invasion', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['invasion'] = invasion_reports
+        if len(invasion_bonus) >= 3 and author and not author.bot:
+            invasion_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('reports', {}).setdefault('invasion', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][author.id]['reports']['invasion'] = invasion_reports
         try:
             del self.bot.guild_dict[guild.id]['invasion_dict'][message.id]
         except KeyError:

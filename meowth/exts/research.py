@@ -114,6 +114,7 @@ class Research(commands.Cog):
         guild = message.channel.guild
         channel = message.channel
         research_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['questreport_dict'])
+        author = guild.get_member(research_dict.get(message.id, {}).get('report_author'))
         await utils.safe_delete(message)
         try:
             user_message = await channel.fetch_message(research_dict[message.id]['report_message'])
@@ -122,9 +123,9 @@ class Research(commands.Cog):
             pass
         await utils.expire_dm_reports(self.bot, research_dict[message.id].get('dm_dict', {}))
         research_bonus = research_dict.get(message.id, {}).get('completed_by', [])
-        if len(research_bonus) >= 3 and not message.author.bot:
-            research_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('research', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['research'] = research_reports
+        if len(research_bonus) >= 3 and author and not author.bot:
+            research_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('reports', {}).setdefault('research', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][author.id]['reports']['research'] = research_reports
         try:
             del self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
         except KeyError:
