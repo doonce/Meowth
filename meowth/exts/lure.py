@@ -365,7 +365,7 @@ class Lure(commands.Cog):
         lure_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         if timer:
-            lure_msg = f"Lure reported by {ctx.author.mention}! Use {list_emoji} to list all lures!"
+            lure_msg = f"Lure reported by {ctx.author.mention}! Use {info_emoji} to edit info, or {list_emoji} to list all lures!"
         else:
             lure_msg = f"Lure reported by {ctx.author.mention}! Use {expire_emoji} if the lure has disappeared, {info_emoji} to edit info, or {list_emoji} to list all lures!!"
         lure_embed.title = _('Meowth! Click here for my directions to the lure!')
