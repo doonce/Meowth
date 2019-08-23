@@ -62,7 +62,6 @@ class Wild(commands.Cog):
                     if user.mention in wild_dict['omw']:
                         wild_dict['omw'].remove(user.mention)
                         await message.remove_reaction(self.bot.custom_emoji.get('wild_omw', '\U0001F3CE'), user)
-                await message.remove_reaction(payload.emoji, user)
             elif str(payload.emoji) == self.bot.custom_emoji.get('wild_info', '\u2139'):
                 ctx = await self.bot.get_context(message)
                 if not ctx.prefix:
@@ -627,7 +626,7 @@ class Wild(commands.Cog):
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [omw_emoji, despawn_emoji, catch_emoji, info_emoji, list_emoji]
+        react_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji, list_emoji]
         if pokemon:
             pokemon.shiny = False
         else:
