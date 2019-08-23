@@ -557,7 +557,7 @@ class Wild(commands.Cog):
                         error = _("cancelled the report")
                         break
                     else:
-                        pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, mon_msg.clean_content, allow_digits=False)
+                        pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, mon_msg.clean_content)
                         if not pokemon:
                             error = _("entered an invalid pokemon")
                             break

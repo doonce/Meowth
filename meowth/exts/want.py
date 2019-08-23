@@ -60,7 +60,7 @@ class Want(commands.Cog):
         while True:
             async with ctx.typing():
                 if pokemon:
-                    await self.want_pokemon(ctx, pokemon)
+                    await self._want_pokemon(ctx, pokemon)
                     return
                 else:
                     want_category_wait = await channel.send(embed=want_embed)
@@ -101,7 +101,7 @@ class Want(commands.Cog):
                             error = _("cancelled your request")
                             break
                         elif want_sub_msg:
-                            await self.want_pokemon(ctx, want_sub_msg.clean_content.lower())
+                            await self._want_pokemon(ctx, want_sub_msg.clean_content.lower())
                         break
                     elif want_category_msg.clean_content.lower() == "boss" and not user_link:
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
@@ -327,7 +327,12 @@ class Want(commands.Cog):
             await utils.safe_delete(message)
             return
 
-    async def want_pokemon(self, ctx, pokemon):
+    @want.command(name="pokemon", hidden=True)
+    @checks.allowwant()
+    async def want_pokemon(self, ctx, *, pokemon):
+        await self._want_pokemon(ctx, pokemon)
+
+    async def _want_pokemon(self, ctx, pokemon):
         await ctx.trigger_typing()
         message = ctx.message
         author = message.author
@@ -346,7 +351,7 @@ class Want(commands.Cog):
         added_list = []
         role_list = []
         for entered_want in want_split:
-            if entered_want.lower() in self.bot.form_dict['list']:
+            if entered_want.lower() in self.bot.form_dict['list'] and not entered_want.isdigit():
                 forms = []
                 for pokemon in self.bot.form_dict:
                     if pokemon == "list" or pokemon == "two_words":
@@ -356,7 +361,7 @@ class Want(commands.Cog):
                 forms = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in forms]
                 want_list.extend([x for x in forms if x])
                 continue
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_want.strip())
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_want.strip(), allow_digits=True)
             if str(pokemon) == "XS Rattata":
                 sizes = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in ["Alolan XS Rattata", "Male XS Rattata", "Female XS Rattata", "XS Rattata"]]
                 want_list.extend(sizes)
@@ -369,10 +374,7 @@ class Want(commands.Cog):
                 want_list.append(pokemon)
             elif len(want_split) == 1 and "list" in entered_want:
                 await utils.safe_delete(ctx.message)
-                list_command = self.bot.get_command("list")
-                want_command = list_command.all_commands.get('wants')
-                await want_command.invoke(ctx)
-                return
+                return await ctx.invoke(self.bot.get_command('list wants'))
             else:
                 spellcheck_list.append(entered_want)
                 match, score = utils.get_match(ctx.bot.pkmn_list, entered_want)
@@ -1221,7 +1223,7 @@ class Want(commands.Cog):
         while True:
             async with ctx.typing():
                 if pokemon:
-                    await self.unwant_pokemon(ctx, pokemon)
+                    await self._unwant_pokemon(ctx, pokemon)
                     return
                 else:
                     want_category_wait = await channel.send(embed=want_embed)
@@ -1265,7 +1267,7 @@ class Want(commands.Cog):
                             error = _("cancelled your request")
                             break
                         elif want_sub_msg:
-                            await self.unwant_pokemon(ctx, want_sub_msg.clean_content.lower())
+                            await self._unwant_pokemon(ctx, want_sub_msg.clean_content.lower())
                         break
                     elif want_category_msg.clean_content.lower() == "boss" and not user_link:
                         if not bosslist:
@@ -1508,7 +1510,12 @@ class Want(commands.Cog):
             await utils.safe_delete(message)
             return
 
-    async def unwant_pokemon(self, ctx, pokemon):
+    @unwant.command(name="pokemon", hidden=True)
+    @checks.allowwant()
+    async def unwant_pokemon(self, ctx, *, pokemon):
+        await self._unwant_pokemon(ctx, pokemon)
+
+    async def _unwant_pokemon(self, ctx, pokemon):
         await ctx.trigger_typing()
         message = ctx.message
         author = message.author
@@ -1527,7 +1534,7 @@ class Want(commands.Cog):
         removed_list = []
         role_list = []
         for entered_unwant in unwant_split:
-            if entered_unwant.lower() in self.bot.form_dict['list']:
+            if entered_unwant.lower() in self.bot.form_dict['list'] and not entered_unwant.isdigit():
                 forms = []
                 for pokemon in self.bot.form_dict:
                     if pokemon == "list" or pokemon == "two_words":
@@ -1537,7 +1544,7 @@ class Want(commands.Cog):
                 forms = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in forms]
                 unwant_list.extend([x for x in forms if x])
                 continue
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_unwant.strip())
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_unwant.strip(), allow_digits=True)
             if str(pokemon) == "XS Rattata":
                 sizes = [await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, x) for x in ["Alolan XS Rattata", "Male XS Rattata", "Female XS Rattata", "XS Rattata"]]
                 unwant_list.extend(sizes)
@@ -1548,12 +1555,12 @@ class Want(commands.Cog):
                 continue
             if pokemon:
                 unwant_list.append(pokemon)
+            elif len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="pokemon")
             elif len(unwant_split) == 1 and "list" in entered_unwant:
                 await utils.safe_delete(ctx.message)
-                list_command = self.bot.get_command("list")
-                unwant_command = list_command.all_commands.get('unwants')
-                await unwant_command.invoke(ctx)
-                return
+                return await ctx.invoke(self.bot.get_command('list wants'))
             else:
                 spellcheck_list.append(entered_unwant)
                 match, score = utils.get_match(ctx.bot.pkmn_list, entered_unwant)
@@ -1624,7 +1631,7 @@ class Want(commands.Cog):
             await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!unwant** to remove pokemon.")
             return
         for entered_unwant in unwant_split:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_unwant.strip())
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_unwant.strip(), allow_digits=True)
             if pokemon:
                 unwant_list.append(pokemon.name.lower())
             else:
@@ -1641,6 +1648,9 @@ class Want(commands.Cog):
             if utils.get_number(self.bot, entered_unwant) not in user_wants:
                 not_wanted_list.append(entered_unwant.capitalize())
                 not_wanted_count += 1
+            elif len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="boss")
             else:
                 user_wants.remove(utils.get_number(self.bot, entered_unwant))
                 removed_list.append(f"{entered_unwant.capitalize()}{role_str}")
@@ -1663,7 +1673,7 @@ class Want(commands.Cog):
 
     @unwant.command(name='all')
     @checks.allowwant()
-    async def unwant_all(self, ctx):
+    async def unwant_all(self, ctx, category="all"):
         """Remove all things from your wanted list.
 
         Usage: !unwant all
@@ -1693,51 +1703,52 @@ class Want(commands.Cog):
         user_roles = [x for x in join_roles if x in author.roles]
         level_count = len(user_levels)
         unwant_msg = ""
-        count = want_count + boss_count + gym_count + stop_count + item_count + type_count + iv_count + level_count + form_count
+        count = want_count + boss_count + gym_count + stop_count + item_count + type_count + iv_count + level_count + form_count + len(user_roles)
         if count == 0:
-            await channel.send(content=_('{0}, you have no pokemon, gyms, stops, types, IVs, levels, or items in your want list.').format(author.mention), delete_after=10)
+            await channel.send(content=_('{0}, you have nothing in your want list!').format(author.mention), delete_after=10)
             return
-        unwant_msg = f"{author.mention}"
         await channel.trigger_typing()
-        if want_count > 0:
+        completed_list = []
+        if(category == "all" or category == "pokemon") and want_count > 0:
             remove_roles = []
             for role in author.roles:
                 if role.name in self.bot.pkmn_list:
                     remove_roles.append(role)
             await author.remove_roles(*remove_roles)
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['wants'] = []
-            unwant_msg += _(" I've removed {0} pokemon from your want list.").format(count)
-        if gym_count > 0:
+            completed_list.append(f"{want_count} pokemon")
+        if (category == "all" or category == "gym") and gym_count > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['gyms'] = []
-            unwant_msg += _(" I've removed {0} gyms from your want list.").format(gym_count)
-        if stop_count > 0:
+            completed_list.append(f"{gym_count} gym{'s' if gym_count > 1 else ''}")
+        if (category == "all" or category == "stop") and stop_count > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['stops'] = []
-            unwant_msg += _(" I've removed {0} stops from your want list.").format(stop_count)
-        if item_count > 0:
+            completed_list.append(f"{stop_count} pokestop{'s' if stop_count > 1 else ''}")
+        if (category == "all" or category == "item") and item_count > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['items'] = []
-            unwant_msg += _(" I've removed {0} items from your want list.").format(item_count)
-        if boss_count > 0:
+            completed_list.append(f"{item_count} item{'s' if item_count > 1 else ''}")
+        if (category == "all" or category == "boss") and boss_count > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['bosses'] = []
-            unwant_msg += _(" I've removed {0} bosses from your want list.").format(boss_count)
-        if type_count > 0:
+            completed_list.append(f"{boss_count} boss{'es' if boss_count > 1 else ''}")
+        if (category == "all" or category == "type") and type_count > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['types'] = []
-            unwant_msg += _(" I've removed {0} types from your want list.").format(type_count)
-        if iv_count > 0:
+            completed_list.append(f"{type_count} type{'s' if type_count > 1 else ''}")
+        if (category == "all" or category == "iv") and iv_count > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['ivs'] = []
-            unwant_msg += _(" I've removed {0} IVs from your want list.").format(iv_count)
-        if level_count > 0:
+            completed_list.append(f"{iv_count} IV{'s' if iv_count > 1 else ''}")
+        if (category == "all" or category == "level") and level_count > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['levels'] = []
-            unwant_msg += _(" I've removed {0} levels from your want list.").format(level_count)
-        if form_count > 0:
+            completed_list.append(f"{level_count} level{'s' if level_count > 1 else ''}")
+        if (category == "all" or category == "form") and form_count > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['forms'] = []
-            unwant_msg += _(" I've removed {0} forms from your want list.").format(form_count)
-        if len(user_roles) > 0:
+            completed_list.append(f"{form_count} form{'s' if form_count > 1 else ''}")
+        if (category == "all" or category == "role") and len(user_roles) > 0:
             remove_roles = []
             for role in author.roles:
                 if role in join_roles:
                     remove_roles.append(role)
             await author.remove_roles(*remove_roles)
-            unwant_msg += _(" I've removed {0} roles from your account.").format(len(user_roles))
+            completed_list.append(f"{len(user_roles)} role{'s' if len(user_roles) > 1 else ''}")
+        unwant_msg = f"{author.mention} I've removed **{(', ').join(completed_list)}** from your want list."
         await channel.send(unwant_msg)
 
     @unwant.command(name='gym')
@@ -1768,6 +1779,9 @@ class Want(commands.Cog):
             gym = await gym_matching_cog.poi_match_prompt(ctx, entered_unwant, gyms, None)
             if gym:
                 unwant_list.append(gym.lower())
+            elif len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="gym")
             else:
                 spellcheck_list.append(entered_unwant)
                 match, score = utils.get_match(gyms.keys(), entered_unwant)
@@ -1823,6 +1837,9 @@ class Want(commands.Cog):
             stop = await gym_matching_cog.poi_match_prompt(ctx, entered_unwant, None, stops)
             if stop:
                 unwant_list.append(stop.lower())
+            elif len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="stop")
             else:
                 spellcheck_list.append(entered_unwant)
                 match, score = utils.get_match(stops.keys(), entered_unwant)
@@ -1874,6 +1891,9 @@ class Want(commands.Cog):
         for entered_unwant in unwant_split:
             if entered_unwant.strip().lower() in item_list:
                 unwant_list.append(entered_unwant.strip().lower())
+            elif len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="item")
             else:
                 spellcheck_list.append(entered_unwant)
                 match, score = utils.get_match(item_list, entered_unwant)
@@ -1925,6 +1945,9 @@ class Want(commands.Cog):
         for entered_unwant in unwant_split:
             if entered_unwant.strip().lower() in type_list:
                 unwant_list.append(entered_unwant.strip().lower())
+            elif len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="type")
             else:
                 spellcheck_list.append(entered_unwant)
                 match, score = utils.get_match(type_list, entered_unwant)
@@ -1988,7 +2011,10 @@ class Want(commands.Cog):
                 else:
                     error_list.append(entered_unwant)
             else:
-                if not entered_unwant.strip().isdigit():
+                if len(unwant_split) == 1 and "all" in entered_unwant:
+                    await utils.safe_delete(ctx.message)
+                    return await ctx.invoke(self.bot.get_command('unwant all'), category="iv")
+                elif not entered_unwant.strip().isdigit():
                     error_list.append(entered_unwant)
                     continue
                 if entered_unwant not in unwant_list:
@@ -2050,7 +2076,10 @@ class Want(commands.Cog):
                 else:
                     error_list.append(entered_unwant)
             else:
-                if not entered_unwant.strip().isdigit():
+                if len(unwant_split) == 1 and "all" in entered_unwant:
+                    await utils.safe_delete(ctx.message)
+                    return await ctx.invoke(self.bot.get_command('unwant all'), category="level")
+                elif not entered_unwant.strip().isdigit():
                     error_list.append(entered_unwant)
                     continue
                 if entered_unwant not in unwant_list:
@@ -2098,6 +2127,9 @@ class Want(commands.Cog):
         converter = commands.RoleConverter()
         join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])]
         for entered_unwant in unwant_split:
+            if len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="role")
             try:
                 role = await converter.convert(ctx, entered_unwant)
             except:

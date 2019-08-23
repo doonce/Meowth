@@ -1400,7 +1400,7 @@ class Raid(commands.Cog):
                         if pokemon_or_level.isdigit():
                             raid_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{pokemon_or_level}.png?cache=1")
                         else:
-                            pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon_or_level, allow_digits=False)
+                            pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon_or_level)
                             if not pokemon or not pokemon.is_raid:
                                 error = _("entered a pokemon that doesn't appear in raids")
                                 break
@@ -4410,7 +4410,7 @@ class Raid(commands.Cog):
         if pkmn_match and self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['type'] == "egg":
             entered_interest = []
             for mon in pkmn_interest.lower().split(','):
-                pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, mon.lower().strip(), allow_digits=False)
+                pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, mon.lower().strip())
                 if pkmn and str(pkmn).lower() in boss_list:
                     if str(pkmn).lower() not in entered_interest:
                         entered_interest.append(str(pkmn).lower())

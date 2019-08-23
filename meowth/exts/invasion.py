@@ -267,7 +267,7 @@ class Invasion(commands.Cog):
             reward_str = f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"
         else:
             for pokemon in reward:
-                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=False)
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 if pokemon:
                     pokemon.shiny = False
                     pokemon.form = "shadow" if "shadow" in self.bot.form_dict.get(pokemon.id, {}) else None
@@ -511,7 +511,7 @@ class Invasion(commands.Cog):
             reward_type = reward.strip().lower()
         else:
             for pokemon in reward:
-                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=False)
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 if pokemon:
                     pokemon.shiny = False
                     pokemon.form = "shadow" if "shadow" in self.bot.form_dict.get(pokemon.id, {}) else None

@@ -1057,7 +1057,7 @@ class Listing(commands.Cog):
                     continue
                 lister_str = f"**Lister**: {lister.display_name}"
                 offered_pokemon = target_trades[offer_id]['offered_pokemon']
-                offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, offered_pokemon, allow_digits=False)
+                offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, offered_pokemon)
                 offered_pokemon = f"{str(offered_pokemon)} {offered_pokemon.emoji}"
                 offered_pokemon = offered_pokemon.replace("Shiny", f"{shiny_emoji} Shiny")
                 wanted_pokemon = target_trades[offer_id]['wanted_pokemon']
@@ -1152,7 +1152,7 @@ class Listing(commands.Cog):
                     reward = research_dict[questid]['reward']
                     location = research_dict[questid]['location']
                     url = research_dict[questid].get('url', None)
-                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits = False)
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
                     other_reward = any(x in reward for x in reward_list)
                     if pokemon and not other_reward:
                         shiny_str = ""

@@ -209,7 +209,7 @@ class Nest(commands.Cog):
                             error = _("entered something invalid")
                             continue
                         if "pokemon" in value and "pokemon" not in success:
-                            entered_pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, value.replace('pokemon', ''), allow_digits=False)
+                            entered_pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, value.replace('pokemon', ''))
                             if value_split[1] and entered_pokemon:
                                 self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel.id][location]['reports'][message.id]['pokemon'] = value_split[1]
                                 success.append("pokemon")

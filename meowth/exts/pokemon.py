@@ -652,7 +652,8 @@ class Pokemon():
         return result
 
     @classmethod
-    def get_pokemon(self, bot, argument, allow_digits = True):
+    def get_pokemon(self, bot, argument, allow_digits=False):
+        entered_argument = str(argument)
         query =  self.query_pokemon(bot, str(argument).strip())
         argument = query['argument']
         match = False
@@ -664,8 +665,8 @@ class Pokemon():
                 else:
                     argument = argument.replace(word, match).strip()
 
-        if argument.isdigit() and allow_digits:
-            match = utils.get_name(bot, int(argument))
+        if entered_argument.isdigit() and allow_digits:
+            match = utils.get_name(bot, int(entered_argument))
         else:
             match = utils.get_match(bot.pkmn_list, argument)[0]
         if match and "nidoran" in match.lower():
@@ -675,11 +676,15 @@ class Pokemon():
                 match = utils.get_name(bot, 32)
         if not match:
             return None
-        pokemon = self(bot, str(match), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
+        if entered_argument.isdigit() and allow_digits:
+            pokemon = self(bot, str(match), None, shiny=False, alolan=False, form=None, gender=None, size=None)
+        else:
+            pokemon = self(bot, str(match), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
         return pokemon
 
     @classmethod
-    async def async_get_pokemon(self, bot, argument, allow_digits = True):
+    async def async_get_pokemon(self, bot, argument, allow_digits=False):
+        entered_argument = str(argument)
         query =  self.query_pokemon(bot, str(argument).strip())
         argument = query['argument']
         match = False
@@ -691,8 +696,8 @@ class Pokemon():
                 else:
                     argument = argument.replace(word, match).strip()
 
-        if argument.isdigit() and allow_digits:
-            match = utils.get_name(bot, int(argument))
+        if entered_argument.isdigit() and allow_digits:
+            match = utils.get_name(bot, int(entered_argument))
         else:
             match = utils.get_match(bot.pkmn_list, argument)[0]
         if match and "nidoran" in match.lower():
@@ -702,11 +707,14 @@ class Pokemon():
                 match = utils.get_name(bot, 32)
         if not match:
             return None
-        pokemon = self(bot, str(match), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
+        if entered_argument.isdigit() and allow_digits:
+            pokemon = self(bot, str(match), None, shiny=False, alolan=False, form=None, gender=None, size=None)
+        else:
+            pokemon = self(bot, str(match), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
         return pokemon
 
     @classmethod
-    async def ask_pokemon(self, ctx, argument, allow_digits = True, ask_correct = True):
+    async def ask_pokemon(self, ctx, argument, allow_digits = True, ask_correct = False):
         query =  self.query_pokemon(ctx.bot, str(argument).strip())
         argument = query['argument']
         match_list = query['match_list']
@@ -805,7 +813,7 @@ class Pokedex(commands.Cog):
                         error = _("cancelled the report")
                         break
                     else:
-                        pokemon, match_list = await Pokemon.ask_pokemon(ctx, pkmn_name_msg.clean_content.lower(), allow_digits=False)
+                        pokemon, match_list = await Pokemon.ask_pokemon(ctx, pkmn_name_msg.clean_content.lower())
                         if not pokemon:
                             error = _("entered an invalid pokemon")
                             break

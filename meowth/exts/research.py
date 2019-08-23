@@ -257,7 +257,7 @@ class Research(commands.Cog):
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [complete_emoji, expire_emoji, list_emoji]
         research_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward, allow_digits=False)
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
         dust = re.search(r'(?i)dust', reward)
         candy = re.search(r'(?i)candy|(?i)candies', reward)
         pinap = re.search(r'(?i)pinap', reward)
