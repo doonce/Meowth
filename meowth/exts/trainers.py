@@ -227,7 +227,7 @@ class Trainers(commands.Cog):
         trainers = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['trainers'])
         leaderboard = []
         field_value = ""
-        typelist = ["total", "raid", "exraid", "wild", "research", "egg", "nest", "lure"]
+        typelist = ["total", "raid", "exraid", "wild", "research", "egg", "nest", "lure", "invasion"]
         type = type.lower()
         if type.isdigit():
             range = type
@@ -263,7 +263,7 @@ class Trainers(commands.Cog):
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled']:
                     field_value += f"Raid: **{trainer['raid']+trainer['egg']+trainer['exraid']}** | "
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled']:
-                    field_value += f"Wild: **{trainer['exraid']}** | "
+                    field_value += f"Wild: **{trainer['wild']}** | "
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['research']['enabled']:
                     field_value += f"Research: **{trainer['research']}** | "
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
