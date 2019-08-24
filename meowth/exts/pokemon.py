@@ -695,7 +695,6 @@ class Pokemon():
                     argument = argument.replace(word, '').strip()
                 else:
                     argument = argument.replace(word, match).strip()
-
         if entered_argument.isdigit() and allow_digits:
             match = utils.get_name(bot, int(entered_argument))
         else:
@@ -714,57 +713,54 @@ class Pokemon():
         return pokemon
 
     @classmethod
-    async def ask_pokemon(self, ctx, argument, allow_digits = True, ask_correct = False):
+    async def ask_pokemon(self, ctx, argument, allow_digits=True, ask_correct=True):
+        entered_argument = str(argument)
         query =  self.query_pokemon(ctx.bot, str(argument).strip())
         argument = query['argument']
         match_list = query['match_list']
         match = False
-        pokemon = False
+        pokemon = None
+        possible_matches = {}
         for word in argument.split():
-            if word.lower() in ctx.bot.pkmn_list:
-                if pokemon:
+            if word in ctx.bot.pkmn_list:
+                possible_matches[word] = {"score":100, "word":word, "index":entered_argument.find(word)}
+                argument = argument.replace(word, '').strip()
+            elif word.isdigit() and allow_digits:
+                possible_matches[utils.get_name(ctx.bot, int(word))] = {"score":100, "word":word}
+                argument = argument.replace(word, '').strip()
+            elif word.lower() not in ctx.bot.pkmn_list and not word.isdigit() and word.lower() not in ctx.bot.form_dict['two_words']:
+                match, score = utils.get_match(ctx.bot.pkmn_list, word)
+                if not score or score < 80:
                     argument = argument.replace(word, '').strip()
                 else:
-                    pokemon = word
-                    match_list.append(word)
-                    continue
-            if word.lower() not in ctx.bot.pkmn_list and not word.isdigit() and word.lower() not in ctx.bot.form_dict['two_words']:
-                if pokemon:
                     argument = argument.replace(word, '').strip()
-                else:
-                    match, score = utils.get_match(ctx.bot.pkmn_list, word)
-                    if not score or score < 60:
-                        argument = argument.replace(word, '').strip()
-                    elif "nidoran" in word.lower():
-                        if query['gender'] == "female":
-                            match = utils.get_name(ctx.bot, 29)
-                        else:
-                            match = utils.get_name(ctx.bot, 32)
-                        match_list.append(word)
-                        argument = argument.replace(word, match).strip()
-                        pokemon = match
-                    elif ask_correct:
-                        match = await utils.autocorrect(ctx.bot, word, ctx.bot.pkmn_list, ctx.channel, ctx.author)
-                        if not match:
-                            return None, None
-                        match_list.append(word)
-                        argument = argument.replace(word, match).strip()
-                        pokemon = match
-
-        if not argument:
-            return None, None
-
-        if not match:
-            if argument.isdigit() and allow_digits:
-                match = utils.get_name(ctx.bot, int(argument))
+                    if match not in possible_matches or score > possible_matches.get(match, {}).get('score', 0):
+                        possible_matches[match] = {"score":score, "word":word, "index":entered_argument.find(word)}
+        match, score = utils.get_match(ctx.bot.pkmn_list, argument)
+        possible_matches[match] = {"score":score, "word":argument, "index":entered_argument.find(argument)}
+        first_match = list(sorted(possible_matches.items(), key=lambda x: x[1]['index']))[0][0]
+        top_match = list(sorted(possible_matches.items(), key=lambda x: x[1]['score'], reverse=True))[0][0]
+        if first_match == top_match:
+            pokemon = first_match
+            match_list.append(first_match)
+        else:
+            match = await utils.autocorrect(ctx.bot, possible_matches[first_match]['word'], ctx.bot.pkmn_list, ctx.channel, ctx.author)
+            if not match:
+                return None, None
+            pokemon = match
+            match_list.append(match)
+        if pokemon and "nidoran" in pokemon.lower():
+            if query['gender'] == "female":
+                pokemon = utils.get_name(ctx.bot, 29)
             else:
-                match = utils.get_match(ctx.bot.pkmn_list, argument.split()[0])[0]
-
-        if not match:
+                pokemon = utils.get_name(ctx.bot, 32)
+            match_list.append(pokemon)
+        if not pokemon:
             return None, None
-
-        pokemon = self(ctx.bot, str(match), ctx.guild, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
-
+        if entered_argument.isdigit() and allow_digits:
+            pokemon = self(ctx.bot, str(pokemon), None, shiny=False, alolan=False, form=None, gender=None, size=None)
+        else:
+            pokemon = self(ctx.bot, str(pokemon), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
         return pokemon, match_list
 
 class Pokedex(commands.Cog):
