@@ -734,10 +734,11 @@ class Pokemon():
                     argument = argument.replace(word, '').strip()
                 else:
                     argument = argument.replace(word, '').strip()
-                    if match not in possible_matches or score > possible_matches.get(match, {}).get('score', 0):
+                    if match and match not in possible_matches or score > possible_matches.get(match, {}).get('score', 0):
                         possible_matches[match] = {"score":score, "word":word, "index":entered_argument.find(word)}
         match, score = utils.get_match(ctx.bot.pkmn_list, argument)
-        possible_matches[match] = {"score":score, "word":argument, "index":entered_argument.find(argument)}
+        if match:
+            possible_matches[match] = {"score":score, "word":argument, "index":entered_argument.find(argument)}
         first_match = list(sorted(possible_matches.items(), key=lambda x: x[1]['index']))[0][0]
         top_match = list(sorted(possible_matches.items(), key=lambda x: x[1]['score'], reverse=True))[0][0]
         if first_match == top_match:
