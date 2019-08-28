@@ -2825,7 +2825,7 @@ class Raid(commands.Cog):
             utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))
             to_raidend = 24*60*60 - ((utcnow-utcnow.replace(hour=21, minute=0, second=0, microsecond=0)).seconds)
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['exp'] = time.time() + to_raidend
-            self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['end'] = time.time() + to_raidend
+            self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['end'] = datetime.datetime.fromtimestamp(time.time() + to_raidend)
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['history'] = [train_location]
             for channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
                 channel_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['address']
@@ -3107,7 +3107,7 @@ class Raid(commands.Cog):
             embed = raidmsg.embeds[0]
             index = 0
             for field in embed.fields:
-                if _("expires") in field.name.lower() or _("hatches") in field.name.lower() or _("event ends") in field.name.lower():
+                if _("expires") in field.name.lower() or _("hatches") in field.name.lower() or _("ends:**") in field.name.lower():
                     embed.set_field_at(index, name=field_name, value=endtime, inline=field.inline)
                     break
                 else:
@@ -3252,7 +3252,7 @@ class Raid(commands.Cog):
             embed = raidmsg.embeds[0]
             index = 0
             for field in embed.fields:
-                if _("**Next Group:**") in field.name or _("**Event Starts:**") in field.name:
+                if _("**Next Group:**") in field.name or _("Starts:**") in field.name:
                     embed.set_field_at(index, name=field.name, value=nextgroup, inline=field.inline)
                     break
                 else:

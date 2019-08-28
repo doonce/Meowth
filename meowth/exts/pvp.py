@@ -425,7 +425,7 @@ class Pvp(commands.Cog):
         stop_emoji = self.bot.custom_emoji.get('pvp_stop', '\u23f9')
         list_emoji = ist_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [stop_emoji, list_emoji]
-        pvp_msg = f"PVP Requested by {ctx.author.mention}. Use {stop_emoji} to cancel or {list_emoji} to list all PVP!"
+        pvp_msg = f"Meowth! PVP Requested by {ctx.author.mention}.\nUse {stop_emoji} to cancel or {list_emoji} to list all PVP!"
         pvp_embed.title = _('Meowth! Click here for my directions to the PVP!')
         pvp_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="pvp")

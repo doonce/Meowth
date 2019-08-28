@@ -549,7 +549,7 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
-    @want.command(name='stop')
+    @want.command(name='stop', aliases=['pokestop', 'pokestops'])
     @checks.allowwant()
     async def want_stop(self, ctx, *, stops):
         """Add a pokestop to your want list. Currently used for wild, invasion, lure, and research reports.
@@ -1809,7 +1809,7 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
-    @unwant.command(name='stop')
+    @unwant.command(name='stop', aliases=['pokestop', 'pokestops'])
     @checks.allowwant()
     async def unwant_stop(self, ctx, *, stops):
         """Remove a pokestop from your wanted list.

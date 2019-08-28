@@ -375,9 +375,9 @@ class Lure(commands.Cog):
         lure_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         if timer:
-            lure_msg = f"Lure reported by {ctx.author.mention}! Use {catch_emoji} if you visited, {info_emoji} to edit info, or {list_emoji} to list all lures!"
+            lure_msg = f"Meowth! {lure_type.title()} lure reported by {ctx.author.mention}! Details: {location}\nUse {catch_emoji} if you visited, {info_emoji} to edit info, or {list_emoji} to list all lures!"
         else:
-            lure_msg = f"Lure reported by {ctx.author.mention}! Use {catch_emoji} if you visited, {expire_emoji} if the lure has disappeared, {info_emoji} to edit info, or {list_emoji} to list all lures!!"
+            lure_msg = f"Meowth! {lure_type.title()} lure reported by {ctx.author.mention}! Details: {location}\nUse {catch_emoji} if you visited, {expire_emoji} if the lure has disappeared, {info_emoji} to edit info, or {list_emoji} to list all lures!!"
         lure_embed.title = _('Meowth! Click here for my directions to the lure!')
         lure_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="lure")

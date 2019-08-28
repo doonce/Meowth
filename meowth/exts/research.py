@@ -283,7 +283,7 @@ class Research(commands.Cog):
         starpiece = re.search(r'(?i)star piece', reward)
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module"]
         other_reward = any(x in reward.lower() for x in reward_list)
-        research_msg = f"Field Research reported by {ctx.author.mention}! Use {complete_emoji} if you completed the quest, {expire_emoji} if the quest has disappeared, or {list_emoji} to list all research!"
+        research_msg = f"Meowth! Field Research reported by {ctx.author.mention}! Details: {location}\nUse {complete_emoji} if you completed the quest, {expire_emoji} if the quest has disappeared, or {list_emoji} to list all research!"
         research_embed.title = _('Meowth! Click here for my directions to the research!')
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=ctx.author.name)
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="research")
@@ -454,9 +454,9 @@ class Research(commands.Cog):
                 try:
                     user = ctx.guild.get_member(trainer)
                     if pokemon:
-                        resdmmsg = await user.send(_("{pkmn} Field Research reported by {author} in {channel}").format(pkmn=string.capwords(pokemon.name, ' '), author=ctx.author.display_name, channel=ctx.channel.mention), embed=embed)
+                        resdmmsg = await user.send(f"Meowth! {pokemon.name.title()} Field Research reported by {ctx.author.display_name} in {ctx.channel.mention}! Details: {location}", embed=embed)
                     else:
-                        resdmmsg = await user.send(_("Field Research reported by {author} in {channel}").format(author=ctx.author.display_name, channel=ctx.channel.mention), embed=embed)
+                        resdmmsg = await user.send(f"Meowth! Field Research reported by {ctx.author.display_name} in {ctx.channel.mention}! Details: {location}", embed=embed)
                     dm_dict[user.id] = resdmmsg.id
                 except:
                     continue

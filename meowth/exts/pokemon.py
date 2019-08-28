@@ -726,7 +726,7 @@ class Pokemon():
                 possible_matches[word] = {"score":100, "word":word, "index":entered_argument.find(word)}
                 argument = argument.replace(word, '').strip()
             elif word.isdigit() and allow_digits:
-                possible_matches[utils.get_name(ctx.bot, int(word))] = {"score":100, "word":word}
+                possible_matches[utils.get_name(ctx.bot, int(word))] = {"score":100, "word":word, "index":entered_argument.find(word)}
                 argument = argument.replace(word, '').strip()
             elif word.lower() not in ctx.bot.pkmn_list and not word.isdigit() and word.lower() not in ctx.bot.form_dict['two_words']:
                 match, score = utils.get_match(ctx.bot.pkmn_list, word)

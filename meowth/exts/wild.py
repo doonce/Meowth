@@ -618,7 +618,6 @@ class Wild(commands.Cog):
         message = ctx.message
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         wild_split = content.split()
-        pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, content)
         wild_iv = None
         nearest_stop = ""
         omw_emoji = self.bot.custom_emoji.get('wild_omw', '\U0001F3CE')
@@ -627,11 +626,6 @@ class Wild(commands.Cog):
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji, list_emoji]
-        if pokemon:
-            pokemon.shiny = False
-        else:
-            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**'), delete_after=10)
-            return
         converter = commands.clean_content()
         iv_test = await converter.convert(ctx, content.split()[-1])
         iv_test = iv_test.lower().strip()
@@ -642,6 +636,12 @@ class Wild(commands.Cog):
                 content = content.replace(content.split()[-1], "").strip()
             else:
                 wild_iv = None
+        pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, content)
+        if pokemon:
+            pokemon.shiny = False
+        else:
+            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**'), delete_after=10)
+            return
         for word in match_list:
             content = re.sub(word, "", content)
         wild_details = content.strip()
