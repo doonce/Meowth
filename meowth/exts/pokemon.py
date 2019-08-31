@@ -739,6 +739,8 @@ class Pokemon():
         match, score = utils.get_match(ctx.bot.pkmn_list, argument)
         if match:
             possible_matches[match] = {"score":score, "word":argument, "index":entered_argument.find(argument)}
+        if not possible_matches:
+            return None, None
         first_match = list(sorted(possible_matches.items(), key=lambda x: x[1]['index']))[0][0]
         top_match = list(sorted(possible_matches.items(), key=lambda x: x[1]['score'], reverse=True))[0][0]
         if first_match == top_match:
@@ -794,7 +796,7 @@ class Pokedex(commands.Cog):
             async with ctx.typing():
                 if not pokemon:
                     pkmn_embed.clear_fields()
-                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"{'Meowth! I will help you edit Pokemon information!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **pokemon** you'd like to edit. Reply with **name** of the pokemon and include any **form** if applicable. You can reply with **cancel** to stop anytime.", inline=False)
+                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"{'Meowth! I will help you edit Pokemon information!' if first else ''}\n\n{'First,' if first else 'Meowth! Now,'} I'll need to know what **pokemon** you'd like to edit. Reply with **name** of the pokemon and include any **form** if applicable. You can reply with **cancel** to stop anytime.", inline=False)
                     pkmn_name_wait = await channel.send(embed=pkmn_embed)
                     try:
                         pkmn_name_msg = await self.bot.wait_for('message', timeout=60, check=check)

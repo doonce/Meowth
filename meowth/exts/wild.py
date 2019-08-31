@@ -640,14 +640,12 @@ class Wild(commands.Cog):
         if pokemon:
             pokemon.shiny = False
         else:
-            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**'), delete_after=10)
-            return
+            return await ctx.invoke(self.bot.get_command('wild'))
         for word in match_list:
             content = re.sub(word, "", content)
         wild_details = content.strip()
         if not wild_details:
-            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!wild <pokemon name> <location>**'), delete_after=10)
-            return
+            return await ctx.invoke(self.bot.get_command('wild'))
         expiremsg = _('**This {pokemon} has despawned!**').format(pokemon=pokemon.name.title())
         wild_gmaps_link = utils.create_gmaps_query(self.bot, wild_details, message.channel, type="wild")
         gym_matching_cog = self.bot.cogs.get('GymMatching')

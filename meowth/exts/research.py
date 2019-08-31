@@ -157,8 +157,7 @@ class Research(commands.Cog):
                 if details:
                     research_split = details.rsplit(",", 2)
                     if len(research_split) != 3:
-                        error = _("entered an incorrect amount of arguments.\n\nUsage: **!research** or **!research <pokestop>, <quest>, <reward>**")
-                        break
+                        return await ctx.invoke(self.bot.get_command('research'))
                     location, quest, reward = research_split
                     location = location.replace(loc_url, "").strip()
                     loc_url = utils.create_gmaps_query(self.bot, location, message.channel, type="research")

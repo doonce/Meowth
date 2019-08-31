@@ -1483,8 +1483,7 @@ class Raid(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         raid_split = content.split()
         if len(raid_split) == 0:
-            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**'), delete_after=10)
-            return
+            return await ctx.invoke(self.bot.get_command('raid'))
         if raid_split[0] == 'egg':
             await self._raidegg(message, content)
             return
@@ -1517,8 +1516,7 @@ class Raid(commands.Cog):
             pokemon.shiny = False
             pokemon.gender = False
         else:
-            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**'), delete_after=10)
-            return
+            return await ctx.invoke(self.bot.get_command('raid'))
 
         if not pokemon.id in self.bot.raid_list:
             await message.channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()), delete_after=10)
@@ -1574,8 +1572,7 @@ class Raid(commands.Cog):
             content = re.sub(word, "", content)
         raid_details = content.strip()
         if not raid_details:
-            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**'), delete_after=10)
-            return
+            return await ctx.invoke(self.bot.get_command('raid'))
 
         raid_gmaps_link = utils.create_gmaps_query(self.bot, raid_details, message.channel, type="raid")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -1695,14 +1692,12 @@ class Raid(commands.Cog):
         if raidegg_split[0].lower() == 'egg':
             del raidegg_split[0]
         if len(raidegg_split) <= 1:
-            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!raidegg <level> <location>**'), delete_after=10)
-            return
+            return await ctx.invoke(self.bot.get_command('raid'))
         if raidegg_split[0].isdigit():
             egg_level = int(raidegg_split[0])
             del raidegg_split[0]
         else:
-            await message.channel.send(_('Meowth! Give more details when reporting! Use at least: **!raidegg <level> <location>**. Type **!help** raidegg for more info.'), delete_after=10)
-            return
+            return await ctx.invoke(self.bot.get_command('raid'))
         if raidegg_split[(- 1)].isdigit():
             raidexp = int(raidegg_split[(- 1)])
             del raidegg_split[(- 1)]
@@ -1746,8 +1741,7 @@ class Raid(commands.Cog):
         raid_details = ' '.join(raidegg_split)
         raid_details = raid_details.strip()
         if raid_details == '':
-            await message.channel.send(_('Meowth! Give more details when reporting! Use at least: **!raidegg <level> <location>**. Type **!help** raidegg for more info.'), delete_after=10)
-            return
+            return await ctx.invoke(self.bot.get_command('raid'))
         rgx = '[^a-zA-Z0-9]'
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
@@ -1756,8 +1750,7 @@ class Raid(commands.Cog):
         if not weather:
             weather = self.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
         if raid_details == '':
-            await message.channel.send(_('Meowth! Give more details when reporting! Usage: **!raid <pokemon name> <location>**'), delete_after=10)
-            return
+            return await ctx.invoke(self.bot.get_command('raid'))
         raid_gmaps_link = utils.create_gmaps_query(self.bot, raid_details, message.channel, type="raid")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""

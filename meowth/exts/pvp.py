@@ -323,6 +323,7 @@ class Pvp(commands.Cog):
         guild = message.guild
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
+        first = True
         pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/CombatButton.png?cache=1')
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
@@ -336,35 +337,38 @@ class Pvp(commands.Cog):
                     await self._pvp(ctx, pvp_type, location, timer)
                     return
                 else:
-                    pvp_embed.add_field(name=_('**New PVP Request**'), value=_("Meowth! I'll help you report a PVP battle!\n\nFirst, I'll need to know what **type** of PVP battle you'd like to start. Reply with the **any, great, ultra, or master**. You can reply with **cancel** to stop anytime."), inline=False)
-                    pvp_type_wait = await channel.send(embed=pvp_embed)
                     def check(reply):
                         if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
                             return True
                         else:
                             return False
-                    try:
-                        pvp_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
-                    except asyncio.TimeoutError:
-                        pvp_type_msg = None
-                    await utils.safe_delete(pvp_type_wait)
-                    if not pvp_type_msg:
-                        error = _("took too long to respond")
-                        break
-                    else:
-                        await utils.safe_delete(pvp_type_msg)
-                    if pvp_type_msg.clean_content.lower() == "cancel":
-                        error = _("cancelled the report")
-                        break
-                    elif not any([pvp_type_msg.clean_content.lower() == "any", pvp_type_msg.clean_content.lower() == "great", pvp_type_msg.clean_content.lower() == "ultra", pvp_type_msg.clean_content.lower() == "master"]):
-                        error = _("entered an invalid type")
-                        break
-                    else:
-                        pvp_type = pvp_type_msg.clean_content.lower()
-                        if pvp_type != "any":
-                            pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png?cache=1")
+                    if not pvp_type or all([pvp_type.lower() != "any", pvp_type.lower() != "great", pvp_type.lower() != "ultra", pvp_type.lower() != "master"]):
+                        pvp_embed.add_field(name=_('**New PVP Request**'), value=_("Meowth! I will help you report a PVP battle!\n\nFirst, I'll need to know what **type** of PVP battle you'd like to start. Reply with the **any, great, ultra, or master**. You can reply with **cancel** to stop anytime."), inline=False)
+                        pvp_type_wait = await channel.send(embed=pvp_embed)
+
+                        try:
+                            pvp_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            pvp_type_msg = None
+                        await utils.safe_delete(pvp_type_wait)
+                        if not pvp_type_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(pvp_type_msg)
+                        if pvp_type_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif not any([pvp_type_msg.clean_content.lower() == "any", pvp_type_msg.clean_content.lower() == "great", pvp_type_msg.clean_content.lower() == "ultra", pvp_type_msg.clean_content.lower() == "master"]):
+                            error = _("entered an invalid type")
+                            break
+                        else:
+                            pvp_type = pvp_type_msg.clean_content.lower()
+                            first = False
+                    if pvp_type != "any":
+                        pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png?cache=1")
                     pvp_embed.clear_fields()
-                    pvp_embed.add_field(name="**New PVP Request**", value=f"Great! Now, reply with the **location** that you will be at for **{pvp_type} PVP** battles. You can reply with **cancel** to stop anytime.", inline=False)
+                    pvp_embed.add_field(name="**New PVP Request**", value=f"{'Meowth! I will help you report a PVP battle!' if first else ''}\n\n{'First, reply ' if first else 'Great! Now, reply '}with the **location** that you will be at for **{pvp_type} PVP** battles. You can reply with **cancel** to stop anytime.", inline=False)
                     location_wait = await channel.send(embed=pvp_embed)
                     try:
                         location_msg = await self.bot.wait_for('message', timeout=60, check=check)

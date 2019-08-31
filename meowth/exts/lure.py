@@ -265,6 +265,7 @@ class Lure(commands.Cog):
         guild = message.guild
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
+        first = True
         lure_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
@@ -278,35 +279,37 @@ class Lure(commands.Cog):
                     await self.send_lure(ctx, lure_type, location, timer)
                     return
                 else:
-                    lure_embed.add_field(name=_('**New Lure Report**'), value=_("Meowth! I'll help you report a lure!\n\nFirst, I'll need to know what **type** the lure is. Reply with the **normal, mossy, magnetic, or glacial**. You can reply with **cancel** to stop anytime."), inline=False)
-                    lure_type_wait = await channel.send(embed=lure_embed)
                     def check(reply):
                         if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
                             return True
                         else:
                             return False
-                    try:
-                        lure_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
-                    except asyncio.TimeoutError:
-                        lure_type_msg = None
-                    await utils.safe_delete(lure_type_wait)
-                    if not lure_type_msg:
-                        error = _("took too long to respond")
-                        break
-                    else:
-                        await utils.safe_delete(lure_type_msg)
-                    if lure_type_msg.clean_content.lower() == "cancel":
-                        error = _("cancelled the report")
-                        break
-                    elif not any([lure_type_msg.clean_content.lower() == "normal", lure_type_msg.clean_content.lower() == "mossy", lure_type_msg.clean_content.lower() == "magnetic", lure_type_msg.clean_content.lower() == "glacial"]):
-                        error = _("entered an invalid type")
-                        break
-                    else:
-                        lure_type = lure_type_msg.clean_content.lower()
-                        if lure_type != "normal":
-                            lure_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png?cache=1")
+                    if not lure_type or all([lure_type.lower() != "normal", lure_type.lower() != "mossy", lure_type.lower() != "glacial", lure_type.lower() != "magnetic"]):
+                        lure_embed.add_field(name=_('**New Lure Report**'), value=_("Meowth! I will help you report a lure!\n\nFirst, I'll need to know what **type** the lure is. Reply with the **normal, mossy, magnetic, or glacial**. You can reply with **cancel** to stop anytime."), inline=False)
+                        lure_type_wait = await channel.send(embed=lure_embed)
+                        try:
+                            lure_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            lure_type_msg = None
+                        await utils.safe_delete(lure_type_wait)
+                        if not lure_type_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(lure_type_msg)
+                        if lure_type_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif not any([lure_type_msg.clean_content.lower() == "normal", lure_type_msg.clean_content.lower() == "mossy", lure_type_msg.clean_content.lower() == "magnetic", lure_type_msg.clean_content.lower() == "glacial"]):
+                            error = _("entered an invalid type")
+                            break
+                        else:
+                            lure_type = lure_type_msg.clean_content.lower()
+                            first = False
+                    if lure_type != "normal":
+                        lure_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png?cache=1")
                     lure_embed.clear_fields()
-                    lure_embed.add_field(name="**New Lure Report**", value=f"Great! Now, reply with the **pokestop** that has the **{lure_type} lure**. You can reply with **cancel** to stop anytime.", inline=False)
+                    lure_embed.add_field(name="**New Lure Report**", value=f"{'Meowth! I will help you report a lure!' if first else ''}\n\n{'First, reply ' if first else 'Great! Now, reply '}with the **pokestop** that has the **{lure_type} lure**. You can reply with **cancel** to stop anytime.", inline=False)
                     location_wait = await channel.send(embed=lure_embed)
                     try:
                         location_msg = await self.bot.wait_for('message', timeout=60, check=check)

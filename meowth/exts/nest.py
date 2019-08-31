@@ -450,7 +450,7 @@ class Nest(commands.Cog):
         nest_embed.set_thumbnail(url=pokemon.img_url)
         pokemon.shiny = False
         dm_dict = {}
-        ctx.nestreportmsg = await ctx.send(f"Meowth! {ctx.author.mention} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest!\nUse {catch_emoji} if you visited, {expire_emoji} if expired, {info_emoji} to edit details, or {list_emoji} to list all nests!", embed=nest_embed)
+        ctx.nestreportmsg = await ctx.send(f"Meowth! {str(pokemon)} nest reported by {ctx.author.mention}! Details: {nest_name.title()}!\nUse {catch_emoji} if you visited, {expire_emoji} if expired, {info_emoji} to edit details, or {list_emoji} to list all nests!", embed=nest_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.nestreportmsg, reaction)
@@ -504,7 +504,7 @@ class Nest(commands.Cog):
             if send_nest:
                 try:
                     user = ctx.guild.get_member(trainer)
-                    nestdmmsg = await user.send(f"Meowth! {ctx.author.display_name} reported that **{nest_name.title()}** is a **{str(pokemon)}** nest in {ctx.channel.mention}!", embed=embed)
+                    nestdmmsg = await user.send(f"Meowth! {str(pokemon)} nest reported by {ctx.author.display_name} in {ctx.channel.mention}! Details: {nest_name.title()}", embed=embed)
                     dm_dict[user.id] = nestdmmsg.id
                 except:
                     continue
