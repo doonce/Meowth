@@ -1722,7 +1722,7 @@ class Huntr(commands.Cog):
                             error = _("cancelled the report")
                             break
                         else:
-                            event_locations = event_loc_msg.clean_content.lower().split(',')
+                            event_locations = event_loc_msg.clean_content.split(',')
                             event_locations = [x.strip() for x in event_locations]
                             event_dict['event_locations'] = event_locations
                 break
@@ -1731,11 +1731,12 @@ class Huntr(commands.Cog):
             local_start = event_dict['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
             local_end = event_dict['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
             local_mute = event_dict['mute_time'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+            local_channel = event_dict['channel_time'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
             success_str = f"The event is scheduled to start on {local_start.strftime('%B %d at %I:%M %p')} and end on {local_end.strftime('%B %d at %I:%M %p')}.\n\n"
             if bot_account:
                 success_str += f"I will mute {bot_account.mention} in {bot_channel.mention} on {local_mute.strftime('%B %d at %I:%M %p')} and will unmute at the end of the event.\n\n"
             if event_dict['make_trains']:
-                success_str += f"I will make {len(event_dict['event_locations'])} train channels in {train_channel.mention} at the beginning of the event and remove them at the end of the event. These channels will be for: {(', ').join(event_dict['event_locations'])}. The title for the trains will be: {event_dict['event_title']}."
+                success_str += f"I will make {len(event_dict['event_locations'])} train channels in {train_channel.mention} on {local_channel.strftime('%B %d at %I:%M %p')} and remove them at the end of the event. These channels will be for: {(', ').join(event_dict['event_locations'])}. The title for the trains will be: {event_dict['event_title']}."
             raid_embed.add_field(name=_('**Raid Hour Report**'), value=f"Meowth! A raid hour has been successfully scheduled. To cancel an event use **{ctx.prefix}raidhour cancel**\n\n{success_str}", inline=False)
             raid_hour_var = self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {})
             self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][ctx.message.id] = copy.deepcopy(event_dict)
