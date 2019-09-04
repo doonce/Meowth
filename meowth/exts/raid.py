@@ -2926,14 +2926,14 @@ class Raid(commands.Cog):
                 if start:
                     timerstr += _("This event will start at {expiry_time}").format(expiry_time=start.strftime(_('%B %d at %I:%M %p (%H:%M)')))
                 else:
-                    timerstr += _("Nobody has told me a start time! Set it with **!starttime**")
+                    timerstr += f"Nobody has told me a start time! Set it with **!{'train' if report_dict == 'raidtrain_dict' else 'meetup'} start**"
                 if end:
                     timerstr += _(" | This event will end at {expiry_time}").format(expiry_time=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
             if self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['type'] == 'exraid':
                 if end:
                     timerstr += _("This event will end at {expiry_time}").format(expiry_time=end.strftime(_('%B %d at %I:%M %p (%H:%M)')))
                 else:
-                    timerstr += _("Nobody has told me a end time! Set it with **!timerset**")
+                    timerstr += f"Nobody has told me a end time! Set it with **!{'train' if report_dict == 'raidtrain_dict' else 'meetup'} end**"
             return timerstr
         if self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['type'] == 'egg':
             raidtype = _('egg')

@@ -611,22 +611,20 @@ class Listing(commands.Cog):
             if raid_complete:
                 for lobby in raid_complete:
                     complete_list = []
+                    index += 1
+                    complete_str += f"**{index}.** "
                     for trainer in lobby['starting_dict'].keys():
                         user = ctx.guild.get_member(trainer)
                         if not user:
                             continue
                         complete_list.append(user.mention)
-                    complete_str += self.bot.custom_emoji.get('bullet', '\U0001F539')
                     complete_str += ", ".join(complete_list)
                     complete_str += "\n"
+                    all_lobbies.append(lobby)
                 list_embed.add_field(name="**Completed**", value=complete_str, inline=False)
             if not raid_lobby and not raid_active and not raid_complete:
                 list_embed.description = "Nobody has started this raid."
-            if not raid_active and not raid_lobby:
-                await ctx.channel.send(embed=list_embed, delete_after=30)
-                return
-            else:
-                await ctx.channel.send("Reply with the number next to a group to tag that group.", embed=list_embed, delete_after=30)
+            await ctx.channel.send("Reply with the number next to a group to tag that group.", embed=list_embed, delete_after=30)
             try:
                 lobby_mention = await self.bot.wait_for('message', timeout=30, check=(lambda message: (message.author == ctx.author)))
             except asyncio.TimeoutError:
