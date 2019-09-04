@@ -1073,7 +1073,7 @@ class Raid(commands.Cog):
                     elif not any([time_level_msg.clean_content.lower() == "ex", time_level_msg.clean_content.lower() == "all", time_level_msg.clean_content.isdigit()]):
                         error = _("entered an invalid option")
                         break
-                    elif time_level_msg.clean_content not in self.bot.raid_info['raid_eggs']:
+                    elif time_level_msg.clean_content not in self.bot.raid_info['raid_eggs'] and time_level_msg.clean_content.lower() != "all":
                         error = _("entered an invalid level")
                         break
                     else:
@@ -1106,7 +1106,10 @@ class Raid(commands.Cog):
                         edit_time = int(boss_list_msg.clean_content.lower())
                     first = False
                 if edit_level and edit_time and edit_type:
-                    msg += _('I will change Level **{level}**\'s **{hatch_or_raid}** time from **{oldtime}** minutes to **{newtime}** minutes.').format(level=edit_level, hatch_or_raid=edit_type.replace('time', ''), oldtime=self.bot.raid_info['raid_eggs'][edit_level][edit_type], newtime=edit_time)
+                    if edit_level == "all":
+                        msg += _('I will change all **{hatch_or_raid}** times to **{newtime}** minutes.').format(hatch_or_raid=edit_type.replace('time', ''), newtime=edit_time)
+                    else:
+                        msg += _('I will change Level **{level}**\'s **{hatch_or_raid}** time from **{oldtime}** minutes to **{newtime}** minutes.').format(level=edit_level, hatch_or_raid=edit_type.replace('time', ''), oldtime=self.bot.raid_info['raid_eggs'][edit_level][edit_type], newtime=edit_time)
                     msg += _('\nWould you like to continue?')
                     raid_embed.clear_fields()
                     raid_embed.add_field(name="Raid Boss Edit", value=msg)
@@ -2574,6 +2577,8 @@ class Raid(commands.Cog):
         self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['meetup']['title'] = title
         if can_manage or meetup_type == "train":
             raid_channel_name = f"{meetup_type}-" + utils.sanitize_channel_name(title)
+            if not ctx.invoked_subcommand:
+                return await ctx.channel.edit(name=raid_channel_name)
             question = await ctx.channel.send(f"Would you like to change the channel name to {raid_channel_name.lower()}?")
             try:
                 timeout = False
@@ -2825,6 +2830,7 @@ class Raid(commands.Cog):
                 if channel_address == train_location:
                     raid_channel = self.bot.get_channel(channel)
                     await raid_channel.send(f"A raid train channel has chosen this raid as its next raid! You can join them in {ctx.channel.mention}")
+            return train_channel
 
     @train.command(name="title")
     @checks.allowmeetupreport()

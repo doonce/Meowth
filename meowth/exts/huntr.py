@@ -27,10 +27,13 @@ class Huntr(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.huntr_cleanup.start()
+        self.raidhour_check.start()
         self.event_loop = asyncio.get_event_loop()
+        self.bot.active_raidhours = []
 
     def cog_unload(self):
         self.huntr_cleanup.cancel()
+        self.raidhour_check.cancel()
 
     @tasks.loop(seconds=600)
     async def huntr_cleanup(self, loop=True):
@@ -1365,6 +1368,426 @@ class Huntr(commands.Cog):
         huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"invasion", "pokestop":"Marilla Park", "reward":random_type, "gps":"39.645742,-79.96908", "gender":"male", "expire":25}).replace("'", '"'))
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
+
+    @tasks.loop(seconds=300)
+    async def raidhour_check(self, loop=True):
+        for guild in self.bot.guilds:
+            for event in list(self.bot.guild_dict[guild.id].get('raidhour_dict').keys()):
+                if event in self.bot.active_raidhours:
+                    continue
+                self.bot.loop.create_task(self.raidhour_manager(guild.id, event))
+                self.bot.active_raidhours.append(event)
+        if not loop:
+            return
+
+    @raidhour_check.before_loop
+    async def before_cleanup(self):
+        await self.bot.wait_until_ready()
+
+    async def raidhour_manager(self, guild_id, event_id):
+        try:
+            guild = self.bot.get_guild(guild_id)
+            event_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['raidhour_dict'][event_id])
+            raid_cog = self.bot.cogs.get('Raid')
+            if not raid_cog:
+                return
+            report_channel = self.bot.get_channel(event_dict['report_channel'])
+            try:
+                report_message = await report_channel.fetch_message(event_id)
+                ctx = await self.bot.get_context(report_message)
+                ctx.command = self.bot.get_command("train")
+            except:
+                return
+            bot_account = guild.get_member(event_dict['bot_account'])
+            bot_channel = self.bot.get_channel(event_dict['bot_channel'])
+            while True:
+                now = datetime.datetime.utcnow()
+                wait_time = [600]
+                event_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['raidhour_dict'][event_id])
+                if event_dict['make_trains']:
+                    if now >= event_dict['channel_time']:
+                        event_start = event_dict['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                        event_end = event_dict['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                        train_channel = self.bot.get_channel(event_dict['train_channel'])
+                        for location in event_dict['event_locations']:
+                            ctx.channel, ctx.message.channel = train_channel, train_channel
+                            channel = await raid_cog._train_channel(ctx, location)
+                            ctx.channel, ctx.message.channel = channel, channel
+                            await ctx.invoke(self.bot.get_command("meetup title"), title=f"{location} - {event_dict['event_title']}")
+                            await ctx.invoke(self.bot.get_command("starttime"), start_time=event_start.strftime('%B %d %I:%M %p'))
+                            await ctx.invoke(self.bot.get_command("timerset"), timer=event_end.strftime('%B %d %I:%M %p'))
+                        self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['make_trains'] = False
+                    else:
+                        wait_time.append((event_dict['channel_time'] - now).total_seconds())
+                if bot_account:
+                    ow = bot_channel.overwrites_for(bot_account)
+                    if now >= event_dict['mute_time'] and bot_channel.permissions_for(bot_account).read_messages:
+                        ow.send_messages = False
+                        ow.read_messages = False
+                        try:
+                            await bot_channel.set_permissions(bot_account, overwrite=ow)
+                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                            pass
+                    else:
+                        wait_time.append((event_dict['mute_time'] - now).total_seconds())
+                    if now >= event_dict['event_end']:
+                        ow.send_messages = True
+                        ow.read_messages = True
+                        try:
+                            await bot_channel.set_permissions(bot_account, overwrite=ow)
+                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                            pass
+                if now >= event_dict['event_end']:
+                    try:
+                        user_message = await report_channel.fetch_message(event_dict['user_message'])
+                        await utils.safe_delete(user_message)
+                    except:
+                        pass
+                    try:
+                        del self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]
+                    except:
+                        pass
+                    try:
+                        self.bot.active_raidhours.remove(event_id)
+                    except:
+                        pass
+                    return
+                else:
+                    wait_time.append((event_dict['event_end'] - now).total_seconds())
+                wait_time = [x for x in wait_time if x > 0]
+                if not wait_time:
+                    wait_time = [600]
+                await asyncio.sleep(min(wait_time))
+        except KeyError:
+            return
+
+    @commands.group(hidden=True, invoke_without_command=True, case_insensitive=True)
+    @checks.is_mod()
+    async def raidhour(self, ctx):
+        author = ctx.author
+        guild = ctx.guild
+        message = ctx.message
+        channel = ctx.channel
+        raid_cog = self.bot.cogs.get('Raid')
+        if not raid_cog:
+            return
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        error = False
+        first = True
+        event_dict = {
+            "report_author":ctx.author.id,
+            "report_channel":ctx.channel.id,
+            "user_message":ctx.message.id,
+            "bot_account": None,
+            "bot_channel": None,
+            "mute_time": None,
+            "event_start": None,
+            "event_end": None,
+            "make_trains": None,
+            "train_channel":None,
+            "channel_time": None,
+            "event_title": None,
+            "event_locations": []
+        }
+        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1')
+        raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        while True:
+            async with ctx.typing():
+                def check(reply):
+                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                        return True
+                    else:
+                        return False
+                if event_dict.get('bot_account') == None:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=_("Meowth! I'll help you report a raid hour or raid day! This will mute a given bot account in a given channel during a certain time. I'll also help you make Raid Train channels if you'd like.\n\nFirst, I'll need to know what **bot account** you'd like to mute. Reply with a @mention, ID, or case-sensitive Username of the bot or **none** to not mute a bot and just schedule channels. You can reply with **cancel** to stop anytime."), inline=False)
+                    bot_account_wait = await channel.send(embed=raid_embed)
+                    try:
+                        bot_account_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        bot_account_msg = None
+                    await utils.safe_delete(bot_account_wait)
+                    if not bot_account_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(bot_account_msg)
+                    if bot_account_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif bot_account_msg.clean_content.lower() == "none":
+                        event_dict['bot_account'] = False
+                        bot_account = None
+                        event_dict['bot_channel'] = False
+                        event_dict['make_trains'] = True
+                    else:
+                        converter = commands.MemberConverter()
+                        try:
+                            bot_account = await converter.convert(ctx, bot_account_msg.content)
+                            event_dict['bot_account'] = bot_account.id
+                        except:
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! I couldn't find that account! Retry or reply with **cancel**.", inline=False)
+                            bot_account_wait = await channel.send(embed=raid_embed, delete_after=20)
+                            continue
+                        if bot_account == ctx.guild.me:
+                            error = _("entered my account")
+                            break
+                        elif not bot_account.bot:
+                            error = _("entered a human account")
+                            break
+                if event_dict.get('bot_channel') == None:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Next, I'll need to know what **bot channel** you'd like to mute {bot_account.mention} in. Reply with a #mention, ID, or case-sensitive name of the channel. You can reply with **cancel** to stop anytime.", inline=False)
+                    bot_channel_wait = await channel.send(embed=raid_embed)
+                    try:
+                        bot_channel_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        bot_channel_msg = None
+                    await utils.safe_delete(bot_channel_wait)
+                    if not bot_channel_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(bot_channel_msg)
+                    if bot_channel_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    else:
+                        converter = commands.TextChannelConverter()
+                        try:
+                            bot_channel = await converter.convert(ctx, bot_channel_msg.content)
+                            event_dict['bot_channel'] = bot_channel.id
+                        except:
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! I couldn't find that channel! Retry or reply with **cancel**.", inline=False)
+                            bot_channel_wait = await channel.send(embed=raid_embed, delete_after=20)
+                            continue
+                if not event_dict.get('event_start'):
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Next, I'll need to know what **date and time** the event starts. This should be the actual time that the raid hour starts{', I will mute ' + bot_account.mention + ' half an hour before this time' if bot_account else ''}. Reply with a date and time. You can reply with **cancel** to stop anytime.", inline=False)
+                    event_start_wait = await channel.send(embed=raid_embed)
+                    try:
+                        event_start_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        event_start_msg = None
+                    await utils.safe_delete(event_start_wait)
+                    if not event_start_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(event_start_msg)
+                    if event_start_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    else:
+                        try:
+                            event_start = dateparser.parse(event_start_msg.content)
+                            event_start = event_start - datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset'])
+                            event_dict['event_start'] = event_start
+                            event_dict['mute_time'] = event_start - datetime.timedelta(minutes=30)
+                            event_dict['channel_time'] = event_start - datetime.timedelta(hours=3)
+                            if datetime.datetime.utcnow() > event_start:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! I need a time in the future! Retry or reply with **cancel**.", inline=False)
+                                event_start_wait = await channel.send(embed=raid_embed, delete_after=20)
+                                event_dict['event_start'] = None
+                                continue
+                        except:
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! I couldn't understand your time! Retry or reply with **cancel**.", inline=False)
+                            event_start_wait = await channel.send(embed=raid_embed, delete_after=20)
+                            continue
+                if not event_dict.get('event_end'):
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Next, I'll need to know what **date and time** the event ends. This should be the actual time that the raid hour ends{', I will unmute ' + bot_account.mention + ' at this time' if bot_account else ''}. Reply with a date and time. You can reply with **cancel** to stop anytime.", inline=False)
+                    event_end_wait = await channel.send(embed=raid_embed)
+                    try:
+                        event_end_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        event_end_msg = None
+                    await utils.safe_delete(event_end_wait)
+                    if not event_end_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(event_end_msg)
+                    if event_end_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    else:
+                        try:
+                            event_end = dateparser.parse(event_end_msg.content)
+                            event_end = event_end - datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset'])
+                            event_dict['event_end'] = event_end
+                            if event_start > event_end:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! The end time has to be after the start time! Retry or reply with **cancel**.", inline=False)
+                                event_start_wait = await channel.send(embed=raid_embed, delete_after=20)
+                                event_dict['event_end'] = None
+                                continue
+                        except:
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! I couldn't understand your time! Retry or reply with **cancel**.", inline=False)
+                            event_end_wait = await channel.send(embed=raid_embed, delete_after=20)
+                            continue
+                if event_dict.get('make_trains') == None:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, would you like some train channels to go with this raid hour for coordination? I'll help you make some train channels automatically three hours before the scheduled raid hour. These channels will be reported in {ctx.channel.mention}. Reply with **yes** or **no**. You can reply with **cancel** to stop anytime.", inline=False)
+                    make_trains_wait = await channel.send(embed=raid_embed)
+                    try:
+                        make_trains_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        make_trains_msg = None
+                    await utils.safe_delete(make_trains_wait)
+                    if not make_trains_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(make_trains_msg)
+                    if make_trains_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif make_trains_msg.clean_content.lower() == "yes" or make_trains_msg.clean_content.lower() == "y":
+                        event_dict['make_trains'] = True
+                    elif make_trains_msg.clean_content.lower() == "no" or make_trains_msg.clean_content.lower() == "n":
+                        event_dict['make_trains'] = False
+                    else:
+                        raid_embed.clear_fields()
+                        raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! I couldn't understand your response! Retry or reply with **cancel**.", inline=False)
+                        make_trains_wait = await channel.send(embed=raid_embed, delete_after=20)
+                        continue
+                if event_dict['make_trains']:
+                    if not event_dict.get('train_channel'):
+                        raid_embed.clear_fields()
+                        raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, what **channel** would you like the train channels to be reported in? Reply with a #mention, ID, or case-sensitive name of the channel. You can reply with **cancel** to stop anytime.", inline=False)
+                        train_channel_wait = await channel.send(embed=raid_embed)
+                        try:
+                            train_channel_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            train_channel_msg = None
+                        await utils.safe_delete(train_channel_wait)
+                        if not train_channel_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(train_channel_msg)
+                        if train_channel_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        else:
+                            converter = commands.TextChannelConverter()
+                            try:
+                                train_channel = await converter.convert(ctx, train_channel_msg.content)
+                                event_dict['train_channel'] = train_channel.id
+                            except:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! I couldn't find that channel! Retry or reply with **cancel**.", inline=False)
+                                bot_channel_wait = await channel.send(embed=raid_embed, delete_after=20)
+                                continue
+                    if not event_dict.get('event_title'):
+                        raid_embed.clear_fields()
+                        raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, reply with the **event title** for your train channels. This can be something like `Legendary Raid Hour` etc. You can reply with **cancel** to stop anytime.", inline=False)
+                        event_title_wait = await channel.send(embed=raid_embed)
+                        try:
+                            event_title_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            event_title_msg = None
+                        await utils.safe_delete(event_title_wait)
+                        if not event_title_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(event_title_msg)
+                        if event_title_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        else:
+                            event_dict['event_title'] = event_title_msg.clean_content.lower()
+                    if not event_dict.get('event_locations'):
+                        raid_embed.clear_fields()
+                        raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, reply with a comma separated list of the **event locations** for your train channels. I'll make a channel for each location. You can reply with **cancel** to stop anytime.", inline=False)
+                        event_loc_wait = await channel.send(embed=raid_embed)
+                        try:
+                            event_loc_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            event_loc_msg = None
+                        await utils.safe_delete(event_loc_wait)
+                        if not event_loc_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(event_loc_msg)
+                        if event_loc_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        else:
+                            event_locations = event_loc_msg.clean_content.lower().split(',')
+                            event_locations = [x.strip() for x in event_locations]
+                            event_dict['event_locations'] = event_locations
+                break
+        raid_embed.clear_fields()
+        if not error:
+            local_start = event_dict['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+            local_end = event_dict['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+            local_mute = event_dict['mute_time'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+            success_str = f"The event is scheduled to start on {local_start.strftime('%B %d at %I:%M %p')} and end on {local_end.strftime('%B %d at %I:%M %p')}.\n\n"
+            if bot_account:
+                success_str += f"I will mute {bot_account.mention} in {bot_channel.mention} on {local_mute.strftime('%B %d at %I:%M %p')} and will unmute at the end of the event.\n\n"
+            if event_dict['make_trains']:
+                success_str += f"I will make {len(event_dict['event_locations'])} train channels in {train_channel.mention} at the beginning of the event and remove them at the end of the event. These channels will be for: {(', ').join(event_dict['event_locations'])}. The title for the trains will be: {event_dict['event_title']}."
+            raid_embed.add_field(name=_('**Raid Hour Report**'), value=f"Meowth! A raid hour has been successfully scheduled. To cancel an event use **{ctx.prefix}raidhour cancel**\n\n{success_str}", inline=False)
+            raid_hour_var = self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {})
+            self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][ctx.message.id] = copy.deepcopy(event_dict)
+            confirmation = await channel.send(embed=raid_embed)
+        else:
+            raid_embed.add_field(name=_('**Raid Hour Report Cancelled**'), value=_("Meowth! Your raid hour has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=raid_embed, delete_after=10)
+
+    @raidhour.command(name="cancel")
+    @checks.is_mod()
+    async def raidhour_cancel(self, ctx):
+        cancel_str = ""
+        if not list(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict').keys()):
+            return await ctx.send("There are no scheduled raid hours.", delete_after=15)
+        for event in list(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict').keys()):
+            cancel_str += f"{str(event)} {self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_title'] if self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_title'] else ''}\n"
+            local_start = self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+            local_end = self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+            cancel_str += f"-- Event Start: {local_start.strftime('%B %d at %I:%M %p')}\n"
+            cancel_str += f"-- Event End: {local_end.strftime('%B %d at %I:%M %p')}\n\n"
+        event_list_wait = await ctx.send(f"{ctx.author.mention} please send the event ID of the event you would like to cancel.\n{cancel_str}", delete_after=60)
+        def check(reply):
+            if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:
+                return True
+            else:
+                return False
+        try:
+            event_list_msg = await self.bot.wait_for('message', timeout=60, check=check)
+        except asyncio.TimeoutError:
+            event_list_msg = None
+        await utils.safe_delete(event_list_wait)
+        if not event_list_msg:
+            return await ctx.send("You took too long to respond.", delete_after=15)
+        else:
+            await utils.safe_delete(event_list_msg)
+        event_reply = event_list_msg.clean_content.lower().strip()
+        if event_reply not in [str(x) for x in list(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict').keys())]:
+            return await ctx.send("You entered an invalid ID", delete_after=15)
+        try:
+            self.bot.active_raidhours.remove(int(event_reply))
+        except:
+            pass
+        bot_account = ctx.guild.get_member(self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['bot_account'])
+        bot_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['bot_channel'])
+        try:
+            del self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]
+        except:
+            pass
+        if bot_account:
+            await ctx.send(f"Raid hour canceled. You will have to manually unmute {bot_account.mention} in {bot_channel.mention} if the cancelled event has muted it already.", delete_after=15)
+        else:
+            await ctx.send(f"Raid hour canceled.", delete_after=15)
 
 def setup(bot):
     bot.add_cog(Huntr(bot))

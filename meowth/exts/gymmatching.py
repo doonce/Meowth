@@ -512,6 +512,8 @@ class GymMatching(commands.Cog):
             return match
         if score < 80:
             try:
+                if "train" or "meetup" in ctx.invoked_with.lower():
+                    return False
                 answer_yes = self.bot.custom_emoji.get('answer_yes', '\u2705')
                 answer_no = self.bot.custom_emoji.get('answer_no', '\u274e')
                 answer_cancel = self.bot.custom_emoji.get('answer_cancel', '\u274c')
