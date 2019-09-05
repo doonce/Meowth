@@ -81,16 +81,10 @@ class Nest(commands.Cog):
                                     self.bot.loop.create_task(self.edit_nest_messages(ctx, nest, report_message))
                                     count += 1
                                     continue
-                                await utils.safe_delete(report_message)
+                                self.bot.loop.create_task(self.expire_nest(nest, report_message))
+                                count += 1
                             except:
                                 pass
-                            try:
-                                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, nest_dict[channel][nest]['reports'][report].get('dm_dict', {})))
-                                del self.bot.guild_dict[guild.id]['nest_dict'][channel][nest]['reports'][report]
-                                count += 1
-                                continue
-                            except:
-                                continue
         if not migration_list:
             migration_list = [600]
         logger.info(f"------ END - {count} Nests Cleaned - Waiting {min(migration_list)} seconds. ------")
@@ -101,6 +95,22 @@ class Nest(commands.Cog):
     @nest_cleanup.before_loop
     async def before_cleanup(self):
         await self.bot.wait_until_ready()
+
+    async def expire_nest(self, nest, message):
+        guild = message.channel.guild
+        channel = message.channel
+        nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
+        author = guild.get_member(nest_dict.get(nest, {}).get('reports', {}).get(message.id, {}).get('report_author'))
+        await utils.safe_delete(message)
+        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, nest_dict[nest]['reports'][message.id].get('dm_dict', {})))
+        nest_bonus = nest_dict[nest]['reports'].get(message.id, {}).get('caught_by', [])
+        if len(nest_bonus) >= 3 and author and not author.bot:
+            nest_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('reports', {}).setdefault('nest', 0) + 1
+            self.bot.guild_dict[message.guild.id]['trainers'][author.id]['reports']['nest'] = nest_reports
+        try:
+            del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][message.id]
+        except KeyError:
+            pass
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -250,7 +260,7 @@ class Nest(commands.Cog):
             elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         nest_embed.description = f"**Nest**: {location.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
-        result = re.search(r'is a \*\*(.*)\*\* nest!', message.content).group(1)
+        result = re.search(r'Meowth! (.*) nest', message.content).group(1)
         message.content = message.content.replace(result, str(pokemon))
         try:
             await message.edit(content=message.content, embed=nest_embed)
@@ -809,22 +819,6 @@ class Nest(commands.Cog):
                     pass
             confirmation = await channel.send(_('Nests reset. Use **!nest time** to set a new migration time.'), delete_after=10)
             return
-
-    async def expire_nest(self, nest, message):
-        guild = message.channel.guild
-        channel = message.channel
-        nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
-        author = guild.get_member(nest_dict.get(nest, {}).get('reports', {}).get(message.id, {}).get('report_author'))
-        await utils.safe_delete(message)
-        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, nest_dict[nest]['reports'][message.id].get('dm_dict', {})))
-        nest_bonus = nest_dict[nest]['reports'].get(message.id, {}).get('caught_by', [])
-        if len(nest_bonus) >= 3 and author and not author.bot:
-            nest_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('reports', {}).setdefault('nest', 0) + 1
-            self.bot.guild_dict[message.guild.id]['trainers'][author.id]['reports']['nest'] = nest_reports
-        try:
-            del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][message.id]
-        except KeyError:
-            pass
 
     @nest.command(name='time')
     @checks.allownestreport()
