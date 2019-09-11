@@ -814,7 +814,7 @@ class Listing(commands.Cog):
             if user_forms:
                 wantmsg += _('**Pokemon Forms:** ({cat_options})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_forms), width=80)), cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
             if bosslist and not user_link:
-                wantmsg += _('**Bosses:** (raids)\n{want_list}').format(want_list='\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
+                wantmsg += _('**Bosses:** (raids)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
             if user_gyms:
                 wantmsg += _('**Gyms:** (raids)\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
             if user_stops:

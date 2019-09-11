@@ -263,7 +263,11 @@ class Huntr(commands.Cog):
                     raid_embed = await self.make_raid_embed(ctx, entered_raid, raid_details, raidexp, huntrgps, moveset)
                     if not raid_embed:
                         return
-                    raid = discord.utils.get(message.guild.roles, name=entered_raid.lower())
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, entered_raid)
+                    if pokemon.alolan:
+                        raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
+                    else:
+                        raid = discord.utils.get(message.guild.roles, name=str(pokemon).replace(' ', '-').lower())
                     if raid == None:
                         roletest = ""
                     else:
@@ -477,7 +481,10 @@ class Huntr(commands.Cog):
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pokemon)
                         if not pokemon:
                             return
-                        raid = discord.utils.get(message.guild.roles, name=pokemon.name.lower())
+                        if pokemon.alolan:
+                            raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
+                        else:
+                            raid = discord.utils.get(message.guild.roles, name=str(pokemon).replace(' ', '-').lower())
                         if raid == None:
                             roletest = ""
                         else:
@@ -687,7 +694,7 @@ class Huntr(commands.Cog):
                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-            boss_list.append(shiny_str + pokemon.name.title() + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
+            boss_list.append(shiny_str + str(pokemon) + ' (' + str(pokemon.id) + ') ' + pokemon.emoji)
         raid_img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{}?cache=1'.format(str(egg_img))
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
         if len(egg_info['pokemon']) > 1:
@@ -724,11 +731,6 @@ class Huntr(commands.Cog):
         if not raid_details:
             await utils.safe_delete(ctx.message)
             return None
-        raid = discord.utils.get(message.guild.roles, name=entered_raid)
-        if raid == None:
-            roletest = ""
-        else:
-            roletest = _("{pokemon} - ").format(pokemon=raid.mention)
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
@@ -935,7 +937,10 @@ class Huntr(commands.Cog):
             return
         await asyncio.sleep(1)
         ctx.raidreport = await message.channel.send(content=f"Meowth! {str(pokemon).title()} raid reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, {cancel_reaction} to cancel, or {list_emoji} to list all raids!", embed=raid_embed)
-        raid = discord.utils.get(message.guild.roles, name=pokemon.name.lower())
+        if pokemon.alolan:
+            raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
+        else:
+            raid = discord.utils.get(message.guild.roles, name=str(pokemon).replace(' ', '-').lower())
         if raid == None:
             roletest = ""
         else:
@@ -1372,7 +1377,7 @@ class Huntr(commands.Cog):
     @tasks.loop(seconds=300)
     async def raidhour_check(self, loop=True):
         for guild in self.bot.guilds:
-            for event in list(self.bot.guild_dict[guild.id].get('raidhour_dict').keys()):
+            for event in list(self.bot.guild_dict[guild.id].get('raidhour_dict', {}).keys()):
                 if event in self.bot.active_raidhours:
                     continue
                 self.bot.loop.create_task(self.raidhour_manager(guild.id, event))

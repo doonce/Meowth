@@ -225,7 +225,7 @@ async def get_raid_dict(bot):
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(bot, pkmn)
             if not pokemon:
                 continue
-            raid_dict[level].extend([pokemon, str(pokemon), pokemon.name, pokemon.id])
+            raid_dict[level].extend([pokemon, str(pokemon), pokemon.name.lower(), pokemon.id])
     return raid_dict
 
 def get_level(bot, pkmn):
@@ -825,7 +825,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.9.5.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.9.11.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

@@ -381,19 +381,31 @@ class Want(commands.Cog):
                 spellcheck_dict[entered_want] = match
         for entered_want in want_list:
             entered_want.shiny = False
+            role_str_list = []
             role_str = ""
-            if entered_want.name.lower() in self.bot.raid_list and user_link:
-                role = discord.utils.get(guild.roles, name=entered_want.name.lower())
-                if not role:
+            if entered_want.id in self.bot.raid_list and user_link:
+                if entered_want.alolan:
+                    role_name = f"{entered_want.name.lower()}-alolan"
+                else:
+                    role_name = str(entered_want).replace(' ', '-').lower()
+                for role in guild.roles:
+                    if not entered_want.form and not entered_want.alolan:
+                        if entered_want.name.lower() in role.name.lower() and role not in ctx.author.roles:
+                            role_list.append(role)
+                            role_str_list.append(role.mention)
+                    elif role.name == role_name:
+                        role_list.append(role)
+                        role_str_list.append(role.mention)
+                if not role_list:
                     try:
-                        role = await guild.create_role(name = entered_want.name.lower(), hoist = False, mentionable = True)
+                        role = await guild.create_role(name=role_name, hoist=False, mentionable=True)
+                        role_list.append(role)
+                        role_str_list.append(role.mention)
                     except discord.errors.HTTPException:
                         await message.channel.send(_('Maximum guild roles reached. Pokemon not added.'), delete_after=10)
                         return
                     await asyncio.sleep(0.5)
-                if role not in ctx.author.roles:
-                    role_list.append(role)
-                role_str = f" ({role.mention})"
+                role_str = f" ({(', ').join(role_str_list)})"
             if (entered_want.size or entered_want.gender or entered_want.form or entered_want.alolan) and len(str(entered_want).split()) > 1:
                 if str(entered_want) in user_forms:
                     already_want_list.append(str(entered_want))
@@ -453,31 +465,26 @@ class Want(commands.Cog):
         for entered_want in want_split:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_want.strip())
             if pokemon:
-                want_list.append(pokemon.name.lower())
+                want_list.append(pokemon)
             else:
                 spellcheck_list.append(entered_want)
                 match, score = utils.get_match(ctx.bot.pkmn_list, entered_want)
                 spellcheck_dict[entered_want] = match
         for entered_want in want_list:
             role_str = ""
-            if entered_want in self.bot.raid_list:
-                role = discord.utils.get(guild.roles, name=entered_want)
-                if not role:
-                    try:
-                        role = await guild.create_role(name = entered_want.lower(), hoist = False, mentionable = True)
-                    except discord.errors.HTTPException:
-                        await message.channel.send(_('Maximum guild roles reached. Pokemon not added.'), delete_after=10)
-                        return
-                    await asyncio.sleep(0.5)
-                if role not in ctx.author.roles:
-                    role_list.append(role)
-                role_str = f" ({role.mention})"
-            if utils.get_number(self.bot, entered_want) in user_wants:
-                already_want_list.append(entered_want.capitalize())
+            role_str_list = []
+            if entered_want.id in self.bot.raid_list:
+                for role in guild.roles:
+                    if entered_want.name.lower() in role.name.lower() and role not in ctx.author.roles:
+                        role_list.append(role)
+                        role_str_list.append(role.mention)
+                role_str = f" ({(', ').join(role_str_list)})"
+            if entered_want.id in user_wants:
+                already_want_list.append(entered_want.name.title())
                 already_want_count += 1
             else:
-                user_wants.append(utils.get_number(self.bot, entered_want))
-                added_list.append(f"{entered_want.capitalize()}{role_str}")
+                user_wants.append(entered_want.id)
+                added_list.append(f"{entered_want.name.title()}{role_str}")
                 added_count += 1
         await ctx.author.add_roles(*role_list)
         want_count = added_count + already_want_count + len(spellcheck_dict)
@@ -993,28 +1000,55 @@ class Want(commands.Cog):
             await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
             await utils.safe_delete(settings_msg)
         if "link" in reply.content.lower() or "mention" in reply.content.lower():
+            boss_names = [str(word) for word in self.bot.raid_list]
+            boss_names = list(set([word for word in boss_names if not word.islower() and not word.isdigit()]))
+            role_names = [x.replace(' ', '-').lower() for x in boss_names]
+            for x in enumerate(role_names):
+                if 'alola' in x[1]:
+                    role_names[x[0]] = f"{x[1].replace('alolan-', '')}-alolan"
             add_list = []
             remove_list = []
+            user_forms = []
             if self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute_mentions']:
                 user_wants = []
             elif self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link']:
                 user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('wants', [])
+                user_forms = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('forms', [])
             else:
                 user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('bosses', [])
             want_names = [utils.get_name(self.bot, x) for x in user_wants]
             want_names = [x.lower() for x in want_names]
+            form_names = [str(x).replace(' ', '-').lower() for x in user_forms]
+            for x in enumerate(form_names):
+                if 'alola' in x[1]:
+                    form_names[x[0]] = f"{x[1].replace('alolan-', '')}-alolan"
             for role in ctx.author.roles:
-                if role.name.lower() not in want_names and role.name.lower() in self.bot.pkmn_list:
+                role_pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, role.name)
+                if role_pkmn and role.name.lower() not in role_names:
                     remove_list.append(role)
-            for want in want_names:
-                if want in self.bot.raid_list:
+                elif role_pkmn and str(role_pkmn) not in user_forms and role_pkmn.id not in user_wants:
+                    remove_list.append(role)
+            for want in form_names:
+                if want in role_names:
                     role = discord.utils.get(ctx.guild.roles, name=want)
                     if role and role not in ctx.author.roles:
                         add_list.append(role)
-            if remove_list:
-                await ctx.author.remove_roles(*remove_list)
+            for want in want_names:
+                for role in role_names:
+                    if want in role:
+                        role = discord.utils.get(ctx.guild.roles, name=role)
+                        if role and role not in ctx.author.roles:
+                            add_list.append(role)
             if add_list:
-                await ctx.author.add_roles(*add_list)
+                try:
+                    await ctx.author.add_roles(*add_list)
+                except (discord.errors.Forbidden, discord.errors.HTTPException):
+                    pass
+            if remove_list:
+                try:
+                    await ctx.author.remove_roles(*remove_list)
+                except (discord.errors.Forbidden, discord.errors.HTTPException):
+                    pass
 
     @want.command(hidden=True)
     @checks.allowwant()
@@ -1567,12 +1601,22 @@ class Want(commands.Cog):
                 spellcheck_dict[entered_unwant] = match
         for entered_unwant in unwant_list:
             entered_unwant.shiny = False
+            role_str_list = []
             role_str = ""
-            if entered_unwant.name.lower() in self.bot.raid_list and user_link:
-                role = discord.utils.get(guild.roles, name=entered_unwant.name.lower())
-                if role and role in ctx.author.roles:
-                    role_list.append(role)
-                    role_str = f" ({role.mention})"
+            if entered_unwant.id in self.bot.raid_list and user_link:
+                for role in guild.roles:
+                    if entered_unwant.alolan:
+                        role_name = f"{entered_unwant.name.lower()}-alolan"
+                    else:
+                        role_name = str(entered_unwant).replace(' ', '-').lower()
+                    if not entered_unwant.form and not entered_unwant.alolan:
+                        if entered_unwant.name.lower() in role.name.lower() and role in ctx.author.roles:
+                            role_list.append(role)
+                            role_str_list.append(role.mention)
+                    elif role.name == role_name:
+                        role_list.append(role)
+                        role_str_list.append(role.mention)
+                role_str = f" ({(', ').join(role_str_list)})"
             if (entered_unwant.size or entered_unwant.gender or entered_unwant.form or entered_unwant.alolan) and len(str(entered_unwant).split()) > 1:
                 if str(entered_unwant) not in user_forms:
                     not_wanted_list.append(str(entered_unwant))
@@ -1631,29 +1675,31 @@ class Want(commands.Cog):
             await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!unwant** to remove pokemon.")
             return
         for entered_unwant in unwant_split:
+            if len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="boss")
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_unwant.strip(), allow_digits=True)
             if pokemon:
-                unwant_list.append(pokemon.name.lower())
+                unwant_list.append(pokemon)
             else:
                 spellcheck_list.append(entered_unwant)
                 match, score = utils.get_match(ctx.bot.pkmn_list, entered_unwant)
                 spellcheck_dict[entered_unwant] = match
         for entered_unwant in unwant_list:
             role_str = ""
-            if entered_unwant in self.bot.raid_list:
-                role = discord.utils.get(guild.roles, name=entered_unwant)
-                if role and role in ctx.author.roles:
-                    role_list.append(role)
-                    role_str = f" ({role.mention})"
-            if utils.get_number(self.bot, entered_unwant) not in user_wants:
-                not_wanted_list.append(entered_unwant.capitalize())
+            role_str_list = []
+            if entered_unwant.id in self.bot.raid_list:
+                for role in guild.roles:
+                    if entered_unwant.name.lower() in role.name.lower() and role in ctx.author.roles:
+                        role_list.append(role)
+                        role_str_list.append(role.mention)
+                role_str = f" ({(', ').join(role_str_list)})"
+            if entered_unwant.id not in user_wants:
+                not_wanted_list.append(entered_unwant.name.title())
                 not_wanted_count += 1
-            elif len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
-                return await ctx.invoke(self.bot.get_command('unwant all'), category="boss")
             else:
-                user_wants.remove(utils.get_number(self.bot, entered_unwant))
-                removed_list.append(f"{entered_unwant.capitalize()}{role_str}")
+                user_wants.remove(entered_unwant.id)
+                removed_list.append(f"{entered_unwant.name.title()}{role_str}")
                 removed_count += 1
         await ctx.author.remove_roles(*role_list)
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
