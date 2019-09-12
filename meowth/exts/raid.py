@@ -296,17 +296,15 @@ class Raid(commands.Cog):
                                     egg_level = self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level']
                                     if not pokemon and len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
                                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
-                                        pokemon = pokemon.name.lower()
                                     elif not pokemon and egg_level == "5" and self.bot.guild_dict[channel.guild.id]['configure_dict']['settings'].get('regional', None) in self.bot.raid_list:
                                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['regional'])
-                                        pokemon = pokemon.name.lower()
                                     if pokemon:
                                         logger.info('Egg Auto Hatched - ' + channel.name)
                                         try:
                                             self.bot.active_channels.remove(channel)
                                         except ValueError:
                                             pass
-                                        await self._eggtoraid(pokemon.lower(), channel, author=None)
+                                        await self._eggtoraid(str(pokemon).lower(), channel, author=None)
                                         break
                                 self.bot.loop.create_task(self.expire_channel(channel))
                                 try:
@@ -1185,8 +1183,7 @@ class Raid(commands.Cog):
         boss_list = []
         for p in self.bot.raid_info['raid_eggs'][egg_level]['pokemon']:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, p)
-            p_name = pokemon.name.title()
-            boss_list.append(p_name.lower())
+            boss_list.append(str(pokemon).lower())
         for trainer in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']:
             self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'][trainer]['interest'] = boss_list
         self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon'] = ''
@@ -1431,7 +1428,7 @@ class Raid(commands.Cog):
                                 error = _("entered a pokemon that doesn't appear in raids")
                                 break
                             else:
-                                pokemon_or_level = pokemon.name.lower()
+                                pokemon_or_level = str(pokemon).lower()
                                 pokemon.shiny = False
                                 raid_embed.set_thumbnail(url=pokemon.img_url)
                     raid_embed.clear_fields()
@@ -1607,8 +1604,7 @@ class Raid(commands.Cog):
             if gym_url:
                 raid_gmaps_link = gym_url
         if not raid_details:
-            await utils.safe_delete(ctx.message)
-            return
+            return await utils.safe_delete(ctx.message)
         raid_channel = await self.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.form.lower() if boss.form else ''}{'-alolan' if boss.alolan else ''}", raid_details, "raid")
         if not raid_channel:
             return
@@ -1858,12 +1854,10 @@ class Raid(commands.Cog):
             self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
             if len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
-                pokemon = pokemon.name.lower()
-                await self._eggassume(ctx, 'assume ' + pokemon, raid_channel)
+                await self._eggassume(ctx, 'assume ' + str(pokemon), raid_channel)
             elif egg_level == "5" and self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings'].get('regional', None) in self.bot.raid_list:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
-                pokemon = pokemon.name.lower()
-                await self._eggassume(ctx, 'assume ' + pokemon, raid_channel)
+                await self._eggassume(ctx, 'assume ' + str(pokemon), raid_channel)
             await utils.safe_reaction(raid_message, help_reaction)
             for reaction in react_list:
                 await asyncio.sleep(0.25)
@@ -2063,7 +2057,6 @@ class Raid(commands.Cog):
                 invitemsgstr2 = ""
             raidreportcontent = _('Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. {invitemsgstr} coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=eggdetails['address'], invitemsgstr=invitemsgstr, raid_channel=raid_channel.mention)
             raidmsg = f"Meowth! {str(pokemon)} EX raid reported by {raid_messageauthor.mention} in {report_channelchannel.mention}! Details: {eggdetails['address']}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands.\n\nThis channel will be deleted five minutes after the timer expires."
-
         raid_channel_name = f"{pokemon.name.lower()}{'-'+pokemon.form.lower() if pokemon.form else ''}{'-alolan' if pokemon.alolan else ''}-" + utils.sanitize_channel_name(eggdetails['address'])
         if pokemon.alolan:
             raid = discord.utils.get(raid_channel.guild.roles, name=f"{pokemon.name.lower()}-alolan")
@@ -2317,8 +2310,7 @@ class Raid(commands.Cog):
         }
         if len(self.bot.raid_info['raid_eggs']['EX']['pokemon']) == 1:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs']['EX']['pokemon'][0])
-            pokemon = pokemon.name.lower()
-            await self._eggassume(ctx, 'assume ' + pokemon, raid_channel)
+            await self._eggassume(ctx, 'assume ' + str(pokemon), raid_channel)
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
         ow = raid_channel.overwrites_for(ctx.author)
         ow.send_messages = True
@@ -2928,6 +2920,7 @@ class Raid(commands.Cog):
             return
         if member.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
+            await ctx.send(f"Meowth! I added **{member.display_name}** as a manager!")
 
     @train.command(name="history")
     @checks.allowmeetupreport()
@@ -4004,7 +3997,7 @@ class Raid(commands.Cog):
         ctrs_dict[ctrs_index]['moveset'] = "Unknown Moveset"
         ctrs_dict[ctrs_index]['emoji'] = '0\u20e3'
         img_url = pokemon.img_url
-        level = utils.get_level(self.bot, pokemon.name.lower()) if utils.get_level(self.bot, pokemon.name.lower()).isdigit() else "5"
+        level = utils.get_level(self.bot, str(pokemon)) if utils.get_level(self.bot, str(pokemon).isdigit() else "5"
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog'), _('foggy')]
         match_list = ['NO_WEATHER', 'NO_WEATHER', 'CLEAR', 'CLEAR', 'RAINY',

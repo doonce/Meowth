@@ -423,7 +423,9 @@ class Wild(commands.Cog):
         if (iv_percent or iv_percent == 0) and "IV**" in content:
             content = re.sub(r" - \*\*[0-9]{1,3}IV\*\*", f" - **{iv_percent}IV**", content, flags=re.IGNORECASE)
         elif iv_percent or iv_percent == 0:
-            content = content + f" - **{iv_percent}IV**"
+            content = content.splitlines()
+            content[0] = f"{content[0]} - **{iv_percent}IV**"
+            content = ('\n').join(content)
         try:
             await message.edit(content=content, embed=wild_embed)
         except:
@@ -452,7 +454,9 @@ class Wild(commands.Cog):
                 if (iv_percent or iv_percent == 0) and "IV**" in content:
                     content = re.sub(r" - \*\*[0-9]{1,3}IV\*\*", f" - **{iv_percent}IV**", content, flags=re.IGNORECASE)
                 elif iv_percent or iv_percent == 0:
-                    content = content + f" - **{iv_percent}IV**"
+                    content = content.splitlines()
+                    content[0] = f"{content[0]} - **{iv_percent}IV**"
+                    content = ('\n').join(content)
                 await dm_message.edit(content=content, embed=wild_embed)
             except:
                 pass

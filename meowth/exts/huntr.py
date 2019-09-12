@@ -489,9 +489,9 @@ class Huntr(commands.Cog):
                             roletest = ""
                         else:
                             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-                        raidmsg = f"{roletest}Meowth! {pokemon.name.title()} raid reported by {message.author.mention}! Details: {raid_details}. React below if you want to make a channel for this raid!"
+                        raidmsg = f"{roletest}Meowth! {str(pokemon)} raid reported by {message.author.mention}! Details: {raid_details}. React below if you want to make a channel for this raid!"
                         ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
-                        dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {pokemon.name.title()} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
+                        dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {str(pokemon)} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                 elif report_details.get('type', None) == "egg":
                     if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports', {}).get('egg'):
                         return
@@ -719,7 +719,6 @@ class Huntr(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_raid)
         if pokemon:
-            entered_raid = pokemon.name.lower()
             pokemon.shiny = False
             pokemon.gender = False
         level = utils.get_level(ctx.bot, pokemon.id)
@@ -739,7 +738,7 @@ class Huntr(commands.Cog):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         raid_number = pokemon.id
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the level {level} raid!').format(level=level), description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{pokemon.name.title()} ({pokemon.id}) {pokemon.emoji}", inline=True)
+        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{str(pokemon)} ({pokemon.id}) {pokemon.emoji}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(ctx.bot, message.guild, utils.get_weaknesses(ctx.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
@@ -1086,12 +1085,10 @@ class Huntr(commands.Cog):
         await raid_channel.send(f"This egg was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.\nThe weather may be inaccurate for this raid, use **{ctx.prefix}weather** to set the correct weather.")
         if len(ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
-            pokemon = pokemon.name.lower()
-            await raid_cog._eggassume(ctx, 'assume ' + pokemon, raid_channel)
+            await raid_cog._eggassume(ctx, 'assume ' + str(pokemon), raid_channel)
         elif egg_level == "5" and ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings'].get('regional', None) in ctx.bot.raid_list:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
-            pokemon = pokemon.name.lower()
-            await raid_cog._eggassume(ctx, 'assume ' + pokemon, raid_channel)
+            await raid_cog._eggassume(ctx, 'assume ' + str(pokemon), raid_channel)
         self.event_loop.create_task(raid_cog.expiry_check(raid_channel))
         index = 0
         for field in raid_embed.fields:
@@ -1377,11 +1374,14 @@ class Huntr(commands.Cog):
     @tasks.loop(seconds=300)
     async def raidhour_check(self, loop=True):
         for guild in self.bot.guilds:
-            for event in list(self.bot.guild_dict[guild.id].get('raidhour_dict', {}).keys()):
-                if event in self.bot.active_raidhours:
-                    continue
-                self.bot.loop.create_task(self.raidhour_manager(guild.id, event))
-                self.bot.active_raidhours.append(event)
+            try:
+                for event in list(self.bot.guild_dict[guild.id].get('raidhour_dict', {}).keys()):
+                    if event in self.bot.active_raidhours:
+                        continue
+                    self.bot.loop.create_task(self.raidhour_manager(guild.id, event))
+                    self.bot.active_raidhours.append(event)
+            except:
+                pass
         if not loop:
             return
 
