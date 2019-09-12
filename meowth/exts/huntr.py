@@ -635,7 +635,7 @@ class Huntr(commands.Cog):
         except AttributeError:
             return
         ctrs_dict = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('ctrs_dict', {})
-        entered_raid = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('pokemon', "")
+        entered_raid = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('pkmn_obj', "")
         weather =  self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('weather', None)
         if not ctrs_dict:
             ctrs_dict = await raid_cog._get_generic_counters(channel.guild, entered_raid, weather)
@@ -899,10 +899,10 @@ class Huntr(commands.Cog):
         else:
             return
         if not pokemon.id in ctx.bot.raid_list:
-            await message.channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()), delete_after=10)
+            await message.channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=pokemon.name.capitalize()), delete_after=10)
             return
-        elif utils.get_level(ctx.bot, entered_raid) == "EX":
-            await message.channel.send(_("Meowth! The Pokemon {pokemon} only appears in EX Raids! Use **!exraid** to report one!").format(pokemon=entered_raid.capitalize()), delete_after=10)
+        elif utils.get_level(ctx.bot, str(pokemon)) == "EX":
+            await message.channel.send(_("Meowth! The Pokemon {pokemon} only appears in EX Raids! Use **!exraid** to report one!").format(pokemon=pokemon.name.capitalize()), delete_after=10)
             return
         level = utils.get_level(ctx.bot, pokemon.id)
         matched_boss = False
@@ -910,7 +910,6 @@ class Huntr(commands.Cog):
             boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
             if str(boss) == str(pokemon):
                 pokemon = boss
-                entered_raid = boss.name.lower()
                 matched_boss = True
                 break
         if not matched_boss:
@@ -918,7 +917,6 @@ class Huntr(commands.Cog):
                 boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
                 if boss and boss.id == pokemon.id:
                     pokemon = boss
-                    entered_raid = boss.name.lower()
                     break
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
         if not weather:
@@ -931,7 +929,7 @@ class Huntr(commands.Cog):
         raid_embed = await self.make_raid_embed(ctx, str(pokemon), raid_details, raidexp, raid_coordinates, moves)
         if not raid_embed:
             return
-        raid_channel = await raid_cog.create_raid_channel(ctx, entered_raid, raid_details, "raid")
+        raid_channel = await raid_cog.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.form.lower() if boss.form else ''}{'-alolan' if boss.alolan else ''}", raid_details, "raid")
         if not raid_channel:
             return
         await asyncio.sleep(1)
@@ -954,7 +952,7 @@ class Huntr(commands.Cog):
             await utils.safe_reaction(ctx.raidreport, reaction)
         await utils.safe_reaction(ctx.raidreport, list_emoji)
         await raid_message.pin()
-        level = utils.get_level(self.bot, entered_raid)
+        level = utils.get_level(self.bot, str(pokemon))
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
             'report_channel':message.channel.id,
             'report_guild':message.guild.id,
@@ -970,7 +968,7 @@ class Huntr(commands.Cog):
             'address': raid_details,
             'location':raid_details,
             'type': 'raid',
-            'pokemon': entered_raid,
+            'pokemon': pokemon.name.lower(),
             'pkmn_obj': str(pokemon),
             'egg_level': '0',
             'moveset': 0,
@@ -978,8 +976,11 @@ class Huntr(commands.Cog):
             'coordinates':raid_coordinates
         }
         await raid_cog._timerset(raid_channel, raidexp)
+        if not ctx.prefix:
+            prefix = self.bot._get_prefix(self.bot, ctx.message)
+            ctx.prefix = prefix[-1]
         await raid_channel.send(f"This raid was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.\nThe weather may be inaccurate for this raid, use **{ctx.prefix}weather** to set the correct weather.")
-        ctrs_dict = await raid_cog._get_generic_counters(message.guild, entered_raid, weather)
+        ctrs_dict = await raid_cog._get_generic_counters(message.guild, str(pokemon), weather)
         if str(level) in ctx.bot.guild_dict[message.guild.id]['configure_dict']['counters']['auto_levels']:
             try:
                 ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
@@ -1295,9 +1296,9 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
+        random_raid = random.choice(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'])
         embed = discord.Embed(title="Title", description="Embed Description")
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":tier5, "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":"Move 1 / Move 2", "raidexp":38}).replace("'", '"'), embed=embed)
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":random_raid.lower(), "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":"Move 1 / Move 2", "raidexp":38}).replace("'", '"'), embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
@@ -1380,7 +1381,8 @@ class Huntr(commands.Cog):
                         continue
                     self.bot.loop.create_task(self.raidhour_manager(guild.id, event))
                     self.bot.active_raidhours.append(event)
-            except:
+            except Exception as e:
+                print(e)
                 pass
         if not loop:
             return
@@ -1400,7 +1402,6 @@ class Huntr(commands.Cog):
             try:
                 report_message = await report_channel.fetch_message(event_id)
                 ctx = await self.bot.get_context(report_message)
-                ctx.command = self.bot.get_command("train")
             except:
                 return
             bot_account = guild.get_member(event_dict['bot_account'])
@@ -1409,19 +1410,25 @@ class Huntr(commands.Cog):
                 now = datetime.datetime.utcnow()
                 wait_time = [600]
                 event_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['raidhour_dict'][event_id])
-                if event_dict['make_trains']:
+                if event_dict['make_trains'] or event_dict.get('make_meetups'):
                     if now >= event_dict['channel_time']:
                         event_start = event_dict['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
                         event_end = event_dict['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
                         train_channel = self.bot.get_channel(event_dict['train_channel'])
                         for location in event_dict['event_locations']:
                             ctx.channel, ctx.message.channel = train_channel, train_channel
-                            channel = await raid_cog._train_channel(ctx, location)
+                            if event_dict['make_trains']:
+                                ctx.command = self.bot.get_command("train")
+                                channel = await raid_cog._train_channel(ctx, location)
+                            elif event_dict.get('make_meetups'):
+                                ctx.command = self.bot.get_command("meetup")
+                                channel = await raid_cog._meetup(ctx, location)
                             ctx.channel, ctx.message.channel = channel, channel
                             await ctx.invoke(self.bot.get_command("meetup title"), title=f"{location} - {event_dict['event_title']}")
                             await ctx.invoke(self.bot.get_command("starttime"), start_time=event_start.strftime('%B %d %I:%M %p'))
                             await ctx.invoke(self.bot.get_command("timerset"), timer=event_end.strftime('%B %d %I:%M %p'))
                         self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['make_trains'] = False
+                        self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['make_meetups'] = False
                     else:
                         wait_time.append((event_dict['channel_time'] - now).total_seconds())
                 if bot_account:
@@ -1466,7 +1473,7 @@ class Huntr(commands.Cog):
         except KeyError:
             return
 
-    @commands.group(hidden=True, invoke_without_command=True, case_insensitive=True)
+    @commands.group(hidden=True, invoke_without_command=True, case_insensitive=True, aliases=["commday"])
     @checks.is_mod()
     async def raidhour(self, ctx):
         author = ctx.author
@@ -1505,7 +1512,7 @@ class Huntr(commands.Cog):
                         return False
                 if event_dict.get('bot_account') == None:
                     raid_embed.clear_fields()
-                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=_("Meowth! I'll help you report a raid hour or raid day! This will mute a given bot account in a given channel during a certain time. I'll also help you make Raid Train channels if you'd like.\n\nFirst, I'll need to know what **bot account** you'd like to mute. Reply with a @mention, ID, or case-sensitive Username of the bot or **none** to not mute a bot and just schedule channels. You can reply with **cancel** to stop anytime."), inline=False)
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=_("Meowth! I'll help you schedule a raid hour, raid day, or other event! This will allow you to mute a given bot account in a given channel during a certain time. I'll also help you make Raid Train or Meetup channels if you'd like.\n\nFirst, I'll need to know what **bot account** you'd like to mute. Reply with a @mention, ID, or case-sensitive Username of the bot or **none** to not mute a bot and just schedule channels. You can reply with **cancel** to stop anytime."), inline=False)
                     bot_account_wait = await channel.send(embed=raid_embed)
                     try:
                         bot_account_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1524,7 +1531,6 @@ class Huntr(commands.Cog):
                         event_dict['bot_account'] = False
                         bot_account = None
                         event_dict['bot_channel'] = False
-                        event_dict['make_trains'] = True
                     else:
                         converter = commands.MemberConverter()
                         try:
@@ -1638,7 +1644,7 @@ class Huntr(commands.Cog):
                             continue
                 if event_dict.get('make_trains') == None:
                     raid_embed.clear_fields()
-                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, would you like some train channels to go with this raid hour for coordination? I'll help you make some train channels automatically three hours before the scheduled raid hour. These channels will be reported in {ctx.channel.mention}. Reply with **yes** or **no**. You can reply with **cancel** to stop anytime.", inline=False)
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, would you like some channels to go with this event for coordination? I'll help you make some channels automatically three hours before the scheduled event. These channels will be reported in {ctx.channel.mention}. Reply with **train** and I'll make train channels, usable for raids. Reply with **meetup** and I'll make meetup channels for other events. Reply with **none** to skip making channels. You can reply with **cancel** to stop anytime.", inline=False)
                     make_trains_wait = await channel.send(embed=raid_embed)
                     try:
                         make_trains_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1653,19 +1659,24 @@ class Huntr(commands.Cog):
                     if make_trains_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
-                    elif make_trains_msg.clean_content.lower() == "yes" or make_trains_msg.clean_content.lower() == "y":
+                    elif make_trains_msg.clean_content.lower() == "train":
                         event_dict['make_trains'] = True
-                    elif make_trains_msg.clean_content.lower() == "no" or make_trains_msg.clean_content.lower() == "n":
+                        event_dict['make_meetups'] = False
+                    elif make_trains_msg.clean_content.lower() == "meetup":
                         event_dict['make_trains'] = False
+                        event_dict['make_meetups'] = True
+                    elif make_trains_msg.clean_content.lower() == "none":
+                        event_dict['make_trains'] = False
+                        event_dict['make_meetups'] = False
                     else:
                         raid_embed.clear_fields()
                         raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! I couldn't understand your response! Retry or reply with **cancel**.", inline=False)
                         make_trains_wait = await channel.send(embed=raid_embed, delete_after=20)
                         continue
-                if event_dict['make_trains']:
+                if event_dict['make_trains'] or event_dict['make_meetups']:
                     if not event_dict.get('train_channel'):
                         raid_embed.clear_fields()
-                        raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, what **channel** would you like the train channels to be reported in? Reply with a #mention, ID, or case-sensitive name of the channel. You can reply with **cancel** to stop anytime.", inline=False)
+                        raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, what **channel** would you like the channels to be reported in? Reply with a #mention, ID, or case-sensitive name of the channel. You can reply with **cancel** to stop anytime.", inline=False)
                         train_channel_wait = await channel.send(embed=raid_embed)
                         try:
                             train_channel_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1692,7 +1703,7 @@ class Huntr(commands.Cog):
                                 continue
                     if not event_dict.get('event_title'):
                         raid_embed.clear_fields()
-                        raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, reply with the **event title** for your train channels. This can be something like `Legendary Raid Hour` etc. You can reply with **cancel** to stop anytime.", inline=False)
+                        raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, reply with the **event title** for your channels. This can be something like `Legendary Raid Hour`, `Community Day` etc. You can reply with **cancel** to stop anytime.", inline=False)
                         event_title_wait = await channel.send(embed=raid_embed)
                         try:
                             event_title_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1711,7 +1722,7 @@ class Huntr(commands.Cog):
                             event_dict['event_title'] = event_title_msg.clean_content.lower()
                     if not event_dict.get('event_locations'):
                         raid_embed.clear_fields()
-                        raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, reply with a comma separated list of the **event locations** for your train channels. I'll make a channel for each location. You can reply with **cancel** to stop anytime.", inline=False)
+                        raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, reply with a comma separated list of the **event locations** for your channels. I'll make a channel for each location. You can reply with **cancel** to stop anytime.", inline=False)
                         event_loc_wait = await channel.send(embed=raid_embed)
                         try:
                             event_loc_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1741,7 +1752,7 @@ class Huntr(commands.Cog):
             if bot_account:
                 success_str += f"I will mute {bot_account.mention} in {bot_channel.mention} on {local_mute.strftime('%B %d at %I:%M %p')} and will unmute at the end of the event.\n\n"
             if event_dict['make_trains']:
-                success_str += f"I will make {len(event_dict['event_locations'])} train channels in {train_channel.mention} on {local_channel.strftime('%B %d at %I:%M %p')} and remove them at the end of the event. These channels will be for: {(', ').join(event_dict['event_locations'])}. The title for the trains will be: {event_dict['event_title']}."
+                success_str += f"I will make {len(event_dict['event_locations'])} channels in {train_channel.mention} on {local_channel.strftime('%B %d at %I:%M %p')} and remove them at the end of the event. These channels will be for: {(', ').join(event_dict['event_locations'])}. The title for the trains will be: {event_dict['event_title']}."
             raid_embed.add_field(name=_('**Raid Hour Report**'), value=f"Meowth! A raid hour has been successfully scheduled. To cancel an event use **{ctx.prefix}raidhour cancel**\n\n{success_str}", inline=False)
             raid_hour_var = self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {})
             self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][ctx.message.id] = copy.deepcopy(event_dict)
@@ -1750,18 +1761,37 @@ class Huntr(commands.Cog):
             raid_embed.add_field(name=_('**Raid Hour Report Cancelled**'), value=_("Meowth! Your raid hour has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=raid_embed, delete_after=10)
 
-    @raidhour.command(name="cancel")
+    @raidhour.command(name="cancel", aliases=["list"])
     @checks.is_mod()
     async def raidhour_cancel(self, ctx):
         cancel_str = ""
         if not list(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict').keys()):
             return await ctx.send("There are no scheduled raid hours.", delete_after=15)
         for event in list(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict').keys()):
-            cancel_str += f"{str(event)} {self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_title'] if self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_title'] else ''}\n"
+            cancel_str += f"ID: **{str(event)}**\n"
             local_start = self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
             local_end = self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+            bot_account = ctx.guild.get_member(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['bot_account'])
+            bot_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['bot_channel'])
+            report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['train_channel'])
+            if self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['make_trains']:
+                channel_type = "train "
+            elif self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['make_meetups']:
+                channel_type = "meetup "
+            else:
+                channel_type = ""
+            if self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_title']:
+                cancel_str += f"-- Title: {self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_title']}\n"
             cancel_str += f"-- Event Start: {local_start.strftime('%B %d at %I:%M %p')}\n"
-            cancel_str += f"-- Event End: {local_end.strftime('%B %d at %I:%M %p')}\n\n"
+            cancel_str += f"-- Event End: {local_end.strftime('%B %d at %I:%M %p')}\n"
+            if bot_account:
+                cancel_str += f"-- Muting: {bot_account.mention} {'in '+bot_channel.mention if bot_channel else ''}\n"
+            if report_channel:
+                cancel_str += f"-- {channel_type.title()}Channels: {(', ').join(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_locations'])} in {report_channel.mention}\n"
+            cancel_str += "\n"
+        if ctx.invoked_with == "list":
+            await ctx.send(cancel_str)
+            return
         event_list_wait = await ctx.send(f"{ctx.author.mention} please send the event ID of the event you would like to cancel.\n{cancel_str}", delete_after=60)
         def check(reply):
             if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:

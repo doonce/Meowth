@@ -1269,10 +1269,10 @@ class Raid(commands.Cog):
                     pass
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['ctrsmessage'] = None
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['ctrs_dict'] = {}
+            await self._eggtoraid(newraid, channel, author=message.author)
             if egg_level == "0":
                 egg_level = utils.get_level(self.bot, newraid)
                 self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['exp'] -= 60 * self.bot.raid_info['raid_eggs'][egg_level]['raidtime']
-            await self._eggtoraid(newraid, channel, author=message.author)
 
     @commands.command()
     @commands.has_permissions(manage_channels=True)
@@ -2488,6 +2488,7 @@ class Raid(commands.Cog):
             await utils.safe_delete(message)
 
     async def _meetup(self, ctx, location):
+        print(ctx.command)
         if "train" in str(ctx.command):
             meetup_type = "train"
             meetup_dict = "raidtrain_dict"
