@@ -443,7 +443,7 @@ class Raid(commands.Cog):
                 elif (self.bot.guild_dict[guild.id][report_dict][channel.id]['active'] == False) and (not self.bot.is_closed()):
                     if report_channel:
                         # Check message again in case it was edited or hatched
-                        if "level" in reportmsg.embeds[0].author.name.lower():
+                        if reportmsg and "level" in reportmsg.embeds[0].author.name.lower():
                             try:
                                 reportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][channel.id]['raid_report'])
                             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
@@ -3499,7 +3499,7 @@ class Raid(commands.Cog):
                 del chsplit[0]
                 raid_details = ' '.join(chsplit)
                 raid_details = raid_details.strip()
-                if (not topic):
+                if (not topic) and raid_message:
                     exp = raid_message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp() + (60 * self.bot.raid_info['raid_eggs'][egg_level]['hatchtime'])
                     manual_timer = False
                 else:
@@ -3521,7 +3521,7 @@ class Raid(commands.Cog):
                 del chsplit[0]
                 raid_details = ' '.join(chsplit)
                 raid_details = raid_details.strip()
-                if (not topic):
+                if (not topic) and raid_message:
                     exp = raid_message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp() + (60 * self.bot.raid_info['raid_eggs'][utils.get_level(self.bot, pokemon)]['raidtime'])
                     manual_timer = False
                 else:
@@ -3542,7 +3542,7 @@ class Raid(commands.Cog):
                 del chsplit[0]
                 raid_details = ' '.join(chsplit)
                 raid_details = raid_details.strip()
-                if (not topic):
+                if (not topic) and raid_message:
                     exp = raid_message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp() + (((60 * 60) * 24) * 14)
                     manual_timer = False
                 else:
@@ -3997,7 +3997,7 @@ class Raid(commands.Cog):
         ctrs_dict[ctrs_index]['moveset'] = "Unknown Moveset"
         ctrs_dict[ctrs_index]['emoji'] = '0\u20e3'
         img_url = pokemon.img_url
-        level = utils.get_level(self.bot, str(pokemon)) if utils.get_level(self.bot, str(pokemon).isdigit() else "5"
+        level = utils.get_level(self.bot, str(pokemon)) if utils.get_level(self.bot, str(pokemon)).isdigit() else "5"
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog'), _('foggy')]
         match_list = ['NO_WEATHER', 'NO_WEATHER', 'CLEAR', 'CLEAR', 'RAINY',
