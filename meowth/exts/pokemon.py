@@ -191,8 +191,8 @@ class Pokemon():
         self.quick_moves = self.game_template.get('pokemonSettings', {}).get('quickMoves', None)
         self.height = self.game_template.get('pokemonSettings', {}).get('pokedexHeightM', None)
         self.weight = self.game_template.get('pokemonSettings', {}).get('pokedexWeightKg', None)
-        self.evolves = self.game_template.get('pokemonSettings', {}).get('evolutionIds', None)
-        self.evolve_candy = self.game_template.get('pokemonSettings', {}).get('candyToEvolve', None)
+        self.evolves = self.game_template.get('pokemonSettings', {}).get('evolutionIds', False) or self.game_template.get('pokemonSettings', {}).get('evolutionBranch', False)
+        self.evolve_candy = self.game_template.get('pokemonSettings', {}).get('candyToEvolve', False) or self.game_template.get('pokemonSettings', {}).get('evolutionBranch', [{}])[0].get('candyCost', False)
         self.buddy_distance = self.game_template.get('pokemonSettings', {}).get('kmBuddyDistance', None)
         self.research_cp = f"{self._get_cp(15, 10, 10, 10)}-{self._get_cp(15, 15, 15, 15)}"
         self.raid_cp = f"{self._get_cp(20, 10, 10, 10)}-{self._get_cp(20, 15, 15, 15)}"
@@ -922,10 +922,15 @@ class Pokedex(commands.Cog):
         sprite_msg = await ctx.send(embed=preview_embed)
 
     @commands.group(hidden=True, aliases=['dex'], invoke_without_command=True, case_insensitive=True)
-    async def pokedex(self, ctx, *, pokemon: Pokemon):
+    async def pokedex(self, ctx, *, pokemon: str=None):
         """Pokedex information for a pokemon
 
         Usage: !pokedex <pokemon with form, gender, etc>"""
+        if not pokemon and checks.check_hatchedraid(ctx):
+            pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pkmn_obj']
+        pokemon = await Pokemon.async_get_pokemon(self.bot, pokemon)
+        if not pokemon:
+            return await ctx.send(f"Meowth! I'm missing some details! Usage: {ctx.prefix}{ctx.invoked_with} **<pokemon>**", delete_after=30)
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
         pokemon.gender = False
         pokemon.size = None
@@ -945,7 +950,9 @@ class Pokedex(commands.Cog):
                 form_key += "G"
             if "S" in form_key or "G" in form_key:
                 form_key = f"**({form_key})**"
-            if form == "None":
+            if form == "None" and "Normal" in forms:
+                continue
+            elif form == "None":
                 form = "Normal"
             form_str = f"{form} {form_key}"
             form_list.append(form_str.strip())
@@ -964,10 +971,15 @@ class Pokedex(commands.Cog):
         pokedex_msg = await ctx.send(embed=preview_embed)
 
     @pokedex.command(hidden=True)
-    async def stats(self, ctx, *, pokemon: Pokemon):
+    async def stats(self, ctx, *, pokemon: str=None):
         """Detailed Pokedex information for a pokemon
 
         Usage: !pokedex stats <pokemon with form, gender, etc>"""
+        if not pokemon and checks.check_hatchedraid(ctx):
+            pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pkmn_obj']
+        pokemon = await Pokemon.async_get_pokemon(self.bot, pokemon)
+        if not pokemon:
+            return await ctx.send(f"Meowth! I'm missing some details! Usage: {ctx.prefix}{ctx.invoked_with} **<pokemon>**", delete_after=30)
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
         pokemon.gender = False
         pokemon.size = None
@@ -1011,7 +1023,7 @@ class Pokedex(commands.Cog):
             field_value += f"Buddy Distance: **{pokemon.buddy_distance}km**\n"
         if pokemon.charge_moves and pokemon.quick_moves:
             charge_moves = [x.replace('_', ' ').title() for x in pokemon.charge_moves]
-            quick_moves = [x.replace('_', ' ').title() for x in pokemon.quick_moves]
+            quick_moves = [x.replace('_FAST', '').replace('_', ' ').title() for x in pokemon.quick_moves]
             field_value += f"Quick Moves: **{(', ').join(quick_moves)}**\nCharge Moves: **{(', ').join(charge_moves)}**"
         preview_embed.add_field(name="Other Info:", value=field_value)
         preview_embed.set_thumbnail(url=pokemon.img_url)

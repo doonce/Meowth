@@ -144,13 +144,21 @@ def check_raidchannel(ctx):
     raid_channels = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).keys()
     return channel.id in raid_channels
 
+def check_hatchedraid(ctx):
+    if ctx.guild is None:
+        return False
+    channel = ctx.channel
+    guild = ctx.guild
+    pokemon = ctx.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('pkmn_obj', False)
+    return pokemon
+
 def check_eggchannel(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
     type = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('type', None)
-    return type == 'egg'
+    return type == "egg"
 
 def check_raidactive(ctx):
     if ctx.guild is None:
@@ -417,7 +425,7 @@ def allowtrainreport():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_raidset(ctx):
-            if check_raidreport(ctx) or check_tutorialchannel(ctx) or check_eggchannel(ctx) or check_raidchannel(ctx):
+            if check_raidreport(ctx) or check_tutorialchannel(ctx) or check_eggchannel(ctx) or check_raidchannel(ctx) or check_meetupreport(ctx):
                 return True
             else:
                 raise errors.RegionEggChannelCheckFail()
