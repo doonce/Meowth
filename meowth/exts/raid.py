@@ -705,14 +705,15 @@ class Raid(commands.Cog):
                     continue
                 user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
                 user_mute = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
-                user_forms = []
                 if user_mute:
                     user_wants = []
+                    user_forms = []
                 elif user_link:
                     user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('wants', [])
                     user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('forms', [])
                 else:
                     user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+                    user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
                 want_names = [utils.get_name(self.bot, x) for x in user_wants]
                 want_names = [x.lower() for x in want_names]
                 form_names = [str(x).replace(' ', '-').lower() for x in user_forms]

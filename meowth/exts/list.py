@@ -774,6 +774,7 @@ class Listing(commands.Cog):
         user_wants = sorted(user_wants)
         wantlist = [utils.get_name(self.bot, x).title() for x in user_wants]
         user_bosses = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+        user_bossforms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
         user_bosses = sorted(user_bosses)
         bosslist = [utils.get_name(self.bot, x).title() for x in user_bosses]
         user_gyms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
@@ -815,6 +816,8 @@ class Listing(commands.Cog):
                 wantmsg += _('**Pokemon Forms:** ({cat_options})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_forms), width=80)), cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
             if bosslist and not user_link:
                 wantmsg += _('**Bosses:** (raids)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
+            if user_bossforms:
+                wantmsg += _('**Boss Forms:** (raids)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_bossforms), width=80)))
             if user_gyms:
                 wantmsg += _('**Gyms:** (raids)\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
             if user_stops:

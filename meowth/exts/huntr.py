@@ -1663,6 +1663,7 @@ class Huntr(commands.Cog):
                         event_dict['make_trains'] = True
                         event_dict['make_meetups'] = False
                     elif make_trains_msg.clean_content.lower() == "meetup":
+                        event_dict['channel_time'] = event_start - datetime.timedelta(days=3)
                         event_dict['make_trains'] = False
                         event_dict['make_meetups'] = True
                     elif make_trains_msg.clean_content.lower() == "none":

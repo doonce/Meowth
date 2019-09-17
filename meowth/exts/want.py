@@ -338,9 +338,16 @@ class Want(commands.Cog):
         author = message.author
         guild = message.guild
         channel = message.channel
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-        user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
+        if "boss" in ctx.invoked_with:
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
+            if user_link:
+                await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!want** to add pokemon.")
+                return
+        else:
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         want_split = pokemon.lower().split(',')
         want_list = []
         added_count = 0
@@ -383,7 +390,7 @@ class Want(commands.Cog):
             entered_want.shiny = False
             role_str_list = []
             role_str = ""
-            if entered_want.id in self.bot.raid_list and user_link:
+            if entered_want.id in self.bot.raid_list and (user_link or "boss" in ctx.invoked_with):
                 if entered_want.alolan:
                     role_name = f"{entered_want.name.lower()}-alolan"
                 else:
@@ -424,7 +431,7 @@ class Want(commands.Cog):
                     added_count += 1
         await ctx.author.add_roles(*role_list)
         want_count = added_count + already_want_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** pokemon:\n').format(member=ctx.author.display_name, count=want_count)
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if want_count > 1 and 'boss' in ctx.invoked_with else ''}:\n"
         if added_count > 0:
             confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
@@ -438,81 +445,20 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
-    @want.command(name='boss')
+    @want.command(name='boss', aliases=['bosses'])
     @checks.allowwant()
     async def want_boss(self, ctx, *, bosses):
         """Adds a boss role to your wants. Currently used for raid reports.
 
         Usage: !want boss <boss list>"""
+        await ctx.invoke(self.bot.get_command('want pokemon'), pokemon=bosses)
+
+    async def _want_poi(self, ctx, pois):
         await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
-        want_split = bosses.lower().split(',')
-        want_list = []
-        added_count = 0
-        spellcheck_dict = {}
-        spellcheck_list = []
-        already_want_count = 0
-        already_want_list = []
-        added_list = []
-        role_list = []
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-        user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-        if user_link:
-            await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!want** to add pokemon.")
-            return
-        for entered_want in want_split:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_want.strip())
-            if pokemon:
-                want_list.append(pokemon)
-            else:
-                spellcheck_list.append(entered_want)
-                match, score = utils.get_match(ctx.bot.pkmn_list, entered_want)
-                spellcheck_dict[entered_want] = match
-        for entered_want in want_list:
-            role_str = ""
-            role_str_list = []
-            if entered_want.id in self.bot.raid_list:
-                for role in guild.roles:
-                    if entered_want.name.lower() in role.name.lower() and role not in ctx.author.roles:
-                        role_list.append(role)
-                        role_str_list.append(role.mention)
-                role_str = f" ({(', ').join(role_str_list)})"
-            if entered_want.id in user_wants:
-                already_want_list.append(entered_want.name.title())
-                already_want_count += 1
-            else:
-                user_wants.append(entered_want.id)
-                added_list.append(f"{entered_want.name.title()}{role_str}")
-                added_count += 1
-        await ctx.author.add_roles(*role_list)
-        want_count = added_count + already_want_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** boss{s}:\n').format(member=ctx.author.display_name, count=want_count, s="es" if want_count > 1 else "")
-        if added_count > 0:
-            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
-        if already_want_count > 0:
-            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
-        if spellcheck_dict:
-            spellcheckmsg = ''
-            for word in spellcheck_dict:
-                spellcheckmsg += _('\n\t{word}').format(word=word)
-                if spellcheck_dict[word]:
-                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-
-    @want.command(name='gym')
-    @checks.allowwant()
-    async def want_gym(self, ctx, *, gyms):
-        """Add a gym to your want list. Currently used for raid and raid egg reports.
-
-        Usage: !want gym <gym list>"""
-        await ctx.trigger_typing()
-        message = ctx.message
-        guild = message.guild
-        channel = message.channel
-        want_split = gyms.lower().split(',')
+        want_split = pois.lower().split(',')
         want_list = []
         added_count = 0
         spellcheck_dict = {}
@@ -523,15 +469,19 @@ class Want(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if not gym_matching_cog:
             return
-        gyms = gym_matching_cog.get_gyms(ctx.guild.id)
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
+        if "stop" in ctx.invoked_with:
+            pois = gym_matching_cog.get_stops(ctx.guild.id)
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
+        else:
+            pois = gym_matching_cog.get_gyms(ctx.guild.id)
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
         for entered_want in want_split:
-            gym = await gym_matching_cog.poi_match_prompt(ctx, entered_want, gyms, None)
+            gym = await gym_matching_cog.poi_match_prompt(ctx, entered_want, pois, None)
             if gym:
                 want_list.append(gym.lower())
             else:
                 spellcheck_list.append(entered_want)
-                match, score = utils.get_match(gyms.keys(), entered_want)
+                match, score = utils.get_match(pois.keys(), entered_want)
                 spellcheck_dict[entered_want] = match
         for entered_want in want_list:
             if entered_want.lower() in user_wants:
@@ -542,7 +492,7 @@ class Want(commands.Cog):
                 added_list.append(f"{entered_want.title()}")
                 added_count += 1
         want_count = added_count + already_want_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** gym{s}:\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'stop' if 'stop' in ctx.invoked_with else 'gym'}{'s' if want_count > 1 else ''}:\n"
         if added_count > 0:
             confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
@@ -555,6 +505,15 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+
+    @want.command(name='gym', aliases=['gyms'])
+    @checks.allowwant()
+    async def want_gym(self, ctx, *, gyms):
+        """Add a gym to your want list. Currently used for raid and raid egg reports.
+
+        Usage: !want gym <gym list>"""
+        await self._want_poi(ctx, gyms)
+
 
     @want.command(name='stop', aliases=['pokestop', 'pokestops'])
     @checks.allowwant()
@@ -562,55 +521,9 @@ class Want(commands.Cog):
         """Add a pokestop to your want list. Currently used for wild, invasion, lure, and research reports.
 
         Usage: !want stop <stop list>"""
-        await ctx.trigger_typing()
-        message = ctx.message
-        guild = message.guild
-        channel = message.channel
-        want_split = stops.lower().split(',')
-        want_list = []
-        added_count = 0
-        spellcheck_dict = {}
-        spellcheck_list = []
-        already_want_count = 0
-        already_want_list = []
-        added_list = []
-        gym_matching_cog = self.bot.cogs.get('GymMatching')
-        if not gym_matching_cog:
-            return
-        stops = gym_matching_cog.get_stops(ctx.guild.id)
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
-        for entered_want in want_split:
-            stop = await gym_matching_cog.poi_match_prompt(ctx, entered_want, None, stops)
-            if stop:
-                want_list.append(stop.lower())
-            else:
-                spellcheck_list.append(entered_want)
-                match, score = utils.get_match(stops.keys(), entered_want)
-                spellcheck_dict[entered_want] = match
-        for entered_want in want_list:
-            if entered_want.lower() in user_wants:
-                already_want_list.append(entered_want.title())
-                already_want_count += 1
-            else:
-                user_wants.append(entered_want.lower())
-                added_list.append(f"{entered_want.title()}")
-                added_count += 1
-        want_count = added_count + already_want_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** stop{s}:\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
-        if added_count > 0:
-            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
-        if already_want_count > 0:
-            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
-        if spellcheck_dict:
-            spellcheckmsg = ''
-            for word in spellcheck_dict:
-                spellcheckmsg += _('\n\t{word}').format(word=word)
-                if spellcheck_dict[word]:
-                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        await self._want_poi(ctx, stops)
 
-    @want.command(name='item')
+    @want.command(name='item', aliases=['items'])
     @checks.allowwant()
     async def want_item(self, ctx, *, items):
         """Add a item to your want list. Currently used research and lure reports.
@@ -662,7 +575,7 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
-    @want.command(name='type')
+    @want.command(name='type', aliases=['types'])
     @checks.allowwant()
     async def want_type(self, ctx, *, types):
         """Add a pokemon type to your want list. Currently used for wild, research, invasion, and nest reports.
@@ -836,7 +749,7 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
-    @want.command(name='role')
+    @want.command(name='role', aliases=['roles'])
     @checks.allowwant()
     async def want_role(self, ctx, *, roles):
         """Adds a joinable role to your wants.
@@ -1555,9 +1468,16 @@ class Want(commands.Cog):
         author = message.author
         guild = message.guild
         channel = message.channel
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-        user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
+        if "boss" in ctx.invoked_with:
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
+            if user_link:
+                await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!unwant** to add pokemon.")
+                return
+        else:
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         unwant_split = pokemon.lower().split(',')
         unwant_list = []
         removed_count = 0
@@ -1635,7 +1555,7 @@ class Want(commands.Cog):
                     removed_count += 1
         await ctx.author.remove_roles(*role_list)
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** pokemon:\n').format(member=ctx.author.display_name, count=unwant_count)
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if unwant_count > 1 and 'boss' in ctx.invoked_with else ''}:\n"
         if removed_count > 0:
             confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
@@ -1649,73 +1569,14 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
-    @unwant.command(name='boss')
+    @unwant.command(name='boss', aliases=['bosses'])
     @checks.allowwant()
     async def unwant_boss(self, ctx, *, bosses):
         """Remove a boss from your wanted list.
 
         Usage: !unwant boss <species>
         You will no longer be notified of reports about this Pokemon."""
-        await ctx.trigger_typing()
-        message = ctx.message
-        guild = message.guild
-        channel = message.channel
-        unwant_split = bosses.lower().split(',')
-        unwant_list = []
-        removed_count = 0
-        spellcheck_dict = {}
-        spellcheck_list = []
-        not_wanted_count = 0
-        not_wanted_list = []
-        removed_list = []
-        role_list = []
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-        user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-        if user_link:
-            await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!unwant** to remove pokemon.")
-            return
-        for entered_unwant in unwant_split:
-            if len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
-                return await ctx.invoke(self.bot.get_command('unwant all'), category="boss")
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_unwant.strip(), allow_digits=True)
-            if pokemon:
-                unwant_list.append(pokemon)
-            else:
-                spellcheck_list.append(entered_unwant)
-                match, score = utils.get_match(ctx.bot.pkmn_list, entered_unwant)
-                spellcheck_dict[entered_unwant] = match
-        for entered_unwant in unwant_list:
-            role_str = ""
-            role_str_list = []
-            if entered_unwant.id in self.bot.raid_list:
-                for role in guild.roles:
-                    if entered_unwant.name.lower() in role.name.lower() and role in ctx.author.roles:
-                        role_list.append(role)
-                        role_str_list.append(role.mention)
-                role_str = f" ({(', ').join(role_str_list)})"
-            if entered_unwant.id not in user_wants:
-                not_wanted_list.append(entered_unwant.name.title())
-                not_wanted_count += 1
-            else:
-                user_wants.remove(entered_unwant.id)
-                removed_list.append(f"{entered_unwant.name.title()}{role_str}")
-                removed_count += 1
-        await ctx.author.remove_roles(*role_list)
-        unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** boss{s}:\n').format(member=ctx.author.display_name, count=unwant_count, s="es" if unwant_count > 1 else "")
-        if removed_count > 0:
-            confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
-        if not_wanted_count > 0:
-            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
-        if spellcheck_dict:
-            spellcheckmsg = ''
-            for word in spellcheck_dict:
-                spellcheckmsg += _('\n\t{word}').format(word=word)
-                if spellcheck_dict[word]:
-                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        await ctx.invoke(self.bot.get_command('unwant pokemon'), pokemon=bosses)
 
     @unwant.command(name='all')
     @checks.allowwant()
@@ -1797,13 +1658,7 @@ class Want(commands.Cog):
         unwant_msg = f"{author.mention} I've removed **{(', ').join(completed_list)}** from your want list."
         await channel.send(unwant_msg)
 
-    @unwant.command(name='gym')
-    @checks.allowwant()
-    async def unwant_gym(self, ctx, *, gyms):
-        """Remove a gym from your wanted list.
-
-        Usage: !unwant gym <gym list>
-        You will no longer be notified of reports about this gym."""
+    async def _unwant_poi(self, ctx, *, pois):
         await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
@@ -1819,10 +1674,14 @@ class Want(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if not gym_matching_cog:
             return
-        gyms = gym_matching_cog.get_gyms(ctx.guild.id)
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
+        if "stop" in ctx.invoked_with:
+            pois = gym_matching_cog.get_stops(ctx.guild.id)
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
+        else:
+            pois = gym_matching_cog.get_gyms(ctx.guild.id)
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
         for entered_unwant in unwant_split:
-            gym = await gym_matching_cog.poi_match_prompt(ctx, entered_unwant, gyms, None)
+            gym = await gym_matching_cog.poi_match_prompt(ctx, entered_unwant, pois, None)
             if gym:
                 unwant_list.append(gym.lower())
             elif len(unwant_split) == 1 and "all" in entered_unwant:
@@ -1830,7 +1689,7 @@ class Want(commands.Cog):
                 return await ctx.invoke(self.bot.get_command('unwant all'), category="gym")
             else:
                 spellcheck_list.append(entered_unwant)
-                match, score = utils.get_match(gyms.keys(), entered_unwant)
+                match, score = utils.get_match(pois.keys(), entered_unwant)
                 spellcheck_dict[entered_unwant] = match
         for entered_unwant in unwant_list:
             if entered_unwant.lower() not in user_wants:
@@ -1841,7 +1700,7 @@ class Want(commands.Cog):
                 removed_list.append(f"{entered_unwant.title()}")
                 removed_count += 1
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** gym{s}:\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'stop' if 'stop' in ctx.invoked_with else 'gym'}{'s' if unwant_count > 1 else ''}:\n"
         if removed_count > 0:
             confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
@@ -1854,6 +1713,16 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+
+    @unwant.command(name='gym')
+    @checks.allowwant()
+    async def unwant_gym(self, ctx, *, gyms):
+        """Remove a gym from your wanted list.
+
+        Usage: !unwant gym <gym list>
+        You will no longer be notified of reports about this gym."""
+        await self._unwant_poi(ctx, gyms)
+
 
     @unwant.command(name='stop', aliases=['pokestop', 'pokestops'])
     @checks.allowwant()
@@ -1862,56 +1731,7 @@ class Want(commands.Cog):
 
         Usage: !unwant stop <stop list>
         You will no longer be notified of reports about this pokestop."""
-        await ctx.trigger_typing()
-        message = ctx.message
-        guild = message.guild
-        channel = message.channel
-        unwant_split = stops.lower().split(',')
-        unwant_list = []
-        removed_count = 0
-        spellcheck_dict = {}
-        spellcheck_list = []
-        not_wanted_count = 0
-        not_wanted_list = []
-        removed_list = []
-        gym_matching_cog = self.bot.cogs.get('GymMatching')
-        if not gym_matching_cog:
-            return
-        stops = gym_matching_cog.get_stops(ctx.guild.id)
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
-        for entered_unwant in unwant_split:
-            stop = await gym_matching_cog.poi_match_prompt(ctx, entered_unwant, None, stops)
-            if stop:
-                unwant_list.append(stop.lower())
-            elif len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
-                return await ctx.invoke(self.bot.get_command('unwant all'), category="stop")
-            else:
-                spellcheck_list.append(entered_unwant)
-                match, score = utils.get_match(stops.keys(), entered_unwant)
-                spellcheck_dict[entered_unwant] = match
-        for entered_unwant in unwant_list:
-            if entered_unwant.lower() not in user_wants:
-                not_wanted_list.append(entered_unwant.title())
-                not_wanted_count += 1
-            else:
-                user_wants.remove(entered_unwant.lower())
-                removed_list.append(f"{entered_unwant.title()}")
-                removed_count += 1
-        unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** stop{s}:\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
-        if removed_count > 0:
-            confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
-        if not_wanted_count > 0:
-            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
-        if spellcheck_dict:
-            spellcheckmsg = ''
-            for word in spellcheck_dict:
-                spellcheckmsg += _('\n\t{word}').format(word=word)
-                if spellcheck_dict[word]:
-                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        await self._unwant_poi(ctx, stops)
 
     @unwant.command(name='item')
     @checks.allowwant()
