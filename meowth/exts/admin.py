@@ -170,7 +170,7 @@ class Admin(commands.Cog):
         else:
             await ctx.send(_("**Extension{plural} {est} not loaded.**\n").format(plural=s, est=', '.join(exts)))
 
-    @commands.command(hidden=True, name="eval")
+    @commands.command(name="eval")
     @checks.is_owner()
     async def _eval(self, ctx, *, body: str):
         """Evaluates a code
@@ -225,7 +225,7 @@ class Admin(commands.Cog):
                 ctx.bot._last_result = ret
                 await ctx.send(f'```py\n{value}{ret}\n```')
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def welcome(self, ctx, user: discord.Member=None):
         """Test welcome on yourself or mentioned member.

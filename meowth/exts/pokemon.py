@@ -912,7 +912,7 @@ class Pokedex(commands.Cog):
             confirmation = await channel.send(embed=pkmn_embed)
             await utils.safe_delete(message)
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def sprite(self, ctx, *, sprite: Pokemon):
         """Displays a pokemon sprite
 
@@ -921,7 +921,7 @@ class Pokedex(commands.Cog):
         preview_embed.set_image(url=sprite.img_url)
         sprite_msg = await ctx.send(embed=preview_embed)
 
-    @commands.group(hidden=True, aliases=['dex'], invoke_without_command=True, case_insensitive=True)
+    @commands.group(aliases=['dex'], invoke_without_command=True, case_insensitive=True, category="true")
     async def pokedex(self, ctx, *, pokemon: str=None):
         """Pokedex information for a pokemon
 
@@ -965,71 +965,32 @@ class Pokedex(commands.Cog):
             preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.id in ctx.bot.mythical_list else 'Legendary'}")
         if all([pokemon.research_cp, pokemon.raid_cp, pokemon.boost_raid_cp, pokemon.max_cp]):
             preview_embed.add_field(name=f"{pokemon.name.title()} CP by Level (Raids / Research):", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**")
+        if "stats" in ctx.invoked_with:
+            if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
+                preview_embed.add_field(name="Base Stats", value=f"Attack: **{pokemon.base_attack}** | Defense: **{pokemon.base_defense}** | Stamina: **{pokemon.base_stamina}**\n")
+            field_value = ""
+            if pokemon.height and pokemon.weight:
+                field_value += f"Height: **{round(pokemon.height, 3)}m** | Weight: **{round(pokemon.weight, 3)}kg**\n"
+            if pokemon.evolves:
+                field_value += f"Evolution Candy: **{pokemon.evolve_candy}**\n"
+            if pokemon.buddy_distance:
+                field_value += f"Buddy Distance: **{pokemon.buddy_distance}km**\n"
+            if pokemon.charge_moves and pokemon.quick_moves:
+                charge_moves = [x.replace('_', ' ').title() for x in pokemon.charge_moves]
+                quick_moves = [x.replace('_FAST', '').replace('_', ' ').title() for x in pokemon.quick_moves]
+                field_value += f"Quick Moves: **{(', ').join(quick_moves)}**\nCharge Moves: **{(', ').join(charge_moves)}**"
+            preview_embed.add_field(name="Other Info:", value=field_value)
         preview_embed.set_thumbnail(url=pokemon.img_url)
         if key_needed:
             preview_embed.set_footer(text="S = Shiny Available | G = Gender Differences")
         pokedex_msg = await ctx.send(embed=preview_embed)
 
-    @pokedex.command(hidden=True)
+    @pokedex.command()
     async def stats(self, ctx, *, pokemon: str=None):
         """Detailed Pokedex information for a pokemon
 
         Usage: !pokedex stats <pokemon with form, gender, etc>"""
-        if not pokemon and checks.check_hatchedraid(ctx):
-            pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pkmn_obj']
-        pokemon = await Pokemon.async_get_pokemon(self.bot, pokemon)
-        if not pokemon:
-            return await ctx.send(f"Meowth! I'm missing some details! Usage: {ctx.prefix}{ctx.invoked_with} **<pokemon>**", delete_after=30)
-        preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
-        pokemon.gender = False
-        pokemon.size = None
-        key_needed = False
-        forms = [x.title() for x in ctx.bot.pkmn_info[pokemon.name.lower()]['forms'].keys()]
-        if not forms:
-            forms = ["None"]
-        form_list = []
-        for form in forms:
-            form_str = ""
-            form_key = ""
-            if form.lower() in ctx.bot.shiny_dict.get(pokemon.id, []):
-                key_needed = True
-                form_key += "S"
-            if form.lower() in ctx.bot.gender_dict.get(pokemon.id, []):
-                key_needed = True
-                form_key += "G"
-            if "S" in form_key or "G" in form_key:
-                form_key = f"**({form_key})**"
-            if form == "None":
-                form = "Normal"
-            form_str = f"{form} {form_key}"
-            form_list.append(form_str.strip())
-        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji}", value=pokemon.pokedex, inline=False)
-        if len(forms) > 1 or key_needed:
-            preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
-        if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:
-            preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"])
-        if pokemon.id in ctx.bot.legendary_list or pokemon.id in ctx.bot.mythical_list:
-            preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.id in ctx.bot.mythical_list else 'Legendary'}")
-        if all([pokemon.research_cp, pokemon.raid_cp, pokemon.boost_raid_cp, pokemon.max_cp]):
-            preview_embed.add_field(name=f"{pokemon.name.title()} CP by Level (Raids / Research):", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**")
-        if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
-            preview_embed.add_field(name="Base Stats", value=f"Attack: **{pokemon.base_attack}** | Defense: **{pokemon.base_defense}** | Stamina: **{pokemon.base_stamina}**\n")
-        field_value = ""
-        if pokemon.height and pokemon.weight:
-            field_value += f"Height: **{round(pokemon.height, 3)}m** | Weight: **{round(pokemon.weight, 3)}kg**\n"
-        if pokemon.evolves:
-            field_value += f"Evolution Candy: **{pokemon.evolve_candy}**\n"
-        if pokemon.buddy_distance:
-            field_value += f"Buddy Distance: **{pokemon.buddy_distance}km**\n"
-        if pokemon.charge_moves and pokemon.quick_moves:
-            charge_moves = [x.replace('_', ' ').title() for x in pokemon.charge_moves]
-            quick_moves = [x.replace('_FAST', '').replace('_', ' ').title() for x in pokemon.quick_moves]
-            field_value += f"Quick Moves: **{(', ').join(quick_moves)}**\nCharge Moves: **{(', ').join(charge_moves)}**"
-        preview_embed.add_field(name="Other Info:", value=field_value)
-        preview_embed.set_thumbnail(url=pokemon.img_url)
-        if key_needed:
-            preview_embed.set_footer(text="S = Shiny Available | G = Gender Differences")
-        pokedex_msg = await ctx.send(embed=preview_embed)
+        await ctx.invoke(self.bot.get_command('pokedex'), pokemon=pokemon)
 
 def setup(bot):
     bot.add_cog(Pokedex(bot))

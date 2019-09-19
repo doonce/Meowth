@@ -414,7 +414,8 @@ class Raid(commands.Cog):
                                 expire_embed.add_field(name=field.name, value=field.value, inline=field.inline)
                     else:
                         expire_embed = None
-                    await channel.send(f"**This egg has hatched!** Trainers {(', ').join(maybe_list)}: Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**.", embed=expire_embed)
+                    hatch_message = await channel.send(f"**This egg has hatched!** Trainers {(', ').join(maybe_list)}: Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**.", embed=expire_embed)
+                    self.bot.guild_dict[guild.id][report_dict][channel.id]['hatch_message'] = hatch_message.id
                 egg_level = self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level']
                 raid_time = int(self.bot.raid_info['raid_eggs'][str(egg_level)]['raidtime'])
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (raid_time * 60)) - time.time()
@@ -2109,7 +2110,7 @@ class Raid(commands.Cog):
                 if not user:
                     continue
                 trainer_list.append(user.mention)
-        hatch_msg = await raid_channel.send(content=_("{roletest}Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!\nIf you couldn't before, you're now able to update your status with **!coming** or **!here**. If you've changed your plans, use **!cancel**.").format(roletest=roletest, trainer_list=', '.join(trainer_list), pokemon=str(pokemon)), embed=raid_embed)
+        hatch_msg = await raid_channel.send(content=_("{roletest}Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!").format(roletest=roletest, trainer_list=', '.join(trainer_list), pokemon=str(pokemon)))
         ctx = await self.bot.get_context(hatch_msg)
         ctx.raidreport = egg_report
         if ctx.raidreport:
@@ -2124,6 +2125,12 @@ class Raid(commands.Cog):
             egg_report = egg_report.id
         except (discord.errors.NotFound, AttributeError):
             egg_report = None
+        try:
+            hatch_message = await raid_channel.fetch_message(self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['hatch_message'])
+            await utils.safe_delete(hatch_message)
+            del self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['hatch_message']
+        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
+            pass
         ctrsmessage_id = eggdetails.get('ctrsmessage', None)
         ctrsmessage = self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id].get('ctrsmessage', None)
         ctrs_dict = self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id].get('ctrs_dict', {})

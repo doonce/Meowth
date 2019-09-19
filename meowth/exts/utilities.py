@@ -626,6 +626,7 @@ class Utilities(commands.Cog):
                         thumbnail=thumbnail_url, plain_msg=plain_msg)
 
     @commands.command(hidden=True)
+    @commands.has_permissions(manage_guild=True)
     async def template(self, ctx, *, sample_message):
         """Sample template messages to see how they would appear."""
         embed = None
@@ -646,7 +647,7 @@ class Utilities(commands.Cog):
         else:
             await ctx.channel.send(msg.format(user=ctx.author.mention))
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def outputlog(self, ctx):
         """Get current Meowth log.
@@ -825,7 +826,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.9.19.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.9.18.1 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

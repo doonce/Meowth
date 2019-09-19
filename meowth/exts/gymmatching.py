@@ -421,7 +421,7 @@ class GymMatching(commands.Cog):
         else:
             await ctx.send("No match found.")
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def whereis(self, ctx, *, poi_name):
         """Matches and shows information for a POI
 

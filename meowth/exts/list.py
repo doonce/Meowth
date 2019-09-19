@@ -192,8 +192,7 @@ class Listing(commands.Cog):
                     if not raid_list:
                         if "all" not in ctx.message.content.lower():
                             ctx.message.content = "!list all"
-                            await ctx.reinvoke()
-                            return
+                            return await ctx.invoke(self.bot.get_command("list"))
                         list_message = await channel.send(f"Meowth! No active channels!", embed=discord.Embed(colour=ctx.guild.me.colour, description=_('Report a new one with **!raid <name> <location> [weather] [timer]**')))
                         list_messages.append(list_message.id)
                     else:

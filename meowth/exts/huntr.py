@@ -1179,7 +1179,7 @@ class Huntr(commands.Cog):
             return
         await invasion_cog.send_invasion(ctx, location, reward, gender, timer)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def huntrraid(self, ctx):
         """Simulates a huntr raid"""
@@ -1198,7 +1198,7 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_huntr(ctx)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def huntregg(self, ctx):
         """Simulates a huntr raid egg"""
@@ -1216,7 +1216,7 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_huntr(ctx)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def huntrwild(self, ctx):
         """Simulates a huntr wild"""
@@ -1234,8 +1234,9 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_huntr(ctx)
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def alarmrecover(self, ctx):
+        """Recovers bot reports that Meowth missed."""
         message_list = []
         await utils.safe_delete(ctx.message)
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
@@ -1290,7 +1291,7 @@ class Huntr(commands.Cog):
                             message_list.append(message)
             await utils.safe_bulk_delete(ctx.channel, message_list)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def alarmraid(self, ctx):
         """Simulates an alarm raid"""
@@ -1305,7 +1306,7 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def alarmegg(self, ctx):
         """Simulates an alarm raid egg"""
@@ -1319,7 +1320,7 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def alarmwild(self, ctx):
         """Simulates an alarm wild"""
@@ -1332,7 +1333,7 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def alarmquest(self, ctx):
         """Simulates an alarm quest"""
@@ -1345,7 +1346,7 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def alarmlure(self, ctx):
         """Simulates an alarm lure"""
@@ -1360,7 +1361,7 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def alarminv(self, ctx):
         """Simulates an alarm invasion"""
@@ -1476,9 +1477,10 @@ class Huntr(commands.Cog):
         except KeyError:
             return
 
-    @commands.group(hidden=True, invoke_without_command=True, case_insensitive=True, aliases=["commday"])
+    @commands.group(invoke_without_command=True, case_insensitive=True, aliases=["commday"])
     @checks.is_mod()
     async def raidhour(self, ctx):
+        """Schedule events such as raid hours or community days."""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message

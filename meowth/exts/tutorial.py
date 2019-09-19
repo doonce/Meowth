@@ -1,7 +1,7 @@
 import asyncio
 import copy
 import logging
-
+import re
 import discord
 from discord.ext import commands, tasks
 
@@ -15,6 +15,7 @@ logger = logging.getLogger("meowth")
 class Tutorial(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.bot.remove_command('help')
         self.tutorial_cleanup.start()
 
     def cog_unload(self):
@@ -480,8 +481,8 @@ class Tutorial(commands.Cog):
         async def timeout_raid(cmd):
             try:
                 if raid_channel:
-                    await raid_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
-                await tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
+                    await raid_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You either canceled or took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
+                await tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You either canceled or took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
                 await asyncio.sleep(10)
                 del report_channels[tutorial_channel.id]
                 if config['raid']['categories'] == "region":
@@ -1096,6 +1097,96 @@ class Tutorial(commands.Cog):
             del ctx.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.tutorial_channel.id]
 
         return True
+
+    @commands.command()
+    async def help(self, ctx, *, command=None):
+        """Shows this message.
+
+        Displays help text and other information about commands."""
+        async def predicate(cmd):
+            try:
+                return await cmd.can_run(ctx)
+            except:
+                return False
+        await utils.safe_delete(ctx.message)
+        help_embed = discord.Embed(description="", title="", colour=ctx.guild.me.colour)
+        help_embed.set_author(name=f"Meowth Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
+        if command:
+            command = self.bot.get_command(command)
+            if not await predicate(command):
+                command = None
+        if not command:
+            help_embed.description = f"Reply with the name of a command category to view commands available in {ctx.channel.mention}. Other commands may be available in different channels.\n\n"
+            help_categories = {k:[] for k in list(self.bot.cogs.keys())}
+            help_categories["No Category"] = []
+            help_categories["Not Run"] = []
+            for cmd in self.bot.commands:
+                can_run = await predicate(cmd)
+                if can_run and cmd.cog_name and not cmd.hidden:
+                    help_categories[cmd.cog_name].append(cmd)
+                elif can_run and not cmd.hidden:
+                    help_categories["No Category"].append(cmd)
+                else:
+                    help_categories["Not Run"].append(cmd)
+            help_embed.description += ', '.join([f"**{x}**" for x in help_categories.keys() if help_categories.get(x) and x != "Not Run"])
+            while True:
+                async with ctx.typing():
+                    cat_wait = await ctx.send(embed=help_embed, delete_after=120)
+                    def check(reply):
+                        if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.author:
+                            return True
+                        else:
+                            return False
+                    try:
+                        cat_msg = await self.bot.wait_for('message', timeout=120, check=check)
+                    except asyncio.TimeoutError:
+                        cat_msg = None
+                    await utils.safe_delete(cat_wait)
+                    if not cat_msg:
+                        return
+                    else:
+                        await utils.safe_delete(cat_msg)
+                    cog_match = re.search(cat_msg.clean_content, str(help_categories.keys()), re.IGNORECASE)
+                    if cog_match:
+                        help_embed.set_author(name=f"{cog_match.group()} Category Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
+                        help_embed.description = f"Reply with the name of a command to view command information.\n\n"
+                        cmd_text = []
+                        for cmd in help_categories[cog_match.group()]:
+                            cmd_text.append(f"**{cmd.name}** - {cmd.short_doc}")
+                        if cmd_text:
+                            help_embed.add_field(name=f"**Commands**", value=('\n').join(cmd_text))
+                        cmd_wait = await ctx.send(embed=help_embed, delete_after=120)
+                        try:
+                            cmd_msg = await self.bot.wait_for('message', timeout=120, check=check)
+                        except asyncio.TimeoutError:
+                            cmd_msg = None
+                        await utils.safe_delete(cmd_wait)
+                        if not cmd_msg:
+                            return
+                        else:
+                            await utils.safe_delete(cmd_msg)
+                        cmd_match = re.search(cmd_msg.clean_content, str([x.name for x in help_categories[cog_match.group()]]), re.IGNORECASE)
+                        if cmd_match:
+                            command = self.bot.get_command(cmd_match.group())
+                    break
+        if command:
+            help_embed = discord.Embed(description="<> denote required arguments, [] denote optional arguments", title="", colour=ctx.guild.me.colour)
+            help_embed.set_author(name=f"{command.name.title()} Command Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
+            help_embed.add_field(name="**Usage**", value=f"{ctx.prefix}{command.name} {command.signature}", inline=False)
+            if command.aliases:
+                help_embed.add_field(name="**Aliases**", value=(', ').join(command.aliases), inline=False)
+            if command.help:
+                help_embed.add_field(name="**Help Text**", value=command.help, inline=False)
+            if hasattr(command, "commands") and command.commands:
+                sub_cmd = []
+                for cmd in command.commands:
+                    if await predicate(cmd) and not cmd.hidden:
+                        sub_cmd.append(f"**{cmd.name}** - {cmd.short_doc}")
+                help_embed.add_field(name="**Subcommands**", value=('\n').join(sub_cmd), inline=False)
+            tutorial_command = self.bot.get_command('tutorial')
+            if command.name in [x.name for x in tutorial_command.commands]:
+                help_embed.add_field(name="**Tutorial**", value=f"Tutorial is available for {command.name} using **{ctx.prefix}tutorial {command.name}**")
+            return await ctx.send(embed=help_embed)
 
 def setup(bot):
     bot.add_cog(Tutorial(bot))
