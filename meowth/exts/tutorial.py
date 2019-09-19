@@ -412,13 +412,6 @@ class Tutorial(commands.Cog):
                 colour=discord.Colour.green(),
                 description=f"Great job!"))
 
-            omw_emoji = ctx.bot.custom_emoji.get('wild_omw', '\U0001F3CE')
-            despawn_emoji = ctx.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
-            info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
-            catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
-
-            await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"The {omw_emoji} emoji adds you to a list of trainers chasing the wild spawn\nThe {despawn_emoji} emoji alerts others that it has despawned.\nThe {catch_emoji} removes you from the chasing list.\nThe {info_emoji} can be used to add wild details."))
-
             try:
                 wild_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['reports']['wild']
                 ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['reports']['wild'] = wild_reports - 1

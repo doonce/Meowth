@@ -154,7 +154,7 @@ class Configure(commands.Cog):
         except (AttributeError, discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             pass
         try:
-            self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id].remove(ctx.configure_channel.id)
+            self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'].get(ctx.author.id, []).remove(ctx.configure_channel.id)
         except (AttributeError, ValueError):
             pass
         try:

@@ -515,7 +515,7 @@ class Want(commands.Cog):
         await self._want_poi(ctx, gyms)
 
 
-    @want.command(name='stop', aliases=['pokestop', 'pokestops'])
+    @want.command(name='stop', aliases=['pokestop', 'pokestops', 'stops'])
     @checks.allowwant()
     async def want_stop(self, ctx, *, stops):
         """Add a pokestop to your want list. Currently used for wild, invasion, lure, and research reports.
@@ -1714,7 +1714,7 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
-    @unwant.command(name='gym')
+    @unwant.command(name='gym', aliases=['gyms'])
     @checks.allowwant()
     async def unwant_gym(self, ctx, *, gyms):
         """Remove a gym from your wanted list.
@@ -1724,7 +1724,7 @@ class Want(commands.Cog):
         await self._unwant_poi(ctx, gyms)
 
 
-    @unwant.command(name='stop', aliases=['pokestop', 'pokestops'])
+    @unwant.command(name='stop', aliases=['pokestop', 'pokestops', 'stops'])
     @checks.allowwant()
     async def unwant_stop(self, ctx, *, stops):
         """Remove a pokestop from your wanted list.
@@ -1733,7 +1733,7 @@ class Want(commands.Cog):
         You will no longer be notified of reports about this pokestop."""
         await self._unwant_poi(ctx, stops)
 
-    @unwant.command(name='item')
+    @unwant.command(name='item', aliases=['items'])
     @checks.allowwant()
     async def unwant_item(self, ctx, *, items):
         """Remove a item from your wanted list.
@@ -1787,7 +1787,7 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
-    @unwant.command(name='type')
+    @unwant.command(name='type', aliases=['types'])
     @checks.allowwant()
     async def unwant_type(self, ctx, *, types):
         """Remove a type from your wanted list.
@@ -1971,7 +1971,7 @@ class Want(commands.Cog):
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
-    @unwant.command(name='role')
+    @unwant.command(name='role', aliases=['roles'])
     @checks.allowwant()
     async def unwant_role(self, ctx, *, roles):
         """Remove a role from your wanted list.

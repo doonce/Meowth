@@ -39,49 +39,52 @@ class Huntr(commands.Cog):
     async def huntr_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
         for guild in list(self.bot.guilds):
-            report_edit_dict = {}
-            report_delete_dict = {}
-            pokealarm_dict = self.bot.guild_dict[guild.id].get('pokealarm_dict', {})
-            pokehuntr_dict = self.bot.guild_dict[guild.id].get('pokehuntr_dict', {})
-            report_dict_dict = {
-                'pokealarm_dict':pokealarm_dict,
-                'pokehuntr_dict':pokehuntr_dict
-            }
-            for report_dict in list(report_dict_dict.keys()):
-                for reportid in list(report_dict_dict.get(report_dict, {}).keys()):
-                    if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('exp', 0) <= time.time():
-                        report_channel = self.bot.get_channel(report_dict_dict.get(report_dict, {}).get(reportid, {}).get('report_channel'))
-                        if report_channel:
-                            user_report = report_dict_dict.get(report_dict, {}).get(reportid, {}).get('report_message', None)
-                            if user_report:
-                                report_delete_dict[user_report] = {"action":"delete", "channel":report_channel}
-                            if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('expedit') == "delete":
-                                report_delete_dict[reportid] = {"action":"delete", "channel":report_channel}
-                            else:
-                                report_edit_dict[reportid] = {"action":report_dict_dict.get(report_dict, {}).get(reportid, {}).get('expedit', ''), "channel":report_channel}
-                            if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('dm_dict', False):
-                                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, report_dict_dict.get(report_dict, {}).get(reportid, {}).get('dm_dict', {})))
-                        try:
-                            del self.bot.guild_dict[guild.id][report_dict][reportid]
-                        except KeyError:
-                            pass
-            for messageid in report_delete_dict.keys():
-                try:
-                    report_message = await report_delete_dict[messageid]['channel'].fetch_message(messageid)
-                    await utils.safe_delete(report_message)
-                except:
-                    pass
-            for messageid in report_edit_dict.keys():
-                try:
-                    report_message = await report_edit_dict[messageid]['channel'].fetch_message(messageid)
-                    if isinstance(report_message.embeds[0].colour, discord.embeds._EmptyEmbed):
-                        colour = discord.Colour.lighter_grey()
-                    else:
-                        colour = report_meetup.embeds[0].colour.value
-                    await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=colour))
-                    await report_message.clear_reactions()
-                except:
-                    pass
+            try:
+                report_edit_dict = {}
+                report_delete_dict = {}
+                pokealarm_dict = self.bot.guild_dict[guild.id].get('pokealarm_dict', {})
+                pokehuntr_dict = self.bot.guild_dict[guild.id].get('pokehuntr_dict', {})
+                report_dict_dict = {
+                    'pokealarm_dict':pokealarm_dict,
+                    'pokehuntr_dict':pokehuntr_dict
+                }
+                for report_dict in list(report_dict_dict.keys()):
+                    for reportid in list(report_dict_dict.get(report_dict, {}).keys()):
+                        if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('exp', 0) <= time.time():
+                            report_channel = self.bot.get_channel(report_dict_dict.get(report_dict, {}).get(reportid, {}).get('report_channel'))
+                            if report_channel:
+                                user_report = report_dict_dict.get(report_dict, {}).get(reportid, {}).get('report_message', None)
+                                if user_report:
+                                    report_delete_dict[user_report] = {"action":"delete", "channel":report_channel}
+                                if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('expedit') == "delete":
+                                    report_delete_dict[reportid] = {"action":"delete", "channel":report_channel}
+                                else:
+                                    report_edit_dict[reportid] = {"action":report_dict_dict.get(report_dict, {}).get(reportid, {}).get('expedit', ''), "channel":report_channel}
+                                if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('dm_dict', False):
+                                    self.bot.loop.create_task(utils.expire_dm_reports(self.bot, report_dict_dict.get(report_dict, {}).get(reportid, {}).get('dm_dict', {})))
+                            try:
+                                del self.bot.guild_dict[guild.id][report_dict][reportid]
+                            except KeyError:
+                                pass
+                for messageid in report_delete_dict.keys():
+                    try:
+                        report_message = await report_delete_dict[messageid]['channel'].fetch_message(messageid)
+                        await utils.safe_delete(report_message)
+                    except:
+                        pass
+                for messageid in report_edit_dict.keys():
+                    try:
+                        report_message = await report_edit_dict[messageid]['channel'].fetch_message(messageid)
+                        if isinstance(report_message.embeds[0].colour, discord.embeds._EmptyEmbed):
+                            colour = discord.Colour.lighter_grey()
+                        else:
+                            colour = report_meetup.embeds[0].colour.value
+                        await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=colour))
+                        await report_message.clear_reactions()
+                    except:
+                        pass
+            except:
+                pass
         # save server_dict changes after cleanup
         logger.info('SAVING CHANGES')
         try:
