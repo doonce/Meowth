@@ -163,6 +163,7 @@ class Trainers(commands.Cog):
                 except:
                     want_message = None
         ign = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('ign', None)
+        pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('pvp', {})
         raids = trainers.get(member.id, {}).get('reports', {}).get('raid', 0)
         eggs = trainers.get(member.id, {}).get('reports', {}).get('egg', 0)
         exraids = trainers.get(member.id, {}).get('reports', {}).get('ex', 0)
@@ -211,6 +212,20 @@ class Trainers(commands.Cog):
             embed.add_field(name=_("Want List"), value=f"[Click here]({want_message}) to view most recent want list in {want_channel.mention}.")
         if trade_message and (trade_channel.overwrites_for(ctx.guild.default_role).read_messages or trade_channel.overwrites_for(ctx.guild.default_role).read_messages == None):
             embed.add_field(name="Active Trades", value=f"[Click here]({trade_message}) to view active trades in {trade_channel.mention}.")
+        if any([pvp_info.get('champion'), pvp_info.get('elite'), pvp_info.get('leader'), pvp_info.get('badges'), pvp_info.get('record')]):
+            pvp_value = ""
+            if pvp_info.get('champion'):
+                pvp_value += f"\U0001F451 {(', ').join([x.title() for x in pvp_info['champion']])} League Champion \U0001F451 | "
+            if pvp_info.get('elite'):
+                pvp_value += f"\U0001F3C6 Elite Four \U0001F3C6 | "
+            if pvp_info.get('leader'):
+                pvp_value += f"Gym Leader: {('').join([utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[x]) for x in pvp_info['leader']])} | "
+            if pvp_info.get('badges'):
+                pvp_value += f"Badges: {('').join([utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[x]) for x in pvp_info['badges']])} | "
+            if pvp_info.get('record'):
+                pvp_value += f"Record: {pvp_info['record'].get('win', 0)}W - {pvp_info['record'].get('loss', 0)}L"
+            if pvp_value:
+                embed.add_field(name=_("PVP League Info"), value=pvp_value, inline=False)
         if roles:
             embed.add_field(name=_("Roles"), value=f"{(' ').join(roles)[:2000]}", inline=False)
 

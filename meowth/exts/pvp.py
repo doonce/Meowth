@@ -182,7 +182,15 @@ class Pvp(commands.Cog):
                             new_embed.add_field(name="\U0001F948 Second Place \U0001F948", value=second_place.mention, inline=True)
                             pvp_dict['tournament']['status'] = "complete"
                             await message.clear_reactions()
-                            edit_content = message.content.split("\n")[0] + " has ended! congratulations to the winner!"
+                            edit_content = message.content.split("\n")[0] + " has ended! Congratulations to the winner!"
+                            if pvp_dict['tournament']['official']:
+                                for trainer in pvp_dict['tournament']['trainers']:
+                                    if trainer != first_place.id:
+                                        pvp_record = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('pvp', {}).setdefault('record', {}).setdefault('loss', 0) + 1
+                                        self.bot.guild_dict[message.guild.id]['trainers'][trainer]['pvp']['record']['loss'] = pvp_record
+                                    elif trainer == first_place.id:
+                                        pvp_record = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('pvp', {}).setdefault('record', {}).setdefault('win', 0) + 1
+                                        self.bot.guild_dict[message.guild.id]['trainers'][trainer]['pvp']['record']['win'] = pvp_record
                         else:
                             new_embed.clear_fields()
                             for field in embed.fields:
@@ -484,6 +492,11 @@ class Pvp(commands.Cog):
         pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/CombatButton.png?cache=1')
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
+            def check(reply):
+                if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                    return True
+                else:
+                    return False
             async with ctx.typing():
                 if pvp_type and any([pvp_type.lower() == "any", pvp_type.lower() == "great", pvp_type.lower() == "ultra", pvp_type.lower() == "master"]) and location:
                     await self._pvp_tournament(ctx, size, pvp_type, location)
@@ -491,11 +504,7 @@ class Pvp(commands.Cog):
                 else:
                     pvp_embed.add_field(name=_('**New PVP Tournament**'), value=_("Meowth! I'll help you report a PVP Tournament!\n\nFirst, I'll need to know what **size** of PVP tournament you'd like to start. Reply with a currently supported size: **2, 4, 8**. You can reply with **cancel** to stop anytime."), inline=False)
                     pvp_size_wait = await channel.send(embed=pvp_embed)
-                    def check(reply):
-                        if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
-                            return True
-                        else:
-                            return False
+
                     try:
                         pvp_size_msg = await self.bot.wait_for('message', timeout=60, check=check)
                     except asyncio.TimeoutError:
@@ -517,11 +526,6 @@ class Pvp(commands.Cog):
                     pvp_embed.clear_fields()
                     pvp_embed.add_field(name=_('**New PVP Tournament**'), value=_("Next, I'll need to know what **type** of PVP tournament you'd like to start. Reply with **great, ultra, or master**. You can reply with **cancel** to stop anytime."), inline=False)
                     pvp_type_wait = await channel.send(embed=pvp_embed)
-                    def check(reply):
-                        if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
-                            return True
-                        else:
-                            return False
                     try:
                         pvp_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
                     except asyncio.TimeoutError:
@@ -567,15 +571,36 @@ class Pvp(commands.Cog):
                                 loc_url = poi_url
                         if not location:
                             return
+                    official_pvp = False
+                    if await checks.check_is_mod(ctx):
+                        pvp_embed.clear_fields()
+                        pvp_embed.add_field(name=_('**New PVP Tournament**'), value=_("Since you are a moderator, I'll need to know if this is an official tournament that will count towards the participants' records. Reply with **yes** or **no**. You can reply with **cancel** to stop anytime."), inline=False)
+                        pvp_type_wait = await channel.send(embed=pvp_embed)
+                        try:
+                            pvp_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            pvp_type_msg = None
+                        await utils.safe_delete(pvp_type_wait)
+                        if not pvp_type_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(pvp_type_msg)
+                        if pvp_type_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif any([pvp_type_msg.clean_content.lower() == "yes", pvp_type_msg.clean_content.lower() == "y"]):
+                            official_pvp = True
+                break
         if not error:
-            await self._pvp_tournament(ctx,size,  pvp_type, location)
+            await self._pvp_tournament(ctx,size,  pvp_type, location, official_pvp)
         else:
             pvp_embed.clear_fields()
             pvp_embed.add_field(name=_('**PVP Tournament Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=pvp_embed, delete_after=10)
             await utils.safe_delete(message)
 
-    async def _pvp_tournament(self, ctx, size, pvp_type, location):
+    async def _pvp_tournament(self, ctx, size, pvp_type, location, official_pvp=False):
         dm_dict = {}
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
         start_emoji = self.bot.custom_emoji.get('pvp_start', '\u25B6')
@@ -621,6 +646,7 @@ class Pvp(commands.Cog):
             'type':pvp_type,
             'tournament':{
                 'creator':ctx.author.id,
+                'official':official_pvp,
                 'size':int(size),
                 'trainers':[],
                 'round':0,
@@ -671,6 +697,421 @@ class Pvp(commands.Cog):
             return
         else:
             return
+
+    @pvp.command()
+    @checks.allowpvpreport()
+    async def badge(self, ctx):
+        """Adds a badge to a trainer profile.
+
+        Usage: !pvp badge"""
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        error = ""
+        if not await checks.check_is_mod(ctx) and not self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('pvp', {}).setdefault('leader', []):
+            return await utils.safe_delete(cxx.message)
+        output = []
+        pvp_embed = discord.Embed(colour=ctx.guild.me.colour)
+        if await checks.check_is_mod(ctx):
+            type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
+        else:
+            type_list = list(self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('pvp', {}).setdefault('leader', []))
+        for type in type_list:
+            emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[type])
+            output.append(f"{emoji} {type.title()}")
+        while True:
+            def check(reply):
+                if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                    return True
+                else:
+                    return False
+            async with ctx.typing():
+                pvp_embed.add_field(name=_('**Award PVP Badge**'), value=f"Meowth! I'll help you award a PVP badge!\n\nFirst, I'll need to know what **type** of badge you'd like to award or remove. Reply with a badge **type** or with **cancel** to stop anytime.", inline=False)
+                pvp_embed.add_field(name=_('**Possible Badges:**'), value=_('{badge_list}').format(badge_list=', '.join(output)), inline=False)
+                badge_type_wait = await channel.send(embed=pvp_embed)
+                try:
+                    badge_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    badge_type_msg = None
+                await utils.safe_delete(badge_type_wait)
+                if not badge_type_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(badge_type_msg)
+                if badge_type_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                elif badge_type_msg.clean_content.lower() in type_list:
+                    badge_type = badge_type_msg.clean_content.lower()
+                    badge_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[badge_type])
+                else:
+                    error = _("entered an invalid type")
+                    break
+                pvp_embed.clear_fields()
+                pvp_embed.add_field(name=_('**Award PVP Badge**'), value=f"Next, I'll need to know what **user** you'd like to add or remove a **{badge_type.title()}** badge for. Reply with a user mention, ID, or case-sensitive username. You can reply with **cancel** to stop anytime.", inline=False)
+                user_wait = await channel.send(embed=pvp_embed)
+                try:
+                    user_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    user_msg = None
+                await utils.safe_delete(user_wait)
+                if not user_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(user_msg)
+                if user_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                converter = commands.MemberConverter()
+                try:
+                    member = await converter.convert(ctx, user_msg.content)
+                except:
+                    error = _("entered an invalid member")
+                    break
+                if badge_type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).setdefault('pvp', {}).setdefault('badges', []):
+                    pvp_embed.clear_fields()
+                    pvp_embed.add_field(name=_('**Award PVP Badge**'), value=f"It looks like {member.mention} already has this badge. Would you like to remove it? Reply with **yes** or **no** or with **cancel** to stop anytime.", inline=False)
+                    confirm_wait = await channel.send(embed=pvp_embed)
+                    try:
+                        confirm_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        confirm_msg = None
+                    await utils.safe_delete(confirm_wait)
+                    if not confirm_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(confirm_msg)
+                    if confirm_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif any([confirm_msg.clean_content.lower() == "yes", confirm_msg.clean_content.lower() == "y"]):
+                        self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['badges'].remove(badge_type)
+                        return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Removed {badge_emoji} {badge_type.title()} Badge from {member.mention}"))
+                    else:
+                        error = _("didn't change anything")
+                        break
+                break
+        if not error:
+            self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['badges'].append(badge_type)
+            return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Awarded {badge_emoji} {badge_type.title()} Badge to {member.mention}"))
+        else:
+            pvp_embed.clear_fields()
+            pvp_embed.add_field(name=_('**PVP Tournament Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=pvp_embed, delete_after=10)
+            await utils.safe_delete(message)
+
+    @pvp.command()
+    @checks.allowpvpreport()
+    @checks.is_mod()
+    async def leader(self, ctx):
+        """Manage gym leaders.
+
+        Usage: !pvp leader"""
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        error = ""
+        output = []
+        pvp_embed = discord.Embed(colour=ctx.guild.me.colour)
+        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
+        leader_dict = {k:{"emoji":utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[k]), "leaders":[]} for k in type_list}
+        for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+            if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
+                for type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
+                    user = guild.get_member(trainer)
+                    leader_dict[type]['leaders'].append(user)
+        for type in leader_dict:
+            output.append(f"{leader_dict[type]['emoji']} {type.title()} {'(' if leader_dict[type]['leaders'] else ''}{(', ').join([x.mention for x in leader_dict[type]['leaders']])}{')' if leader_dict[type]['leaders'] else ''}")
+        while True:
+            def check(reply):
+                if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                    return True
+                else:
+                    return False
+            async with ctx.typing():
+                pvp_embed.add_field(name=_('**Promote Gym Leader**'), value=f"Meowth! I'll help you promote a user to a gym leader!\n\nFirst, I'll need to know what **type** of leader you'd like to award or remove. Reply with a leader **type** or with **cancel** to stop anytime.", inline=False)
+                pvp_embed.add_field(name=_('**Possible Leader Types:**'), value=_('{badge_list}').format(badge_list=', '.join(output)), inline=False)
+                badge_type_wait = await channel.send(embed=pvp_embed)
+                try:
+                    badge_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    badge_type_msg = None
+                await utils.safe_delete(badge_type_wait)
+                if not badge_type_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(badge_type_msg)
+                if badge_type_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                elif badge_type_msg.clean_content.lower() in type_list:
+                    badge_type = badge_type_msg.clean_content.lower()
+                    badge_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[badge_type])
+                else:
+                    error = _("entered an invalid type")
+                    break
+                pvp_embed.clear_fields()
+                pvp_embed.add_field(name=_('**Promote Gym Leader**'), value=f"Next, I'll need to know what **user** you'd like to add or remove as a **{badge_type.title()}** gym leader. Reply with a user mention, ID, or case-sensitive username. You can reply with **cancel** to stop anytime.", inline=False)
+                user_wait = await channel.send(embed=pvp_embed)
+                try:
+                    user_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    user_msg = None
+                await utils.safe_delete(user_wait)
+                if not user_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(user_msg)
+                if user_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                converter = commands.MemberConverter()
+                try:
+                    member = await converter.convert(ctx, user_msg.content)
+                except:
+                    error = _("entered an invalid member")
+                    break
+                if badge_type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).setdefault('pvp', {}).setdefault('leader', []):
+                    pvp_embed.clear_fields()
+                    pvp_embed.add_field(name=_('**Award PVP Badge**'), value=f"It looks like {member.mention} already is already a leader for that type. Would you like to remove them? Reply with **yes** or **no** or with **cancel** to stop anytime.", inline=False)
+                    confirm_wait = await channel.send(embed=pvp_embed)
+                    try:
+                        confirm_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        confirm_msg = None
+                    await utils.safe_delete(confirm_wait)
+                    if not confirm_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(confirm_msg)
+                    if confirm_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif any([confirm_msg.clean_content.lower() == "yes", confirm_msg.clean_content.lower() == "y"]):
+                        self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['leader'].remove(badge_type)
+                        return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Removed {member.mention} as the {badge_emoji} {badge_type.title()} gym leader"))
+                    else:
+                        error = _("didn't change anything")
+                        break
+                break
+        if not error:
+            for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+                if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
+                    if badge_type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
+                        self.bot.guild_dict[ctx.guild.id]['trainers']['pvp']['leader'].remove(badge_type)
+            self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['leader'].append(badge_type)
+            return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Promoted {member.mention} as the {badge_emoji} {badge_type.title()} gym leader"))
+        else:
+            pvp_embed.clear_fields()
+            pvp_embed.add_field(name=_('**PVP Tournament Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=pvp_embed, delete_after=10)
+            await utils.safe_delete(message)
+
+    @pvp.command()
+    @checks.allowpvpreport()
+    @checks.is_mod()
+    async def elite(self, ctx):
+        """Manage Elite Four.
+
+        Usage: !pvp elite"""
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        error = ""
+        output = []
+        pvp_embed = discord.Embed(colour=ctx.guild.me.colour)
+        elite_list = []
+        for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+            if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('elite', []):
+                user = guild.get_member(trainer)
+                elite_list.append(user)
+        while len(elite_list) < 4:
+            elite_list.append(None)
+        count = 1
+        for item in elite_list:
+            output.append(f"{count}) {elite_list[count-1].mention if elite_list[count-1] else 'Unoccupied'}")
+            count += 1
+        while True:
+            def check(reply):
+                if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                    return True
+                else:
+                    return False
+            async with ctx.typing():
+                pvp_embed.add_field(name=_('**Promote Elite Four**'), value=f"Meowth! I'll help you promote a user to the Elite Four!\n\nFirst, I'll need to know what **slot** of the Elite Four you'd like to fill. Reply with a **number 1-4** or with **cancel** to stop anytime.", inline=False)
+                pvp_embed.add_field(name=f"Current Elite Four", value=('\n').join(output))
+                badge_type_wait = await channel.send(embed=pvp_embed)
+                try:
+                    badge_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    badge_type_msg = None
+                await utils.safe_delete(badge_type_wait)
+                if not badge_type_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(badge_type_msg)
+                if badge_type_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                elif not badge_type_msg.clean_content.isdigit() or (badge_type_msg.clean_content.isdigit() and int(badge_type_msg.clean_content) > 4):
+                    error = _("entered something invalid")
+                    break
+                else:
+                    index = int(badge_type_msg.clean_content) - 1
+                    remove_user = elite_list[index]
+                pvp_embed.clear_fields()
+                pvp_embed.add_field(name=_('**Promote Elite Four**'), value=f"Next, I'll need to know what **user** you'd like to add as an Elite Four member. Reply with a user mention, ID, or case-sensitive username to promote a user{' or reply with **none** to remove '+elite_list[index].mention if elite_list[index] else ''}. You can reply with **cancel** to stop anytime.", inline=False)
+                user_wait = await channel.send(embed=pvp_embed)
+                try:
+                    user_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    user_msg = None
+                await utils.safe_delete(user_wait)
+                if not user_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(user_msg)
+                if user_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                elif user_msg.clean_content.lower() == "none":
+                    if remove_user:
+                        self.bot.guild_dict[ctx.guild.id]['trainers'][remove_user.id]['pvp']['elite'] = False
+                        return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Remove {remove_user.mention} from the Elite Four!"))
+                converter = commands.MemberConverter()
+                try:
+                    member = await converter.convert(ctx, user_msg.content)
+                    self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['elite'] = True
+                    if remove_user:
+                        self.bot.guild_dict[ctx.guild.id]['trainers'][remove_user.id]['pvp']['elite'] = False
+                except:
+                    error = _("entered an invalid member")
+                    break
+                break
+        if not error:
+            return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Promoted {member.mention} to the Elite Four!"))
+        else:
+            pvp_embed.clear_fields()
+            pvp_embed.add_field(name=_('**PVP Tournament Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=pvp_embed, delete_after=10)
+            await utils.safe_delete(message)
+
+    @pvp.command()
+    @checks.allowpvpreport()
+    @checks.is_mod()
+    async def champion(self, ctx):
+        """Manage league champions.
+
+        Usage: !pvp champion"""
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        error = ""
+        output = []
+        pvp_embed = discord.Embed(colour=ctx.guild.me.colour)
+        league_list = ["great", "ultra", "master"]
+        leader_dict = {k:[] for k in league_list}
+        for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+            if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
+                for type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
+                    user = guild.get_member(trainer)
+                    leader_dict[type].append(user)
+        for type in leader_dict:
+            output.append(f"\U0001F451 {type.title()} League Champion: {(', ').join([x.mention for x in leader_dict[type]]) if leader_dict[type] else 'Unoccupied'}")
+        while True:
+            def check(reply):
+                if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                    return True
+                else:
+                    return False
+            async with ctx.typing():
+                pvp_embed.add_field(name=_('**Promote League Champion**'), value=f"Meowth! I'll help you promote a user to league champion!\n\nFirst, I'll need to know what **type** of champion you'd like to award. Reply with a league **type** or with **cancel** to stop anytime.", inline=False)
+                pvp_embed.add_field(name=_('**Possible Leader Types:**'), value=_('{badge_list}').format(badge_list='\n'.join(output)), inline=False)
+                badge_type_wait = await channel.send(embed=pvp_embed)
+                try:
+                    badge_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    badge_type_msg = None
+                await utils.safe_delete(badge_type_wait)
+                if not badge_type_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(badge_type_msg)
+                if badge_type_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                elif badge_type_msg.clean_content.lower() in league_list:
+                    badge_type = badge_type_msg.clean_content.lower()
+                else:
+                    error = _("entered an invalid type")
+                    break
+                pvp_embed.clear_fields()
+                pvp_embed.add_field(name=_('**Promote Gym Leader**'), value=f"Next, I'll need to know what **user** you'd like to add or remove as the **{badge_type.title()}** league champion. Reply with a user mention, ID, or case-sensitive username. You can reply with **cancel** to stop anytime.", inline=False)
+                user_wait = await channel.send(embed=pvp_embed)
+                try:
+                    user_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    user_msg = None
+                await utils.safe_delete(user_wait)
+                if not user_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(user_msg)
+                if user_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                converter = commands.MemberConverter()
+                try:
+                    member = await converter.convert(ctx, user_msg.content)
+                except:
+                    error = _("entered an invalid member")
+                    break
+                if badge_type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).setdefault('pvp', {}).setdefault('champion', []):
+                    pvp_embed.clear_fields()
+                    pvp_embed.add_field(name=_('**Award PVP Badge**'), value=f"It looks like {member.mention} already is the {badge_type} champion. Would you like to remove them? Reply with **yes** or **no** or with **cancel** to stop anytime.", inline=False)
+                    confirm_wait = await channel.send(embed=pvp_embed)
+                    try:
+                        confirm_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        confirm_msg = None
+                    await utils.safe_delete(confirm_wait)
+                    if not confirm_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(confirm_msg)
+                    if confirm_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif any([confirm_msg.clean_content.lower() == "yes", confirm_msg.clean_content.lower() == "y"]):
+                        self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['champion'].remove(badge_type)
+                        return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Removed {member.mention} as the {badge_type.title()} league champion"))
+                    else:
+                        error = _("didn't change anything")
+                        break
+                break
+        if not error:
+            for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+                if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
+                    if badge_type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
+                        self.bot.guild_dict[ctx.guild.id]['trainers']['pvp']['champion'].remove(badge_type)
+            self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['champion'].append(badge_type)
+            return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Promoted {member.mention} as the {badge_type.title()} league champion"))
+        else:
+            pvp_embed.clear_fields()
+            pvp_embed.add_field(name=_('**PVP Tournament Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=pvp_embed, delete_after=10)
+            await utils.safe_delete(message)
 
 def setup(bot):
     bot.add_cog(Pvp(bot))
