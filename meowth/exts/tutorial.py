@@ -1148,6 +1148,9 @@ class Tutorial(commands.Cog):
                         await utils.safe_delete(cat_msg)
                     cog_match = re.search(cat_msg.clean_content, str(help_categories.keys()), re.IGNORECASE)
                     if cog_match:
+                        if len(help_categories[cog_match.group()]) == 1:
+                            command = help_categories[cog_match.group()][0]
+                            break
                         help_embed.set_author(name=f"{cog_match.group()} Category Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
                         help_embed.description = f"Reply with the name of a command to view command information.\n\n"
                         cmd_text = []
@@ -1182,7 +1185,8 @@ class Tutorial(commands.Cog):
                 for cmd in command.commands:
                     if await predicate(cmd) and not cmd.hidden:
                         sub_cmd.append(f"**{cmd.name}** - {cmd.short_doc}")
-                help_embed.add_field(name="**Subcommands**", value=('\n').join(sub_cmd), inline=False)
+                if sub_cmd:
+                    help_embed.add_field(name="**Subcommands**", value=('\n').join(sub_cmd), inline=False)
             tutorial_command = self.bot.get_command('tutorial')
             if command.name in [x.name for x in tutorial_command.commands]:
                 help_embed.add_field(name="**Tutorial**", value=f"Tutorial is available for {command.name} using **{ctx.prefix}tutorial {command.name}**")

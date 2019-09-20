@@ -444,11 +444,11 @@ class Raid(commands.Cog):
                 elif (self.bot.guild_dict[guild.id][report_dict][channel.id]['active'] == False) and (not self.bot.is_closed()):
                     if report_channel:
                         # Check message again in case it was edited or hatched
-                        if reportmsg and "level" in reportmsg.embeds[0].author.name.lower():
-                            try:
+                        try:
+                            if reportmsg and "level" in reportmsg.embeds[0].author.name.lower():
                                 reportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][channel.id]['raid_report'])
-                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                                reportmsg = None
+                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, AttributeError):
+                            reportmsg = None
                         if self.bot.guild_dict[guild.id][report_dict][channel.id]['type'] == "egg" and not self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', {}):
                             expiremsg = _('**This level {level} raid egg has expired!**').format(level=egg_level)
                         else:

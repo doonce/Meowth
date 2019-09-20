@@ -1332,6 +1332,82 @@ class Listing(commands.Cog):
             listmsg = _("Meowth! There are no reported lures. Report one with **!lure**")
         return listmsg, None
 
+    @_list.command(hidden=True)
+    @checks.allowraidreport()
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    async def pokealarms(self, ctx, type="pokealarm"):
+        """List the pokealarms for the channel
+
+        Usage: !list pokealarms"""
+        if type == "pokealarm":
+            report_type = "pokealarm"
+        else:
+            report_type = "pokehuntr"
+        if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', f"{report_type}s"]:
+            await utils.safe_delete(ctx.message)
+        list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault(report_type, {}).setdefault(ctx.channel.id, [])
+        delete_list = []
+        async with ctx.typing():
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.fetch_message(msg)
+                    delete_list.append(msg)
+                except:
+                    pass
+            await utils.safe_bulk_delete(ctx.channel, delete_list)
+            listmsg, pokealarm_pages = await self._pokealarmlist(ctx, report_type)
+            list_messages = []
+            if pokealarm_pages:
+                index = 0
+                for p in pokealarm_pages:
+                    if index == 0:
+                        listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    else:
+                        listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    list_messages.append(listmsg.id)
+                    index += 1
+            elif listmsg:
+                listmsg = await ctx.channel.send(listmsg)
+                list_messages.append(listmsg.id)
+            else:
+                return
+            self.bot.guild_dict[ctx.guild.id]['list_dict'][report_type][ctx.channel.id] = list_messages
+
+    async def _pokealarmlist(self, ctx, report_type):
+        pokealarm_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get(f"{report_type}_dict", {}))
+        listing_dict = {}
+        for pokealarmid in pokealarm_dict:
+            pokealarmmsg = ""
+            if pokealarm_dict[pokealarmid]['report_channel'] == ctx.message.channel.id:
+                try:
+                    pokealarmreportmsg = await ctx.message.channel.fetch_message(pokealarmid)
+                    pokealarm_expire = datetime.datetime.utcfromtimestamp(pokealarm_dict[pokealarmid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    pokealarmmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('pokealarm_bullet', '\U0001F539')))
+                    if pokealarm_dict[pokealarmid]['reporttype'] == "raid":
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokealarm_dict[pokealarmid]['pokemon'])
+                        pokealarmmsg += f"**Boss**: {str(pokemon)} {pokemon.emoji} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Expires**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({pokealarmreportmsg.jump_url})"
+                    elif pokealarm_dict[pokealarmid]['reporttype'] == "egg":
+                        pokealarmmsg += f"**Level**: {pokealarm_dict[pokealarmid]['level']} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Expires**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({pokealarmreportmsg.jump_url})"
+                    listing_dict[pokealarmid] = {
+                        "message":pokealarmmsg,
+                        "expire":pokealarm_expire
+                    }
+                except Exception as e:
+                    print("pokealarmlist", e)
+                    continue
+        if listing_dict:
+            pokealarm_list_msg = ""
+            for (k, v) in sorted(listing_dict.items(), key=lambda item: item[1]['expire']):
+                pokealarm_list_msg += listing_dict[k]['message']
+            listmsg = _('**Meowth! Here\'s the current bot reported raids for {channel}**').format(channel=ctx.message.channel.mention)
+            paginator = commands.Paginator(prefix="", suffix="")
+            for line in pokealarm_list_msg.splitlines():
+                paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+            return listmsg, paginator.pages
+        else:
+            listmsg = _("Meowth! There are no bot reported raids.")
+        return listmsg, None
+
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @checks.allowinvasionreport()
