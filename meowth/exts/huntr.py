@@ -39,52 +39,47 @@ class Huntr(commands.Cog):
     async def huntr_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
         for guild in list(self.bot.guilds):
-            try:
-                report_edit_dict = {}
-                report_delete_dict = {}
-                pokealarm_dict = self.bot.guild_dict[guild.id].get('pokealarm_dict', {})
-                pokehuntr_dict = self.bot.guild_dict[guild.id].get('pokehuntr_dict', {})
-                report_dict_dict = {
-                    'pokealarm_dict':pokealarm_dict,
-                    'pokehuntr_dict':pokehuntr_dict
-                }
-                for report_dict in list(report_dict_dict.keys()):
-                    for reportid in list(report_dict_dict.get(report_dict, {}).keys()):
-                        if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('exp', 0) <= time.time():
-                            report_channel = self.bot.get_channel(report_dict_dict.get(report_dict, {}).get(reportid, {}).get('report_channel'))
+            report_edit_dict = {}
+            report_delete_dict = {}
+            for report_dict in ['pokealarm_dict', 'pokehuntr_dict']:
+                try:
+                    alarm_dict = self.bot.guild_dict[guild.id].setdefault(report_dict, {})
+                    for reportid in list(alarm_dict.keys()):
+                        if alarm_dict.get(reportid, {}).get('exp', 0) <= time.time():
+                            report_channel = self.bot.get_channel(alarm_dict.get(reportid, {}).get('report_channel'))
                             if report_channel:
-                                user_report = report_dict_dict.get(report_dict, {}).get(reportid, {}).get('report_message', None)
+                                user_report = alarm_dict.get(reportid, {}).get('report_message', None)
                                 if user_report:
                                     report_delete_dict[user_report] = {"action":"delete", "channel":report_channel}
-                                if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('expedit') == "delete":
+                                if alarm_dict.get(reportid, {}).get('expedit') == "delete":
                                     report_delete_dict[reportid] = {"action":"delete", "channel":report_channel}
                                 else:
-                                    report_edit_dict[reportid] = {"action":report_dict_dict.get(report_dict, {}).get(reportid, {}).get('expedit', ''), "channel":report_channel}
-                                if report_dict_dict.get(report_dict, {}).get(reportid, {}).get('dm_dict', False):
-                                    self.bot.loop.create_task(utils.expire_dm_reports(self.bot, report_dict_dict.get(report_dict, {}).get(reportid, {}).get('dm_dict', {})))
-                            try:
-                                del self.bot.guild_dict[guild.id][report_dict][reportid]
-                            except KeyError:
-                                pass
-                for messageid in report_delete_dict.keys():
-                    try:
-                        report_message = await report_delete_dict[messageid]['channel'].fetch_message(messageid)
-                        await utils.safe_delete(report_message)
-                    except:
-                        pass
-                for messageid in report_edit_dict.keys():
-                    try:
-                        report_message = await report_edit_dict[messageid]['channel'].fetch_message(messageid)
-                        if isinstance(report_message.embeds[0].colour, discord.embeds._EmptyEmbed):
-                            colour = discord.Colour.lighter_grey()
-                        else:
-                            colour = report_meetup.embeds[0].colour.value
-                        await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=colour))
-                        await report_message.clear_reactions()
-                    except:
-                        pass
-            except:
-                pass
+                                    report_edit_dict[reportid] = {"action":alarm_dict.get(reportid, {}).get('expedit', ''), "channel":report_channel}
+                                if alarm_dict.get(reportid, {}).get('dm_dict', False):
+                                    self.bot.loop.create_task(utils.expire_dm_reports(self.bot, alarm_dict.get(reportid, {}).get('dm_dict', {})))
+                            # try:
+                            #     del self.bot.guild_dict[guild.id][report_dict][reportid]
+                            # except KeyError:
+                            #     pass
+                except:
+                    pass
+            for messageid in report_delete_dict.keys():
+                try:
+                    report_message = await report_delete_dict[messageid]['channel'].fetch_message(messageid)
+                    await utils.safe_delete(report_message)
+                except:
+                    pass
+            for messageid in report_edit_dict.keys():
+                try:
+                    report_message = await report_edit_dict[messageid]['channel'].fetch_message(messageid)
+                    if isinstance(report_message.embeds[0].colour, discord.embeds._EmptyEmbed):
+                        colour = discord.Colour.lighter_grey()
+                    else:
+                        colour = report_message.embeds[0].colour.value
+                    await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=colour))
+                    await report_message.clear_reactions()
+                except:
+                    pass
         # save server_dict changes after cleanup
         logger.info('SAVING CHANGES')
         try:
@@ -767,6 +762,11 @@ class Huntr(commands.Cog):
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(ctx.bot, message.guild, utils.get_weaknesses(ctx.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
         raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
+        if raidexp:
+            raid_expire = message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(raidexp))
+            raid_embed.add_field(name=_('**Expires:**'), value=raid_expire.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
+        else:
+            raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
         if moveset:
             raid_embed.add_field(name=_("**Moveset:**"), value=moveset)
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -1211,7 +1211,7 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
-        description = f"**Marilla Park.**\n{tier5}\n**CP:** 60540 - **Moves:** Confusion / Shadow Ball\n*Raid Ending: 0 hours 46 min 50 sec*"
+        description = f"**Marilla Park.**\n{tier5}\n**CP:** 60540 - **Moves:** Confusion / Shadow Ball\n*Raid Ending: 0 hours 10 min 50 sec*"
         url = "https://gymhuntr.com/#34.008618,-118.49125"
         img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=1'
         huntrembed = discord.Embed(title=_('Level 5 Raid has started!'), description=description, url=url, colour=message.guild.me.colour)
@@ -1324,7 +1324,7 @@ class Huntr(commands.Cog):
         await utils.safe_delete(message)
         random_raid = random.choice(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'])
         embed = discord.Embed(title="Title", description="Embed Description")
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":random_raid.lower(), "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":"Move 1 / Move 2", "raidexp":38}).replace("'", '"'), embed=embed)
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":random_raid.lower(), "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":"Move 1 / Move 2", "raidexp":10}).replace("'", '"'), embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
@@ -1671,7 +1671,7 @@ class Huntr(commands.Cog):
                             continue
                 if event_dict.get('make_trains') == None:
                     raid_embed.clear_fields()
-                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, would you like some channels to go with this event for coordination? I'll help you make some channels automatically three hours before the scheduled event. These channels will be reported in {ctx.channel.mention}. Reply with **train** and I'll make train channels, usable for raids. Reply with **meetup** and I'll make meetup channels for other events. Reply with **none** to skip making channels. You can reply with **cancel** to stop anytime.", inline=False)
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, would you like some channels to go with this event for coordination? I'll help you make some channels automatically three hours before the scheduled event. Reply with **train** and I'll make train channels, usable for raids. Reply with **meetup** and I'll make meetup channels for other events. Reply with **none** to skip making channels. You can reply with **cancel** to stop anytime.", inline=False)
                     make_trains_wait = await channel.send(embed=raid_embed)
                     try:
                         make_trains_msg = await self.bot.wait_for('message', timeout=60, check=check)

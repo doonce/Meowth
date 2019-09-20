@@ -1387,7 +1387,7 @@ class Listing(commands.Cog):
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokealarm_dict[pokealarmid]['pokemon'])
                         pokealarmmsg += f"**Boss**: {str(pokemon)} {pokemon.emoji} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Expires**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({pokealarmreportmsg.jump_url})"
                     elif pokealarm_dict[pokealarmid]['reporttype'] == "egg":
-                        pokealarmmsg += f"**Level**: {pokealarm_dict[pokealarmid]['level']} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Expires**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({pokealarmreportmsg.jump_url})"
+                        pokealarmmsg += f"**Level**: {pokealarm_dict[pokealarmid]['level']} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Hatches**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({pokealarmreportmsg.jump_url})"
                     listing_dict[pokealarmid] = {
                         "message":pokealarmmsg,
                         "expire":pokealarm_expire
