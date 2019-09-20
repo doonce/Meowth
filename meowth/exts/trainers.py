@@ -181,11 +181,11 @@ class Trainers(commands.Cog):
         if member.is_on_mobile():
             status_emoji = "\U0001F4F1"
         embed.set_footer(text=f"User Registered: {member.created_at.strftime(_('%b %d, %Y %I:%M %p'))} | Status: {str(member.status).title()} {status_emoji}")
-        if "set with" not in silph.lower() or member == ctx.author:
+        if "set with" not in str(silph).lower() or member == ctx.author:
             embed.add_field(name=_("Silph Road"), value=silph, inline=True)
-        if "set with" not in pokebattler.lower() or member == ctx.author:
+        if "set with" not in str(pokebattler).lower() or member == ctx.author:
             embed.add_field(name=_("Pokebattler"), value=pokebattler, inline=True)
-        if "set with" not in trainercode.lower() or member == ctx.author:
+        if "set with" not in str(trainercode).lower() or member == ctx.author:
             embed.add_field(name=_("Trainer Code"), value=trainercode, inline=True)
         embed.add_field(name=_("Member Since"), value=f"{member.joined_at.strftime(_('%b %d, %Y %I:%M %p'))}", inline=True)
         if ign:
