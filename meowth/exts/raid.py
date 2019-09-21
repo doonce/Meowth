@@ -3597,29 +3597,35 @@ class Raid(commands.Cog):
                         if message.raw_mentions:
                             if message.raw_mentions[0] not in trainer_dict:
                                 trainerid = message.raw_mentions[0]
+                                user = ctx.guild.get_member(trainerid)
+                                if not user:
+                                    continue
                                 status = {'maybe':0, 'coming':0, 'here':0, 'lobby':0}
                                 trainerstatus = None
                                 if _('is interested') in message.content:
                                     trainerstatus = 'maybe'
-                                if _('on the way') in message.content:
+                                elif _('on the way') in message.content:
                                     trainerstatus = 'coming'
-                                if _('at the') in message.content:
+                                elif _('at the') in message.content:
                                     trainerstatus = 'here'
-                                if (_('no longer') in message.content) or (_('left the raid') in message.content):
+                                elif (_('no longer') in message.content) or (_('left the raid') in message.content):
                                     trainerstatus = None
                                 if _('trainers') in message.content:
                                     messagesplit = message.content.split()
-                                    if messagesplit[-1].isdigit():
-                                        count = int(messagesplit[-13])
-                                        party = {'mystic':int(messagesplit[-10]), 'valor':int(messagesplit[-7]), 'instinct':int(messagesplit[-4]), 'unknown':int(messagesplit[-1])}
-                                    else:
-                                        count = 1
-                                        party = {'mystic':0, 'valor':0, 'instinct':0, 'unknown':count}
+                                    count = re.search(r'total of \*\*(.*)\*\*', message.content)
+                                    count = int(count.group(1))
+                                    party = {'mystic':0, 'valor':0, 'instinct':0, 'unknown':0}
+                                    for index, item in enumerate(messagesplit):
+                                        if ":mystic:" in item:
+                                            party['mystic'] = int(messagesplit[index+1])
+                                        elif ":valor:" in item:
+                                            party['valor'] = int(messagesplit[index+1])
+                                        elif ":instinct:" in item:
+                                            party['instinct'] = int(messagesplit[index+1])
+                                        elif ":grey_question:" in item:
+                                            party['unknown'] = int(messagesplit[index+1])
                                 elif trainerstatus:
                                     count = 1
-                                    user = ctx.guild.get_member(trainerid)
-                                    if not user:
-                                        continue
                                     for role in user.roles:
                                         if role.id == self.bot.guild_dict[guild.id]['configure_dict']['team']['team_roles']['mystic']:
                                             party = {'mystic':1, 'valor':0, 'instinct':0, 'unknown':0}
