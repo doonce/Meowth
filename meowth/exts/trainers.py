@@ -213,19 +213,21 @@ class Trainers(commands.Cog):
         if trade_message and (trade_channel.overwrites_for(ctx.guild.default_role).read_messages or trade_channel.overwrites_for(ctx.guild.default_role).read_messages == None):
             embed.add_field(name="Active Trades", value=f"[Click here]({trade_message}) to view active trades in {trade_channel.mention}.")
         if any([pvp_info.get('champion'), pvp_info.get('elite'), pvp_info.get('leader'), pvp_info.get('badges'), pvp_info.get('record')]):
-            pvp_value = ""
+            champ_emoji = self.bot.config.custom_emoji.get('pvp_champ', '\U0001F451')
+            elite_emoji = self.bot.config.custom_emoji.get('pvp_elite', '\U0001F3C6')
+            pvp_value = []
             if pvp_info.get('champion'):
-                pvp_value += f"\U0001F451 {(', ').join([x.title() for x in pvp_info['champion']])} League Champion \U0001F451 | "
+                pvp_value.append(f"{champ_emoji} {(', ').join([x.title() for x in pvp_info['champion']])} League Champion {champ_emoji}")
             if pvp_info.get('elite'):
-                pvp_value += f"\U0001F3C6 Elite Four \U0001F3C6 | "
+                pvp_value.append(f"{elite_emoji} Elite Four {elite_emoji}")
             if pvp_info.get('leader'):
-                pvp_value += f"Gym Leader: {('').join([utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[x]) for x in pvp_info['leader']])} | "
+                pvp_value.append(f"Gym Leader: {('').join([utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[x]) for x in pvp_info['leader']])}")
             if pvp_info.get('badges'):
-                pvp_value += f"Badges: {('').join([utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[x]) for x in pvp_info['badges']])} | "
+                pvp_value.append(f"Badges: {('').join([utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[x]) for x in pvp_info['badges']])}")
             if pvp_info.get('record'):
-                pvp_value += f"Record: {pvp_info['record'].get('win', 0)}W - {pvp_info['record'].get('loss', 0)}L"
+                pvp_value.append(f"Record: {pvp_info['record'].get('win', 0)}W - {pvp_info['record'].get('loss', 0)}L")
             if pvp_value:
-                embed.add_field(name=_("PVP League Info"), value=pvp_value, inline=False)
+                embed.add_field(name=_("PVP League Info"), value=(' | ').join(pvp_value), inline=False)
         if roles:
             embed.add_field(name=_("Roles"), value=f"{(' ').join(roles)[:2000]}", inline=False)
 
