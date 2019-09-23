@@ -492,7 +492,7 @@ class Pvp(commands.Cog):
         pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/CombatButton.png?cache=1')
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id].get('pvp', {})
-        is_moderator = checks.check_is_mod(ctx)
+        is_moderator = await checks.check_is_mod(ctx)
         is_ranked = any([pvp_info.get('leader', []), pvp_info.get('elite', []), pvp_info.get('champion', [])])
         while True:
             def check(reply):
@@ -733,7 +733,7 @@ class Pvp(commands.Cog):
                 else:
                     return False
             async with ctx.typing():
-                pvp_embed.add_field(name=_('**Award PVP Badge**'), value=f"Meowth! I'll help you award a PVP badge!\n\nFirst, I'll need to know what **type** of badge you'd like to award or remove. Reply with a badge **type** or with **cancel** to stop anytime. {'Or reply with **reset** to reset all badges.' if checks.check_is_mod(ctx) else ''}", inline=False)
+                pvp_embed.add_field(name=_('**Award PVP Badge**'), value=f"Meowth! I'll help you award a PVP badge!\n\nFirst, I'll need to know what **type** of badge you'd like to award or remove. Reply with a badge **type** or with **cancel** to stop anytime. {'Or reply with **reset** to reset all badges.' if await checks.check_is_mod(ctx) else ''}", inline=False)
                 pvp_embed.add_field(name=_('**Possible Badges:**'), value=_('{badge_list}').format(badge_list=', '.join(output)), inline=False)
                 badge_type_wait = await channel.send(embed=pvp_embed)
                 try:
@@ -749,7 +749,7 @@ class Pvp(commands.Cog):
                 if badge_type_msg.clean_content.lower() == "cancel":
                     error = _("cancelled the report")
                     break
-                elif badge_type_msg.clean_content.lower() == "reset" and checks.check_is_mod(ctx):
+                elif badge_type_msg.clean_content.lower() == "reset" and await checks.check_is_mod(ctx):
                     for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pvp', {}).get('badges'):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['badges'] = []
@@ -844,7 +844,7 @@ class Pvp(commands.Cog):
                 else:
                     return False
             async with ctx.typing():
-                pvp_embed.add_field(name=_('**Promote Gym Leader**'), value=f"Meowth! I'll help you promote a user to a gym leader!\n\nFirst, I'll need to know what **type** of leader you'd like to award or remove. Reply with a leader **type** or with **cancel** to stop anytime. {'Or reply with **reset** to reset all leaders.' if checks.check_is_mod(ctx) else ''}", inline=False)
+                pvp_embed.add_field(name=_('**Promote Gym Leader**'), value=f"Meowth! I'll help you promote a user to a gym leader!\n\nFirst, I'll need to know what **type** of leader you'd like to award or remove. Reply with a leader **type** or with **cancel** to stop anytime. {'Or reply with **reset** to reset all leaders.' if await checks.check_is_mod(ctx) else ''}", inline=False)
                 pvp_embed.add_field(name=_('**Possible Leader Types:**'), value=_('{badge_list}').format(badge_list=', '.join(output)), inline=False)
                 badge_type_wait = await channel.send(embed=pvp_embed)
                 try:
@@ -860,7 +860,7 @@ class Pvp(commands.Cog):
                 if badge_type_msg.clean_content.lower() == "cancel":
                     error = _("cancelled the report")
                     break
-                elif badge_type_msg.clean_content.lower() == "reset" and checks.check_is_mod(ctx):
+                elif badge_type_msg.clean_content.lower() == "reset" and await checks.check_is_mod(ctx):
                     for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pvp', {}).get('leader'):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['leader'] = []
@@ -964,7 +964,7 @@ class Pvp(commands.Cog):
                 else:
                     return False
             async with ctx.typing():
-                pvp_embed.add_field(name=_('**Promote Elite Four**'), value=f"Meowth! I'll help you promote a user to the Elite Four!\n\nFirst, I'll need to know what **slot** of the Elite Four you'd like to fill. Reply with a **number 1-4** or with **cancel** to stop anytime. {'Or reply with **reset** to reset all Elite Four.' if checks.check_is_mod(ctx) else ''}", inline=False)
+                pvp_embed.add_field(name=_('**Promote Elite Four**'), value=f"Meowth! I'll help you promote a user to the Elite Four!\n\nFirst, I'll need to know what **slot** of the Elite Four you'd like to fill. Reply with a **number 1-4** or with **cancel** to stop anytime. {'Or reply with **reset** to reset all Elite Four.' if await checks.check_is_mod(ctx) else ''}", inline=False)
                 pvp_embed.add_field(name=f"Current Elite Four", value=('\n').join(output))
                 slot_wait = await channel.send(embed=pvp_embed)
                 try:
@@ -980,7 +980,7 @@ class Pvp(commands.Cog):
                 if slot_msg.clean_content.lower() == "cancel":
                     error = _("cancelled the report")
                     break
-                elif slot_msg.clean_content.lower() == "reset" and checks.check_is_mod(ctx):
+                elif slot_msg.clean_content.lower() == "reset" and await checks.check_is_mod(ctx):
                     for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pvp', {}).get('elite'):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['elite'] = []
@@ -1061,7 +1061,7 @@ class Pvp(commands.Cog):
                 else:
                     return False
             async with ctx.typing():
-                pvp_embed.add_field(name=_('**Promote League Champion**'), value=f"Meowth! I'll help you promote a user to league champion!\n\nFirst, I'll need to know what **type** of champion you'd like to award. Reply with a league **type** (great, ultra, master) or with **cancel** to stop anytime. {'Or reply with **reset** to reset all champions.' if checks.check_is_mod(ctx) else ''}", inline=False)
+                pvp_embed.add_field(name=_('**Promote League Champion**'), value=f"Meowth! I'll help you promote a user to league champion!\n\nFirst, I'll need to know what **type** of champion you'd like to award. Reply with a league **type** (great, ultra, master) or with **cancel** to stop anytime. {'Or reply with **reset** to reset all champions.' if await checks.check_is_mod(ctx) else ''}", inline=False)
                 pvp_embed.add_field(name=_('**Possible Leader Types:**'), value=_('{badge_list}').format(badge_list='\n'.join(output)), inline=False)
                 league_type_wait = await channel.send(embed=pvp_embed)
                 try:
@@ -1077,7 +1077,7 @@ class Pvp(commands.Cog):
                 if league_type_msg.clean_content.lower() == "cancel":
                     error = _("cancelled the report")
                     break
-                elif league_type_msg.clean_content.lower() == "reset" and checks.check_is_mod(ctx):
+                elif league_type_msg.clean_content.lower() == "reset" and await checks.check_is_mod(ctx):
                     for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pvp', {}).get('champion'):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['champion'] = []
@@ -1182,7 +1182,7 @@ class Pvp(commands.Cog):
                 if user_msg.clean_content.lower() == "cancel":
                     error = _("cancelled the report")
                     break
-                elif (user_msg.clean_content.lower() == "reset" or user_msg.clean_content.lower() == "wipe") and checks.check_is_mod(ctx):
+                elif (user_msg.clean_content.lower() == "reset" or user_msg.clean_content.lower() == "wipe") and await checks.check_is_mod(ctx):
                     for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('pvp', {}).get('record', {}).get('win', 0):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['record']['win'] = 0
