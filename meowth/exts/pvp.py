@@ -491,6 +491,9 @@ class Pvp(commands.Cog):
         error = False
         pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/CombatButton.png?cache=1')
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id].get('pvp', {})
+        is_moderator = checks.check_is_mod(ctx)
+        is_ranked = any([pvp_info.get('leader', []), pvp_info.get('elite', []), pvp_info.get('champion', [])])
         while True:
             def check(reply):
                 if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
@@ -572,9 +575,9 @@ class Pvp(commands.Cog):
                         if not location:
                             return
                     official_pvp = False
-                    if await checks.check_is_mod(ctx):
+                    if is_moderator or is_ranked:
                         pvp_embed.clear_fields()
-                        pvp_embed.add_field(name=_('**New PVP Tournament**'), value=_("Since you are a moderator, I'll need to know if this is an official tournament that will count towards the participants' records. Reply with **yes** or **no**. You can reply with **cancel** to stop anytime."), inline=False)
+                        pvp_embed.add_field(name=_('**New PVP Tournament**'), value=f"Since you are a {'ranked member' if is_ranked else 'moderator'}, I'll need to know if this is an official tournament that will count towards the participants' records. Reply with **yes** or **no**. You can reply with **cancel** to stop anytime.", inline=False)
                         pvp_type_wait = await channel.send(embed=pvp_embed)
                         try:
                             pvp_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1181,11 +1184,11 @@ class Pvp(commands.Cog):
                     break
                 elif (user_msg.clean_content.lower() == "reset" or user_msg.clean_content.lower() == "wipe") and checks.check_is_mod(ctx):
                     for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
-                        if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('pvp', {}).get('record'):
+                        if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('pvp', {}).get('record', {}).get('win', 0):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['record']['win'] = 0
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['record']['loss'] = 0
-                            if user_msg.clean_content.lower() == "wipe":
-                                self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['record']['title'] = []
+                        if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('pvp', {}).get('record', {}).get('title', []) and user_msg.clean_content.lower() == "wipe":
+                            self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['record']['title'] = []
                     return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Reset all records."))
                 converter = commands.MemberConverter()
                 try:
@@ -1257,7 +1260,7 @@ class Pvp(commands.Cog):
                         pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).setdefault('pvp', {}).setdefault('record', {})
                         pvp_info['loss'] = int(user_msg.clean_content)
                         return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Manually set loss record for {member.mention} to {user_msg.clean_content}."))
-                elif user_msg.clean_content.lower() == "ttile":
+                elif user_msg.clean_content.lower() == "title":
                     pvp_embed.clear_fields()
                     pvp_embed.add_field(name=_('**Manage League Records**'), value=f"Now, enter the titles to attach to {member.mention}. This is to track whether {member.mention} has ever held these titles in your current season or career, not whether they are currently held. Reply with a comma-separated list of any of the following: **leader, elite, champion**. You can reply with **cancel** to stop anytime.", inline=False)
                     title_list = ["leader", "elite", "champion"]

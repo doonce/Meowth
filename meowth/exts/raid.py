@@ -4868,11 +4868,14 @@ class Raid(commands.Cog):
                     continue
                 if battle_lobby['starting_dict'][trainer]['status'] == {'maybe':0, 'coming':0, 'here':0, 'lobby':0}:
                     continue
-                lobby_list.append(user.mention)
+                lobby_list.append(user)
                 count = battle_lobby['starting_dict'][trainer]['status']['lobby']
                 battle_lobby['starting_dict'][trainer]['status'] = {'maybe':0, 'coming':count, 'here':0, 'lobby':0}
+                if user == author:
+                    continue
+                await user.send(f"Backout - Meowth! {author.display_name} has requested a backout in {channel.mention}. Please check the channel and back out of the raid if required.")
             self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['trainer_dict'] = {**trainer_dict, **battle_lobby['starting_dict']}
-            await channel.send(_('Backout - Meowth! {author} has requested that the group consisting of {lobby_list} and the people with them to back out of the battle! Please confirm that you have backed out with **!here**. The lobby will have to be started again using **!starting**.').format(author=author.mention, lobby_list=', '.join(lobby_list)))
+            await channel.send(_('Backout - Meowth! {author} has requested that the group consisting of {lobby_list} and the people with them to back out of the battle! Please confirm that you have backed out with **!here**. The lobby will have to be started again using **!starting**.').format(author=author.mention, lobby_list=', '.join([x.mention for x in lobby_list])))
         elif (author.id in trainer_dict) and (trainer_dict[author.id]['status']['lobby']):
             count = trainer_dict[author.id]['count']
             trainer_dict[author.id]['status'] = {'maybe':0, 'coming':0, 'here':count, 'lobby':0}
@@ -4882,8 +4885,11 @@ class Raid(commands.Cog):
                     user = guild.get_member(trainer)
                     if not user:
                         continue
-                    lobby_list.append(user.mention)
+                    lobby_list.append(user)
                     trainer_dict[trainer]['status'] = {'maybe':0, 'coming':0, 'here':count, 'lobby':0}
+                    if user == author:
+                        continue
+                    await user.send(f"Backout - Meowth! {author.display_name} has requested a backout in {channel.mention}. Please check the channel and back out of the raid if required.")
             if (not lobby_list):
                 await channel.send(_("Meowth! There's no one else in the lobby for this raid!"), delete_after=10)
                 try:
@@ -4891,7 +4897,7 @@ class Raid(commands.Cog):
                 except KeyError:
                     pass
                 return
-            await channel.send(_('Backout - Meowth! {author} has indicated that the group consisting of {lobby_list} and the people with them has backed out of the lobby! If this is inaccurate, please use **!lobby** or **!cancel** to help me keep my lists accurate!').format(author=author.mention, lobby_list=', '.join(lobby_list)))
+            await channel.send(_('Backout - Meowth! {author} has indicated that the group consisting of {lobby_list} and the people with them has backed out of the lobby! If this is inaccurate, please use **!lobby** or **!cancel** to help me keep my lists accurate!').format(author=author.mention, lobby_list=', '.join([x.mention for x in lobby_list])))
             try:
                 del self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id]['lobby']
             except KeyError:
@@ -4903,13 +4909,16 @@ class Raid(commands.Cog):
                     user = guild.get_member(trainer)
                     if not user:
                         continue
-                    lobby_list.append(user.mention)
+                    lobby_list.append(user)
                     trainer_list.append(trainer)
+                    if user == author:
+                        continue
+                    await user.send(f"Backout - Meowth! {author.display_name} has requested a backout in {channel.mention}. Please check the channel and back out of the raid if required.")
             if (not lobby_list):
                 await channel.send(_("Meowth! There's no one in the lobby for this raid!"), delete_after=10)
                 return
 
-            backoutmsg = await channel.send(_('Backout - Meowth! {author} has requested a backout! If one of the following trainers reacts with the check mark, I will assume the group is backing out of the raid lobby as requested! {lobby_list}').format(author=author.mention, lobby_list=', '.join(lobby_list)))
+            backoutmsg = await channel.send(_('Backout - Meowth! {author} has requested a backout! If one of the following trainers reacts with the check mark, I will assume the group is backing out of the raid lobby as requested! {lobby_list}').format(author=author.mention, lobby_list=', '.join([x.mention for x in lobby_list])))
             try:
                 timeout = False
                 res, reactuser = await utils.ask(self.bot, backoutmsg, trainer_list, react_list=[self.bot.custom_emoji.get('answer_yes', '\u2705')])
