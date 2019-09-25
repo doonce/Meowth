@@ -1190,6 +1190,8 @@ class Huntr(commands.Cog):
         timer = report_details.get('expire', 30)
         reward = report_details.get('reward', None)
         gender = report_details.get('gender', None)
+        if gender == "male" and reward == ["snorlax"]:
+            reward = []
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
@@ -1351,7 +1353,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Pikachu", "gps":"39.645742,-79.96908", "expire":"5 min 0 sec", "iv_percent":"95.5", "iv_long":"14 / 14/ 15", "level":"27", "gender":"male", "height":"0.4", "weight":"6", "moveset":"Quick Attack / Wild Charge"}')
+        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Ditto", "gps":"39.645742,-79.96908", "expire":"5 min 0 sec", "iv_percent":"95.5", "iv_long":"14 / 14/ 15", "level":"27", "gender":"male", "height":"0.4", "weight":"6", "moveset":"Quick Attack / Wild Charge", "disguise":"Yanma"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

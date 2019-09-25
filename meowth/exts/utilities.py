@@ -581,6 +581,9 @@ class Utilities(commands.Cog):
                         elif "welcome" in message.content.lower():
                             if (datetime.datetime.now() - message.created_at).days >= 30:
                                 delete_list.append(message)
+                        elif "backout" in message.content.lower():
+                            if (datetime.datetime.now() - message.created_at).days >= 1:
+                                delete_list.append(message)
                         elif message.embeds:
                             if "pokebattler.com" in str(message.embeds[0].author.url).lower() or "raid coordination help" in str(message.embeds[0].author.name).lower():
                                 if (datetime.datetime.now() - message.created_at).days >= 7:
@@ -826,7 +829,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.9.23.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.9.25.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

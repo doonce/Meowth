@@ -440,8 +440,8 @@ class Lure(commands.Cog):
                     embed.remove_field(index)
                 else:
                     index += 1
-        content = content.split(f"{ctx.author.mention}!")[0]
-        content = f"{content}{ctx.author.display_name} in {ctx.channel.mention}"
+        content = content.splitlines()[0]
+        content = content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}")
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_stops = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('stops', [])
             stop_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokestop', {}).get('lure', True)

@@ -57,11 +57,21 @@ class Want(commands.Cog):
         want_embed.add_field(name=_('**Item**'), value=f"Reply with **item** to want sspecific items from research.", inline=False)
         want_embed.add_field(name=_('**Settings**'), value=f"Reply with **settings** to access your want settings.", inline=False)
         want_embed.add_field(name=_('**List**'), value=f"Reply with **list** to view your want list.", inline=False)
+        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
+        item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "glacial lure module", "magnetic lure module", "mossy lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
         while True:
             async with ctx.typing():
                 if pokemon:
-                    await self._want_pokemon(ctx, pokemon)
-                    return
+                    if pokemon.split(',')[0].lower().strip() in type_list:
+                        return await ctx.invoke(self.bot.get_command('want type'), types=pokemon)
+                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in gyms:
+                        return await ctx.invoke(self.bot.get_command('want gym'), gyms=pokemon)
+                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in stops:
+                        return await ctx.invoke(self.bot.get_command('want stop'), stops=pokemon)
+                    elif pokemon.split(',')[0].lower().strip() in item_list:
+                        return await ctx.invoke(self.bot.get_command('want item'), items=pokemon)
+                    else:
+                        return await self._want_pokemon(ctx, pokemon)
                 else:
                     want_category_wait = await channel.send(embed=want_embed)
                     def check(reply):
@@ -125,8 +135,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('boss')
                             if want_command:
-                                await ctx.invoke(want_command, bosses=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, bosses=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "gym" and gym_matching_cog and gyms:
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/gym-arena.png?cache=1")
@@ -150,8 +159,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('gym')
                             if want_command:
-                                await ctx.invoke(want_command, gyms=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, gyms=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "stop" and gym_matching_cog and stops:
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pokestop_near.png?cache=1")
@@ -175,8 +183,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('stop')
                             if want_command:
-                                await ctx.invoke(want_command, stops=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, stops=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "iv":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1")
@@ -200,8 +207,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('iv')
                             if want_command:
-                                await ctx.invoke(want_command, ivs=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, ivs=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "level":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1")
@@ -225,8 +231,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('level')
                             if want_command:
-                                await ctx.invoke(want_command, levels=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, levels=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "item":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/MysteryItem.png?cache=1")
@@ -250,8 +255,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('item')
                             if want_command:
-                                await ctx.invoke(want_command, items=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, items=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "type":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/types.png?cache=1")
@@ -275,8 +279,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('type')
                             if want_command:
-                                await ctx.invoke(want_command, types=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, types=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "role" and role_list:
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/discord.png?cache=1")
@@ -302,20 +305,17 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('role')
                             if want_command:
-                                await ctx.invoke(want_command, roles=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, roles=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "settings":
                         want_command = ctx.command.all_commands.get('settings')
                         if want_command:
-                            await want_command.invoke(ctx)
-                            return
+                            return await want_command.invoke(ctx)
                     elif want_category_msg.clean_content.lower() == "list":
                         await utils.safe_delete(ctx.message)
                         list_command = self.bot.get_command("list")
                         want_command = list_command.all_commands.get('wants')
-                        await want_command.invoke(ctx)
-                        return
+                        return await want_command.invoke(ctx)
                     else:
                         error = _("entered something invalid")
                         break
@@ -453,7 +453,7 @@ class Want(commands.Cog):
         Usage: !want boss <boss list>"""
         await ctx.invoke(self.bot.get_command('want pokemon'), pokemon=bosses)
 
-    async def _want_poi(self, ctx, pois):
+    async def _want_poi(self, ctx, pois, poi_type="gym"):
         await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
@@ -469,7 +469,7 @@ class Want(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if not gym_matching_cog:
             return
-        if "stop" in ctx.invoked_with:
+        if poi_type == "stop":
             pois = gym_matching_cog.get_stops(ctx.guild.id)
             user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
         else:
@@ -492,7 +492,7 @@ class Want(commands.Cog):
                 added_list.append(f"{entered_want.title()}")
                 added_count += 1
         want_count = added_count + already_want_count + len(spellcheck_dict)
-        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'stop' if 'stop' in ctx.invoked_with else 'gym'}{'s' if want_count > 1 else ''}:\n"
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'stop' if poi_type == 'stop' else 'gym'}{'s' if want_count > 1 else ''}:\n"
         if added_count > 0:
             confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
@@ -512,7 +512,7 @@ class Want(commands.Cog):
         """Add a gym to your want list. Currently used for raid and raid egg reports.
 
         Usage: !want gym <gym list>"""
-        await self._want_poi(ctx, gyms)
+        await self._want_poi(ctx, gyms, poi_type="gym")
 
 
     @want.command(name='stop', aliases=['pokestop', 'pokestops', 'stops'])
@@ -521,7 +521,7 @@ class Want(commands.Cog):
         """Add a pokestop to your want list. Currently used for wild, invasion, lure, and research reports.
 
         Usage: !want stop <stop list>"""
-        await self._want_poi(ctx, stops)
+        await self._want_poi(ctx, stops, poi_type="stop")
 
     @want.command(name='item', aliases=['items'])
     @checks.allowwant()
@@ -1140,6 +1140,8 @@ class Want(commands.Cog):
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         want_msg = f"Meowth! I'll help you remove an alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to unsubscribe from. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=want_msg, inline=False)
+        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
+        item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "glacial lure module", "magnetic lure module", "mossy lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
         if not any([user_wants, user_bosses, user_gyms, user_stops, user_ivs, user_levels, user_items, user_types, user_forms, user_roles]):
             want_embed.clear_fields()
             want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
@@ -1170,8 +1172,16 @@ class Want(commands.Cog):
         while True:
             async with ctx.typing():
                 if pokemon:
-                    await self._unwant_pokemon(ctx, pokemon)
-                    return
+                    if pokemon.split(',')[0].lower().strip() in type_list:
+                        return await ctx.invoke(self.bot.get_command('unwant type'), types=pokemon)
+                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in gyms:
+                        return await ctx.invoke(self.bot.get_command('unwant gym'), gyms=pokemon)
+                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in stops:
+                        return await ctx.invoke(self.bot.get_command('unwant stop'), stops=pokemon)
+                    elif pokemon.split(',')[0].lower().strip() in item_list:
+                        return await ctx.invoke(self.bot.get_command('unwant item'), items=pokemon)
+                    else:
+                        return await self._want_pokemon(ctx, pokemon)
                 else:
                     want_category_wait = await channel.send(embed=want_embed)
                     def check(reply):
@@ -1241,8 +1251,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('boss')
                             if want_command:
-                                await ctx.invoke(want_command, bosses=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, bosses=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "gym" and gym_matching_cog:
                         if not user_gyms:
@@ -1269,8 +1278,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('gym')
                             if want_command:
-                                await ctx.invoke(want_command, gyms=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, gyms=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "stop" and gym_matching_cog:
                         if not user_stops:
@@ -1297,8 +1305,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('stop')
                             if want_command:
-                                await ctx.invoke(want_command, stops=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, stops=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "iv":
                         if not user_ivs:
@@ -1325,8 +1332,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('iv')
                             if want_command:
-                                await ctx.invoke(want_command, ivs=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, ivs=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "level":
                         if not user_levels:
@@ -1353,8 +1359,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('level')
                             if want_command:
-                                await ctx.invoke(want_command, levels=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, levels=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "item":
                         if not user_items:
@@ -1381,8 +1386,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('item')
                             if want_command:
-                                await ctx.invoke(want_command, items=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, items=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "type":
                         if not user_types:
@@ -1409,8 +1413,7 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('type')
                             if want_command:
-                                await ctx.invoke(want_command, types=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, types=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "role" and user_roles:
                         if not user_roles:
@@ -1438,14 +1441,12 @@ class Want(commands.Cog):
                             ctx.message.content = want_sub_msg.clean_content
                             want_command = ctx.command.all_commands.get('role')
                             if want_command:
-                                await ctx.invoke(want_command, roles=ctx.message.content)
-                                return
+                                return await ctx.invoke(want_command, roles=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "all":
                         want_command = ctx.command.all_commands.get('all')
                         if want_command:
-                            await want_command.invoke(ctx)
-                            return
+                            return await want_command.invoke(ctx)
                     else:
                         error = _("entered something invalid")
                         break
@@ -1658,12 +1659,12 @@ class Want(commands.Cog):
         unwant_msg = f"{author.mention} I've removed **{(', ').join(completed_list)}** from your want list."
         await channel.send(unwant_msg)
 
-    async def _unwant_poi(self, ctx, *, pois):
+    async def _unwant_poi(self, ctx, pois, poi_type="gym"):
         await ctx.trigger_typing()
         message = ctx.message
         guild = message.guild
         channel = message.channel
-        unwant_split = gyms.lower().split(',')
+        unwant_split = pois.lower().split(',')
         unwant_list = []
         removed_count = 0
         spellcheck_dict = {}
@@ -1674,7 +1675,7 @@ class Want(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if not gym_matching_cog:
             return
-        if "stop" in ctx.invoked_with:
+        if poi_type == "stop":
             pois = gym_matching_cog.get_stops(ctx.guild.id)
             user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
         else:
@@ -1700,7 +1701,7 @@ class Want(commands.Cog):
                 removed_list.append(f"{entered_unwant.title()}")
                 removed_count += 1
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'stop' if 'stop' in ctx.invoked_with else 'gym'}{'s' if unwant_count > 1 else ''}:\n"
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'stop' if poi_type == 'stop' else 'gym'}{'s' if unwant_count > 1 else ''}:\n"
         if removed_count > 0:
             confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
@@ -1721,7 +1722,7 @@ class Want(commands.Cog):
 
         Usage: !unwant gym <gym list>
         You will no longer be notified of reports about this gym."""
-        await self._unwant_poi(ctx, gyms)
+        await self._unwant_poi(ctx, gyms, poi_type="gym")
 
 
     @unwant.command(name='stop', aliases=['pokestop', 'pokestops', 'stops'])
@@ -1731,7 +1732,7 @@ class Want(commands.Cog):
 
         Usage: !unwant stop <stop list>
         You will no longer be notified of reports about this pokestop."""
-        await self._unwant_poi(ctx, stops)
+        await self._unwant_poi(ctx, stops, poi_type="stop")
 
     @unwant.command(name='item', aliases=['items'])
     @checks.allowwant()
