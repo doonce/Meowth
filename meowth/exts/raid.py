@@ -1513,6 +1513,7 @@ class Raid(commands.Cog):
             await self._raidegg(message, content)
             return
 
+        raidexp = False
         if raid_split[-1].isdigit():
             raidexp = int(raid_split[-1])
             del raid_split[-1]
@@ -1525,8 +1526,6 @@ class Raid(commands.Cog):
             if h.isdigit() and m.isdigit():
                 raidexp = (60 * int(h)) + int(m)
             del raid_split[(- 1)]
-        else:
-            raidexp = False
 
         rgx = '[^a-zA-Z0-9]'
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
@@ -1586,7 +1585,7 @@ class Raid(commands.Cog):
                 return await message.channel.send(_('Meowth! Please wait until the egg has hatched before changing it to an open raid!'), delete_after=10)
 
 
-        if raidexp is not False:
+        if raidexp:
             if self._timercheck(raidexp, self.bot.raid_info['raid_eggs'][level]['raidtime']):
                 await message.channel.send(_("Meowth...that's too long. Level {raidlevel} raids currently last no more than {raidtime} minutes...").format(raidlevel=level, raidtime=self.bot.raid_info['raid_eggs'][level]['raidtime']), delete_after=10)
                 return
