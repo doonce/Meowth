@@ -34,6 +34,7 @@ class Trainers(commands.Cog):
         team_roles = {k: discord.utils.get(ctx.guild.roles, id=v) for (k, v) in guild_roles.items()}
         high_roles = []
         team_colors = [discord.Colour.blue(), discord.Colour.red(), discord.Colour.gold(), discord.Colour.default()]
+        team = team.replace('red', 'valor').replace('blue', 'mystic').replace('yellow', 'instinct')
         team_msg = _(' or ').join(['**!team {0}**'.format(team) for team in guild_roles.keys()])
         index = 0
         for teamrole in copy.deepcopy(guild_roles).keys():

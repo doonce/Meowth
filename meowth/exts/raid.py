@@ -2496,7 +2496,6 @@ class Raid(commands.Cog):
             await utils.safe_delete(message)
 
     async def _meetup(self, ctx, location):
-        print(ctx.command)
         if "train" in str(ctx.command):
             meetup_type = "train"
             meetup_dict = "raidtrain_dict"
@@ -2862,7 +2861,9 @@ class Raid(commands.Cog):
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['history'] = [train_location]
             for channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
                 channel_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['address']
-                if channel_address == train_location:
+                channel_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['egg_level']
+                channel_type = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['type']
+                if channel_address == train_location and channel_level != "EX" and channel_type != "exraid":
                     raid_channel = self.bot.get_channel(channel)
                     await raid_channel.send(f"A raid train channel has chosen this raid as its next raid! You can join them in {ctx.channel.mention}")
             return train_channel
@@ -2887,6 +2888,13 @@ class Raid(commands.Cog):
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         await ctx.invoke(self.bot.get_command("timerset"), timer=timer)
+
+    @commands.command(name="next")
+    @checks.allowmeetupreport()
+    async def train_next_parent(self, ctx, *, channel_or_gym):
+        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
+            return
+        await ctx.invoke(self.bot.get_command("train next"), channel_or_gym=channel_or_gym)
 
     @train.command(name="next")
     @checks.allowmeetupreport()
@@ -3372,7 +3380,10 @@ class Raid(commands.Cog):
                 await utils.safe_delete(ctx.message)
                 return
             oldraidmsg = await message.channel.fetch_message(self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['raid_message'])
-            oldreportmsg = await report_channel.fetch_message(self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['raid_report'])
+            try:
+                oldreportmsg = await report_channel.fetch_message(self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['raid_report'])
+            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                pass
             oldembed = oldraidmsg.embeds[0]
             newembed = discord.Embed(title=oldembed.title, description=gym_info, url=raid_gmaps_link, colour=message.guild.me.colour)
             for field in oldembed.fields:
@@ -3418,14 +3429,14 @@ class Raid(commands.Cog):
                     newembed.add_field(name=field.name, value=field.value, inline=field.inline)
             try:
                 await oldraidmsg.edit(embed=newembed, content=oldraidmsg.content.replace(old_location, raid_details))
+                self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['raid_message'] = oldraidmsg.id
             except:
                 pass
             try:
                 await oldreportmsg.edit(embed=newembed, content=oldreportmsg.content.replace(old_location, raid_details))
+                self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['raid_report'] = oldreportmsg.id
             except:
                 pass
-            self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['raid_message'] = oldraidmsg.id
-            self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['raid_report'] = oldreportmsg.id
             self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['address'] = raid_details
             if can_manage or report_train:
                 if report_train:
@@ -3686,6 +3697,11 @@ class Raid(commands.Cog):
                 'egg_level':egg_level,
                 'pkmn_obj': pkmn_obj
             }
+            if train:
+                self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'] = [ctx.author.id]
+                for member in ctx.guild.members:
+                    if ctx.channel.permissions_for(member).manage_channels:
+                        self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
             recovermsg = _("Meowth! This channel has been recovered! However, there may be some inaccuracies in what I remembered! Here's what I have:")
             if meetup:
                 self.bot.guild_dict[channel.guild.id]['meetup_dict'][channel.id]['meetup'] = {'start':False, 'end':False}
@@ -4733,7 +4749,6 @@ class Raid(commands.Cog):
         for manager in self.bot.managers:
             id_startinglist.append(manager)
         id_startinglist.append(self.bot.owner)
-        name_startinglist = []
         team_list = []
         team_names = ["mystic", "valor", "instinct", "unknown"]
         team = team if team and team.lower() in team_names else "all"
@@ -4750,18 +4765,21 @@ class Raid(commands.Cog):
                 user = ctx.guild.get_member(trainer)
                 if not user:
                     continue
-                all_trainers.append(user.mention)
-            starting_str = f"Starting - Meowth! The group that was waiting is starting at the current train location! Trainers {(', ').join(all_trainers)}, if you are with them you should start as well. If you are not with them wait for next train location to be announced if it has not already. If you are no longer following the train, reply with **{ctx.prefix}x** or react with {cancel_reaction} above to leave the train."
+                if sum(trainer_dict[trainer]['status'].values()) == 0:
+                    continue
+                all_trainers.append(user)
+            if all_trainers:
+                starting_str = f"Starting - Meowth! The group that was waiting is starting at the current train location! Trainers {(', ').join([x.mention for x in all_trainers])}, if you are with them you should start as well. If you are not with them wait for next train location to be announced if it has not already. If you are no longer following the train, reply with **{ctx.prefix}x** or react with {cancel_reaction} above to leave the train."
+            else:
+                starting_str = f"Meowth! How can you start when there's no one waiting at this raid!?"
             return await ctx.channel.send(starting_str)
         if self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('type', None) == 'egg' and not checks.check_meetupchannel(ctx):
             starting_str = _("Meowth! How can you start when the egg hasn't hatched!?")
-            await ctx.channel.send(starting_str, delete_after=10)
-            return
+            return await ctx.channel.send(starting_str, delete_after=10)
         if self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('lobby', False):
             starting_str = _("Meowth! Please wait for the group in the lobby to enter the raid.")
             await ctx.channel.send(starting_str, delete_after=10)
-            await self.lobby_countdown(ctx)
-            return
+            return await self.lobby_countdown(ctx)
         for trainer in trainer_dict:
             ctx.count = trainer_dict[trainer].get('count', 1)
             user = ctx.guild.get_member(trainer)
@@ -4776,25 +4794,22 @@ class Raid(commands.Cog):
                 teamcount = trainer_dict[trainer]['party'][team]
                 if trainer_dict[trainer]['status']['here'] and (user.id in team_list):
                     trainer_dict[trainer]['status'] = {'maybe':0, 'coming':0, 'here':herecount - teamcount, 'lobby':lobbycount + teamcount}
-                    ctx_startinglist.append(user.mention)
-                    name_startinglist.append('**'+user.display_name+'**')
+                    ctx_startinglist.append(user)
                     id_startinglist.append(trainer)
             else:
                 if trainer_dict[trainer]['status']['here'] and (user.id in team_list or team == "all"):
                     trainer_dict[trainer]['status'] = {'maybe':0, 'coming':0, 'here':0, 'lobby':ctx.count}
-                    ctx_startinglist.append(user.mention)
-                    name_startinglist.append('**'+user.display_name+'**')
+                    ctx_startinglist.append(user)
                     id_startinglist.append(trainer)
             if trainer_dict[trainer]['status']['lobby']:
                 starting_dict[trainer] = {"count":trainer_dict[trainer]['count'], "status":trainer_dict[trainer]['status'], "party":trainer_dict[trainer]['party'], "herecount":herecount, "teamcount":teamcount, "lobbycount":lobbycount}
         if len(ctx_startinglist) == 0:
             starting_str = _("Meowth! How can you start when there's no one waiting at this raid!?")
-            await ctx.channel.send(starting_str, delete_after=10)
-            return
+            return await ctx.channel.send(starting_str, delete_after=10)
         if team in team_names:
-            question = await ctx.channel.send(_("Are you sure you would like to start this raid? Trainers {trainer_list}, react to this message to confirm or cancel the start of the raid.").format(trainer_list=', '.join(ctx_startinglist)))
+            question = await ctx.channel.send(_("Are you sure you would like to start this raid? Trainers {trainer_list}, react to this message to confirm or cancel the start of the raid.").format(trainer_list=', '.join([x.mention for x in ctx_startinglist])))
         else:
-            question = await ctx.channel.send(_("Are you sure you would like to start this raid? You can also use **!starting [team]** to start that team only. Trainers {trainer_list}, react to this message to confirm or cancel the start of the raid.").format(trainer_list=', '.join(ctx_startinglist)))
+            question = await ctx.channel.send(_("Are you sure you would like to start this raid? You can also use **!starting [team]** to start that team only. Trainers {trainer_list}, react to this message to confirm or cancel the start of the raid.").format(trainer_list=', '.join([x.mention for x in ctx_startinglist])))
         try:
             timeout = False
             res, reactuser = await utils.ask(self.bot, question, id_startinglist)
@@ -4803,8 +4818,7 @@ class Raid(commands.Cog):
         if timeout:
             await ctx.channel.send(_('Meowth! The **!starting** command was not confirmed. I\'m not sure if the group started.'))
         if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
-            await utils.safe_delete(question)
-            return
+            return await utils.safe_delete(question)
         elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
             await utils.safe_delete(question)
             self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'] = trainer_dict
@@ -4815,7 +4829,7 @@ class Raid(commands.Cog):
             else:
                 timestr = ' '
             self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['lobby'] = {"exp":time.time() + 120, "team":team, "starting_dict":starting_dict}
-            starting_str = _('Starting - Meowth! The group that was waiting{timestr}is starting the raid! Trainers {trainer_list}, if you are not in this group and are waiting for the next group, please respond with {here_emoji} or **!here**. If you need to ask those that just started to back out of their lobby, use **!backout**').format(timestr=timestr, trainer_list=', '.join(ctx_startinglist), here_emoji=utils.parse_emoji(ctx.guild, self.bot.config.here_id))
+            starting_str = _('Starting - Meowth! The group that was waiting{timestr}is starting the raid! Trainers {trainer_list}, if you are not in this group and are waiting for the next group, please respond with {here_emoji} or **!here**. If you need to ask those that just started to back out of their lobby, use **!backout**').format(timestr=timestr, trainer_list=', '.join([x.mention for x in ctx_startinglist]), here_emoji=utils.parse_emoji(ctx.guild, self.bot.config.here_id))
             if starttime:
                 starting_str += '\n\nThe start time has also been cleared, new groups can set a new start time wtih **!starttime HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!).'
                 report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['report_channel'])

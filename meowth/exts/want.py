@@ -1181,7 +1181,7 @@ class Want(commands.Cog):
                     elif pokemon.split(',')[0].lower().strip() in item_list:
                         return await ctx.invoke(self.bot.get_command('unwant item'), items=pokemon)
                     else:
-                        return await self._want_pokemon(ctx, pokemon)
+                        return await self._unwant_pokemon(ctx, pokemon)
                 else:
                     want_category_wait = await channel.send(embed=want_embed)
                     def check(reply):
