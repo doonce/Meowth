@@ -1595,7 +1595,7 @@ class Raid(commands.Cog):
         for word in match_list:
             content = re.sub(word, "", content)
         raid_details = content.strip()
-        if not raid_details:
+        if not raid_details or len(utils.sanitize_channel_name(raid_details)) == 0:
             return await ctx.invoke(self.bot.get_command('raid'))
 
         raid_gmaps_link = utils.create_gmaps_query(self.bot, raid_details, message.channel, type="raid")
@@ -1724,6 +1724,7 @@ class Raid(commands.Cog):
             del raidegg_split[0]
         else:
             return await ctx.invoke(self.bot.get_command('raid'))
+
         if raidegg_split[(- 1)].isdigit():
             raidexp = int(raidegg_split[(- 1)])
             del raidegg_split[(- 1)]
@@ -1766,7 +1767,7 @@ class Raid(commands.Cog):
                 return
         raid_details = ' '.join(raidegg_split)
         raid_details = raid_details.strip()
-        if raid_details == '':
+        if not raid_details or len(utils.sanitize_channel_name(raid_details)) == 0:
             return await ctx.invoke(self.bot.get_command('raid'))
         rgx = '[^a-zA-Z0-9]'
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
