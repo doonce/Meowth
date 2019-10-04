@@ -138,7 +138,7 @@ class Pokemon():
         bot.shiny_dict = shiny_dict
         bot.gamemaster = {}
         async with aiohttp.ClientSession() as sess:
-            async with sess.get("http://raw.githubusercontent.com/ZeChrales/PogoAssets/master/gamemaster/gamemaster.json") as resp:
+            async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/GAME_MASTER.json") as resp:
                 data = await resp.json(content_type=None)
                 bot.gamemaster = data
 
@@ -183,10 +183,6 @@ class Pokemon():
         self.base_stamina = self.game_template.get('pokemonSettings', {}).get('stats', {}).get('baseStamina', None)
         self.base_attack = self.game_template.get('pokemonSettings', {}).get('stats', {}).get('baseAttack', None)
         self.base_defense = self.game_template.get('pokemonSettings', {}).get('stats', {}).get('baseDefense', None)
-        if self.form == "armored":
-            self.base_stamina = 214
-            self.base_attack = 182
-            self.base_defense = 278
         self.charge_moves = self.game_template.get('pokemonSettings', {}).get('cinematicMoves', None)
         self.quick_moves = self.game_template.get('pokemonSettings', {}).get('quickMoves', None)
         self.height = self.game_template.get('pokemonSettings', {}).get('pokedexHeightM', None)
@@ -346,8 +342,6 @@ class Pokemon():
     def game_template(self):
         template = {}
         search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.game_name}".lower()
-        if self.form == "armored":
-            search_term = search_term.replace("_a", "")
         for template in self.bot.gamemaster.get('itemTemplates', {}):
             if search_term in template['templateId'].lower() and "forms_" not in template['templateId'].lower() and "spawn_" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
                 break
