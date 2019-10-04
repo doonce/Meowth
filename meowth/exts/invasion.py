@@ -7,6 +7,7 @@ import dateparser
 import textwrap
 import logging
 import string
+import traceback
 
 import discord
 from discord.ext import commands, tasks
@@ -31,28 +32,31 @@ class Invasion(commands.Cog):
         expire_list = []
         count = 0
         for guild in list(self.bot.guilds):
-            invasion_dict = self.bot.guild_dict[guild.id].setdefault('invasion_dict', {})
-            for reportid in list(invasion_dict.keys()):
-                if invasion_dict.get(reportid, {}).get('exp', 0) <= time.time():
-                    report_channel = self.bot.get_channel(invasion_dict.get(reportid, {}).get('report_channel'))
-                    if report_channel:
+            try:
+                invasion_dict = self.bot.guild_dict[guild.id].setdefault('invasion_dict', {})
+                for reportid in list(invasion_dict.keys()):
+                    if invasion_dict.get(reportid, {}).get('exp', 0) <= time.time():
+                        report_channel = self.bot.get_channel(invasion_dict.get(reportid, {}).get('report_channel'))
+                        if report_channel:
+                            try:
+                                report_message = await report_channel.fetch_message(reportid)
+                                self.bot.loop.create_task(self.expire_invasion(report_message))
+                                count += 1
+                                continue
+                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                pass
                         try:
-                            report_message = await report_channel.fetch_message(reportid)
-                            self.bot.loop.create_task(self.expire_invasion(report_message))
+                            self.bot.loop.create_task(utils.expire_dm_reports(self.bot, invasion_dict.get(reportid, {}).get('dm_dict', {})))
+                            del self.bot.guild_dict[guild.id]['invasion_dict'][reportid]
                             count += 1
                             continue
-                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
-                    try:
-                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, invasion_dict.get(reportid, {}).get('dm_dict', {})))
-                        del self.bot.guild_dict[guild.id]['invasion_dict'][reportid]
-                        count += 1
-                        continue
-                    except KeyError:
-                        continue
-                to_expire = invasion_dict.get(reportid, {}).get('exp', 0) - time.time()
-                if to_expire > 10:
-                    expire_list.append(to_expire)
+                        except KeyError:
+                            continue
+                    to_expire = invasion_dict.get(reportid, {}).get('exp', 0) - time.time()
+                    if to_expire > 10:
+                        expire_list.append(to_expire)
+            except Exception as e:
+                print(traceback.format_exc())
         # save server_dict changes after cleanup
         logger.info('SAVING CHANGES')
         try:

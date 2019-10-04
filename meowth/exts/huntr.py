@@ -12,6 +12,7 @@ import string
 import json
 import random
 import functools
+import traceback
 
 import discord
 from discord.ext import commands, tasks
@@ -39,47 +40,50 @@ class Huntr(commands.Cog):
     async def huntr_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
         for guild in list(self.bot.guilds):
-            report_edit_dict = {}
-            report_delete_dict = {}
-            for report_dict in ['pokealarm_dict', 'pokehuntr_dict']:
-                try:
-                    alarm_dict = self.bot.guild_dict[guild.id].setdefault(report_dict, {})
-                    for reportid in list(alarm_dict.keys()):
-                        if alarm_dict.get(reportid, {}).get('exp', 0) <= time.time():
-                            report_channel = self.bot.get_channel(alarm_dict.get(reportid, {}).get('report_channel'))
-                            if report_channel:
-                                user_report = alarm_dict.get(reportid, {}).get('report_message', None)
-                                if user_report:
-                                    report_delete_dict[user_report] = {"action":"delete", "channel":report_channel}
-                                if alarm_dict.get(reportid, {}).get('expedit') == "delete":
-                                    report_delete_dict[reportid] = {"action":"delete", "channel":report_channel}
-                                else:
-                                    report_edit_dict[reportid] = {"action":alarm_dict.get(reportid, {}).get('expedit', ''), "channel":report_channel}
-                                if alarm_dict.get(reportid, {}).get('dm_dict', False):
-                                    self.bot.loop.create_task(utils.expire_dm_reports(self.bot, alarm_dict.get(reportid, {}).get('dm_dict', {})))
-                            # try:
-                            #     del self.bot.guild_dict[guild.id][report_dict][reportid]
-                            # except KeyError:
-                            #     pass
-                except:
-                    pass
-            for messageid in report_delete_dict.keys():
-                try:
-                    report_message = await report_delete_dict[messageid]['channel'].fetch_message(messageid)
-                    await utils.safe_delete(report_message)
-                except:
-                    pass
-            for messageid in report_edit_dict.keys():
-                try:
-                    report_message = await report_edit_dict[messageid]['channel'].fetch_message(messageid)
-                    if isinstance(report_message.embeds[0].colour, discord.embeds._EmptyEmbed):
-                        colour = discord.Colour.lighter_grey()
-                    else:
-                        colour = report_message.embeds[0].colour.value
-                    await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=colour))
-                    await report_message.clear_reactions()
-                except:
-                    pass
+            try:
+                report_edit_dict = {}
+                report_delete_dict = {}
+                for report_dict in ['pokealarm_dict', 'pokehuntr_dict']:
+                    try:
+                        alarm_dict = self.bot.guild_dict[guild.id].setdefault(report_dict, {})
+                        for reportid in list(alarm_dict.keys()):
+                            if alarm_dict.get(reportid, {}).get('exp', 0) <= time.time():
+                                report_channel = self.bot.get_channel(alarm_dict.get(reportid, {}).get('report_channel'))
+                                if report_channel:
+                                    user_report = alarm_dict.get(reportid, {}).get('report_message', None)
+                                    if user_report:
+                                        report_delete_dict[user_report] = {"action":"delete", "channel":report_channel}
+                                    if alarm_dict.get(reportid, {}).get('expedit') == "delete":
+                                        report_delete_dict[reportid] = {"action":"delete", "channel":report_channel}
+                                    else:
+                                        report_edit_dict[reportid] = {"action":alarm_dict.get(reportid, {}).get('expedit', ''), "channel":report_channel}
+                                    if alarm_dict.get(reportid, {}).get('dm_dict', False):
+                                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, alarm_dict.get(reportid, {}).get('dm_dict', {})))
+                                # try:
+                                #     del self.bot.guild_dict[guild.id][report_dict][reportid]
+                                # except KeyError:
+                                #     pass
+                    except:
+                        pass
+                for messageid in report_delete_dict.keys():
+                    try:
+                        report_message = await report_delete_dict[messageid]['channel'].fetch_message(messageid)
+                        await utils.safe_delete(report_message)
+                    except:
+                        pass
+                for messageid in report_edit_dict.keys():
+                    try:
+                        report_message = await report_edit_dict[messageid]['channel'].fetch_message(messageid)
+                        if isinstance(report_message.embeds[0].colour, discord.embeds._EmptyEmbed):
+                            colour = discord.Colour.lighter_grey()
+                        else:
+                            colour = report_message.embeds[0].colour.value
+                        await report_message.edit(content=report_edit_dict[messageid]['action']['content'], embed=discord.Embed(description=report_edit_dict[messageid]['action'].get('embedcontent'), colour=colour))
+                        await report_message.clear_reactions()
+                    except:
+                        pass
+            except Exception as e:
+                print(traceback.format_exc())
         # save server_dict changes after cleanup
         logger.info('SAVING CHANGES')
         try:
@@ -1410,8 +1414,7 @@ class Huntr(commands.Cog):
                     self.bot.loop.create_task(self.raidhour_manager(guild.id, event))
                     self.bot.active_raidhours.append(event)
             except Exception as e:
-                print(e)
-                pass
+                print(traceback.format_exc())
         if not loop:
             return
 

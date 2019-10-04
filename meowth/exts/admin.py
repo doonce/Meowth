@@ -29,32 +29,35 @@ class Admin(commands.Cog):
 
     @tasks.loop(seconds=7200)
     async def guild_cleanup(self, loop=True):
-        logger.info('------ BEGIN ------')
-        dict_guild_list = []
-        bot_guild_list = []
-        dict_guild_delete = []
-        for guildid in list(self.bot.guild_dict.keys()):
-            dict_guild_list.append(guildid)
-        for guild in list(self.bot.guilds):
-            bot_guild_list.append(guild.id)
-        guild_diff = set(dict_guild_list) - set(bot_guild_list)
-        for s in guild_diff:
-            dict_guild_delete.append(s)
-        for s in dict_guild_delete:
-            try:
-                del self.guild_dict[s]
-                logger.info(('Cleared ' + str(s)) +
-                            ' from save data')
-            except KeyError:
-                pass
-        logger.info('SAVING CHANGES')
         try:
-            await self.bot.save
-        except Exception as err:
-            logger.info('SAVING FAILED' + err)
-        logger.info('------ END ------')
-        if not loop:
-            return
+            logger.info('------ BEGIN ------')
+            dict_guild_list = []
+            bot_guild_list = []
+            dict_guild_delete = []
+            for guildid in list(self.bot.guild_dict.keys()):
+                dict_guild_list.append(guildid)
+            for guild in list(self.bot.guilds):
+                bot_guild_list.append(guild.id)
+            guild_diff = set(dict_guild_list) - set(bot_guild_list)
+            for s in guild_diff:
+                dict_guild_delete.append(s)
+            for s in dict_guild_delete:
+                try:
+                    del self.guild_dict[s]
+                    logger.info(('Cleared ' + str(s)) +
+                                ' from save data')
+                except KeyError:
+                    pass
+            logger.info('SAVING CHANGES')
+            try:
+                await self.bot.save
+            except Exception as err:
+                logger.info('SAVING FAILED' + err)
+            logger.info('------ END ------')
+            if not loop:
+                return
+        except Exception as e:
+            print(traceback.format_exc())
 
     @guild_cleanup.before_loop
     async def before_cleanup(self):

@@ -9,6 +9,7 @@ import datetime
 import copy
 import logging
 import aiohttp
+import traceback
 
 from dateutil.relativedelta import relativedelta
 
@@ -553,50 +554,53 @@ class Utilities(commands.Cog):
                         global_dm_list.append(v)
             return global_dm_list
         for guild in list(self.bot.guilds):
-            dm_list = build_dm_list(guild.id)
-            if not dm_list:
-                continue
-            delete_list = []
-            trainers = self.bot.guild_dict[guild.id].get('trainers', {}).keys()
-            for trainer in trainers:
-                user = self.bot.get_user(trainer)
-                if not user or user == self.bot.user:
+            try:
+                dm_list = build_dm_list(guild.id)
+                if not dm_list:
                     continue
-                dm_channel = user.dm_channel
-                if not dm_channel:
-                    try:
-                        dm_channel = await user.create_dm()
-                    except:
+                delete_list = []
+                trainers = self.bot.guild_dict[guild.id].get('trainers', {}).keys()
+                for trainer in trainers:
+                    user = self.bot.get_user(trainer)
+                    if not user or user == self.bot.user:
                         continue
-                if not dm_channel:
-                    continue
-                async for message in user.dm_channel.history(limit=500):
-                    if message.author.id == self.bot.user.id:
-                        if "reported by" in message.content or "hatched into" in message.content or "reported that" in message.content:
-                            if message.id not in dm_list:
-                                delete_list.append(message)
-                        elif "trade" in message.content.lower() or "offer" in message.content.lower():
-                            if message.id not in dm_list:
-                                if (datetime.datetime.now() - message.created_at).days >= 7:
-                                    delete_list.append(message)
-                        elif "welcome" in message.content.lower():
-                            if (datetime.datetime.now() - message.created_at).days >= 30:
-                                delete_list.append(message)
-                        elif "backout" in message.content.lower():
-                            if (datetime.datetime.now() - message.created_at).days >= 1:
-                                delete_list.append(message)
-                        elif message.embeds:
-                            if "pokebattler.com" in str(message.embeds[0].author.url).lower() or "raid coordination help" in str(message.embeds[0].author.name).lower():
-                                if (datetime.datetime.now() - message.created_at).days >= 7:
-                                    delete_list.append(message)
-            dm_list = build_dm_list(guild.id)
-            for message in delete_list:
-                if message.id not in dm_list:
-                    try:
-                        await message.delete()
-                        count += 1
-                    except:
+                    dm_channel = user.dm_channel
+                    if not dm_channel:
+                        try:
+                            dm_channel = await user.create_dm()
+                        except:
+                            continue
+                    if not dm_channel:
                         continue
+                    async for message in user.dm_channel.history(limit=500):
+                        if message.author.id == self.bot.user.id:
+                            if "reported by" in message.content or "hatched into" in message.content or "reported that" in message.content:
+                                if message.id not in dm_list:
+                                    delete_list.append(message)
+                            elif "trade" in message.content.lower() or "offer" in message.content.lower():
+                                if message.id not in dm_list:
+                                    if (datetime.datetime.now() - message.created_at).days >= 7:
+                                        delete_list.append(message)
+                            elif "welcome" in message.content.lower():
+                                if (datetime.datetime.now() - message.created_at).days >= 30:
+                                    delete_list.append(message)
+                            elif "backout" in message.content.lower():
+                                if (datetime.datetime.now() - message.created_at).days >= 1:
+                                    delete_list.append(message)
+                            elif message.embeds:
+                                if "pokebattler.com" in str(message.embeds[0].author.url).lower() or "raid coordination help" in str(message.embeds[0].author.name).lower():
+                                    if (datetime.datetime.now() - message.created_at).days >= 7:
+                                        delete_list.append(message)
+                dm_list = build_dm_list(guild.id)
+                for message in delete_list:
+                    if message.id not in dm_list:
+                        try:
+                            await message.delete()
+                            count += 1
+                        except:
+                            continue
+            except Exception as e:
+                print(traceback.format_exc())
         logger.info(f"------ END - {count} DMs Cleaned ------")
         if not loop:
             return count
@@ -830,7 +834,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.9.26.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.10.4.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

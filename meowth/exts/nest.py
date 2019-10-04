@@ -5,6 +5,7 @@ import time
 import datetime
 import dateparser
 import logging
+import traceback
 
 import discord
 from discord.ext import commands, tasks
@@ -87,7 +88,7 @@ class Nest(commands.Cog):
                                 except:
                                     pass
             except Exception as e:
-                print(e)
+                print(traceback.format_exc())
         if not migration_list:
             migration_list = [600]
         logger.info(f"------ END - {count} Nests Cleaned - Waiting {min(migration_list)} seconds. ------")

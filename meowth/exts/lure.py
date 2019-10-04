@@ -7,6 +7,7 @@ import dateparser
 import textwrap
 import logging
 import string
+import traceback
 
 import discord
 from discord.ext import commands, tasks
@@ -31,28 +32,31 @@ class Lure(commands.Cog):
         expire_list = []
         count = 0
         for guild in list(self.bot.guilds):
-            lure_dict = self.bot.guild_dict[guild.id].setdefault('lure_dict', {})
-            for reportid in list(lure_dict.keys()):
-                if lure_dict.get(reportid, {}).get('exp', 0) <= time.time():
-                    report_channel = self.bot.get_channel(lure_dict.get(reportid, {}).get('report_channel'))
-                    if report_channel:
+            try:
+                lure_dict = self.bot.guild_dict[guild.id].setdefault('lure_dict', {})
+                for reportid in list(lure_dict.keys()):
+                    if lure_dict.get(reportid, {}).get('exp', 0) <= time.time():
+                        report_channel = self.bot.get_channel(lure_dict.get(reportid, {}).get('report_channel'))
+                        if report_channel:
+                            try:
+                                report_message = await report_channel.fetch_message(reportid)
+                                self.bot.loop.create_task(self.expire_lure(report_message))
+                                count += 1
+                                continue
+                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                pass
                         try:
-                            report_message = await report_channel.fetch_message(reportid)
-                            self.bot.loop.create_task(self.expire_lure(report_message))
+                            self.bot.loop.create_task(utils.expire_dm_reports(self.bot, lure_dict.get(reportid, {}).get('dm_dict', {})))
+                            del self.bot.guild_dict[guild.id]['lure_dict'][reportid]
                             count += 1
                             continue
-                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
-                    try:
-                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, lure_dict.get(reportid, {}).get('dm_dict', {})))
-                        del self.bot.guild_dict[guild.id]['lure_dict'][reportid]
-                        count += 1
-                        continue
-                    except KeyError:
-                        continue
-                to_expire = lure_dict.get(reportid, {}).get('exp', 0) - time.time()
-                if to_expire > 0:
-                    expire_list.append(to_expire)
+                        except KeyError:
+                            continue
+                    to_expire = lure_dict.get(reportid, {}).get('exp', 0) - time.time()
+                    if to_expire > 0:
+                        expire_list.append(to_expire)
+            except Exception as e:
+                print(traceback.format_exc())
         # save server_dict changes after cleanup
         logger.info('SAVING CHANGES')
         try:

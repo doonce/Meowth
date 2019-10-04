@@ -7,6 +7,7 @@ import dateparser
 import textwrap
 import logging
 import string
+import traceback
 
 import discord
 from discord.ext import commands, tasks
@@ -31,29 +32,32 @@ class Research(commands.Cog):
         midnight_list = []
         count = 0
         for guild in list(self.bot.guilds):
-            utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
-            to_midnight = 24*60*60 - ((utcnow-utcnow.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
-            if to_midnight > 0:
-                midnight_list.append(to_midnight)
-            research_dict = self.bot.guild_dict[guild.id].setdefault('questreport_dict', {})
-            for reportid in list(research_dict.keys()):
-                if research_dict.get(reportid, {}).get('exp', 0) <= time.time():
-                    report_channel = self.bot.get_channel(research_dict.get(reportid, {}).get('report_channel'))
-                    if report_channel:
+            try:
+                utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
+                to_midnight = 24*60*60 - ((utcnow-utcnow.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+                if to_midnight > 0:
+                    midnight_list.append(to_midnight)
+                research_dict = self.bot.guild_dict[guild.id].setdefault('questreport_dict', {})
+                for reportid in list(research_dict.keys()):
+                    if research_dict.get(reportid, {}).get('exp', 0) <= time.time():
+                        report_channel = self.bot.get_channel(research_dict.get(reportid, {}).get('report_channel'))
+                        if report_channel:
+                            try:
+                                report_message = await report_channel.fetch_message(reportid)
+                                self.bot.loop.create_task(self.expire_research(report_message))
+                                count += 1
+                                continue
+                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                pass
                         try:
-                            report_message = await report_channel.fetch_message(reportid)
-                            self.bot.loop.create_task(self.expire_research(report_message))
+                            self.bot.loop.create_task(utils.expire_dm_reports(self.bot, research_dict.get(reportid, {}).get('dm_dict', {})))
+                            del self.bot.guild_dict[guild.id]['questreport_dict'][reportid]
                             count += 1
                             continue
-                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
-                    try:
-                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, research_dict.get(reportid, {}).get('dm_dict', {})))
-                        del self.bot.guild_dict[guild.id]['questreport_dict'][reportid]
-                        count += 1
-                        continue
-                    except KeyError:
-                        continue
+                        except KeyError:
+                            continue
+            except Exception as e:
+                print(traceback.format_exc())
         # save server_dict changes after cleanup
         logger.info('SAVING CHANGES')
         try:

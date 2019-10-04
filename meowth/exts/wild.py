@@ -6,6 +6,7 @@ import datetime
 import dateparser
 import textwrap
 import logging
+import traceback
 
 import discord
 from discord.ext import commands, tasks
@@ -86,28 +87,31 @@ class Wild(commands.Cog):
         despawn_list = []
         count = 0
         for guild in list(self.bot.guilds):
-            wild_dict = self.bot.guild_dict[guild.id].setdefault('wildreport_dict', {})
-            for reportid in list(wild_dict.keys()):
-                if wild_dict.get(reportid, {}).get('exp', 0) <= time.time():
-                    report_channel = self.bot.get_channel(wild_dict.get(reportid, {}).get('report_channel'))
-                    if report_channel:
+            try:
+                wild_dict = self.bot.guild_dict[guild.id].setdefault('wildreport_dict', {})
+                for reportid in list(wild_dict.keys()):
+                    if wild_dict.get(reportid, {}).get('exp', 0) <= time.time():
+                        report_channel = self.bot.get_channel(wild_dict.get(reportid, {}).get('report_channel'))
+                        if report_channel:
+                            try:
+                                report_message = await report_channel.fetch_message(reportid)
+                                self.bot.loop.create_task(self.expire_wild(report_message))
+                                count += 1
+                                continue
+                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                pass
                         try:
-                            report_message = await report_channel.fetch_message(reportid)
-                            self.bot.loop.create_task(self.expire_wild(report_message))
+                            self.bot.loop.create_task(utils.expire_dm_reports(self.bot, wild_dict.get(reportid, {}).get('dm_dict', {})))
+                            del self.bot.guild_dict[guild.id]['wildreport_dict'][reportid]
                             count += 1
                             continue
-                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
-                    try:
-                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, wild_dict.get(reportid, {}).get('dm_dict', {})))
-                        del self.bot.guild_dict[guild.id]['wildreport_dict'][reportid]
-                        count += 1
-                        continue
-                    except KeyError:
-                        continue
-                to_despawn = wild_dict.get(reportid, {}).get('exp', 0) - time.time()
-                if to_despawn > 10:
-                    despawn_list.append(to_despawn)
+                        except KeyError:
+                            continue
+                    to_despawn = wild_dict.get(reportid, {}).get('exp', 0) - time.time()
+                    if to_despawn > 10:
+                        despawn_list.append(to_despawn)
+            except Exception as e:
+                print(traceback.format_exc())
         # save server_dict changes after cleanup
         logger.info('SAVING CHANGES')
         try:
