@@ -514,6 +514,24 @@ class Want(commands.Cog):
         Usage: !want gym <gym list>"""
         await self._want_poi(ctx, gyms, poi_type="gym")
 
+    @want.command(name='exraid')
+    @checks.allowwant()
+    async def want_exraid(self, ctx):
+        """Add all EX eligible gyms to your want list. Currently used for raid and raid egg reports.
+
+        Usage: !want exraid"""
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        ex_list = []
+        if not gym_matching_cog:
+            return
+        gyms = gym_matching_cog.get_gyms(ctx.guild.id)
+        for gym in gyms:
+            if "ex" in gyms[gym].get('notes', '').lower():
+                if gyms[gym].get('alias'):
+                    gym = gyms[gym].get('alias')
+                if gym not in ex_list:
+                    ex_list.append(gym)
+        await self._want_poi(ctx, (', ').join(ex_list), poi_type="gym")
 
     @want.command(name='stop', aliases=['pokestop', 'pokestops', 'stops'])
     @checks.allowwant()
@@ -1724,6 +1742,24 @@ class Want(commands.Cog):
         You will no longer be notified of reports about this gym."""
         await self._unwant_poi(ctx, gyms, poi_type="gym")
 
+    @unwant.command(name='exraid')
+    @checks.allowwant()
+    async def unwant_exraid(self, ctx):
+        """Remove all EX eligible gyms from your want list. Currently used for raid and raid egg reports.
+
+        Usage: !unwant exraid"""
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        ex_list = []
+        if not gym_matching_cog:
+            return
+        gyms = gym_matching_cog.get_gyms(ctx.guild.id)
+        for gym in gyms:
+            if "ex" in gyms[gym].get('notes', '').lower():
+                if gyms[gym].get('alias'):
+                    gym = gyms[gym].get('alias')
+                if gym not in ex_list:
+                    ex_list.append(gym)
+        await self._unwant_poi(ctx, (', ').join(ex_list), poi_type="gym")
 
     @unwant.command(name='stop', aliases=['pokestop', 'pokestops', 'stops'])
     @checks.allowwant()

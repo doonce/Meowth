@@ -1190,12 +1190,18 @@ class Raid(commands.Cog):
             return await ctx.send("This channel hasn't been assumed", delete_after=10)
         egg_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['egg_level']
         boss_list = []
+        try:
+            ctrs_message = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrsmessage'])
+            await utils.safe_delete(ctrs_message)
+        except:
+            pass
         for p in self.bot.raid_info['raid_eggs'][egg_level]['pokemon']:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, p)
             boss_list.append(str(pokemon).lower())
         for trainer in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict']:
             self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['trainer_dict'][trainer]['interest'] = boss_list
         self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pokemon'] = ''
+        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pkmn_obj'] = ''
         self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrs_dict'] = {}
         self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrsmessage'] = None
         await self._edit_party(ctx.channel)
@@ -1510,9 +1516,10 @@ class Raid(commands.Cog):
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
         list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
-        if self.bot.guild_dict[message.channel.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('type') == "egg":
+        egg_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'].get(ctx.channel.id, {}).get('egg_level')
+        if self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'].get(ctx.channel.id, {}).get('type') == "egg":
             fromegg = True
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         raid_split = content.split()
         if len(raid_split) == 0:
             return await ctx.invoke(self.bot.get_command('raid'))
@@ -1539,7 +1546,7 @@ class Raid(commands.Cog):
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
         weather = next((w for w in weather_list if re.sub(rgx, '', w) in re.sub(rgx, '', content.lower())), None)
         if not weather:
-            weather = self.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
+            weather = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'].get(ctx.channel.id, {}).get('weather', None)
 
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, ' '.join(raid_split))
         if pokemon:
@@ -1550,9 +1557,11 @@ class Raid(commands.Cog):
             return await ctx.invoke(self.bot.get_command('raid'))
 
         if not pokemon.id in self.bot.raid_list:
-            return await message.channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()), delete_after=10)
-        elif utils.get_level(self.bot, entered_raid) == "EX":
-            return await message.channel.send(_("Meowth! The Pokemon {pokemon} only appears in EX Raids! Use **!exraid** to report one!").format(pokemon=entered_raid.capitalize()), delete_after=10)
+            return await ctx.channel.send(_('Meowth! The Pokemon {pokemon} does not appear in raids!').format(pokemon=entered_raid.capitalize()), delete_after=10)
+        elif not fromegg and utils.get_level(self.bot, entered_raid) == "EX":
+            return await ctx.channel.send(_("Meowth! The Pokemon {pokemon} only appears in EX Raids! Use **!exraid** to report one!").format(pokemon=entered_raid.capitalize()), delete_after=10)
+        elif fromegg and utils.get_level(self.bot, entered_raid) == "EX" and egg_level != "EX":
+            return await ctx.channel.send(_("Meowth! The Pokemon {pokemon} only appears in EX Raids! Use **!exraid** to report one!").format(pokemon=entered_raid.capitalize()), delete_after=10)
 
         matched_boss = False
         level = utils.get_level(self.bot, pokemon.id)
@@ -1921,7 +1930,10 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['pkmn_obj'] = str(pokemon)
         oldembed = raid_message.embeds[0]
         raid_gmaps_link = oldembed.url
-        raidrole = discord.utils.get(raid_channel.guild.roles, name=entered_raid)
+        if pokemon.alolan:
+            raidrole = discord.utils.get(raid_channel.guild.roles, name=f"{pokemon.name.lower()}-alolan")
+        else:
+            raidrole = discord.utils.get(raid_channel.guild.roles, name=str(pokemon).replace(' ', '-').lower())
         if raidrole == None:
             roletest = ""
         else:
@@ -2898,24 +2910,29 @@ class Raid(commands.Cog):
 
     @commands.command(name="next")
     @checks.allowmeetupreport()
-    async def train_next_parent(self, ctx, *, channel_or_gym):
+    async def train_next_parent(self, ctx, *, channel_or_gym=''):
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         await ctx.invoke(self.bot.get_command("train next"), channel_or_gym=channel_or_gym)
 
     @train.command(name="next")
     @checks.allowmeetupreport()
-    async def train_next(self, ctx, *, channel_or_gym):
+    async def train_next(self, ctx, *, channel_or_gym=''):
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
-        converter = commands.TextChannelConverter()
-        try:
-            channel_or_gym = await converter.convert(ctx, channel_or_gym)
-        except:
-            location = ""
-        if isinstance(channel_or_gym, discord.TextChannel):
-            if channel_or_gym.id in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
-                location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['address']
+        train_path = self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup'].setdefault('route', [])
+        if train_path and not channel_or_gym:
+            location, channel_or_gym = train_path[0], train_path[0]
+            train_path.remove(location)
+        else:
+            converter = commands.TextChannelConverter()
+            try:
+                channel_or_gym = await converter.convert(ctx, channel_or_gym)
+            except:
+                location = ""
+            if isinstance(channel_or_gym, discord.TextChannel):
+                if channel_or_gym.id in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
+                    location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['address']
         if not location:
             gym_matching_cog = self.bot.cogs.get('GymMatching')
             gym_info = ""
@@ -2960,6 +2977,38 @@ class Raid(commands.Cog):
         train_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/train.png?cache=1')
         train_embed.add_field(name="Train Channel History", value=f"This raid train has been to:\n{history_str}")
         await ctx.send(embed=train_embed)
+
+    @train.command(name="route", aliases=['path'])
+    @checks.allowmeetupreport()
+    async def train_route(self, ctx, *, path=''):
+        if ctx.channel.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict']:
+            return
+        is_manager = ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
+        train_path = self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup'].setdefault('route', [])
+        if path and is_manager:
+            gym_matching_cog = self.bot.cogs.get('GymMatching')
+            path_list = []
+            path_split = path.split(',')
+            path_split = [x.strip() for x in path_split]
+            for gym in path_split:
+                if gym_matching_cog:
+                    gym_info, gym, gym_url = await gym_matching_cog.get_poi_info(ctx, gym, "raid")
+                if not gym:
+                    return await utils.safe_delete(ctx.message)
+                path_list.append(gym)
+            self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup']['route'] = path_list
+            return await ctx.send(f"Meowth! The train route has been set to **{(', ').join(path_list)}**")
+        elif train_path:
+            path_str = ""
+            index = 1
+            for item in train_path:
+                path_str += f"**{index})** {item}\n"
+                index += 1
+            train_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/train.png?cache=1')
+            train_embed.add_field(name="Planned Train Route", value=f"This raid train is currently planned to go to:\n{path_str}")
+            await ctx.send(embed=train_embed)
+        else:
+            return await ctx.send(f"Meowth! No train route has been set! Have a manager set one with **{ctx.prefix}train path**", delete_after=30)
 
     """
     Raid Channel Management
@@ -3710,8 +3759,8 @@ class Raid(commands.Cog):
                     if ctx.channel.permissions_for(member).manage_channels:
                         self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
             recovermsg = _("Meowth! This channel has been recovered! However, there may be some inaccuracies in what I remembered! Here's what I have:")
-            if meetup:
-                self.bot.guild_dict[channel.guild.id]['meetup_dict'][channel.id]['meetup'] = {'start':False, 'end':False}
+            if meetup or train:
+                self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['meetup'] = {'start':False, 'end':False}
                 recovermsg += _(" You will have to set the event times again.")
             await self._edit_party(channel, message.author)
             bulletpoint = self.bot.custom_emoji.get('bullet', '\U0001F539')

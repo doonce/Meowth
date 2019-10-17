@@ -63,6 +63,9 @@ class Trading(commands.Cog):
                                     listing_msg = await trade_channel.fetch_message(listing_id)
                                 except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                                     await self.close_trade(guild_id, listing_id)
+                                if not lister:
+                                    await self.close_trade(guild.id, listing_id)
+                                    continue
                                 embed = listing_msg.embeds[0]
                                 embed.description = f"**Trade:** [Jump to Message]({listing_msg.jump_url})"
                                 active_check_msg = await lister.send(f"Meowth... Did you complete this trade with {buyer.display_name}? React with {yes_emoji} to extend trade for 30 more days or react with {no_emoji} to confirm trade. I'll automatically cancel it in seven days if I don't hear from you.", embed=embed)
@@ -201,6 +204,8 @@ class Trading(commands.Cog):
         buyer_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
         buyer = guild.get_member(buyer_id)
         lister = guild.get_member(trade_dict['lister_id'])
+        if not lister:
+            return await self.close_trade(guild_id, listing_id)
         offer_embed = discord.Embed(colour=guild.me.colour)
         offer_embed.set_author(name="Pokemon Trade Offer - {}".format(buyer.display_name), icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_icon_small.png")
         offer_embed.add_field(name="You Offered", value=str(listing_pokemon), inline=True)
@@ -222,12 +227,16 @@ class Trading(commands.Cog):
         trade_dict = self.bot.guild_dict[guild.id]['trade_dict'][listing_id]
         if trade_dict['status'] == "active":
             buyer = guild.get_member(buyer_id)
+            if not buyer:
+                return
             lister = guild.get_member(trade_dict['lister_id'])
             channel = self.bot.get_channel(trade_dict['report_channel_id'])
             try:
                 listing_msg = await channel.fetch_message(listing_id)
             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                 await self.close_trade(guild_id, listing_id)
+            if not lister:
+                return await self.close_trade(guild.id, listing_id)
             offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
             wanted_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offers'][buyer_id]['offer'])
             complete_emoji = self.bot.custom_emoji.get('trade_complete', '\u2611')
@@ -247,6 +256,8 @@ class Trading(commands.Cog):
             for offerid in trade_dict['offers'].keys():
                 if offerid != buyer_id:
                     reject = guild.get_member(offerid)
+                    if not reject:
+                        continue
                     try:
                         await reject.send(f"Meowth... {lister.display_name} accepted a competing offer for their {offered_pokemon}.")
                     except discord.HTTPException:
@@ -257,7 +268,8 @@ class Trading(commands.Cog):
     async def reject_offer(self, guild_id, listing_id, buyer_id):
         guild = self.bot.get_guild(guild_id)
         trade_dict = self.bot.guild_dict[guild.id]['trade_dict'][listing_id]
-        buyer = guild.get_member(buyer_id)
+        if not buyer:
+            return
         lister = guild.get_member(trade_dict['lister_id'])
         channel = self.bot.get_channel(trade_dict['report_channel_id'])
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
@@ -266,11 +278,16 @@ class Trading(commands.Cog):
             listing_msg = await channel.fetch_message(listing_id)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
             await self.close_trade(guild_id, listing_id)
+        if not lister:
+            return await self.close_trade(guild.id, listing_id)
         offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
         wanted_pokemon = trade_dict['wanted_pokemon']
         wanted_pokemon = wanted_pokemon.encode('ascii', 'ignore').decode("utf-8").replace(":", "")
         wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want) for want in wanted_pokemon.split("\n")]
-        await buyer.send(f"Meowth... {lister.display_name} rejected your offer for their {offered_pokemon}.")
+        try:
+            await buyer.send(f"Meowth... {lister.display_name} rejected your offer for their {offered_pokemon}.")
+        except:
+            pass
         cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
         offer_str = f"Meowth! {lister.display_name} offers a {str(offered_pokemon)} up for trade!"
         instructions = "React to this message to make an offer!"
@@ -299,6 +316,8 @@ class Trading(commands.Cog):
             listing_msg = await channel.fetch_message(listing_id)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
             await self.close_trade(guild_id, listing_id)
+        if not lister:
+            return await self.close_trade(guild.id, listing_id)
         offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
         wanted_pokemon = trade_dict['wanted_pokemon']
         wanted_pokemon = wanted_pokemon.encode('ascii', 'ignore').decode("utf-8").replace(":", "")
@@ -334,6 +353,8 @@ class Trading(commands.Cog):
         lister = guild.get_member(trade_dict['lister_id'])
         for offerid in trade_dict['offers']:
             reject = guild.get_member(offerid)
+            if not reject:
+                continue
             await reject.send(f"Meowth... {lister.display_name} canceled their trade offer of {str(offered_pokemon)}")
             await utils.expire_dm_reports(self.bot, {lister.id: trade_dict['offers'][offerid]['lister_msg']})
         await self.close_trade(guild_id, listing_id)
