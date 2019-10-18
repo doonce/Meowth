@@ -438,6 +438,8 @@ class GymMatching(commands.Cog):
             match_type = "gym"
         elif location in stops:
             match_type = "stop"
+        else:
+            return
         poi_coords = poi_url.split("query=")[1]
         poi_embed = discord.Embed(colour=ctx.guild.me.colour, description=poi_info).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/POI_Submission_Illustration_01.png?cache=1')
         poi_embed.set_author(name=f"Matched Location", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/here.png?cache=1")

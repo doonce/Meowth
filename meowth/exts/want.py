@@ -61,6 +61,11 @@ class Want(commands.Cog):
         item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "glacial lure module", "magnetic lure module", "mossy lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
         while True:
             async with ctx.typing():
+                def check(reply):
+                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                        return True
+                    else:
+                        return False
                 if pokemon:
                     if pokemon.split(',')[0].lower().strip() in type_list:
                         return await ctx.invoke(self.bot.get_command('want type'), types=pokemon)
@@ -70,15 +75,35 @@ class Want(commands.Cog):
                         return await ctx.invoke(self.bot.get_command('want stop'), stops=pokemon)
                     elif pokemon.split(',')[0].lower().strip() in item_list:
                         return await ctx.invoke(self.bot.get_command('want item'), items=pokemon)
+                    elif pokemon.split(',')[0].lower().strip().isdigit() and int(pokemon.split(',')[0].lower().strip()) < 101:
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Meowth! You entered a number, which can be used for **IV**, **level**, or **pokemon**. Which did you mean? Reply with your answer or with **cancel** to stop.", inline=False)
+                        want_category_wait = await channel.send(embed=want_embed)
+                        try:
+                            want_category_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            want_category_msg = None
+                        await utils.safe_delete(want_category_wait)
+                        if not want_category_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(want_category_msg)
+                        if want_category_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif want_category_msg.clean_content.lower() == "iv":
+                            return await ctx.invoke(self.bot.get_command('want iv'), ivs=pokemon)
+                        elif want_category_msg.clean_content.lower() == "level":
+                            return await ctx.invoke(self.bot.get_command('want level'), levels=pokemon)
+                        elif want_category_msg.clean_content.lower() == "pokemon":
+                            return await self._want_pokemon(ctx, pokemon)
+                        else:
+                            continue
                     else:
                         return await self._want_pokemon(ctx, pokemon)
                 else:
                     want_category_wait = await channel.send(embed=want_embed)
-                    def check(reply):
-                        if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
-                            return True
-                        else:
-                            return False
                     try:
                         want_category_msg = await self.bot.wait_for('message', timeout=60, check=check)
                     except asyncio.TimeoutError:
@@ -431,18 +456,18 @@ class Want(commands.Cog):
                     added_count += 1
         await ctx.author.add_roles(*role_list)
         want_count = added_count + already_want_count + len(spellcheck_dict)
-        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if want_count > 1 and 'boss' in ctx.invoked_with else ''}:\n"
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if want_count > 1 and 'boss' in ctx.invoked_with else ''}:\n\n"
         if added_count > 0:
-            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
                 spellcheckmsg += _('\n\t{word}').format(word=word)
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @want.command(name='boss', aliases=['bosses'])
@@ -492,18 +517,18 @@ class Want(commands.Cog):
                 added_list.append(f"{entered_want.title()}")
                 added_count += 1
         want_count = added_count + already_want_count + len(spellcheck_dict)
-        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'stop' if poi_type == 'stop' else 'gym'}{'s' if want_count > 1 else ''}:\n"
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'stop' if poi_type == 'stop' else 'gym'}{'s' if want_count > 1 else ''}:\n\n"
         if added_count > 0:
-            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
                 spellcheckmsg += _('\n\t{word}').format(word=word)
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @want.command(name='gym', aliases=['gyms'])
@@ -579,18 +604,18 @@ class Want(commands.Cog):
                 added_list.append(f"{entered_want.title()}")
                 added_count += 1
         want_count = added_count + already_want_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:\n\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
         if added_count > 0:
-            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
                 spellcheckmsg += _('\n\t{word}').format(word=word)
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @want.command(name='type', aliases=['types'])
@@ -629,18 +654,18 @@ class Want(commands.Cog):
                 added_list.append(f"{entered_want.title()}")
                 added_count += 1
         want_count = added_count + already_want_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** type{s}:\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** type{s}:\n\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
         if added_count > 0:
-            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
                 spellcheckmsg += _('\n\t{word}').format(word=word)
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @want.command(name='iv', aliases=['ivs'])
@@ -693,11 +718,11 @@ class Want(commands.Cog):
                 added_list.append(f"{entered_want}")
                 added_count += 1
         want_count = added_count + already_want_count + len(error_list)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** iv{s}:\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** iv{s}:\n\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
         if added_count > 0:
-            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if error_list:
             error_msg = ''
             for word in error_list:
@@ -755,11 +780,11 @@ class Want(commands.Cog):
                 added_list.append(f"{entered_want}")
                 added_count += 1
         want_count = added_count + already_want_count + len(error_list)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** level{s}:\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** level{s}:\n\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
         if added_count > 0:
-            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if error_list:
             error_msg = ''
             for word in error_list:
@@ -812,18 +837,18 @@ class Want(commands.Cog):
                 spellcheck_dict[role.name] = None
         await ctx.author.add_roles(*role_list)
         want_count = added_count + already_want_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** role{s}:\n').format(member=ctx.author.display_name, count=want_count, s="es" if want_count > 1 else "")
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** role{s}:\n\n').format(member=ctx.author.display_name, count=want_count, s="es" if want_count > 1 else "")
         if added_count > 0:
-            confirmation_msg += _('\n**{added_count} Added:** \n\t{added_list}').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
         if already_want_count > 0:
-            confirmation_msg += _('\n\n**{already_want_count} Already Wanted:** \n\t{already_want_list}').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
                 spellcheckmsg += _('\n\t{word}').format(word=word)
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @want.command()
@@ -1189,6 +1214,11 @@ class Want(commands.Cog):
         want_embed.add_field(name=_('**All**'), value=f"Reply with **all** to unwant everything.", inline=False)
         while True:
             async with ctx.typing():
+                def check(reply):
+                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                        return True
+                    else:
+                        return False
                 if pokemon:
                     if pokemon.split(',')[0].lower().strip() in type_list:
                         return await ctx.invoke(self.bot.get_command('unwant type'), types=pokemon)
@@ -1198,15 +1228,35 @@ class Want(commands.Cog):
                         return await ctx.invoke(self.bot.get_command('unwant stop'), stops=pokemon)
                     elif pokemon.split(',')[0].lower().strip() in item_list:
                         return await ctx.invoke(self.bot.get_command('unwant item'), items=pokemon)
+                    elif pokemon.split(',')[0].lower().strip().isdigit() and int(pokemon.split(',')[0].lower().strip()) < 101:
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Meowth! You entered a number, which can be used for **IV**, **level**, or **pokemon**. Which did you mean? Reply with your answer or with **cancel** to stop.", inline=False)
+                        want_category_wait = await channel.send(embed=want_embed)
+                        try:
+                            want_category_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            want_category_msg = None
+                        await utils.safe_delete(want_category_wait)
+                        if not want_category_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(want_category_msg)
+                        if want_category_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif want_category_msg.clean_content.lower() == "iv":
+                            return await ctx.invoke(self.bot.get_command('unwant iv'), ivs=pokemon)
+                        elif want_category_msg.clean_content.lower() == "level":
+                            return await ctx.invoke(self.bot.get_command('unwant level'), levels=pokemon)
+                        elif want_category_msg.clean_content.lower() == "pokemon":
+                            return await self._want_pokemon(ctx, pokemon)
+                        else:
+                            continue
                     else:
                         return await self._unwant_pokemon(ctx, pokemon)
                 else:
                     want_category_wait = await channel.send(embed=want_embed)
-                    def check(reply):
-                        if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
-                            return True
-                        else:
-                            return False
                     try:
                         want_category_msg = await self.bot.wait_for('message', timeout=60, check=check)
                     except asyncio.TimeoutError:
@@ -1574,18 +1624,18 @@ class Want(commands.Cog):
                     removed_count += 1
         await ctx.author.remove_roles(*role_list)
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if unwant_count > 1 and 'boss' in ctx.invoked_with else ''}:\n"
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if unwant_count > 1 and 'boss' in ctx.invoked_with else ''}:\n\n"
         if removed_count > 0:
-            confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
                 spellcheckmsg += _('\n\t{word}').format(word=word)
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @unwant.command(name='boss', aliases=['bosses'])
@@ -1719,18 +1769,18 @@ class Want(commands.Cog):
                 removed_list.append(f"{entered_unwant.title()}")
                 removed_count += 1
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'stop' if poi_type == 'stop' else 'gym'}{'s' if unwant_count > 1 else ''}:\n"
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'stop' if poi_type == 'stop' else 'gym'}{'s' if unwant_count > 1 else ''}:\n\n"
         if removed_count > 0:
-            confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
                 spellcheckmsg += _('\n\t{word}').format(word=word)
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @unwant.command(name='gym', aliases=['gyms'])
@@ -1810,18 +1860,18 @@ class Want(commands.Cog):
                 removed_list.append(f"{entered_unwant.title()}")
                 removed_count += 1
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
         if removed_count > 0:
-            confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n\n**{not_wanted_count} Not Wwanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('**{not_wanted_count} Not Wwanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
                 spellcheckmsg += _('\n\t{word}').format(word=word)
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @unwant.command(name='type', aliases=['types'])
@@ -1864,18 +1914,18 @@ class Want(commands.Cog):
                 removed_list.append(f"{entered_unwant.title()}")
                 removed_count += 1
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** type{s}:\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** type{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
         if removed_count > 0:
-            confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
                 spellcheckmsg += _('\n\t{word}').format(word=word)
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @unwant.command(name='iv', aliases=['ivs'])
@@ -1931,16 +1981,16 @@ class Want(commands.Cog):
                 removed_list.append(f"{entered_unwant}")
                 removed_count += 1
         unwant_count = removed_count + not_wanted_count + len(error_list)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** iv{s}:\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** iv{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
         if removed_count > 0:
-            confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if error_list:
             error_msg = ''
             for word in error_list:
                 error_msg += _('\n\t{word}').format(word=word)
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @unwant.command(name='level', aliases=['levels'])
@@ -1996,16 +2046,16 @@ class Want(commands.Cog):
                 removed_list.append(f"{entered_unwant}")
                 removed_count += 1
         unwant_count = removed_count + not_wanted_count + len(error_list)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** level{s}:\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** level{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
         if removed_count > 0:
-            confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if error_list:
             error_msg = ''
             for word in error_list:
                 error_msg += _('\n\t{word}').format(word=word)
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
     @unwant.command(name='role', aliases=['roles'])
@@ -2057,18 +2107,18 @@ class Want(commands.Cog):
                 spellcheck_dict[role.name] = None
         await ctx.author.remove_roles(*role_list)
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** role{s}:\n').format(member=ctx.author.display_name, count=unwant_count, s="es" if unwant_count > 1 else "")
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** role{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="es" if unwant_count > 1 else "")
         if removed_count > 0:
-            confirmation_msg += _('\n**{removed_count} Removed:** \n\t{removed_list}').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
         if not_wanted_count > 0:
-            confirmation_msg += _('\n\n**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
                 spellcheckmsg += _('\n\t{word}').format(word=word)
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
 def setup(bot):
