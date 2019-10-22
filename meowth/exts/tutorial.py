@@ -1107,6 +1107,8 @@ class Tutorial(commands.Cog):
         """Shows this message.
 
         Displays help text and other information about commands."""
+        can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.channel.permissions_for(ctx.author).manage_messages
+        manage_msg = ""
         async def predicate(cmd):
             try:
                 return await cmd.can_run(ctx)
@@ -1117,10 +1119,11 @@ class Tutorial(commands.Cog):
         help_embed.set_author(name=f"Meowth Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
         if command:
             command = self.bot.get_command(command)
-            if not await predicate(command):
-                command = None
+            if not await predicate(command) and command:
+                if not can_manage:
+                    command = None
         if not command:
-            help_embed.description = f"Reply with the name of a command category to view commands available in {ctx.channel.mention}. Other commands may be available in different channels.\n\n"
+            help_embed.description = f"Reply with the name of a command, if known, or the name of a command category to view commands available in {ctx.channel.mention}. Other commands may be available in different channels."
             help_categories = {k:[] for k in list(self.bot.cogs.keys())}
             help_categories["No Category"] = []
             help_categories["Not Run"] = []
@@ -1132,7 +1135,10 @@ class Tutorial(commands.Cog):
                     help_categories["No Category"].append(cmd)
                 else:
                     help_categories["Not Run"].append(cmd)
-            help_embed.description += ', '.join([f"**{x}**" for x in help_categories.keys() if help_categories.get(x) and x != "Not Run"])
+            help_embed.add_field(name="**Available Command Categories**", value=', '.join([f"{x}" for x in help_categories.keys() if help_categories.get(x) and x != "Not Run"]))
+            help_embed.add_field(name="**README**", value=f"For a full list of commands, Meowth's readme is available [here](https://github.com/doonce/Meowth/blob/Rewrite/README.md).")
+            if can_manage:
+                help_embed.description += f" Moderators can view help for other commands by replying with **Not Run**."
             while True:
                 async with ctx.typing():
                     cat_wait = await ctx.send(embed=help_embed, delete_after=120)
@@ -1151,18 +1157,28 @@ class Tutorial(commands.Cog):
                     else:
                         await utils.safe_delete(cat_msg)
                     cog_match = re.search(cat_msg.clean_content, str(help_categories.keys()), re.IGNORECASE)
+                    cmd_match = re.search(cat_msg.clean_content, str([x.name for x in self.bot.commands]))
+                    help_embed.clear_fields()
                     if cog_match:
                         if len(help_categories[cog_match.group()]) == 1:
                             command = help_categories[cog_match.group()][0]
                             break
+                        elif len(help_categories[cog_match.group()]) == 0:
+                            return
                         help_embed.set_author(name=f"{cog_match.group()} Category Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
                         help_embed.description = f"Reply with the name of a command to view command information.\n\n"
                         cmd_text = []
                         for cmd in help_categories[cog_match.group()]:
                             cmd_text.append(f"**{cmd.name}** - {cmd.short_doc}")
-                        if cmd_text:
+                        if cog_match.group().lower() == "not run" and can_manage:
+                            cmd_text = [x.split(' - ')[0] for x in cmd_text]
+                            help_embed.add_field(name=f"**Commands**", value=(', ').join(cmd_text))
+                        elif cmd_text:
                             help_embed.add_field(name=f"**Commands**", value=('\n').join(cmd_text))
-                        cmd_wait = await ctx.send(embed=help_embed, delete_after=120)
+                        try:
+                            cmd_wait = await ctx.send(embed=help_embed, delete_after=120)
+                        except:
+                            return
                         try:
                             cmd_msg = await self.bot.wait_for('message', timeout=120, check=check)
                         except asyncio.TimeoutError:
@@ -1175,11 +1191,26 @@ class Tutorial(commands.Cog):
                         cmd_match = re.search(cmd_msg.clean_content, str([x.name for x in help_categories[cog_match.group()]]), re.IGNORECASE)
                         if cmd_match:
                             command = self.bot.get_command(cmd_match.group())
+                    elif cmd_match:
+                        command = self.bot.get_command(cmd_match.group())
                     break
         if command:
+            if can_manage and not await predicate(command):
+                city_channels = self.bot.guild_dict[ctx.guild.id]['configure_dict'].get(command.name.lower(), {}).get('report_channels', [])
+                report_channels = []
+                for c in city_channels:
+                    channel = discord.utils.get(ctx.guild.channels, id=c)
+                    perms = ctx.author.permissions_in(channel)
+                    if not perms.read_messages:
+                        continue
+                    if channel and (channel.overwrites_for(ctx.guild.default_role).read_messages or channel.overwrites_for(ctx.guild.default_role).read_messages == None):
+                        report_channels.append(channel.mention)
+                if len(report_channels) == 0 or len(report_channels) > 10:
+                    report_channels = [f"a {command.name.lower()} report channel."]
+                manage_msg = f"\n\nThis command will not run in {ctx.channel.mention}{' and will only run in ' if city_channels else ''}{(', ').join(report_channels) if city_channels else ''}"
             help_embed = discord.Embed(description="<> denote required arguments, [] denote optional arguments", title="", colour=ctx.guild.me.colour)
             help_embed.set_author(name=f"{command.name.title()} Command Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
-            help_embed.add_field(name="**Usage**", value=f"{ctx.prefix}{command.name} {command.signature}", inline=False)
+            help_embed.add_field(name="**Usage**", value=f"{ctx.prefix}{command.name} {command.signature}{manage_msg}", inline=False)
             if command.aliases:
                 help_embed.add_field(name="**Aliases**", value=(', ').join(command.aliases), inline=False)
             if command.help:

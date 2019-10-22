@@ -78,11 +78,14 @@ class Pokemon():
                  'alolan', 'size', 'legendary', 'mythical', 'base_stamina',
                  'base_attack', 'base_defense', 'charge_moves', 'quick_moves',
                  'height', 'weight', 'evolves', 'evolve_candy', 'buddy_distance',
-                 'research_cp', 'raid_cp', 'boost_raid_cp', 'max_cp', 'weather')
+                 'research_cp', 'raid_cp', 'boost_raid_cp', 'max_cp', 'weather',
+                 'shadow')
 
     async def generate_lists(bot):
         available_dict = {}
         shiny_dict = {}
+        shadow_list = []
+        shadow_dict = {}
         alolan_list = []
         gender_dict = {}
         size_dict = {}
@@ -94,6 +97,7 @@ class Pokemon():
         for k, v in bot.pkmn_info.items():
             gender_forms = []
             size_forms = []
+            shadow_forms = []
             for form in v['forms']:
                 if form == "list":
                     continue
@@ -103,6 +107,8 @@ class Pokemon():
                     shiny_dict[v['number']][form] = v['forms'][form].get('shiny', [])
                 if v['forms'][form].get('gender', False):
                     gender_forms.append(form)
+                if v['forms'][form].get('shadow', False):
+                    shadow_forms.append(form)
                 if v['forms'][form].get('size', False):
                     size_forms.append(form)
                 if v['forms'][form].get('available', []):
@@ -114,6 +120,8 @@ class Pokemon():
                         available_dict[v['number']][form] = v['forms'][form].get('available', [])
             if gender_forms:
                 gender_dict[v['number']] = gender_forms
+            if shadow_forms:
+                shadow_dict[v['number']] = shadow_forms
             if size_forms:
                 size_dict[v['number']] = size_forms
             if v['forms'].get('alolan', {}):
@@ -132,6 +140,7 @@ class Pokemon():
         bot.size_dict = size_dict
         bot.alolan_list = alolan_list
         bot.gender_dict = gender_dict
+        bot.shadow_dict = shadow_dict
         bot.legendary_list = legendary_list
         bot.mythical_list = mythical_list
         bot.form_dict = form_dict
@@ -162,6 +171,14 @@ class Pokemon():
         self.alolan = attribs.get('alolan', False)
         if self.id not in bot.alolan_list:
             self.alolan = False
+        self.shadow = attribs.get('shadow', False)
+        if self.shadow:
+            if self.id not in bot.shadow_dict:
+                self.shadow = False
+            if self.alolan and "alolan" not in bot.shadow_dict.get(self.id, {}):
+                self.shadow = False
+            elif self.form and str(self.form).lower() not in bot.shadow_dict.get(self.id, {}):
+                self.shadow = False
         self.shiny = attribs.get('shiny', False)
         if self.shiny:
             if self.id not in bot.shiny_dict:
@@ -170,12 +187,10 @@ class Pokemon():
                 self.shiny = False
             elif self.form and str(self.form).lower() not in bot.shiny_dict.get(self.id, {}):
                 self.shiny = False
-        self.legendary = False
-        self.mythical = False
-        if self.id in bot.legendary_list:
-            self.legendary = True
-        if self.id in bot.mythical_list:
-            self.mythical = True
+            if self.shadow and "shadow" not in bot.shiny_dict.get(self.id, {}).get(str(self.form).lower(), []):
+                self.shiny = False
+        self.legendary = True if self.id in bot.legendary_list else False
+        self.mythical = True if self.id in bot.mythical_list else False
         self.gender = attribs.get('gender', None)
         self.types = self._get_type()
         self.emoji = self._get_emoji()
@@ -204,6 +219,8 @@ class Pokemon():
             name = name + f" {self.form.title()}"
         if self.alolan:
             name = 'Alolan ' + name
+        if self.shadow:
+            name = f"{self.shadow.title()} " + name
         if self.shiny:
             name = 'Shiny ' + name
         if self.id in self.bot.gender_dict and self.gender:
@@ -301,14 +318,7 @@ class Pokemon():
             else:
                 form_str = "_00"
         if self.form and self.id in self.bot.form_dict:
-            if self.id in [201, 327, 351, 386, 412, 413, 421, 422, 423, 479, 487, 492, 493]:
-                form_str = form_str + "_" + str(list(self.bot.form_dict[self.id].keys()).index(self.form) + 10)
-            elif self.form == "sunglasses":
-                form_str = form_str + "_00_05"
-            elif self.id in [133, 134, 135, 136, 196, 197, 470, 471] and self.form == "flower":
-                form_str = form_str + "_00_07"
-            else:
-                form_str = form_str + "_" + str(list(self.bot.form_dict[self.id].keys()).index(self.form)).zfill(2)
+            form_str = form_str + "_" + str(list(self.bot.form_dict[self.id].keys()).index(self.form)).zfill(2)
         if self.id not in self.bot.gender_dict and not self.form:
             form_str = form_str + "_00"
         if self.alolan:
@@ -317,8 +327,12 @@ class Pokemon():
             shiny_str = "_shiny"
         else:
             shiny_str = ""
+        if self.shadow:
+            shadow_str = f"_{self.shadow}"
+        else:
+            shadow_str = ""
 
-        return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{form_str}{shiny_str}.png?cache=2")
+        return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons_temp/pokemon_icon_{pkmn_no}{form_str}{shiny_str}.png?cache=2")
 
     @property
     def game_name(self):
@@ -528,6 +542,8 @@ class Pokemon():
         female = re.search(r'\bfemale\b', argument, re.IGNORECASE)
         large = re.search(r'\blarge\b|\bbig\b|\bxl\b', argument, re.IGNORECASE)
         small = re.search(r'\bsmall\b|\btiny\b|xs\b', argument, re.IGNORECASE)
+        shadow = re.search(r'\bshadow\b', argument, re.IGNORECASE)
+        purified = re.search(r'\bpurified\b', argument, re.IGNORECASE)
         form_list = bot.form_dict['list']
         try:
             form_list.remove("none")
@@ -541,6 +557,16 @@ class Pokemon():
             shiny = True
         else:
             shiny = False
+        if shadow:
+            match_list.append(shadow.group(0))
+            argument = re.sub(shadow.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
+            shadow = "shadow"
+        elif purified:
+            match_list.append(purified.group(0))
+            argument = re.sub(purified.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
+            shadow = "purified"
+        else:
+            shadow = False
         if alolan:
             match_list.append(alolan.group(0))
             argument = re.sub(alolan.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
@@ -578,7 +604,7 @@ class Pokemon():
             else:
                 form = None
 
-        return {"argument":argument, "match_list":match_list, "shiny":shiny, "alolan":alolan, "gender":gender, "size":size, "form":form}
+        return {"argument":argument, "match_list":match_list, "shiny":shiny, "alolan":alolan, "gender":gender, "size":size, "form":form, "shadow":shadow}
 
     @classmethod
     async def convert(self, ctx, argument):
@@ -634,7 +660,7 @@ class Pokemon():
         result = False
         if match:
             if score >= 80:
-                result = self(ctx.bot, str(match), ctx.guild, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
+                result = self(ctx.bot, str(match), ctx.guild, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
             else:
                 result = {
                     'suggested' : str(match),
@@ -671,9 +697,9 @@ class Pokemon():
         if not match:
             return None
         if entered_argument.isdigit() and allow_digits:
-            pokemon = self(bot, str(match), None, shiny=False, alolan=False, form=None, gender=None, size=None)
+            pokemon = self(bot, str(match), None, shiny=False, alolan=False, form=None, gender=None, size=None, shadow=None)
         else:
-            pokemon = self(bot, str(match), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
+            pokemon = self(bot, str(match), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
         return pokemon
 
     @classmethod
@@ -701,9 +727,9 @@ class Pokemon():
         if not match:
             return None
         if entered_argument.isdigit() and allow_digits:
-            pokemon = self(bot, str(match), None, shiny=False, alolan=False, form=None, gender=None, size=None)
+            pokemon = self(bot, str(match), None, shiny=False, alolan=False, form=None, gender=None, size=None, shadow=None)
         else:
-            pokemon = self(bot, str(match), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
+            pokemon = self(bot, str(match), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
         return pokemon
 
     @classmethod
@@ -755,9 +781,9 @@ class Pokemon():
         if not pokemon:
             return None, None
         if entered_argument.isdigit() and allow_digits:
-            pokemon = self(ctx.bot, str(pokemon), None, shiny=False, alolan=False, form=None, gender=None, size=None)
+            pokemon = self(ctx.bot, str(pokemon), None, shiny=False, alolan=False, form=None, gender=None, size=None, shadow=None)
         else:
-            pokemon = self(ctx.bot, str(pokemon), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'])
+            pokemon = self(ctx.bot, str(pokemon), None, shiny=query['shiny'], alolan=query['alolan'], form=query['form'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
         return pokemon, match_list
 
 class Pokedex(commands.Cog):
@@ -832,8 +858,11 @@ class Pokedex(commands.Cog):
                     pkmn_size = False
                     if pkmn_form in self.bot.size_dict.get(pokemon.id, []):
                         pkmn_size = True
+                    pkmn_shadow = False
+                    if pkmn_form in self.bot.shadow_dict.get(pokemon.id, []):
+                        pkmn_shadow = True
                     pkmn_embed.clear_fields()
-                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **available** to toggle in-game availability, **shiny** to set shiny availability, **gender** to toggle gender differences, or **size** to toggle size relevance. You can reply with **cancel** to stop anytime.\n\n**Current {str(pokemon)} Settings**\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}\nSize Relevant: {pkmn_size}", inline=False)
+                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **available** to toggle in-game availability, **shiny** to set shiny availability, **gender** to toggle gender differences, or **size** to toggle size relevance, **shadow** to toggle shadow. You can reply with **cancel** to stop anytime.\n\n**Current {str(pokemon)} Settings**\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}", inline=False)
                     attr_type_wait = await channel.send(embed=pkmn_embed)
                     try:
                         attr_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -854,12 +883,15 @@ class Pokedex(commands.Cog):
                     elif attr_type_msg.clean_content.lower() == "size":
                         pkmn_size = not pkmn_size
                         break
+                    elif attr_type_msg.clean_content.lower() == "shadow":
+                        pkmn_shadow = not pkmn_shadow
+                        break
                     elif attr_type_msg.clean_content.lower() == "available":
                         pkmn_available = not pkmn_available
                         break
                     elif attr_type_msg.clean_content.lower() == "shiny":
                         pkmn_embed.clear_fields()
-                        pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"Shiny **{str(pokemon)}** is {'not currently available' if not pkmn_shiny else 'currently available in the following: '+str(pkmn_shiny)}.\n\nTo change availability, reply with a comma separated list of all possible occurrences that shiny {str(pokemon)} can appear in-game. You can reply with **cancel** to stop anytime.\n\nSelect from the following options:\n**hatch, raid, wild, research, nest, evolution, none**", inline=False)
+                        pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"Shiny **{str(pokemon)}** is {'not currently available' if not pkmn_shiny else 'currently available in the following: '+str(pkmn_shiny)}.\n\nTo change availability, reply with a comma separated list of all possible occurrences that shiny {str(pokemon)} can appear in-game. You can reply with **cancel** to stop anytime.\n\nSelect from the following options:\n**hatch, raid, wild, research, nest, evolution, shadow, none**", inline=False)
                         shiny_type_wait = await channel.send(embed=pkmn_embed)
                         try:
                             shiny_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -875,7 +907,7 @@ class Pokedex(commands.Cog):
                             error = _("cancelled the report")
                             break
                         else:
-                            shiny_options = ["hatch", "raid", "wild", "research", "nest", "invasion", "evolution"]
+                            shiny_options = ["hatch", "raid", "wild", "research", "nest", "invasion", "evolution", "shadow"]
                             shiny_split = shiny_type_msg.clean_content.lower().split(',')
                             shiny_split = [x.strip() for x in shiny_split]
                             shiny_split = [x for x in shiny_split if x in shiny_options]
@@ -898,11 +930,12 @@ class Pokedex(commands.Cog):
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['gender'] = pkmn_gender
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['shiny'] = pkmn_shiny
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['size'] = pkmn_size
+            pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['shadow'] = pkmn_shadow
             with open(self.bot.pkmn_info_path, 'w', encoding="utf8") as fd:
                 json.dump(pkmn_info, fd, indent=2, separators=(', ', ': '))
             await Pokemon.generate_lists(self.bot)
             pkmn_embed.clear_fields()
-            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}\nSize Relevant: {pkmn_size}", inline=False)
+            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nAvailable in-game: {pkmn_available}\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}", inline=False)
             confirmation = await channel.send(embed=pkmn_embed)
             await utils.safe_delete(message)
 
@@ -928,7 +961,7 @@ class Pokedex(commands.Cog):
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
         pokemon.gender = False
         pokemon.size = None
-        key_needed = False
+        key_list = []
         forms = [x.title() for x in ctx.bot.pkmn_info[pokemon.name.lower()]['forms'].keys()]
         if not forms:
             forms = ["None"]
@@ -937,12 +970,18 @@ class Pokedex(commands.Cog):
             form_str = ""
             form_key = ""
             if form.lower() in ctx.bot.shiny_dict.get(pokemon.id, []):
-                key_needed = True
+                if "S = Shiny Available" not in key_list:
+                    key_list.append("S = Shiny Available")
                 form_key += "S"
             if form.lower() in ctx.bot.gender_dict.get(pokemon.id, []):
-                key_needed = True
+                if "G = Gender Differences" not in key_list:
+                    key_list.append("G = Gender Differences")
                 form_key += "G"
-            if "S" in form_key or "G" in form_key:
+            if form.lower() in ctx.bot.shadow_dict.get(pokemon.id, []):
+                if "R = Team Rocket Shadow" not in key_list:
+                    key_list.append("R = Team Rocket Shadow")
+                form_key += "R"
+            if "S" in form_key or "G" in form_key or "R" in form_key:
                 form_key = f"**({form_key})**"
             if form == "None" and "Normal" in forms:
                 continue
@@ -951,7 +990,7 @@ class Pokedex(commands.Cog):
             form_str = f"{form} {form_key}"
             form_list.append(form_str.strip())
         preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji}", value=pokemon.pokedex, inline=False)
-        if len(forms) > 1 or key_needed:
+        if len(forms) > 1 or key_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
         if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:
             preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"])
@@ -975,8 +1014,8 @@ class Pokedex(commands.Cog):
                 field_value += f"Quick Moves: **{(', ').join(quick_moves)}**\nCharge Moves: **{(', ').join(charge_moves)}**"
             preview_embed.add_field(name="Other Info:", value=field_value)
         preview_embed.set_thumbnail(url=pokemon.img_url)
-        if key_needed:
-            preview_embed.set_footer(text="S = Shiny Available | G = Gender Differences")
+        if key_list:
+            preview_embed.set_footer(text=(' | ').join(key_list))
         pokedex_msg = await ctx.send(embed=preview_embed)
 
     @pokedex.command()

@@ -189,123 +189,79 @@ Arguments within \< \> are required.<br/>
 Arguments within \[ \] are optional.<br/>
 pkmn = Pokemon
 
-### Admin or Manager Commands:
+### Admin Cog Commands:
 
 | Commands | Requirements  | Description |
 | -------- |:-------------:| ------------|
 | **!save**  | *Owner Only* | Saves the save data to file. |
-| **!exit**  | *Owner Only* | Saves the save data to file and shutdown Meowth. |
 | **!restart**  | *Owner Only* | Saves the save data to file and restarts Meowth. |
-| **!announce** \[msg\] | *Owner Only* | Sends announcement message to server owners. |
+| **!load** \[extensions\]  | *Owner Only* | Loads or reloads extension. |
+| **!unload** \[extensions\]  | *Owner Only* | Unloads extension. |
+| **!reload** \[extensions\] | *Owner Only* | Reload extensions without a hard restart. |
+| **!exit**  | *Owner Only* | Saves the save data to file and shutdown Meowth. |
 | **!eval** \<code\> | *Owner Only* | Evaluates code. |
-| **!set prefix** \[prefix\] | *Server Manager Only* | Sets Meowth's prefix. |
-| **!set regional** \<pkmn\> | *Server Manager Only* | Sets server's regional raid boss. Accepts number or name. |
-| **!set timezone** \<UTC offset\> | *Server Manager Only* | Sets server's timezone. Accepts numbers from -12 to 14. |
-| **!set activity** \<activity\> | *Owner Only* | Sets Meowth's activity (Playing: x). |
-| **!set avatar** \<avatar\> | *Owner Only* | Sets Meowth's avatar from a URL or image upload. |
-| **!set username** \<username\> | *Owner Only* | Sets Meowth's username. |
-| **!get prefix** | *Server Manager Only* | Displays Meowth's prefix. |
-| **!get perms** \[channelid\] | *Server Manager Only* | Displays Meowth's permissions in guild and channel. |
-| **!welcome** \[user\] | *Owner Only* | Test welcome message on mentioned member |
-| **!outputlog**  | *Server Manager Only* | Uploads the log file to hastebin and replies with a link. |
-| **!configure** | *Server Manager Only* | Configure Meowth |
-| **!reload_json** | *Owner Only* | reloads JSON files for the server |
-| **!raid_json** \[level\] \[bosslist\] | *Owner Only* | Edits or displays raid_info.json |
-| **!raid_time** \<hatch or raid\> \<level\> \<new time\> | *Channel Manager Only* | Edits hatch or raid time for raids. |
-| **!changeraid** \[level or boss\] | *Channel Manager Only* | Changes raid boss or egg level |
-| **!unassume** | *Channel Manager<br/>Raid Channel* | Use if a level 5 egg has been assumed before raid_json was corrected. |
-| **!clearstatus**  | *Channel Manager<br/>Raid Channel* | Cancel everyone's status. |
-| **!setstatus** \<user\> \<status\> \[count\] | *Channel Manager<br/>Raid Channel* | Changes raid channel status lists. |
-| **!leaderboard reset** \[user\] \[type\] | *Server Manager* | Resets \[user\]'s or server's leaderboard by type or total. |
-| **!wild reset** \[message\] | *Server Manager* | Resets all wild reports or by message. |
-| **!research reset \[message\]** | *Server Manager* | Resets all research reports or by message. |
-| **!nest reset** | *Server Manager* | Resets nest reports. |
-| **!nest add** | *Server Manager* | Adds a nest. |
-| **!nest remove** | *Server Manager* | Removes a nest. |
-| **!nest time** | *Server Manager* | Sets migration time. |
+| **!welcome** \[user\] | *Guild Manager* | Test welcome message on mentioned member |
 
-### Miscellaneous Commands
-| Commands | Requirements  | Description |
-| -------- |:-------------:| ------------|
-| **!help** \[command\] | - | Shows bot/command help, with descriptions. |
-| **!tutorial** \[command\] | - | Shows interactive bot/command tutorial. |
-| **!about** | - | Shows info about Meowth. |
-| **!uptime** | - | Shows Meowth's uptime. |
-| **!team** \<team\> | - | Let's users set their team role. |
-| **!set silph** \<Silph name\> | - | Links user\'s Silph Road account to Meowth. |
-| **!silphcard** \[Silph name\] | - | Displays [Silph name]\'s or user\'s trainer card. |
-| **!set trainercode** \<trainer code\> | - | Links user\'s trainer code to Meowth. |
-| **!trainercode**  | - | Displays author\'s trainer code. |
-| **!profile** \[username\] | - | Displays [username]\'s or user\'s profile. |
-| **!leaderboard** \[type\] | - | Displays reporting leaderboard. Accepts total, raids, eggs, exraids, wilds, research. Defaults to total. |
-| **!pokedex \<pkmn\>** | - | Displays Pokedex entry for pokemon. |
-| **!sprite \<pkmn\>**| - | Displays pokemon sprite. |
-
-### Notification Commands:
+### Configure Cog Commands:
 
 | Commands | Requirements  | Description |
 | -------- |:-------------:| ------------|
-| **!want settings** | *Want Channel* | Set active hours, mute, want list link. |
-| **!want** \<pkmn\> | *Want Channel* | Adds a Pokemon to your notifications. |
-| **!want gym** \<gym list\> | *Want Channel* and gymmatching | Add a gym to your notifications. |
-| **!want stop** \<stop list\> | *Want Channel* and gymmatching | Adds a pokestop to your notifications. |
-| **!want item** \<item list\> | *Want Channel* | Adds a item to your notifications. |
-| **!want type** \<type list\> | *Want Channel* | Adds a type to your notifications. |
-| **!want boss** \<boss list\> | *Want Channel* | Adds a boss to your notifications if want list unlinked. |
-| **!want iv** \<iv list\> | *Want Channel* | Adds an IV to your notifications. |
-| **!unwant** \<pkmn\> | *Want Channel* | Removes a Pokemon from your notifications. |
-| **!unwant gym** \<gym list\> | *Want Channel* and gymmatching | Removes a gym from your notifications. |
-| **!unwant stop** \<stop list\> | *Want Channel* and gymmatching | Removes a pokestop from your notifications. |
-| **!unwant item** \<item list\> | *Want Channel* | Removes a item from your notifications. |
-| **!unwant type** \<type list\> | *Want Channel* | Removes a type from your notifications. |
-| **!unwant boss** \<boss list\> | *Want Channel* | Removes a boss from your notifications if want list unlinked. |
-| **!unwant iv** \<iv list\> | *Want Channel* | Removes an IV from your notifications. |
-| **!unwant all**  | *Want Channel* | Removes all notifications. |
+| **!configure** \[command list\] | *Server Manager Only* | Configure Meowth |
+| **!configure all** | *Server Manager Only* | Configure all settings |
+| **!configure team** | *Server Manager Only* | Configure team settings |
+| **!configure welcome** | *Server Manager Only* | Configure welcome settings |
+| **!configure raid** | *Server Manager Only* | Configure raid settings |
+| **!configure exraid** | *Server Manager Only* | Configure exraid settings |
+| **!configure invite** | *Server Manager Only* | Configure invite settings |
+| **!configure counters** | *Server Manager Only* | Configure counters settings |
+| **!configure wild** | *Server Manager Only* | Configure wild settings |
+| **!configure research** | *Server Manager Only* | Configure research settings |
+| **!configure lure** | *Server Manager Only* | Configure lure settings |
+| **!configure invasion** | *Server Manager Only* | Configure invasion settings |
+| **!configure meetup** | *Server Manager Only* | Configure meetup settings |
+| **!configure want** | *Server Manager Only* | Configure want settings |
+| **!configure archive** | *Server Manager Only* | Configure archive settings |
+| **!configure settings** | *Server Manager Only* | Configure other settings |
+| **!configure trade** | *Server Manager Only* | Configure trade settings |
+| **!configure nest** | *Server Manager Only* | Configure nest settings |
+| **!configure scanners** | *Server Manager Only* | Configure scanners settings |
 
-### Reporting Commands:
-
-| Commands | Requirements  | Description |
-| -------- |:-------------:| ------------|
-| **!wild** \<pkmn\> \<location\> | *Region Channel* | Reports a wild pokemon, notifying people who want it. `Aliases: !w` |
-| **!raid** \<pkmn\> \<place\> \[timer\] | *Region Channel* | Creates an open raid channel. `Aliases: !r`|
-| **!raidegg** \<level\> \<place\> \[timer\] | *Region Channel* | Creates a raid egg channel. `Aliases: !re, !regg, !egg` |
-| **!raid** \<pkmn\> | *Raid Egg Channel* | Converts raid egg to an open raid. |
-| **!raid assume** \<pkmn\> | *Raid Egg Channel* | Assumes a pokemon on hatch. |
-| **!exraid** \<pkmn\> \<place\> | *Region Channel* | Creates an exraid channel. `Aliases: !ex`|
-| **!invite**  | *Region Channel* | Gain entry to exraids. |
-| **!meetup** \<place\> | *Region Channel* | Reports a community event or meetup. `Aliases: !event`|
-| **!research** \[pokestop name \[optional URL\], quest, reward\] | *Region Channel* | Reports field research. Guided version available with just **!research** `Aliases: !res` |
-| **!nest** \<pkmn\> | *Region Channel* | Reports nest. |
-| **!nest info** | *Region Channel* | Details about a nest. |
-
-### Raid Channel Management:
+### GymMatching Cog Commands:
 
 | Commands | Requirements  | Description |
 | -------- |:-------------:| ------------|
-| **!timer** | *Raid Channel* | Shows the expiry time for the raid. |
-| **!timerset** \<timer\> | *Raid Channel* | Set the expiry time for the raid. |
-| **!starttime** \[HH:MM AM/PM\] | *Raid Channel* | Set a time for a group to start a raid. |
-| **!location** | *Raid Channel* | Shows the raid location. |
-| **!location new** \<place/map\> | *Raid Channel* | Sets the raid location. |
-| **!recover** | *Raid Channel* | Recovers an unresponsive raid channel. |
-| **!duplicate** | *Raid Channel* | Reports the raid as a duplicate channel. |
-| **!weather** | *Raid Channel* | Sets the weather for the raid. |
-| **!counters** | *Raid Channel* | Simulate a Raid battle with Pokebattler. |
-| **!archive** | *Raid Channel* | Mark a channel for archiving. |
+| **!poi_json** \[gym/stop\] \[add/remove\] | *Bot Manager Only* | Edits stop_info.json and gym_info.json. |
+| **!gym_match_test** \[gym name\] | gymmatching | Tests matching for a gym. |
+| **!stop_match_test** \[stop name\] | gymmatching | Tests matching for a pokestop. |
+| **!whereis** \[stop or gym name\] | gymmatching | Matches and shows information for a POI. |
 
-### Status Management:
+
+### Huntr Cog Commands:
 
 | Commands | Requirements  | Description |
 | -------- |:-------------:| ------------|
-| **!interested** \[number\] \[teamcounts\] \[boss list or all\] | *Raid Channel* | Sets your status for the raid to 'interested'. Teamcounts format is `m# v# i# u#`. You can also supply a list of bosses or 'all' that you are interested in. `Aliases: !i, !maybe` |
-| **!coming** \[number\] \[teamcounts\] \[boss list or all\] | *Raid Channel* | Sets your status for the raid to 'coming'. Teamcounts format is `m# v# i# u#`. You can also supply a list of bosses or 'all' that you are interested in. `Aliases: !c` |
-| **!here** \[number\] \[teamcounts\] \[boss list or all\] | *Raid Channel* | Sets your status for the raid to 'here'.  Teamcounts format is `m# v# i# u#`. You can also supply a list of bosses or 'all' that you are interested in. `Aliases: !h` |
-| **!lobby** \[number\] \[teamcounts\] | *Raid Channel* | Indicate you are entering the raid lobby. Teamcounts format is `m# v# i# u#`. |
-| **!starting** \[team\] | *Raid Channel* | Clears all members 'here', announce raid start. |
-| **!backout** | *Raid Channel* | Request players in lobby to backout. |
-| **!cancel**  | *Raid Channel* | Cancel your status. `Aliases: !x` |
+| **!huntrraid** | *Server Manager Only* | Simulates a huntr raid |
+| **!huntregg** | *Server Manager Only* | Simulates a huntr egg |
+| **!huntrwild** | *Server Manager Only* | Simulates a huntr wild |
+| **!alarmraid** | *Server Manager Only* | Simulates a pokealarm raid |
+| **!alarmegg** | *Server Manager Only* | Simulates a pokealarm egg |
+| **!alarmwild** | *Server Manager Only* | Simulates a pokealarm wild |
+| **!alarmquest** | *Server Manager Only* | Simulates a pokealarm quest |
+| **!alarmlure** | *Server Manager Only* | Simulates a pokealarm lure |
+| **!alarminv** | *Server Manager Only* | Simulates a pokealarm invasion |
+| **!raidhour** | *Server Manager Only* | Schedules a raid hour, raid day, or community day |
+| **!raidhour list** | *Server Manager Only* | Lists scheduled events |
+| **!raidhour cancel** | *Server Manager Only* | Cancel a scheduled event |
+| **!alarmrecover** | - | Recovers bot reports that Meowth missed. |
 
-### List Commands:
+### Invasion Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!invasion** \[pokestop name\] \[reward\] | *Region Channel* | Reports an ongoing Team Rocket invasion. |
+| **!invasion reset** \[report_message\] | *Channel Manager Only and Region Channel* | Resets all invasion reports or supplied report_message. |
+
+### Listing Cog Commands:
 
 | Commands | Requirements  | Description |
 | -------- |:-------------:| ------------|
@@ -329,6 +285,224 @@ pkmn = Pokemon
 | **!list research** | *Region Channel* | List the research for the channel. `Aliases: !l` |
 | **!list trades** \[pokemon or trainer\] | *Region Channel* | List the trades for a user or pokemon, defaults to your trades. `Aliases: !l` |
 | **!list nests** | *Region Channel* | List the nest reports for the channel. `Aliases: !l` |
+| **!list lures** | *Region Channel* | List the lure reports for the channel. `Aliases: !l` |
+| **!list pokealarms** | *Region Channel* | List the pokealarm reports for the channel. `Aliases: !l` |
+| **!list invasions** | *Region Channel* | List the invasions reports for the channel. `Aliases: !l` |
+| **!list pvp** | *Region Channel* | List the pvp reports for the channel. `Aliases: !l` |
+
+### Lure Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!lure** \[type\] \[pokestop name\] \[minutes\] | *Region Channel* | Reports an ongoing lure. |
+| **!lure reset** \[report_message\] | *Channel Manager Only and Region Channel* | Resets all lure reports or supplied report_message. |
+
+### Nest Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!nest** \<pkmn\> | *Region Channel* | Reports nest. |
+| **!nest info** | *Region Channel* | Details about a nest. |
+| **!nest reset** \[report_message\] | *Server Manager* | Resets nest reports. |
+| **!nest add** | *Channel Manager* | Adds a nest. |
+| **!nest remove** | *Channel Manager* | Removes a nest. |
+| **!nest time** | *Channel Manager* | Sets migration time. |
+
+### Pokemon Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!poi_json** \[pokemon\] | *Bot Manager Only* | Edits pkmn.json form, shiny, etc. availability. |
+| **!pokedex \<pkmn\>** | - | Displays Pokedex entry for pokemon. |
+| **!pokedex stats \<pkmn\>** | - | Displays detailed Pokedex entry for pokemon. |
+| **!sprite \<pkmn\>**| - | Displays pokemon sprite. |
+
+### PVP Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!pvp** \[type\] \[location\] \[minutes\] | *Region Channel* | Reports an ongoing PVP request. |
+| **!pvp tournament** \[size\] \[type\] \[location\] | *Region Channel* | Reports an ongoing PVP request. |
+| **!pvp reset** \[report_message\] | *Channel Manager Only and Region Channel* | Resets all lure reports or supplied report_message. |
+
+#### PVP Minigame Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!pvp badge** | *Channel Manager or Gym Leader* | Rewards a badge to a user. |
+| **!pvp leader** | *Channel Manager Only* | Promotes a user to gym leader. |
+| **!pvp elite** | *Channel Manager Only* | Promotes a user to Elite Four. |
+| **!pvp champion** | *Channel Manager Only* | Promotes a user to champion. |
+| **!pvp record** | *Channel Manager Only* | Manage league records. |
+
+### Raid Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!raid_json** \[level\] \[bosslist\] | *Owner Only* | Edits or displays raid_info.json |
+| **!unassume** | *Channel Manager<br/>Raid Channel* | Use if a level 5 egg has been assumed before raid_json was corrected. |
+| **!raid_time** \<hatch or raid\> \<level\> \<new time\> | *Channel Manager Only* | Edits hatch or raid time for raids. |
+| **!changeraid** \[level or boss\] | *Channel Manager Only* | Changes raid boss or egg level |
+| **!raid** \<pkmn\> \<place\> \[timer\] | *Region Channel* | Creates an open raid channel. `Aliases: !r`|
+| **!raidegg** \<level\> \<place\> \[timer\] | *Region Channel* | Creates a raid egg channel. `Aliases: !re, !regg, !egg` |
+| **!raid** \<pkmn\> | *Raid Egg Channel* | Converts raid egg to an open raid. |
+| **!raid assume** \<pkmn\> | *Raid Egg Channel* | Assumes a pokemon on hatch. |
+| **!exraid** \<pkmn\> \<place\> | *Region Channel* | Creates an exraid channel. `Aliases: !ex`|
+| **!invite**  | *Region Channel* | Gain entry to exraids. |
+| **!meetup** \<place\> | *Region Channel* | Reports a community event or meetup. `Aliases: !event`|
+| **!train** \<channel or gym\> | *Region Channel* | Reports a raid train. `Aliases: !event`|
+| **!train channel** \<channel or gym\> | *Region Channel* | Reports a raid train channel. `Aliases: !event`|
+
+#### Train / Meetup Channel Management:
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!meetup title** \<title\> | *Meetup Channel* | Sets the title of the meetup channel |
+| **!meetup start** \<date time\> | *Meetup Channel* | Sets the start time in the meetup channel |
+| **!meetup end** \<date time\> | *Meetup Channel* | Sets the end time in the meetup channel |
+| **!train title** \<title\> | *Train Channel* | Sets the title of the train channel |
+| **!train start** \<date time\> | *Train Channel and train manager* | Sets the start time of the train channel |
+| **!train end** \<date time\> | *Train Channel and train manager* | Sets the end time of the train channel channel |
+| **!train next** \[channel or gym\] | *Train Channel and train manager* | Changes train channel to next gym. `Aliases: !next` |
+| **!train manager** \<user\> | *Train Channel* | Sets train managers |
+| **!train history** | *Train Channel* | View train channel history |
+| **!train route** \<gym list\> | *Train Channel and train manager* | Sets the train route |
+
+#### Raid Channel Management:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!timer** | *Raid Channel* | Shows the expiry time for the raid. |
+| **!timerset** \<timer\> | *Raid Channel* | Set the expiry time for the raid. |
+| **!starttime** \[HH:MM AM/PM\] | *Raid Channel* | Set a time for a group to start a raid. |
+| **!location** | *Raid Channel* | Shows the raid location. |
+| **!location new** \<place/map\> | *Raid Channel* | Sets the raid location. |
+| **!recover** | *Raid Channel* | Recovers an unresponsive raid channel. |
+| **!duplicate** | *Raid Channel* | Reports the raid as a duplicate channel. |
+| **!weather** | *Raid Channel* | Sets the weather for the raid. |
+| **!counters** | *Raid Channel* | Simulate a Raid battle with Pokebattler. |
+| **!archive** | *Raid Channel* | Mark a channel for archiving. |
+
+#### Status Management:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!clearstatus**  | *Channel Manager<br/>Raid Channel* | Cancel everyone's status. |
+| **!setstatus** \<user\> \<status\> \[count\] | *Channel Manager<br/>Raid Channel* | Changes raid channel status lists. |
+| **!interested** \[number\] \[teamcounts\] \[boss list or all\] | *Raid Channel* | Sets your status for the raid to 'interested'. Teamcounts format is `m# v# i# u#`. You can also supply a list of bosses or 'all' that you are interested in. `Aliases: !i, !maybe` |
+| **!coming** \[number\] \[teamcounts\] \[boss list or all\] | *Raid Channel* | Sets your status for the raid to 'coming'. Teamcounts format is `m# v# i# u#`. You can also supply a list of bosses or 'all' that you are interested in. `Aliases: !c` |
+| **!here** \[number\] \[teamcounts\] \[boss list or all\] | *Raid Channel* | Sets your status for the raid to 'here'.  Teamcounts format is `m# v# i# u#`. You can also supply a list of bosses or 'all' that you are interested in. `Aliases: !h` |
+| **!lobby** \[number\] \[teamcounts\] | *Raid Channel* | Indicate you are entering the raid lobby. Teamcounts format is `m# v# i# u#`. |
+| **!starting** \[team\] | *Raid Channel* | Clears all members 'here', announce raid start. |
+| **!backout** | *Raid Channel* | Request players in lobby to backout. |
+| **!cancel**  | *Raid Channel* | Cancel your status. `Aliases: !x` |
+
+### Research Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!research** \[pokestop name \[optional URL\], quest, reward\] | *Region Channel* | Reports field research. Guided version available with just **!research** `Aliases: !res` |
+| **!research reset** \[report_message\] | *Channel Manager Only and Region Channel* | Resets all research reports or supplied report_message. |
+
+### Silph Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!silph** \[silph user\] | - | Links a server member to a Silph Road travelers card. |
+| **!silphcard** \[silph user\] | - | Displays Silph Road travelers card. |
+
+### Trade Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!trade \[pokemon list\] | *Region Channel* | Create a trade listing |
+
+### Trainer Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!team** \<team\> | - | Let's users set their team role. |
+| **!trainercode**  | - | Links and displays author\'s trainer code. |
+| **!pokebattler**  | - | Links and displays author\'s pokebattler code. |
+| **!ign**  | - | Links and displays author\'s in-game name. |
+| **!profile** \[username\] | - | Displays [username]\'s or user\'s profile. |
+| **!leaderboard** \[type\] | - | Displays reporting leaderboard. Accepts total, raids, eggs, exraids, wilds, research. Defaults to total. |
+| **!leaderboard reset** \[user\] \[type\] | *Server Manager* | Resets \[user\]'s or server's leaderboard by type or total. |
+
+### Tutorial Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!tutorial** \[command\] | - | Shows interactive bot/command tutorial. |
+| **!tutorial all** | - | Launch all tutorials |
+| **!tutorial team** | - | Launch team tutorial |
+| **!tutorial raid** | - | Launch raid tutorial |
+| **!tutorial pvp** | - | Launch raid tutorial |
+| **!tutorial exraid** | - | Launch exraid tutorial |
+| **!tutorial invite** | - | Launch invite tutorial |
+| **!tutorial wild** | - | Launch wild tutorial |
+| **!tutorial research** | - | Launch research tutorial |
+| **!tutorial lure** | - | Configure lure tutorial |
+| **!tutorial invasion** | - | Launch invasion tutorial |
+| **!tutorial want** | - | Launch want tutorial |
+| **!tutorial trade** | - | Launch trade tutorial |
+| **!tutorial nest** | - | Launch nest tutorial |
+| **!help** \[command\] | - | Shows bot/command help, with descriptions. |
+
+### Utilities Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!clean_dm** | *Owner Only* | Manually clean forgotten DMs |
+| **!embed** \<title\> \[content\] \[color\] \[icon_url\] \[image_url\] \[thumbnail_url\] \[plain_message\] | *Owner Only* | Build and send an embed |
+| **!template** | *Server Manager Only* | Test welcome message template |
+| **!outputlog**  | *Server Manager Only* | Uploads the log file to hastebin and replies with a link. |
+| **!announce** \[msg\] | *Server Manager Only* | Sends announcement message to server owners. |
+| **!about** | - | Shows info about Meowth. |
+| **!uptime** | - | Shows Meowth's uptime. |
+| **!set regional** \<pkmn\> | *Server Manager Only* | Sets server's regional raid boss. Accepts number or name. |
+| **!set timezone** \<UTC offset\> | *Server Manager Only* | Sets server's timezone. Accepts numbers from -12 to 14. |
+| **!set activity** \<activity\> | *Owner Only* | Sets Meowth's activity (Playing: x). |
+| **!set status** \<status\> | *Owner Only* | Sets Meowth's status (online, offline, idle, invisible). |
+| **!set nickname** \<nickname\> | *Owner Only* | Sets Meowth's nickname. |
+| **!set avatar** \<avatar\> | *Owner Only* | Sets Meowth's avatar from a URL or image upload. |
+| **!set username** \<username\> | *Owner Only* | Sets Meowth's username. |
+| **!prefix** | *Server Manager Only* | Displays Meowth's prefix. |
+| **!permissions** \[channelid\] | *Server Manager Only* | Displays Meowth's permissions in guild and channel. |
+
+### Want Cog Commands:
+
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
+| **!want settings** | *Want Channel* | Set active hours, mute, want list link. |
+| **!want categories** | *Want Channel* | Change your want category preferences. |
+| **!want** \<pkmn\> | *Want Channel* | Adds a Pokemon to your notifications. |
+| **!want** pokemon \<pkmn\> | *Want Channel* | Adds a Pokemon to your notifications. |
+| **!want gym** \<gym list\> | *Want Channel* and gymmatching | Add a gym to your notifications. |
+| **!want stop** \<stop list\> | *Want Channel* and gymmatching | Adds a pokestop to your notifications. |
+| **!want item** \<item list\> | *Want Channel* | Adds a item to your notifications. |
+| **!want type** \<type list\> | *Want Channel* | Adds a type to your notifications. |
+| **!want boss** \<boss list\> | *Want Channel* | Adds a boss to your notifications if want list unlinked. |
+| **!want iv** \<iv list\> | *Want Channel* | Adds an IV to your notifications. |
+| **!want level** \<level list\> | *Want Channel* | Adds an level to your notifications. |
+| **!want role** \<role list\> | *Want Channel* | Adds a joinable role to user. |
+| **!want exraid** | *Want Channel* | Adds all EX gyms to your notifications. |
+| **!unwant** \<pkmn\> | *Want Channel* | Removes a Pokemon from your notifications. |
+| **!unwant** pokemon \<pkmn\> | *Want Channel* | Removes a Pokemon from your notifications. |
+| **!unwant gym** \<gym list\> | *Want Channel* and gymmatching | Removes a gym from your notifications. |
+| **!unwant stop** \<stop list\> | *Want Channel* and gymmatching | Removes a pokestop from your notifications. |
+| **!unwant item** \<item list\> | *Want Channel* | Removes a item from your notifications. |
+| **!unwant type** \<type list\> | *Want Channel* | Removes a type from your notifications. |
+| **!unwant boss** \<boss list\> | *Want Channel* | Removes a boss from your notifications if want list unlinked. |
+| **!unwant iv** \<iv list\> | *Want Channel* | Removes an IV from your notifications. |
+| **!unwant level** \<level list\> | *Want Channel* | Removes an level from your notifications. |
+| **!unwant role** \<role list\> | *Want Channel* | Removes a joinable role from user. |
+| **!unwant exraid** | *Want Channel* | Removes all EX gyms from your notifications. |
+| **!unwant all**  | *Want Channel* | Removes all notifications. |
+
+### Wild Cog Commands:
+
+| **!wild** \<pkmn\> \<location\> | *Region Channel* | Reports a wild pokemon, notifying people who want it. `Aliases: !w` |
+| **!wild reset** \[message\] | *Server Manager* | Resets all wild reports or by message. |
 
 ## General notes on Meowth:
 

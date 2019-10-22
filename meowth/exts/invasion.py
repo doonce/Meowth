@@ -222,7 +222,7 @@ class Invasion(commands.Cog):
                                     continue
                                 pokemon.shiny = False
                                 pokemon.size = None
-                                pokemon.form = "shadow" if "shadow" in self.bot.form_dict.get(pokemon.id, {}) else None
+                                pokemon.shadow = "shadow"
                                 if str(pokemon) in reward:
                                     continue
                                 reward.append(str(pokemon))
@@ -276,11 +276,11 @@ class Invasion(commands.Cog):
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 if pokemon:
                     pokemon.shiny = False
-                    pokemon.form = "shadow" if "shadow" in self.bot.form_dict.get(pokemon.id, {}) else None
+                    pokemon.shadow = "shadow"
                     if pokemon.id in self.bot.shiny_dict:
-                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "invasion" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "invasion" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                     reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
                     reward_list.append(str(pokemon))
@@ -537,11 +537,11 @@ class Invasion(commands.Cog):
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 if pokemon:
                     pokemon.shiny = False
-                    pokemon.form = "shadow" if "shadow" in self.bot.form_dict.get(pokemon.id, {}) else None
+                    pokemon.shadow = "shadow"
                     if pokemon.id in self.bot.shiny_dict:
-                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "invasion" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "invasion" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                     reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
                     reward_list.append(str(pokemon))
