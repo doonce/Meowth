@@ -1676,9 +1676,9 @@ class Raid(commands.Cog):
             await self._timerset(raid_channel, raidexp)
         else:
             await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left on the raid using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
+        ctrs_dict = await self._get_generic_counters(message.guild, str(pokemon), weather)
         if str(level) in self.bot.guild_dict[message.guild.id]['configure_dict']['counters']['auto_levels']:
             try:
-                ctrs_dict = await self._get_generic_counters(message.guild, str(pokemon), weather)
                 embed = ctrs_dict[0]['embed'] if ctrs_dict else None
                 ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
                 ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=embed)
@@ -1688,10 +1688,8 @@ class Raid(commands.Cog):
                     await utils.safe_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
                     await asyncio.sleep(0.25)
             except Exception as e:
-                ctrs_dict = {}
                 ctrsmessage_id = None
         else:
-            ctrs_dict = {}
             ctrsmessage_id = None
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrsmessage'] = ctrsmessage_id
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['ctrs_dict'] = ctrs_dict
@@ -1968,8 +1966,8 @@ class Raid(commands.Cog):
         except discord.errors.NotFound:
             egg_report = None
         await raid_channel.send(_('{roletest}Meowth! This egg will be assumed to be {pokemon} when it hatches!').format(roletest=roletest, pokemon=str(pokemon).title()))
+        ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), weather)
         if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels']:
-            ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), weather)
             embed = ctrs_dict[0]['embed'] if ctrs_dict else None
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=embed)
@@ -1979,7 +1977,6 @@ class Raid(commands.Cog):
                 await utils.safe_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
                 await asyncio.sleep(0.25)
         else:
-            ctrs_dict = {}
             ctrsmessage_id = eggdetails.get('ctrsmessage', None)
         eggdetails['ctrs_dict'] = ctrs_dict
         eggdetails['ctrsmessage'] = ctrsmessage_id
@@ -2163,8 +2160,8 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['pkmn_obj'] = str(pokemon)
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['egg_level'] = '0'
         self.bot.guild_dict[raid_channel.guild.id]['raidchannel_dict'][raid_channel.id]['moveset'] = 0
+        ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), eggdetails.get('weather', None))
         if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and str(pokemon) and not ctrsmessage:
-            ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), eggdetails.get('weather', None))
             embed = ctrs_dict[0]['embed'] if ctrs_dict else None
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=embed)
@@ -2851,6 +2848,7 @@ class Raid(commands.Cog):
     @train.command(name="channel")
     @checks.allowtrainreport()
     async def train_channel(self, ctx, *, channel_or_gym):
+        """Report a new raid train channel"""
         await self._train_channel(ctx, channel_or_gym)
 
     async def _train_channel(self, ctx, channel_or_gym):
@@ -2890,6 +2888,7 @@ class Raid(commands.Cog):
     @train.command(name="title")
     @checks.allowmeetupreport()
     async def train_title(self, ctx, *, title):
+        """Set raid train channel title"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         await ctx.invoke(self.bot.get_command("meetup title"), title=title)
@@ -2897,6 +2896,7 @@ class Raid(commands.Cog):
     @train.command(name="start")
     @checks.allowmeetupreport()
     async def train_start(self, ctx, *, timer):
+        """Set raid train channel start time"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         await ctx.invoke(self.bot.get_command("starttime"), start_time=timer)
@@ -2904,13 +2904,15 @@ class Raid(commands.Cog):
     @train.command(name="end")
     @checks.allowmeetupreport()
     async def train_end(self, ctx, *, timer):
+        """Set raid train channel end time"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         await ctx.invoke(self.bot.get_command("timerset"), timer=timer)
 
-    @commands.command(name="next")
+    @commands.command(name="next", hidden=True)
     @checks.allowmeetupreport()
     async def train_next_parent(self, ctx, *, channel_or_gym=''):
+        """Proceed to next train location"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         await ctx.invoke(self.bot.get_command("train next"), channel_or_gym=channel_or_gym)
@@ -2918,6 +2920,7 @@ class Raid(commands.Cog):
     @train.command(name="next")
     @checks.allowmeetupreport()
     async def train_next(self, ctx, *, channel_or_gym=''):
+        """Proceed to next train location"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         train_path = self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup'].setdefault('route', [])
@@ -2952,6 +2955,7 @@ class Raid(commands.Cog):
     @train.command(name="manager")
     @checks.allowmeetupreport()
     async def train_manager(self, ctx, *, user):
+        """Add new train manager"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
         converter = commands.MemberConverter()
@@ -2966,6 +2970,7 @@ class Raid(commands.Cog):
     @train.command(name="history")
     @checks.allowmeetupreport()
     async def train_history(self, ctx):
+        """View raid train history"""
         if ctx.channel.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict']:
             return
         history_str = ""
@@ -2981,6 +2986,7 @@ class Raid(commands.Cog):
     @train.command(name="route", aliases=['path'])
     @checks.allowmeetupreport()
     async def train_route(self, ctx, *, path=''):
+        """Set raid train route"""
         if ctx.channel.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict']:
             return
         is_manager = ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
@@ -3940,6 +3946,7 @@ class Raid(commands.Cog):
         weather = None
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
+        ctrs_dict = {}
         if args:
             user = next((w for w in args.split() if w.isdigit()), user)
             args = args.replace(str(user), "").strip()
@@ -3955,12 +3962,17 @@ class Raid(commands.Cog):
                         ctrsembed = ctrsmessage.embeds[0]
                         ctrsembed.remove_field(6)
                         ctrsembed.remove_field(6)
-                        await channel.send(content=ctrsmessage.content, embed=ctrsembed)
-                        return
+                        return await channel.send(content=ctrsmessage.content, embed=ctrsembed)
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError):
                         pass
+                ctrs_dict = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('ctrs_dict', {})
                 moveset = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('moveset', 0)
-                movesetstr = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('ctrs_dict', {}).get(moveset, {}).get('moveset', "Unknown Moveset")
+                movesetstr = ctrs_dict.get(moveset, {}).get('moveset', "Unknown Moveset")
+                if ctrs_dict:
+                    ctrsembed = copy.deepcopy(ctrs_dict[moveset]['embed'])
+                    ctrsembed.remove_field(6)
+                    ctrsembed.remove_field(6)
+                    return await ctx.send(embed=ctrsembed)
                 if not weather:
                     weather = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('weather', None)
             else:
@@ -4003,14 +4015,14 @@ class Raid(commands.Cog):
         async with aiohttp.ClientSession() as sess:
             async with sess.get(url) as resp:
                 data = await resp.json(content_type=None)
-        if data.get('error', None):
-            url = url.replace(f"_{pkmn.game_name.upper()}_FORM", "")
+        if not data or data.get('error', None):
+            url = url.replace(f"{pkmn.game_name.upper()}_FORM", pkmn.name.upper())
             pkmn.form = None
             pkmn.alolan = False
             async with aiohttp.ClientSession() as sess:
                 async with sess.get(url) as resp:
-                    data = await resp.json()
-        if data.get('error', None):
+                    data = await resp.json(content_type=None)
+        if not data or data.get('error', None):
             return None
         title_url = url.replace('https://fight', 'https://www')
         hyperlink_icon = 'https://i.imgur.com/fn9E5nb.png'
@@ -4103,15 +4115,15 @@ class Raid(commands.Cog):
         pbtlr_icon = 'https://www.pokebattler.com/favicon-32x32.png'
         async with aiohttp.ClientSession() as sess:
             async with sess.get(url) as resp:
-                data = await resp.json()
-        if data.get('error', None):
-            url = url.replace(f"_{str(pokemon.game_name).upper()}_FORM", "")
+                data = await resp.json(content_type=None)
+        if not data or data.get('error', None):
+            url = url.replace(f"{str(pokemon.game_name).upper()}_FORM", pokemon.name.upper())
             pokemon.form = None
             pokemon.alolan = False
             async with aiohttp.ClientSession() as sess:
                 async with sess.get(url) as resp:
-                    data = await resp.json()
-        if data.get('error', None):
+                    data = await resp.json(content_type=None)
+        if not data or data.get('error', None):
             return {}
         data = data['attackers'][0]
         raid_cp = data['cp']
@@ -4221,8 +4233,8 @@ class Raid(commands.Cog):
                         await report_message.edit(embed=raid_embed)
                 except Exception as e:
                     print("weather", e)
+                ctrs_dict = await self._get_generic_counters(ctx.guild, pkmn, weather.lower())
                 if str(utils.get_level(self.bot, pkmn)) in self.bot.guild_dict[ctx.guild.id]['configure_dict']['counters']['auto_levels']:
-                    ctrs_dict = await self._get_generic_counters(ctx.guild, pkmn, weather.lower())
                     try:
                         ctrsmessage = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['ctrsmessage'])
                         moveset = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['moveset']

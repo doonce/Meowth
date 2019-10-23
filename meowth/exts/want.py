@@ -46,6 +46,7 @@ class Want(commands.Cog):
         role_list = self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])
         if not user_link:
             want_embed.add_field(name=_('**Boss**'), value=f"Reply with **boss** to want specific pokemon for raid reports.", inline=False)
+        gyms, stops = [], []
         if gym_matching_cog:
             gyms = gym_matching_cog.get_gyms(ctx.guild.id)
             stops = gym_matching_cog.get_stops(ctx.guild.id)
@@ -1196,6 +1197,7 @@ class Want(commands.Cog):
             want_embed.add_field(name=_('**Pokemon**'), value=f"Reply with **pokemon** to unwant specific pokemon for research, wild, {'nest, and raid reports.' if user_link else 'and nest reports.'}", inline=False)
         if not user_link and user_bosses:
             want_embed.add_field(name=_('**Boss**'), value=f"Reply with **boss** to unwant specific pokemon for raid reports.", inline=False)
+        gyms, stops = [], []
         if gym_matching_cog:
             gyms = gym_matching_cog.get_gyms(ctx.guild.id)
             stops = gym_matching_cog.get_stops(ctx.guild.id)
