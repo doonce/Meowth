@@ -69,9 +69,9 @@ class Want(commands.Cog):
                 if pokemon:
                     if pokemon.split(',')[0].lower().strip() in type_list:
                         return await ctx.invoke(self.bot.get_command('want type'), types=pokemon)
-                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in gyms:
+                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in [x.lower() for x in gyms]:
                         return await ctx.invoke(self.bot.get_command('want gym'), gyms=pokemon)
-                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in stops:
+                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in [x.lower() for x in stops]:
                         return await ctx.invoke(self.bot.get_command('want stop'), stops=pokemon)
                     elif pokemon.split(',')[0].lower().strip() in item_list:
                         return await ctx.invoke(self.bot.get_command('want item'), items=pokemon)
@@ -1222,9 +1222,9 @@ class Want(commands.Cog):
                 if pokemon:
                     if pokemon.split(',')[0].lower().strip() in type_list:
                         return await ctx.invoke(self.bot.get_command('unwant type'), types=pokemon)
-                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in gyms:
+                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in [x.lower() for x in gyms]:
                         return await ctx.invoke(self.bot.get_command('unwant gym'), gyms=pokemon)
-                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in stops:
+                    elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in [x.lower() for x in stops]:
                         return await ctx.invoke(self.bot.get_command('unwant stop'), stops=pokemon)
                     elif pokemon.split(',')[0].lower().strip() in item_list:
                         return await ctx.invoke(self.bot.get_command('unwant item'), items=pokemon)

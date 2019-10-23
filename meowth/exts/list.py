@@ -1018,6 +1018,7 @@ class Listing(commands.Cog):
         trademsg = ""
         lister_str = ""
         shiny_emoji = self.bot.custom_emoji.get('shiny_chance', '\u2728')
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search)
         for offer_id in self.bot.guild_dict[ctx.guild.id]['trade_dict']:
             if self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['report_channel_id'] != ctx.channel.id:
                 continue
@@ -1030,7 +1031,6 @@ class Listing(commands.Cog):
                 if "shiny" in self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['offered_pokemon'].lower():
                     tgt_shiny_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]
             else:
-                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search)
                 if str(pokemon) in self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['offered_pokemon']:
                     tgt_pokemon_trades[offer_id] = self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]
         if tgt_trainer_trades:
@@ -1077,7 +1077,7 @@ class Listing(commands.Cog):
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:
-            listmsg = _("Meowth! No active trades found. List one with **!trade**")
+            listmsg = f"Meowth! No active trades matched your search term **{search}**. List one with **!trade**"
         return listmsg, None
 
     @_list.command()

@@ -24,7 +24,7 @@ from meowth.exts import pokemon as pkmn_class
 
 logger = logging.getLogger("meowth")
 
-def get_match(word_list: list, word: str, score_cutoff: int = 60):
+def get_match(word_list: list, word: str, score_cutoff: int = 50):
     """Uses fuzzywuzzy to see if word is close to entries in word_list
 
     Returns a tuple of (MATCH, SCORE)
@@ -834,7 +834,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.10.22.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.10.23.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
