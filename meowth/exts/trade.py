@@ -152,6 +152,11 @@ class Trading(commands.Cog):
                 elif payload.user_id == trade_dict[message.id]['lister_id'] and emoji == self.bot.custom_emoji.get('wild_info', '\u2139'):
                     await message.remove_reaction(self.bot.custom_emoji.get('wild_info', '\u2139'), user)
                     await self.add_trade_details(ctx, message)
+                elif str(payload.emoji) == self.bot.custom_emoji.get('trade_report', '\U0001F4E2'):
+                    ctx = await self.bot.get_context(message)
+                    ctx.author, ctx.message.author = user, user
+                    await message.remove_reaction(payload.emoji, user)
+                    return await ctx.invoke(self.bot.get_command('trade'))
                 elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
                     await asyncio.sleep(0.25)
                     await message.remove_reaction(payload.emoji, self.bot.user)
@@ -273,6 +278,7 @@ class Trading(commands.Cog):
         lister = guild.get_member(trade_dict['lister_id'])
         channel = self.bot.get_channel(trade_dict['report_channel_id'])
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        report_emoji = ctx.bot.custom_emoji.get('trade', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         try:
             listing_msg = await channel.fetch_message(listing_id)
@@ -297,7 +303,7 @@ class Trading(commands.Cog):
             trainercode = self.bot.guild_dict[guild.id]['trainers'][lister.id].get('trainercode', None)
             if trainercode:
                 codemsg += f"\n{lister.display_name}'s trainer code is: **{trainercode}**"
-        await listing_msg.edit(content=f"{offer_str}\n{instructions}\n{cancel_inst}{codemsg}\nUser {list_emoji} to list all active trades!")
+        await listing_msg.edit(content=f"{offer_str}\n{instructions}\n{cancel_inst}{codemsg}\nUse {report_emoji} to list new or {list_emoji} to list all active trades!")
         for i in range(len(wanted_pokemon)):
             await utils.safe_reaction(listing_msg, f'{i+1}\u20e3')
         await utils.safe_reaction(listing_msg, self.bot.custom_emoji.get('trade_stop', '\u23f9'))
@@ -311,6 +317,7 @@ class Trading(commands.Cog):
         lister = guild.get_member(trade_dict['lister_id'])
         channel = self.bot.get_channel(trade_dict['report_channel_id'])
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        report_emoji = ctx.bot.custom_emoji.get('trade_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         try:
             listing_msg = await channel.fetch_message(listing_id)
@@ -333,7 +340,7 @@ class Trading(commands.Cog):
             trainercode = self.bot.guild_dict[guild.id]['trainers'][lister.id].get('trainercode', None)
             if trainercode:
                 codemsg += f"\n{lister.display_name}'s trainer code is: **{trainercode}**"
-        await listing_msg.edit(content=f"{offer_str} {instructions}\n{cancel_inst}{codemsg}\nUse {list_emoji} to list all active trades!")
+        await listing_msg.edit(content=f"{offer_str} {instructions}\n{cancel_inst}{codemsg}\nUse {report_emoji} to list new or {list_emoji} to list all active trades!")
         for i in range(len(wanted_pokemon)):
             await utils.safe_reaction(listing_msg, f'{i+1}\u20e3')
         await utils.safe_reaction(listing_msg, self.bot.custom_emoji.get('trade_stop', '\u23f9'))
@@ -489,7 +496,8 @@ class Trading(commands.Cog):
 
         Usage: !trade [pokemon list]
         Meowth will guide you through listing pokemon for trade"""
-        await utils.safe_delete(ctx.message)
+        if not ctx.message.embeds:
+            await utils.safe_delete(ctx.message)
         trade_dict = self.bot.guild_dict[ctx.guild.id].setdefault('trade_dict', {})
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         error = False
@@ -644,6 +652,7 @@ class Trading(commands.Cog):
         trade_dict = self.bot.guild_dict[ctx.guild.id].setdefault('trade_dict', {})
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        report_emoji = ctx.bot.custom_emoji.get('trade_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         if not wanted_pokemon or "open trade" in wanted_pokemon:
             wanted_pokemon = "Open Trade (DM User)"
@@ -670,7 +679,7 @@ class Trading(commands.Cog):
             if trainercode:
                 codemsg += f"\n{ctx.author.display_name}'s trainer code is: **{trainercode}**"
         cancel_inst = f"{ctx.author.display_name} may cancel the trade with :stop_button: or edit trade details with {info_emoji}"
-        trade_msg = await ctx.send(f"{offered_pokemon_str} {instructions}\n{cancel_inst}{codemsg}\nUse {list_emoji} to list all active trades!", embed=trade_embed)
+        trade_msg = await ctx.send(f"{offered_pokemon_str} {instructions}\n{cancel_inst}{codemsg}\nUse {report_emoji} to list new or {list_emoji} to list all active trades!", embed=trade_embed)
         if "open trade" not in wanted_pokemon.lower():
             for i in range(len(wanted_pokemon.split('\n'))):
                 await asyncio.sleep(0.25)
@@ -679,6 +688,8 @@ class Trading(commands.Cog):
         await utils.safe_reaction(trade_msg, ctx.bot.custom_emoji.get('trade_stop', '\u23f9'))
         await asyncio.sleep(0.25)
         await utils.safe_reaction(trade_msg, info_emoji)
+        await asyncio.sleep(0.25)
+        await utils.safe_reaction(trade_msg, report_emoji)
         await asyncio.sleep(0.25)
         await utils.safe_reaction(trade_msg, list_emoji)
         ctx.bot.guild_dict[ctx.guild.id]['trade_dict'][trade_msg.id] = {

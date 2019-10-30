@@ -99,6 +99,20 @@ class Raid(commands.Cog):
                 return
             await message.edit(embed=newembed)
             self.bot.guild_dict[guild.id].get(report_dict, {})[channel.id]['moveset'] = moveset
+        elif str(payload.emoji) == self.bot.custom_emoji.get('raid_report', '\U0001F4E2') or str(payload.emoji) == self.bot.custom_emoji.get('meetup_report', '\U0001F4E2'):
+            ctx.author, ctx.message.author = user, user
+            channel = self.bot.get_channel(payload.channel_id)
+            ctx.message.channel, ctx.channel = channel, channel
+            ctx.message.content = ""
+            if report_dict == "raidtrain_dict":
+                return await ctx.invoke(self.bot.get_command('train'))
+            elif report_dict == "meetup_dict":
+                return await ctx.invoke(self.bot.get_command('meetup'))
+            else:
+                if self.bot.guild_dict[guild.id][report_dict][report_channel]['type'] == "exraid" or self.bot.guild_dict[guild.id][report_dict][report_channel]['egg_level'] == "EX":
+                    return await ctx.invoke(self.bot.get_command('exraid'))
+                else:
+                    return await ctx.invoke(self.bot.get_command('raid'))
         elif react_message == "raid_report" or react_message == "raid_message":
             if str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
                 channel = self.bot.get_channel(payload.channel_id)
@@ -1468,7 +1482,7 @@ class Raid(commands.Cog):
                         loc_url = utils.create_gmaps_query(self.bot, location, message.channel, type="raid")
                         gym_info = ""
                         if gym_matching_cog:
-                            gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, location, "raid", dupe_check=False)
+                            gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, location, "raid", dupe_check=False, autocorrect=False)
                             if gym_url:
                                 loc_url = gym_url
                         if not location:
@@ -1504,7 +1518,8 @@ class Raid(commands.Cog):
             raid_embed.clear_fields()
             raid_embed.add_field(name=_('**Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=raid_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if not message.embeds:
+                await utils.safe_delete(message)
 
     async def _raid(self, ctx, content):
         message = ctx.message
@@ -1514,6 +1529,7 @@ class Raid(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
+        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
         list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         egg_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'].get(ctx.channel.id, {}).get('egg_level')
@@ -1647,9 +1663,9 @@ class Raid(commands.Cog):
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=pokemon.img_url)
         raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1")
-        ctx.raidreport = await message.channel.send(content=f"Meowth! {str(pokemon).title()} raid reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, {cancel_reaction} to cancel, or {list_emoji} to list all raids!", embed=raid_embed)
+        ctx.raidreport = await message.channel.send(content=f"Meowth! {str(pokemon).title()} raid reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\n\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!", embed=raid_embed)
         await asyncio.sleep(1)
-        raidmsg = f"{roletest}Meowth! {str(pokemon).title()} raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
+        raidmsg = f"{roletest}Meowth! {str(pokemon).title()} raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await raid_message.pin()
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
@@ -1712,6 +1728,7 @@ class Raid(commands.Cog):
             await utils.safe_reaction(raid_message, reaction)
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.raidreport, reaction)
+        await utils.safe_reaction(ctx.raidreport, report_emoji)
         await utils.safe_reaction(ctx.raidreport, list_emoji)
         return raid_channel
 
@@ -1725,6 +1742,7 @@ class Raid(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
+        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
         list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         raidegg_split = content.split()
@@ -1833,9 +1851,9 @@ class Raid(commands.Cog):
             raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=message.author.display_name, timestamp=timestamp), icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
             raid_embed.set_thumbnail(url=raid_img_url)
             raid_embed.set_author(name=f"Level {egg_level} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1")
-            ctx.raidreport = await message.channel.send(f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, {cancel_reaction} to cancel, or {list_emoji} to list all raids!", embed=raid_embed)
+            ctx.raidreport = await message.channel.send(f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\n\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!", embed=raid_embed)
             await asyncio.sleep(1)
-            raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
+            raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
             raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
             await raid_message.pin()
             self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
@@ -1880,6 +1898,7 @@ class Raid(commands.Cog):
                 await utils.safe_reaction(raid_message, reaction)
                 await asyncio.sleep(0.25)
                 await utils.safe_reaction(ctx.raidreport, reaction)
+            await utils.safe_reaction(ctx.raidreport, report_emoji)
             await utils.safe_reaction(ctx.raidreport, list_emoji)
             return raid_channel
 
@@ -2022,6 +2041,7 @@ class Raid(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
+        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
         list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         try:
             report_channelchannel = self.bot.get_channel(eggdetails['report_channel'])
@@ -2063,8 +2083,8 @@ class Raid(commands.Cog):
         raid_gmaps_link = oldembed.url
         if egg_level.isdigit():
             hatchtype = 'raid'
-            raidreportcontent = f"Meowth! The egg has hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, {cancel_reaction} to cancel, or {list_emoji} to list all raids!"
-            raidmsg = f"Meowth! The egg reported by {raid_messageauthor.mention} in {report_channelchannel.mention} hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
+            raidreportcontent = f"Meowth! The egg has hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate in {raid_channel.mention}\n\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!"
+            raidmsg = f"Meowth! The egg reported by {raid_messageauthor.mention} in {report_channelchannel.mention} hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
         elif egg_level == 'EX':
             hatchtype = 'exraid'
             if self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['invite']['enabled']:
@@ -2074,7 +2094,7 @@ class Raid(commands.Cog):
                 invitemsgstr = _("Coordinate")
                 invitemsgstr2 = ""
             raidreportcontent = _('Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. {invitemsgstr} coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=eggdetails['address'], invitemsgstr=invitemsgstr, raid_channel=raid_channel.mention)
-            raidmsg = f"Meowth! {str(pokemon)} EX raid reported by {raid_messageauthor.mention} in {report_channelchannel.mention}! Details: {eggdetails['address']}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands.\n\nThis channel will be deleted five minutes after the timer expires."
+            raidmsg = f"Meowth! {str(pokemon)} EX raid reported by {raid_messageauthor.mention} in {report_channelchannel.mention}! Details: {eggdetails['address']}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
         raid_channel_name = f"{pokemon.name.lower()}{'-'+pokemon.form.lower() if pokemon.form else ''}{'-alolan' if pokemon.alolan else ''}-" + utils.sanitize_channel_name(eggdetails['address'])
         if pokemon.alolan:
             raid = discord.utils.get(raid_channel.guild.roles, name=f"{pokemon.name.lower()}-alolan")
@@ -2237,7 +2257,7 @@ class Raid(commands.Cog):
                         loc_url = utils.create_gmaps_query(self.bot, location, message.channel, type="raid")
                         gym_info = ""
                         if gym_matching_cog:
-                            gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, location, "raid", dupe_check=False)
+                            gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, location, "raid", dupe_check=False, autocorrect=False)
                             if gym_url:
                                 loc_url = gym_url
                         if not location:
@@ -2250,7 +2270,8 @@ class Raid(commands.Cog):
             raid_embed.clear_fields()
             raid_embed.add_field(name=_('**EX Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=raid_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if not message.embeds:
+                await utils.safe_delete(message)
 
     async def _exraid(self, ctx, location):
         message = ctx.message
@@ -2261,6 +2282,7 @@ class Raid(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
+        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
         list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         fromegg = False
@@ -2310,9 +2332,9 @@ class Raid(commands.Cog):
         else:
             invitemsgstr = _("Coordinate")
             invitemsgstr2 = ""
-        ctx.raidreport = await channel.send(content=f"Meowth! EX raid egg reported by {message.author.mention}! Details: {raid_details}. {invitemsgstr} in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, {cancel_reaction} to cancel, or {list_emoji} to list all raids!", embed=raid_embed)
+        ctx.raidreport = await channel.send(content=f"Meowth! EX raid egg reported by {message.author.mention}! Details: {raid_details}. {invitemsgstr} in {raid_channel.mention}\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!", embed=raid_embed)
         await asyncio.sleep(1)
-        raidmsg = f"Meowth! EX raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
+        raidmsg = f"Meowth! EX raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await raid_message.pin()
         self.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
@@ -2353,6 +2375,7 @@ class Raid(commands.Cog):
             await utils.safe_reaction(raid_message, reaction)
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.raidreport, reaction)
+        await utils.safe_reaction(ctx.raidreport, report_emoji)
         await utils.safe_reaction(ctx.raidreport, list_emoji)
         return raid_channel
 
@@ -2509,7 +2532,8 @@ class Raid(commands.Cog):
             raid_embed.clear_fields()
             raid_embed.add_field(name=_('**Meetup Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=raid_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if not message.embeds:
+                await utils.safe_delete(message)
 
     async def _meetup(self, ctx, location):
         if "train" in str(ctx.command):
@@ -2526,6 +2550,7 @@ class Raid(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
+        report_emoji = self.bot.custom_emoji.get('meetup_report', '\U0001F4E2')
         list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         raid_details = location
@@ -2543,9 +2568,9 @@ class Raid(commands.Cog):
         raid_embed.set_footer(text=f"Reported by @{ctx.author.display_name} - {timestamp}", icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=raid_img_url)
         raid_embed.set_author(name=f"{meetup_type.title()} Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/{meetup_type}.png?cache=1")
-        ctx.raidreport = await channel.send(content=f"Meowth! {meetup_type.title()} reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the meetup, {cancel_reaction} to cancel, or {list_emoji} to list all meetups!", embed=raid_embed)
+        ctx.raidreport = await channel.send(content=f"Meowth! {meetup_type.title()} reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all meetups!", embed=raid_embed)
         await asyncio.sleep(1)
-        raidmsg = f"Meowth! {meetup_type.title()} reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands.\n\nThis channel will be deleted five minutes after the timer expires."
+        raidmsg = f"Meowth! {meetup_type.title()} reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\Click the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
@@ -2553,6 +2578,7 @@ class Raid(commands.Cog):
             await utils.safe_reaction(raid_message, reaction)
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.raidreport, reaction)
+        await utils.safe_reaction(ctx.raidreport, report_emoji)
         await utils.safe_reaction(ctx.raidreport, list_emoji)
         await raid_message.pin()
         self.bot.guild_dict[message.guild.id][meetup_dict][raid_channel.id] = {
@@ -2843,7 +2869,8 @@ class Raid(commands.Cog):
             train_embed.clear_fields()
             train_embed.add_field(name=_('**Raid Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=train_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if not message.embeds:
+                await utils.safe_delete(message)
 
     @train.command(name="channel")
     @checks.allowtrainreport()
@@ -3956,19 +3983,10 @@ class Raid(commands.Cog):
             pkmn = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('pkmn_obj', None)
             pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
             if pkmn:
-                if not weather and not user:
-                    try:
-                        ctrsmessage = await channel.fetch_message(self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('ctrsmessage', None))
-                        ctrsembed = ctrsmessage.embeds[0]
-                        ctrsembed.remove_field(6)
-                        ctrsembed.remove_field(6)
-                        return await channel.send(content=ctrsmessage.content, embed=ctrsembed)
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, IndexError):
-                        pass
                 ctrs_dict = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('ctrs_dict', {})
                 moveset = self.bot.guild_dict[guild.id]['raidchannel_dict'][channel.id].get('moveset', 0)
                 movesetstr = ctrs_dict.get(moveset, {}).get('moveset', "Unknown Moveset")
-                if ctrs_dict:
+                if ctrs_dict and not user:
                     ctrsembed = copy.deepcopy(ctrs_dict[moveset]['embed'])
                     ctrsembed.remove_field(6)
                     ctrsembed.remove_field(6)
@@ -4035,7 +4053,7 @@ class Raid(commands.Cog):
                 url = url.replace(f"users/{user}", 'levels/30')
                 async with aiohttp.ClientSession() as sess:
                     async with sess.get(url) as resp:
-                        data = await resp.json()
+                        data = await resp.json(content_type=None)
 
         data = data['attackers'][0]
         raid_cp = data['cp']
@@ -4081,8 +4099,7 @@ class Raid(commands.Cog):
         ctrs_embed.add_field(name=_("Difficulty Estimate:"), value=_("{est} Trainers").format(est=round(est, 2)), inline=True)
         ctrs_embed.add_field(name=_("Results with {userstr} attackers").format(userstr=userstr), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pkmn.name.replace('-', '_').upper()), inline=True)
         if user:
-            await ctx.author.send(embed=ctrs_embed, delete_after=600)
-            return
+            return await ctx.author.send(embed=ctrs_embed, delete_after=600)
         await ctx.channel.send(embed=ctrs_embed)
 
     async def _get_generic_counters(self, guild, pkmn, weather=None):

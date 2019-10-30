@@ -329,8 +329,6 @@ class MeowthBot(commands.AutoShardedBot):
             return
 
     async def on_message(self, message):
-        if "niandick" in message.content.lower():
-            await utils.safe_reaction(message, "\U0001F346")
         if (not message.author.bot):
             await self.process_commands(message)
 

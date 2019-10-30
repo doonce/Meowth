@@ -115,6 +115,11 @@ class Lure(commands.Cog):
                 ctx.author = user
                 if user.id == lure_dict['report_author'] or can_manage:
                     await self.edit_lure_info(ctx, message)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('lure_report', '\U0001F4E2'):
+                ctx = await self.bot.get_context(message)
+                ctx.author, ctx.message.author = user, user
+                await message.remove_reaction(payload.emoji, user)
+                return await ctx.invoke(self.bot.get_command('lure'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
                 await asyncio.sleep(0.25)
                 await message.remove_reaction(payload.emoji, self.bot.user)
@@ -363,7 +368,8 @@ class Lure(commands.Cog):
             lure_embed.clear_fields()
             lure_embed.add_field(name=_('**Lure Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=lure_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if not message.embeds:
+                await utils.safe_delete(message)
 
     async def send_lure(self, ctx, lure_type, location, timer):
         dm_dict = {}
@@ -377,14 +383,15 @@ class Lure(commands.Cog):
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
         info_emoji = ctx.bot.custom_emoji.get('lure_info', '\u2139')
         expire_emoji = self.bot.custom_emoji.get('lure_expire', '\U0001F4A8')
+        report_emoji = self.bot.custom_emoji.get('lure_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [catch_emoji, expire_emoji, info_emoji, list_emoji]
+        react_list = [catch_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         lure_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         if timer:
-            lure_msg = f"Meowth! {lure_type.title()} lure reported by {ctx.author.mention}! Details: {location}\nUse {catch_emoji} if you visited, {info_emoji} to edit info, or {list_emoji} to list all lures!"
+            lure_msg = f"Meowth! {lure_type.title()} lure reported by {ctx.author.mention}! Details: {location}\n\nUse {catch_emoji} if visited, {info_emoji} to edit info, {report_emoji} to report new, or {list_emoji} to list all lures!"
         else:
-            lure_msg = f"Meowth! {lure_type.title()} lure reported by {ctx.author.mention}! Details: {location}\nUse {catch_emoji} if you visited, {expire_emoji} if the lure has disappeared, {info_emoji} to edit info, or {list_emoji} to list all lures!!"
+            lure_msg = f"Meowth! {lure_type.title()} lure reported by {ctx.author.mention}! Details: {location}\n\nUse {catch_emoji} if visited, {expire_emoji} if expired, {info_emoji} to edit info, {report_emoji} to report new, or {list_emoji} to list all lures!!"
         lure_embed.title = _('Meowth! Click here for my directions to the lure!')
         lure_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="lure")

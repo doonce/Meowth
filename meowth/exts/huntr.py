@@ -146,6 +146,11 @@ class Huntr(commands.Cog):
                 ctx.message.author, ctx.author = user, user
                 ctx.channel, ctx.message.channel = raid_channel, raid_channel
                 await raid_cog._rsvp(ctx, "here", "1")
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_report', '\U0001F4E2'):
+                ctx = await self.bot.get_context(message)
+                ctx.author, ctx.message.author = user, user
+                await message.remove_reaction(payload.emoji, user)
+                return await ctx.invoke(self.bot.get_command('raid'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
@@ -173,6 +178,11 @@ class Huntr(commands.Cog):
                 ctx.message.author, ctx.author = user, user
                 ctx.channel, ctx.message.channel = raid_channel, raid_channel
                 await raid_cog._rsvp(ctx, "here", "1")
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_report', '\U0001F4E2'):
+                ctx = await self.bot.get_context(message)
+                ctx.author, ctx.message.author = user, user
+                await message.remove_reaction(payload.emoji, user)
+                return await ctx.invoke(self.bot.get_command('raid'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
@@ -194,8 +204,9 @@ class Huntr(commands.Cog):
         maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
+        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [maybe_reaction, omw_reaction, here_reaction, list_emoji]
+        react_list = [maybe_reaction, omw_reaction, here_reaction, report_emoji, list_emoji]
         if not auto_raid and not auto_egg and not auto_wild:
             return
         if not reactuser:
@@ -294,7 +305,7 @@ class Huntr(commands.Cog):
                     else:
                         roletest = _("{pokemon} - ").format(pokemon=raid.mention)
                     pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
-                    ctx.raidreport = await message.channel.send(content=f"{roletest}Meowth! {entered_raid.title()} raid reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid or use {list_emoji} to list unreported raids!", embed=raid_embed)
+                    ctx.raidreport = await message.channel.send(content=f"{roletest}Meowth! {entered_raid.title()} raid reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!", embed=raid_embed)
                     await asyncio.sleep(0.25)
                     await utils.safe_reaction(ctx.raidreport, self.bot.custom_emoji.get('huntr_report', '\u2705'))
                     for reaction in react_list:
@@ -326,7 +337,7 @@ class Huntr(commands.Cog):
                     if not raid_embed:
                         return
                     pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
-                    ctx.raidreport = await message.channel.send(content=f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid or use {list_emoji} to list unreported raids!", embed=raid_embed)
+                    ctx.raidreport = await message.channel.send(content=f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!", embed=raid_embed)
                     await asyncio.sleep(0.25)
                     await utils.safe_reaction(ctx.raidreport, self.bot.custom_emoji.get('huntr_report', '\u2705'))
                     for reaction in react_list:
@@ -429,6 +440,7 @@ class Huntr(commands.Cog):
         maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
+        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [huntr_emoji, maybe_reaction, omw_reaction, here_reaction, list_emoji]
         if not reactuser:
@@ -513,7 +525,7 @@ class Huntr(commands.Cog):
                             roletest = ""
                         else:
                             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-                        raidmsg = f"{roletest}Meowth! {str(pokemon)} raid reported by {message.author.mention}! Details: {raid_details}. React below if you want to make a channel for this raid or use {list_emoji} to list unreported raids!"
+                        raidmsg = f"{roletest}Meowth! {str(pokemon)} raid reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!", embed=raid_embed)
                         ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
                         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {str(pokemon)} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                 elif report_details.get('type', None) == "egg":
@@ -536,7 +548,7 @@ class Huntr(commands.Cog):
                             await raid_channel.send(embed=embed)
                         return
                     else:
-                        raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React below if you want to make a channel for this egg or use {list_emoji} to list unreported raids!"
+                        raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!", embed=raid_embed)
                         ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
                         dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! Level {egg_level} raid egg reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                 self.bot.guild_dict[message.guild.id]['pokealarm_dict'][ctx.raidreport.id] = {
@@ -867,12 +879,13 @@ class Huntr(commands.Cog):
         despawn_emoji = ctx.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
+        report_emoji = self.bot.custom_emoji.get('wild_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        reaction_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji, list_emoji]
+        reaction_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji, report_emoji, list_emoji]
         despawn = (int(expire.split(' ')[0]) * 60) + int(expire.split(' ')[2])
         if despawn != 2700:
             reaction_list.remove(despawn_emoji)
-        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}!{stop_str}Coordinates: {wild_coordinates}{iv_str}\nUse {omw_emoji} if on your way, {catch_emoji} if you caught it{', ' + despawn_emoji + ' if it despawned' if despawn == 2700 else ''}, {info_emoji} to edit details, or {list_emoji} to list all wilds!", embed=wild_embed)
+        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}!{stop_str}Coordinates: {wild_coordinates}{iv_str}\n\nUse {omw_emoji} if coming, {catch_emoji} if caught{', ' + despawn_emoji + ' if despawned' if despawn == 2700 else ''}, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all wilds!", embed=wild_embed)
         dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), iv_percent, level, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
         for reaction in reaction_list:
             await asyncio.sleep(0.25)
@@ -912,6 +925,7 @@ class Huntr(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
+        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
@@ -962,7 +976,7 @@ class Huntr(commands.Cog):
         if not raid_channel:
             return
         await asyncio.sleep(1)
-        ctx.raidreport = await message.channel.send(content=f"Meowth! {str(pokemon).title()} raid reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, {cancel_reaction} to cancel, or {list_emoji} to list all raids!", embed=raid_embed)
+        ctx.raidreport = await message.channel.send(content=f"Meowth! {str(pokemon).title()} raid reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!", embed=raid_embed)
         if pokemon.alolan:
             raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
         else:
@@ -971,7 +985,7 @@ class Huntr(commands.Cog):
             roletest = ""
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-        raidmsg = f"{roletest}Meowth! {str(pokemon).title()} raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel.\n\nThis channel will be deleted five minutes after the timer expires."
+        raidmsg = f"{roletest}Meowth! {str(pokemon).title()} raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel.\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
@@ -979,6 +993,7 @@ class Huntr(commands.Cog):
             await utils.safe_reaction(raid_message, reaction)
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.raidreport, reaction)
+        await utils.safe_reaction(ctx.raidreport, report_emoji)
         await utils.safe_reaction(ctx.raidreport, list_emoji)
         await raid_message.pin()
         level = utils.get_level(self.bot, str(pokemon))
@@ -1053,6 +1068,7 @@ class Huntr(commands.Cog):
         omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
+        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
@@ -1076,8 +1092,8 @@ class Huntr(commands.Cog):
         if not raid_channel:
             return
         await asyncio.sleep(1)
-        ctx.raidreport = await message.channel.send(content=f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, {cancel_reaction} to cancel, or {list_emoji} to list all raids!", embed=raid_embed)
-        raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if you are interested, {omw_reaction} if you are on your way, {here_reaction} if you are at the raid, or {cancel_reaction} to cancel.\n\nThis channel will be deleted five minutes after the timer expires."
+        ctx.raidreport = await message.channel.send(content=f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\n\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!", embed=raid_embed)
+        raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel.\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
@@ -1085,6 +1101,7 @@ class Huntr(commands.Cog):
             await utils.safe_reaction(raid_message, reaction)
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.raidreport, reaction)
+        await utils.safe_reaction(ctx.raidreport, report_emoji)
         await utils.safe_reaction(ctx.raidreport, list_emoji)
         await raid_message.pin()
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {

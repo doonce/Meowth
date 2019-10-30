@@ -159,6 +159,11 @@ class Nest(commands.Cog):
                         ctx.author = user
                         if user.id == nest_dict[channel.id][nest]['reports'][message.id]['report_author'] or can_manage:
                             await self.edit_nest_info(ctx, message)
+                    elif str(payload.emoji) == self.bot.custom_emoji.get('nest_report', '\U0001F4E2'):
+                        ctx = await self.bot.get_context(message)
+                        ctx.author, ctx.message.author = user, user
+                        await message.remove_reaction(payload.emoji, user)
+                        return await ctx.invoke(self.bot.get_command('nest'))
                     elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
                         ctx = await self.bot.get_context(message)
                         await asyncio.sleep(0.25)
@@ -364,7 +369,8 @@ class Nest(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         list_messages = []
         error = None
-        await utils.safe_delete(message)
+        if not message.embeds:
+            await utils.safe_delete(message)
         while True:
             async with ctx.typing():
                 nest_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/POI_Submission_Illustration_03.png?cache=1')
@@ -444,8 +450,9 @@ class Nest(commands.Cog):
         expire_emoji = self.bot.custom_emoji.get('nest_expire', '\U0001F4A8')
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
         info_emoji = ctx.bot.custom_emoji.get('nest_info', '\u2139')
+        report_emoji = ctx.bot.custom_emoji.get('nest_report', '\U0001F4E2')
         list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [catch_emoji, expire_emoji, info_emoji, list_emoji]
+        react_list = [catch_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_name.split())}"
         migration_utc = self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
@@ -464,7 +471,7 @@ class Nest(commands.Cog):
         nest_embed.set_thumbnail(url=pokemon.img_url)
         pokemon.shiny = False
         dm_dict = {}
-        ctx.nestreportmsg = await ctx.send(f"Meowth! {str(pokemon)} nest reported by {ctx.author.mention}! Details: {nest_name.title()}!\nUse {catch_emoji} if you visited, {expire_emoji} if expired, {info_emoji} to edit details, or {list_emoji} to list all nests!", embed=nest_embed)
+        ctx.nestreportmsg = await ctx.send(f"Meowth! {str(pokemon)} nest reported by {ctx.author.mention}! Details: {nest_name.title()}!\n\nUse {catch_emoji} if you visited, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all nests!", embed=nest_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.nestreportmsg, reaction)

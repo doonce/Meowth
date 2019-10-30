@@ -124,6 +124,11 @@ class Pvp(commands.Cog):
                 await ctx.invoke(self.bot.get_command("list pvp"))
                 await asyncio.sleep(5)
                 return await utils.safe_reaction(message, payload.emoji)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('pvp_report', '\U0001F4E2'):
+                ctx = await self.bot.get_context(message)
+                ctx.author, ctx.message.author = user, user
+                await message.remove_reaction(payload.emoji, user)
+                return await ctx.invoke(self.bot.get_command('pvp'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('pvp_stop', '\u23f9'):
                 for reaction in message.reactions:
                     if reaction.emoji == self.bot.custom_emoji.get('pvp_stop', '\u23f9') and (reaction.count >= 3 or can_manage or user.id == pvp_dict['report_author']):
@@ -428,7 +433,8 @@ class Pvp(commands.Cog):
             pvp_embed.clear_fields()
             pvp_embed.add_field(name=_('**PVP Request Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=pvp_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if not message.embeds:
+                await utils.safe_delete(message)
 
     async def _pvp(self, ctx, pvp_type, location, timer):
         dm_dict = {}
@@ -439,9 +445,10 @@ class Pvp(commands.Cog):
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour)
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         stop_emoji = self.bot.custom_emoji.get('pvp_stop', '\u23f9')
+        report_emoji = self.bot.custom_emoji.get('pvp_report', '\U0001F4E2')
         list_emoji = ist_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [stop_emoji, list_emoji]
-        pvp_msg = f"Meowth! PVP Requested by {ctx.author.mention}.\nUse {stop_emoji} to cancel or {list_emoji} to list all PVP!"
+        react_list = [stop_emoji, report_emoji, list_emoji]
+        pvp_msg = f"Meowth! PVP Requested by {ctx.author.mention}.\n\nUse {stop_emoji} to cancel, {report_emoji} to report new, or {list_emoji} to list all PVP!"
         pvp_embed.title = _('Meowth! Click here for my directions to the PVP!')
         pvp_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="pvp")
@@ -622,7 +629,7 @@ class Pvp(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
-            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "pvp", dupe_check=False)
+            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "pvp", dupe_check=False, autocorrect=False)
             if stop_url:
                 loc_url = stop_url
                 pvp_embed.description = stop_info

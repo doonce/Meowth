@@ -104,6 +104,11 @@ class Research(commands.Cog):
                 for reaction in message.reactions:
                     if reaction.emoji == self.bot.custom_emoji.get('research_expired', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         await self.expire_research(message)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('research_report', '\U0001F4E2'):
+                ctx = await self.bot.get_context(message)
+                ctx.author, ctx.message.author = user, user
+                await message.remove_reaction(payload.emoji, user)
+                return await ctx.invoke(self.bot.get_command('research'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
@@ -248,7 +253,8 @@ class Research(commands.Cog):
             research_embed.clear_fields()
             research_embed.add_field(name=_('**Research Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=research_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if not message.embeds:
+                await utils.safe_delete(message)
 
     async def send_research(self, ctx, location, quest, reward):
         dm_dict = {}
@@ -257,8 +263,9 @@ class Research(commands.Cog):
         to_midnight = 24*60*60 - ((timestamp-timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
         complete_emoji = self.bot.custom_emoji.get('research_complete', '\u2705')
         expire_emoji = self.bot.custom_emoji.get('research_expired', '\ud83d\udca8')
+        report_emoji = self.bot.custom_emoji.get('research_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [complete_emoji, expire_emoji, list_emoji]
+        react_list = [complete_emoji, expire_emoji, report_emoji, list_emoji]
         research_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
         dust = re.search(r'(?i)dust', reward)
@@ -286,14 +293,14 @@ class Research(commands.Cog):
         starpiece = re.search(r'(?i)star piece', reward)
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module"]
         other_reward = any(x in reward.lower() for x in reward_list)
-        research_msg = f"Meowth! Field Research reported by {ctx.author.mention}! Details: {location}\nUse {complete_emoji} if you completed the quest, {expire_emoji} if the quest has disappeared, or {list_emoji} to list all research!"
+        research_msg = f"Meowth! Field Research reported by {ctx.author.mention}! Details: {location}\n\nUse {complete_emoji} if completed, {expire_emoji} if expired, {report_emoji} to report new, or {list_emoji} to list all research!"
         research_embed.title = _('Meowth! Click here for my directions to the research!')
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=ctx.author.name)
         loc_url = utils.create_gmaps_query(self.bot, location, ctx.channel, type="research")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
-            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "research", dupe_check=False)
+            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "research", dupe_check=False, autocorrect=False)
             if stop_url:
                 loc_url = stop_url
         if not location:

@@ -111,6 +111,11 @@ class Invasion(commands.Cog):
                 await message.remove_reaction(payload.emoji, user)
                 ctx.author = user
                 await self.add_invasion_info(ctx, message, user)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('invasion_report', '\U0001F4E2'):
+                ctx = await self.bot.get_context(message)
+                ctx.author, ctx.message.author = user, user
+                await message.remove_reaction(payload.emoji, user)
+                return await ctx.invoke(self.bot.get_command('invasion'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
@@ -257,6 +262,7 @@ class Invasion(commands.Cog):
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8')
         info_emoji = ctx.bot.custom_emoji.get('invasion_info', '\u2139')
+        report_emoji = self.bot.custom_emoji.get('invasion_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         author = ctx.guild.get_member(invasion_dict.get('report_author', None))
         if author:
@@ -295,14 +301,14 @@ class Invasion(commands.Cog):
             else:
                 index += 1
         if pokemon:
-            invasion_msg = f"Meowth! {pokemon.name.title()} Invasion reported by {author.mention}! Details: {nearest_stop}\nUse {complete_emoji} if you completed the invasion, {info_emoji} to edit details, or {list_emoji} to list all invasions!"
+            invasion_msg = f"Meowth! {pokemon.name.title()} Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} if completed, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         elif reward_type:
-            invasion_msg = f"Meowth! {reward_type.title()} Invasion reported by {author.mention}! Details: {nearest_stop}\nUse {complete_emoji} if you completed the invasion, {info_emoji} to edit details, or {list_emoji} to list all invasions!"
+            invasion_msg = f"Meowth! {reward_type.title()} Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} if completed, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         else:
-            invasion_msg = f"Meowth! Invasion reported by {author.mention}! Details: {nearest_stop}\nUse {complete_emoji} if you completed the invasion, {info_emoji} to edit details, or {list_emoji} to list all invasions!"
+            invasion_msg = f"Meowth! Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} completed, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         for reaction in ctx.message.reactions:
             if reaction.emoji == self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8'):
-                invasion_msg = invasion_msg.replace(f"completed the invasion", f"completed the invasion, {expire_emoji} if the invasion has disappeared")
+                invasion_msg = invasion_msg.replace(f"if completed", f"if completed, {expire_emoji} if expired")
                 break
         try:
             await message.edit(content=invasion_msg, embed=invasion_embed)
@@ -502,7 +508,8 @@ class Invasion(commands.Cog):
             invasion_embed.clear_fields()
             invasion_embed.add_field(name=_('**Invasion Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you **{error}**! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=invasion_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if not message.embeds:
+                await utils.safe_delete(message)
 
     async def send_invasion(self, ctx, location, reward=None, gender=None, timer=None):
         dm_dict = {}
@@ -516,8 +523,9 @@ class Invasion(commands.Cog):
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8')
         info_emoji = ctx.bot.custom_emoji.get('invasion_info', '\u2139')
+        report_emoji = self.bot.custom_emoji.get('invasion_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [complete_emoji, expire_emoji, info_emoji, list_emoji]
+        react_list = [complete_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
         type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         pokemon = None
@@ -552,14 +560,14 @@ class Invasion(commands.Cog):
                 invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward_str}", inline=True)
                 invasion_embed.set_thumbnail(url=pokemon.img_url)
         if pokemon:
-            invasion_msg = f"Meowth! {pokemon.name.title()} Invasion reported by {ctx.author.mention}! Details: {location}\nUse {complete_emoji} if you completed the invasion, {expire_emoji} if the invasion has disappeared, {info_emoji} to edit details, or {list_emoji} to list all invasions!"
+            invasion_msg = f"Meowth! {pokemon.name.title()} Invasion reported by {ctx.author.mention}! Details: {location}\n\nUse {complete_emoji} if completed, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         elif reward_type:
-            invasion_msg = f"Meowth! {reward_type.title()} Invasion reported by {ctx.author.mention}! Details: {location}\nUse {complete_emoji} if you completed the invasion, {expire_emoji} if the invasion has disappeared, {info_emoji} to edit details, or {list_emoji} to list all invasions!"
+            invasion_msg = f"Meowth! {reward_type.title()} Invasion reported by {ctx.author.mention}! Details: {location}\n\nUse {complete_emoji} if completed, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         else:
-            invasion_msg = f"Meowth! Invasion reported by {ctx.author.mention}! Details: {location}\nUse {complete_emoji} if you completed the invasion, {expire_emoji} if the invasion has disappeared, {info_emoji} to edit details, or {list_emoji} to list all invasions!"
+            invasion_msg = f"Meowth! Invasion reported by {ctx.author.mention}! Details: {location}\n\nUse {complete_emoji} if completed, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         if timer:
             react_list.remove(expire_emoji)
-            invasion_msg = invasion_msg.replace(f", {expire_emoji} if the invasion has disappeared", "")
+            invasion_msg = invasion_msg.replace(f", {expire_emoji} if expired", "")
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         invasion_embed.title = _('Meowth! Click here for my directions to the invasion!')
         invasion_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"
@@ -567,7 +575,7 @@ class Invasion(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
-            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "invasion", dupe_check=False)
+            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "invasion", dupe_check=False, autocorrect=False)
             if stop_url:
                 loc_url = stop_url
                 invasion_embed.description = stop_info

@@ -30,11 +30,11 @@ class TrainerData:
     def __init__(self, bot, data):
         self._bot = bot
         self._data = data
-        self.raid_reports = data.get('raid_reports')
-        self.ex_reports = data.get('ex_reports')
-        self.wild_reports = data.get('wild_reports')
-        self.egg_reports = data.get('egg_reports')
-        self.research_reports = data.get('research_reports')
+        self.raid_reports = data.get('reports').get('raid')
+        self.ex_reports = data.get('reports').get('ex')
+        self.wild_reports = data.get('reports').get('wild')
+        self.egg_reports = data.get('reports').get('egg')
+        self.research_reports = data.get('reports').get('research')
         self.silph_id = data.get('silphid')
         self.silph = self.silph_profile
 

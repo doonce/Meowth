@@ -71,6 +71,11 @@ class Wild(commands.Cog):
                 await message.remove_reaction(payload.emoji, user)
                 ctx.author = user
                 await self.add_wild_info(ctx, message)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_report', '\U0001F4E2'):
+                ctx = await self.bot.get_context(message)
+                ctx.author, ctx.message.author = user, user
+                await message.remove_reaction(payload.emoji, user)
+                return await ctx.invoke(self.bot.get_command('wild'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
@@ -189,7 +194,7 @@ class Wild(commands.Cog):
         poi_info = ""
         nearest_stop = ""
         if gym_matching_cog:
-            poi_info, location, poi_url = await gym_matching_cog.get_poi_info(ctx, location, "wild")
+            poi_info, location, poi_url = await gym_matching_cog.get_poi_info(ctx, location, "wild", autocorrect=False)
             if poi_url:
                 wild_gmaps_link = poi_url
                 wild_coordinates = poi_url.split("query=")[1]
@@ -540,8 +545,7 @@ class Wild(commands.Cog):
             async with ctx.typing():
                 if pokemon and location:
                     content = f"{pokemon} {location}"
-                    await self._wild(ctx, content)
-                    return
+                    return await self._wild(ctx, content)
                 else:
                     wild_embed.add_field(name=_('**New Wild Report**'), value=_("Meowth! I'll help you report a wild!\n\nFirst, I'll need to know what **pokemon** you encountered. Reply with the name of a **pokemon**. Include any forms, size, gender if necessary. You can reply with **cancel** to stop anytime."), inline=False)
                     mon_wait = await channel.send(embed=wild_embed)
@@ -620,7 +624,8 @@ class Wild(commands.Cog):
             wild_embed.clear_fields()
             wild_embed.add_field(name=_('**Wild Report Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=wild_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if not message.embeds:
+                await utils.safe_delete(message)
 
     async def _wild(self, ctx, content):
         message = ctx.message
@@ -632,8 +637,9 @@ class Wild(commands.Cog):
         despawn_emoji = self.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        report_emoji = self.bot.custom_emoji.get('wild_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji, list_emoji]
+        react_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji, report_emoji, list_emoji]
         converter = commands.clean_content()
         iv_test = await converter.convert(ctx, content.split()[-1])
         iv_test = iv_test.lower().strip()
@@ -688,7 +694,7 @@ class Wild(commands.Cog):
         }
         despawn = 2700
         wild_embed = await self.make_wild_embed(ctx, details)
-        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\nUse {omw_emoji} if on your way, {catch_emoji} if you caught it, {despawn_emoji} if it despawned, {info_emoji} to edit details, or {list_emoji} to list all wilds!", embed=wild_embed)
+        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\n\nUse {omw_emoji} if coming, {catch_emoji} if caught, {despawn_emoji} if despawned, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all wilds!", embed=wild_embed)
         dm_dict = {}
         dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         for reaction in react_list:

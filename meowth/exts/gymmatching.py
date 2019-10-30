@@ -503,7 +503,7 @@ class GymMatching(commands.Cog):
                 poi_embed.add_field(name="Current Wilds", value=('\n').join(active_wilds), inline=False)
         await ctx.send(embed=poi_embed)
 
-    async def poi_match_prompt(self, ctx, poi_name, gyms=None, stops=None):
+    async def poi_match_prompt(self, ctx, poi_name, gyms=None, stops=None, autocorrect=True):
         channel = ctx.channel
         author = ctx.author
         match, score = self.poi_match(poi_name, gyms, stops)
@@ -512,6 +512,8 @@ class GymMatching(commands.Cog):
         if ctx.author.bot:
             return match
         if score < 80:
+            if not autocorrect:
+                return None
             try:
                 if "train" in ctx.invoked_with.lower() or "meetup" in ctx.invoked_with.lower():
                     return False
@@ -537,7 +539,7 @@ class GymMatching(commands.Cog):
             return None
         return match
 
-    async def get_poi_info(self, ctx, details, type, dupe_check=True):
+    async def get_poi_info(self, ctx, details, type, dupe_check=True, autocorrect=True):
         message = ctx.message
         gyms = self.get_gyms(ctx.guild.id)
         stops = self.get_stops(ctx.guild.id)
@@ -551,11 +553,11 @@ class GymMatching(commands.Cog):
         if not gyms and not stops:
             return poi_info, details, False
         if type == "raid" or type == "exraid":
-            match = await self.poi_match_prompt(ctx, details, gyms, None)
+            match = await self.poi_match_prompt(ctx, details, gyms, None, autocorrect)
         elif type == "research" or type == "lure" or type == "invasion":
-            match = await self.poi_match_prompt(ctx, details, None, stops)
+            match = await self.poi_match_prompt(ctx, details, None, stops, autocorrect)
         elif type == "wild" or type == "pvp" or type == "whereis":
-            match = await self.poi_match_prompt(ctx, details, gyms, stops)
+            match = await self.poi_match_prompt(ctx, details, gyms, stops, autocorrect)
         else:
             return poi_info, details, False
         if match == False:
