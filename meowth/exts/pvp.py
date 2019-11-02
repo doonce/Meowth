@@ -708,11 +708,12 @@ class Pvp(commands.Cog):
             return
         elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
             await utils.safe_delete(rusure)
-            for report in pvp_dict:
-                report_message = await channel.fetch_message(report)
-                self.bot.loop.create_task(self.expire_pvp(report_message))
-            confirmation = await channel.send(_('PVPs reset.'), delete_after=10)
-            return
+            async with ctx.typing():
+                for report in pvp_dict:
+                    report_message = await channel.fetch_message(report)
+                    self.bot.loop.create_task(self.expire_pvp(report_message))
+                confirmation = await channel.send(_('PVPs reset.'), delete_after=10)
+                return
         else:
             return
 

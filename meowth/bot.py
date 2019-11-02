@@ -53,6 +53,7 @@ class MeowthBot(commands.AutoShardedBot):
                       **kwargs)
         super().__init__(**kwargs)
         self.logger = logging.getLogger('meowth')
+        self.channel_report_dicts = ['raidchannel_dict', 'exraidchannel_dict', 'meetup_dict', 'raidtrain_dict']
 
     @property
     def avatar(self):
@@ -360,23 +361,24 @@ class MeowthBot(commands.AutoShardedBot):
         if message.author.bot:
             return
         ctx = await self.get_context(message, cls=Context)
-        if ctx.guild and ctx.channel.id in ctx.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
-            if ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['invite']['enabled']:
-                raid_type = ctx.bot.guild_dict[ctx.guild.id]['raidchannel_dict'].get(ctx.channel.id, {}).get('type', None)
-                raid_level = ctx.bot.guild_dict[ctx.guild.id]['raidchannel_dict'].get(ctx.channel.id, {}).get('egg_level', None)
-                meetup = ctx.bot.guild_dict[ctx.guild.id]['raidchannel_dict'].get(ctx.channel.id, {}).get('meetup', {})
-                if (raid_type == "exraid" or raid_level == "EX") and not meetup:
-                    if ctx.author not in ctx.channel.overwrites:
-                        if not ctx.channel.permissions_for(ctx.author).manage_guild and not ctx.channel.permissions_for(ctx.author).manage_channels and not ctx.channel.permissions_for(ctx.author).manage_messages:
-                            ow = ctx.channel.overwrites_for(ctx.author)
-                            ow.send_messages = False
-                            try:
-                                await ctx.channel.set_permissions(ctx.author, overwrite = ow)
-                            except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                                pass
-                            await utils.safe_delete(ctx.message)
-                            await ctx.bot.on_command_error(ctx, errors.EXInviteFail())
-                            return
+        for report_dict in ctx.bot.channel_report_dicts:
+            if ctx.guild and ctx.channel.id in ctx.bot.guild_dict[ctx.guild.id].setdefault(report_dict, {}):
+                if ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['invite']['enabled']:
+                    raid_type = ctx.bot.guild_dict[ctx.guild.id][report_dict].get(ctx.channel.id, {}).get('type', None)
+                    raid_level = ctx.bot.guild_dict[ctx.guild.id][report_dict].get(ctx.channel.id, {}).get('egg_level', None)
+                    meetup = ctx.bot.guild_dict[ctx.guild.id][report_dict].get(ctx.channel.id, {}).get('meetup', {})
+                    if (raid_type == "exraid" or raid_level == "EX") and not meetup:
+                        if ctx.author not in ctx.channel.overwrites:
+                            if not ctx.channel.permissions_for(ctx.author).manage_guild and not ctx.channel.permissions_for(ctx.author).manage_channels and not ctx.channel.permissions_for(ctx.author).manage_messages:
+                                ow = ctx.channel.overwrites_for(ctx.author)
+                                ow.send_messages = False
+                                try:
+                                    await ctx.channel.set_permissions(ctx.author, overwrite = ow)
+                                except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
+                                    pass
+                                await utils.safe_delete(ctx.message)
+                                await ctx.bot.on_command_error(ctx, errors.EXInviteFail())
+                                return
         if not ctx.command:
             return
         await self.invoke(ctx)

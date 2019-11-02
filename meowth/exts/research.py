@@ -512,16 +512,17 @@ class Research(commands.Cog):
             return
         elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
             await utils.safe_delete(rusure)
-            for report in research_dict:
-                try:
-                    report_message = await channel.fetch_message(report)
-                except:
-                    await utils.expire_dm_reports(self.bot, research_dict[report].get('dm_dict', {}))
-                    del self.bot.guild_dict[guild.id]['questreport_dict'][report]
-                    return
-                self.bot.loop.create_task(self.expire_research(report_message))
-            confirmation = await channel.send(_('Research reset.'), delete_after=10)
-            return
+            async with ctx.typing():
+                for report in research_dict:
+                    try:
+                        report_message = await channel.fetch_message(report)
+                    except:
+                        await utils.expire_dm_reports(self.bot, research_dict[report].get('dm_dict', {}))
+                        del self.bot.guild_dict[guild.id]['questreport_dict'][report]
+                        return
+                    self.bot.loop.create_task(self.expire_research(report_message))
+                confirmation = await channel.send(_('Research reset.'), delete_after=10)
+                return
         else:
             return
 

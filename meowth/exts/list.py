@@ -53,7 +53,7 @@ class Listing(commands.Cog):
                         await utils.safe_delete(tag_error)
                         return
                     cty = channel.name
-                    rc_d = {**self.bot.guild_dict[guild.id]['raidchannel_dict'], **self.bot.guild_dict[guild.id]['meetup_dict'], **self.bot.guild_dict[guild.id]['raidtrain_dict']}
+                    rc_d = {**self.bot.guild_dict[guild.id]['raidchannel_dict'], **self.bot.guild_dict[guild.id]['exraidchannel_dict'], **self.bot.guild_dict[guild.id]['meetup_dict'], **self.bot.guild_dict[guild.id]['raidtrain_dict']}
                     raid_dict = {}
                     egg_dict = {}
                     exraid_list = []
@@ -655,7 +655,8 @@ class Listing(commands.Cog):
     async def _bosslist(self, ctx):
         message = ctx.message
         channel = ctx.channel
-        egg_level = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channel.id]['egg_level']
+        report_dict = await utils.get_report_dict(ctx.bot, ctx.channel)
+        egg_level = self.bot.guild_dict[message.guild.id].setdefault(report_dict, {}).get(channel.id, {}).get('egg_level', None)
         egg_level = str(egg_level)
         if egg_level == "0":
             listmsg = _(' The egg has already hatched!')
@@ -670,7 +671,7 @@ class Listing(commands.Cog):
             boss_list.append(str(pokemon).lower())
             boss_dict[str(pokemon).lower()] = {"type": "{}".format(pokemon.emoji), "total": 0, "maybe": 0, "coming": 0, "here": 0, "trainers":[]}
         boss_list.append('unspecified')
-        trainer_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channel.id]['trainer_dict'])
+        trainer_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id][report_dict][channel.id]['trainer_dict'])
         for trainer in trainer_dict:
             user = ctx.guild.get_member(trainer)
             if not user:

@@ -51,8 +51,8 @@ class Nest(commands.Cog):
         logger.info('------ BEGIN ------')
         migration_list = []
         count = 0
-        for guild in list(self.bot.guilds):
-            try:
+        try:
+            for guild in list(self.bot.guilds):
                 nest_dict = self.bot.guild_dict[guild.id].setdefault('nest_dict', {})
                 utcnow = datetime.datetime.utcnow()
                 migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest']['migration']
@@ -87,14 +87,15 @@ class Nest(commands.Cog):
                                     count += 1
                                 except:
                                     pass
-            except Exception as e:
-                print(traceback.format_exc())
-        if not migration_list:
-            migration_list = [600]
-        logger.info(f"------ END - {count} Nests Cleaned - Waiting {min(migration_list)} seconds. ------")
-        if not loop:
-            return
-        self.nest_cleanup.change_interval(seconds=min(migration_list))
+
+            if not migration_list:
+                migration_list = [600]
+            logger.info(f"------ END - {count} Nests Cleaned - Waiting {min(migration_list)} seconds. ------")
+            if not loop:
+                return
+            self.nest_cleanup.change_interval(seconds=min(migration_list))
+        except Exception as e:
+            print(traceback.format_exc())
 
     @nest_cleanup.before_loop
     async def before_cleanup(self):
@@ -805,30 +806,32 @@ class Nest(commands.Cog):
             return
         elif nest_name_reply.content.lower() == "all":
             await utils.safe_delete(nest_name_reply)
-            for nest in nest_dict:
-                if nest == "list":
-                    continue
-                for report in nest_dict[nest]['reports']:
-                    try:
-                        report_message = await channel.fetch_message(report)
-                        self.bot.loop.create_task(self.expire_nest(nest, report_message))
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                        pass
-            confirmation = await channel.send(_('Nests reset. Use **!nest time** to set a new migration time.'), delete_after=10)
-            return
+            async with ctx.typing():
+                for nest in nest_dict:
+                    if nest == "list":
+                        continue
+                    for report in nest_dict[nest]['reports']:
+                        try:
+                            report_message = await channel.fetch_message(report)
+                            self.bot.loop.create_task(self.expire_nest(nest, report_message))
+                        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                            pass
+                confirmation = await channel.send(_('Nests reset. Use **!nest time** to set a new migration time.'), delete_after=10)
+                return
         else:
             await utils.safe_delete(nest_name_reply)
             try:
                 nest_name = nest_dict['list'][int(nest_name_reply.content)-1]
             except IndexError:
                 return
-            for report in nest_dict[nest_name]['reports']:
-                try:
-                    report_message = await channel.fetch_message(report)
-                    self.bot.loop.create_task(self.expire_nest(nest_name, report_message))
-                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                    pass
-            confirmation = await channel.send(_('Nests reset. Use **!nest time** to set a new migration time.'), delete_after=10)
+            async with ctx.typing():
+                for report in nest_dict[nest_name]['reports']:
+                    try:
+                        report_message = await channel.fetch_message(report)
+                        self.bot.loop.create_task(self.expire_nest(nest_name, report_message))
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                        pass
+                confirmation = await channel.send(f"{nest_name.title()} reset. Use **!nest time** to set a new migration time.", delete_after=10)
             return
 
     @nest.command(name='time')

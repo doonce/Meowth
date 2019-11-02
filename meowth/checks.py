@@ -45,6 +45,8 @@ async def check_is_admin(ctx):
 async def check_is_mod(ctx):
     if await check_is_admin(ctx):
         return True
+    if await is_manager_check(ctx):
+        return True
     if ctx.author.permissions_in(ctx.channel).manage_messages:
         return True
     elif ctx.author.permissions_in(ctx.channel).manage_channel:
@@ -133,10 +135,10 @@ def check_rsvpchannel(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    raid_channels = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).keys()
-    meetup_channels = ctx.bot.guild_dict[guild.id].setdefault('meetup_dict', {}).keys()
-    train_channels = ctx.bot.guild_dict[guild.id].setdefault('raidtrain_dict', {}).keys()
-    return channel.id in raid_channels or channel.id in meetup_channels or channel.id in train_channels
+    for report_dict in ctx.bot.channel_report_dicts:
+        if channel.id in ctx.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys():
+            return True
+    return False
 
 def check_raidchannel(ctx):
     if ctx.guild is None:
@@ -146,13 +148,26 @@ def check_raidchannel(ctx):
     raid_channels = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).keys()
     return channel.id in raid_channels
 
+def check_exraidchannel(ctx):
+    if ctx.guild is None:
+        return False
+    channel = ctx.channel
+    guild = ctx.guild
+    raid_channels = ctx.bot.guild_dict[guild.id].setdefault('exraidchannel_dict', {}).keys()
+    level = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('egg_level', False)
+    type =  ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('type', False)
+    return channel.id in raid_channels or level == 'EX' or type == 'exraid'
+
 def check_hatchedraid(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
-    pokemon = ctx.bot.guild_dict[guild.id]['raidchannel_dict'].get(channel.id, {}).get('pkmn_obj', False)
-    return pokemon
+    for report_dict in self.bot.channel_report_dicts:
+        pokemon = ctx.bot.guild_dict[guild.id].setdefault(report_dict, {}).get(channel.id, {}).get('pkmn_obj', False)
+        if pokemon:
+            return pokemon
+    return False
 
 def check_eggchannel(ctx):
     if ctx.guild is None:
@@ -162,12 +177,24 @@ def check_eggchannel(ctx):
     type = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('type', None)
     return type == "egg"
 
+def check_exeggchannel(ctx):
+    if ctx.guild is None:
+        return False
+    channel = ctx.channel
+    guild = ctx.guild
+    type = ctx.bot.guild_dict[guild.id].setdefault('exraidchannel_dict', {}).get(channel.id, {}).get('type', None)
+    return type == "egg"
+
 def check_raidactive(ctx):
     if ctx.guild is None:
         return False
     channel = ctx.channel
     guild = ctx.guild
-    return ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('active', False)
+    for report_dict in ctx.bot.channel_report_dicts:
+        active = ctx.bot.guild_dict[guild.id].setdefault(report_dict, {}).get(channel.id, {}).get('active', False)
+        if active:
+            return True
+    return False
 
 def check_exraidset(ctx):
     if ctx.guild is None:
@@ -188,15 +215,6 @@ def check_inviteset(ctx):
         return False
     guild = ctx.guild
     return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('invite', {}).get('enabled', False)
-
-def check_exraidchannel(ctx):
-    if ctx.guild is None:
-        return False
-    channel = ctx.channel
-    guild = ctx.guild
-    level = ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('egg_level', False)
-    type =  ctx.bot.guild_dict[guild.id].setdefault('raidchannel_dict', {}).get(channel.id, {}).get('type', False)
-    return (level == 'EX') or (type == 'exraid')
 
 def check_meetupset(ctx):
     if ctx.guild is None:
@@ -389,7 +407,7 @@ def allowreports():
     def predicate(ctx):
         if not ctx.guild:
             raise errors.GuildCheckFail()
-        if check_raidreport(ctx) or (check_eggchannel(ctx) and check_raidchannel(ctx)):
+        if check_raidreport(ctx) or (check_eggchannel(ctx) or check_exeggchannel(ctx) and check_raidchannel(ctx)):
             return True
         elif check_exraidreport(ctx) or check_exraidchannel(ctx):
             return True
@@ -414,7 +432,7 @@ def allowraidreport():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_raidset(ctx):
-            if check_raidreport(ctx) or check_tutorialchannel(ctx) or (check_eggchannel(ctx) and check_raidchannel(ctx)):
+            if check_raidreport(ctx) or check_tutorialchannel(ctx) or (check_eggchannel(ctx) or check_exeggchannel(ctx) and check_raidchannel(ctx)):
                 return True
             else:
                 raise errors.RegionEggChannelCheckFail()
@@ -613,7 +631,7 @@ def rsvpchannel():
     def predicate(ctx):
         if not ctx.guild:
             raise errors.GuildCheckFail()
-        if check_raidchannel(ctx) or check_meetupchannel(ctx) or check_trainchannel(ctx):
+        if check_raidchannel(ctx) or check_meetupchannel(ctx) or check_trainchannel(ctx) or check_exraidchannel(ctx):
             return True
         raise errors.RSVPChannelCheckFail()
     return commands.check(predicate)
@@ -622,7 +640,7 @@ def raidchannel():
     def predicate(ctx):
         if not ctx.guild:
             raise errors.GuildCheckFail()
-        if check_raidchannel(ctx):
+        if check_raidchannel(ctx) or check_exraidchannel(ctx):
             return True
         raise errors.RaidChannelCheckFail()
     return commands.check(predicate)
@@ -649,7 +667,7 @@ def activeraidchannel():
     def predicate(ctx):
         if not ctx.guild:
             raise errors.GuildCheckFail()
-        if check_raidchannel(ctx) and not check_meetupchannel(ctx):
+        if (check_exraidchannel(ctx) or check_raidchannel(ctx)) and not check_meetupchannel(ctx):
             if check_raidactive(ctx):
                 return True
         raise errors.ActiveRaidChannelCheckFail()

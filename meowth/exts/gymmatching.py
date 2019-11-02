@@ -453,6 +453,15 @@ class GymMatching(commands.Cog):
                     index += 1
             if active_raids:
                 poi_embed.add_field(name="Current Raids", value=('\n').join(active_raids), inline=False)
+            active_raids = []
+            index = 1
+            for channel in self.bot.guild_dict[ctx.guild.id].setdefault('exraidchannel_dict', {}):
+                if self.bot.guild_dict[ctx.guild.id]['exraidchannel_dict'][channel].get('address', "") == location:
+                    raid_channel = self.bot.get_channel(channel)
+                    active_raids.append(f"{index}. {raid_channel.mention}")
+                    index += 1
+            if active_raids:
+                poi_embed.add_field(name="Current EX Raids", value=('\n').join(active_raids), inline=False)
         elif match_type == "stop":
             active_quests = []
             index = 1
@@ -580,25 +589,26 @@ class GymMatching(commands.Cog):
         poi_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={poi_coords}"
         if type == "raid" or type == "exraid":
             poi_info = _("**Gym:** {0}{1}").format(details, poi_note)
-            for raid in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
-                raid_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid]['address']
-                raid_report_channel = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid]['report_channel']
-                if self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid]['type'] == "exraid" or self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid]['egg_level'] == "EX":
-                    raid_type = "exraid"
-                else:
-                    raid_type = "raid"
-                if (details == raid_address) and ctx.channel.id == raid_report_channel and raid_type == type:
-                    if message.author.bot:
+            for report_dict in self.bot.channel_report_dicts:
+                for raid in self.bot.guild_dict[ctx.guild.id].setdefault(report_dict, {}):
+                    raid_address = self.bot.guild_dict[ctx.guild.id].get(report_dict, {}).get(raid, {}).get('address', None)
+                    raid_report_channel = self.bot.guild_dict[ctx.guild.id].get(report_dict, {}).get(raid, {}).get('report_channel', None)
+                    if self.bot.guild_dict[ctx.guild.id].get(report_dict, {}).get(raid, {}).get('type', None) == "exraid" or self.bot.guild_dict[ctx.guild.id].get(report_dict, {}).get(raid, {}).get('egg_level', None) == "EX":
+                        raid_type = "exraid"
+                    else:
+                        raid_type = "raid"
+                    if (details == raid_address) and ctx.channel.id == raid_report_channel and raid_type == type:
+                        if message.author.bot:
+                            return "", False, False
+                        dupe_channel = self.bot.get_channel(raid)
+                        if dupe_channel:
+                            duplicate_raids.append(dupe_channel.mention)
+                if duplicate_raids:
+                    if ctx.author.bot:
                         return "", False, False
-                    dupe_channel = self.bot.get_channel(raid)
-                    if dupe_channel:
-                        duplicate_raids.append(dupe_channel.mention)
-            if duplicate_raids:
-                if ctx.author.bot:
-                    return "", False, False
-                if not dupe_check:
-                    return poi_info, details, poi_gmaps_link
-                rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_raids)))
+                    if not dupe_check:
+                        return poi_info, details, poi_gmaps_link
+                    rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_raids)))
         elif type == "research":
             poi_info = poi_note
             counter = 1

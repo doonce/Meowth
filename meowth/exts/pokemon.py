@@ -946,7 +946,8 @@ class Pokedex(commands.Cog):
 
         Usage: !pokedex <pokemon with form, gender, etc>"""
         if not pokemon and checks.check_hatchedraid(ctx):
-            pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.channel.id]['pkmn_obj']
+            report_dict = await utils.get_report_dict(ctx.bot, ctx.channel)
+            pokemon = self.bot.guild_dict[ctx.guild.id].setdefault(report_dict, {}).get(ctx.channel.id, {}).get('pkmn_obj', None)
         pokemon = await Pokemon.async_get_pokemon(self.bot, pokemon)
         if not pokemon:
             return await ctx.send(f"Meowth! I'm missing some details! Usage: {ctx.prefix}{ctx.invoked_with} **<pokemon>**", delete_after=30)
