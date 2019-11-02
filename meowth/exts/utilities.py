@@ -243,6 +243,10 @@ async def ask(bot, message, user_list=None, timeout=60, *, react_list=[]):
         react_list=[bot.custom_emoji.get('answer_yes', '\u2705'), bot.custom_emoji.get('answer_no', '\u274e')]
     if user_list and type(user_list) != list:
         user_list = [user_list]
+    for member in message.guild.members:
+        if (message.channel.permissions_for(member).manage_channels or message.channel.permissions_for(member).manage_messages) and member.id not in user_list:
+            if member != bot.user:
+                user_list.append(member.id)
     def check(reaction, user):
         if user_list and type(user_list) is list:
             return (user.id in user_list) and (reaction.message.id == message.id) and (reaction.emoji in react_list)
@@ -255,8 +259,7 @@ async def ask(bot, message, user_list=None, timeout=60, *, react_list=[]):
         reaction, user = await bot.wait_for('reaction_add', check=check, timeout=timeout)
         return reaction, user
     except asyncio.TimeoutError:
-        await message.clear_reactions()
-        return
+        return await message.clear_reactions()
 
 async def letter_case(iterable, find, *, limits=None):
     servercase_list = []

@@ -843,6 +843,18 @@ class Raid(commands.Cog):
         raid_channel_name += utils.sanitize_channel_name(raid_details)
         if ctx.author.bot:
             raid_channel_name += "-bot"
+        if type != "exraid":
+            ow = ctx.channel.overwrites_for(ctx.guild.default_role)
+            ow.send_messages = True
+            raid_channel_overwrites[ctx.guild.default_role] = ow
+        for role in ctx.guild.roles:
+            if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
+                ow = ctx.channel.overwrites_for(role)
+                ow.manage_channels = True
+                ow.manage_messages = True
+                ow.manage_roles = True
+                ow.send_messages = True
+                raid_channel_overwrites[role] = ow
         category_choices = [raid_channel_category, ctx.channel.category, None]
         for category in category_choices:
             try:
@@ -852,24 +864,6 @@ class Raid(commands.Cog):
                 raid_channel = None
         if not raid_channel:
             return None
-        if type != "exraid":
-            ow = raid_channel.overwrites_for(raid_channel.guild.default_role)
-            ow.send_messages = True
-            try:
-                await raid_channel.set_permissions(raid_channel.guild.default_role, overwrite = ow)
-            except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                pass
-        for role in raid_channel.guild.roles:
-            if role.permissions.manage_guild or role.permissions.manage_channels or role.permissions.manage_messages:
-                ow = raid_channel.overwrites_for(role)
-                ow.manage_channels = True
-                ow.manage_messages = True
-                ow.manage_roles = True
-                ow.send_messages = True
-                try:
-                    await raid_channel.set_permissions(role, overwrite = ow)
-                except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                    pass
         return raid_channel
 
     """
@@ -2689,7 +2683,7 @@ class Raid(commands.Cog):
         raid_embed.set_footer(text=f"Reported by @{ctx.author.display_name} - {timestamp}", icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=raid_img_url)
         raid_embed.set_author(name=f"{meetup_type.title()} Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/{meetup_type}.png?cache=1")
-        ctx.raidreport = await channel.send(content=f"Meowth! {meetup_type.title()} reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all meetups!", embed=raid_embed)
+        ctx.raidreport = await channel.send(content=f"Meowth! {meetup_type.title()} reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\n\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all meetups!", embed=raid_embed)
         await asyncio.sleep(1)
         raidmsg = f"Meowth! {meetup_type.title()} reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
@@ -3018,10 +3012,11 @@ class Raid(commands.Cog):
         train_location = str(channel_or_gym)
         train_channel = await self._meetup(ctx, train_location)
         if train_channel:
+            managers = self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id].get('managers', [])
             await train_channel.send(f"{ctx.author.mention}, you can set additional train managers using **{ctx.prefix}train manager <user mention>** and direct the train to a new gym using **{ctx.prefix}train next <channel_or_gym>**.")
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['managers'] = [ctx.author.id]
             for member in ctx.guild.members:
-                if ctx.channel.permissions_for(member).manage_channels:
+                if (ctx.channel.permissions_for(member).manage_channels or train_channel.permissions_for(member).manage_channels) and member.id not in managers:
                     self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['managers'].append(member.id)
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['raid'] = True
             utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))
