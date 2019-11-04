@@ -59,10 +59,10 @@ class Huntr(commands.Cog):
                                         report_edit_dict[reportid] = {"action":alarm_dict.get(reportid, {}).get('expedit', ''), "channel":report_channel}
                                     if alarm_dict.get(reportid, {}).get('dm_dict', False):
                                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, alarm_dict.get(reportid, {}).get('dm_dict', {})))
-                                # try:
-                                #     del self.bot.guild_dict[guild.id][report_dict][reportid]
-                                # except KeyError:
-                                #     pass
+                                try:
+                                    del self.bot.guild_dict[guild.id][report_dict][reportid]
+                                except KeyError:
+                                    pass
                     except:
                         pass
                 for messageid in report_delete_dict.keys():
