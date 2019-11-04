@@ -1697,6 +1697,7 @@ class Raid(commands.Cog):
             'active': True,
             'raid_message':raid_message.id,
             'raid_report':ctx.raidreport.id,
+            'raid_embed':raid_embed,
             'report_message':message.id,
             'address': raid_details,
             'type': 'raid',
@@ -1885,6 +1886,7 @@ class Raid(commands.Cog):
                 'active': True,
                 'raid_message':raid_message.id,
                 'raid_report':ctx.raidreport.id,
+                'raid_embed':raid_embed,
                 'report_message':message.id,
                 'address': raid_details,
                 'type': 'egg',
@@ -2457,6 +2459,7 @@ class Raid(commands.Cog):
             'active': True,
             'raid_message':raid_message.id,
             'raid_report':ctx.raidreport.id,
+            'raid_embed':raid_embed,
             'report_message':message.id,
             'address': raid_details,
             'type': 'egg',
@@ -2707,6 +2710,7 @@ class Raid(commands.Cog):
             'active': True,
             'raid_message':raid_message.id,
             'raid_report':ctx.raidreport.id,
+            'raid_embed':raid_embed,
             'report_message':message.id,
             'address': raid_details,
             'type': 'egg',
@@ -3000,13 +3004,17 @@ class Raid(commands.Cog):
 
     async def _train_channel(self, ctx, channel_or_gym):
         location = ""
+        raidhour_check = getattr(ctx, "raidhour", False)
         if isinstance(channel_or_gym, discord.TextChannel):
             if channel_or_gym.id in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
                 location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['address']
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if not location and gym_matching_cog:
-            gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, str(channel_or_gym), "raid", dupe_check=False)
+            if raidhour_check:
+                gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, str(channel_or_gym), "raid", dupe_check=False, autocorrect=False)
+            else:
+                gym_info, location, gym_url = await gym_matching_cog.get_poi_info(ctx, str(channel_or_gym), "raid", dupe_check=False)
         if location:
             channel_or_gym = location
         train_location = str(channel_or_gym)
@@ -3031,6 +3039,19 @@ class Raid(commands.Cog):
                 if channel_address == train_location and channel_level != "EX" and channel_type != "exraid":
                     raid_channel = self.bot.get_channel(channel)
                     await raid_channel.send(f"A raid train channel has chosen this raid as its next raid! You can join them in {ctx.channel.mention}")
+                    try:
+                        timer_set = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['manual_timer']
+                        raid_timer = ""
+                        raid_message = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['raid_message']
+                        raid_message = await raid_channel.fetch_message(raid_message)
+                        raid_embed = raid_message.embeds[0]
+                        while len(raid_embed.fields) > 2:
+                            raid_embed.remove_field(-1)
+                        if timer_set:
+                            raid_timer = await self.print_raid_timer(raid_channel)
+                        await ctx.send(f"Meowth! I found this raid at {train_location}! {raid_timer}", embed=raid_embed)
+                    except:
+                        pass
             return train_channel
 
     @train.command(name="title")
@@ -3096,9 +3117,24 @@ class Raid(commands.Cog):
         self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup'].setdefault('history', []).append(train_location)
         for channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
             channel_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['address']
-            if channel_address == train_location:
+            channel_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['egg_level']
+            channel_type = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['type']
+            if channel_address == train_location and channel_level != "EX" and channel_type != "exraid":
                 raid_channel = self.bot.get_channel(channel)
                 await raid_channel.send(f"A raid train channel has chosen this raid as its next raid! You can join them in {ctx.channel.mention}")
+                try:
+                    timer_set = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['manual_timer']
+                    raid_timer = ""
+                    raid_message = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['raid_message']
+                    raid_message = await raid_channel.fetch_message(raid_message)
+                    raid_embed = raid_message.embeds[0]
+                    while len(raid_embed.fields) > 2:
+                        raid_embed.remove_field(-1)
+                    if timer_set:
+                        raid_timer = await self.print_raid_timer(raid_channel)
+                    await ctx.send(f"Meowth! I found this raid at {train_location}! {raid_timer}", embed=raid_embed)
+                except:
+                    pass
 
     @train.command(name="manager")
     @checks.allowmeetupreport()
@@ -4806,11 +4842,11 @@ class Raid(commands.Cog):
         trainer_dict['party'] = party
         self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict'][author.id] = trainer_dict
         await self._edit_party(channel, author)
-        total_count = 0
-        for trainer in list(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict']):
-            total_count += sum(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict'][trainer]['status'].values())
-        if total_count%3 == 0:
-            await ctx.invoke(self.bot.get_command("list"))
+        # total_count = 0
+        # for trainer in list(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict']):
+        #     total_count += sum(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict'][trainer]['status'].values())
+        # if total_count%3 == 0:
+        #     await ctx.invoke(self.bot.get_command("list"))
 
     @commands.command(aliases=['x'])
     @checks.rsvpchannel()
@@ -4860,11 +4896,11 @@ class Raid(commands.Cog):
         t_dict['interest'] = []
         t_dict['count'] = 1
         await self._edit_party(channel, author)
-        total_count = 0
-        for trainer in list(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict']):
-            total_count += sum(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict'][trainer]['status'].values())
-        if total_count%3 == 0:
-            await ctx.invoke(self.bot.get_command("list"))
+        # total_count = 0
+        # for trainer in list(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict']):
+        #     total_count += sum(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict'][trainer]['status'].values())
+        # if total_count%3 == 0:
+        #     await ctx.invoke(self.bot.get_command("list"))
 
     @tasks.loop(seconds=21600)
     async def lobby_cleanup(self, loop=True):

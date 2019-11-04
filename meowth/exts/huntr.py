@@ -442,7 +442,7 @@ class Huntr(commands.Cog):
         here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
         report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
-        react_list = [huntr_emoji, maybe_reaction, omw_reaction, here_reaction, list_emoji]
+        react_list = [huntr_emoji, maybe_reaction, omw_reaction, here_reaction, report_emoji, list_emoji]
         if not reactuser:
             reporttype = None
             report = None
@@ -976,7 +976,7 @@ class Huntr(commands.Cog):
         if not raid_channel:
             return
         await asyncio.sleep(1)
-        ctx.raidreport = await message.channel.send(content=f"Meowth! {str(pokemon).title()} raid reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!", embed=raid_embed)
+        ctx.raidreport = await message.channel.send(content=f"Meowth! {str(pokemon).title()} raid reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\n\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!", embed=raid_embed)
         if pokemon.alolan:
             raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
         else:
@@ -1008,6 +1008,7 @@ class Huntr(commands.Cog):
             'active': True,
             'raid_message':raid_message.id,
             'raid_report':ctx.raidreport.id,
+            'raid_embed':raid_embed,
             'report_message':message.id,
             'address': raid_details,
             'location':raid_details,
@@ -1116,6 +1117,7 @@ class Huntr(commands.Cog):
             'raid_message':raid_message.id,
             'raid_report': ctx.raidreport.id,
             'raid_report':ctx.raidreport.id,
+            'raid_embed':raid_embed,
             'report_message':message.id,
             'address': raid_details,
             'type': 'egg',
@@ -1465,6 +1467,7 @@ class Huntr(commands.Cog):
                         train_channel = self.bot.get_channel(event_dict['train_channel'])
                         for location in event_dict['event_locations']:
                             ctx.channel, ctx.message.channel = train_channel, train_channel
+                            ctx.raidhour = True
                             if event_dict['make_trains']:
                                 ctx.command = self.bot.get_command("train")
                                 channel = await raid_cog._train_channel(ctx, location)
