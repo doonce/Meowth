@@ -106,7 +106,6 @@ The above may not be supported on all systems. You can sometimes find a suitable
    - *Optional:* Tick the Public Bot tickbox if you want to allow others to invite your bot to their own server.
 
 1. Download the files in this repository, or your own fork if you intend to modify source  
-   #### *``Note: If you alter the code significantly, adapt to support platforms we don't or integrate any TOS-breaking features, we ask you don't name your instance Meowth to avoid confusion to users between our instance and yours.``*
 
 1. Copy the bot config template `config_blank.json`, rename to `config.json` and edit it:
    - `bot_token` is the Token you copied down earlier from the Discord Developers page and requires quotes as it's a string.
@@ -339,7 +338,7 @@ pkmn = Pokemon
 
 | Commands | Requirements  | Description |
 | -------- |:-------------:| ------------|
-| **!raid_json** \[level\] \[bosslist\] | *Owner Only* | Edits or displays raid_info.json |
+| **!raid_json** \[level\] \[bosslist\] | *Bot Manager Only* | Edits or displays raid_info.json |
 | **!unassume** | *Channel Manager<br/>Raid Channel* | Use if a level 5 egg has been assumed before raid_json was corrected. |
 | **!raid_time** \<hatch or raid\> \<level\> \<new time\> | *Channel Manager Only* | Edits hatch or raid time for raids. |
 | **!changeraid** \[level or boss\] | *Channel Manager Only* | Changes raid boss or egg level |
@@ -501,6 +500,8 @@ pkmn = Pokemon
 
 ### Wild Cog Commands:
 
+| Commands | Requirements  | Description |
+| -------- |:-------------:| ------------|
 | **!wild** \<pkmn\> \<location\> | *Region Channel* | Reports a wild pokemon, notifying people who want it. `Aliases: !w` |
 | **!wild reset** \[message\] | *Server Manager* | Resets all wild reports or by message. |
 
