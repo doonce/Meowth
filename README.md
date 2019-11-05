@@ -372,6 +372,7 @@ pkmn = Pokemon
 | -------- |:-------------:| ------------|
 | **!timer** | *Raid Channel* | Shows the expiry time for the raid. |
 | **!timerset** \<timer\> | *Raid Channel* | Set the expiry time for the raid. |
+| **!moveset** \<move 1, move 2\> | *Raid Channel* | Set the boss moveset. |
 | **!starttime** \[HH:MM AM/PM\] | *Raid Channel* | Set a time for a group to start a raid. |
 | **!location** | *Raid Channel* | Shows the raid location. |
 | **!location new** \<place/map\> | *Raid Channel* | Sets the raid location. |

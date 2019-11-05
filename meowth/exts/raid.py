@@ -3569,6 +3569,9 @@ class Raid(commands.Cog):
     @commands.command()
     @checks.raidchannel()
     async def moveset(self, ctx, *, moves):
+        """Set the moveset for the channel
+
+        Usage: !moveset <move 1, move 2>"""
         if not checks.check_hatchedraid(ctx):
             return await ctx.send(f"Meowth! Please wait until the egg has hatched before setting moveset!", delete_after=10)
         await self.set_moveset(ctx, ctx.channel, moves)
