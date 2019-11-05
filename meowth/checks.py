@@ -163,9 +163,10 @@ def check_hatchedraid(ctx):
         return False
     channel = ctx.channel
     guild = ctx.guild
-    for report_dict in self.bot.channel_report_dicts:
+    for report_dict in ctx.bot.channel_report_dicts:
         pokemon = ctx.bot.guild_dict[guild.id].setdefault(report_dict, {}).get(channel.id, {}).get('pkmn_obj', False)
-        if pokemon:
+        type = ctx.bot.guild_dict[guild.id].setdefault(report_dict, {}).get(channel.id, {}).get('type', False)
+        if pokemon and type != "egg":
             return pokemon
     return False
 

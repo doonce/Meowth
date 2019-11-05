@@ -79,6 +79,8 @@ class Raid(commands.Cog):
                     break
             if react_message:
                 break
+        if not react_message:
+            return
         report_dict = await utils.get_report_dict(self.bot, channel)
         def get_teamcounts(raid_channel, trainer, lobby):
             total = lobby[trainer]['count']
@@ -2242,12 +2244,12 @@ class Raid(commands.Cog):
         raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].setdefault(report_dict, {}))
         if channel and channel.id not in raid_dict:
             channel = None
-        if not channel and channel.id in raid_dict:
+        if not channel and ctx.channel.id in raid_dict:
             channel = ctx.channel
         if not channel:
             def check(m):
                 return m.author == ctx.author and m.channel == ctx.channel
-            raid_wait = await ctx.send(f"**Meowth!** {ctx.author.mention}, Reply with a channel mention of the raid you'd like to delete or **all** to reset all raids. If you want to stop, reply with **cancel**.")
+            raid_wait = await ctx.send(f"**Meowth!** {ctx.author.mention}, Reply with a channel mention of the raid you'd like to delete or **all** to reset all raids{' or a **number** to reset all of that level' if type == 'raid' else ''}. If you want to stop, reply with **cancel**.")
             try:
                 raid_reply = await self.bot.wait_for('message', timeout=60, check=check)
                 await utils.safe_delete(raid_wait)
@@ -2257,10 +2259,12 @@ class Raid(commands.Cog):
                 await utils.safe_delete(raid_wait)
                 confirmation = await ctx.send(_('Reset cancelled.'), delete_after=10)
                 return
-            elif raid_reply.content.lower() == "all":
+            elif raid_reply.content.lower() == "all" or (raid_reply.content.isdigit() and int(raid_reply.content) <= 5):
                 await utils.safe_delete(raid_reply)
                 async with ctx.typing():
                     for raid_id in raid_dict:
+                        if self.bot.guild_dict[ctx.guild.id][report_dict][raid_id]['egg_level'] != str(raid_reply.content) and raid_reply.content.isdigit():
+                            continue
                         channel = ctx.bot.get_channel(raid_id)
                         if not channel:
                             continue
@@ -3561,6 +3565,62 @@ class Raid(commands.Cog):
             except discord.errors.NotFound:
                 pass
             return
+
+    @commands.command()
+    @checks.raidchannel()
+    async def moveset(self, ctx, *, moves):
+        if not checks.check_hatchedraid(ctx):
+            return await ctx.send(f"Meowth! Please wait until the egg has hatched before setting moveset!", delete_after=10)
+        await self.set_moveset(ctx, ctx.channel, moves)
+
+    async def set_moveset(self, ctx, channel, moves):
+        moveset = 0
+        newembed = False
+        moveset_str = ""
+        report_dict = await utils.get_report_dict(ctx.bot, channel)
+        try:
+            ctrs_message = await channel.fetch_message(self.bot.guild_dict[ctx.channel.guild.id][report_dict][channel.id]['ctrsmessage'])
+        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
+            ctrs_message = None
+        except AttributeError:
+            return
+        ctrs_dict = self.bot.guild_dict[channel.guild.id][report_dict][channel.id].get('ctrs_dict', {})
+        entered_raid = self.bot.guild_dict[channel.guild.id][report_dict][channel.id].get('pkmn_obj', "")
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_raid)
+        weather =  self.bot.guild_dict[channel.guild.id][report_dict][channel.id].get('weather', None)
+        if not ctrs_dict:
+            ctrs_dict = await raid_cog._get_generic_counters(channel.guild, entered_raid, weather)
+            self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['ctrs_dict'] = ctrs_dict
+        if not moves or not ctrs_dict:
+            return
+        moves = re.split('\\||/|,', moves)
+        moves = [x.strip().title() for x in moves]
+        moves = [x for x in moves if x.lower() in pokemon.quick_moves+pokemon.charge_moves]
+        if len(moves) > 2 or len(moves) == 0:
+            return
+        elif len(moves) == 2:
+            if moves[0] in [x.title() for x in pokemon.charge_moves]:
+                moves.reverse()
+            for i in ctrs_dict:
+                if ctrs_dict[i]['moveset'] == (' | ').join(moves):
+                    newembed = ctrs_dict[i]['embed']
+                    moveset = i
+                    break
+            if ctrs_message and newembed:
+                await ctrs_message.edit(embed=newembed)
+            self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['moveset'] = moveset
+        await channel.send(f"This {str(pokemon)}'s {'moves are' if len(moves)>1 else 'move is'}: **{(' / ').join(moves)}**")
+        try:
+            raid_msg = await channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][channel.id]['raid_message'])
+        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+            return
+        raid_embed = raid_msg.embeds[0]
+        for index, field in enumerate(raid_embed.fields):
+            if "list" in field.name.lower() or "moveset" in field.name.lower():
+                raid_embed.remove_field(index)
+        raid_embed.add_field(name="**Moveset**:", value=(' / ').join(moves), inline=True)
+        await raid_msg.edit(embed=raid_embed)
+        await self._edit_party(channel)
 
     @commands.group(case_insensitive=True)
     @checks.rsvpchannel()

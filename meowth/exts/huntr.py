@@ -266,8 +266,6 @@ class Huntr(commands.Cog):
                         if self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['type'] == 'egg':
                             await raid_cog._eggtoraid(entered_raid.lower().strip(), channel, author=message.author, huntr=moveset)
                         raidmsg = await channel.fetch_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raid_message'])
-                        if moveset and raidmsg.embeds[0].fields[2].name != moveset:
-                            await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=entered_raid.title(), moves=moveset))
                         return
                 if auto_report and reporttype == "raid":
                     report_details = {
@@ -476,22 +474,10 @@ class Huntr(commands.Cog):
                                 logger.error(f"{report_details.get('pokemon', None)} not in raid_json")
                                 return
                             await raid_cog._eggtoraid(report_details.get('pokemon', None), channel, message.author, huntr=report_details.get('moves', None))
-                        elif channel and report_details.get('moves', None):
-                            await channel.send(_("This {entered_raid}'s moves are: **{moves}**").format(entered_raid=report_details.get('pokemon', None).title(), moves=report_details.get('moves', None)))
-                            try:
-                                raid_msg = await channel.fetch_message(self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid]['raid_message'])
-                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                                return
-                            raid_embed = raid_msg.embeds[0]
-                            for field in raid_embed.fields:
-                                if "moveset" in field.name.lower():
-                                    return
-                            raid_embed.add_field(name="**Moveset**:", value=report_details.get('moves', None), inline=True)
-                            await raid_msg.edit(embed=raid_embed)
                         raidexp = report_details.get('raidexp')
                         if raidexp and channel:
                             await raid_cog._timerset(channel, raidexp)
-                        await self.auto_counters(channel, report_details.get('moves', None))
+                        await raid_cog.set_moveset(ctx, channel, report_details.get('moves', None))
                         return
                 if report_details.get('type', None) == "raid":
                     if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports', {}).get('raid'):
@@ -657,37 +643,37 @@ class Huntr(commands.Cog):
 
     """Helpers"""
 
-    async def auto_counters(self, channel, moves):
-        moveset = 0
-        newembed = False
-        raid_cog = self.bot.cogs.get('Raid')
-        if not raid_cog:
-            logger.error("Raid Cog not loaded")
-            return
-        try:
-            ctrs_message = await channel.fetch_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrsmessage'])
-        except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
-            ctrs_message = None
-        except AttributeError:
-            return
-        ctrs_dict = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('ctrs_dict', {})
-        entered_raid = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('pkmn_obj', "")
-        weather =  self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('weather', None)
-        if not ctrs_dict:
-            ctrs_dict = await raid_cog._get_generic_counters(channel.guild, entered_raid, weather)
-            self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrs_dict'] = ctrs_dict
-        if not moves or not ctrs_dict:
-            return
-        moves = re.split('\\||/|,', moves)
-        moves = [x.strip() for x in moves]
-        for i in ctrs_dict:
-            if ctrs_dict[i]['moveset'] == (' | ').join(moves):
-                newembed = ctrs_dict[i]['embed']
-                moveset = i
-                break
-        if ctrs_message and newembed:
-            await ctrs_message.edit(embed=newembed)
-        self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['moveset'] = moveset
+    # async def auto_counters(self, channel, moves):
+    #     moveset = 0
+    #     newembed = False
+    #     raid_cog = self.bot.cogs.get('Raid')
+    #     if not raid_cog:
+    #         logger.error("Raid Cog not loaded")
+    #         return
+    #     try:
+    #         ctrs_message = await channel.fetch_message(self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrsmessage'])
+    #     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
+    #         ctrs_message = None
+    #     except AttributeError:
+    #         return
+    #     ctrs_dict = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('ctrs_dict', {})
+    #     entered_raid = self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('pkmn_obj', "")
+    #     weather =  self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id].get('weather', None)
+    #     if not ctrs_dict:
+    #         ctrs_dict = await raid_cog._get_generic_counters(channel.guild, entered_raid, weather)
+    #         self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['ctrs_dict'] = ctrs_dict
+    #     if not moves or not ctrs_dict:
+    #         return
+    #     moves = re.split('\\||/|,', moves)
+    #     moves = [x.strip() for x in moves]
+    #     for i in ctrs_dict:
+    #         if ctrs_dict[i]['moveset'] == (' | ').join(moves):
+    #             newembed = ctrs_dict[i]['embed']
+    #             moveset = i
+    #             break
+    #     if ctrs_message and newembed:
+    #         await ctrs_message.edit(embed=newembed)
+    #     self.bot.guild_dict[channel.guild.id]['raidchannel_dict'][channel.id]['moveset'] = moveset
 
     async def auto_weather(self, ctx, coord):
         wild_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict']
@@ -777,7 +763,6 @@ class Huntr(commands.Cog):
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{str(pokemon)} ({pokemon.id}) {pokemon.emoji}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(ctx.bot, message.guild, utils.get_weaknesses(ctx.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
         raid_embed.add_field(name=_('**Next Group:**'), value=_('Set with **!starttime**'), inline=True)
-        raid_embed.add_field(name=_('**Expires:**'), value=_('Set with **!timerset**'), inline=True)
         if raidexp:
             raid_expire = message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'], minutes=int(raidexp))
             raid_embed.add_field(name=_('**Expires:**'), value=raid_expire.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
@@ -1054,7 +1039,7 @@ class Huntr(commands.Cog):
         if report_user:
             raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(report_user.id, {}).setdefault('reports', {}).setdefault('raid', 0) + 1
             self.bot.guild_dict[message.guild.id]['trainers'][report_user.id]['reports']['raid'] = raid_reports
-        await self.auto_counters(raid_channel, moves)
+        await raid_cog.set_moveset(ctx, raid_channel, moves)
         return raid_channel
 
     async def huntr_raidegg(self, ctx, report_details, reporter=None, report_user=None, dm_dict=None):
@@ -1348,8 +1333,9 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         random_raid = random.choice(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'])
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, random_raid)
         embed = discord.Embed(title="Title", description="Embed Description")
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":random_raid.lower(), "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":"Move 1 / Move 2", "raidexp":10}).replace("'", '"'), embed=embed)
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":random_raid.lower(), "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":f"{pokemon.quick_moves[0].title()} / {pokemon.charge_moves[0].title()}", "raidexp":10}).replace("'", '"'), embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

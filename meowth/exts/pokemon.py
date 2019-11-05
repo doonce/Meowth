@@ -198,7 +198,11 @@ class Pokemon():
         self.base_attack = self.game_template.get('pokemonSettings', {}).get('stats', {}).get('baseAttack', None)
         self.base_defense = self.game_template.get('pokemonSettings', {}).get('stats', {}).get('baseDefense', None)
         self.charge_moves = self.game_template.get('pokemonSettings', {}).get('cinematicMoves', None)
+        if self.charge_moves:
+            self.charge_moves = [x.replace('_FAST', '').replace('_', ' ').lower() for x in self.charge_moves]
         self.quick_moves = self.game_template.get('pokemonSettings', {}).get('quickMoves', None)
+        if self.quick_moves:
+            self.quick_moves = [x.replace('_FAST', '').replace('_', ' ').lower() for x in self.quick_moves]
         self.height = self.game_template.get('pokemonSettings', {}).get('pokedexHeightM', None)
         self.weight = self.game_template.get('pokemonSettings', {}).get('pokedexWeightKg', None)
         self.evolves = self.game_template.get('pokemonSettings', {}).get('evolutionIds', False) or self.game_template.get('pokemonSettings', {}).get('evolutionBranch', False)
