@@ -1040,8 +1040,7 @@ class Want(commands.Cog):
         try:
             cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
         except asyncio.TimeoutError:
-            await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-            return
+            return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
         await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message])
         if cat_reply.content.lower() in category_list:
             if cat_reply.content.lower() == "pokemon":
@@ -1049,10 +1048,11 @@ class Want(commands.Cog):
                 try:
                     cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
                 except asyncio.TimeoutError:
-                    await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-                    return
+                    return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
                 if cat_reply.content.lower() == "all":
                     cat_reply.content = (', ').join(pokemon_options)
+                elif cat_reply.content.lower() == "cancel":
+                    return await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed")
                 reply_list = cat_reply.content.lower().split(',')
                 reply_list = [x.strip() for x in reply_list]
                 reply_list = [x for x in reply_list if x in pokemon_options]
@@ -1070,10 +1070,11 @@ class Want(commands.Cog):
                 try:
                     cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
                 except asyncio.TimeoutError:
-                    await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-                    return
+                    return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
                 if cat_reply.content.lower() == "all":
                     cat_reply.content = (', ').join(pokestop_options)
+                elif cat_reply.content.lower() == "cancel":
+                    return await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed")
                 reply_list = cat_reply.content.lower().split(',')
                 reply_list = [x.strip() for x in reply_list]
                 reply_list = [x for x in reply_list if x in pokestop_options]
@@ -1091,10 +1092,11 @@ class Want(commands.Cog):
                 try:
                     cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
                 except asyncio.TimeoutError:
-                    await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-                    return
+                    return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
                 if cat_reply.content.lower() == "all":
                     cat_reply.content = (', ').join(item_options)
+                elif cat_reply.content.lower() == "cancel":
+                    return await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed")
                 reply_list = cat_reply.content.lower().split(',')
                 reply_list = [x.strip() for x in reply_list]
                 reply_list = [x for x in reply_list if x in item_options]
@@ -1112,10 +1114,11 @@ class Want(commands.Cog):
                 try:
                     cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
                 except asyncio.TimeoutError:
-                    await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-                    return
+                    return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
                 if cat_reply.content.lower() == "all":
                     cat_reply.content = (', ').join(type_options)
+                elif cat_reply.content.lower() == "cancel":
+                    return await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed")
                 reply_list = cat_reply.content.lower().split(',')
                 reply_list = [x.strip() for x in reply_list]
                 reply_list = [x for x in reply_list if x in type_options]
