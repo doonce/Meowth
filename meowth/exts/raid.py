@@ -824,7 +824,7 @@ class Raid(commands.Cog):
                 if not dm_user or not dm_channel:
                     continue
                 dm_message = await dm_channel.fetch_message(dm_message)
-                await dm_message.edit(content=content.splitlines[0], embed=embed)
+                await dm_message.edit(content=content.splitlines()[0], embed=embed)
             except:
                 pass
 
@@ -897,7 +897,7 @@ class Raid(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog and not raid_coordinates:
-            gym_info, raid_locagion, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_location, "raid")
+            gym_info, raid_locagion, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_location, "raid", dupe_check=False, autocorrect=False)
             if gym_url:
                 raid_gmaps_link = gym_url
         if not raid_location and not raid_coordinates:
@@ -951,7 +951,7 @@ class Raid(commands.Cog):
             raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(ctx.bot, ctx.guild, utils.get_weaknesses(ctx.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
             raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1")
         raid_embed.add_field(name=_('**Next Group:**'), value=f"Set with **{ctx.prefix}starttime**", inline=True)
-        if raidexp or raidexp == 0:
+        if raidexp or raidexp is 0:
             raid_expire = now + datetime.timedelta(minutes=float(raidexp))
             raid_embed.add_field(name=f"{'**Hatches:**' if embed_type == 'egg' else '**Expires:**'}", value=raid_expire.strftime(_('%B %d at %I:%M %p (%H:%M)')), inline=True)
         else:
@@ -1719,7 +1719,7 @@ class Raid(commands.Cog):
             roletest = ""
         else:
             roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-        if (raidexp or raidexp == 0) and int(raidexp) > int(self.bot.raid_info['raid_eggs'][level]['raidtime']):
+        if (raidexp or raidexp is 0) and int(raidexp) > int(self.bot.raid_info['raid_eggs'][level]['raidtime']):
             raidexp = False
             await ctx.send(f"Meowth! That's too long! Level {level} raids currently last no more than {self.bot.raid_info['raid_eggs'][level]['raidtime']} minutes. I'll still try to make the channel and you can correct the time later.", delete_after=10)
         report_details = {
@@ -1756,7 +1756,7 @@ class Raid(commands.Cog):
             'weather': weather,
             'coordinates':raid_coordinates
         }
-        if raidexp or raidexp == 0:
+        if raidexp or raidexp is 0:
             await self._timerset(raid_channel, raidexp)
         else:
             await raid_channel.send(f"Meowth! Hey {ctx.author.mention}, if you can, set the time left on the raid using **{ctx.prefix}timerset <minutes>** so others can check it with **{ctx.prefix}timer**.")
@@ -1889,7 +1889,7 @@ class Raid(commands.Cog):
         raid_channel = await self.create_raid_channel(ctx, egg_level, raid_details, "egg")
         if not raid_channel:
             return
-        if (raidexp or raidexp == 0) and int(raidexp) > int(self.bot.raid_info['raid_eggs'][str(egg_level)]['hatchtime']):
+        if (raidexp or raidexp is 0) and int(raidexp) > int(self.bot.raid_info['raid_eggs'][str(egg_level)]['hatchtime']):
             raidexp = False
             await ctx.send(f"Meowth! That's too long. Level {egg_level} Raid Eggs currently last no more than {self.bot.raid_info['raid_eggs'][str(egg_level)]['hatchtime']} minutes. I'll still try to make the channel and you can correct the time later.", delete_after=10)
         report_details = {
@@ -1924,7 +1924,7 @@ class Raid(commands.Cog):
             'moveset': 0,
             'coordinates':raid_coordinates
         }
-        if raidexp or raidexp == 0:
+        if raidexp or raidexp is 0:
             await self._timerset(raid_channel, raidexp)
         else:
             await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=ctx.author.mention))
