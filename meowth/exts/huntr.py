@@ -113,16 +113,16 @@ class Huntr(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
+        guild = getattr(channel, "guild", None)
         try:
-            message = await channel.fetch_message(payload.message_id)
-        except (discord.errors.NotFound, AttributeError, discord.Forbidden):
-            return
-        guild = message.guild
-        try:
-            user = guild.get_member(payload.user_id)
+            user = self.bot.get_user(payload.user_id)
         except AttributeError:
             return
         if user == self.bot.user:
+            return
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except (discord.errors.NotFound, AttributeError, discord.Forbidden):
             return
         ctx = await self.bot.get_context(message)
         pokealarm_dict = copy.deepcopy(ctx.bot.guild_dict[channel.guild.id].get('pokealarm_dict', {}))
@@ -789,7 +789,9 @@ class Huntr(commands.Cog):
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
         entered_raid = report_details['pokemon']
         raid_coordinates = report_details['gps']
+        report_details['coordinates'] = raid_coordinates
         raid_details = report_details.get('gym', raid_coordinates)
+        report_details['address'] = raid_details
         moves = report_details.get('moves', None)
         raidexp = report_details.get('raidexp', 45)
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_raid)
@@ -936,6 +938,9 @@ class Huntr(commands.Cog):
         raid_details = report_details.get('gym')
         raidexp = report_details.get('raidexp', 60)
         raid_coordinates = report_details['gps']
+        report_details['coordinates'] = raid_coordinates
+        raid_details = report_details.get('gym', raid_coordinates)
+        report_details['address'] = raid_details
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
         if not weather:
             weather = await raid_cog.auto_weather(ctx, raid_coordinates)

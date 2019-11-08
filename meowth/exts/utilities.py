@@ -420,7 +420,7 @@ def create_gmaps_query(bot, details, channel, type="raid"):
         report = "raid"
     else:
         report = type
-    if "/maps" in details and "http" in details:
+    if details and "/maps" in details and "http" in details:
         mapsindex = details.find('/maps')
         newlocindex = details.rfind('http', 0, mapsindex)
         if newlocindex == (- 1):

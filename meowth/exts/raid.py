@@ -43,9 +43,9 @@ class Raid(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
-        guild = channel.guild
+        guild = getattr(channel, "guild", None)
         try:
-            user = guild.get_member(payload.user_id)
+            user = self.bot.get_user(payload.user_id)
         except AttributeError:
             return
         if user == self.bot.user:
@@ -891,7 +891,7 @@ class Raid(commands.Cog):
         if raid_coordinates:
             raid_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={raid_coordinates}"
         else:
-            raid_gmaps_link = utils.create_gmaps_query(self.bot, raid_location, ctx.channel, type="raid")
+            raid_gmaps_link = utils.create_gmaps_query(self.bot, raid_location or raid_coordinates, ctx.channel, type="raid")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog and not raid_coordinates:

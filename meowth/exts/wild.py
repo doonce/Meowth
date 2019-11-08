@@ -28,16 +28,16 @@ class Wild(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
+        guild = getattr(channel, "guild", None)
         try:
-            message = await channel.fetch_message(payload.message_id)
-        except (discord.errors.NotFound, AttributeError, discord.Forbidden):
-            return
-        guild = message.guild
-        try:
-            user = guild.get_member(payload.user_id)
+            user = self.bot.get_user(payload.user_id)
         except AttributeError:
             return
         if user == self.bot.user:
+            return
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except (discord.errors.NotFound, AttributeError, discord.Forbidden):
             return
         can_manage = channel.permissions_for(user).manage_messages
         try:
