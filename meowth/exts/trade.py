@@ -106,6 +106,8 @@ class Trading(commands.Cog):
             user = self.bot.get_user(payload.user_id)
         except AttributeError:
             return
+        if user.bot:
+            return
         if not channel:
             channel = user.dm_channel
             if not channel:
@@ -121,8 +123,6 @@ class Trading(commands.Cog):
         active_check_dict = {}
         offer_dict = {}
         accepted_dict = {}
-        if user.bot:
-            return
         for guildid in self.bot.guild_dict.keys():
             guild = self.bot.get_guild(guildid)
             if message.guild and message.channel.id not in self.bot.guild_dict[guild.id]['configure_dict']['trade']['report_channels']:

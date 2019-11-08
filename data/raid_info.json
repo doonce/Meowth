@@ -4,10 +4,11 @@
       "egg": "normal", 
       "egg_img": "1.png", 
       "pokemon": [
-        129, 
-        138, 
-        140, 
-        320
+        "Ekans", 
+        "Zubat", 
+        "Meowth", 
+        "Cubone", 
+        "Koffing"
       ], 
       "hatchtime": 60, 
       "raidtime": 45
@@ -16,10 +17,11 @@
       "egg": "normal", 
       "egg_img": "2.png", 
       "pokemon": [
-        125, 
-        185, 
-        303, 
-        310
+        "Sandslash", 
+        "Magneton", 
+        "Muk", 
+        "Cloyster", 
+        "Kingler"
       ], 
       "hatchtime": 60, 
       "raidtime": 45
@@ -28,10 +30,10 @@
       "egg": "rare", 
       "egg_img": "3.png", 
       "pokemon": [
-        68, 
-        95, 
-        135, 
-        142
+        "Alolan Raichu", 
+        "Persian", 
+        "Machamp", 
+        "Onix"
       ], 
       "hatchtime": 60, 
       "raidtime": 45
@@ -40,10 +42,11 @@
       "egg": "rare", 
       "egg_img": "4.png", 
       "pokemon": [
-        76, 
-        112, 
-        248, 
-        359
+        "Nidoking", 
+        "Golem", 
+        "Alolan Marowak", 
+        "Rhydon", 
+        "Absol"
       ], 
       "hatchtime": 60, 
       "raidtime": 45
@@ -52,8 +55,7 @@
       "egg": "legendary", 
       "egg_img": "5.png", 
       "pokemon": [
-        378, 
-        379
+        "Cobalion"
       ], 
       "hatchtime": 60, 
       "raidtime": 45
@@ -62,7 +64,7 @@
       "egg": "EX", 
       "egg_img": "EX.png", 
       "pokemon": [
-        150
+        "Mewtwo"
       ], 
       "hatchtime": 14, 
       "raidtime": 45

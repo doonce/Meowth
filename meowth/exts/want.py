@@ -58,8 +58,6 @@ class Want(commands.Cog):
         want_embed.add_field(name=_('**Item**'), value=f"Reply with **item** to want sspecific items from research.", inline=False)
         want_embed.add_field(name=_('**Settings**'), value=f"Reply with **settings** to access your want settings.", inline=False)
         want_embed.add_field(name=_('**List**'), value=f"Reply with **list** to view your want list.", inline=False)
-        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
-        item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "glacial lure module", "magnetic lure module", "mossy lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
         while True:
             async with ctx.typing():
                 def check(reply):
@@ -68,13 +66,13 @@ class Want(commands.Cog):
                     else:
                         return False
                 if pokemon:
-                    if pokemon.split(',')[0].lower().strip() in type_list:
+                    if pokemon.split(',')[0].lower().strip() in self.bot.type_list:
                         return await ctx.invoke(self.bot.get_command('want type'), types=pokemon)
                     elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in [x.lower() for x in gyms]:
                         return await ctx.invoke(self.bot.get_command('want gym'), gyms=pokemon)
                     elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in [x.lower() for x in stops]:
                         return await ctx.invoke(self.bot.get_command('want stop'), stops=pokemon)
-                    elif pokemon.split(',')[0].lower().strip() in item_list:
+                    elif pokemon.split(',')[0].lower().strip() in self.bot.item_list:
                         return await ctx.invoke(self.bot.get_command('want item'), items=pokemon)
                     elif pokemon.split(',')[0].lower().strip().isdigit() and int(pokemon.split(',')[0].lower().strip()) < 101:
                         want_embed.clear_fields()
@@ -262,7 +260,7 @@ class Want(commands.Cog):
                     elif want_category_msg.clean_content.lower() == "item":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/MysteryItem.png?cache=1")
                         want_embed.clear_fields()
-                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the items you'd like to subscribe to.\n\nSupported items include: incense, poke ball, great ball, ultra ball, master ball, potion, super potion, hyper potion, max potion, revive, max revive, razz berry, golden razz berry, nanab berry, pinap berry, silver pinap berry, fast tm, charged tm, rare candy, lucky egg, stardust, lure module, glacial lure module, magnetic lure module, mossy lure module, star piece, premium raid pass, egg incubator, super incubator, team medallion, sun stone, metal coat, dragon scale, up-grade, sinnoh stone.\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the items you'd like to subscribe to.\n\nSupported items include: {', '.join(self.bot.item_list)}.\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -286,7 +284,7 @@ class Want(commands.Cog):
                     elif want_category_msg.clean_content.lower() == "type":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/types.png?cache=1")
                         want_embed.clear_fields()
-                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the types you'd like to subscribe to.\n\nSupported types include: normal, fighting, flying, poison, ground, rock, bug, ghost, steel, fire, water, grass, electric, psychic, ice, dragon, dark, fairy.\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the types you'd like to subscribe to.\n\nSupported types include: {', '.join(self.bot.type_list)}.\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -572,7 +570,7 @@ class Want(commands.Cog):
     async def want_item(self, ctx, *, items):
         """Add a item to your want list. Currently used research and lure reports.
 
-        Item List = incense, poke ball, great ball, ultra ball, master ball, potion, super potion, hyper potion, max potion, revive, max revive, razz berry, golden razz berry, nanab berry, pinap berry, silver pinap berry, fast tm, charged tm, rare candy, lucky egg, stardust, lure module, glacial lure module, magnetic lure module, mossy lure module, star piece, premium raid pass, egg incubator, super incubator, team medallion, sun stone, metal coat, dragon scale, up-grade, sinnoh stone
+        Item List = incense, poke ball, great ball, ultra ball, master ball, potion, super potion, hyper potion, max potion, revive, max revive, razz berry, golden razz berry, nanab berry, pinap berry, silver pinap berry, fast tm, charged tm, rare candy, lucky egg, stardust, lure module, glacial lure module, magnetic lure module, mossy lure module, star piece, premium raid pass, egg incubator, super incubator, team medallion, sun stone, metal coat, dragon scale, up-grade, sinnoh stone, unova stone, mysterious component, rocket radar
 
         Usage: !want item <item list>"""
         await ctx.trigger_typing()
@@ -587,14 +585,13 @@ class Want(commands.Cog):
         already_want_count = 0
         already_want_list = []
         added_list = []
-        item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "glacial lure module", "magnetic lure module", "mossy lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
         for entered_want in want_split:
-            if entered_want.strip().lower() in item_list:
+            if entered_want.strip().lower() in self.bot.item_list:
                 want_list.append(entered_want.strip().lower())
             else:
                 spellcheck_list.append(entered_want)
-                match, score = utils.get_match(item_list, entered_want)
+                match, score = utils.get_match(self.bot.item_list, entered_want)
                 spellcheck_dict[entered_want] = match
         for entered_want in want_list:
             if entered_want.lower() in user_wants:
@@ -637,14 +634,13 @@ class Want(commands.Cog):
         already_want_count = 0
         already_want_list = []
         added_list = []
-        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
         for entered_want in want_split:
-            if entered_want.strip().lower() in type_list:
+            if entered_want.strip().lower() in self.bot.type_list:
                 want_list.append(entered_want.strip().lower())
             else:
                 spellcheck_list.append(entered_want)
-                match, score = utils.get_match(type_list, entered_want)
+                match, score = utils.get_match(self.bot.type_list, entered_want)
                 spellcheck_dict[entered_want] = match
         for entered_want in want_list:
             if entered_want.lower() in user_wants:
@@ -1184,8 +1180,6 @@ class Want(commands.Cog):
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         want_msg = f"Meowth! I'll help you remove an alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to unsubscribe from. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=want_msg, inline=False)
-        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
-        item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "glacial lure module", "magnetic lure module", "mossy lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
         if not any([user_wants, user_bosses, user_gyms, user_stops, user_ivs, user_levels, user_items, user_types, user_forms, user_roles]):
             want_embed.clear_fields()
             want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_softbank.png?cache=1")
@@ -1222,13 +1216,13 @@ class Want(commands.Cog):
                     else:
                         return False
                 if pokemon:
-                    if pokemon.split(',')[0].lower().strip() in type_list:
+                    if pokemon.split(',')[0].lower().strip() in self.bot.type_list:
                         return await ctx.invoke(self.bot.get_command('unwant type'), types=pokemon)
                     elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in [x.lower() for x in gyms]:
                         return await ctx.invoke(self.bot.get_command('unwant gym'), gyms=pokemon)
                     elif gym_matching_cog and pokemon.split(',')[0].lower().strip() in [x.lower() for x in stops]:
                         return await ctx.invoke(self.bot.get_command('unwant stop'), stops=pokemon)
-                    elif pokemon.split(',')[0].lower().strip() in item_list:
+                    elif pokemon.split(',')[0].lower().strip() in self.bot.item_list:
                         return await ctx.invoke(self.bot.get_command('unwant item'), items=pokemon)
                     elif pokemon.split(',')[0].lower().strip().isdigit() and int(pokemon.split(',')[0].lower().strip()) < 101:
                         want_embed.clear_fields()
@@ -1841,17 +1835,16 @@ class Want(commands.Cog):
         not_wanted_count = 0
         not_wanted_list = []
         removed_list = []
-        item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "glacial lure module", "magnetic lure module", "mossy lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone"]
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
         for entered_unwant in unwant_split:
-            if entered_unwant.strip().lower() in item_list:
+            if entered_unwant.strip().lower() in self.bot.item_list:
                 unwant_list.append(entered_unwant.strip().lower())
             elif len(unwant_split) == 1 and "all" in entered_unwant:
                 await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('unwant all'), category="item")
             else:
                 spellcheck_list.append(entered_unwant)
-                match, score = utils.get_match(item_list, entered_unwant)
+                match, score = utils.get_match(self.bot.item_list, entered_unwant)
                 spellcheck_dict[entered_unwant] = match
         for entered_unwant in unwant_list:
             if entered_unwant.lower() not in user_wants:
@@ -1895,17 +1888,16 @@ class Want(commands.Cog):
         not_wanted_count = 0
         not_wanted_list = []
         removed_list = []
-        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
         for entered_unwant in unwant_split:
-            if entered_unwant.strip().lower() in type_list:
+            if entered_unwant.strip().lower() in self.bot.type_list:
                 unwant_list.append(entered_unwant.strip().lower())
             elif len(unwant_split) == 1 and "all" in entered_unwant:
                 await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('unwant all'), category="type")
             else:
                 spellcheck_list.append(entered_unwant)
-                match, score = utils.get_match(type_list, entered_unwant)
+                match, score = utils.get_match(self.bot.type_list, entered_unwant)
                 spellcheck_dict[entered_unwant] = match
         for entered_unwant in unwant_list:
             if entered_unwant.lower() not in user_wants:

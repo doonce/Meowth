@@ -291,7 +291,16 @@ class Research(commands.Cog):
         fasttm = re.search(r'(?i)fast tm', reward)
         chargetm = re.search(r'(?i)charged? tm', reward)
         starpiece = re.search(r'(?i)star piece', reward)
-        reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module"]
+        sinnoh_stone = re.search(r'(?i)sinnoh stone', reward)
+        unova_stone = re.search(r'(?i)unova stone', reward)
+        kings_rock = re.search(r'(?i)king\'?s? rock', reward)
+        dragon_scale = re.search(r'(?i)dragon scale', reward)
+        metal_coat = re.search(r'(?i)metal coat', reward)
+        sun_stone = re.search(r'(?i)sun stone', reward)
+        up_grade = re.search(r'(?i)up-? ?grade', reward)
+        mysterious_component = re.search(r'(?i)mysterious|(?i)component', reward)
+        rocket_radar = re.search(r'(?i)rocket radar', reward)
+        reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module", "mysterious", "component", "radar", "sinnoh", "unova", "stone", "scale", "coat", "grade"]
         other_reward = any(x in reward.lower() for x in reward_list)
         research_msg = f"Meowth! Field Research reported by {ctx.author.mention}! Details: {location}\n\nUse {complete_emoji} if completed, {expire_emoji} if expired, {report_emoji} to report new, or {list_emoji} to list all research!"
         research_embed.title = _('Meowth! Click here for my directions to the research!')
@@ -386,6 +395,33 @@ class Research(commands.Cog):
         elif lure and mossylure:
             research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_mossy.png")
             item = "mossy lure module"
+        elif sinnoh_stone:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Sinnoh_Stone_Sprite.png")
+            item = "sinnoh stone"
+        elif unova_stone:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Unova_Stone_Sprite.png")
+            item = "unova stone"
+        elif kings_rock:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_King's_Rock_Sprite.png")
+            item = "king's rock"
+        elif dragon_scale:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Dragon_Scale_Sprite.png")
+            item = "dragon scale"
+        elif metal_coat:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Metal_Coat_Sprite.png")
+            item = "metal coat"
+        elif sun_stone:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Sun_Stone_Sprite.png")
+            item = "sun stone"
+        elif up_grade:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Up-Grade_Sprite.png")
+            item = "up-grade"
+        elif mysterious_component:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/hideout_map_frag.png")
+            item = "mysterious component"
+        elif rocket_radar:
+            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_Leader_MapCompass.png")
+            item = "rocket radar"
         research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
         research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, " "), inline=True)
         research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, " "), inline=True)

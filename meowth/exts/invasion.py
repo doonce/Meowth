@@ -269,6 +269,7 @@ class Invasion(commands.Cog):
             ctx.author = author
         if gender:
             invasion_embed.set_author(name=f"Invasion Report {' (♀)' if gender == 'female' else ''}{' (♂)' if gender == 'male' else ''}", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_shadow.png?cache=2")
+            invasion_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
         pokemon = None
         shiny_str = ""
         reward_str = ""
@@ -526,7 +527,7 @@ class Invasion(commands.Cog):
         report_emoji = self.bot.custom_emoji.get('invasion_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [complete_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
-        invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
+        invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
         type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         pokemon = None
         shiny_str = ""

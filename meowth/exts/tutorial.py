@@ -1172,9 +1172,23 @@ class Tutorial(commands.Cog):
                             cmd_text.append(f"**{cmd.name}** - {cmd.short_doc}")
                         if cog_match.group().lower() == "not run" and can_manage:
                             cmd_text = [x.split(' - ')[0] for x in cmd_text]
-                            help_embed.add_field(name=f"**Commands**", value=(', ').join(cmd_text))
+                            field_value = ""
+                            for index, item in enumerate(cmd_text):
+                                if (len(field_value) + len(item)) < 1000:
+                                    field_value += f"{'' if index == 0 else ', '}{item}"
+                                else:
+                                    help_embed.add_field(name=f"**Commands**", value=field_value)
+                                    field_value = item
+                            help_embed.add_field(name=f"**Commands**", value=field_value)
                         elif cmd_text:
-                            help_embed.add_field(name=f"**Commands**", value=('\n').join(cmd_text))
+                            field_value = ""
+                            for item in cmd_text:
+                                if (len(field_value) + len(item)) < 1000:
+                                    field_value += f"\n{item}"
+                                else:
+                                    help_embed.add_field(name=f"**Commands**", value=field_value)
+                                    field_value = item
+                            help_embed.add_field(name=f"**Commands**", value=field_value)
                         try:
                             cmd_wait = await ctx.send(embed=help_embed, delete_after=120)
                         except:
@@ -1221,7 +1235,14 @@ class Tutorial(commands.Cog):
                     if await predicate(cmd) and not cmd.hidden:
                         sub_cmd.append(f"**{cmd.name}** - {cmd.short_doc}")
                 if sub_cmd:
-                    help_embed.add_field(name="**Subcommands**", value=('\n').join(sub_cmd), inline=False)
+                    field_value = ""
+                    for item in sub_cmd:
+                        if (len(field_value) + len(item)) < 1000:
+                            field_value += f"\n{item}"
+                        else:
+                            help_embed.add_field(name=f"**Subommands**", value=field_value)
+                            field_value = item
+                    help_embed.add_field(name=f"**Subommands**", value=field_value)
             tutorial_command = self.bot.get_command('tutorial')
             if command.name in [x.name for x in tutorial_command.commands]:
                 help_embed.add_field(name="**Tutorial**", value=f"Tutorial is available for {command.name} using **{ctx.prefix}tutorial {command.name}**")

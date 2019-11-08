@@ -664,6 +664,7 @@ class Wild(commands.Cog):
         wild_gmaps_link = utils.create_gmaps_query(self.bot, wild_details, message.channel, type="wild")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         poi_info = ""
+        wild_coordinates = ""
         if gym_matching_cog:
             poi_info, wild_details, poi_url = await gym_matching_cog.get_poi_info(ctx, wild_details.replace(f" - **{wild_iv}IV**", "").strip(), "wild")
             if poi_url:
@@ -710,6 +711,7 @@ class Wild(commands.Cog):
             'report_guild':message.guild.id,
             'dm_dict':dm_dict,
             'location':wild_details,
+            'coordinates':wild_coordinates,
             'url':wild_gmaps_link,
             'pokemon':pokemon.name.lower(),
             'pkmn_obj':str(pokemon),

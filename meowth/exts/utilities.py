@@ -244,7 +244,10 @@ async def ask(bot, message, user_list=None, timeout=60, *, react_list=[]):
     if user_list and type(user_list) != list:
         user_list = [user_list]
     for member in message.guild.members:
-        if (message.channel.permissions_for(member).manage_channels or message.channel.permissions_for(member).manage_messages) and member.id not in user_list:
+        if member.id in bot.managers and member.id not in user_list:
+            if member != bot.user:
+                user_list.append(member.id)
+        elif (message.channel.permissions_for(member).manage_channels or message.channel.permissions_for(member).manage_messages) and member.id not in user_list:
             if member != bot.user:
                 user_list.append(member.id)
     def check(reaction, user):
@@ -837,7 +840,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.11.5.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.11.8.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

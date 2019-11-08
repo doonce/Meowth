@@ -524,7 +524,7 @@ class GymMatching(commands.Cog):
             if not autocorrect:
                 return None
             try:
-                if "train" in ctx.invoked_with.lower() or "meetup" in ctx.invoked_with.lower():
+                if ctx.invoked_with and ("train" in ctx.invoked_with.lower() or "meetup" in ctx.invoked_with.lower()):
                     return False
                 answer_yes = self.bot.custom_emoji.get('answer_yes', '\u2705')
                 answer_no = self.bot.custom_emoji.get('answer_no', '\u274e')
@@ -603,12 +603,12 @@ class GymMatching(commands.Cog):
                         dupe_channel = self.bot.get_channel(raid)
                         if dupe_channel:
                             duplicate_raids.append(dupe_channel.mention)
-                if duplicate_raids:
-                    if ctx.author.bot:
-                        return "", False, False
-                    if not dupe_check:
-                        return poi_info, details, poi_gmaps_link
-                    rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_raids)))
+            if duplicate_raids:
+                if ctx.author.bot:
+                    return "", False, False
+                if not dupe_check:
+                    return poi_info, details, poi_gmaps_link
+                rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_raids)))
         elif type == "research":
             poi_info = poi_note
             counter = 1
