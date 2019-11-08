@@ -890,12 +890,10 @@ class Want(commands.Cog):
         try:
             reply = await ctx.bot.wait_for('message', timeout=120, check=check)
         except asyncio.TimeoutError:
-            await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=120)
-            return
+            return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=120)
         await utils.safe_delete(reply)
         if reply.content.lower() == "cancel":
-            await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed.")
-            return
+            return await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed.")
         elif reply.content.lower() == "mute":
             await ctx.send(f"{ctx.author.mention} - Your DM alerts are now muted.")
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute'] = True
@@ -913,8 +911,7 @@ class Want(commands.Cog):
             try:
                 time_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
             except asyncio.TimeoutError:
-                await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-                return
+                return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
             await utils.safe_delete(time_reply)
             if time_reply.content.lower() == "none":
                 await ctx.send(f"{ctx.author.mention} - You will now receive all DMs you are subscribed to, regardless of time.")
@@ -924,20 +921,17 @@ class Want(commands.Cog):
             try:
                 start_set = dateparser.parse(time_reply.content.lower())
             except ValueError:
-                await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-                return
+                return await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
             await ctx.send(f"Please enter the time you would like to **stop receiving** DMs each day. *Ex: 9:00 PM*", delete_after=120)
             try:
                 time_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
             except asyncio.TimeoutError:
-                await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-                return
+                return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
             await utils.safe_delete(time_reply)
             try:
                 end_set = dateparser.parse(time_reply.content.lower())
             except ValueError:
-                await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-                return
+                return await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
             await ctx.send(f"{ctx.author.mention} - Your DM alerts will start at {start_set.time().strftime('%I:%M %p')} and stop at {end_set.time().strftime('%I:%M %p')} each day.")
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_start'] = start_set.time()
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_end'] = end_set.time()

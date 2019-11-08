@@ -183,7 +183,12 @@ class Configure(commands.Cog):
                         new_word = await utils.get_object(ctx, word, return_type="name")
                         value = value.replace(word, new_word)
                 config_value += v + ": " + value + "\n"
-            config_embed.add_field(name=k.title(), value=config_value, inline=False)
+            if len(config_embed.fields) < 25:
+                config_embed.add_field(name=k.title(), value=config_value, inline=False)
+            else:
+                await ctx.author.send(embed=config_embed)
+                config_embed.clear_fields()
+                config_embed.add_field(name=k.title(), value=config_value, inline=False)
         try:
             await ctx.author.send(embed=config_embed)
         except:

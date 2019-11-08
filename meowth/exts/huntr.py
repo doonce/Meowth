@@ -1281,8 +1281,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
-        random_type = random.choice(type_list)
+        random_type = random.choice(self.bot.type_list)
         huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"invasion", "pokestop":"Marilla Park", "reward":random_type, "gps":"39.645742,-79.96908", "gender":"male", "expire":25}).replace("'", '"'))
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)

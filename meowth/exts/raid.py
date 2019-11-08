@@ -461,6 +461,8 @@ class Raid(commands.Cog):
                     await channel.send(embed=expire_embed)
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (5 * 60)) - time.time()
             raidtype = _("event") if self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', False) else _(" raid")
+            if delete_raid:
+                delete_time = 300
             await asyncio.sleep(delete_time)
             # If the channel has already been deleted from the dict, someone
             # else got to it before us, so don't do anything.
@@ -3054,7 +3056,7 @@ class Raid(commands.Cog):
                             raid_embed.remove_field(-1)
                         if timer_set:
                             raid_timer = await self.print_raid_timer(raid_channel)
-                        await ctx.send(f"Meowth! I found this raid at {train_location}! {raid_timer}", embed=raid_embed)
+                        await train_channel.send(f"Meowth! I found this raid at {train_location}! {raid_timer}", embed=raid_embed)
                     except:
                         pass
                     break

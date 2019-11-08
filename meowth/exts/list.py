@@ -1131,7 +1131,7 @@ class Listing(commands.Cog):
         potion_quests = []
         revive_quests = []
         ball_quests = []
-        reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy"]
+        reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module", "mysterious", "component", "radar", "sinnoh", "unova", "stone", "scale", "coat", "grade"]
         encounter_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_encounter', '\u2753'))
         candy_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_candy', '\U0001F36C'))
         dust_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_dust', '\u2b50'))

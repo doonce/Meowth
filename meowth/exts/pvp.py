@@ -733,10 +733,10 @@ class Pvp(commands.Cog):
         output = []
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Badge_Master.png?cache=1')
         if is_moderator:
-            type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
+            type_list = self.bot.type_list
         else:
             type_list = list(self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('pvp', {}).setdefault('leader', []))
-        for type in type_list:
+        for type in self.bot.type_list:
             emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[type])
             output.append(f"{emoji} {type.title()}")
         while True:
@@ -767,7 +767,7 @@ class Pvp(commands.Cog):
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pvp', {}).get('badges'):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['badges'] = []
                     return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Removed badges from all users."))
-                elif badge_type_msg.clean_content.lower() in type_list:
+                elif badge_type_msg.clean_content.lower() in self.bot.type_list:
                     badge_type = badge_type_msg.clean_content.lower()
                     badge_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[badge_type])
                 else:
@@ -842,8 +842,7 @@ class Pvp(commands.Cog):
         output = []
         is_moderator = await checks.check_is_mod(ctx)
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Badge_Master.png?cache=1')
-        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
-        leader_dict = {k:{"emoji":utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[k]), "leaders":[]} for k in type_list}
+        leader_dict = {k:{"emoji":utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[k]), "leaders":[]} for k in self.bot.type_list}
         for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
             if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
                 for type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
@@ -879,7 +878,7 @@ class Pvp(commands.Cog):
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pvp', {}).get('leader'):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['leader'] = []
                     return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Removed all gym leaders."))
-                elif badge_type_msg.clean_content.lower() in type_list:
+                elif badge_type_msg.clean_content.lower() in self.bot.type_list:
                     badge_type = badge_type_msg.clean_content.lower()
                     badge_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[badge_type])
                 else:

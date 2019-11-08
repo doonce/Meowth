@@ -157,7 +157,6 @@ class Invasion(commands.Cog):
         reward_type = invasion_dict.get('reward_type', '')
         location = invasion_dict.get('location', '')
         info_emoji = ctx.bot.custom_emoji.get('invasion_info', '\u2139')
-        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         if not author:
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
@@ -196,7 +195,7 @@ class Invasion(commands.Cog):
                     for value in entered_values:
                         value_split = value.split()
                         if "type" in value and "type" not in success:
-                            if value_split[1] and value_split[1].lower() in type_list:
+                            if value_split[1] and value_split[1].lower() in self.bot.type_list:
                                 self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['reward_type'] = value_split[1]
                                 success.append("type")
                             elif value_split[1] and value_split[1].lower() == "none":
@@ -354,10 +353,9 @@ class Invasion(commands.Cog):
                 else:
                     index += 1
         invasion_type = None
-        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         pokemon = None
         pkmn_list = []
-        if inv_pokemon in type_list:
+        if inv_pokemon in self.bot.type_list:
             invasion_type = inv_pokemon
         elif inv_pokemon:
             for pokemon in inv_pokemon:
@@ -427,7 +425,6 @@ class Invasion(commands.Cog):
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pokemon = False
         gender = None
-        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         invasion_dict = self.bot.guild_dict[ctx.guild.id].setdefault('invasion_dict', {})
         while True:
             async with ctx.typing():
@@ -494,7 +491,7 @@ class Invasion(commands.Cog):
                         break
                     elif rewardmsg.clean_content.lower() == "n":
                         reward = []
-                    elif rewardmsg.clean_content.lower().strip() in type_list:
+                    elif rewardmsg.clean_content.lower().strip() in self.bot.type_list:
                         reward = rewardmsg.clean_content.lower().strip()
                     elif rewardmsg:
                         reward = rewardmsg.clean_content.split(',')
@@ -528,7 +525,6 @@ class Invasion(commands.Cog):
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [complete_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
-        type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         pokemon = None
         shiny_str = ""
         reward_str = ""
@@ -537,7 +533,7 @@ class Invasion(commands.Cog):
         if not reward:
             reward = []
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknown Pokemon", inline=True)
-        elif isinstance(reward, str) and reward.lower() in type_list:
+        elif isinstance(reward, str) and reward.lower() in self.bot.type_list:
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward.title()} Invasion {self.bot.config.type_id_dict[reward.lower()]}", inline=True)
             reward = reward.strip().lower()
             reward_type = reward.strip().lower()
@@ -606,7 +602,7 @@ class Invasion(commands.Cog):
         }
         dm_dict = await self.send_dm_messages(ctx, reward, location, copy.deepcopy(invasion_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['dm_dict'] = dm_dict
-        if str(reward).lower() in type_list:
+        if str(reward).lower() in self.bot.type_list:
             self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['reward'] = []
         if not ctx.author.bot:
             invasion_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('invasion', 0) + 1
