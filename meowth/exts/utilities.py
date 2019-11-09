@@ -583,7 +583,7 @@ async def get_item(ctx, search_term):
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_Leader_MapCompass.png?cache=1", "rocket radar"
     elif team_medalion:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1406.png?cache=1", "team medalion"
-    elif egg_incubator and not super_incobator:
+    elif egg_incubator and not super_incubator:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/EggIncubatorEmpty.png?cache=1", "egg incubator"
     elif super_incubator:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/EggIncubatorSuper_Empty.png?cache=1", "super incubator"
