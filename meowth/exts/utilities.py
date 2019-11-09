@@ -326,10 +326,9 @@ def do_template(message, author, guild):
     return (msg, not_found)
 
 async def autocorrect(bot, entered_word, word_list, destination, author):
-    msg = _("Meowth! **{word}** isn't a Pokemon!").format(word=entered_word.title())
     match, score = get_match(word_list, entered_word)
     if match:
-        msg += _(' Did you mean **{correction}**?').format(correction=match.title())
+        msg = f"I couldn't find **{entered_word.title()}**! Did you mean **{match.title()}**?"
         question = await destination.send(msg)
         if author:
             try:
@@ -347,7 +346,6 @@ async def autocorrect(bot, entered_word, word_list, destination, author):
         else:
             return None
     else:
-        question = await destination.send(msg)
         return None
 
 def parse_emoji(guild, emoji_string):

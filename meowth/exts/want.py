@@ -601,9 +601,13 @@ class Want(commands.Cog):
             if entered_want.strip().lower() in self.bot.item_list:
                 want_list.append(entered_want.strip().lower())
             else:
-                spellcheck_list.append(entered_want)
-                match, score = utils.get_match(self.bot.item_list, entered_want)
-                spellcheck_dict[entered_want] = match
+                match = await utils.autocorrect(self.bot, entered_want, self.bot.item_list, ctx.channel, ctx.author)
+                if match:
+                    want_list.append(match.lower())
+                else:
+                    spellcheck_list.append(entered_want)
+                    match, score = utils.get_match(self.bot.item_list, entered_want)
+                    spellcheck_dict[entered_want] = match
         for entered_want in want_list:
             if entered_want.lower() in user_wants:
                 already_want_list.append(entered_want.title())
@@ -655,9 +659,13 @@ class Want(commands.Cog):
             if entered_want.strip().lower() in self.bot.type_list:
                 want_list.append(entered_want.strip().lower())
             else:
-                spellcheck_list.append(entered_want)
-                match, score = utils.get_match(self.bot.type_list, entered_want)
-                spellcheck_dict[entered_want] = match
+                match = await utils.autocorrect(self.bot, entered_want, self.bot.type_list, ctx.channel, ctx.author)
+                if match:
+                    want_list.append(match.lower())
+                else:
+                    spellcheck_list.append(entered_want)
+                    match, score = utils.get_match(self.bot.type_list, entered_want)
+                    spellcheck_dict[entered_want] = match
         for entered_want in want_list:
             if entered_want.lower() in user_wants:
                 already_want_list.append(entered_want.title())
@@ -1796,9 +1804,13 @@ class Want(commands.Cog):
                 await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('unwant all'), category="item")
             else:
-                spellcheck_list.append(entered_unwant)
-                match, score = utils.get_match(self.bot.item_list, entered_unwant)
-                spellcheck_dict[entered_unwant] = match
+                match = await utils.autocorrect(self.bot, entered_unwant, self.bot.item_list, ctx.channel, ctx.author)
+                if match:
+                    unwant_list.append(match)
+                else:
+                    spellcheck_list.append(entered_unwant)
+                    match, score = utils.get_match(self.bot.item_list, entered_unwant)
+                    spellcheck_dict[entered_unwant] = match
         for entered_unwant in unwant_list:
             if entered_unwant.lower() not in user_wants:
                 not_wanted_list.append(entered_unwant.title())
@@ -1854,9 +1866,13 @@ class Want(commands.Cog):
                 await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('unwant all'), category="type")
             else:
-                spellcheck_list.append(entered_unwant)
-                match, score = utils.get_match(self.bot.type_list, entered_unwant)
-                spellcheck_dict[entered_unwant] = match
+                match = await utils.autocorrect(self.bot, entered_unwant, self.bot.type_list, ctx.channel, ctx.author)
+                if match:
+                    unwant_list.append(match)
+                else:
+                    spellcheck_list.append(entered_unwant)
+                    match, score = utils.get_match(self.bot.type_list, entered_unwant)
+                    spellcheck_dict[entered_unwant] = match
         for entered_unwant in unwant_list:
             if entered_unwant.lower() not in user_wants:
                 not_wanted_list.append(entered_unwant.title())
