@@ -103,6 +103,8 @@ class Pvp(commands.Cog):
             return
         if user == self.bot.user:
             return
+        if guild:
+            user = guild.get_member(payload.user_id)
         try:
             message = await channel.fetch_message(payload.message_id)
         except (discord.errors.NotFound, AttributeError, discord.Forbidden):
