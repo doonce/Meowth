@@ -482,6 +482,107 @@ async def get_object(ctx, snowflake, return_type="object"):
     else:
         return object
 
+async def get_item(ctx, search_term):
+    """Given search_term, returns thumbnail_url, item"""
+    dust = re.search(r'(?i)dust', search_term)
+    candy = re.search(r'(?i)candy|(?i)candies', search_term)
+    pinap = re.search(r'(?i)pinap', search_term)
+    silverpinap = re.search(r'(?i)silver pinap', search_term)
+    razz = re.search(r'(?i)razz', search_term)
+    goldenrazz = re.search(r'(?i)golde?n? razz', search_term)
+    nanab = re.search(r'(?i)nanab', search_term)
+    lure = re.search(r'(?i)lure', search_term)
+    glaciallure = re.search(r'(?i)glacial lure', search_term)
+    magnetlure = re.search(r'(?i)magnetic lure', search_term)
+    mossylure = re.search(r'(?i)mossy lure', search_term)
+    pokeball = re.search(r'(?i)ball', search_term)
+    greatball = re.search(r'(?i)great ball', search_term)
+    ultraball = re.search(r'(?i)ultra ball', search_term)
+    potion = re.search(r'(?i)potion', search_term)
+    superpotion = re.search(r'(?i)super potion', search_term)
+    hyperpotion = re.search(r'(?i)hyper potion', search_term)
+    maxpotion = re.search(r'(?i)max potion', search_term)
+    revive = re.search(r'(?i)revive', search_term)
+    maxrevive = re.search(r'(?i)max revive', search_term)
+    fasttm = re.search(r'(?i)fast tm', search_term)
+    chargetm = re.search(r'(?i)charged? tm', search_term)
+    starpiece = re.search(r'(?i)star piece', search_term)
+    sinnoh_stone = re.search(r'(?i)sinnoh stone', search_term)
+    unova_stone = re.search(r'(?i)unova stone', search_term)
+    kings_rock = re.search(r'(?i)king\'?s? rock', search_term)
+    dragon_scale = re.search(r'(?i)dragon scale', search_term)
+    metal_coat = re.search(r'(?i)metal coat', search_term)
+    sun_stone = re.search(r'(?i)sun stone', search_term)
+    up_grade = re.search(r'(?i)up-? ?grade', search_term)
+    mysterious_component = re.search(r'(?i)mysterious|(?i)component', search_term)
+    rocket_radar = re.search(r'(?i)rocket radar', search_term)
+    if dust:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png?cache=1", "stardust"
+    elif candy:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1301.png?cache=1", "rare candy"
+    elif pinap and not silverpinap:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0705.png?cache=1", "pinap berry"
+    elif pinap and silverpinap:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0707.png?cache=1", "silver pinap berry"
+    elif razz and not goldenrazz:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0701.png?cache=1", "razz berry"
+    elif razz and goldenrazz:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0706.png?cache=1", "golden razz berry"
+    elif nanab:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0703.png?cache=1", "nanab berry"
+    elif pokeball and not ultraball and not greatball:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0001.png?cache=1", "poke ball"
+    elif pokeball and greatball:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0002.png?cache=1", "great ball"
+    elif pokeball and ultraball:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0003.png?cache=1", "ultra ball"
+    elif potion and not superpotion and not hyperpotion and not maxpotion:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0101.png?cache=1", "potion"
+    elif potion and superpotion:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0102.png?cache=1", "super potion"
+    elif potion and hyperpotion:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0103.png?cache=1", "hyper potion"
+    elif potion and maxpotion:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0104.png?cache=1", "max potion"
+    elif revive and not maxrevive:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0201.png?cache=1", "revive"
+    elif revive and maxrevive:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0202.png?cache=1", "max revive"
+    elif fasttm:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1201.png?cache=1", "fast tm"
+    elif chargetm:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1202.png?cache=1", "charged tm"
+    elif starpiece:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/starpiece.png?cache=1", "star piece"
+    elif lure and not glaciallure and not magnetlure and not mossylure:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1", "lure module"
+    elif lure and glaciallure:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_glacial.png?cache=1", "glacial lure module"
+    elif lure and magnetlure:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_magnetic.png?cache=1", "magnetic lure module"
+    elif lure and mossylure:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_mossy.png?cache=1", "mossy lure module"
+    elif sinnoh_stone:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Sinnoh_Stone_Sprite.png?cache=1", "sinnoh stone"
+    elif unova_stone:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Unova_Stone_Sprite.png?cache=1", "unova stone"
+    elif kings_rock:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_King's_Rock_Sprite.png?cache=1", "king's rock"
+    elif dragon_scale:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Dragon_Scale_Sprite.png?cache=1", "dragon scale"
+    elif metal_coat:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Metal_Coat_Sprite.png?cache=1", "metal coat"
+    elif sun_stone:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Sun_Stone_Sprite.png?cache=1", "sun stone"
+    elif up_grade:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Up-Grade_Sprite.png?cache=1", "up-grade"
+    elif mysterious_component:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/hideout_map_frag.png?cache=1", "mysterious component"
+    elif rocket_radar:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_Leader_MapCompass.png?cache=1", "rocket radar"
+    else:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/MysteryItem.png?cache=1", None
+
 async def expire_dm_reports(bot, dm_dict):
     if not dm_dict:
         return

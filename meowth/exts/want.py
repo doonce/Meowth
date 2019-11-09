@@ -363,15 +363,6 @@ class Want(commands.Cog):
         guild = message.guild
         channel = message.channel
         user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-        if "boss" in ctx.invoked_with:
-            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
-            if user_link:
-                await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!want** to add pokemon.")
-                return
-        else:
-            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         want_split = pokemon.lower().split(',')
         want_list = []
         added_count = 0
@@ -381,6 +372,17 @@ class Want(commands.Cog):
         already_want_list = []
         added_list = []
         role_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour)
+        if "boss" in ctx.invoked_with:
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
+            if user_link:
+                return await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!want** to add pokemon.")
+        else:
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
         for entered_want in want_split:
             if entered_want.lower() in self.bot.form_dict['list'] and not entered_want.isdigit():
                 forms = []
@@ -467,7 +469,11 @@ class Want(commands.Cog):
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        if len(added_list) == 1:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, added_list[0])
+            want_embed.set_thumbnail(url=pokemon.img_url)
+        want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
+        want_confirmation = await channel.send(embed=want_embed)
 
     @want.command(name='boss', aliases=['bosses'])
     @checks.allowwant()
@@ -490,15 +496,18 @@ class Want(commands.Cog):
         already_want_count = 0
         already_want_list = []
         added_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if not gym_matching_cog:
             return
         if poi_type == "stop":
             pois = gym_matching_cog.get_stops(ctx.guild.id)
             user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pokestop_near.png?cache=1")
         else:
             pois = gym_matching_cog.get_gyms(ctx.guild.id)
             user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/gym-arena.png?cache=1")
         for entered_want in want_split:
             gym = await gym_matching_cog.poi_match_prompt(ctx, entered_want, pois, None)
             if gym:
@@ -528,7 +537,8 @@ class Want(commands.Cog):
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
+        want_confirmation = await channel.send(embed=want_embed)
 
     @want.command(name='gym', aliases=['gyms'])
     @checks.allowwant()
@@ -585,6 +595,7 @@ class Want(commands.Cog):
         already_want_count = 0
         already_want_list = []
         added_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/MysteryItem.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
         for entered_want in want_split:
             if entered_want.strip().lower() in self.bot.item_list:
@@ -614,7 +625,11 @@ class Want(commands.Cog):
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        if len(added_list) == 1:
+            thumbnail_url, item = await utils.get_item(ctx, added_list[0])
+            want_embed.set_thumbnail(url=thumbnail_url)
+        want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
+        want_confirmation = await channel.send(embed=want_embed)
 
     @want.command(name='type', aliases=['types'])
     @checks.allowwant()
@@ -634,6 +649,7 @@ class Want(commands.Cog):
         already_want_count = 0
         already_want_list = []
         added_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/types.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
         for entered_want in want_split:
             if entered_want.strip().lower() in self.bot.type_list:
@@ -663,7 +679,10 @@ class Want(commands.Cog):
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        if len(added_list) == 1:
+            want_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/{added_list[0].lower()}.png")
+        want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
+        want_confirmation = await channel.send(embed=want_embed)
 
     @want.command(name='iv', aliases=['ivs'])
     @checks.allowwant()
@@ -683,6 +702,7 @@ class Want(commands.Cog):
         already_want_list = []
         added_list = []
         error_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
         for entered_want in want_split:
             if "+" in entered_want.lower():
@@ -725,7 +745,8 @@ class Want(commands.Cog):
             for word in error_list:
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
-        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
+        want_confirmation = await channel.send(embed=want_embed)
 
     @want.command(name='level', aliases=['levels'])
     @checks.allowwant()
@@ -745,6 +766,7 @@ class Want(commands.Cog):
         already_want_list = []
         added_list = []
         error_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
         for entered_want in want_split:
             if "+" in entered_want.lower():
@@ -787,7 +809,8 @@ class Want(commands.Cog):
             for word in error_list:
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
-        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
+        want_confirmation = await channel.send(embed=want_embed)
 
     @want.command(name='role', aliases=['roles'])
     @checks.allowwant()
@@ -807,6 +830,7 @@ class Want(commands.Cog):
         already_want_list = []
         added_list = []
         role_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/discord.png?cache=1")
         converter = commands.RoleConverter()
         join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])]
         for entered_want in want_split:
@@ -846,7 +870,8 @@ class Want(commands.Cog):
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        want_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
+        want_confirmation = await channel.send(embed=want_embed)
 
     @want.command()
     @checks.allowwant()
@@ -1243,7 +1268,7 @@ class Want(commands.Cog):
                         elif want_category_msg.clean_content.lower() == "level":
                             return await ctx.invoke(self.bot.get_command('unwant level'), levels=pokemon)
                         elif want_category_msg.clean_content.lower() == "pokemon":
-                            return await self._want_pokemon(ctx, pokemon)
+                            return await self._unwant_pokemon(ctx, pokemon)
                         else:
                             continue
                     else:
@@ -1531,15 +1556,6 @@ class Want(commands.Cog):
         guild = message.guild
         channel = message.channel
         user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-        if "boss" in ctx.invoked_with:
-            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
-            if user_link:
-                await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!unwant** to add pokemon.")
-                return
-        else:
-            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         unwant_split = pokemon.lower().split(',')
         unwant_list = []
         removed_count = 0
@@ -1549,6 +1565,17 @@ class Want(commands.Cog):
         not_wanted_list = []
         removed_list = []
         role_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour)
+        if "boss" in ctx.invoked_with:
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
+            if user_link:
+                return await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!unwant** to add pokemon.")
+        else:
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
         for entered_unwant in unwant_split:
             if entered_unwant.lower() in self.bot.form_dict['list'] and not entered_unwant.isdigit():
                 forms = []
@@ -1629,7 +1656,11 @@ class Want(commands.Cog):
                 if spellcheck_dict[word]:
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
+        if len(removed_list) == 1:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, removed_list[0])
+            want_embed.set_thumbnail(url=pokemon.img_url)
+        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
+        unwant_confirmation = await channel.send(embed=want_embed)
 
     @unwant.command(name='boss', aliases=['bosses'])
     @checks.allowwant()
@@ -1639,6 +1670,417 @@ class Want(commands.Cog):
         Usage: !unwant boss <species>
         You will no longer be notified of reports about this Pokemon."""
         await ctx.invoke(self.bot.get_command('unwant pokemon'), pokemon=bosses)
+
+    async def _unwant_poi(self, ctx, pois, poi_type="gym"):
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        unwant_split = pois.lower().split(',')
+        unwant_list = []
+        removed_count = 0
+        spellcheck_dict = {}
+        spellcheck_list = []
+        not_wanted_count = 0
+        not_wanted_list = []
+        removed_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour)
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        if not gym_matching_cog:
+            return
+        if poi_type == "stop":
+            pois = gym_matching_cog.get_stops(ctx.guild.id)
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pokestop_near.png?cache=1")
+        else:
+            pois = gym_matching_cog.get_gyms(ctx.guild.id)
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/gym-arena.png?cache=1")
+        for entered_unwant in unwant_split:
+            gym = await gym_matching_cog.poi_match_prompt(ctx, entered_unwant, pois, None)
+            if gym:
+                unwant_list.append(gym.lower())
+            elif len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="gym")
+            else:
+                spellcheck_list.append(entered_unwant)
+                match, score = utils.get_match(pois.keys(), entered_unwant)
+                spellcheck_dict[entered_unwant] = match
+        for entered_unwant in unwant_list:
+            if entered_unwant.lower() not in user_wants:
+                not_wanted_list.append(entered_unwant.title())
+                not_wanted_count += 1
+            else:
+                user_wants.remove(entered_unwant.lower())
+                removed_list.append(f"{entered_unwant.title()}")
+                removed_count += 1
+        unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'stop' if poi_type == 'stop' else 'gym'}{'s' if unwant_count > 1 else ''}:\n\n"
+        if removed_count > 0:
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+        if not_wanted_count > 0:
+            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+        if spellcheck_dict:
+            spellcheckmsg = ''
+            for word in spellcheck_dict:
+                spellcheckmsg += _('\n\t{word}').format(word=word)
+                if spellcheck_dict[word]:
+                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
+        unwant_confirmation = await channel.send(embed=want_embed)
+
+    @unwant.command(name='gym', aliases=['gyms'])
+    @checks.allowwant()
+    async def unwant_gym(self, ctx, *, gyms):
+        """Remove a gym from your wanted list.
+
+        Usage: !unwant gym <gym list>
+        You will no longer be notified of reports about this gym."""
+        await self._unwant_poi(ctx, gyms, poi_type="gym")
+
+    @unwant.command(name='exraid')
+    @checks.allowwant()
+    async def unwant_exraid(self, ctx):
+        """Remove all EX eligible gyms from your want list. Currently used for raid and raid egg reports.
+
+        Usage: !unwant exraid"""
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        ex_list = []
+        if not gym_matching_cog:
+            return
+        gyms = gym_matching_cog.get_gyms(ctx.guild.id)
+        for gym in gyms:
+            if "ex" in gyms[gym].get('notes', '').lower():
+                if gyms[gym].get('alias'):
+                    gym = gyms[gym].get('alias')
+                if gym not in ex_list:
+                    ex_list.append(gym)
+        await self._unwant_poi(ctx, (', ').join(ex_list), poi_type="gym")
+
+    @unwant.command(name='stop', aliases=['pokestop', 'pokestops', 'stops'])
+    @checks.allowwant()
+    async def unwant_stop(self, ctx, *, stops):
+        """Remove a pokestop from your wanted list.
+
+        Usage: !unwant stop <stop list>
+        You will no longer be notified of reports about this pokestop."""
+        await self._unwant_poi(ctx, stops, poi_type="stop")
+
+    @unwant.command(name='item', aliases=['items'])
+    @checks.allowwant()
+    async def unwant_item(self, ctx, *, items):
+        """Remove a item from your wanted list.
+
+        Usage: !unwant item <item list>
+        You will no longer be notified of reports about this item."""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        unwant_split = items.lower().split(',')
+        unwant_list = []
+        removed_count = 0
+        spellcheck_dict = {}
+        spellcheck_list = []
+        not_wanted_count = 0
+        not_wanted_list = []
+        removed_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/MysteryItem.png?cache=1")
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
+        for entered_unwant in unwant_split:
+            if entered_unwant.strip().lower() in self.bot.item_list:
+                unwant_list.append(entered_unwant.strip().lower())
+            elif len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="item")
+            else:
+                spellcheck_list.append(entered_unwant)
+                match, score = utils.get_match(self.bot.item_list, entered_unwant)
+                spellcheck_dict[entered_unwant] = match
+        for entered_unwant in unwant_list:
+            if entered_unwant.lower() not in user_wants:
+                not_wanted_list.append(entered_unwant.title())
+                not_wanted_count += 1
+            else:
+                user_wants.remove(entered_unwant.lower())
+                removed_list.append(f"{entered_unwant.title()}")
+                removed_count += 1
+        unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
+        if removed_count > 0:
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+        if not_wanted_count > 0:
+            confirmation_msg += _('**{not_wanted_count} Not Wwanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+        if spellcheck_dict:
+            spellcheckmsg = ''
+            for word in spellcheck_dict:
+                spellcheckmsg += _('\n\t{word}').format(word=word)
+                if spellcheck_dict[word]:
+                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+        if len(removed_list) == 1:
+            thumbnail_url, item = await utils.get_item(ctx, removed_list[0])
+            want_embed.set_thumbnail(url=thumbnail_url)
+        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
+        unwant_confirmation = await channel.send(embed=want_embed)
+
+    @unwant.command(name='type', aliases=['types'])
+    @checks.allowwant()
+    async def unwant_type(self, ctx, *, types):
+        """Remove a type from your wanted list.
+
+        Usage: !unwant type <species>
+        You will no longer be notified of reports about this type."""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        unwant_split = types.lower().split(',')
+        unwant_list = []
+        removed_count = 0
+        spellcheck_dict = {}
+        spellcheck_list = []
+        not_wanted_count = 0
+        not_wanted_list = []
+        removed_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/types.png?cache=1")
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
+        for entered_unwant in unwant_split:
+            if entered_unwant.strip().lower() in self.bot.type_list:
+                unwant_list.append(entered_unwant.strip().lower())
+            elif len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="type")
+            else:
+                spellcheck_list.append(entered_unwant)
+                match, score = utils.get_match(self.bot.type_list, entered_unwant)
+                spellcheck_dict[entered_unwant] = match
+        for entered_unwant in unwant_list:
+            if entered_unwant.lower() not in user_wants:
+                not_wanted_list.append(entered_unwant.title())
+                not_wanted_count += 1
+            else:
+                user_wants.remove(entered_unwant.lower())
+                removed_list.append(f"{entered_unwant.title()}")
+                removed_count += 1
+        unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** type{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
+        if removed_count > 0:
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+        if not_wanted_count > 0:
+            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+        if spellcheck_dict:
+            spellcheckmsg = ''
+            for word in spellcheck_dict:
+                spellcheckmsg += _('\n\t{word}').format(word=word)
+                if spellcheck_dict[word]:
+                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+        if len(removed_list) == 1:
+            want_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/{removed_list[0].lower()}.png")
+        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
+        unwant_confirmation = await channel.send(embed=want_embed)
+
+    @unwant.command(name='iv', aliases=['ivs'])
+    @checks.allowwant()
+    async def unwant_iv(self, ctx, *, ivs):
+        """Remove an IV from your wanted list.
+
+        Usage: !unwant iv <iv list>
+        You will no longer be notified of reports about this IV."""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        unwant_split = ivs.lower().split(',')
+        unwant_list = []
+        removed_count = 0
+        not_wanted_count = 0
+        not_wanted_list = []
+        removed_list = []
+        error_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1")
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
+        for entered_unwant in unwant_split:
+            if "+" in entered_unwant.lower():
+                entered_unwant = entered_unwant.replace("+", "").strip()
+                if not entered_unwant.strip().isdigit():
+                    error_list.append(entered_unwant)
+                    continue
+                for iv in range(int(entered_unwant), 101):
+                    if iv not in unwant_list:
+                        unwant_list.append(str(iv))
+            elif "-" in entered_unwant.lower():
+                range_split = entered_unwant.split("-")
+                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]):
+                    for iv in range(int(range_split[0]), int(range_split[1])+1):
+                        unwant_list.append(str(iv))
+                else:
+                    error_list.append(entered_unwant)
+            else:
+                if len(unwant_split) == 1 and "all" in entered_unwant:
+                    await utils.safe_delete(ctx.message)
+                    return await ctx.invoke(self.bot.get_command('unwant all'), category="iv")
+                elif not entered_unwant.strip().isdigit():
+                    error_list.append(entered_unwant)
+                    continue
+                if entered_unwant not in unwant_list:
+                    unwant_list.append(entered_unwant)
+        for entered_unwant in unwant_list:
+            if int(entered_unwant) not in user_wants:
+                not_wanted_list.append(entered_unwant)
+                not_wanted_count += 1
+            else:
+                user_wants.remove(int(entered_unwant))
+                removed_list.append(f"{entered_unwant}")
+                removed_count += 1
+        unwant_count = removed_count + not_wanted_count + len(error_list)
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** iv{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
+        if removed_count > 0:
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+        if not_wanted_count > 0:
+            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+        if error_list:
+            error_msg = ''
+            for word in error_list:
+                error_msg += _('\n\t{word}').format(word=word)
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
+        unwant_confirmation = await channel.send(embed=want_embed)
+
+    @unwant.command(name='level', aliases=['levels'])
+    @checks.allowwant()
+    async def unwant_level(self, ctx, *, levels):
+        """Remove a level from your wanted list.
+
+        Usage: !unwant level <level list>
+        You will no longer be notified of reports about this level."""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        unwant_split = levels.lower().split(',')
+        unwant_list = []
+        removed_count = 0
+        not_wanted_count = 0
+        not_wanted_list = []
+        removed_list = []
+        error_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_tut_strength_adjust.png?cache=1")
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
+        for entered_unwant in unwant_split:
+            if "+" in entered_unwant.lower():
+                entered_unwant = entered_unwant.replace("+", "").strip()
+                if not entered_unwant.strip().isdigit():
+                    error_list.append(entered_unwant)
+                    continue
+                for level in range(int(entered_unwant), 41):
+                    if level not in unwant_list:
+                        unwant_list.append(str(level))
+            elif "-" in entered_unwant.lower():
+                range_split = entered_unwant.split("-")
+                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]):
+                    for level in range(int(range_split[0]), int(range_split[1])+1):
+                        unwant_list.append(str(level))
+                else:
+                    error_list.append(entered_unwant)
+            else:
+                if len(unwant_split) == 1 and "all" in entered_unwant:
+                    await utils.safe_delete(ctx.message)
+                    return await ctx.invoke(self.bot.get_command('unwant all'), category="level")
+                elif not entered_unwant.strip().isdigit():
+                    error_list.append(entered_unwant)
+                    continue
+                if entered_unwant not in unwant_list:
+                    unwant_list.append(entered_unwant)
+        for entered_unwant in unwant_list:
+            if int(entered_unwant) not in user_wants:
+                not_wanted_list.append(entered_unwant)
+                not_wanted_count += 1
+            else:
+                user_wants.remove(int(entered_unwant))
+                removed_list.append(f"{entered_unwant}")
+                removed_count += 1
+        unwant_count = removed_count + not_wanted_count + len(error_list)
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** level{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
+        if removed_count > 0:
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+        if not_wanted_count > 0:
+            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+        if error_list:
+            error_msg = ''
+            for word in error_list:
+                error_msg += _('\n\t{word}').format(word=word)
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
+        unwant_confirmation = await channel.send(embed=want_embed)
+
+    @unwant.command(name='role', aliases=['roles'])
+    @checks.allowwant()
+    async def unwant_role(self, ctx, *, roles):
+        """Remove a role from your wanted list.
+
+        Usage: !unwant role <role>"""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        unwant_split = roles.lower().split(',')
+        unwant_list = []
+        removed_count = 0
+        spellcheck_dict = {}
+        spellcheck_list = []
+        not_wanted_count = 0
+        not_wanted_list = []
+        removed_list = []
+        role_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/discord.png?cache=1")
+        converter = commands.RoleConverter()
+        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])]
+        for entered_unwant in unwant_split:
+            if len(unwant_split) == 1 and "all" in entered_unwant:
+                await utils.safe_delete(ctx.message)
+                return await ctx.invoke(self.bot.get_command('unwant all'), category="role")
+            try:
+                role = await converter.convert(ctx, entered_unwant)
+            except:
+                role = None
+            if role:
+                unwant_list.append(role)
+            else:
+                match, score = utils.get_match([x.name for x in ctx.guild.roles], entered_unwant)
+                spellcheck_dict[entered_unwant] = match
+        for role in unwant_list:
+            role_str = ""
+            if role in join_roles:
+                role_str = f" ({role.mention})"
+                if role in ctx.author.roles:
+                    role_list.append(role)
+                    removed_list.append(f"{role.name}{role_str}")
+                    removed_count += 1
+                else:
+                    not_wanted_list.append(f"{role.name}{role_str}")
+                    not_wanted_count += 1
+            else:
+                spellcheck_dict[role.name] = None
+        await ctx.author.remove_roles(*role_list)
+        unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** role{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="es" if unwant_count > 1 else "")
+        if removed_count > 0:
+            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+        if not_wanted_count > 0:
+            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+        if spellcheck_dict:
+            spellcheckmsg = ''
+            for word in spellcheck_dict:
+                spellcheckmsg += _('\n\t{word}').format(word=word)
+                if spellcheck_dict[word]:
+                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
+        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
+        unwant_confirmation = await channel.send(embed=want_embed)
 
     @unwant.command(name='all')
     @checks.allowwant()
@@ -1719,398 +2161,6 @@ class Want(commands.Cog):
             completed_list.append(f"{len(user_roles)} role{'s' if len(user_roles) > 1 else ''}")
         unwant_msg = f"{author.mention} I've removed **{(', ').join(completed_list)}** from your want list."
         await channel.send(unwant_msg)
-
-    async def _unwant_poi(self, ctx, pois, poi_type="gym"):
-        await ctx.trigger_typing()
-        message = ctx.message
-        guild = message.guild
-        channel = message.channel
-        unwant_split = pois.lower().split(',')
-        unwant_list = []
-        removed_count = 0
-        spellcheck_dict = {}
-        spellcheck_list = []
-        not_wanted_count = 0
-        not_wanted_list = []
-        removed_list = []
-        gym_matching_cog = self.bot.cogs.get('GymMatching')
-        if not gym_matching_cog:
-            return
-        if poi_type == "stop":
-            pois = gym_matching_cog.get_stops(ctx.guild.id)
-            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
-        else:
-            pois = gym_matching_cog.get_gyms(ctx.guild.id)
-            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
-        for entered_unwant in unwant_split:
-            gym = await gym_matching_cog.poi_match_prompt(ctx, entered_unwant, pois, None)
-            if gym:
-                unwant_list.append(gym.lower())
-            elif len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
-                return await ctx.invoke(self.bot.get_command('unwant all'), category="gym")
-            else:
-                spellcheck_list.append(entered_unwant)
-                match, score = utils.get_match(pois.keys(), entered_unwant)
-                spellcheck_dict[entered_unwant] = match
-        for entered_unwant in unwant_list:
-            if entered_unwant.lower() not in user_wants:
-                not_wanted_list.append(entered_unwant.title())
-                not_wanted_count += 1
-            else:
-                user_wants.remove(entered_unwant.lower())
-                removed_list.append(f"{entered_unwant.title()}")
-                removed_count += 1
-        unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'stop' if poi_type == 'stop' else 'gym'}{'s' if unwant_count > 1 else ''}:\n\n"
-        if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
-        if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
-        if spellcheck_dict:
-            spellcheckmsg = ''
-            for word in spellcheck_dict:
-                spellcheckmsg += _('\n\t{word}').format(word=word)
-                if spellcheck_dict[word]:
-                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-
-    @unwant.command(name='gym', aliases=['gyms'])
-    @checks.allowwant()
-    async def unwant_gym(self, ctx, *, gyms):
-        """Remove a gym from your wanted list.
-
-        Usage: !unwant gym <gym list>
-        You will no longer be notified of reports about this gym."""
-        await self._unwant_poi(ctx, gyms, poi_type="gym")
-
-    @unwant.command(name='exraid')
-    @checks.allowwant()
-    async def unwant_exraid(self, ctx):
-        """Remove all EX eligible gyms from your want list. Currently used for raid and raid egg reports.
-
-        Usage: !unwant exraid"""
-        gym_matching_cog = self.bot.cogs.get('GymMatching')
-        ex_list = []
-        if not gym_matching_cog:
-            return
-        gyms = gym_matching_cog.get_gyms(ctx.guild.id)
-        for gym in gyms:
-            if "ex" in gyms[gym].get('notes', '').lower():
-                if gyms[gym].get('alias'):
-                    gym = gyms[gym].get('alias')
-                if gym not in ex_list:
-                    ex_list.append(gym)
-        await self._unwant_poi(ctx, (', ').join(ex_list), poi_type="gym")
-
-    @unwant.command(name='stop', aliases=['pokestop', 'pokestops', 'stops'])
-    @checks.allowwant()
-    async def unwant_stop(self, ctx, *, stops):
-        """Remove a pokestop from your wanted list.
-
-        Usage: !unwant stop <stop list>
-        You will no longer be notified of reports about this pokestop."""
-        await self._unwant_poi(ctx, stops, poi_type="stop")
-
-    @unwant.command(name='item', aliases=['items'])
-    @checks.allowwant()
-    async def unwant_item(self, ctx, *, items):
-        """Remove a item from your wanted list.
-
-        Usage: !unwant item <item list>
-        You will no longer be notified of reports about this item."""
-        await ctx.trigger_typing()
-        message = ctx.message
-        guild = message.guild
-        channel = message.channel
-        unwant_split = items.lower().split(',')
-        unwant_list = []
-        removed_count = 0
-        spellcheck_dict = {}
-        spellcheck_list = []
-        not_wanted_count = 0
-        not_wanted_list = []
-        removed_list = []
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
-        for entered_unwant in unwant_split:
-            if entered_unwant.strip().lower() in self.bot.item_list:
-                unwant_list.append(entered_unwant.strip().lower())
-            elif len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
-                return await ctx.invoke(self.bot.get_command('unwant all'), category="item")
-            else:
-                spellcheck_list.append(entered_unwant)
-                match, score = utils.get_match(self.bot.item_list, entered_unwant)
-                spellcheck_dict[entered_unwant] = match
-        for entered_unwant in unwant_list:
-            if entered_unwant.lower() not in user_wants:
-                not_wanted_list.append(entered_unwant.title())
-                not_wanted_count += 1
-            else:
-                user_wants.remove(entered_unwant.lower())
-                removed_list.append(f"{entered_unwant.title()}")
-                removed_count += 1
-        unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
-        if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
-        if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wwanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
-        if spellcheck_dict:
-            spellcheckmsg = ''
-            for word in spellcheck_dict:
-                spellcheckmsg += _('\n\t{word}').format(word=word)
-                if spellcheck_dict[word]:
-                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-
-    @unwant.command(name='type', aliases=['types'])
-    @checks.allowwant()
-    async def unwant_type(self, ctx, *, types):
-        """Remove a type from your wanted list.
-
-        Usage: !unwant type <species>
-        You will no longer be notified of reports about this type."""
-        await ctx.trigger_typing()
-        message = ctx.message
-        guild = message.guild
-        channel = message.channel
-        unwant_split = types.lower().split(',')
-        unwant_list = []
-        removed_count = 0
-        spellcheck_dict = {}
-        spellcheck_list = []
-        not_wanted_count = 0
-        not_wanted_list = []
-        removed_list = []
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
-        for entered_unwant in unwant_split:
-            if entered_unwant.strip().lower() in self.bot.type_list:
-                unwant_list.append(entered_unwant.strip().lower())
-            elif len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
-                return await ctx.invoke(self.bot.get_command('unwant all'), category="type")
-            else:
-                spellcheck_list.append(entered_unwant)
-                match, score = utils.get_match(self.bot.type_list, entered_unwant)
-                spellcheck_dict[entered_unwant] = match
-        for entered_unwant in unwant_list:
-            if entered_unwant.lower() not in user_wants:
-                not_wanted_list.append(entered_unwant.title())
-                not_wanted_count += 1
-            else:
-                user_wants.remove(entered_unwant.lower())
-                removed_list.append(f"{entered_unwant.title()}")
-                removed_count += 1
-        unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** type{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
-        if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
-        if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
-        if spellcheck_dict:
-            spellcheckmsg = ''
-            for word in spellcheck_dict:
-                spellcheckmsg += _('\n\t{word}').format(word=word)
-                if spellcheck_dict[word]:
-                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-
-    @unwant.command(name='iv', aliases=['ivs'])
-    @checks.allowwant()
-    async def unwant_iv(self, ctx, *, ivs):
-        """Remove an IV from your wanted list.
-
-        Usage: !unwant iv <iv list>
-        You will no longer be notified of reports about this IV."""
-        await ctx.trigger_typing()
-        message = ctx.message
-        guild = message.guild
-        channel = message.channel
-        unwant_split = ivs.lower().split(',')
-        unwant_list = []
-        removed_count = 0
-        not_wanted_count = 0
-        not_wanted_list = []
-        removed_list = []
-        error_list = []
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
-        for entered_unwant in unwant_split:
-            if "+" in entered_unwant.lower():
-                entered_unwant = entered_unwant.replace("+", "").strip()
-                if not entered_unwant.strip().isdigit():
-                    error_list.append(entered_unwant)
-                    continue
-                for iv in range(int(entered_unwant), 101):
-                    if iv not in unwant_list:
-                        unwant_list.append(str(iv))
-            elif "-" in entered_unwant.lower():
-                range_split = entered_unwant.split("-")
-                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]):
-                    for iv in range(int(range_split[0]), int(range_split[1])+1):
-                        unwant_list.append(str(iv))
-                else:
-                    error_list.append(entered_unwant)
-            else:
-                if len(unwant_split) == 1 and "all" in entered_unwant:
-                    await utils.safe_delete(ctx.message)
-                    return await ctx.invoke(self.bot.get_command('unwant all'), category="iv")
-                elif not entered_unwant.strip().isdigit():
-                    error_list.append(entered_unwant)
-                    continue
-                if entered_unwant not in unwant_list:
-                    unwant_list.append(entered_unwant)
-        for entered_unwant in unwant_list:
-            if int(entered_unwant) not in user_wants:
-                not_wanted_list.append(entered_unwant)
-                not_wanted_count += 1
-            else:
-                user_wants.remove(int(entered_unwant))
-                removed_list.append(f"{entered_unwant}")
-                removed_count += 1
-        unwant_count = removed_count + not_wanted_count + len(error_list)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** iv{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
-        if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
-        if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
-        if error_list:
-            error_msg = ''
-            for word in error_list:
-                error_msg += _('\n\t{word}').format(word=word)
-            confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
-        unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-
-    @unwant.command(name='level', aliases=['levels'])
-    @checks.allowwant()
-    async def unwant_level(self, ctx, *, levels):
-        """Remove a level from your wanted list.
-
-        Usage: !unwant level <level list>
-        You will no longer be notified of reports about this level."""
-        await ctx.trigger_typing()
-        message = ctx.message
-        guild = message.guild
-        channel = message.channel
-        unwant_split = levels.lower().split(',')
-        unwant_list = []
-        removed_count = 0
-        not_wanted_count = 0
-        not_wanted_list = []
-        removed_list = []
-        error_list = []
-        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
-        for entered_unwant in unwant_split:
-            if "+" in entered_unwant.lower():
-                entered_unwant = entered_unwant.replace("+", "").strip()
-                if not entered_unwant.strip().isdigit():
-                    error_list.append(entered_unwant)
-                    continue
-                for level in range(int(entered_unwant), 41):
-                    if level not in unwant_list:
-                        unwant_list.append(str(level))
-            elif "-" in entered_unwant.lower():
-                range_split = entered_unwant.split("-")
-                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]):
-                    for level in range(int(range_split[0]), int(range_split[1])+1):
-                        unwant_list.append(str(level))
-                else:
-                    error_list.append(entered_unwant)
-            else:
-                if len(unwant_split) == 1 and "all" in entered_unwant:
-                    await utils.safe_delete(ctx.message)
-                    return await ctx.invoke(self.bot.get_command('unwant all'), category="level")
-                elif not entered_unwant.strip().isdigit():
-                    error_list.append(entered_unwant)
-                    continue
-                if entered_unwant not in unwant_list:
-                    unwant_list.append(entered_unwant)
-        for entered_unwant in unwant_list:
-            if int(entered_unwant) not in user_wants:
-                not_wanted_list.append(entered_unwant)
-                not_wanted_count += 1
-            else:
-                user_wants.remove(int(entered_unwant))
-                removed_list.append(f"{entered_unwant}")
-                removed_count += 1
-        unwant_count = removed_count + not_wanted_count + len(error_list)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** level{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
-        if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
-        if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
-        if error_list:
-            error_msg = ''
-            for word in error_list:
-                error_msg += _('\n\t{word}').format(word=word)
-            confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
-        unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
-
-    @unwant.command(name='role', aliases=['roles'])
-    @checks.allowwant()
-    async def unwant_role(self, ctx, *, roles):
-        """Remove a role from your wanted list.
-
-        Usage: !unwant role <role>"""
-        await ctx.trigger_typing()
-        message = ctx.message
-        guild = message.guild
-        channel = message.channel
-        unwant_split = roles.lower().split(',')
-        unwant_list = []
-        removed_count = 0
-        spellcheck_dict = {}
-        spellcheck_list = []
-        not_wanted_count = 0
-        not_wanted_list = []
-        removed_list = []
-        role_list = []
-        converter = commands.RoleConverter()
-        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])]
-        for entered_unwant in unwant_split:
-            if len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
-                return await ctx.invoke(self.bot.get_command('unwant all'), category="role")
-            try:
-                role = await converter.convert(ctx, entered_unwant)
-            except:
-                role = None
-            if role:
-                unwant_list.append(role)
-            else:
-                match, score = utils.get_match([x.name for x in ctx.guild.roles], entered_unwant)
-                spellcheck_dict[entered_unwant] = match
-        for role in unwant_list:
-            role_str = ""
-            if role in join_roles:
-                role_str = f" ({role.mention})"
-                if role in ctx.author.roles:
-                    role_list.append(role)
-                    removed_list.append(f"{role.name}{role_str}")
-                    removed_count += 1
-                else:
-                    not_wanted_list.append(f"{role.name}{role_str}")
-                    not_wanted_count += 1
-            else:
-                spellcheck_dict[role.name] = None
-        await ctx.author.remove_roles(*role_list)
-        unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
-        confirmation_msg = _('Meowth! {member}, out of your total **{count}** role{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="es" if unwant_count > 1 else "")
-        if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
-        if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
-        if spellcheck_dict:
-            spellcheckmsg = ''
-            for word in spellcheck_dict:
-                spellcheckmsg += _('\n\t{word}').format(word=word)
-                if spellcheck_dict[word]:
-                    spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
-            confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
-        unwant_confirmation = await channel.send(embed=discord.Embed(description=confirmation_msg, colour=ctx.me.colour))
 
 def setup(bot):
     bot.add_cog(Want(bot))

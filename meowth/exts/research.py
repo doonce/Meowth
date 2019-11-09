@@ -268,38 +268,6 @@ class Research(commands.Cog):
         react_list = [complete_emoji, expire_emoji, report_emoji, list_emoji]
         research_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/field-research.png?cache=1')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
-        dust = re.search(r'(?i)dust', reward)
-        candy = re.search(r'(?i)candy|(?i)candies', reward)
-        pinap = re.search(r'(?i)pinap', reward)
-        silverpinap = re.search(r'(?i)silver pinap', reward)
-        razz = re.search(r'(?i)razz', reward)
-        goldenrazz = re.search(r'(?i)golde?n? razz', reward)
-        nanab = re.search(r'(?i)nanab', reward)
-        lure = re.search(r'(?i)lure', reward)
-        glaciallure = re.search(r'(?i)glacial lure', reward)
-        magnetlure = re.search(r'(?i)magnetic lure', reward)
-        mossylure = re.search(r'(?i)mossy lure', reward)
-        pokeball = re.search(r'(?i)ball', reward)
-        greatball = re.search(r'(?i)great ball', reward)
-        ultraball = re.search(r'(?i)ultra ball', reward)
-        potion = re.search(r'(?i)potion', reward)
-        superpotion = re.search(r'(?i)super potion', reward)
-        hyperpotion = re.search(r'(?i)hyper potion', reward)
-        maxpotion = re.search(r'(?i)max potion', reward)
-        revive = re.search(r'(?i)revive', reward)
-        maxrevive = re.search(r'(?i)max revive', reward)
-        fasttm = re.search(r'(?i)fast tm', reward)
-        chargetm = re.search(r'(?i)charged? tm', reward)
-        starpiece = re.search(r'(?i)star piece', reward)
-        sinnoh_stone = re.search(r'(?i)sinnoh stone', reward)
-        unova_stone = re.search(r'(?i)unova stone', reward)
-        kings_rock = re.search(r'(?i)king\'?s? rock', reward)
-        dragon_scale = re.search(r'(?i)dragon scale', reward)
-        metal_coat = re.search(r'(?i)metal coat', reward)
-        sun_stone = re.search(r'(?i)sun stone', reward)
-        up_grade = re.search(r'(?i)up-? ?grade', reward)
-        mysterious_component = re.search(r'(?i)mysterious|(?i)component', reward)
-        rocket_radar = re.search(r'(?i)rocket radar', reward)
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module", "mysterious", "component", "radar", "sinnoh", "unova", "stone", "scale", "coat", "grade"]
         other_reward = any(x in reward.lower() for x in reward_list)
         research_msg = f"Meowth! Field Research reported by {ctx.author.mention}! Details: {location}\n\nUse {complete_emoji} if completed, {expire_emoji} if expired, {report_emoji} to report new, or {list_emoji} to list all research!"
@@ -326,102 +294,10 @@ class Research(commands.Cog):
             reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
             pokemon.shiny = False
             research_embed.set_thumbnail(url=pokemon.img_url)
-        elif dust:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png")
-            item = "stardust"
-        elif candy:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1301.png")
-            item = "rare candy"
-        elif pinap and not silverpinap:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0705.png")
-            item = "pinap berry"
-        elif pinap and silverpinap:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0707.png")
-            item = "silver pinap berry"
-        elif razz and not goldenrazz:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0701.png")
-            item = "razz berry"
-        elif razz and goldenrazz:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0706.png")
-            item = "golden razz berry"
-        elif nanab:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0703.png")
-            item = "nanab berry"
-        elif pokeball and not ultraball and not greatball:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0001.png")
-            item = "poke ball"
-        elif pokeball and greatball:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0002.png")
-            item = "great ball"
-        elif pokeball and ultraball:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0003.png")
-            item = "ultra ball"
-        elif potion and not superpotion and not hyperpotion and not maxpotion:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0101.png")
-            item = "potion"
-        elif potion and superpotion:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0102.png")
-            item = "super potion"
-        elif potion and hyperpotion:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0103.png")
-            item = "hyper potion"
-        elif potion and maxpotion:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0104.png")
-            item = "max potion"
-        elif revive and not maxrevive:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0201.png")
-            item = "revive"
-        elif revive and maxrevive:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0202.png")
-            item = "max revive"
-        elif fasttm:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1201.png")
-            item = "fast tm"
-        elif chargetm:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1202.png")
-            item = "charged tm"
-        elif starpiece:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/starpiece.png")
-            item = "star piece"
-        elif lure and not glaciallure and not magnetlure and not mossylure:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png")
-            item = "lure module"
-        elif lure and glaciallure:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_glacial.png")
-            item = "glacial lure module"
-        elif lure and magnetlure:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_magnetic.png")
-            item = "magnetic lure module"
-        elif lure and mossylure:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_mossy.png")
-            item = "mossy lure module"
-        elif sinnoh_stone:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Sinnoh_Stone_Sprite.png")
-            item = "sinnoh stone"
-        elif unova_stone:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Unova_Stone_Sprite.png")
-            item = "unova stone"
-        elif kings_rock:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_King's_Rock_Sprite.png")
-            item = "king's rock"
-        elif dragon_scale:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Dragon_Scale_Sprite.png")
-            item = "dragon scale"
-        elif metal_coat:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Metal_Coat_Sprite.png")
-            item = "metal coat"
-        elif sun_stone:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Sun_Stone_Sprite.png")
-            item = "sun stone"
-        elif up_grade:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Up-Grade_Sprite.png")
-            item = "up-grade"
-        elif mysterious_component:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/hideout_map_frag.png")
-            item = "mysterious component"
-        elif rocket_radar:
-            research_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_Leader_MapCompass.png")
-            item = "rocket radar"
+        else:
+            thumbnail_url, item = await utils.get_item(ctx, reward)
+            if item:
+                research_embed.set_thumbnail(url=thumbnail_url)
         research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {stop_info}", inline=True)
         research_embed.add_field(name=_("**Quest:**"), value=string.capwords(quest, " "), inline=True)
         research_embed.add_field(name=_("**Reward:**"), value=string.capwords(reward, " "), inline=True)
