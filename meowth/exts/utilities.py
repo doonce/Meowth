@@ -514,6 +514,9 @@ async def get_item(ctx, search_term):
     up_grade = re.search(r'(?i)up-? ?grade', search_term)
     mysterious_component = re.search(r'(?i)mysterious|(?i)component', search_term)
     rocket_radar = re.search(r'(?i)rocket radar', search_term)
+    team_medalion = re.search(r'(?i)rocket radar', search_term)
+    egg_incubator = re.search(r'(?i)incubator', search_term)
+    super_incubator = re.search(r'(?i)super.*incubator', search_term)
     if dust:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png?cache=1", "stardust"
     elif candy:
@@ -578,6 +581,12 @@ async def get_item(ctx, search_term):
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/hideout_map_frag.png?cache=1", "mysterious component"
     elif rocket_radar:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_Leader_MapCompass.png?cache=1", "rocket radar"
+    elif team_medalion:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1406.png?cache=1", "team medalion"
+    elif egg_incubator and not super_incobator:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/EggIncubatorEmpty.png?cache=1", "egg incubator"
+    elif super_incubator:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/EggIncubatorSuper_Empty.png?cache=1", "super incubator"
     else:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/MysteryItem.png?cache=1", None
 
