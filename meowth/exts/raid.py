@@ -52,6 +52,8 @@ class Raid(commands.Cog):
             return
         if guild:
             user = guild.get_member(payload.user_id)
+        else:
+            return
         try:
             message = await channel.fetch_message(payload.message_id)
         except (discord.errors.NotFound, AttributeError, discord.Forbidden):
@@ -798,6 +800,12 @@ class Raid(commands.Cog):
                 embed.description = ""
             embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
         content = content.splitlines()[0]
+        index = 0
+        for field in embed.fields:
+            if "list" in field.name.lower():
+                embed.remove_field(index)
+            else:
+                index += 1
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             if not checks.dm_check(ctx, trainer):
                 continue
@@ -950,7 +958,7 @@ class Raid(commands.Cog):
             egg_level = utils.get_level(ctx.bot, pokemon.id)
             raid_embed = discord.Embed(title=f"Meowth! Click here for directions to the level {egg_level} raid!", description=gym_info, url=raid_gmaps_link, colour=ctx.guild.me.colour)
             raid_embed.add_field(name=_('**Details:**'), value=f"{boss_list[0]}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
-            raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(ctx.bot, ctx.guild, utils.get_weaknesses(ctx.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
+            raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=pokemon.weakness_emoji), inline=True)
             raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1")
         raid_embed.add_field(name=_('**Next Group:**'), value=f"Set with **{ctx.prefix}starttime**", inline=True)
         if raidexp or raidexp is 0:
@@ -976,8 +984,11 @@ class Raid(commands.Cog):
         if not wild_weather_dict:
             return None
         weather_search = {k: (float(k.split(",")[0]), float(k.split(",")[1])) for k,v in wild_weather_dict.items()}
-        dist = lambda s, key: (float(s[0]) - float(weather_search[key][0])) ** 2 + \
-                              (float(s[1]) - float(weather_search[key][1])) ** 2
+        try:
+            dist = lambda s, key: (float(s[0]) - float(weather_search[key][0])) ** 2 + \
+                                  (float(s[1]) - float(weather_search[key][1])) ** 2
+        except:
+            return None
         nearest_wild = min(weather_search, key=functools.partial(dist, coord))
         return wild_weather_dict[nearest_wild]
 
@@ -2056,7 +2067,7 @@ class Raid(commands.Cog):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{str(pokemon)} ({pokemon.id}) {pokemon.emoji}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
-        raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=utils.weakness_to_str(self.bot, raid_channel.guild, utils.get_weaknesses(self.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan))), inline=True)
+        raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=pokemon.weakness_emoji), inline=True)
         index = 0
         for field in oldembed.fields:
             if _('group') in field.name.lower() or _('expires') in field.name.lower() or _('hatches') in field.name.lower() or _('list') in field.name.lower() or _('event') in field.name.lower():
@@ -4597,8 +4608,8 @@ class Raid(commands.Cog):
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, p)
                 boss_list.append(str(pokemon).lower())
                 boss_dict[str(pokemon).lower()] = {
-                    "type": "{}".format(pokemon.emoji),
-                    "weakness":utils.weakness_to_str(self.bot, channel.guild, utils.get_weaknesses(self.bot, pokemon.name.lower(), pokemon.form, pokemon.alolan)),
+                    "type": pokemon.emoji,
+                    "weakness":pokemon.weakness_emoji,
                     "total": 0
                 }
         channel_dict = {"mystic":0, "valor":0, "instinct":0, "unknown":0, "maybe":0, "coming":0, "here":0, "lobby":0, "total":0, "boss":0}

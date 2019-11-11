@@ -122,6 +122,8 @@ class Huntr(commands.Cog):
             return
         if guild:
             user = guild.get_member(payload.user_id)
+        else:
+            return
         try:
             message = await channel.fetch_message(payload.message_id)
         except (discord.errors.NotFound, AttributeError, discord.Forbidden):
@@ -247,6 +249,13 @@ class Huntr(commands.Cog):
                     raidexp = match.group(6)
                     egg_level = 0
                     await utils.safe_delete(message)
+                    egg_level = utils.get_level(Self.bot, entered_raid)
+                    if egg_level.isdigit() and int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls']:
+                        auto_report = True
+                    elif egg_level == "EX" and "EX" in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls']:
+                        auto_report = True
+                    else:
+                        auto_report = False
                     auto_report = True if int(utils.get_level(self.bot, entered_raid)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls'] else False
                 elif (len(message.embeds[0].title.split(' ')) == 6) and auto_egg:
                     match = re.search('[* ]*([a-zA-Z ]*)[* .]*\n[*:a-zA-Z ]*([0-2]*)[ a-z]*([0-9]*)[ a-z]*([0-9]*)', message.embeds[0].description)
@@ -498,7 +507,14 @@ class Huntr(commands.Cog):
                     egg_level = "0"
                     timeout = int(report_details.get('raidexp', 45))*60
                     expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=pokemon.title())
-                    if int(utils.get_level(self.bot, pokemon)) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('raidlvls', []):
+                    egg_level = utils.get_level(Self.bot, pokemon)
+                    if egg_level.isdigit() and int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls']:
+                        auto_report = True
+                    elif egg_level == "EX" and "EX" in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls']:
+                        auto_report = True
+                    else:
+                        auto_report = False
+                    if auto_report:
                         raid_channel = await self.huntr_raid(ctx, report_details)
                         if embed and raid_channel:
                             await raid_channel.send(embed=embed)

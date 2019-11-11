@@ -1462,6 +1462,8 @@ class Listing(commands.Cog):
                     if reward:
                         for pokemon in reward:
                             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                            if not pokemon:
+                                continue
                             shiny_str = ""
                             if pokemon and pokemon.id in self.bot.shiny_dict:
                                 if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "invasion" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
@@ -1471,7 +1473,7 @@ class Listing(commands.Cog):
                             reward_list.append(f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}")
                     elif reward_type:
                         reward_list = [f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"]
-                    else:
+                    if not reward_list:
                         reward_list = ["Unknown Pokemon"]
                     invasion_expire = datetime.datetime.utcfromtimestamp(invasion_dict[invasionid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
                     reported_by = ""
@@ -1487,6 +1489,7 @@ class Listing(commands.Cog):
                         "expire":invasion_expire
                     }
                 except Exception as e:
+                    print(e)
                     continue
         if listing_dict:
             inv_list_msg = ""

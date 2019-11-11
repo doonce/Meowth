@@ -129,6 +129,8 @@ class Nest(commands.Cog):
             return
         if guild:
             user = guild.get_member(payload.user_id)
+        else:
+            return
         try:
             message = await channel.fetch_message(payload.message_id)
         except (discord.errors.NotFound, AttributeError, discord.Forbidden):

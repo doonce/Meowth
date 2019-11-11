@@ -102,13 +102,16 @@ class Trading(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
+        guild = getattr(channel, "guild", None)
         try:
             user = self.bot.get_user(payload.user_id)
         except AttributeError:
             return
-        if user.bot:
+        if user == self.bot.user:
             return
-        if not channel:
+        if guild:
+            user = guild.get_member(payload.user_id)
+        elif not guild and not channel:
             channel = user.dm_channel
             if not channel:
                 channel = await user.create_dm()

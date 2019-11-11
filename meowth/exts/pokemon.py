@@ -428,6 +428,14 @@ class Pokemon():
         self.guild = guild
 
     @property
+    def weakness_dict(self):
+        return utils.get_weaknesses(self.bot, self.types)
+
+    @property
+    def weakness_emoji(self):
+        return utils.weakness_to_emoji(self.bot, self.weakness_dict)
+
+    @property
     def weak_against(self):
         """:class:`dict` : Returns a dict of all types the Pokemon is
         weak against.
@@ -527,6 +535,7 @@ class Pokemon():
             'worst' : []
         }
         for t, v in self.type_effects.items():
+            print(t,v)
             if v > 1.9:
                 type_eff_dict['ultra'].append(t)
             elif v > 1.3:

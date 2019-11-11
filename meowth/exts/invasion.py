@@ -86,6 +86,8 @@ class Invasion(commands.Cog):
             return
         if guild:
             user = guild.get_member(payload.user_id)
+        else:
+            return
         try:
             message = await channel.fetch_message(payload.message_id)
         except (discord.errors.NotFound, AttributeError, discord.Forbidden):
@@ -277,8 +279,10 @@ class Invasion(commands.Cog):
         reward_list = []
         if not reward and not reward_type:
             reward_str = "Unknown Pokemon"
+            weakness_str = "Unknown"
         elif not reward and reward_type:
             reward_str = f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"
+            weakness_str = utils.weakness_to_emoji(self.bot, utils.get_weaknesses(self.bot, [reward_type.title()]))
         else:
             for pokemon in reward:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
@@ -292,16 +296,19 @@ class Invasion(commands.Cog):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                     reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
                     reward_list.append(str(pokemon))
+            weakness_str = pokemon.weakness_emoji
             if not reward_list:
                 reward_str = "Unknown Pokemon"
             else:
                 invasion_embed.set_thumbnail(url=pokemon.img_url)
         index = 0
         for field in invasion_embed.fields:
+            print(index, field)
             if "reward" in field.name.lower():
                 invasion_embed.set_field_at(index, name=field.name, value=reward_str)
-            else:
-                index += 1
+            elif "weakness" in field.name.lower():
+                invasion_embed.set_field_at(index, name=field.name, value=f"{weakness_str}\u200b")
+            index += 1
         if pokemon:
             invasion_msg = f"Meowth! {pokemon.name.title()} Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} if completed, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         elif reward_type:
@@ -535,8 +542,10 @@ class Invasion(commands.Cog):
         if not reward:
             reward = []
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknown Pokemon", inline=True)
+            invasion_embed.add_field(name=_("**Weaknesses:**"), value="Unknown", inline=True)
         elif isinstance(reward, str) and reward.lower() in self.bot.type_list:
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward.title()} Invasion {self.bot.config.type_id_dict[reward.lower()]}", inline=True)
+            invasion_embed.add_field(name=_("**Weaknesses:**"), value=f"{utils.weakness_to_emoji(self.bot, utils.get_weaknesses(self.bot, [reward.title()]))}\u200b", inline=True)
             reward = reward.strip().lower()
             reward_type = reward.strip().lower()
         else:
@@ -558,6 +567,7 @@ class Invasion(commands.Cog):
                 reward = reward_list
                 invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward_str}", inline=True)
                 invasion_embed.set_thumbnail(url=pokemon.img_url)
+                invasion_embed.add_field(name=_("**Weaknesses:**"), value=f"{pokemon.weakness_emoji}\u200b", inline=True)
         if pokemon:
             invasion_msg = f"Meowth! {pokemon.name.title()} Invasion reported by {ctx.author.mention}! Details: {location}\n\nUse {complete_emoji} if completed, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         elif reward_type:

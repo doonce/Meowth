@@ -366,19 +366,7 @@ def print_emoji_name(guild, emoji_string):
         ret = ((emoji + ' (`') + emoji_string) + '`)'
     return ret
 
-def get_weaknesses(bot, species, form="none", alolan=False):
-    # Get the Pokemon's number
-    number = bot.pkmn_list.index(species)
-    if not form:
-        form = "none"
-    if alolan:
-        form = "alolan"
-    # Look up its type
-    try:
-        pk_type = bot.pkmn_info[species]['forms'][form]['type']
-    except KeyError:
-        pk_type = bot.pkmn_info[species]['forms']["none"]['type']
-
+def get_weaknesses(bot, type_list):
     # Calculate sum of its weaknesses
     # and resistances.
     # -2 == immune
@@ -387,30 +375,28 @@ def get_weaknesses(bot, species, form="none", alolan=False):
     #  1 == SE
     #  2 == double SE
     type_eff = {}
-    for type in pk_type:
+    for type in type_list:
         for atk_type in bot.type_chart[type]:
             if atk_type not in type_eff:
                 type_eff[atk_type] = 0
             type_eff[atk_type] += bot.type_chart[type][atk_type]
-    ret = []
-    for (type, effectiveness) in sorted(type_eff.items(), key=(lambda x: x[1]), reverse=True):
-        if effectiveness == 1:
-            ret.append(type.lower())
-        elif effectiveness == 2:
-            ret.append(type.lower() + 'x2')
-    return ret
+    return sorted(type_eff.items(), key=(lambda x: x[1]), reverse=True)
 
-def weakness_to_str(bot, guild, weak_list):
-    ret = ''
-    for weakness in weak_list:
-
-        x2 = ''
-        if weakness[(- 2):] == 'x2':
-            weakness = weakness[:(- 2)]
-            x2 = 'x2'
-        # Append to string
-        ret += (parse_emoji(guild,
-                bot.config.type_id_dict[weakness]) + x2) + ' '
+def weakness_to_emoji(bot, weakness_dict):
+    ret = ""
+    for type, weakness in weakness_dict:
+        emoji = None
+        try:
+            emoji_id = ''.join(x for x in bot.config.type_id_dict[type.lower()].split(":")[2] if x.isdigit())
+            emoji = discord.utils.get(bot.emojis, id=int(emoji_id))
+            if not emoji:
+                emoji_name = bot.config.type_id_dict[type.lower()].split(":")[1]
+                emoji = discord.utils.get(bot.emojis, name=emoji_name)
+            if weakness > 0:
+                ret += f"{str(emoji) if emoji else type.lower()}{'x2' if weakness == 2 else ''}"
+        except (IndexError, ValueError):
+            if weakness > 0:
+                ret += f":{type.lower()}{'x2' if weakness == 2 else ''}:"
     return ret
 
 def create_gmaps_query(bot, details, channel, type="raid"):
@@ -948,7 +934,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.11.8.2 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.11.11.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
