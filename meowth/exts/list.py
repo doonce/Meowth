@@ -1489,7 +1489,6 @@ class Listing(commands.Cog):
                         "expire":invasion_expire
                     }
                 except Exception as e:
-                    print(e)
                     continue
         if listing_dict:
             inv_list_msg = ""

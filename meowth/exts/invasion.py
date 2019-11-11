@@ -303,7 +303,6 @@ class Invasion(commands.Cog):
                 invasion_embed.set_thumbnail(url=pokemon.img_url)
         index = 0
         for field in invasion_embed.fields:
-            print(index, field)
             if "reward" in field.name.lower():
                 invasion_embed.set_field_at(index, name=field.name, value=reward_str)
             elif "weakness" in field.name.lower():

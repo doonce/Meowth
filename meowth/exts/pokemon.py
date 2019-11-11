@@ -535,7 +535,6 @@ class Pokemon():
             'worst' : []
         }
         for t, v in self.type_effects.items():
-            print(t,v)
             if v > 1.9:
                 type_eff_dict['ultra'].append(t)
             elif v > 1.3:
