@@ -249,7 +249,7 @@ class Huntr(commands.Cog):
                     raidexp = match.group(6)
                     egg_level = 0
                     await utils.safe_delete(message)
-                    egg_level = utils.get_level(Self.bot, entered_raid)
+                    egg_level = utils.get_level(self.bot, entered_raid)
                     if egg_level.isdigit() and int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls']:
                         auto_report = True
                     elif egg_level == "EX" and "EX" in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls']:
@@ -507,7 +507,7 @@ class Huntr(commands.Cog):
                     egg_level = "0"
                     timeout = int(report_details.get('raidexp', 45))*60
                     expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=pokemon.title())
-                    egg_level = utils.get_level(Self.bot, pokemon)
+                    egg_level = utils.get_level(self.bot, pokemon)
                     if egg_level.isdigit() and int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls']:
                         auto_report = True
                     elif egg_level == "EX" and "EX" in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['raidlvls']:

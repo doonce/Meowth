@@ -4262,9 +4262,9 @@ class Raid(commands.Cog):
             url += "levels/30/"
             userstr = _("Level 30")
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
-                        _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog')]
+                        _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('snowy'), _('fog'), _('foggy')]
         match_list = ['NO_WEATHER', 'NO_WEATHER', 'CLEAR', 'CLEAR', 'RAINY',
-                            'PARTLY_CLOUDY', 'OVERCAST', 'WINDY', 'SNOW', 'FOG']
+                            'PARTLY_CLOUDY', 'OVERCAST', 'WINDY', 'SNOW', 'SNOW', 'FOG', 'FOG']
         if not weather:
             index = 0
         else:
@@ -4364,9 +4364,9 @@ class Raid(commands.Cog):
         img_url = pokemon.img_url
         level = utils.get_level(self.bot, str(pokemon)) if utils.get_level(self.bot, str(pokemon)).isdigit() else "5"
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
-                        _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('fog'), _('foggy')]
+                        _('partlycloudy'), _('cloudy'), _('windy'), _('snow'), _('snowy'), _('fog'), _('foggy')]
         match_list = ['NO_WEATHER', 'NO_WEATHER', 'CLEAR', 'CLEAR', 'RAINY',
-                            'PARTLY_CLOUDY', 'OVERCAST', 'WINDY', 'SNOW', 'FOG', 'FOG']
+                            'PARTLY_CLOUDY', 'OVERCAST', 'WINDY', 'SNOW', 'SNOW', 'FOG', 'FOG']
         if not weather:
             index = 0
         else:

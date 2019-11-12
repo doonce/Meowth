@@ -6,8 +6,7 @@ data/serverdict
 data/guilddict.txt
 data/guilddict_backup.txt
 meowth/config.py
-meowth/__pycache__
-meowth/exts/__pycache__
+meowth/__pycache__/
+meowth/exts/__pycache__/
 meowth/exts/advanced.py
-
 images/desktop.ini

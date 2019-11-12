@@ -260,7 +260,8 @@ class Invasion(commands.Cog):
         reward_type = invasion_dict.get('reward_type', '')
         gender = invasion_dict.get('gender', '')
         dm_dict = invasion_dict.get('dm_dict', {})
-        invasion_embed = message.embeds[0]
+        old_embed = message.embeds[0]
+        invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
         nearest_stop = invasion_dict.get('location', None)
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8')
@@ -270,44 +271,39 @@ class Invasion(commands.Cog):
         author = ctx.guild.get_member(invasion_dict.get('report_author', None))
         if author:
             ctx.author = author
-        if gender:
-            invasion_embed.set_author(name=f"Invasion Report {' (♀)' if gender == 'female' else ''}{' (♂)' if gender == 'male' else ''}", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_shadow.png?cache=2")
-            invasion_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
+        invasion_embed.set_author(name=f"Invasion Report {' (♀)' if gender == 'female' else ''}{' (♂)' if gender == 'male' else ''}", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_shadow.png?cache=2")
         pokemon = None
         shiny_str = ""
         reward_str = ""
         reward_list = []
         if not reward and not reward_type:
-            reward_str = "Unknown Pokemon"
-            weakness_str = "Unknown"
+            invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknown Pokemon", inline=True)
         elif not reward and reward_type:
-            reward_str = f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"
-            weakness_str = utils.weakness_to_emoji(self.bot, utils.get_weaknesses(self.bot, [reward_type.title()]))
+            invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}", inline=True)
+            invasion_embed.add_field(name=_("**Weaknesses:**"), value=f"{utils.weakness_to_emoji(self.bot, utils.get_weaknesses(self.bot, [reward_type.title()]))}\u200b", inline=True)
         else:
             for pokemon in reward:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
-                if pokemon:
-                    pokemon.shiny = False
-                    pokemon.shadow = "shadow"
-                    if pokemon.id in self.bot.shiny_dict:
-                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                    reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
-                    reward_list.append(str(pokemon))
-            weakness_str = pokemon.weakness_emoji
+                if not pokemon:
+                    continue
+                pokemon.shiny = False
+                pokemon.shadow = "shadow"
+                if pokemon.id in self.bot.shiny_dict:
+                    if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
+                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                    elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
+                reward_list.append(str(pokemon))
             if not reward_list:
-                reward_str = "Unknown Pokemon"
+                invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknown Pokemon", inline=True)
             else:
+                invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward_str}", inline=True)
                 invasion_embed.set_thumbnail(url=pokemon.img_url)
-        index = 0
-        for field in invasion_embed.fields:
-            if "reward" in field.name.lower():
-                invasion_embed.set_field_at(index, name=field.name, value=reward_str)
-            elif "weakness" in field.name.lower():
-                invasion_embed.set_field_at(index, name=field.name, value=f"{weakness_str}\u200b")
-            index += 1
+                invasion_embed.add_field(name=_("**Weaknesses:**"), value=f"{pokemon.weakness_emoji}\u200b", inline=True)
+        for field in old_embed.fields:
+            if "expire" in field.name.lower():
+                invasion_embed.add_field(name=field.name, value=field.value)
         if pokemon:
             invasion_msg = f"Meowth! {pokemon.name.title()} Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} if completed, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         elif reward_type:
@@ -541,7 +537,6 @@ class Invasion(commands.Cog):
         if not reward:
             reward = []
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknown Pokemon", inline=True)
-            invasion_embed.add_field(name=_("**Weaknesses:**"), value="Unknown", inline=True)
         elif isinstance(reward, str) and reward.lower() in self.bot.type_list:
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value=f"{reward.title()} Invasion {self.bot.config.type_id_dict[reward.lower()]}", inline=True)
             invasion_embed.add_field(name=_("**Weaknesses:**"), value=f"{utils.weakness_to_emoji(self.bot, utils.get_weaknesses(self.bot, [reward.title()]))}\u200b", inline=True)
