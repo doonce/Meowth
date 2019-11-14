@@ -3048,6 +3048,14 @@ class Raid(commands.Cog):
         train_channel = await self._meetup(ctx, train_location)
         if train_channel:
             managers = self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id].get('managers', [])
+            manager_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=_('Raid Manager Help')).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/train.png?cache=1')
+            manager_embed.add_field(name=f"{ctx.prefix}train start <date and time>", value=f"Sets the train start time. Example: `!train start 6pm`", inline=False)
+            manager_embed.add_field(name=f"{ctx.prefix}train end <date and time>", value=f"Sets the train end time. Example: `!train end 7pm`", inline=False)
+            manager_embed.add_field(name=f"{ctx.prefix}train manager <user @mention>", value=f"Once you become a train manager, you can promote new train managers using this command. Example: `!train manager @{ctx.guild.me.display_name}`", inline=False)
+            manager_embed.add_field(name=f"{ctx.prefix}train route <gym list>", value=f"If you have a planned route, you can set it using this command. Example: `!train route Hershey Park, Liberty Park`", inline=False)
+            manager_embed.add_field(name=f"{ctx.prefix}next [gym name]", value=f"Alert the channel that you are going to a new gym. Example: `!next Hershey Park`. If a route is set, train will move to next gym without needing a gym name", inline=False)
+            manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
+            await ctx.author.send(embed=manager_embed, delete_after=3600)
             await train_channel.send(f"{ctx.author.mention}, you can set additional train managers using **{ctx.prefix}train manager <user mention>** and direct the train to a new gym using **{ctx.prefix}train next <channel_or_gym>**.")
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['managers'] = [ctx.author.id]
             for member in ctx.guild.members:
@@ -3178,6 +3186,14 @@ class Raid(commands.Cog):
         if member.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
             await ctx.send(f"Meowth! I added **{member.display_name}** as a manager!")
+            manager_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=_('Raid Manager Help')).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/train.png?cache=1')
+            manager_embed.add_field(name=f"{ctx.prefix}train start <date and time>", value=f"Sets the train start time. Example: `!train start 6pm`", inline=False)
+            manager_embed.add_field(name=f"{ctx.prefix}train end <date and time>", value=f"Sets the train end time. Example: `!train end 7pm`", inline=False)
+            manager_embed.add_field(name=f"{ctx.prefix}train manager <user @mention>", value=f"Once you become a train manager, you can promote new train managers using this command. Example: `!train manager @{ctx.guild.me.display_name}`", inline=False)
+            manager_embed.add_field(name=f"{ctx.prefix}train route <gym list>", value=f"If you have a planned route, you can set it using this command. Example: `!train route Hershey Park, Liberty Park`", inline=False)
+            manager_embed.add_field(name=f"{ctx.prefix}next [gym name]", value=f"Alert the channel that you are going to a new gym. Example: `!next Hershey Park`. If a route is set, train will move to next gym without needing a gym name", inline=False)
+            manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
+            await member.send(embed=manager_embed, delete_after=3600)
 
     @train.command(name="history")
     @checks.allowmeetupreport()

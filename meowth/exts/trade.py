@@ -680,7 +680,7 @@ class Trading(commands.Cog):
             wanted_pokemon = [f'{i+1}\u20e3: {pkmn}' for i, pkmn in enumerate(wanted_pokemon)]
             wanted_pokemon = '\n'.join(wanted_pokemon)
         offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, offered_pokemon)
-        if offered_pokemon.gender:
+        if offered_pokemon.gender and (offered_pokemon.shiny or offered_pokemon.shadow):
             details = f"{offered_pokemon.gender.title()} {offered_pokemon.name.title()}. {details}"
             offered_pokemon.gender = False
         trade_embed = discord.Embed(colour=ctx.guild.me.colour)

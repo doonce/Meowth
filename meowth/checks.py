@@ -239,6 +239,20 @@ def check_meetupchannel(ctx):
     meetup_channels = ctx.bot.guild_dict[guild.id].setdefault('meetup_dict', {}).keys()
     return channel.id in meetup_channels
 
+def check_trainset(ctx):
+    if ctx.guild is None:
+        return False
+    guild = ctx.guild
+    return ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('train', {}).get('enabled', False)
+
+def check_trainreport(ctx):
+    if ctx.guild is None:
+        return False
+    channel = ctx.channel
+    guild = ctx.guild
+    channel_list = [x for x in ctx.bot.guild_dict[guild.id]['configure_dict'].setdefault('train', {}).get('report_channels', {}).keys()]
+    return channel.id in channel_list
+
 def check_trainchannel(ctx):
     if ctx.guild is None:
         return False
@@ -549,13 +563,13 @@ def allowtrainreport():
     def predicate(ctx):
         if not ctx.guild:
             raise errors.GuildCheckFail()
-        if check_raidset(ctx):
-            if check_raidreport(ctx) or check_tutorialchannel(ctx) or check_eggchannel(ctx) or check_raidchannel(ctx) or check_meetupreport(ctx):
+        if check_raidset(ctx) and check_trainset(ctx):
+            if check_raidreport(ctx) or check_tutorialchannel(ctx) or check_eggchannel(ctx) or check_raidchannel(ctx) or check_trainreport(ctx):
                 return True
             else:
                 raise errors.RegionEggChannelCheckFail()
         else:
-            raise errors.RaidSetCheckFail()
+            raise errors.TrainSetCheckFail()
     return commands.check(predicate)
 
 def allowinvite():

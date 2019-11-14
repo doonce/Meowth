@@ -198,7 +198,7 @@ class Configure(commands.Cog):
         guild = ctx.message.guild
         citychannel_dict = {}
         channels = None
-        test_var = test_var = config_dict_temp.setdefault(type, {}).setdefault('enabled', False)
+        test_var = config_dict_temp.setdefault(type, {}).setdefault('enabled', False)
         if output == "list":
             test_var = config_dict_temp.setdefault(type, {}).setdefault('report_channels', [])
         else:
@@ -315,6 +315,8 @@ class Configure(commands.Cog):
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the EX raid channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('EX Raid Reporting Categories'), icon_url=self.bot.user.avatar_url))
             elif type == "meetup":
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the meetup channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('Meetup Reporting Categories'), icon_url=self.bot.user.avatar_url))
+            elif type == "train":
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the train channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('Train Reporting Categories'), icon_url=self.bot.user.avatar_url))
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp[type]['categories'])).set_author(name=_("Current Category Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
             while True:
                 guild = self.bot.get_guild(guild.id)
@@ -577,7 +579,7 @@ class Configure(commands.Cog):
                 if ctx.config_dict_temp[commandconfig].get('enabled', False):
                     enabled_commands.append(commandconfig)
             configmessage += _("\n\n**Enabled Commands:**\n{enabled_commands}").format(enabled_commands=", ".join(enabled_commands))
-            configmessage += _("\n\n**All Commands:**\n**all** - To redo configuration\n**team** - For Team Assignment configuration\n**welcome** - For Welcome Message configuration\n**raid** - for raid command configuration\n**exraid** - for EX raid command configuration\n**invite** - for invite command configuration\n**counters** - for automatic counters configuration\n**wild** - for wild command configuration\n**research** - for !research command configuration\n**lure** - for !lure command configuration\n**invasion** - for !invasion command configuration\n**pvp** - for !pvp command configuration\n**meetup** - for !meetup command configuration\n**want** - for want/unwant command configuration\n**archive** - For !archive configuration\n**trade** - For trade command configuration\n**nest** - For nest command configuration\n**timezone** - For timezone configuration\n**scanners** - For scanner bot integration configuration")
+            configmessage += _("\n\n**All Commands:**\n**all** - To redo configuration\n**team** - For Team Assignment configuration\n**welcome** - For Welcome Message configuration\n**raid** - for raid command configuration\n**exraid** - for EX raid command configuration\n**invite** - for invite command configuration\n**counters** - for automatic counters configuration\n**wild** - for wild command configuration\n**research** - for !research command configuration\n**lure** - for !lure command configuration\n**invasion** - for !invasion command configuration\n**pvp** - for !pvp command configuration\n**meetup** - for !meetup command configuration\n**train** - for !train command configuration\n**want** - for want/unwant command configuration\n**archive** - For !archive configuration\n**trade** - For trade command configuration\n**nest** - For nest command configuration\n**timezone** - For timezone configuration\n**scanners** - For scanner bot integration configuration")
             configmessage += _('\n\nReply with **cancel** at any time throughout the questions to cancel the configure process.')
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=configmessage).set_author(name=_('Meowth Configuration - {guild}').format(guild=guild.name), icon_url=self.bot.user.avatar_url))
             while True:
@@ -630,6 +632,10 @@ class Configure(commands.Cog):
                     return None
             if "meetup" in configreplylist:
                 ctx = await self._configure_meetup(ctx)
+                if not ctx:
+                    return None
+            if "train" in configreplylist:
+                ctx = await self._configure_train(ctx)
                 if not ctx:
                     return None
             if "invite" in configreplylist:
@@ -1479,6 +1485,46 @@ class Configure(commands.Cog):
         config_dict_temp['meetup'] = {'enabled':False, 'report_channels': {}, 'categories':'same', 'catgory_dict':{}}
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meetup Reporting allows users to report meetups with **!meetup** or **!event**. Meetup reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-meetups, hull-meetups, sydney-meetups`\n\nIf you do not require meetup reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Meetup Reporting Channels'), icon_url=self.bot.user.avatar_url))
         config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "meetup", ["none", "same", "other"], output="category_dict")
+        if not config_dict_temp:
+            return None
+        ctx.config_dict_temp = config_dict_temp
+        return ctx
+
+    @configure.command(name="train")
+    async def configure_train(self, ctx):
+        """!train reporting settings"""
+        try:
+            guild = ctx.message.guild
+            await utils.safe_delete(ctx.message)
+            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+                await self._configure(ctx, "all")
+                return
+            ctx.configure_channel = await self.create_configure_channel(ctx)
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            if ctx.configure_channel.id not in config_sessions:
+                config_sessions.append(ctx.configure_channel.id)
+            self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
+            await self.check_sessions(ctx)
+            ctx = await self._configure_train(ctx)
+            if ctx:
+                self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
+                await self.configure_summary(ctx)
+            await self.end_configure(ctx)
+        except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
+            await self.end_configure(ctx)
+            return None
+
+    async def _configure_train(self, ctx):
+        guild = ctx.message.guild
+        config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        raid_cog = self.bot.cogs.get('Raid')
+        if not raid_cog:
+            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Raid Cog is not loaded. Train cannot be configured.")))
+            ctx.config_dict_temp = config_dict_temp
+            return ctx
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Train Reporting allows users to report raid trains with **!train**. Train reports are contained within one or more channels. Each channel will be able to represent different areas/communities. I'll need you to provide a list of channels in your server you will allow reports from in this format: `channel-name, channel-name, channel-name`\n\nExample: `kansas-city-trains, hull-trains, sydney-trains`\n\nIf you do not require train reporting, you may want to disable this function.\n\nRespond with: **N** to disable, or the **channel-name** list to enable, each seperated with a comma and space:")).set_author(name=_('Train Reporting Channels'), icon_url=self.bot.user.avatar_url))
+        config_dict_temp = await self.configure_city_channels(ctx, config_dict_temp, "train", ["none", "same", "other"], output="category_dict")
         if not config_dict_temp:
             return None
         ctx.config_dict_temp = config_dict_temp

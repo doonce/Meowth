@@ -282,6 +282,11 @@ def custom_error_handling(bot, logger):
             error = await ctx.channel.send(msg)
             await asyncio.sleep(10)
             await delete_error(ctx.message, error)
+        elif isinstance(error, TrainSetCheckFail):
+            msg = _('Meowth! Raid Trains are not enabled on this server. **{prefix}{cmd_name}** is unable to be used.').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
+            error = await ctx.channel.send(msg)
+            await asyncio.sleep(10)
+            await delete_error(ctx.message, error)
         elif isinstance(error, ResearchSetCheckFail):
             msg = _('Meowth! Research Reporting is not enabled on this server. **{prefix}{cmd_name}** is unable to be used.').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             error = await ctx.channel.send(msg)

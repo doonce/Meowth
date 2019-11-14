@@ -181,6 +181,10 @@ class MeowthBot(commands.AutoShardedBot):
         users = 0
         for guild in list(self.guilds):
             # RUN ONCE
+            try:
+                test_var = self.guild_dict[guild.id]['configure_dict']['train']['report_channels']
+            except KeyError:
+                self.guild_dict[guild.id]['configure_dict']['train'] = copy.deepcopy(self.guild_dict[guild.id]['configure_dict']['meetup'])
             while True:
                 try:
                     test_var = self.guild_dict[guild.id]['configure_dict']['scanners']['reports']['raid']

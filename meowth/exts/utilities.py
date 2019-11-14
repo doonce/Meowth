@@ -688,7 +688,7 @@ class Utilities(commands.Cog):
                                 if (datetime.datetime.now() - message.created_at).days >= 1:
                                     delete_list.append(message)
                             elif message.embeds:
-                                if "pokebattler.com" in str(message.embeds[0].author.url).lower() or "raid coordination help" in str(message.embeds[0].author.name).lower():
+                                if "pokebattler.com" in str(message.embeds[0].author.url).lower() or "help" in str(message.embeds[0].author.name).lower():
                                     if (datetime.datetime.now() - message.created_at).days >= 7:
                                         delete_list.append(message)
                 dm_list = build_dm_list(guild.id)
@@ -934,7 +934,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.11.14.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.11.14.1 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
