@@ -337,15 +337,17 @@ class MeowthBot(commands.AutoShardedBot):
 
     async def on_raw_reaction_add(self, payload):
         emoji = payload.emoji.name
-        if emoji == config.custom_emoji.get('delete_dm', '\U0001f5d1'):
+        if config.custom_emoji.get('delete_dm', '\U0001f5d1') in emoji:
             try:
                 user = self.get_user(payload.user_id)
             except AttributeError:
                 return
+            if user.bot:
+                return
             channel = user.dm_channel
             if not channel:
                 channel = await user.create_dm()
-            if not channel or user.bot:
+            if not channel:
                 return
             try:
                 message = await channel.fetch_message(payload.message_id)

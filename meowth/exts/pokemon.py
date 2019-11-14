@@ -998,14 +998,14 @@ class Pokedex(commands.Cog):
         if len(forms) > 1 or key_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
         if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:
-            preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"])
+            preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"], inline=False)
         if pokemon.id in ctx.bot.legendary_list or pokemon.id in ctx.bot.mythical_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.id in ctx.bot.mythical_list else 'Legendary'}")
         if all([pokemon.research_cp, pokemon.raid_cp, pokemon.boost_raid_cp, pokemon.max_cp]):
-            preview_embed.add_field(name=f"{pokemon.name.title()} CP by Level (Raids / Research):", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**")
+            preview_embed.add_field(name=f"{pokemon.name.title()} CP by Level (Raids / Research):", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**", inline=False)
         if "stats" in ctx.invoked_with:
             if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
-                preview_embed.add_field(name="Base Stats", value=f"Attack: **{pokemon.base_attack}** | Defense: **{pokemon.base_defense}** | Stamina: **{pokemon.base_stamina}**\n")
+                preview_embed.add_field(name="Base Stats", value=f"Attack: **{pokemon.base_attack}** | Defense: **{pokemon.base_defense}** | Stamina: **{pokemon.base_stamina}**\n", inline=False)
             field_value = ""
             if pokemon.height and pokemon.weight:
                 field_value += f"Height: **{round(pokemon.height, 3)}m** | Weight: **{round(pokemon.weight, 3)}kg**\n"
@@ -1017,7 +1017,7 @@ class Pokedex(commands.Cog):
                 charge_moves = [x.replace('_', ' ').title() for x in pokemon.charge_moves]
                 quick_moves = [x.replace('_FAST', '').replace('_', ' ').title() for x in pokemon.quick_moves]
                 field_value += f"Quick Moves: **{(', ').join(quick_moves)}**\nCharge Moves: **{(', ').join(charge_moves)}**"
-            preview_embed.add_field(name="Other Info:", value=field_value)
+            preview_embed.add_field(name="Other Info:", value=field_value, inline=False)
         preview_embed.set_thumbnail(url=pokemon.img_url)
         if key_list:
             preview_embed.set_footer(text=(' | ').join(key_list))

@@ -769,14 +769,17 @@ class Listing(commands.Cog):
         user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
         user_mute = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', False)
         mute_mentions = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
-        user_forms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
         user_wants = sorted(user_wants)
         wantlist = [utils.get_name(self.bot, x).title() for x in user_wants]
+        user_forms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         user_bosses = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
         user_bossforms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
         user_bosses = sorted(user_bosses)
         bosslist = [utils.get_name(self.bot, x).title() for x in user_bosses]
+        user_trades = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('trades', [])
+        user_tradeforms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('trade_forms', [])
+        tradelist = [utils.get_name(self.bot, x).title() for x in user_trades]
         user_gyms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
         user_gyms = [x.title() for x in user_gyms]
         user_stops = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
@@ -811,13 +814,15 @@ class Listing(commands.Cog):
         wantmsg = ""
         if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels) or len(user_forms) > 0:
             if wantlist:
-                wantmsg += _('**Pokemon:** ({cat_options}{raid_link})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids" if user_link else "", cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
+                wantmsg += _('**Pokemon:** ({cat_options}{raid_link})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids, trades" if user_link else "", cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
             if user_forms:
                 wantmsg += _('**Pokemon Forms:** ({cat_options})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_forms), width=80)), cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
-            if bosslist and not user_link:
+            if user_bosses and not user_link:
                 wantmsg += _('**Bosses:** (raids)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
-            if user_bossforms:
+            if user_bossforms and not user_link:
                 wantmsg += _('**Boss Forms:** (raids)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_bossforms), width=80)))
+            if (user_trades or user_tradeforms) and not user_link:
+                wantmsg += _('**Trades:** (trades)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_trades+user_tradeforms), width=80)))
             if user_gyms:
                 wantmsg += _('**Gyms:** (raids)\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
             if user_stops:
@@ -879,6 +884,8 @@ class Listing(commands.Cog):
         stop_list = []
         gym_list = []
         boss_list = []
+        bossform_list = []
+        trade_list = []
         item_list = []
         type_list = []
         iv_list = []
@@ -899,6 +906,15 @@ class Listing(commands.Cog):
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('bosses', []):
                 if want not in boss_list:
                     boss_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('boss_forms', []):
+                if want not in bossform_list:
+                    bossform_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('trades', []):
+                if want not in trade_list:
+                    trade_list.append(utils.get_name(self.bot, want))
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('trade_forms', []):
+                if want not in trade_list:
+                    trade_list.append(want)
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('items', []):
                 if want not in item_list:
                     item_list.append(want)
@@ -931,6 +947,10 @@ class Listing(commands.Cog):
                 wantmsg += _('**Pokemon Forms:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(form_list), width=80)))
             if boss_list:
                 wantmsg += _('**Bosses:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(boss_list), width=80)))
+            if bossform_list:
+                wantmsg += _('**Boss Forms:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(bossform_list), width=80)))
+            if trade_list:
+                wantmsg += _('**Trades:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(trade_list), width=80)))
             if gym_list:
                 wantmsg += _('**Gyms:**\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(gym_list), width=80)))
             if stop_list:
@@ -1072,6 +1092,116 @@ class Listing(commands.Cog):
                 trade_details = target_trades[offer_id].get('details', '')
                 trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('trade_bullet', '\U0001F539')))
                 trademsg += (f"**Offered Pokemon**: {offered_pokemon} | **Wanted Pokemon**: {wanted_pokemon}{' | **Details**: '+trade_details if trade_details else ''} | {lister_str} | [Jump To Message]({offer_url})")
+        if trademsg:
+            paginator = commands.Paginator(prefix="", suffix="")
+            for line in trademsg.splitlines():
+                paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+            return listmsg, paginator.pages
+        else:
+            listmsg = f"Meowth! No active trades matched your search term **{search}**. List one with **!trade**"
+        return listmsg, None
+
+    @_list.command(aliases=['looking'])
+    @checks.allowtrade()
+    async def searching(self, ctx, *, search=None):
+        """List the trades for the user or pokemon
+
+        Usage: !list trades [user or pokemon or shiny]
+        Works only in trading channels. Will search for supplied search term, showing
+        all pokemon that match or all trades for specific user"""
+        async with ctx.typing():
+            delete_list = []
+            if not search:
+                search = ctx.author
+            else:
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search)
+                if pokemon:
+                    search = str(pokemon)
+                elif "shiny" in search.lower():
+                    search = "shiny"
+                elif "all" in search.lower():
+                    search = "all"
+                    list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('trade', {}).setdefault(ctx.channel.id, [])
+                    delete_list = []
+                    for msg in list_dict:
+                        try:
+                            msg = await ctx.channel.fetch_message(msg)
+                            delete_list.append(msg)
+                        except:
+                            pass
+                    await utils.safe_bulk_delete(ctx.channel, delete_list)
+                else:
+                    converter = commands.MemberConverter()
+                    try:
+                        search = await converter.convert(ctx, search)
+                    except Exception as e:
+                        search = ctx.author
+            listmsg, res_pages = await self._searchoflist(ctx, search)
+            list_messages = []
+            if res_pages:
+                index = 0
+                for p in res_pages:
+                    if index == 0:
+                        listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                        if search == ctx.author:
+                            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trade_list'] = {ctx.channel.id: listmsg.id}
+                    else:
+                        listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    list_messages.append(listmsg.id)
+                    index += 1
+                if search == "all":
+                    self.bot.guild_dict[ctx.guild.id]['list_dict']['trade'][ctx.channel.id] = list_messages
+            elif listmsg:
+                listmsg = await ctx.channel.send(listmsg)
+                list_messages.append(listmsg.id)
+            else:
+                return
+
+    async def _searchoflist(self, ctx, search):
+        tgt_trainer_trades = {}
+        tgt_pokemon_trades = {}
+        tgt_shiny_trades = {}
+        tgt_all_trades = {}
+        target_trades = {}
+        all_wants = {}
+        listmsg = ""
+        trademsg = ""
+        shiny_emoji = self.bot.custom_emoji.get('shiny_chance', '\u2728')
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search)
+        for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+            if isinstance(search, discord.member.Member):
+                trainer = search.id
+            user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
+            if user_link:
+                user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+                user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
+                trade_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokemon', {}).get('trade', False)
+            else:
+                user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('trades', [])
+                user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('trade_forms', [])
+                trade_setting = True
+            if not trade_setting:
+                continue
+            for want in user_wants:
+                if ("shiny" in str(want).lower() and search == "shiny") or search == "all" or isinstance(search, discord.member.Member):
+                    all_wants[utils.get_name(self.bot, want)] = want
+            for want in user_forms:
+                shiny_str = ""
+                if "shiny" in want.lower():
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                for word in want.split():
+                    if word.lower() in self.bot.pkmn_list:
+                        if ("shiny" in want.lower() and search == "shiny") or search == "all" or isinstance(search, discord.member.Member):
+                            all_wants[f"{shiny_str}{want.lower()}"] = utils.get_number(self.bot, word)
+            if isinstance(search, discord.member.Member):
+                break
+        all_wants = dict(sorted(all_wants.items(), key=lambda x: x[1]))
+        if all_wants and isinstance(search, discord.member.Member):
+            listmsg = f"Meowth! Here are the pokemon that {search.display_name} is looking for!"
+            trademsg = f"**Pokemon:**\n\n{(', ').join([x.title() for x in all_wants.keys()])}"
+        elif all_wants:
+            listmsg = f"Meowth! Here are the current{' shiny' if search == 'shiny' else ''} pokemon that users are searching for!"
+            trademsg = f"**Pokemon:**\n\n{(', ').join([x.title() for x in all_wants.keys()])}"
         if trademsg:
             paginator = commands.Paginator(prefix="", suffix="")
             for line in trademsg.splitlines():

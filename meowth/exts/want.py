@@ -42,10 +42,10 @@ class Want(commands.Cog):
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         want_msg = f"Meowth! I'll help you add a new alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to subscribe to. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**New Alert Subscription**'), value=want_msg, inline=False)
-        want_embed.add_field(name=_('**Pokemon**'), value=f"Reply with **pokemon** to want specific pokemon for research, wild, {'nest, and raid reports.' if user_link else 'and nest reports.'}", inline=False)
+        want_embed.add_field(name=_('**Pokemon**'), value=f"Reply with **pokemon** to want specific pokemon for research, wild, {'nest, trade, and raid reports.' if user_link else 'and nest reports.'}", inline=False)
         role_list = self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])
         if not user_link:
-            want_embed.add_field(name=_('**Boss**'), value=f"Reply with **boss** to want specific pokemon for raid reports.", inline=False)
+            want_embed.add_field(name=_('**Boss** / **Trade**'), value=f"Reply with **boss** to want specific pokemon for raid reports. Reply with **trade** to want specific pokemon for trade listings.", inline=False)
         gyms, stops = [], []
         if gym_matching_cog:
             gyms = gym_matching_cog.get_gyms(ctx.guild.id)
@@ -160,6 +160,30 @@ class Want(commands.Cog):
                             want_command = ctx.command.all_commands.get('boss')
                             if want_command:
                                 return await ctx.invoke(want_command, bosses=ctx.message.content)
+                        break
+                    elif want_category_msg.clean_content.lower() == "trade" and not user_link and checks.check_tradeset(ctx):
+                        want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_icon_small.png?cache=1")
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to subscribe to. You can reply with **cancel** to stop anytime.", inline=False)
+                        want_wait = await channel.send(embed=want_embed)
+                        try:
+                            want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            want_sub_msg = None
+                        await utils.safe_delete(want_wait)
+                        if not want_sub_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(want_sub_msg)
+                        if want_sub_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled your request")
+                            break
+                        elif want_sub_msg:
+                            ctx.message.content = want_sub_msg.clean_content
+                            want_command = ctx.command.all_commands.get('trade')
+                            if want_command:
+                                return await ctx.invoke(want_command, trades=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "gym" and gym_matching_cog and gyms:
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/gym-arena.png?cache=1")
@@ -372,6 +396,7 @@ class Want(commands.Cog):
         already_want_list = []
         added_list = []
         role_list = []
+        trade_warn = []
         want_embed = discord.Embed(colour=ctx.me.colour)
         if "boss" in ctx.invoked_with:
             user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
@@ -379,6 +404,11 @@ class Want(commands.Cog):
             want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
             if user_link:
                 return await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!want** to add pokemon.")
+        elif "trade" in ctx.invoked_with:
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('trades', [])
+            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('trade_forms', [])
+            if user_link:
+                return await message.channel.send(f"{ctx.author.mention} - Your trade want list is linked to your want list, please use **!want** to add pokemon.")
         else:
             user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
             user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
@@ -404,6 +434,12 @@ class Want(commands.Cog):
                 want_list.extend(sizes)
                 continue
             if pokemon:
+                if (pokemon.shiny or pokemon.shadow == "purified") and "trade" not in ctx.invoked_with:
+                    if not checks.check_tradeset(ctx):
+                        pokemon.shiny = False
+                        pokemon.shadow = False
+                    else:
+                        trade_warn.append(str(pokemon))
                 want_list.append(pokemon)
             elif len(want_split) == 1 and "list" in entered_want:
                 await utils.safe_delete(ctx.message)
@@ -413,10 +449,9 @@ class Want(commands.Cog):
                 match, score = utils.get_match(ctx.bot.pkmn_list, entered_want)
                 spellcheck_dict[entered_want] = match
         for entered_want in want_list:
-            entered_want.shiny = False
             role_str_list = []
             role_str = ""
-            if entered_want.id in self.bot.raid_list and (user_link or "boss" in ctx.invoked_with):
+            if entered_want.id in self.bot.raid_list and (user_link and "boss" in ctx.invoked_with):
                 if entered_want.alolan:
                     role_name = f"{entered_want.name.lower()}-alolan"
                 else:
@@ -439,7 +474,7 @@ class Want(commands.Cog):
                         return
                     await asyncio.sleep(0.5)
                 role_str = f" ({(', ').join(role_str_list)})"
-            if (entered_want.size or entered_want.gender or entered_want.form or entered_want.alolan) and len(str(entered_want).split()) > 1:
+            if (entered_want.size or entered_want.gender or entered_want.form or entered_want.alolan or entered_want.shiny or entered_want.shadow) and len(str(entered_want).split()) > 1:
                 if str(entered_want) in user_forms:
                     already_want_list.append(str(entered_want))
                     already_want_count += 1
@@ -474,6 +509,8 @@ class Want(commands.Cog):
             want_embed.set_thumbnail(url=pokemon.img_url)
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
+        if trade_warn:
+            await ctx.send(f"Meowth! {ctx.author.mention}, just so you know, **{(', ').join(trade_warn)}** will only be alerted through new trade listings.", delete_after=30)
 
     @want.command(name='boss', aliases=['bosses'])
     @checks.allowwant()
@@ -482,6 +519,16 @@ class Want(commands.Cog):
 
         Usage: !want boss <boss list>"""
         await ctx.invoke(self.bot.get_command('want pokemon'), pokemon=bosses)
+
+    @want.command(name='trade', aliases=['trades'])
+    @checks.allowwant()
+    async def want_trades(self, ctx, *, trades):
+        """Adds a trade listing to your wants for alerts if wanted pokemon is listed.
+
+        Usage: !want trade <trade list>"""
+        if not checks.check_tradeset(ctx):
+            return await ctx.send(f"Meowth! Trading isn't enabled on this server!", delete_after=30)
+        await ctx.invoke(self.bot.get_command('want pokemon'), pokemon=trades)
 
     async def _want_poi(self, ctx, pois, poi_type="gym"):
         await ctx.trigger_typing()
@@ -902,7 +949,7 @@ class Want(commands.Cog):
         else:
             mention_str = f"Reply with **unmention** to mute all raid @mentions from Meowth"
         if user_link:
-            link_str = f"Reply with **unlink** to unlink your **!want** list from your boss notifications. You are currently linked meaning your **!want** list controls all pokemon alerts. If you unlink, your **!want** list will be used for wild, research, and nest reports only and **!want boss <pokemon>** will be used for raid boss @mentions."
+            link_str = f"Reply with **unlink** to unlink your **!want** list from your boss notifications. You are currently linked meaning your **!want** list controls all pokemon alerts. If you unlink, your **!want** list will be used for wild, research, and nest reports only. **!want boss <pokemon>** will be used for raid boss @mentions and **!want trade <pokemon>** will be used for trade wants."
         else:
             link_str = f"Reply with **link** to link your **!want** list to your boss notifications. Your current **!want** list will be used for wild, research, raid @mentions, and nest reports."
         settings_embed = discord.Embed(description=f"", colour=ctx.me.colour)
@@ -1038,7 +1085,7 @@ class Want(commands.Cog):
         Usage: !want categories"""
         categories = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {})
         category_list = ["pokemon", "pokestop", "item", "type"]
-        pokemon_options = ["wild", "research", "invasion", "nest"]
+        pokemon_options = ["wild", "research", "invasion", "nest", "trade"]
         pokestop_options = ["research", "wild", "lure", "invasion"]
         type_options = ["wild", "research", "nest", "invasion"]
         item_options = ["research", "lure"]
@@ -1186,10 +1233,13 @@ class Want(commands.Cog):
         user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
         user_wants = sorted(user_wants)
         wantlist = [utils.get_name(self.bot, x).title() for x in user_wants]
+        user_forms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         user_bosses = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+        user_bossforms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
+        user_trades = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('trades', [])
+        user_tradeforms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('trade_forms', [])
         user_bosses = sorted(user_bosses)
         bosslist = [utils.get_name(self.bot, x).title() for x in user_bosses]
-        user_forms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
         user_gyms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
         user_gyms = [x.title() for x in user_gyms]
         user_stops = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
@@ -1218,9 +1268,9 @@ class Want(commands.Cog):
             await utils.safe_delete(message)
             return
         if user_wants:
-            want_embed.add_field(name=_('**Pokemon**'), value=f"Reply with **pokemon** to unwant specific pokemon for research, wild, {'nest, and raid reports.' if user_link else 'and nest reports.'}", inline=False)
-        if not user_link and user_bosses:
-            want_embed.add_field(name=_('**Boss**'), value=f"Reply with **boss** to unwant specific pokemon for raid reports.", inline=False)
+            want_embed.add_field(name=_('**Pokemon**'), value=f"Reply with **pokemon** to unwant specific pokemon for research, wild, {'nest, trade, and raid reports.' if user_link else 'and nest reports.'}", inline=False)
+        if not user_link and (user_bosses or user_bossforms or user_trades or user_tradeforms):
+            want_embed.add_field(name=_('**Boss** / **Trade**'), value=f"Reply with **boss** to unwant specific pokemon for raid reports. Reply with **trade** to unwant specific pokemon for trade listings.", inline=False)
         gyms, stops = [], []
         if gym_matching_cog:
             gyms = gym_matching_cog.get_gyms(ctx.guild.id)
@@ -1297,7 +1347,7 @@ class Want(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif want_category_msg.clean_content.lower() == "pokemon":
-                        if not wantlist:
+                        if not wantlist and not user_forms:
                             error = _("don't have wants of that type")
                             break
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_grass.png?cache=1")
@@ -1326,7 +1376,34 @@ class Want(commands.Cog):
                             break
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
                         want_embed.clear_fields()
-                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(bosslist)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(bosslist+user_bossforms)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_wait = await channel.send(embed=want_embed)
+                        try:
+                            want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            want_sub_msg = None
+                        await utils.safe_delete(want_wait)
+                        if not want_sub_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(want_sub_msg)
+                        if want_sub_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled your request")
+                            break
+                        elif want_sub_msg:
+                            ctx.message.content = want_sub_msg.clean_content
+                            want_command = ctx.command.all_commands.get('boss')
+                            if want_command:
+                                return await ctx.invoke(want_command, bosses=ctx.message.content)
+                        break
+                    elif want_category_msg.clean_content.lower() == "trade" and not user_link and checks.check_tradeset(ctx):
+                        if not bosslist:
+                            error = _("don't have wants of that type")
+                            break
+                        want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_icon_small.png?cache=1")
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the pokemon you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(user_trades+user_tradeforms)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                         want_wait = await channel.send(embed=want_embed)
                         try:
                             want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1573,11 +1650,20 @@ class Want(commands.Cog):
         not_wanted_list = []
         removed_list = []
         role_list = []
+        category = "pokemon"
         want_embed = discord.Embed(colour=ctx.me.colour)
         if "boss" in ctx.invoked_with:
             user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
             user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
             want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
+            category = "boss"
+            if user_link:
+                return await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!unwant** to add pokemon.")
+        if "trade" in ctx.invoked_with:
+            user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('trades', [])
+            user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('trade_forms', [])
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
+            category = "trade"
             if user_link:
                 return await message.channel.send(f"{ctx.author.mention} - Your boss list is linked to your want list, please use **!unwant** to add pokemon.")
         else:
@@ -1608,7 +1694,7 @@ class Want(commands.Cog):
                 unwant_list.append(pokemon)
             elif len(unwant_split) == 1 and "all" in entered_unwant:
                 await utils.safe_delete(ctx.message)
-                return await ctx.invoke(self.bot.get_command('unwant all'), category="pokemon")
+                return await ctx.invoke(self.bot.get_command('unwant all'), category=category)
             elif len(unwant_split) == 1 and "list" in entered_unwant:
                 await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('list wants'))
@@ -1617,10 +1703,9 @@ class Want(commands.Cog):
                 match, score = utils.get_match(ctx.bot.pkmn_list, entered_unwant)
                 spellcheck_dict[entered_unwant] = match
         for entered_unwant in unwant_list:
-            entered_unwant.shiny = False
             role_str_list = []
             role_str = ""
-            if entered_unwant.id in self.bot.raid_list and user_link:
+            if entered_unwant.id in self.bot.raid_list and user_link and "boss" in ctx.invoked_with:
                 for role in guild.roles:
                     if entered_unwant.alolan:
                         role_name = f"{entered_unwant.name.lower()}-alolan"
@@ -1634,7 +1719,7 @@ class Want(commands.Cog):
                         role_list.append(role)
                         role_str_list.append(role.mention)
                 role_str = f" ({(', ').join(role_str_list)})"
-            if (entered_unwant.size or entered_unwant.gender or entered_unwant.form or entered_unwant.alolan) and len(str(entered_unwant).split()) > 1:
+            if (entered_unwant.size or entered_unwant.gender or entered_unwant.form or entered_unwant.alolan or entered_unwant.shiny or entered_unwant.shadow) and len(str(entered_unwant).split()) > 1:
                 if str(entered_unwant) not in user_forms:
                     not_wanted_list.append(str(entered_unwant))
                     not_wanted_count += 1
@@ -1678,6 +1763,17 @@ class Want(commands.Cog):
         Usage: !unwant boss <species>
         You will no longer be notified of reports about this Pokemon."""
         await ctx.invoke(self.bot.get_command('unwant pokemon'), pokemon=bosses)
+
+    @unwant.command(name='trade', aliases=['trades'])
+    @checks.allowwant()
+    async def unwant_trade(self, ctx, *, trades):
+        """Remove a trade listing from your wanted list.
+
+        Usage: !unwant trade <species>
+        You will no longer be notified of trades about this Pokemon."""
+        if not checks.check_tradeset(ctx):
+            return await ctx.send(f"Meowth! Trading isn't enabled on this server!", delete_after=30)
+        await ctx.invoke(self.bot.get_command('unwant pokemon'), pokemon=trades)
 
     async def _unwant_poi(self, ctx, pois, poi_type="gym"):
         await ctx.trigger_typing()
@@ -2110,64 +2206,67 @@ class Want(commands.Cog):
         channel = message.channel
         author = message.author
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-        want_count = len(user_wants)
-        user_bosses = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-        boss_count = len(user_bosses)
         user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('forms', [])
-        form_count = len(user_forms)
+        user_bosses = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
+        user_bossforms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
+        user_trades = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('trades', [])
+        user_tradeforms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('trade_forms', [])
         user_gyms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('gyms', [])
-        gym_count = len(user_gyms)
         user_stops = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
-        stop_count = len(user_stops)
         user_items = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
-        item_count = len(user_items)
         user_types = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
-        type_count = len(user_types)
         user_ivs = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
-        iv_count = len(user_ivs)
         user_levels = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
         join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])]
         user_roles = [x for x in join_roles if x in author.roles]
-        level_count = len(user_levels)
         unwant_msg = ""
-        count = want_count + boss_count + gym_count + stop_count + item_count + type_count + iv_count + level_count + form_count + len(user_roles)
-        if count == 0:
+        if not any([user_wants, user_bosses, user_gyms, user_stops, user_items, user_types, user_ivs, user_levels, user_forms, user_roles, user_bossforms, user_trades]):
             await channel.send(content=_('{0}, you have nothing in your want list!').format(author.mention), delete_after=10)
             return
         await channel.trigger_typing()
         completed_list = []
-        if(category == "all" or category == "pokemon") and want_count > 0:
+        if(category == "all" or category == "pokemon") and len(user_wants) > 0:
             remove_roles = []
             for role in author.roles:
                 if role.name in self.bot.pkmn_list:
                     remove_roles.append(role)
+                    continue
             await author.remove_roles(*remove_roles)
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['wants'] = []
-            completed_list.append(f"{want_count} pokemon")
-        if (category == "all" or category == "gym") and gym_count > 0:
-            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['gyms'] = []
-            completed_list.append(f"{gym_count} gym{'s' if gym_count > 1 else ''}")
-        if (category == "all" or category == "stop") and stop_count > 0:
-            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['stops'] = []
-            completed_list.append(f"{stop_count} pokestop{'s' if stop_count > 1 else ''}")
-        if (category == "all" or category == "item") and item_count > 0:
-            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['items'] = []
-            completed_list.append(f"{item_count} item{'s' if item_count > 1 else ''}")
-        if (category == "all" or category == "boss") and boss_count > 0:
-            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['bosses'] = []
-            completed_list.append(f"{boss_count} boss{'es' if boss_count > 1 else ''}")
-        if (category == "all" or category == "type") and type_count > 0:
-            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['types'] = []
-            completed_list.append(f"{type_count} type{'s' if type_count > 1 else ''}")
-        if (category == "all" or category == "iv") and iv_count > 0:
-            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['ivs'] = []
-            completed_list.append(f"{iv_count} IV{'s' if iv_count > 1 else ''}")
-        if (category == "all" or category == "level") and level_count > 0:
-            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['levels'] = []
-            completed_list.append(f"{level_count} level{'s' if level_count > 1 else ''}")
-        if (category == "all" or category == "form") and form_count > 0:
+            completed_list.append(f"{len(user_wants)} pokemon")
+        if (category == "all" or category == "form") and len(user_forms) > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['forms'] = []
-            completed_list.append(f"{form_count} form{'s' if form_count > 1 else ''}")
+            completed_list.append(f"{len(user_forms)} form{'s' if len(user_forms) > 1 else ''}")
+        if (category == "all" or category == "boss") and len(user_bosses) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['bosses'] = []
+            completed_list.append(f"{len(user_bosses)} boss{'es' if len(user_bosses) > 1 else ''}")
+        if (category == "all" or category == "boss") and len(user_bossforms) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['boss_forms'] = []
+            completed_list.append(f"{len(user_bosses)} boss form{'s' if len(user_bosses) > 1 else ''}")
+        if (category == "all" or category == "trade") and len(user_trades) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['trades'] = []
+            completed_list.append(f"{len(user_trades)} trade{'s' if len(user_trades) > 1 else ''}")
+        if (category == "all" or category == "trade") and len(user_tradeforms) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['trade_forms'] = []
+            completed_list.append(f"{len(user_tradeforms)} trade form{'s' if len(user_tradeforms) > 1 else ''}")
+        if (category == "all" or category == "gym") and len(user_gyms) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['gyms'] = []
+            completed_list.append(f"{len(user_gyms)} gym{'s' if len(user_gyms) > 1 else ''}")
+        if (category == "all" or category == "stop") and len(user_stops) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['stops'] = []
+            completed_list.append(f"{len(user_stops)} pokestop{'s' if len(user_stops) > 1 else ''}")
+        if (category == "all" or category == "item") and len(user_items) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['items'] = []
+            completed_list.append(f"{len(user_items)} item{'s' if len(user_items) > 1 else ''}")
+        if (category == "all" or category == "type") and len(user_types) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['types'] = []
+            completed_list.append(f"{len(user_types)} type{'s' if len(user_types) > 1 else ''}")
+        if (category == "all" or category == "iv") and len(user_ivs) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['ivs'] = []
+            completed_list.append(f"{len(user_ivs)} IV{'s' if len(user_ivs) > 1 else ''}")
+        if (category == "all" or category == "level") and len(user_levels) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['levels'] = []
+            completed_list.append(f"{len(user_levels)} level{'s' if len(user_levels) > 1 else ''}")
         if (category == "all" or category == "role") and len(user_roles) > 0:
             remove_roles = []
             for role in author.roles:

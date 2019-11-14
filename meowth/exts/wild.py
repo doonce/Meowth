@@ -578,6 +578,7 @@ class Wild(commands.Cog):
                             break
                     await utils.safe_delete(mon_msg)
                     pokemon.shiny = False
+                    pokemon.shadow = False
                     wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Great! Now, reply with the **gym, pokestop, or other location** that the wild {str(pokemon)} is closest to. You can reply with **cancel** to stop anytime.", inline=False)
                     wild_embed.set_thumbnail(url=pokemon.img_url)
                     location_wait = await channel.send(embed=wild_embed)
@@ -657,6 +658,7 @@ class Wild(commands.Cog):
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, content)
         if pokemon:
             pokemon.shiny = False
+            pokemon.shadow = False
         else:
             return await ctx.invoke(self.bot.get_command('wild'))
         for word in match_list:

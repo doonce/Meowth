@@ -475,6 +475,9 @@ class Nest(commands.Cog):
         nest_embed.description = nest_description
         nest_embed.set_thumbnail(url=pokemon.img_url)
         pokemon.shiny = False
+        pokemon.gender = False
+        pokemon.size = False
+        pokemon.shadow = False
         dm_dict = {}
         ctx.nestreportmsg = await ctx.send(f"Meowth! {str(pokemon)} nest reported by {ctx.author.mention}! Details: {nest_name.title()}!\n\nUse {catch_emoji} if you visited, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all nests!", embed=nest_embed)
         for reaction in react_list:

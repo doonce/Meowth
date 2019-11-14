@@ -297,6 +297,9 @@ class Research(commands.Cog):
         if pokemon and not other_reward:
             reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
             pokemon.shiny = False
+            pokemon.gender = False
+            pokemon.size = False
+            pokemon.shadow = False
             research_embed.set_thumbnail(url=pokemon.img_url)
         else:
             thumbnail_url, item = await utils.get_item(ctx, reward)

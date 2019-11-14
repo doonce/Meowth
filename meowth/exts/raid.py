@@ -922,6 +922,7 @@ class Raid(commands.Cog):
                 pokemon.shiny = False
                 pokemon.gender = False
                 pokemon.size = False
+                pokemon.shadow = False
                 if weather:
                     if "rain" in weather:
                         pokemon.weather = "rainy"
@@ -1576,6 +1577,9 @@ class Raid(commands.Cog):
                             else:
                                 pokemon_or_level = str(pokemon).lower()
                                 pokemon.shiny = False
+                                pokemon.gender = False
+                                pokemon.size = False
+                                pokemon.shadow = False
                                 raid_embed.set_thumbnail(url=pokemon.img_url)
                     raid_embed.clear_fields()
                     raid_embed.add_field(name=_('**New Raid Report**'), value=f"Great! Now, reply with the **gym** that has the **{'level '+pokemon_or_level if str(pokemon_or_level).isdigit() else str(pokemon_or_level).title()}** raid. You can reply with **cancel** to stop anytime.", inline=False)
@@ -1702,6 +1706,8 @@ class Raid(commands.Cog):
                     break
         pokemon.shiny = False
         pokemon.gender = False
+        pokemon.size = False
+        pokemon.shadow = False
         pokemon.weather = weather
         raid_details = " ".join(raid_split).strip()
         for word in match_list:
@@ -2172,7 +2178,8 @@ class Raid(commands.Cog):
             'address': eggdetails['address'],
             'coordinates': eggdetails.get('coordinates'),
             'pkmn_obj':str(pokemon),
-            'moves':eggdetails.get('moves')
+            'moves':eggdetails.get('moves'),
+            'weather':weather
         }
         oldembed = raid_message.embeds[0]
         raid_embed = await self.make_raid_embed(ctx, report_details, raidexp)
@@ -4507,7 +4514,7 @@ class Raid(commands.Cog):
                         moveset = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['moveset']
                         newembed = ctrs_dict[moveset]['embed']
                         await ctrsmessage.edit(embed=newembed)
-                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                    except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
                         pass
                     self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['ctrs_dict'] = ctrs_dict
             return await ctx.channel.send(_("Meowth! Weather set to {}!").format(weather.lower()))

@@ -107,7 +107,7 @@ class Trading(commands.Cog):
             user = self.bot.get_user(payload.user_id)
         except AttributeError:
             return
-        if user == self.bot.user:
+        if user.bot or user == self.bot.user:
             return
         if guild:
             user = guild.get_member(payload.user_id)
@@ -168,6 +168,9 @@ class Trading(commands.Cog):
                     await ctx.invoke(self.bot.get_command("list trades"), search="all")
                     await asyncio.sleep(5)
                     await utils.safe_reaction(message, payload.emoji)
+                elif str(payload.emoji) == self.bot.custom_emoji.get('trade_search', '\U0001f50d'):
+                    await message.remove_reaction(payload.emoji, user)
+                    await ctx.invoke(self.bot.get_command("list searching"), search="all")
         elif message.id in active_check_dict.keys():
             guild = self.bot.get_guild(active_check_dict[message.id]['guild_id'])
             listing_id = active_check_dict[message.id]['listing_id']
@@ -250,7 +253,7 @@ class Trading(commands.Cog):
             complete_emoji = self.bot.custom_emoji.get('trade_complete', '\u2611')
             cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
             acceptedmsg = f"Meowth! {lister.display_name} has agreed to trade their {offered_pokemon} for {buyer.display_name}'s {wanted_pokemon}. React with {complete_emoji} when the trade has been completed! To reject or cancel this offer, react with {cancel_emoji}"
-            special_check = [offered_pokemon.shiny, offered_pokemon.legendary, wanted_pokemon.shiny, wanted_pokemon.legendary]
+            special_check = [offered_pokemon.shiny, offered_pokemon.legendary, wanted_pokemon.shiny, wanted_pokemon.legendary, wanted_pokemon.shadow == "purified"]
             if any(special_check):
                 acceptedmsg += "\n\nThis is a Special Trade! These can only be completed once per day and can cost up to 1 million stardust! Significant discounts can be earned by leveling up your friendship before the trade is made!"
             tradermsg = await buyer.send(acceptedmsg)
@@ -282,6 +285,7 @@ class Trading(commands.Cog):
         channel = self.bot.get_channel(trade_dict['report_channel_id'])
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         report_emoji = ctx.bot.custom_emoji.get('trade', '\U0001F4E2')
+        search_emoji = ctx.bot.custom_emoji.get('trade_search', '\U0001f50d')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         try:
             listing_msg = await channel.fetch_message(listing_id)
@@ -298,15 +302,15 @@ class Trading(commands.Cog):
         except:
             pass
         cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
-        offer_str = f"Meowth! {lister.display_name} offers a {str(offered_pokemon)} up for trade!"
-        instructions = "React to this message to make an offer!"
-        cancel_inst = f"{lister.display_name} may cancel the trade with {cancel_emoji} or edit details with {info_emoji}"
-        codemsg = ""
         if lister.id in self.bot.guild_dict[guild.id].get('trainers', {}):
             trainercode = self.bot.guild_dict[guild.id]['trainers'][lister.id].get('trainercode', None)
-            if trainercode:
-                codemsg += f"\n{lister.display_name}'s trainer code is: **{trainercode}**"
-        await listing_msg.edit(content=f"{offer_str}\n{instructions}\n{cancel_inst}{codemsg}\nUse {report_emoji} to list new or {list_emoji} to list all active trades!")
+        offered_pokemon_str = f"Meowth! {lister.mention} {'(trainercode: **'+trainercode+'**) ' if trainercode else ''}offers a {str(offered_pokemon)} up for trade!"
+        if "open trade" not in wanted_pokemon.lower():
+            instructions = "React to this message to make an offer!"
+        else:
+            instructions = f"DM {lister.display_name} to make an offer!"
+        instructions += f"\n\n{lister.display_name} can use {trade_stop} to cancel or {info_emoji} to edit details. Everyone can use {report_emoji} to report new, {search_emoji} to list desired pokemon, or {list_emoji} to list all active trades!"
+        await listing_msg.edit(content=f"{offered_pokemon_str} {instructions}")
         for i in range(len(wanted_pokemon)):
             await utils.safe_reaction(listing_msg, f'{i+1}\u20e3')
         await utils.safe_reaction(listing_msg, self.bot.custom_emoji.get('trade_stop', '\u23f9'))
@@ -321,6 +325,7 @@ class Trading(commands.Cog):
         channel = self.bot.get_channel(trade_dict['report_channel_id'])
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         report_emoji = ctx.bot.custom_emoji.get('trade_report', '\U0001F4E2')
+        search_emoji = ctx.bot.custom_emoji.get('trade_search', '\U0001f50d')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         try:
             listing_msg = await channel.fetch_message(listing_id)
@@ -335,15 +340,15 @@ class Trading(commands.Cog):
         buyer_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offers'][buyer_id]['offer'])
         cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
         await lister.send(f"Meowth... {buyer.display_name} withdrew their trade offer of {str(buyer_pokemon)}.")
-        offer_str = f"Meowth! {lister.display_name} offers a {str(offered_pokemon)} up for trade!"
-        instructions = "React to this message to make an offer!"
-        cancel_inst = f"{lister.display_name} may cancel the trade with {cancel_emoji} or edit details with {info_emoji}"
-        codemsg = ""
         if lister.id in self.bot.guild_dict[guild.id].get('trainers', {}):
             trainercode = self.bot.guild_dict[guild.id]['trainers'][lister.id].get('trainercode', None)
-            if trainercode:
-                codemsg += f"\n{lister.display_name}'s trainer code is: **{trainercode}**"
-        await listing_msg.edit(content=f"{offer_str} {instructions}\n{cancel_inst}{codemsg}\nUse {report_emoji} to list new or {list_emoji} to list all active trades!")
+        offered_pokemon_str = f"Meowth! {lister.mention} {'(trainercode: **'+trainercode+'**) ' if trainercode else ''}offers a {str(offered_pokemon)} up for trade!"
+        if "open trade" not in wanted_pokemon.lower():
+            instructions = "React to this message to make an offer!"
+        else:
+            instructions = f"DM {lister.display_name} to make an offer!"
+        instructions += f"\n\n{lister.display_name} can use {trade_stop} to cancel or {info_emoji} to edit details. Everyone can use {report_emoji} to report new, {search_emoji} to list desired pokemon, or {list_emoji} to list all active trades!"
+        await listing_msg.edit(content=f"{offered_pokemon_str} {instructions}")
         for i in range(len(wanted_pokemon)):
             await utils.safe_reaction(listing_msg, f'{i+1}\u20e3')
         await utils.safe_reaction(listing_msg, self.bot.custom_emoji.get('trade_stop', '\u23f9'))
@@ -425,6 +430,9 @@ class Trading(commands.Cog):
                             wanted_pokemon = value_msg.clean_content.lower().split(',')
                             wanted_pokemon = [x.strip() for x in wanted_pokemon]
                             wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in wanted_pokemon]
+                            for pkmn in wanted_pokemon:
+                                if pkmn.shadow == "shadow":
+                                    pkmn.shadow = False
                             wanted_pokemon = [str(x) for x in wanted_pokemon if x]
                             if len(wanted_pokemon) > 9:
                                 error = _("entered more than nine pokemon")
@@ -488,6 +496,10 @@ class Trading(commands.Cog):
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
             pass
         try:
+            await utils.expire_dm_reports(self.bot, trade_dict.get('dm_dict', {}))
+        except:
+            pass
+        try:
             del self.bot.guild_dict[guild_id]['trade_dict'][listing_id]
         except (KeyError, discord.HTTPException):
             pass
@@ -544,6 +556,8 @@ class Trading(commands.Cog):
                         all_offered = [x.strip() for x in all_offered]
                         for index, item in enumerate(all_offered):
                             pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, item)
+                            if pokemon and pokemon.shadow == "shadow":
+                                pokemon.shadow = False
                             all_offered[index] = pokemon
                         all_offered = [x for x in all_offered if x]
                         if not all_offered:
@@ -583,7 +597,7 @@ class Trading(commands.Cog):
                     if list_separate or first_listing:
                         preview_embed.clear_fields()
                         preview_embed.set_thumbnail(url=offered_pokemon.img_url)
-                        preview_embed.add_field(name=f"New Trade Listing", value=f"What pokemon are you willing to accept in exchange for your {str(offered_pokemon) if list_separate else str(len(all_offered))+' trades'}?\n\nList up to 9 pokemon in a comma separated list, reply with **ask** to create an open trade and invite offers, or reply with **cancel** to cancel this listing.{' Reply with **stop** to cancel all listed trades.' if len(all_offered) > 1 else ''}", inline=False)
+                        preview_embed.add_field(name=f"New Trade Listing", value=f"What pokemon are you willing to accept in exchange for your {str(offered_pokemon) if list_separate else str(len(all_offered))+' trades'}?\n\nList up to 9 pokemon in a comma separated list, reply with **open** to create an open trade and invite offers, or reply with **cancel** to cancel this listing.{' Reply with **stop** to cancel all listed trades.' if len(all_offered) > 1 else ''}", inline=False)
                         want_wait = await ctx.send(embed=preview_embed)
                         try:
                             want_reply = await self.bot.wait_for('message', timeout=60, check=check)
@@ -616,24 +630,24 @@ class Trading(commands.Cog):
                             for pkmn in wanted_pokemon:
                                 pkmn = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pkmn)
                                 if pkmn and str(pkmn) not in wanted_pokemon_list:
+                                    if pkmn.shadow == "shadow":
+                                        pkmn.shadow = False
                                     wanted_pokemon_list.append(str(pkmn))
                             wanted_pokemon = wanted_pokemon_list
                         if not wanted_pokemon:
                             error = _("entered something invalid")
                             await error_msg(error)
                             return
-                        details = None
+                        details = ""
                         if list_separate:
-                            preview_embed.set_field_at(0, name=preview_embed.fields[0].name, value=f"Great! Now, would you like to add some **details** to your trade? This can be something like 'My offer has a legacy moveset, I'm looking for a great league trade. Trade is negotiable.'\n\nReply with your **details** to add them, reply with **N** to list without any details, or reply with **cancel** to cancel this listing.{' Reply with **stop** to cancel all listed trades.' if len(all_offered) > 1 else ''}", inline=False)
+                            preview_embed.set_field_at(0, name=preview_embed.fields[0].name, value=f"Great! Now, would you like to add some **details** to your trade? This can be something like 'My offer has a legacy moveset, I'm looking for a great league trade. Trade is negotiable.'\n\nReply with your **details** to add them, reply with **none** to list without any details, or reply with **cancel** to cancel this listing.{' Reply with **stop** to cancel all listed trades.' if len(all_offered) > 1 else ''}", inline=False)
                             details_want = await ctx.send(embed=preview_embed)
                             try:
                                 details_msg = await self.bot.wait_for('message', timeout=60, check=check)
                             except asyncio.TimeoutError:
                                 details_msg = None
                             await utils.safe_delete(details_want)
-                            if not details_msg:
-                                details = None
-                            else:
+                            if details_msg:
                                 await utils.safe_delete(details_msg)
                             if details_msg.clean_content.lower() == "cancel":
                                 error = _("cancelled the listing")
@@ -643,8 +657,8 @@ class Trading(commands.Cog):
                                 error = _("cancelled the listing")
                                 await error_msg(error)
                                 return
-                            elif details_msg.clean_content.lower() == "n":
-                                details = None
+                            elif details_msg.clean_content.lower() == "n" or details_msg.clean_content.lower() == "none":
+                                details = ""
                             elif details_msg:
                                 details = details_msg.clean_content
                     await self.send_trade(ctx, wanted_pokemon, str(offered_pokemon), details)
@@ -654,48 +668,48 @@ class Trading(commands.Cog):
     async def send_trade(self, ctx, wanted_pokemon, offered_pokemon, details):
         trade_dict = self.bot.guild_dict[ctx.guild.id].setdefault('trade_dict', {})
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        trade_stop =  ctx.bot.custom_emoji.get('trade_stop', '\u23f9')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
         report_emoji = ctx.bot.custom_emoji.get('trade_report', '\U0001F4E2')
+        search_emoji = ctx.bot.custom_emoji.get('trade_search', '\U0001f50d')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        react_list = [trade_stop, info_emoji, report_emoji, search_emoji, list_emoji]
         if not wanted_pokemon or "open trade" in wanted_pokemon:
             wanted_pokemon = "Open Trade (DM User)"
         else:
             wanted_pokemon = [f'{i+1}\u20e3: {pkmn}' for i, pkmn in enumerate(wanted_pokemon)]
             wanted_pokemon = '\n'.join(wanted_pokemon)
         offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, offered_pokemon)
+        if offered_pokemon.gender:
+            details = f"{offered_pokemon.gender.title()} {offered_pokemon.name.title()}. {details}"
+            offered_pokemon.gender = False
         trade_embed = discord.Embed(colour=ctx.guild.me.colour)
         trade_embed.set_author(name="Pokemon Trade - {}".format(ctx.author.display_name), icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_icon_small.png")
-        trade_embed.add_field(name="Wants", value=wanted_pokemon, inline=True)
-        trade_embed.add_field(name="Offers", value=str(offered_pokemon), inline=True)
+        trade_embed.add_field(name="**Wants:**", value=wanted_pokemon, inline=True)
+        trade_embed.add_field(name="**Offers:**", value=str(offered_pokemon), inline=True)
         if details and details.lower() != "none":
             trade_embed.add_field(name="Details", value=details, inline=False)
         trade_embed.set_footer(text=f"Listed by @{ctx.author.display_name} - {timestamp}", icon_url=ctx.author.avatar_url_as(format=None, static_format='png', size=256))
         trade_embed.set_thumbnail(url=offered_pokemon.img_url)
-        offered_pokemon_str = f"Meowth! {ctx.author.mention} offers a {str(offered_pokemon)} up for trade!"
+        trainercode = None
+        if ctx.author.id in ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}):
+            trainercode = ctx.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id].get('trainercode', None)
+        offered_pokemon_str = f"Meowth! {ctx.author.mention} {'(trainercode: **'+trainercode+'**) ' if trainercode else ''}offers a {str(offered_pokemon)} up for trade!"
         if "open trade" not in wanted_pokemon.lower():
             instructions = "React to this message to make an offer!"
         else:
             instructions = f"DM {ctx.author.display_name} to make an offer!"
-        codemsg = ""
-        if ctx.author.id in ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}):
-            trainercode = ctx.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id].get('trainercode', None)
-            if trainercode:
-                codemsg += f"\n{ctx.author.display_name}'s trainer code is: **{trainercode}**"
-        cancel_inst = f"{ctx.author.display_name} may cancel the trade with :stop_button: or edit trade details with {info_emoji}"
-        trade_msg = await ctx.send(f"{offered_pokemon_str} {instructions}\n{cancel_inst}{codemsg}\nUse {report_emoji} to list new or {list_emoji} to list all active trades!", embed=trade_embed)
+        instructions += f"\n\n{ctx.author.display_name} can use {trade_stop} to cancel or {info_emoji} to edit details. Everyone can use {report_emoji} to report new, {search_emoji} to list desired pokemon, or {list_emoji} to list all active trades!"
+        ctx.tradereportmsg = await ctx.send(f"{offered_pokemon_str} {instructions}", embed=trade_embed)
         if "open trade" not in wanted_pokemon.lower():
             for i in range(len(wanted_pokemon.split('\n'))):
                 await asyncio.sleep(0.25)
-                await utils.safe_reaction(trade_msg, f'{i+1}\u20e3')
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(trade_msg, ctx.bot.custom_emoji.get('trade_stop', '\u23f9'))
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(trade_msg, info_emoji)
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(trade_msg, report_emoji)
-        await asyncio.sleep(0.25)
-        await utils.safe_reaction(trade_msg, list_emoji)
-        ctx.bot.guild_dict[ctx.guild.id]['trade_dict'][trade_msg.id] = {
+                await utils.safe_reaction(ctx.tradereportmsg, f'{i+1}\u20e3')
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.safe_reaction(ctx.tradereportmsg, reaction)
+        dm_dict = await self.send_dm_messages(ctx, str(offered_pokemon), copy.deepcopy(trade_embed))
+        ctx.bot.guild_dict[ctx.guild.id]['trade_dict'][ctx.tradereportmsg.id] = {
             'exp':time.time() + 30*24*60*60,
             'status':"active",
             'lister_id': ctx.author.id,
@@ -706,8 +720,55 @@ class Trading(commands.Cog):
             'wanted_pokemon': wanted_pokemon,
             'offered_pokemon': str(offered_pokemon),
             'offers':{},
-            'details':details
+            'details':details,
+            'dm_dict':dm_dict
         }
+
+    async def send_dm_messages(self, ctx, trade_pokemon, embed, dm_dict=None):
+        if not dm_dict:
+            dm_dict = {}
+        if embed:
+            if isinstance(embed.description, discord.embeds._EmptyEmbed):
+                embed.description = ""
+            if "Jump to Message" not in embed.description:
+                embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.tradereportmsg.jump_url})"
+            index = 0
+            for field in embed.fields:
+                if "reaction" in field.name.lower():
+                    embed.remove_field(index)
+                else:
+                    index += 1
+        delete_emoji = self.bot.config.custom_emoji.get('delete_dm', '\U0001f5d1')
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_pokemon)
+        content = f"Meowth! {ctx.author.display_name} offers a {str(trade_pokemon)} up for trade in {ctx.channel.mention}! Use {delete_emoji} if you aren't interested."
+        for trainer in copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('trainers', {})):
+            if trainer == ctx.author.id:
+                continue
+            user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
+            if user_link:
+                user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
+                user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
+                pokemon_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokemon', {}).get('trade', False)
+            else:
+                user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('trades', [])
+                user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('trade_forms', [])
+                pokemon_setting = True
+            if not any([pokemon_setting]):
+                continue
+            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
+                continue
+            send_trade = False
+            if pokemon_setting and pokemon and (pokemon.id in user_wants or str(pokemon) in user_forms):
+                send_trade = True
+            if send_trade:
+                try:
+                    user = ctx.guild.get_member(trainer)
+                    tradedmmsg = await user.send(content=content, embed=embed)
+                    await utils.safe_reaction(tradedmmsg, delete_emoji)
+                    dm_dict[user.id] = tradedmmsg.id
+                except:
+                    continue
+        return dm_dict
 
 def setup(bot):
     bot.add_cog(Trading(bot))

@@ -816,6 +816,8 @@ class Huntr(commands.Cog):
         if pokemon:
             pokemon.shiny = False
             pokemon.gender = False
+            pokemon.size = None
+            pokemon.shadow = None
         else:
             return
         if not pokemon.id in ctx.bot.raid_list:

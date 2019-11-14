@@ -34,7 +34,7 @@ class Advanced(commands.Cog):
     async def on_message(self, message):
         if "niandick" in message.content.lower():
             await utils.safe_reaction(message, "\U0001F346")
-    
+
 def setup(bot):
     bot.add_cog(Advanced(bot))
 

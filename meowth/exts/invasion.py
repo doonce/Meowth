@@ -230,6 +230,7 @@ class Invasion(commands.Cog):
                                     continue
                                 pokemon.shiny = False
                                 pokemon.size = None
+                                pokemon.gender = None
                                 pokemon.shadow = "shadow"
                                 if str(pokemon) in reward:
                                     continue
@@ -287,6 +288,8 @@ class Invasion(commands.Cog):
                 if not pokemon:
                     continue
                 pokemon.shiny = False
+                pokemon.size = None
+                pokemon.gender = None
                 pokemon.shadow = "shadow"
                 if pokemon.id in self.bot.shiny_dict:
                     if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):

@@ -647,7 +647,7 @@ class Utilities(commands.Cog):
                 if self.bot.guild_dict[guildid]['trade_dict'][listing_id].get('accepted', {}):
                     global_dm_list.append(self.bot.guild_dict[guildid]['trade_dict'][listing_id]['accepted']['lister_msg'])
                     global_dm_list.append(self.bot.guild_dict[guildid]['trade_dict'][listing_id]['accepted']['buyer_msg'])
-            report_list = ["questreport_dict", "wildreport_dict", "pokealarm_dict", "pokehuntr_dict", "raidchannel_dict", "exraidchannl_dict", "lure_dict"]
+            report_list = ["questreport_dict", "wildreport_dict", "pokealarm_dict", "pokehuntr_dict", "raidchannel_dict", "exraidchannl_dict", "lure_dict", "trade_dict"]
             for report_dict in report_list:
                 for report in self.bot.guild_dict[guildid].get(report_dict, {}):
                     for k,v in self.bot.guild_dict[guildid][report_dict][report].get('dm_dict', {}).items():
@@ -934,7 +934,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.11.12.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.11.14.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
