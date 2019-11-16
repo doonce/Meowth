@@ -321,7 +321,12 @@ class Pokemon():
             else:
                 form_str = "_00"
         if self.form and self.id in self.bot.form_dict:
-            form_str = form_str + "_" + str(list(self.bot.form_dict[self.id].keys()).index(self.form)).zfill(2)
+            if self.form == "alolan":
+                form_str = "_61"
+            elif self.form == "galarian":
+                form_str = "_31"
+            else:
+                form_str = form_str + "_" + str(list(self.bot.form_dict[self.id].keys()).index(self.form)).zfill(2)
         if self.id not in self.bot.gender_dict and not self.form:
             form_str = form_str + "_00"
         if self.alolan:
