@@ -861,8 +861,10 @@ class Huntr(commands.Cog):
             return
         await asyncio.sleep(1)
         ctx.raidreport = await message.channel.send(content=f"Meowth! {str(pokemon).title()} raid reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\n\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!", embed=raid_embed)
-        if pokemon.alolan:
+        if pokemon.form == "alolan":
             raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
+        elif pokemon.form == "galarian":
+            raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-galarian")
         else:
             raid = discord.utils.get(message.guild.roles, name=str(pokemon).replace(' ', '-').lower())
         if raid == None:
