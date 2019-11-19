@@ -699,6 +699,8 @@ class Raid(commands.Cog):
         for x in enumerate(role_names):
             if 'alola' in x[1]:
                 role_names[x[0]] = f"{x[1].replace('alolan-', '')}-alolan"
+            elif 'galar' in x[1]:
+                role_names[x[0]] = f"{x[1].replace('galarian-', '')}-galarian"
         for guild in list(self.bot.guilds):
             try:
                 if not guild:
@@ -758,6 +760,8 @@ class Raid(commands.Cog):
                     for x in enumerate(form_names):
                         if 'alola' in x[1]:
                             form_names[x[0]] = f"{x[1].replace('alolan-', '')}-alolan"
+                        elif 'galar' in x[1]:
+                            form_names[x[0]] = f"{x[1].replace('galarian-', '')}-galarian"
                     for want in form_names:
                         if want in role_names:
                             role = discord.utils.get(guild.roles, name=want)
@@ -939,9 +943,7 @@ class Raid(commands.Cog):
                     elif "fog" in weather:
                         pokemon.weather = "foggy"
                 if pokemon.id in self.bot.shiny_dict:
-                    if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                    elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                    if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                         shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 boss_list.append(f"{shiny_str}{str(pokemon)} ({pokemon.id}) {pokemon.emoji}")
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1" if embed_type == "egg" else pokemon.img_url
@@ -1725,13 +1727,15 @@ class Raid(commands.Cog):
                 raid_coordinates = gym_url.split('query=')[1]
         if not raid_details:
             return await utils.safe_delete(ctx.message)
-        raid_channel = await self.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.form.lower() if boss.form else ''}{'-alolan' if boss.alolan else ''}", raid_details, "raid")
+        raid_channel = await self.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.form.lower() if boss.form else ''}", raid_details, "raid")
         if not raid_channel:
             return
         if not weather:
             weather = await self.auto_weather(ctx, raid_coordinates)
-        if pokemon.alolan:
+        if pokemon.form == "alolan":
             raid = discord.utils.get(ctx.guild.roles, name=f"{pokemon.name.lower()}-alolan")
+        elif pokemon.form == "galarian":
+            raid = discord.utils.get(ctx.guild.roles, name=f"{pokemon.name.lower()}-galarian")
         else:
             raid = discord.utils.get(ctx.guild.roles, name=str(pokemon).replace(' ', '-').lower())
         if raid == None:
@@ -2057,8 +2061,10 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
         oldembed = raid_message.embeds[0]
         raid_gmaps_link = oldembed.url
-        if pokemon.alolan:
+        if pokemon.form == "alolan":
             raidrole = discord.utils.get(raid_channel.guild.roles, name=f"{pokemon.name.lower()}-alolan")
+        elif pokemon.form == "galarian":
+            raidrole = discord.utils.get(raid_channel.guild.roles, name=f"{pokemon.name.lower()}-galarian")
         else:
             raidrole = discord.utils.get(raid_channel.guild.roles, name=str(pokemon).replace(' ', '-').lower())
         if raidrole == None:
@@ -2067,9 +2073,7 @@ class Raid(commands.Cog):
             roletest = _("{pokemon} - ").format(pokemon=raidrole.mention)
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
-            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+            if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{str(pokemon)} ({pokemon.id}) {pokemon.emoji}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
@@ -2200,9 +2204,11 @@ class Raid(commands.Cog):
                 invitemsgstr2 = ""
             raidreportcontent = _('Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. {invitemsgstr} coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=eggdetails['address'], invitemsgstr=invitemsgstr, raid_channel=raid_channel.mention)
             raidmsg = f"Meowth! {str(pokemon)} EX raid reported by {author.mention} in {report_channel.mention}! Details: {eggdetails['address']}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
-        raid_channel_name = f"{pokemon.name.lower()}{'-'+pokemon.form.lower() if pokemon.form else ''}{'-alolan' if pokemon.alolan else ''}-" + utils.sanitize_channel_name(eggdetails['address'])
-        if pokemon.alolan:
+        raid_channel_name = f"{pokemon.name.lower()}{'-'+pokemon.form.lower() if pokemon.form else ''}-" + utils.sanitize_channel_name(eggdetails['address'])
+        if pokemon.form == "alolan":
             raid = discord.utils.get(raid_channel.guild.roles, name=f"{pokemon.name.lower()}-alolan")
+        if pokemon.form == "galarian":
+            raid = discord.utils.get(raid_channel.guild.roles, name=f"{pokemon.name.lower()}-galarian")
         else:
             raid = discord.utils.get(raid_channel.guild.roles, name=str(pokemon).replace(' ', '-').lower())
         if raid == None:
@@ -3805,6 +3811,8 @@ class Raid(commands.Cog):
                 elif report_type == "raid":
                     if 'alola' in report_pokemon.lower():
                         raid_channel_name = f"{report_pokemon.lower().replace('alolan', '').strip()}-alolan-"
+                    elif 'galar' in report_pokemon.lower():
+                        raid_channel_name = f"{report_pokemon.lower().replace('galarian', '').strip()}-galarian-"
                     else:
                         raid_channel_name = (report_pokemon.replace(' ', '-').lower() + '-')
                 elif report_type == "egg":
@@ -4277,7 +4285,7 @@ class Raid(commands.Cog):
                 return await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
         level = utils.get_level(self.bot, pkmn.name.lower())
         redirect_url = ""
-        url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.game_name.upper()}{'_FORM' if pkmn.form or pkmn.alolan else ''}/levels/RAID_LEVEL_{level}/attackers/"
+        url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.game_name.upper()}{'_FORM' if pkmn.form else ''}/levels/RAID_LEVEL_{level}/attackers/"
         if user:
             url += "users/{user}/".format(user=user)
             userstr = _("user #{user}'s").format(user=user)
@@ -4308,7 +4316,6 @@ class Raid(commands.Cog):
         if not data or data.get('error', None):
             url = url.replace(f"{pkmn.game_name.upper()}_FORM", pkmn.name.upper())
             pkmn.form = None
-            pkmn.alolan = False
             async with aiohttp.ClientSession() as sess:
                 async with sess.get(url) as resp:
                     data = await resp.json(content_type=None)
@@ -4395,7 +4402,7 @@ class Raid(commands.Cog):
         else:
             index = weather_list.index(weather)
         weather = match_list[index]
-        url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.game_name.upper()}{'_FORM' if pokemon.form or pokemon.alolan else ''}/levels/RAID_LEVEL_{level}/attackers/"
+        url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.game_name.upper()}{'_FORM' if pokemon.form else ''}/levels/RAID_LEVEL_{level}/attackers/"
         url += "levels/30/"
         url += "strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=OVERALL&"
         url += "weatherCondition={weather}&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE".format(weather=weather)
@@ -4408,7 +4415,6 @@ class Raid(commands.Cog):
         if not data or data.get('error', None):
             url = url.replace(f"{str(pokemon.game_name).upper()}_FORM", pokemon.name.upper())
             pokemon.form = None
-            pokemon.alolan = False
             async with aiohttp.ClientSession() as sess:
                 async with sess.get(url) as resp:
                     data = await resp.json(content_type=None)
@@ -4669,9 +4675,7 @@ class Raid(commands.Cog):
                 boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
                 shiny_str = ""
                 if boss.id in self.bot.shiny_dict:
-                    if boss.alolan and "alolan" in self.bot.shiny_dict.get(boss.id, {}) and "raid" in self.bot.shiny_dict.get(boss.id, {}).get("alolan", []):
-                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                    elif str(boss.form).lower() in self.bot.shiny_dict.get(boss.id, {}) and "raid" in self.bot.shiny_dict.get(boss.id, {}).get(str(boss.form).lower(), []):
+                    if str(boss.form).lower() in self.bot.shiny_dict.get(boss.id, {}) and "raid" in self.bot.shiny_dict.get(boss.id, {}).get(str(boss.form).lower(), []):
                         shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 if boss_dict[str(boss).lower()]['total'] > 0:
                     bossstr = f"{shiny_str}{boss.name.title()} ({boss.id}) {boss_dict[str(boss).lower()]['type']} : **{boss_dict[str(boss).lower()]['total']}**"

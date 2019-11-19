@@ -77,7 +77,7 @@ class Nest(commands.Cog):
                             if nest_dict[channel][nest]['reports'][report].get('exp', 0) <= time.time():
                                 try:
                                     report_message = await report_channel.fetch_message(report)
-                                    if new_migration and nest_dict[channel][nest]['reports'][report]['reporttime'] > migration_utc:
+                                    if new_migration and nest_dict[channel][nest]['reports'][report]['report_time'] > migration_utc:
                                         ctx = self.bot.get_context(report_message)
                                         self.bot.guild_dict[guild.id]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
                                         self.bot.loop.create_task(self.edit_nest_messages(ctx, nest, report_message))
@@ -85,9 +85,16 @@ class Nest(commands.Cog):
                                         continue
                                     self.bot.loop.create_task(self.expire_nest(nest, report_message))
                                     count += 1
+                                    continue
                                 except:
-                                    pass
-
+                                    print(traceback.format_exc())
+                                try:
+                                    self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report].get('dm_dict', {})))
+                                    del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report]
+                                    count += 1
+                                    continue
+                                except KeyError:
+                                    print(traceback.format_exc())
             if not migration_list:
                 migration_list = [600]
             logger.info(f"------ END - {count} Nests Cleaned - Waiting {min(migration_list)} seconds. ------")
@@ -269,9 +276,7 @@ class Nest(commands.Cog):
         nest_embed.set_thumbnail(url=pokemon.img_url)
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
-            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+            if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         nest_embed.description = f"**Nest**: {location.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         result = re.search(r'Meowth! (.*) nest', message.content).group(1)
@@ -337,9 +342,7 @@ class Nest(commands.Cog):
                 shiny_str = ""
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn[0])
                 if pokemon.id in self.bot.shiny_dict:
-                    if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                    elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                    if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                         shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 if report_count == 0:
                     embed_value += f"**{shiny_str}{pokemon.name.title()}** {pokemon.emoji}"
@@ -409,7 +412,6 @@ class Nest(commands.Cog):
                     if not pokemon:
                         error = _("entered something invalid")
                         break
-                pokemon.alolan = False
                 pokemon.gender = None
                 pokemon.form = None
                 nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
@@ -458,15 +460,13 @@ class Nest(commands.Cog):
         report_emoji = ctx.bot.custom_emoji.get('nest_report', '\U0001F4E2')
         list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [catch_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
-        nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_name.split())}"
+        nest_url = f"https://www.google.com/maps/search/?api=1&query={nest_dict.get(nest_name, {}).get('location', nest_name)}"
         migration_utc = self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
-            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+            if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=ctx.guild.me.colour)
@@ -608,9 +608,7 @@ class Nest(commands.Cog):
             shiny_str = ""
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn[0])
             if pokemon.id in self.bot.shiny_dict:
-                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
             if report_count == 0:
                 embed_value += f"**{shiny_str}{str(pokemon)}** {pokemon.emoji} **({pkmn[1]})**"
@@ -753,7 +751,8 @@ class Nest(commands.Cog):
                     report_message = await channel.fetch_message(report)
                     await self.expire_nest(nest_name, report_message)
                 except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                    pass
+                    self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name]['reports'][report].get('dm_dict', {})))
+                    del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report]
             del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name]
             self.bot.guild_dict[guild.id]['nest_dict'][channel.id]['list'].remove(nest_name)
             confirmation = await channel.send(_('Nest deleted.'), delete_after=10)
@@ -787,7 +786,8 @@ class Nest(commands.Cog):
                         report = await channel.fetch_message(report)
                         self.bot.loop.create_task(self.expire_nest(nest, report))
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                        pass
+                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report].get('dm_dict', {})))
+                        del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report]
                     return
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
@@ -822,7 +822,8 @@ class Nest(commands.Cog):
                             report_message = await channel.fetch_message(report)
                             self.bot.loop.create_task(self.expire_nest(nest, report_message))
                         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
+                            self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report].get('dm_dict', {})))
+                            del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report]
                 confirmation = await channel.send(_('Nests reset. Use **!nest time** to set a new migration time.'), delete_after=10)
                 return
         else:
@@ -837,7 +838,8 @@ class Nest(commands.Cog):
                         report_message = await channel.fetch_message(report)
                         self.bot.loop.create_task(self.expire_nest(nest_name, report_message))
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                        pass
+                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name]['reports'][report].get('dm_dict', {})))
+                        del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name]['reports'][report]
                 confirmation = await channel.send(f"{nest_name.title()} reset. Use **!nest time** to set a new migration time.", delete_after=10)
             return
 

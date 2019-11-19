@@ -1288,9 +1288,7 @@ class Listing(commands.Cog):
                     if pokemon and not other_reward:
                         shiny_str = ""
                         if pokemon.id in self.bot.shiny_dict:
-                            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                            if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                         quest_dict['encounters'][questid] = {"reward":f"{shiny_str}{reward} {pokemon.emoji}", "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "pokemon":pokemon.name}
                         if pokemon.name not in reward_dict['encounters']:
@@ -1596,9 +1594,7 @@ class Listing(commands.Cog):
                                 continue
                             shiny_str = ""
                             if pokemon and pokemon.id in self.bot.shiny_dict:
-                                if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "invasion" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                                elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "invasion" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                                if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "invasion" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                                     shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                             reward_list.append(f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}")
                     elif reward_type:
@@ -1773,9 +1769,7 @@ class Listing(commands.Cog):
                         disguise.weather = weather_check
                         disguise_str = f" | **Disguise**: {disguise.name.title()} {disguise.emoji}"
                     if pokemon.id in self.bot.shiny_dict:
-                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                        if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                     wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('wild_bullet', '\U0001F539')))
                     wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}{disguise_str} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"

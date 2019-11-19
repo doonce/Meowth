@@ -292,9 +292,7 @@ class Invasion(commands.Cog):
                 pokemon.gender = None
                 pokemon.shadow = "shadow"
                 if pokemon.id in self.bot.shiny_dict:
-                    if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                    elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                    if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                         shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
                 reward_list.append(str(pokemon))
@@ -552,9 +550,7 @@ class Invasion(commands.Cog):
                     pokemon.shiny = False
                     pokemon.shadow = "shadow"
                     if pokemon.id in self.bot.shiny_dict:
-                        if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                        elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                        if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                     reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
                     reward_list.append(str(pokemon))

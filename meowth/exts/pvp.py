@@ -697,8 +697,12 @@ class Pvp(commands.Cog):
         if not pvp_dict:
             return
         if report_message and int(report_message) in pvp_dict.keys():
-            report_message = await channel.fetch_message(report_message)
-            await self.expire_pvp(report_message)
+            try:
+                report_message = await channel.fetch_message(report_message)
+                await self.expire_pvp(report_message)
+            except:
+                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, pvp_dict.get(report_message, {}).get('dm_dict', {})))
+                del self.bot.guild_dict[guild.id]['pvp_dict'][report_message]
             return
         rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all PVP requests?'))
         try:
@@ -714,8 +718,12 @@ class Pvp(commands.Cog):
             await utils.safe_delete(rusure)
             async with ctx.typing():
                 for report in pvp_dict:
-                    report_message = await channel.fetch_message(report)
-                    self.bot.loop.create_task(self.expire_pvp(report_message))
+                    try:
+                        report_message = await channel.fetch_message(report)
+                        self.bot.loop.create_task(self.expire_pvp(report))
+                    except:
+                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, pvp_dict.get(report, {}).get('dm_dict', {})))
+                        del self.bot.guild_dict[guild.id]['pvp_dict'][report]
                 confirmation = await channel.send(_('PVPs reset.'), delete_after=10)
                 return
         else:

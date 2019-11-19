@@ -208,9 +208,7 @@ class Wild(commands.Cog):
         huntrexpstamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'], minutes=int(expire.split()[0]), seconds=int(expire.split()[2]))).strftime('%I:%M %p')
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
-            if pokemon.alolan and "alolan" in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get("alolan", []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-            elif str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+            if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
         details_str = f"{shiny_str}{pokemon.name.title()}"
         if gender and "female" in gender.lower():
@@ -769,8 +767,12 @@ class Wild(commands.Cog):
         if not wild_dict:
             return
         if report_message and int(report_message) in wild_dict.keys():
-            report_message = await channel.fetch_message(report_message)
-            await self.expire_wild(report_message)
+            try:
+                report_message = await channel.fetch_message(report_message)
+                await self.expire_wild(report_message)
+            except:
+                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['wild_dict'][report_message].get('dm_dict', {})))
+                del self.bot.guild_dict[guild.id]['wild_dict'][report_message]
             return
         rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all wild reports?'))
         try:
@@ -786,8 +788,12 @@ class Wild(commands.Cog):
             await utils.safe_delete(rusure)
             async with ctx.typing():
                 for report in wild_dict:
-                    report_message = await channel.fetch_message(report)
-                    self.bot.loop.create_task(self.expire_wild(report_message))
+                    try:
+                        report_message = await channel.fetch_message(report)
+                        self.bot.loop.create_task(self.expire_wild(report_message))
+                    except:
+                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['wild_dict'][report].get('dm_dict', {})))
+                        del self.bot.guild_dict[guild.id]['wild_dict'][report]
                 confirmation = await channel.send(_('Wilds reset.'), delete_after=10)
                 return
         else:

@@ -452,12 +452,14 @@ class Want(commands.Cog):
             role_str_list = []
             role_str = ""
             if entered_want.id in self.bot.raid_list and (user_link and "boss" in ctx.invoked_with):
-                if entered_want.alolan:
+                if entered_want.form == "alolan":
                     role_name = f"{entered_want.name.lower()}-alolan"
+                elif entered_want.form == "galarian":
+                    role_name = f"{entered_want.name.lower()}-galarian"
                 else:
                     role_name = str(entered_want).replace(' ', '-').lower()
                 for role in guild.roles:
-                    if not entered_want.form and not entered_want.alolan:
+                    if not entered_want.form and entered_want.form != "alolan" and entered_want.form != "galarian":
                         if entered_want.name.lower() in role.name.lower() and role not in ctx.author.roles:
                             role_list.append(role)
                             role_str_list.append(role.mention)
@@ -474,7 +476,7 @@ class Want(commands.Cog):
                         return
                     await asyncio.sleep(0.5)
                 role_str = f" ({(', ').join(role_str_list)})"
-            if (entered_want.size or entered_want.gender or entered_want.form or entered_want.alolan or entered_want.shiny or entered_want.shadow) and len(str(entered_want).split()) > 1:
+            if (entered_want.size or entered_want.gender or entered_want.form or entered_want.shiny or entered_want.shadow) and len(str(entered_want).split()) > 1:
                 if str(entered_want) in user_forms:
                     already_want_list.append(str(entered_want))
                     already_want_count += 1
@@ -1033,6 +1035,8 @@ class Want(commands.Cog):
             for x in enumerate(role_names):
                 if 'alola' in x[1]:
                     role_names[x[0]] = f"{x[1].replace('alolan-', '')}-alolan"
+                elif 'galar' in x[1]:
+                    role_names[x[0]] = f"{x[1].replace('galarian-', '')}-galarian"
             add_list = []
             remove_list = []
             user_forms = []
@@ -1049,6 +1053,8 @@ class Want(commands.Cog):
             for x in enumerate(form_names):
                 if 'alola' in x[1]:
                     form_names[x[0]] = f"{x[1].replace('alolan-', '')}-alolan"
+                elif 'galar' in x[1]:
+                    form_names[x[0]] = f"{x[1].replace('galariann-', '')}-galarian"
             for role in ctx.author.roles:
                 role_pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, role.name)
                 if role_pkmn and role.name.lower() not in role_names:
@@ -1707,11 +1713,13 @@ class Want(commands.Cog):
             role_str = ""
             if entered_unwant.id in self.bot.raid_list and user_link and "boss" in ctx.invoked_with:
                 for role in guild.roles:
-                    if entered_unwant.alolan:
+                    if entered_unwant.form == "alolan":
                         role_name = f"{entered_unwant.name.lower()}-alolan"
+                    elif entered_unwant.form == "galarian":
+                        role_name = f"{entered_unwant.name.lower()}-galarian"
                     else:
                         role_name = str(entered_unwant).replace(' ', '-').lower()
-                    if not entered_unwant.form and not entered_unwant.alolan:
+                    if not entered_unwant.form and entered_unwant.form != "alolan" and entered_unwant.form != "galarian":
                         if entered_unwant.name.lower() in role.name.lower() and role in ctx.author.roles:
                             role_list.append(role)
                             role_str_list.append(role.mention)
@@ -1719,7 +1727,7 @@ class Want(commands.Cog):
                         role_list.append(role)
                         role_str_list.append(role.mention)
                 role_str = f" ({(', ').join(role_str_list)})"
-            if (entered_unwant.size or entered_unwant.gender or entered_unwant.form or entered_unwant.alolan or entered_unwant.shiny or entered_unwant.shadow) and len(str(entered_unwant).split()) > 1:
+            if (entered_unwant.size or entered_unwant.gender or entered_unwant.form or entered_unwant.shiny or entered_unwant.shadow) and len(str(entered_unwant).split()) > 1:
                 if str(entered_unwant) not in user_forms:
                     not_wanted_list.append(str(entered_unwant))
                     not_wanted_count += 1

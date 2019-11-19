@@ -305,8 +305,10 @@ class Huntr(commands.Cog):
                     if not raid_embed:
                         return
                     pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, entered_raid)
-                    if pokemon.alolan:
+                    if pokemon.form == "alolan":
                         raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
+                    elif pokemon.form == "galarian":
+                        raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-galarian")
                     else:
                         raid = discord.utils.get(message.guild.roles, name=str(pokemon).replace(' ', '-').lower())
                     if raid == None:
@@ -523,8 +525,10 @@ class Huntr(commands.Cog):
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pokemon)
                         if not pokemon:
                             return
-                        if pokemon.alolan:
+                        if pokemon.form == "alolan":
                             raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
+                        elif pokemon.form == "galarian":
+                            raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-galarian")
                         else:
                             raid = discord.utils.get(message.guild.roles, name=str(pokemon).replace(' ', '-').lower())
                         if raid == None:
@@ -852,7 +856,7 @@ class Huntr(commands.Cog):
         raid_embed = await raid_cog.make_raid_embed(ctx, report_details, raidexp)
         if not raid_embed:
             return
-        raid_channel = await raid_cog.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.form.lower() if boss.form else ''}{'-alolan' if boss.alolan else ''}", raid_details, "raid")
+        raid_channel = await raid_cog.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.form.lower() if boss.form else ''}", raid_details, "raid")
         if not raid_channel:
             return
         await asyncio.sleep(1)

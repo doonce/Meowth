@@ -32,6 +32,10 @@ class EXRaidSetCheckFail(CommandError):
     'Exception raised checks.exraidset fails'
     pass
 
+class TrainSetCheckFail(CommandError):
+    'Exception raised checks.trainset fails'
+    pass
+
 class ResearchSetCheckFail(CommandError):
     'Exception raised checks.researchset fails'
     pass

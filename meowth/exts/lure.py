@@ -500,8 +500,12 @@ class Lure(commands.Cog):
         if not lure_dict:
             return
         if report_message and int(report_message) in lure_dict.keys():
-            report_message = await channel.fetch_message(report_message)
-            await self.expire_lure(report_message)
+            try:
+                report_message = await channel.fetch_message(report_message)
+                await self.expire_lure(report_message)
+            except:
+                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, lure_dict.get(report_message, {}).get('dm_dict', {})))
+                del self.bot.guild_dict[guild.id]['lure_dict'][report_message]
             return
         rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all lures?'))
         try:
@@ -517,8 +521,12 @@ class Lure(commands.Cog):
             await utils.safe_delete(rusure)
             async with ctx.typing():
                 for report in lure_dict:
-                    report_message = await channel.fetch_message(report)
-                    self.bot.loop.create_task(self.expire_lure(report_message))
+                    try:
+                        report_message = await channel.fetch_message(report)
+                        self.bot.loop.create_task(self.expire_lure(report))
+                    except:
+                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, lure_dict.get(report, {}).get('dm_dict', {})))
+                        del self.bot.guild_dict[guild.id]['lure_dict'][report]
                 confirmation = await channel.send(_('Lures reset.'), delete_after=10)
                 return
         else:
