@@ -447,7 +447,7 @@ def allowraidreport():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_raidset(ctx):
-            if check_raidreport(ctx) or check_tutorialchannel(ctx) or (check_eggchannel(ctx) or check_exeggchannel(ctx) and check_raidchannel(ctx)):
+            if check_raidreport(ctx) or check_tutorialchannel(ctx) or check_eggchannel(ctx) or check_exeggchannel(ctx):
                 return True
             else:
                 raise errors.RegionEggChannelCheckFail()

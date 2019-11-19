@@ -1532,7 +1532,7 @@ class Raid(commands.Cog):
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
-                if checks.check_eggchannel(ctx):
+                if checks.check_eggchannel(ctx) or checks.check_exeggchannel(ctx):
                     return await ctx.invoke(self.bot.get_command("raid hatch"), pokemon=pokemon_or_level)
                 elif pokemon_or_level and location:
                     content = f"{pokemon_or_level} {location}"
