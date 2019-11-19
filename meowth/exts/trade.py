@@ -528,7 +528,7 @@ class Trading(commands.Cog):
         preview_embed.set_footer(text=f"Listed by @{ctx.author.display_name} - {timestamp}", icon_url=ctx.author.avatar_url_as(format=None, static_format='png', size=256))
         async def error_msg(e):
             preview_embed.clear_fields()
-            preview_embed.add_field(name=_('**Trade Listing Cancelled**'), value=_("Meowth! Your listing has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            preview_embed.add_field(name=_('**Trade Listing Cancelled**'), value=_("Meowth! Your listing has been cancelled because you {error}! Retry when you're ready.").format(error=e), inline=False)
             confirmation = await ctx.send(embed=preview_embed, delete_after=10)
         while True:
             async with ctx.typing():
@@ -544,6 +544,7 @@ class Trading(commands.Cog):
                     await utils.safe_delete(trade_listing)
                     if not listing_msg:
                         error = _("took too long to respond")
+                        await error_msg(error)
                         break
                     else:
                         await utils.safe_delete(listing_msg)
@@ -647,7 +648,11 @@ class Trading(commands.Cog):
                             except asyncio.TimeoutError:
                                 details_msg = None
                             await utils.safe_delete(details_want)
-                            if details_msg:
+                            if not details_msg:
+                                error = _("took too long to respond")
+                                await error_msg(error)
+                                return
+                            else:
                                 await utils.safe_delete(details_msg)
                             if details_msg.clean_content.lower() == "cancel":
                                 error = _("cancelled the listing")
