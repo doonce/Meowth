@@ -169,7 +169,8 @@ class Invasion(commands.Cog):
         reply_msg = f"**reward <encounter>** - Current: {invasion_dict.get('reward', 'X')}\n"
         reply_msg += f"**type <grunt type>** - Current: {invasion_dict.get('reward_type', 'X')}\n"
         reply_msg += f"**gender <grunt gender>** - Current: {invasion_dict.get('gender', 'X')}\n"
-        invasion_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
+        reply_msg += f"**leader <leader name>** - Current: {invasion_dict.get('leader', 'X')}\n"
+        invasion_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/invasion/teamrocket.png?cache=1')
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
@@ -216,6 +217,15 @@ class Invasion(commands.Cog):
                                 success.append("gender")
                             else:
                                 error = _('entered something invalid. Please enter male or female')
+                        elif "leader" in value and "leader" not in success:
+                            if value_split[1] and (value_split[1] == "arlo" or value_split[1] == "cliff" or value_split[1] == "sierra" or value_split[1] == "giovanni"):
+                                self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['leader'] = value_split[1]
+                                success.append("leader")
+                            elif value_split[1] and value_split[1].lower() == "none":
+                                self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['leader'] = None
+                                success.append("leader")
+                            else:
+                                error = _('entered something invalid. Please enter arlo, cliff, sierra, or giovanni')
                         else:
                             if "reward" in value.lower() and "none" in value.lower():
                                 reward = []
@@ -260,9 +270,10 @@ class Invasion(commands.Cog):
         reward = invasion_dict.get('reward', [])
         reward_type = invasion_dict.get('reward_type', '')
         gender = invasion_dict.get('gender', '')
+        leader = invasion_dict.get('leader', '')
         dm_dict = invasion_dict.get('dm_dict', {})
         old_embed = message.embeds[0]
-        invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
+        invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/invasion/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
         nearest_stop = invasion_dict.get('location', None)
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8')
@@ -273,6 +284,9 @@ class Invasion(commands.Cog):
         if author:
             ctx.author = author
         invasion_embed.set_author(name=f"Invasion Report {' (♀)' if gender == 'female' else ''}{' (♂)' if gender == 'male' else ''}", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_shadow.png?cache=2")
+        if leader:
+            invasion_embed.set_author(name=f"Team Rocket Leader Report ({leader.title()})", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_Leader_MapCompass.png?cache=2")
+            invasion_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/invasion/teamrocket{'_'+leader.lower()}.png?cache=1")
         pokemon = None
         shiny_str = ""
         reward_str = ""
@@ -426,7 +440,7 @@ class Invasion(commands.Cog):
         exp_timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'], minutes=30, seconds=0)).strftime('%I:%M %p')
         error = False
         loc_url = utils.create_gmaps_query(self.bot, "", message.channel, type="invasion")
-        invasion_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket.png?cache=1')
+        invasion_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/invasion/teamrocket.png?cache=1')
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pokemon = False
         gender = None
@@ -514,7 +528,7 @@ class Invasion(commands.Cog):
             if not message.embeds:
                 await utils.safe_delete(message)
 
-    async def send_invasion(self, ctx, location, reward=None, gender=None, timer=None):
+    async def send_invasion(self, ctx, location, reward=None, gender=None, leader=None, timer=None):
         dm_dict = {}
         expire_time = "30"
         if timer:
@@ -529,7 +543,7 @@ class Invasion(commands.Cog):
         report_emoji = self.bot.custom_emoji.get('invasion_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [complete_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
-        invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
+        invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/invasion/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
         pokemon = None
         shiny_str = ""
         reward_str = ""
@@ -586,6 +600,9 @@ class Invasion(commands.Cog):
         invasion_embed.url = loc_url
         invasion_embed.add_field(name=f"**{'Expires' if timer else 'Expire Estimate'}:**", value=f"{expire_time} mins {end.strftime(_('(%I:%M %p)'))}")
         invasion_embed.set_author(name=f"Invasion Report {' (♀)' if gender == 'female' else ''}{' (♂)' if gender == 'male' else ''}", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_shadow.png?cache=2")
+        if leader:
+            invasion_embed.set_author(name=f"Team Rocket Leader Report ({leader.title()})", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_Leader_MapCompass.png?cache=2")
+            invasion_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/invasion/teamrocket{'_'+leader.lower()}.png?cache=1")
         ctx.invreportmsg = await ctx.channel.send(invasion_msg, embed=invasion_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
@@ -603,7 +620,8 @@ class Invasion(commands.Cog):
             'url':loc_url,
             'reward':reward,
             'completed_by':[],
-            'reward_type':reward_type
+            'reward_type':reward_type,
+            'leader':leader
         }
         dm_dict = await self.send_dm_messages(ctx, reward, location, copy.deepcopy(invasion_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['dm_dict'] = dm_dict

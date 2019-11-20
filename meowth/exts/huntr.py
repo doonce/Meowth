@@ -1102,6 +1102,7 @@ class Huntr(commands.Cog):
         timer = report_details.get('expire', 30)
         reward = report_details.get('reward', None)
         gender = report_details.get('gender', None)
+        leader = report_details.get('leader', None)
         if gender == "male" and reward == ["snorlax"]:
             reward = []
         gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -1113,7 +1114,7 @@ class Huntr(commands.Cog):
             stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "invasion")
         if not location:
             return
-        await invasion_cog.send_invasion(ctx, location, reward, gender, timer)
+        await invasion_cog.send_invasion(ctx, location, reward, gender, leader, timer)
 
     @commands.command()
     @commands.has_permissions(manage_guild=True)

@@ -1587,6 +1587,7 @@ class Listing(commands.Cog):
                     reward = invasion_dict[invasionid]['reward']
                     reward_type = invasion_dict[invasionid].get('reward_type', None)
                     grunt_gender = invasion_dict[invasionid].get('gender', None)
+                    leader = invasion_dict[invasionid].get('leader', None)
                     if reward:
                         for pokemon in reward:
                             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
@@ -1606,6 +1607,8 @@ class Listing(commands.Cog):
                     if invasionauthor and not invasionauthor.bot:
                         reported_by = f" | **Reported By**: {invasionauthor.display_name}"
                     gender_str = ""
+                    if leader:
+                        gender_str = f" | **Leader**: {leader.title()}"
                     if grunt_gender:
                         gender_str = f" | **Gender**: {grunt_gender.title()}"
                     invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', '\U0001F539')))

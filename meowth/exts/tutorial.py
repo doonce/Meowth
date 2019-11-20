@@ -1135,7 +1135,7 @@ class Tutorial(commands.Cog):
                     help_categories["No Category"].append(cmd)
                 else:
                     help_categories["Not Run"].append(cmd)
-            help_embed.add_field(name="**Available Command Categories**", value=', '.join([f"{x}" for x in help_categories.keys() if help_categories.get(x) and x != "Not Run"]))
+            help_embed.add_field(name="**Available Command Categories**", value=', '.join([f"{x}" for x in help_categories.keys() if help_categories.get(x) and x != "Not Run"]), inline=False)
             help_embed.add_field(name="**README**", value=f"For a full list of commands, Meowth's readme is available [here](https://github.com/doonce/Meowth/blob/Rewrite/README.md).")
             if can_manage:
                 help_embed.description += f" Moderators can view help for other commands by replying with **Not Run**."
