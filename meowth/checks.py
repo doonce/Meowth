@@ -4,48 +4,44 @@ from discord.ext import commands
 import discord.utils
 from meowth import errors
 
+### User hierarchy
+
+def is_dev_check(ctx):
+    return ctx.author.id in [288810647960158220]
+
+def is_dev():
+    return commands.check(is_dev_check)
+
 def is_owner_check(ctx):
-    author = ctx.author.id
-    owner = ctx.bot.owner
-    return author == owner
+    return ctx.author.id == ctx.bot.owner or is_dev_check(ctx)
 
 def is_owner():
     return commands.check(is_owner_check)
 
 def is_manager_check(ctx):
-    author = ctx.author.id
-    manager_list = ctx.bot.managers
-    return author in manager_list or is_dev_check(ctx) or is_owner_check(ctx)
+    return ctx.author.id in ctx.bot.managers or is_owner_check(ctx)
 
 def is_manager():
     return commands.check(is_manager_check)
 
-def is_dev_check(ctx):
-    author = ctx.author.id
-    dev_list = [288810647960158220]
-    return author in dev_list
+def is_guildowner_check(ctx):
+    return ctx.author.id == ctx.guild.owner.id or is_manager_check(ctx)
 
-def is_dev():
-    return commands.check(is_dev_check)
+def is_guildowner():
+    return commands.check(is_guildowner_check)
 
-async def check_is_guildowner(ctx):
-    if is_manager_check(ctx):
-        return True
-    if ctx.author.id == ctx.guild.owner.id:
-        return True
-    return False
-
-async def check_is_admin(ctx):
-    if await check_is_guildowner(ctx):
+def is_admin_check(ctx):
+    if is_guildowner_check(ctx):
         return True
     if ctx.author.guild_permissions.manage_guild:
         return True
     return False
 
-async def check_is_mod(ctx):
-    if await check_is_admin(ctx):
-        return True
-    if await is_manager_check(ctx):
+def is_admin():
+    return commands.check(is_admin)
+
+def is_mod_check(ctx):
+    if is_admin_check(ctx):
         return True
     if ctx.author.permissions_in(ctx.channel).manage_messages:
         return True
@@ -56,7 +52,9 @@ async def check_is_mod(ctx):
     return False
 
 def is_mod():
-    return commands.check(check_is_mod)
+    return commands.check(is_mod_check)
+
+###
 
 def check_permissions(ctx, perms):
     if not perms:
