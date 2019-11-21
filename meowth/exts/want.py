@@ -451,7 +451,7 @@ class Want(commands.Cog):
         for entered_want in want_list:
             role_str_list = []
             role_str = ""
-            if entered_want.id in self.bot.raid_list:
+            if entered_want.id in self.bot.raid_list and (user_link or "boss" in ctx.invoked_with):
                 if entered_want.form == "alolan":
                     role_name = f"{entered_want.name.lower()}-alolan"
                 elif entered_want.form == "galarian":
@@ -1711,7 +1711,7 @@ class Want(commands.Cog):
         for entered_unwant in unwant_list:
             role_str_list = []
             role_str = ""
-            if entered_unwant.id in self.bot.raid_list:
+            if entered_unwant.id in self.bot.raid_list and (user_link or "boss" in ctx.invoked_with):
                 for role in guild.roles:
                     if entered_unwant.form == "alolan":
                         role_name = f"{entered_unwant.name.lower()}-alolan"
