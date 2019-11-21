@@ -507,7 +507,7 @@ class Pvp(commands.Cog):
         pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1')
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id].get('pvp', {})
-        is_moderator = checks.is_mod_check_mod(ctx)
+        is_moderator = checks.is_mod_check(ctx)
         is_ranked = any([pvp_info.get('leader', []), pvp_info.get('elite', []), pvp_info.get('champion', [])])
         while True:
             def check(reply):
@@ -739,7 +739,7 @@ class Pvp(commands.Cog):
         guild = message.guild
         channel = message.channel
         error = ""
-        is_moderator = checks.is_mod_check_mod(ctx)
+        is_moderator = checks.is_mod_check(ctx)
         if not is_moderator and not self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('pvp', {}).setdefault('leader', []):
             return await utils.safe_delete(cxx.message)
         output = []
@@ -852,7 +852,7 @@ class Pvp(commands.Cog):
         channel = message.channel
         error = ""
         output = []
-        is_moderator = checks.is_mod_check_mod(ctx)
+        is_moderator = checks.is_mod_check(ctx)
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         leader_dict = {k:{"emoji":utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[k]), "leaders":[]} for k in self.bot.type_list}
         for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
@@ -1069,7 +1069,7 @@ class Pvp(commands.Cog):
         error = ""
         output = []
         champ_emoji = self.bot.config.custom_emoji.get('pvp_champ', '\U0001F451')
-        is_moderator = checks.is_mod_check_mod(ctx)
+        is_moderator = checks.is_mod_check(ctx)
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         league_list = ["great", "ultra", "master"]
         leader_dict = {k:[] for k in league_list}
@@ -1185,7 +1185,7 @@ class Pvp(commands.Cog):
         guild = message.guild
         channel = message.channel
         error = ""
-        is_moderator = checks.is_mod_check_mod(ctx)
+        is_moderator = checks.is_mod_check(ctx)
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1')
         while True:
             def check(reply):
