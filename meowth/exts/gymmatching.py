@@ -152,7 +152,7 @@ class GymMatching(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
         error = False
         first = True
-        poi_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/POI_Submission_Illustration_01.png?cache=1')
+        poi_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/POI_Submission_Illustration_01.png?cache=1')
         poi_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         def check(reply):
             if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
@@ -440,7 +440,7 @@ class GymMatching(commands.Cog):
         else:
             return await ctx.send(f"Location not found. Try again.", delete_after=30)
         poi_coords = poi_url.split("query=")[1]
-        poi_embed = discord.Embed(colour=ctx.guild.me.colour, description=poi_info).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/POI_Submission_Illustration_01.png?cache=1')
+        poi_embed = discord.Embed(colour=ctx.guild.me.colour, description=poi_info).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/POI_Submission_Illustration_01.png?cache=1')
         poi_embed.set_author(name=f"Matched Location", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/here.png?cache=1")
         poi_embed.add_field(name="Directions", value=f"[Google Maps](https://www.google.com/maps/search/?api=1&query={poi_coords}) | [Apple Maps](http://maps.apple.com/maps?daddr={poi_coords}&z=10&t=s&dirflg=d) | [Open Street Map](https://www.openstreetmap.org/#map=16/{poi_coords.split(',')[0]}/{poi_coords.split(',')[1]})", inline=False)
         if match_type == "gym":

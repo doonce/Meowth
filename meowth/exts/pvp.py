@@ -345,7 +345,7 @@ class Pvp(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
         first = True
-        pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/CombatButton.png?cache=1')
+        pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1')
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
@@ -387,7 +387,7 @@ class Pvp(commands.Cog):
                             pvp_type = pvp_type_msg.clean_content.lower()
                             first = False
                     if pvp_type != "any":
-                        pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png?cache=1")
+                        pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pogo_{pvp_type}_league.png?cache=1")
                     pvp_embed.clear_fields()
                     pvp_embed.add_field(name="**New PVP Request**", value=f"{'Meowth! I will help you report a PVP battle!' if first else ''}\n\n{'First, reply ' if first else 'Great! Now, reply '}with the **location** that you will be at for **{pvp_type} PVP** battles. You can reply with **cancel** to stop anytime.", inline=False)
                     location_wait = await channel.send(embed=pvp_embed)
@@ -467,11 +467,11 @@ class Pvp(commands.Cog):
             return
         pvp_embed.url = loc_url
         item = None
-        pvp_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/CombatButton.png")
-        pvp_embed.set_author(name=f"PVP Request", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/CombatButton.png?cache=1")
+        pvp_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png")
+        pvp_embed.set_author(name=f"PVP Request", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1")
         if pvp_type != "any":
-            pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png")
-            pvp_embed.set_author(name=f"{pvp_type.title()} League PVP Request", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png?cache=1")
+            pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pogo_{pvp_type}_league.png")
+            pvp_embed.set_author(name=f"{pvp_type.title()} League PVP Request", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pogo_{pvp_type}_league.png?cache=1")
         pvp_embed.add_field(name=f"**PVP Type:**", value=pvp_type.title())
         pvp_embed.add_field(name=f"**Available Until:**", value=end.strftime(_('%I:%M %p (%H:%M)')))
         confirmation = await ctx.channel.send(pvp_msg, embed=pvp_embed)
@@ -504,7 +504,7 @@ class Pvp(commands.Cog):
         guild = message.guild
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
-        pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/CombatButton.png?cache=1')
+        pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1')
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id].get('pvp', {})
         is_moderator = await checks.check_is_mod(ctx)
@@ -562,7 +562,7 @@ class Pvp(commands.Cog):
                         break
                     else:
                         pvp_type = pvp_type_msg.clean_content.lower()
-                        pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png?cache=1")
+                        pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pogo_{pvp_type}_league.png?cache=1")
                     pvp_embed.clear_fields()
                     pvp_embed.add_field(name="**New PVP Tournament**", value=f"Great! Now, reply with the **location** that you will be at for **{pvp_type} PVP** battles. You can reply with **cancel** to stop anytime.", inline=False)
                     location_wait = await channel.send(embed=pvp_embed)
@@ -641,12 +641,12 @@ class Pvp(commands.Cog):
             return
         pvp_embed.url = loc_url
         item = None
-        pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png")
+        pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pogo_{pvp_type}_league.png")
         if official_pvp:
-            pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Badge_{pvp_type.title()}.png")
-        pvp_embed.set_author(name=f"{pvp_type.title()} League PVP Tournament", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_{pvp_type}_league.png?cache=1")
+            pvp_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_{pvp_type.title()}.png")
+        pvp_embed.set_author(name=f"{pvp_type.title()} League PVP Tournament", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pogo_{pvp_type}_league.png?cache=1")
         if official_pvp:
-            pvp_embed.set_author(name=f"{pvp_type.title()} League PVP Tournament", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Badge_{pvp_type.title()}.png?cache=1")
+            pvp_embed.set_author(name=f"{pvp_type.title()} League PVP Tournament", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_{pvp_type.title()}.png?cache=1")
         pvp_embed.add_field(name=f"**PVP Type:**", value=pvp_type.title())
         pvp_embed.add_field(name=f"**Tournament Size:**", value=str(size))
         confirmation = await ctx.channel.send(pvp_msg, embed=pvp_embed)
@@ -743,7 +743,7 @@ class Pvp(commands.Cog):
         if not is_moderator and not self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('pvp', {}).setdefault('leader', []):
             return await utils.safe_delete(cxx.message)
         output = []
-        pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Badge_Master.png?cache=1')
+        pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         if is_moderator:
             type_list = self.bot.type_list
         else:
@@ -853,7 +853,7 @@ class Pvp(commands.Cog):
         error = ""
         output = []
         is_moderator = await checks.check_is_mod(ctx)
-        pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Badge_Master.png?cache=1')
+        pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         leader_dict = {k:{"emoji":utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[k]), "leaders":[]} for k in self.bot.type_list}
         for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
             if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
@@ -970,7 +970,7 @@ class Pvp(commands.Cog):
         error = ""
         output = []
         elite_emoji = self.bot.config.custom_emoji.get('pvp_elite', '\U0001F3C6')
-        pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Badge_Master.png?cache=1')
+        pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         elite_list = []
         for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
             if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('elite', []):
@@ -1070,7 +1070,7 @@ class Pvp(commands.Cog):
         output = []
         champ_emoji = self.bot.config.custom_emoji.get('pvp_champ', '\U0001F451')
         is_moderator = await checks.check_is_mod(ctx)
-        pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Badge_Master.png?cache=1')
+        pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         league_list = ["great", "ultra", "master"]
         leader_dict = {k:[] for k in league_list}
         for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
@@ -1186,7 +1186,7 @@ class Pvp(commands.Cog):
         channel = message.channel
         error = ""
         is_moderator = await checks.check_is_mod(ctx)
-        pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/CombatButton.png?cache=1')
+        pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1')
         while True:
             def check(reply):
                 if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:

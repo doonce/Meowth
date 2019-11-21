@@ -381,7 +381,7 @@ class Nest(commands.Cog):
             await utils.safe_delete(message)
         while True:
             async with ctx.typing():
-                nest_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/POI_Submission_Illustration_03.png?cache=1')
+                nest_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/POI_Submission_Illustration_03.png?cache=1')
                 nest_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
                 def check(m):
                     return m.author == ctx.author and m.channel == ctx.channel

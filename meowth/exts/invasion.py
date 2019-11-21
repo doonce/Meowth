@@ -272,8 +272,14 @@ class Invasion(commands.Cog):
         gender = invasion_dict.get('gender', '')
         leader = invasion_dict.get('leader', '')
         dm_dict = invasion_dict.get('dm_dict', {})
+        report_time = datetime.datetime.utcfromtimestamp(invasion_dict.get('report_time', time.time()))
+        now_utc = datetime.datetime.utcnow()
+        now_local = now_utc + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        expire_time = invasion_dict.get('expire_time', "30")
+        end_utc = report_time + datetime.timedelta(minutes=int(expire_time))
+        end_local = report_time + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'], minutes=int(expire_time))
         old_embed = message.embeds[0]
-        invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/invasion/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
+        invasion_embed = discord.Embed(description=old_embed.description, title=old_embed.title, url=old_embed.url, colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/invasion/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")    
         nearest_stop = invasion_dict.get('location', None)
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8')
@@ -287,6 +293,8 @@ class Invasion(commands.Cog):
         if leader:
             invasion_embed.set_author(name=f"Team Rocket Leader Report ({leader.title()})", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_Leader_MapCompass.png?cache=2")
             invasion_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/invasion/teamrocket{'_'+leader.lower()}.png?cache=1")
+            end_local = now_local.replace(hour=22, minute=0, second=0, microsecond=0)
+        timer = int((end_local-now_local).total_seconds()/60)
         pokemon = None
         shiny_str = ""
         reward_str = ""
@@ -318,7 +326,7 @@ class Invasion(commands.Cog):
                 invasion_embed.add_field(name=_("**Weaknesses:**"), value=f"{pokemon.weakness_emoji}\u200b", inline=True)
         for field in old_embed.fields:
             if "expire" in field.name.lower():
-                invasion_embed.add_field(name=field.name, value=field.value)
+                invasion_embed.add_field(name=field.name, value=f"{timer} mins {end_local.strftime(_('(%I:%M %p)'))}")
         if pokemon:
             invasion_msg = f"Meowth! {pokemon.name.title()} Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} if completed, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         elif reward_type:
@@ -358,6 +366,7 @@ class Invasion(commands.Cog):
         ctx.invreportmsg = message
         dm_dict = await self.send_dm_messages(ctx, reward_list, nearest_stop, copy.deepcopy(invasion_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['dm_dict'] = dm_dict
+        self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['exp'] = time.time() + int((end_local-now_local).total_seconds())
 
     async def send_dm_messages(self, ctx, inv_pokemon, location, embed, dm_dict):
         if embed:
@@ -615,6 +624,7 @@ class Invasion(commands.Cog):
             'report_author':ctx.author.id,
             'report_guild':ctx.guild.id,
             'report_time':time.time(),
+            'expire_time':expire_time,
             'dm_dict':dm_dict,
             'location':location,
             'url':loc_url,

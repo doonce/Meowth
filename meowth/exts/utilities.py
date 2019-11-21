@@ -504,77 +504,77 @@ async def get_item(ctx, search_term):
     egg_incubator = re.search(r'(?i)incubator', search_term)
     super_incubator = re.search(r'(?i)super.*incubator', search_term)
     if dust:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/stardust_painted.png?cache=1", "stardust"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/stardust_painted.png?cache=1", "stardust"
     elif candy:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1301.png?cache=1", "rare candy"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_1301.png?cache=1", "rare candy"
     elif pinap and not silverpinap:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0705.png?cache=1", "pinap berry"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0705.png?cache=1", "pinap berry"
     elif pinap and silverpinap:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0707.png?cache=1", "silver pinap berry"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0707.png?cache=1", "silver pinap berry"
     elif razz and not goldenrazz:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0701.png?cache=1", "razz berry"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0701.png?cache=1", "razz berry"
     elif razz and goldenrazz:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0706.png?cache=1", "golden razz berry"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0706.png?cache=1", "golden razz berry"
     elif nanab:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0703.png?cache=1", "nanab berry"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0703.png?cache=1", "nanab berry"
     elif pokeball and not ultraball and not greatball:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0001.png?cache=1", "poke ball"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0001.png?cache=1", "poke ball"
     elif pokeball and greatball:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0002.png?cache=1", "great ball"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0002.png?cache=1", "great ball"
     elif pokeball and ultraball:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0003.png?cache=1", "ultra ball"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0003.png?cache=1", "ultra ball"
     elif potion and not superpotion and not hyperpotion and not maxpotion:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0101.png?cache=1", "potion"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0101.png?cache=1", "potion"
     elif potion and superpotion:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0102.png?cache=1", "super potion"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0102.png?cache=1", "super potion"
     elif potion and hyperpotion:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0103.png?cache=1", "hyper potion"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0103.png?cache=1", "hyper potion"
     elif potion and maxpotion:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0104.png?cache=1", "max potion"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0104.png?cache=1", "max potion"
     elif revive and not maxrevive:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0201.png?cache=1", "revive"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0201.png?cache=1", "revive"
     elif revive and maxrevive:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_0202.png?cache=1", "max revive"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0202.png?cache=1", "max revive"
     elif fasttm:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1201.png?cache=1", "fast tm"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_1201.png?cache=1", "fast tm"
     elif chargetm:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1202.png?cache=1", "charged tm"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_1202.png?cache=1", "charged tm"
     elif starpiece:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/starpiece.png?cache=1", "star piece"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/starpiece.png?cache=1", "star piece"
     elif lure and not glaciallure and not magnetlure and not mossylure:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1", "lure module"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey.png?cache=1", "lure module"
     elif lure and glaciallure:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_glacial.png?cache=1", "glacial lure module"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey_glacial.png?cache=1", "glacial lure module"
     elif lure and magnetlure:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_magnetic.png?cache=1", "magnetic lure module"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey_magnetic.png?cache=1", "magnetic lure module"
     elif lure and mossylure:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_mossy.png?cache=1", "mossy lure module"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey_mossy.png?cache=1", "mossy lure module"
     elif sinnoh_stone:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Sinnoh_Stone_Sprite.png?cache=1", "sinnoh stone"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Bag_Sinnoh_Stone_Sprite.png?cache=1", "sinnoh stone"
     elif unova_stone:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Unova_Stone_Sprite.png?cache=1", "unova stone"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Bag_Unova_Stone_Sprite.png?cache=1", "unova stone"
     elif kings_rock:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_King's_Rock_Sprite.png?cache=1", "king's rock"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Bag_King's_Rock_Sprite.png?cache=1", "king's rock"
     elif dragon_scale:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Dragon_Scale_Sprite.png?cache=1", "dragon scale"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Bag_Dragon_Scale_Sprite.png?cache=1", "dragon scale"
     elif metal_coat:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Metal_Coat_Sprite.png?cache=1", "metal coat"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Bag_Metal_Coat_Sprite.png?cache=1", "metal coat"
     elif sun_stone:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Sun_Stone_Sprite.png?cache=1", "sun stone"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Bag_Sun_Stone_Sprite.png?cache=1", "sun stone"
     elif up_grade:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Bag_Up-Grade_Sprite.png?cache=1", "up-grade"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Bag_Up-Grade_Sprite.png?cache=1", "up-grade"
     elif mysterious_component:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/hideout_map_frag.png?cache=1", "mysterious component"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/hideout_map_frag.png?cache=1", "mysterious component"
     elif rocket_radar:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_Leader_MapCompass.png?cache=1", "rocket radar"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_Leader_MapCompass.png?cache=1", "rocket radar"
     elif team_medalion:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/Item_1406.png?cache=1", "team medalion"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_1406.png?cache=1", "team medalion"
     elif egg_incubator and not super_incubator:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/EggIncubatorEmpty.png?cache=1", "egg incubator"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/EggIncubatorEmpty.png?cache=1", "egg incubator"
     elif super_incubator:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/EggIncubatorSuper_Empty.png?cache=1", "super incubator"
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/EggIncubatorSuper_Empty.png?cache=1", "super incubator"
     else:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/MysteryItem.png?cache=1", None
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/MysteryItem.png?cache=1", None
 
 async def expire_dm_reports(bot, dm_dict):
     if not dm_dict:
@@ -934,7 +934,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.11.20.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.11.21.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

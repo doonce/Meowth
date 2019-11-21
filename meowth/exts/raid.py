@@ -415,7 +415,7 @@ class Raid(commands.Cog):
                 if (not alreadyexpired):
                     expire_embed = discord.Embed(colour=channel.guild.me.colour, description=f"The channel has been deleted in 1 minute. Check the channel list for the other raid channel to coordinate in!\nIf this was an error, reset the raid with **!timerset**.")
                     expire_embed.set_author(name=f"Duplicate Reported!")
-                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_speedometer.png?cache=1")
+                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_speedometer.png?cache=1")
                     await channel.send(embed=expire_embed)
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (1 * 60)) - time.time()
             elif self.bot.guild_dict[guild.id][report_dict][channel.id]['type'] == 'egg' and not self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', {}) and not delete_raid:
@@ -461,7 +461,7 @@ class Raid(commands.Cog):
                     await channel.edit(name=new_name)
                     expire_embed = discord.Embed(colour=channel.guild.me.colour, description=f"The channel has been deactivated and will be deleted in 5 minutes.\nTo reactivate the channel, use **!timerset** to set the timer again.")
                     expire_embed.set_author(name=f"This channel timer has expired!")
-                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/ic_speedometer.png?cache=1")
+                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_speedometer.png?cache=1")
                     await channel.send(embed=expire_embed)
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (5 * 60)) - time.time()
             raidtype = _("event") if self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', False) else _(" raid")
@@ -947,7 +947,7 @@ class Raid(commands.Cog):
                         shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
                 boss_list.append(f"{shiny_str}{str(pokemon)} ({pokemon.id}) {pokemon.emoji}")
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1" if embed_type == "egg" else pokemon.img_url
-        raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin_exclusive.png?cache=1" if egg_level == "EX" else raid_img_url
+        raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin_exclusive.png?cache=1" if egg_level == "EX" else raid_img_url
         if embed_type == "egg":
             raid_embed = discord.Embed(title=f"Meowth! Click here for directions to the coming level {egg_level} raid!", description=gym_info, url=raid_gmaps_link, colour=ctx.guild.me.colour)
             if len(egg_info['pokemon']) > 1:
@@ -962,7 +962,7 @@ class Raid(commands.Cog):
             raid_embed = discord.Embed(title=f"Meowth! Click here for directions to the level {egg_level} raid!", description=gym_info, url=raid_gmaps_link, colour=ctx.guild.me.colour)
             raid_embed.add_field(name=_('**Details:**'), value=f"{boss_list[0]}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
             raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=pokemon.weakness_emoji), inline=True)
-            raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1")
+            raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin.png?cache=1")
         raid_embed.add_field(name=_('**Next Group:**'), value=f"Set with **{ctx.prefix}starttime**", inline=True)
         if raidexp or raidexp is 0:
             raid_expire = now + datetime.timedelta(minutes=float(raidexp))
@@ -1013,7 +1013,7 @@ class Raid(commands.Cog):
         error = False
         first = True
         msg = ""
-        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/raid_tut_raid.png?cache=1')
+        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
         raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         def check(reply):
             if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
@@ -1179,7 +1179,7 @@ class Raid(commands.Cog):
         error = False
         first = True
         msg = ""
-        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/raid_tut_raid.png?cache=1')
+        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
         raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         def check(reply):
             if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
@@ -1528,12 +1528,12 @@ class Raid(commands.Cog):
         guild = message.guild
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
-        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin.png?cache=1')
+        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin.png?cache=1')
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
                 if checks.check_eggchannel(ctx) or checks.check_exeggchannel(ctx):
-                    return await ctx.invoke(self.bot.get_command("raid hatch"), pokemon=pokemon_or_level)
+                    return await ctx.invoke(self.bot.get_command("raid hatch"), pokemon=f"{pokemon_or_level} {location}")
                 elif pokemon_or_level and location:
                     content = f"{pokemon_or_level} {location}"
                     if pokemon_or_level.isdigit():
@@ -2366,7 +2366,7 @@ class Raid(commands.Cog):
         guild = message.guild
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
-        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin_exclusive.png?cache=1')
+        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin_exclusive.png?cache=1')
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
@@ -2459,7 +2459,7 @@ class Raid(commands.Cog):
         raid_channel = await self.create_raid_channel(ctx, "EX", raid_details, "exraid")
         if not raid_channel:
             return
-        raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/tx_raid_coin_exclusive.png?cache=1"
+        raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin_exclusive.png?cache=1"
         if self.bot.guild_dict[channel.guild.id]['configure_dict']['invite']['enabled']:
             invitemsgstr = _("Use the **!invite** command to gain access and coordinate")
             invitemsgstr2 = _(" after using **!invite** to gain access")
@@ -2645,7 +2645,7 @@ class Raid(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
         can_manage = ctx.channel.permissions_for(ctx.author).manage_channels
-        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/meetup.png?cache=1')
+        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/meetup.png?cache=1')
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
@@ -2710,7 +2710,7 @@ class Raid(commands.Cog):
         raid_channel = await self.create_raid_channel(ctx, "EX", raid_details, meetup_type)
         if not raid_channel:
             return
-        raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/{meetup_type}.png?cache=1"
+        raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/{meetup_type}.png?cache=1"
         raid_embed = discord.Embed(title=f"Meowth! Click here for directions to the {meetup_type}!", description="", url=raid_gmaps_link, colour=message.guild.me.colour)
         raid_embed.add_field(name=f"**{meetup_type.title()} Title:**", value=f"Set with **{ctx.prefix}{meetup_type} title**", inline=True)
         raid_embed.add_field(name=f"**{meetup_type.title()} Location:**", value=raid_details, inline=True)
@@ -2718,7 +2718,7 @@ class Raid(commands.Cog):
         raid_embed.add_field(name=f"**{meetup_type.title()} Ends:**", value=f"Set with **{ctx.prefix}{meetup_type} end**", inline=True)
         raid_embed.set_footer(text=f"Reported by @{ctx.author.display_name} - {timestamp}", icon_url=message.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=raid_img_url)
-        raid_embed.set_author(name=f"{meetup_type.title()} Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/{meetup_type}.png?cache=1")
+        raid_embed.set_author(name=f"{meetup_type.title()} Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/{meetup_type}.png?cache=1")
         ctx.raidreport = await channel.send(content=f"Meowth! {meetup_type.title()} reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\n\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all meetups!", embed=raid_embed)
         await asyncio.sleep(1)
         raidmsg = f"Meowth! {meetup_type.title()} reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
@@ -2757,7 +2757,7 @@ class Raid(commands.Cog):
         return raid_channel
 
     @meetup.command(name="title")
-    @checks.allowmeetupreport()
+    @checks.meetupchannel()
     async def meetup_title(self, ctx, *, title):
         if "train" in str(ctx.command):
             meetup_type = "train"
@@ -2823,12 +2823,12 @@ class Raid(commands.Cog):
             await ctx.channel.edit(name=raid_channel_name)
 
     @meetup.command(name="start")
-    @checks.allowmeetupreport()
+    @checks.meetupchannel()
     async def meetup_start(self, ctx, *, timer):
         await ctx.invoke(self.bot.get_command("starttime"), start_time=timer)
 
     @meetup.command(name="end")
-    @checks.allowmeetupreport()
+    @checks.meetupchannel()
     async def meetup_end(self, ctx, *, timer):
         await ctx.invoke(self.bot.get_command("timerset"), timer=timer)
 
@@ -2852,7 +2852,7 @@ class Raid(commands.Cog):
         guild = message.guild
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
-        train_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/train.png?cache=1')
+        train_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
         train_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         active_trains = []
         train_msg = ""
@@ -3054,7 +3054,7 @@ class Raid(commands.Cog):
         train_channel = await self._meetup(ctx, train_location)
         if train_channel:
             managers = self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id].get('managers', [])
-            manager_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=_('Raid Manager Help')).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/train.png?cache=1')
+            manager_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=_('Raid Manager Help')).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
             manager_embed.add_field(name=f"{ctx.prefix}train start <date and time>", value=f"Sets the train start time. Example: `!train start 6pm`", inline=False)
             manager_embed.add_field(name=f"{ctx.prefix}train end <date and time>", value=f"Sets the train end time. Example: `!train end 7pm`", inline=False)
             manager_embed.add_field(name=f"{ctx.prefix}train manager <user @mention>", value=f"Once you become a train manager, you can promote new train managers using this command. Example: `!train manager @{ctx.guild.me.display_name}`", inline=False)
@@ -3062,7 +3062,7 @@ class Raid(commands.Cog):
             manager_embed.add_field(name=f"{ctx.prefix}next [gym name]", value=f"Alert the channel that you are going to a new gym. Example: `!next Hershey Park`. If a route is set, train will move to next gym without needing a gym name", inline=False)
             manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
             await ctx.author.send(embed=manager_embed, delete_after=3600)
-            await train_channel.send(f"{ctx.author.mention}, you can set additional train managers using **{ctx.prefix}train manager <user mention>** and direct the train to a new gym using **{ctx.prefix}train next <channel_or_gym>**.")
+            await train_channel.send(f"{ctx.author.mention}, you can set additional train managers using **{ctx.prefix}train manager <user mention>** and direct the train to a new gym using **{ctx.prefix}train next <channel_or_gym>**. Check your DMs for more instructions!")
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['managers'] = [ctx.author.id]
             for member in ctx.guild.members:
                 if (ctx.channel.permissions_for(member).manage_channels or train_channel.permissions_for(member).manage_channels) and member.id not in managers:
@@ -3097,7 +3097,7 @@ class Raid(commands.Cog):
             return train_channel
 
     @train.command(name="title")
-    @checks.allowmeetupreport()
+    @checks.trainchannel()
     async def train_title(self, ctx, *, title):
         """Set raid train channel title"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
@@ -3105,7 +3105,7 @@ class Raid(commands.Cog):
         await ctx.invoke(self.bot.get_command("meetup title"), title=title)
 
     @train.command(name="start")
-    @checks.allowmeetupreport()
+    @checks.trainchannel()
     async def train_start(self, ctx, *, timer):
         """Set raid train channel start time"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
@@ -3113,7 +3113,7 @@ class Raid(commands.Cog):
         await ctx.invoke(self.bot.get_command("starttime"), start_time=timer)
 
     @train.command(name="end")
-    @checks.allowmeetupreport()
+    @checks.trainchannel()
     async def train_end(self, ctx, *, timer):
         """Set raid train channel end time"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
@@ -3121,7 +3121,7 @@ class Raid(commands.Cog):
         await ctx.invoke(self.bot.get_command("timerset"), timer=timer)
 
     @commands.command(name="next", hidden=True)
-    @checks.allowmeetupreport()
+    @checks.trainchannel()
     async def train_next_parent(self, ctx, *, channel_or_gym=''):
         """Proceed to next train location"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
@@ -3129,7 +3129,7 @@ class Raid(commands.Cog):
         await ctx.invoke(self.bot.get_command("train next"), channel_or_gym=channel_or_gym)
 
     @train.command(name="next")
-    @checks.allowmeetupreport()
+    @checks.trainchannel()
     async def train_next(self, ctx, *, channel_or_gym=''):
         """Proceed to next train location"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
@@ -3179,11 +3179,20 @@ class Raid(commands.Cog):
                     pass
 
     @train.command(name="manager")
-    @checks.allowmeetupreport()
+    @checks.trainchannel()
     async def train_manager(self, ctx, *, user):
         """Add new train manager"""
         if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             return
+        manager_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=_('Raid Manager Help')).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
+        manager_embed.add_field(name=f"{ctx.prefix}train start <date and time>", value=f"Sets the train start time. Example: `!train start 6pm`", inline=False)
+        manager_embed.add_field(name=f"{ctx.prefix}train end <date and time>", value=f"Sets the train end time. Example: `!train end 7pm`", inline=False)
+        manager_embed.add_field(name=f"{ctx.prefix}train manager <user @mention>", value=f"Once you become a train manager, you can promote new train managers using this command. Example: `!train manager @{ctx.guild.me.display_name}`", inline=False)
+        manager_embed.add_field(name=f"{ctx.prefix}train route <gym list>", value=f"If you have a planned route, you can set it using this command. Example: `!train route Hershey Park, Liberty Park`", inline=False)
+        manager_embed.add_field(name=f"{ctx.prefix}next [gym name]", value=f"Alert the channel that you are going to a new gym. Example: `!next Hershey Park`. If a route is set, train will move to next gym without needing a gym name", inline=False)
+        manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
+        if user == "help":
+            return await ctx.send(embed=manager_embed)
         converter = commands.MemberConverter()
         try:
             member = await converter.convert(ctx, user)
@@ -3191,18 +3200,11 @@ class Raid(commands.Cog):
             return
         if member.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
-            await ctx.send(f"Meowth! I added **{member.display_name}** as a manager!")
-            manager_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=_('Raid Manager Help')).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/train.png?cache=1')
-            manager_embed.add_field(name=f"{ctx.prefix}train start <date and time>", value=f"Sets the train start time. Example: `!train start 6pm`", inline=False)
-            manager_embed.add_field(name=f"{ctx.prefix}train end <date and time>", value=f"Sets the train end time. Example: `!train end 7pm`", inline=False)
-            manager_embed.add_field(name=f"{ctx.prefix}train manager <user @mention>", value=f"Once you become a train manager, you can promote new train managers using this command. Example: `!train manager @{ctx.guild.me.display_name}`", inline=False)
-            manager_embed.add_field(name=f"{ctx.prefix}train route <gym list>", value=f"If you have a planned route, you can set it using this command. Example: `!train route Hershey Park, Liberty Park`", inline=False)
-            manager_embed.add_field(name=f"{ctx.prefix}next [gym name]", value=f"Alert the channel that you are going to a new gym. Example: `!next Hershey Park`. If a route is set, train will move to next gym without needing a gym name", inline=False)
-            manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
+            await ctx.send(f"Meowth! I added **{member.display_name}** as a manager! {member.mention}, check your DMs for instructions!")
             await member.send(embed=manager_embed, delete_after=3600)
 
     @train.command(name="history")
-    @checks.allowmeetupreport()
+    @checks.trainchannel()
     async def train_history(self, ctx):
         """View raid train history"""
         if ctx.channel.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict']:
@@ -3217,12 +3219,12 @@ class Raid(commands.Cog):
                 train_embed.add_field(name="Train Channel History", value=f"This raid train has been to:\n{history_str}")
                 history_str = f"**{index})** {item}\n"
             index += 1
-        train_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/train.png?cache=1')
+        train_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
         train_embed.add_field(name="Train Channel History", value=f"This raid train has been to:\n{history_str}")
         await ctx.send(embed=train_embed)
 
     @train.command(name="route", aliases=['path'])
-    @checks.allowmeetupreport()
+    @checks.trainchannel()
     async def train_route(self, ctx, *, path=''):
         """Set raid train route"""
         if ctx.channel.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict']:
@@ -3248,7 +3250,7 @@ class Raid(commands.Cog):
             for item in train_path:
                 path_str += f"**{index})** {item}\n"
                 index += 1
-            train_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/train.png?cache=1')
+            train_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
             train_embed.add_field(name="Planned Train Route", value=f"This raid train is currently planned to go to:\n{path_str}")
             await ctx.send(embed=train_embed)
         else:

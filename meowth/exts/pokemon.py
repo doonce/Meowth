@@ -335,7 +335,7 @@ class Pokemon():
         else:
             shadow_str = ""
 
-        return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons_temp/pokemon_icon_{pkmn_no}{form_str}{shiny_str}.png?cache=2")
+        return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{form_str}{shiny_str}.png?cache=2")
 
     @property
     def game_name(self):
@@ -822,7 +822,7 @@ class Pokedex(commands.Cog):
         first = True
         action = "edit"
         owner = self.bot.get_user(self.bot.owner)
-        pkmn_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pokemonstorageupgrade.1.png?cache=1')
+        pkmn_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pokemonstorageupgrade.1.png?cache=1')
         pkmn_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         def check(reply):
             if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:

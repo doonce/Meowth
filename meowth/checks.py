@@ -51,6 +51,8 @@ async def check_is_mod(ctx):
         return True
     elif ctx.author.permissions_in(ctx.channel).manage_channel:
         return True
+    elif ctx.author.permissions_in(ctx.channel).manage_roles:
+        return True
     return False
 
 def is_mod():
@@ -551,7 +553,20 @@ def allowmeetupreport():
         if not ctx.guild:
             raise errors.GuildCheckFail()
         if check_meetupset(ctx):
-            if check_meetupreport(ctx) or check_meetupchannel(ctx) or check_trainchannel(ctx):
+            if check_meetupreport(ctx) or check_tutorialchannel(ctx):
+                return True
+            else:
+                raise errors.MeetupReportChannelCheckFail()
+        else:
+            raise errors.MeetupSetCheckFail()
+    return commands.check(predicate)
+
+def meetupchannel():
+    def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
+        if check_meetupset(ctx):
+            if check_meetupchannel(ctx):
                 return True
             else:
                 raise errors.MeetupReportChannelCheckFail()
@@ -568,6 +583,19 @@ def allowtrainreport():
                 return True
             else:
                 raise errors.RegionEggChannelCheckFail()
+        else:
+            raise errors.TrainSetCheckFail()
+    return commands.check(predicate)
+
+def trainchannel():
+    def predicate(ctx):
+        if not ctx.guild:
+            raise errors.GuildCheckFail()
+        if check_trainset(ctx):
+            if check_trainchannel(ctx):
+                return True
+            else:
+                raise errors.TrainReportChannelCheckFail()
         else:
             raise errors.TrainSetCheckFail()
     return commands.check(predicate)

@@ -218,7 +218,7 @@ class Trading(commands.Cog):
         if not lister:
             return await self.close_trade(guild_id, listing_id)
         offer_embed = discord.Embed(colour=guild.me.colour)
-        offer_embed.set_author(name="Pokemon Trade Offer - {}".format(buyer.display_name), icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_icon_small.png")
+        offer_embed.set_author(name="Pokemon Trade Offer - {}".format(buyer.display_name), icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_icon_small.png")
         offer_embed.add_field(name="You Offered", value=str(listing_pokemon), inline=True)
         offer_embed.add_field(name="They Offer", value=str(buyer_pokemon), inline=True)
         offer_embed.set_footer(text=f"Offered by @{buyer.display_name}", icon_url=buyer.avatar_url_as(format=None, static_format='png', size=256))
@@ -398,7 +398,7 @@ class Trading(commands.Cog):
         reply_msg = f"**wanted <want list>** - Current: {(', ').join(wanted_pokemon)}\n"
         reply_msg += f"**details <details>** - Current: {trade_details}\n"
         reply_msg += f"**offer <offered pokemon>** - Current: {offered_pokemon}\n"
-        trade_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_trading_icon.png?cache=1')
+        trade_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pogo_trading_icon.png?cache=1')
         trade_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=lister.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=lister.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
@@ -524,7 +524,7 @@ class Trading(commands.Cog):
             pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, item)
             all_offered[index] = pokemon
         all_offered = [x for x in all_offered if x]
-        preview_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/pogo_trading_icon.png?cache=1')
+        preview_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pogo_trading_icon.png?cache=1')
         preview_embed.set_footer(text=f"Listed by @{ctx.author.display_name} - {timestamp}", icon_url=ctx.author.avatar_url_as(format=None, static_format='png', size=256))
         async def error_msg(e):
             preview_embed.clear_fields()
@@ -689,7 +689,7 @@ class Trading(commands.Cog):
             details = f"{offered_pokemon.gender.title()} {offered_pokemon.name.title()}. {details}"
             offered_pokemon.gender = False
         trade_embed = discord.Embed(colour=ctx.guild.me.colour)
-        trade_embed.set_author(name="Pokemon Trade - {}".format(ctx.author.display_name), icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/trade_icon_small.png")
+        trade_embed.set_author(name="Pokemon Trade - {}".format(ctx.author.display_name), icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_icon_small.png")
         trade_embed.add_field(name="**Wants:**", value=wanted_pokemon, inline=True)
         trade_embed.add_field(name="**Offers:**", value=str(offered_pokemon), inline=True)
         if details and details.lower() != "none":

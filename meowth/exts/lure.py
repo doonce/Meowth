@@ -168,7 +168,7 @@ class Lure(commands.Cog):
         error = False
         success = []
         reply_msg = f"**type <lure type>** - Current: {lure_dict.get('type', 'X')}\n"
-        lure_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
+        lure_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
@@ -231,12 +231,12 @@ class Lure(commands.Cog):
         if author:
             ctx.author = author
         content = message.content
-        lure_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png")
-        lure_embed.set_author(name=f"Normal Lure Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1")
+        lure_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey.png")
+        lure_embed.set_author(name=f"Normal Lure Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey.png?cache=1")
         item = "lure module"
         if lure_type != "normal":
-            lure_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png")
-            lure_embed.set_author(name=f"{lure_type.title()} Lure Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png?cache=1")
+            lure_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey_{lure_type}.png")
+            lure_embed.set_author(name=f"{lure_type.title()} Lure Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey_{lure_type}.png?cache=1")
             item = f"{lure_type} lure module"
         lure_embed.set_field_at(0, name=f"**Lure Type:**", value=item.title())
         try:
@@ -279,7 +279,7 @@ class Lure(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
         error = False
         first = True
-        lure_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
+        lure_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
             async with ctx.typing():
@@ -320,7 +320,7 @@ class Lure(commands.Cog):
                             lure_type = lure_type_msg.clean_content.lower()
                             first = False
                     if lure_type != "normal":
-                        lure_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png?cache=1")
+                        lure_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey_{lure_type}.png?cache=1")
                     lure_embed.clear_fields()
                     lure_embed.add_field(name="**New Lure Report**", value=f"{'Meowth! I will help you report a lure!' if first else ''}\n\n{'First, reply ' if first else 'Great! Now, reply '}with the **pokestop** that has the **{lure_type} lure**. You can reply with **cancel** to stop anytime.", inline=False)
                     location_wait = await channel.send(embed=lure_embed)
@@ -390,7 +390,7 @@ class Lure(commands.Cog):
         report_emoji = self.bot.custom_emoji.get('lure_report', '\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
         react_list = [catch_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
-        lure_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1')
+        lure_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         if timer:
             lure_msg = f"Meowth! {lure_type.title()} lure reported by {ctx.author.mention}! Details: {location}\n\nUse {catch_emoji} if visited, {info_emoji} to edit info, {report_emoji} to report new, or {list_emoji} to list all lures!"
@@ -410,12 +410,12 @@ class Lure(commands.Cog):
             return
         lure_embed.url = loc_url
         item = None
-        lure_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png")
-        lure_embed.set_author(name=f"Normal Lure Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey.png?cache=1")
+        lure_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey.png")
+        lure_embed.set_author(name=f"Normal Lure Report", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey.png?cache=1")
         item = "lure module"
         if lure_type != "normal":
-            lure_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png")
-            lure_embed.set_author(name=f"{lure_type.title()} Lure Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/misc/TroyKey_{lure_type}.png?cache=1")
+            lure_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey_{lure_type}.png")
+            lure_embed.set_author(name=f"{lure_type.title()} Lure Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey_{lure_type}.png?cache=1")
             item = f"{lure_type} lure module"
         lure_embed.add_field(name=f"**Lure Type:**", value=item.title())
         lure_embed.add_field(name=f"**{'Expires' if timer else 'Expire Estimate'}:**", value=f"{expire_time} mins {end.strftime(_('(%I:%M %p)'))}")
