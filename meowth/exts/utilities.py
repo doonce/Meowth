@@ -934,7 +934,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.12.3.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.12.3.1 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
@@ -988,7 +988,7 @@ class Utilities(commands.Cog):
         if regional in self.bot.raid_list:
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['regional'] = regional
             await ctx.message.channel.send(_("Meowth! Regional raid boss set to **{boss}**!").format(boss=get_name(self.bot, regional).title()), delete_after=10)
-            await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611')
+            await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
         else:
             await ctx.message.channel.send(_("Meowth! That Pokemon doesn't appear in raids!"), delete_after=10)
             return
