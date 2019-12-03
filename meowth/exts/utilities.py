@@ -934,7 +934,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v19.12.3.1 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v19.12.3.2 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
@@ -1011,7 +1011,7 @@ class Utilities(commands.Cog):
         self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'] = timezone
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
         await ctx.channel.send(_("Timezone has been set to: `UTC{offset}`\nThe current time is **{now}**").format(offset=timezone, now=now.strftime("%H:%M")), delete_after=10)
-        await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611')
+        await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
     @_set.command()
     @checks.is_owner()
@@ -1151,7 +1151,7 @@ class Utilities(commands.Cog):
         else:
             default_prefix = self.bot.default_prefix
             await ctx.channel.send(_('Prefix has been reset to default: `{}`').format(default_prefix))
-        await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611')
+        await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
     @commands.command()
     @commands.has_permissions(manage_guild=True)
