@@ -98,7 +98,7 @@ class Listing(commands.Cog):
                         else:
                             assumed_str = ''
                         if channel_dict.get('train', False):
-                            train_str = "{train_emoji} - ".format(train_emoji=self.bot.custom_emoji.get('train_emoji', '\U0001F682'))
+                            train_str = "{train_emoji} - ".format(train_emoji=self.bot.custom_emoji.get('train_emoji', u'\U0001F682'))
                         else:
                             train_str = ''
                         starttime = rc_d[r].get('starttime', None)
@@ -249,7 +249,7 @@ class Listing(commands.Cog):
                     elif team == "unknown":
                         bulletpoint = utils.parse_emoji(ctx.guild, self.bot.config.unknown)
                     else:
-                        bulletpoint = self.bot.custom_emoji.get('bullet', '\U0001F539')
+                        bulletpoint = self.bot.custom_emoji.get('bullet', u'\U0001F539')
                     if " 0 interested!" not in await self._interest(ctx, tag, team):
                         listmsg += ('\n' + bulletpoint) + (await self._interest(ctx, tag, team))
                     if " 0 on the way!" not in await self._otw(ctx, tag, team):
@@ -1038,7 +1038,7 @@ class Listing(commands.Cog):
         listmsg = ""
         trademsg = ""
         lister_str = ""
-        shiny_emoji = self.bot.custom_emoji.get('shiny_chance', '\u2728')
+        shiny_emoji = self.bot.custom_emoji.get('shiny_chance', u'\U00002728')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search)
         for offer_id in self.bot.guild_dict[ctx.guild.id]['trade_dict']:
             if self.bot.guild_dict[ctx.guild.id]['trade_dict'][offer_id]['report_channel_id'] != ctx.channel.id:
@@ -1090,7 +1090,7 @@ class Listing(commands.Cog):
                     wanted_pokemon = [x.strip() for x in wanted_pokemon.split("\n")]
                     wanted_pokemon = ', '.join(wanted_pokemon)
                 trade_details = target_trades[offer_id].get('details', '')
-                trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('trade_bullet', '\U0001F539')))
+                trademsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('trade_bullet', u'\U0001F539')))
                 trademsg += (f"**Offered Pokemon**: {offered_pokemon} | **Wanted Pokemon**: {wanted_pokemon}{' | **Details**: '+trade_details if trade_details else ''} | {lister_str} | [Jump To Message]({offer_url})")
         if trademsg:
             paginator = commands.Paginator(prefix="", suffix="")
@@ -1166,7 +1166,7 @@ class Listing(commands.Cog):
         all_wants = {}
         listmsg = ""
         trademsg = ""
-        shiny_emoji = self.bot.custom_emoji.get('shiny_chance', '\u2728')
+        shiny_emoji = self.bot.custom_emoji.get('shiny_chance', u'\U00002728')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search)
         for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
             if isinstance(search, discord.member.Member):
@@ -1188,7 +1188,7 @@ class Listing(commands.Cog):
             for want in user_forms:
                 shiny_str = ""
                 if "shiny" in want.lower():
-                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                 for word in want.split():
                     if word.lower() in self.bot.pkmn_list:
                         if ("shiny" in want.lower() and search == "shiny") or search == "all" or isinstance(search, discord.member.Member):
@@ -1262,14 +1262,14 @@ class Listing(commands.Cog):
         revive_quests = []
         ball_quests = []
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module", "mysterious", "component", "radar", "sinnoh", "unova", "stone", "scale", "coat", "grade"]
-        encounter_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_encounter', '\u2753'))
-        candy_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_candy', '\U0001F36C'))
-        dust_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_dust', '\u2b50'))
-        berry_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_berry', '\U0001F353'))
-        potion_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_potion', '\U0001F48A'))
-        revive_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_revive', '\u2764'))
-        ball_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_ball', '\u26be'))
-        other_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_other', '\U0001F539'))
+        encounter_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_encounter', u'\U00002753'))
+        candy_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_candy', u'\U0001F36C'))
+        dust_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_dust', u'\U00002b50'))
+        berry_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_berry', u'\U0001F353'))
+        potion_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_potion', u'\U0001F48A'))
+        revive_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_revive', u'\U00002764\U0000fe0f'))
+        ball_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_ball', u'\U000026be'))
+        other_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_other', u'\U0001F539'))
         for questid in research_dict:
             pokemon = None
             if research_dict[questid]['report_channel'] == ctx.message.channel.id:
@@ -1289,7 +1289,7 @@ class Listing(commands.Cog):
                         shiny_str = ""
                         if pokemon.id in self.bot.shiny_dict:
                             if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                         quest_dict['encounters'][questid] = {"reward":f"{shiny_str}{reward} {pokemon.emoji}", "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "pokemon":pokemon.name}
                         if pokemon.name not in reward_dict['encounters']:
                             reward_dict['encounters'].append(pokemon.name)
@@ -1439,7 +1439,7 @@ class Listing(commands.Cog):
                     reported_by = ""
                     if lureauthor and not lureauthor.bot:
                         reported_by = f" | **Reported By**: {lureauthor.display_name}"
-                    luremsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('lure_bullet', '\U0001F539')))
+                    luremsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('lure_bullet', u'\U0001F539')))
                     luremsg += f"**Lure Type**: {lure_dict[lureid]['type'].title()} | **Location**: [{lure_dict[lureid]['location'].title()}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
                     listing_dict[lureid] = {
                         "message":luremsg,
@@ -1511,7 +1511,7 @@ class Listing(commands.Cog):
                 try:
                     pokealarmreportmsg = await ctx.message.channel.fetch_message(pokealarmid)
                     pokealarm_expire = datetime.datetime.utcfromtimestamp(pokealarm_dict[pokealarmid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
-                    pokealarmmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('pokealarm_bullet', '\U0001F539')))
+                    pokealarmmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('pokealarm_bullet', u'\U0001F539')))
                     if pokealarm_dict[pokealarmid]['reporttype'] == "raid":
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokealarm_dict[pokealarmid]['pokemon'])
                         pokealarmmsg += f"**Boss**: {str(pokemon)} {pokemon.emoji} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Expires**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({pokealarmreportmsg.jump_url})"
@@ -1596,7 +1596,7 @@ class Listing(commands.Cog):
                             shiny_str = ""
                             if pokemon and pokemon.id in self.bot.shiny_dict:
                                 if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "invasion" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                             reward_list.append(f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}")
                     elif reward_type:
                         reward_list = [f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"]
@@ -1611,7 +1611,7 @@ class Listing(commands.Cog):
                         gender_str = f" | **Leader**: {leader.title()}"
                     if grunt_gender:
                         gender_str = f" | **Gender**: {grunt_gender.title()}"
-                    invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', '\U0001F539')))
+                    invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', u'\U0001F539')))
                     invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{invasion_dict[invasionid]['location'].title()}]({invasion_dict[invasionid].get('url', None)}){gender_str} | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
                     listing_dict[invasionid] = {
                         "message":invasionmsg,
@@ -1683,7 +1683,7 @@ class Listing(commands.Cog):
                     reported_by = ""
                     if pvpauthor and not pvpauthor.bot:
                         reported_by = f" | **Requested By**: {pvpauthor.display_name}"
-                    pvpmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('pvp_bullet', '\U0001F539')))
+                    pvpmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('pvp_bullet', u'\U0001F539')))
                     if pvp_tournament:
                         pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} Tournament | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Tournament Size**: {pvp_tournament['size']} | **Round**: {pvp_tournament['round']}{reported_by}"
                         pass
@@ -1773,8 +1773,8 @@ class Listing(commands.Cog):
                         disguise_str = f" | **Disguise**: {disguise.name.title()} {disguise.emoji}"
                     if pokemon.id in self.bot.shiny_dict:
                         if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
-                    wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('wild_bullet', '\U0001F539')))
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                    wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('wild_bullet', u'\U0001F539')))
                     wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}{disguise_str} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
                     if (disguise and disguise.is_boosted) or (pokemon and pokemon.is_boosted):
                         timestamp = wildreportmsg.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])

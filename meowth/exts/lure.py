@@ -103,15 +103,15 @@ class Lure(commands.Cog):
             lure_dict = {}
         if message.id in lure_dict:
             lure_dict =  self.bot.guild_dict[guild.id]['lure_dict'][message.id]
-            if str(payload.emoji) == self.bot.custom_emoji.get('wild_catch', '\U0001f1f7'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('wild_catch', u'\U000026be'):
                 if user.id not in lure_dict.get('caught_by', []):
                     if user.id != lure_dict['report_author']:
                         lure_dict.setdefault('caught_by', []).append(user.id)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('lure_expire', '\U0001F4A8'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('lure_expire', u'\U0001F4A8'):
                 for reaction in message.reactions:
-                    if reaction.emoji == self.bot.custom_emoji.get('lure_expire', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
+                    if reaction.emoji == self.bot.custom_emoji.get('lure_expire', u'\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         await self.expire_lure(message)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('lure_info', '\u2139'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('lure_info', u'\U00002139\U0000fe0f'):
                 if not ctx.prefix:
                     prefix = self.bot._get_prefix(self.bot, message)
                     ctx.prefix = prefix[-1]
@@ -119,12 +119,12 @@ class Lure(commands.Cog):
                 ctx.author = user
                 if user.id == lure_dict['report_author'] or can_manage:
                     await self.edit_lure_info(ctx, message)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('lure_report', '\U0001F4E2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('lure_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
                 await message.remove_reaction(payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('lure'))
-            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 await asyncio.sleep(0.25)
                 await message.remove_reaction(payload.emoji, self.bot.user)
                 await asyncio.sleep(0.25)
@@ -384,11 +384,11 @@ class Lure(commands.Cog):
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
         end = now + datetime.timedelta(minutes=int(expire_time))
-        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
-        info_emoji = ctx.bot.custom_emoji.get('lure_info', '\u2139')
-        expire_emoji = self.bot.custom_emoji.get('lure_expire', '\U0001F4A8')
-        report_emoji = self.bot.custom_emoji.get('lure_report', '\U0001F4E2')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', u'\U000026be')
+        info_emoji = ctx.bot.custom_emoji.get('lure_info', u'\U00002139\U0000fe0f')
+        expire_emoji = self.bot.custom_emoji.get('lure_expire', u'\U0001F4A8')
+        report_emoji = self.bot.custom_emoji.get('lure_report', u'\U0001F4E2')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [catch_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         lure_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey.png?cache=1')
         lure_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -513,11 +513,11 @@ class Lure(commands.Cog):
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
             return
-        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             async with ctx.typing():
                 for report in lure_dict:

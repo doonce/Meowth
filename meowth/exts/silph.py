@@ -314,9 +314,9 @@ class Silph(commands.Cog):
             except TypeError:
                 timeout = True
             await utils.safe_delete(question)
-            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
                 return await silph_command.invoke(ctx)
-            elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+            elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
                 pass
             else:
                 return
@@ -349,7 +349,7 @@ class Silph(commands.Cog):
             await ctx.send(
                 _('This Travelers Card has been successfully linked to you!'),
                 embed=card.embed(offset), delete_after=30)
-            await utils.safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', '\u2611'))
+            await utils.safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611')
 
     @commands.command()
     @checks.guildchannel()

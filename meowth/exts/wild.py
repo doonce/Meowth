@@ -50,24 +50,24 @@ class Wild(commands.Cog):
             wildreport_dict = {}
         if message.id in wildreport_dict:
             wild_dict = self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
-            if str(payload.emoji) == self.bot.custom_emoji.get('wild_omw', '\U0001F3CE'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('wild_omw', u'\U0001F3CE\U0000fe0f'):
                 wild_dict['omw'].append(user.mention)
                 self.bot.guild_dict[guild.id]['wildreport_dict'][message.id] = wild_dict
-            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_despawn', '\U0001F4A8'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_despawn', u'\U0001F4A8'):
                 for reaction in message.reactions:
-                    if reaction.emoji == self.bot.custom_emoji.get('wild_despawn', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
+                    if reaction.emoji == self.bot.custom_emoji.get('wild_despawn', u'\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         if wild_dict['omw']:
                             despawn = _("has despawned")
                             await channel.send(f"{', '.join(wild_dict['omw'])}: {wild_dict['pokemon'].title()} {despawn}!")
                         await self.expire_wild(message)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_catch', '\u26BE'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_catch', u'\U000026be'):
                 if user.id not in wild_dict.get('caught_by', []):
                     if user.id != wild_dict['report_author']:
                         wild_dict.get('caught_by', []).append(user.id)
                     if user.mention in wild_dict['omw']:
                         wild_dict['omw'].remove(user.mention)
-                        await message.remove_reaction(self.bot.custom_emoji.get('wild_omw', '\U0001F3CE'), user)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_info', '\u2139'):
+                        await message.remove_reaction(self.bot.custom_emoji.get('wild_omw', u'\U0001F3CE\U0000fe0f'), user)
+            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_info', u'\U00002139\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 if not ctx.prefix:
                     prefix = self.bot._get_prefix(self.bot, message)
@@ -75,12 +75,12 @@ class Wild(commands.Cog):
                 await message.remove_reaction(payload.emoji, user)
                 ctx.author = user
                 await self.add_wild_info(ctx, message)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_report', '\U0001F4E2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('wild_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
                 await message.remove_reaction(payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('wild'))
-            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
                 await message.remove_reaction(payload.emoji, self.bot.user)
@@ -209,7 +209,7 @@ class Wild(commands.Cog):
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         details_str = f"{shiny_str}{pokemon.name.title()}"
         if gender and "female" in gender.lower():
             details_str += f" ♀"
@@ -636,12 +636,12 @@ class Wild(commands.Cog):
         wild_split = content.split()
         wild_iv = None
         nearest_stop = ""
-        omw_emoji = self.bot.custom_emoji.get('wild_omw', '\U0001F3CE')
-        despawn_emoji = self.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
-        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
-        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
-        report_emoji = self.bot.custom_emoji.get('wild_report', '\U0001F4E2')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        omw_emoji = self.bot.custom_emoji.get('wild_omw', u'\U0001F3CE\U0000fe0f')
+        despawn_emoji = self.bot.custom_emoji.get('wild_despawn', u'\U0001F4A8')
+        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', u'\U000026be')
+        info_emoji = ctx.bot.custom_emoji.get('wild_info', u'\U00002139\U0000fe0f')
+        report_emoji = self.bot.custom_emoji.get('wild_report', u'\U0001F4E2')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji, report_emoji, list_emoji]
         converter = commands.clean_content()
         iv_test = await converter.convert(ctx, content.split()[-1])
@@ -780,11 +780,11 @@ class Wild(commands.Cog):
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
             return
-        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             async with ctx.typing():
                 for report in wild_dict:

@@ -100,20 +100,20 @@ class Research(commands.Cog):
             research_dict = {}
         if message.id in research_dict:
             research_dict =  self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
-            if str(payload.emoji) == self.bot.custom_emoji.get('research_complete', '\u2705'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('research_complete', u'\U00002705'):
                 if user.id not in research_dict.get('completed_by', []):
                     if user.id != research_dict['report_author']:
                         research_dict.get('completed_by', []).append(user.id)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('research_expired', '\U0001F4A8'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('research_expired', u'\U0001F4A8'):
                 for reaction in message.reactions:
-                    if reaction.emoji == self.bot.custom_emoji.get('research_expired', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
+                    if reaction.emoji == self.bot.custom_emoji.get('research_expired', u'\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         await self.expire_research(message)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('research_report', '\U0001F4E2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('research_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
                 await message.remove_reaction(payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('research'))
-            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
                 await message.remove_reaction(payload.emoji, self.bot.user)
@@ -265,10 +265,10 @@ class Research(commands.Cog):
         research_dict = self.bot.guild_dict[ctx.guild.id].setdefault('questreport_dict', {})
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
         to_midnight = 24*60*60 - ((timestamp-timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
-        complete_emoji = self.bot.custom_emoji.get('research_complete', '\u2705')
-        expire_emoji = self.bot.custom_emoji.get('research_expired', '\ud83d\udca8')
-        report_emoji = self.bot.custom_emoji.get('research_report', '\U0001F4E2')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        complete_emoji = self.bot.custom_emoji.get('research_complete', u'\U00002705')
+        expire_emoji = self.bot.custom_emoji.get('research_expired', u'\U0001F4A8')
+        report_emoji = self.bot.custom_emoji.get('research_report', u'\U0001F4E2')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [complete_emoji, expire_emoji, report_emoji, list_emoji]
         research_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/field-research.png?cache=1')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
@@ -291,7 +291,7 @@ class Research(commands.Cog):
         shiny_str = ""
         if pokemon and pokemon.id in self.bot.shiny_dict:
             if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         if pokemon and not other_reward:
             reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
             pokemon.shiny = False
@@ -423,11 +423,11 @@ class Research(commands.Cog):
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
             return
-        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             async with ctx.typing():
                 for report in research_dict:

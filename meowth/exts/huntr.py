@@ -133,29 +133,29 @@ class Huntr(commands.Cog):
         pokehuntr_dict = copy.deepcopy(ctx.bot.guild_dict[channel.guild.id].get('pokehuntr_dict', {}))
         raid_cog = self.bot.cogs.get('Raid')
         if message.id in pokealarm_dict.keys() and not user.bot:
-            if str(payload.emoji) == self.bot.custom_emoji.get('huntr_report', '\u2705'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('huntr_report', u'\U00002705'):
                 await self.on_pokealarm(ctx, user)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', '\u2753'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', u'\U00002753'):
                 raid_channel = await self.on_pokealarm(ctx, user)
                 ctx.message.author, ctx.author = user, user
                 ctx.channel, ctx.message.channel = raid_channel, raid_channel
                 await raid_cog._rsvp(ctx, "maybe", "1")
-            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', u'\U0001f3ce\U0000fe0f'):
                 raid_channel = await self.on_pokealarm(ctx, user)
                 ctx.message.author, ctx.author = user, user
                 ctx.channel, ctx.message.channel = raid_channel, raid_channel
                 await raid_cog._rsvp(ctx, "coming", "1")
-            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_here', '\U0001F4CD'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_here', u'\U0001F4CD'):
                 raid_channel = await self.on_pokealarm(ctx, user)
                 ctx.message.author, ctx.author = user, user
                 ctx.channel, ctx.message.channel = raid_channel, raid_channel
                 await raid_cog._rsvp(ctx, "here", "1")
-            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_report', '\U0001F4E2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
                 await message.remove_reaction(payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('raid'))
-            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
                 await message.remove_reaction(payload.emoji, self.bot.user)
@@ -165,29 +165,29 @@ class Huntr(commands.Cog):
                 await asyncio.sleep(5)
                 await utils.safe_reaction(message, payload.emoji)
         elif message.id in pokehuntr_dict.keys() and not user.bot:
-            if str(payload.emoji) == self.bot.custom_emoji.get('huntr_report', '\u2705'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('huntr_report', u'\U00002705'):
                 await self.on_huntr(ctx, user)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', '\u2753'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', u'\U00002753'):
                 raid_channel = await self.on_huntr(ctx, user)
                 ctx.message.author, ctx.author = user, user
                 ctx.channel, ctx.message.channel = raid_channel, raid_channel
                 await raid_cog._rsvp(ctx, "maybe", "1")
-            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', u'\U0001f3ce\U0000fe0f'):
                 raid_channel = await self.on_huntr(ctx, user)
                 ctx.message.author, ctx.author = user, user
                 ctx.channel, ctx.message.channel = raid_channel, raid_channel
                 await raid_cog._rsvp(ctx, "coming", "1")
-            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_here', '\U0001F4CD'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_here', u'\U0001F4CD'):
                 raid_channel = await self.on_huntr(ctx, user)
                 ctx.message.author, ctx.author = user, user
                 ctx.channel, ctx.message.channel = raid_channel, raid_channel
                 await raid_cog._rsvp(ctx, "here", "1")
-            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_report', '\U0001F4E2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('raid_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
                 await message.remove_reaction(payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('raid'))
-            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
                 await message.remove_reaction(payload.emoji, self.bot.user)
@@ -205,11 +205,11 @@ class Huntr(commands.Cog):
         auto_egg = self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['reports'].get('egg', False)
         auto_wild = self.bot.guild_dict[message.guild.id]['configure_dict']['scanners']['reports'].get('wild', False)
         raid_channel = None
-        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
-        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
-        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
-        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', u'\U00002753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', u'\U0001f3ce\U0000fe0f')
+        here_reaction = self.bot.custom_emoji.get('raid_here', u'\U0001F4CD')
+        report_emoji = self.bot.custom_emoji.get('raid_report', u'\U0001F4E2')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [maybe_reaction, omw_reaction, here_reaction, report_emoji, list_emoji]
         if not auto_raid and not auto_egg and not auto_wild:
             return
@@ -318,7 +318,7 @@ class Huntr(commands.Cog):
                     pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
                     ctx.raidreport = await message.channel.send(content=f"{roletest}Meowth! {entered_raid.title()} raid reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!", embed=raid_embed)
                     await asyncio.sleep(0.25)
-                    await utils.safe_reaction(ctx.raidreport, self.bot.custom_emoji.get('huntr_report', '\u2705'))
+                    await utils.safe_reaction(ctx.raidreport, self.bot.custom_emoji.get('huntr_report', u'\U00002705'))
                     for reaction in react_list:
                         await utils.safe_reaction(ctx.raidreport, reaction)
                     dm_dict = {}
@@ -350,7 +350,7 @@ class Huntr(commands.Cog):
                     pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
                     ctx.raidreport = await message.channel.send(content=f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!", embed=raid_embed)
                     await asyncio.sleep(0.25)
-                    await utils.safe_reaction(ctx.raidreport, self.bot.custom_emoji.get('huntr_report', '\u2705'))
+                    await utils.safe_reaction(ctx.raidreport, self.bot.custom_emoji.get('huntr_report', u'\U00002705'))
                     for reaction in react_list:
                         await utils.safe_reaction(ctx.raidreport, reaction)
                     dm_dict = {}
@@ -447,12 +447,12 @@ class Huntr(commands.Cog):
         raid_channel = False
         pokealarm_dict = self.bot.guild_dict[ctx.guild.id].setdefault('pokealarm_dict', {})
         dm_dict = {}
-        huntr_emoji = self.bot.custom_emoji.get('huntr_report', '\u2705')
-        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
-        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
-        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
-        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        huntr_emoji = self.bot.custom_emoji.get('huntr_report', u'\U00002705')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', u'\U00002753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', u'\U0001f3ce\U0000fe0f')
+        here_reaction = self.bot.custom_emoji.get('raid_here', u'\U0001F4CD')
+        report_emoji = self.bot.custom_emoji.get('raid_report', u'\U0001F4E2')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [huntr_emoji, maybe_reaction, omw_reaction, here_reaction, report_emoji, list_emoji]
         if not reactuser:
             reporttype = None
@@ -683,7 +683,7 @@ class Huntr(commands.Cog):
             pokemon.shiny = False
         else:
             return
-        if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['scanners'].setdefault('wildfilter', []):
+        if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['scanners'].setdefault('wildfilter', []) or str(pokemon).id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['scanners'].setdefault('wildfilter', []):
             if not report_details.get("iv_percent", '') and not report_details.get("level", ''):
                 return
         gender = report_details.setdefault("gender", pokemon.gender)
@@ -754,12 +754,12 @@ class Huntr(commands.Cog):
         if nearest_stop or nearest_poi:
             stop_str = f"{' Details: '+nearest_poi+' |' if nearest_poi and nearest_poi != nearest_stop else ''}{' Nearest Pokestop: '+nearest_stop if nearest_stop else ''}{' | ' if nearest_poi or nearest_stop else ' '}"
         wild_embed = await wild_cog.make_wild_embed(ctx, report_details)
-        omw_emoji = ctx.bot.custom_emoji.get('wild_omw', '\U0001F3CE')
-        despawn_emoji = ctx.bot.custom_emoji.get('wild_despawn', '\U0001F4A8')
-        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
-        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
-        report_emoji = self.bot.custom_emoji.get('wild_report', '\U0001F4E2')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        omw_emoji = ctx.bot.custom_emoji.get('wild_omw', u'\U0001F3CE\U0000fe0f')
+        despawn_emoji = ctx.bot.custom_emoji.get('wild_despawn', u'\U0001F4A8')
+        info_emoji = ctx.bot.custom_emoji.get('wild_info', u'\U00002139\U0000fe0f')
+        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', u'\U000026be')
+        report_emoji = self.bot.custom_emoji.get('wild_report', u'\U0001F4E2')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         reaction_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji, report_emoji, list_emoji]
         despawn = (int(expire.split(' ')[0]) * 60) + int(expire.split(' ')[2])
         if despawn != 2700:
@@ -799,13 +799,13 @@ class Huntr(commands.Cog):
         if report_user:
             ctx.author, ctx.message.author = report_user, report_user
         message = ctx.message
-        help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
-        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
-        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
-        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
-        cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
-        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        help_reaction = self.bot.custom_emoji.get('raid_info', u'\U00002139\U0000fe0f')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', u'\U00002753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', u'\U0001f3ce\U0000fe0f')
+        here_reaction = self.bot.custom_emoji.get('raid_here', u'\U0001F4CD')
+        cancel_reaction = self.bot.custom_emoji.get('raid_cancel', u'\U0000274C')
+        report_emoji = self.bot.custom_emoji.get('raid_report', u'\U0001F4E2')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
@@ -950,13 +950,13 @@ class Huntr(commands.Cog):
         if report_user:
             ctx.author, ctx.message.author = report_user, report_user
         message = ctx.message
-        help_reaction = self.bot.custom_emoji.get('raid_info', '\u2139')
-        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', '\u2753')
-        omw_reaction = self.bot.custom_emoji.get('raid_omw', '\ud83c\udfce')
-        here_reaction = self.bot.custom_emoji.get('raid_here', '\U0001F4CD')
-        cancel_reaction = self.bot.custom_emoji.get('raid_cancel', '\u274C')
-        report_emoji = self.bot.custom_emoji.get('raid_report', '\U0001F4E2')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        help_reaction = self.bot.custom_emoji.get('raid_info', u'\U00002139\U0000fe0f')
+        maybe_reaction = self.bot.custom_emoji.get('raid_maybe', u'\U00002753')
+        omw_reaction = self.bot.custom_emoji.get('raid_omw', u'\U0001f3ce\U0000fe0f')
+        here_reaction = self.bot.custom_emoji.get('raid_here', u'\U0001F4CD')
+        cancel_reaction = self.bot.custom_emoji.get('raid_cancel', u'\U0000274C')
+        report_emoji = self.bot.custom_emoji.get('raid_report', u'\U0001F4E2')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
         timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])

@@ -99,15 +99,15 @@ class Invasion(commands.Cog):
             invasion_dict = {}
         if message.id in invasion_dict:
             invasion_dict =  self.bot.guild_dict[guild.id]['invasion_dict'][message.id]
-            if str(payload.emoji) == self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('invasion_complete', 'u\U0001f1f7'):
                 if user.id not in invasion_dict.get('completed_by', []):
                     if user.id != invasion_dict['report_author']:
                         invasion_dict.get('completed_by', []).append(user.id)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('invasion_expired', u'\U0001F4A8'):
                 for reaction in message.reactions:
-                    if reaction.emoji == self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
+                    if reaction.emoji == self.bot.custom_emoji.get('invasion_expired', u'\U0001F4A8') and (reaction.count >= 3 or can_manage):
                         await self.expire_invasion(message)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('invasion_info', '\u2139'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('invasion_info', u'\U00002139\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 if not ctx.prefix:
                     prefix = self.bot._get_prefix(self.bot, message)
@@ -115,12 +115,12 @@ class Invasion(commands.Cog):
                 await message.remove_reaction(payload.emoji, user)
                 ctx.author = user
                 await self.add_invasion_info(ctx, message, user)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('invasion_report', '\U0001F4E2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
                 await message.remove_reaction(payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('invasion'))
-            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
                 await message.remove_reaction(payload.emoji, self.bot.user)
@@ -160,7 +160,7 @@ class Invasion(commands.Cog):
         reward = invasion_dict.get('reward', [])
         reward_type = invasion_dict.get('reward_type', '')
         location = invasion_dict.get('location', '')
-        info_emoji = ctx.bot.custom_emoji.get('invasion_info', '\u2139')
+        info_emoji = ctx.bot.custom_emoji.get('invasion_info', u'\U00002139\U0000fe0f')
         if not author:
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
@@ -279,13 +279,13 @@ class Invasion(commands.Cog):
         end_utc = report_time + datetime.timedelta(minutes=int(expire_time))
         end_local = report_time + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'], minutes=int(expire_time))
         old_embed = message.embeds[0]
-        invasion_embed = discord.Embed(description=old_embed.description, title=old_embed.title, url=old_embed.url, colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/invasion/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")    
+        invasion_embed = discord.Embed(description=old_embed.description, title=old_embed.title, url=old_embed.url, colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/invasion/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
         nearest_stop = invasion_dict.get('location', None)
-        complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
-        expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8')
-        info_emoji = ctx.bot.custom_emoji.get('invasion_info', '\u2139')
-        report_emoji = self.bot.custom_emoji.get('invasion_report', '\U0001F4E2')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        complete_emoji = self.bot.custom_emoji.get('invasion_complete', 'u\U0001f1f7')
+        expire_emoji = self.bot.custom_emoji.get('invasion_expired', u'\U0001F4A8')
+        info_emoji = ctx.bot.custom_emoji.get('invasion_info', u'\U00002139\U0000fe0f')
+        report_emoji = self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         author = ctx.guild.get_member(invasion_dict.get('report_author', None))
         if author:
             ctx.author = author
@@ -315,7 +315,7 @@ class Invasion(commands.Cog):
                 pokemon.shadow = "shadow"
                 if pokemon.id in self.bot.shiny_dict:
                     if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                        shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                 reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
                 reward_list.append(str(pokemon))
             if not reward_list:
@@ -334,7 +334,7 @@ class Invasion(commands.Cog):
         else:
             invasion_msg = f"Meowth! Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} completed, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         for reaction in ctx.message.reactions:
-            if reaction.emoji == self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8'):
+            if reaction.emoji == self.bot.custom_emoji.get('invasion_expired', u'\U0001F4A8'):
                 invasion_msg = invasion_msg.replace(f"if completed", f"if completed, {expire_emoji} if expired")
                 break
         try:
@@ -546,11 +546,11 @@ class Invasion(commands.Cog):
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
         end = now + datetime.timedelta(minutes=int(expire_time))
-        complete_emoji = self.bot.custom_emoji.get('invasion_complete', '\U0001f1f7')
-        expire_emoji = self.bot.custom_emoji.get('invasion_expired', '\U0001F4A8')
-        info_emoji = ctx.bot.custom_emoji.get('invasion_info', '\u2139')
-        report_emoji = self.bot.custom_emoji.get('invasion_report', '\U0001F4E2')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        complete_emoji = self.bot.custom_emoji.get('invasion_complete', 'u\U0001f1f7')
+        expire_emoji = self.bot.custom_emoji.get('invasion_expired', u'\U0001F4A8')
+        info_emoji = ctx.bot.custom_emoji.get('invasion_info', u'\U00002139\U0000fe0f')
+        report_emoji = self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [complete_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         invasion_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/invasion/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
         pokemon = None
@@ -574,7 +574,7 @@ class Invasion(commands.Cog):
                     pokemon.shadow = "shadow"
                     if pokemon.id in self.bot.shiny_dict:
                         if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                            shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                     reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
                     reward_list.append(str(pokemon))
             if not reward_list:
@@ -672,11 +672,11 @@ class Invasion(commands.Cog):
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
             return
-        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             async with ctx.typing():
                 for report in invasion_dict:

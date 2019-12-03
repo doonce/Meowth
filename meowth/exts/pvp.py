@@ -119,7 +119,7 @@ class Pvp(commands.Cog):
             pvp_dict = {}
         if message.id in pvp_dict:
             pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
-            if str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+            if str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
                 await message.remove_reaction(payload.emoji, self.bot.user)
@@ -128,14 +128,14 @@ class Pvp(commands.Cog):
                 await ctx.invoke(self.bot.get_command("list pvp"))
                 await asyncio.sleep(5)
                 return await utils.safe_reaction(message, payload.emoji)
-            elif str(payload.emoji) == self.bot.custom_emoji.get('pvp_report', '\U0001F4E2'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('pvp_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
                 await message.remove_reaction(payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('pvp'))
-            elif str(payload.emoji) == self.bot.custom_emoji.get('pvp_stop', '\u23f9'):
+            elif str(payload.emoji) == self.bot.custom_emoji.get('pvp_stop', u'\U000023f9\U0000fe0f'):
                 for reaction in message.reactions:
-                    if reaction.emoji == self.bot.custom_emoji.get('pvp_stop', '\u23f9') and (reaction.count >= 3 or can_manage or user.id == pvp_dict['report_author']):
+                    if reaction.emoji == self.bot.custom_emoji.get('pvp_stop', u'\U000023f9\U0000fe0f') and (reaction.count >= 3 or can_manage or user.id == pvp_dict['report_author']):
                         await self.expire_pvp(message)
             if pvp_dict.get('tournament'):
                 embed = message.embeds[0]
@@ -152,7 +152,7 @@ class Pvp(commands.Cog):
                         new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
                         new_embed.add_field(name="Trainers Joined", value=(', ').join(user_list), inline=False)
                         await message.edit(embed=new_embed)
-                    elif emoji == self.bot.custom_emoji.get('pvp_start', '\u25B6') and user.id == pvp_dict['tournament']['creator'] and len(pvp_dict['tournament']['trainers']) == pvp_dict['tournament']['size']:
+                    elif emoji == self.bot.custom_emoji.get('pvp_start', u'\U000025b6\U0000fe0f') and user.id == pvp_dict['tournament']['creator'] and len(pvp_dict['tournament']['trainers']) == pvp_dict['tournament']['size']:
                         ctx = await self.bot.get_context(message)
                         if len(pvp_dict['tournament']['trainers']) == 8:
                             await self.bracket_8(ctx)
@@ -213,7 +213,7 @@ class Pvp(commands.Cog):
                             edit_content = message.content
                         await message.edit(content=edit_content, embed=new_embed)
                         pvp_dict['tournament']['trainers'] = winner_list
-                    elif emoji == self.bot.custom_emoji.get('pvp_start', '\u25B6') and user.id == pvp_dict['tournament']['creator'] and  len(pvp_dict['tournament']['trainers']) == pvp_dict['tournament']['next_size']:
+                    elif emoji == self.bot.custom_emoji.get('pvp_start', u'\U000025b6\U0000fe0f') and user.id == pvp_dict['tournament']['creator'] and  len(pvp_dict['tournament']['trainers']) == pvp_dict['tournament']['next_size']:
                         ctx = await self.bot.get_context(message)
                         if len(pvp_dict['tournament']['trainers']) == 8:
                             await self.bracket_8(ctx)
@@ -222,7 +222,7 @@ class Pvp(commands.Cog):
                         elif len(pvp_dict['tournament']['trainers']) == 2:
                             await self.bracket_2(ctx)
                         return
-                if emoji == self.bot.custom_emoji.get('pvp_stop', '\u23f9') and user.id == pvp_dict['tournament']['creator']:
+                if emoji == self.bot.custom_emoji.get('pvp_stop', u'\U000023f9\U0000fe0f') and user.id == pvp_dict['tournament']['creator']:
                     await self.expire_pvp(message)
                     return
                 await message.remove_reaction(emoji, user)
@@ -233,8 +233,8 @@ class Pvp(commands.Cog):
         guild = ctx.guild
         pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
         embed = message.embeds[0]
-        start_emoji = self.bot.custom_emoji.get('pvp_start', '\u25B6')
-        stop_emoji = self.bot.custom_emoji.get('pvp_stop', '\u23f9')
+        start_emoji = self.bot.custom_emoji.get('pvp_start', u'\U000025b6\U0000fe0f')
+        stop_emoji = self.bot.custom_emoji.get('pvp_stop', u'\U000023f9\U0000fe0f')
         new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
         new_embed.add_field(name=embed.fields[0].name, value=embed.fields[0].value, inline=embed.fields[0].inline)
         new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
@@ -269,8 +269,8 @@ class Pvp(commands.Cog):
         guild = ctx.guild
         pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
         embed = message.embeds[0]
-        start_emoji = self.bot.custom_emoji.get('pvp_start', '\u25B6')
-        stop_emoji = self.bot.custom_emoji.get('pvp_stop', '\u23f9')
+        start_emoji = self.bot.custom_emoji.get('pvp_start', u'\U000025b6\U0000fe0f')
+        stop_emoji = self.bot.custom_emoji.get('pvp_stop', u'\U000023f9\U0000fe0f')
         new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
         new_embed.add_field(name=embed.fields[0].name, value=embed.fields[0].value, inline=embed.fields[0].inline)
         new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
@@ -303,8 +303,8 @@ class Pvp(commands.Cog):
         guild = ctx.guild
         pvp_dict = self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
         embed = message.embeds[0]
-        start_emoji = self.bot.custom_emoji.get('pvp_start', '\u25B6')
-        stop_emoji = self.bot.custom_emoji.get('pvp_stop', '\u23f9')
+        start_emoji = self.bot.custom_emoji.get('pvp_start', u'\U000025b6\U0000fe0f')
+        stop_emoji = self.bot.custom_emoji.get('pvp_stop', u'\U000023f9\U0000fe0f')
         new_embed = discord.Embed(colour=guild.me.colour).set_thumbnail(url=embed.thumbnail.url).set_author(name=embed.author.name, icon_url=embed.author.icon_url).set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
         new_embed.add_field(name=embed.fields[0].name, value=embed.fields[0].value, inline=embed.fields[0].inline)
         new_embed.add_field(name=embed.fields[1].name, value=embed.fields[1].value, inline=embed.fields[1].inline)
@@ -448,9 +448,9 @@ class Pvp(commands.Cog):
         end = now + datetime.timedelta(minutes=int(timer))
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour)
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
-        stop_emoji = self.bot.custom_emoji.get('pvp_stop', '\u23f9')
-        report_emoji = self.bot.custom_emoji.get('pvp_report', '\U0001F4E2')
-        list_emoji = ist_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        stop_emoji = self.bot.custom_emoji.get('pvp_stop', u'\U000023f9\U0000fe0f')
+        report_emoji = self.bot.custom_emoji.get('pvp_report', u'\U0001F4E2')
+        list_emoji = ist_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [stop_emoji, report_emoji, list_emoji]
         pvp_msg = f"Meowth! PVP Requested by {ctx.author.mention}.\n\nUse {stop_emoji} to cancel, {report_emoji} to report new, or {list_emoji} to list all PVP!"
         pvp_embed.title = _('Meowth! Click here for my directions to the PVP!')
@@ -507,7 +507,7 @@ class Pvp(commands.Cog):
         pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1')
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id].get('pvp', {})
-        is_moderator = checks.is_mod_check(ctx)
+        is_moderator = checks.is_mod_check_mod(ctx)
         is_ranked = any([pvp_info.get('leader', []), pvp_info.get('elite', []), pvp_info.get('champion', [])])
         while True:
             def check(reply):
@@ -621,8 +621,8 @@ class Pvp(commands.Cog):
     async def _pvp_tournament(self, ctx, size, pvp_type, location, official_pvp=False):
         dm_dict = {}
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
-        start_emoji = self.bot.custom_emoji.get('pvp_start', '\u25B6')
-        stop_emoji = self.bot.custom_emoji.get('pvp_stop', '\u23f9')
+        start_emoji = self.bot.custom_emoji.get('pvp_start', u'\U000025b6\U0000fe0f')
+        stop_emoji = self.bot.custom_emoji.get('pvp_stop', u'\U000023f9\U0000fe0f')
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour)
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -710,11 +710,11 @@ class Pvp(commands.Cog):
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
             return
-        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             async with ctx.typing():
                 for report in pvp_dict:
@@ -739,7 +739,7 @@ class Pvp(commands.Cog):
         guild = message.guild
         channel = message.channel
         error = ""
-        is_moderator = checks.is_mod_check(ctx)
+        is_moderator = checks.is_mod_check_mod(ctx)
         if not is_moderator and not self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('pvp', {}).setdefault('leader', []):
             return await utils.safe_delete(cxx.message)
         output = []
@@ -852,7 +852,7 @@ class Pvp(commands.Cog):
         channel = message.channel
         error = ""
         output = []
-        is_moderator = checks.is_mod_check(ctx)
+        is_moderator = checks.is_mod_check_mod(ctx)
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         leader_dict = {k:{"emoji":utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[k]), "leaders":[]} for k in self.bot.type_list}
         for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
@@ -969,7 +969,7 @@ class Pvp(commands.Cog):
         channel = message.channel
         error = ""
         output = []
-        elite_emoji = self.bot.config.custom_emoji.get('pvp_elite', '\U0001F3C6')
+        elite_emoji = self.bot.config.custom_emoji.get('pvp_elite', u'\U0001F3C6')
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         elite_list = []
         for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
@@ -1068,8 +1068,8 @@ class Pvp(commands.Cog):
         channel = message.channel
         error = ""
         output = []
-        champ_emoji = self.bot.config.custom_emoji.get('pvp_champ', '\U0001F451')
-        is_moderator = checks.is_mod_check(ctx)
+        champ_emoji = self.bot.config.custom_emoji.get('pvp_champ', u'\U0001F451')
+        is_moderator = checks.is_mod_check_mod(ctx)
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         league_list = ["great", "ultra", "master"]
         leader_dict = {k:[] for k in league_list}
@@ -1185,7 +1185,7 @@ class Pvp(commands.Cog):
         guild = message.guild
         channel = message.channel
         error = ""
-        is_moderator = checks.is_mod_check(ctx)
+        is_moderator = checks.is_mod_check_mod(ctx)
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1')
         while True:
             def check(reply):

@@ -155,15 +155,15 @@ class Nest(commands.Cog):
                 if nest == "list":
                     continue
                 if message.id in nest_dict[channel.id][nest].get('reports'):
-                    if str(payload.emoji) == self.bot.custom_emoji.get('wild_catch', '\U0001f1f7'):
+                    if str(payload.emoji) == self.bot.custom_emoji.get('wild_catch', u'\U000026be'):
                         if user.id not in nest_dict[channel.id][nest]['reports'][message.id].get('caught_by', []):
                             if user.id != nest_dict[channel.id][nest]['reports'][message.id]['report_author']:
                                 nest_dict[channel.id][nest]['reports'][message.id].setdefault('caught_by', []).append(user.id)
-                    elif str(payload.emoji) == self.bot.custom_emoji.get('nest_expire', '\U0001F4A8'):
+                    elif str(payload.emoji) == self.bot.custom_emoji.get('nest_expire', u'\U0001F4A8'):
                         for reaction in message.reactions:
-                            if reaction.emoji == self.bot.custom_emoji.get('nest_expire', '\U0001F4A8') and (reaction.count >= 3 or can_manage):
+                            if reaction.emoji == self.bot.custom_emoji.get('nest_expire', u'\U0001F4A8') and (reaction.count >= 3 or can_manage):
                                 await self.expire_nest(nest, message)
-                    elif str(payload.emoji) == self.bot.custom_emoji.get('nest_info', '\u2139'):
+                    elif str(payload.emoji) == self.bot.custom_emoji.get('nest_info', u'\U00002139\U0000fe0f'):
                         if not ctx.prefix:
                             prefix = self.bot._get_prefix(self.bot, message)
                             ctx.prefix = prefix[-1]
@@ -171,12 +171,12 @@ class Nest(commands.Cog):
                         ctx.author = user
                         if user.id == nest_dict[channel.id][nest]['reports'][message.id]['report_author'] or can_manage:
                             await self.edit_nest_info(ctx, message)
-                    elif str(payload.emoji) == self.bot.custom_emoji.get('nest_report', '\U0001F4E2'):
+                    elif str(payload.emoji) == self.bot.custom_emoji.get('nest_report', u'\U0001F4E2'):
                         ctx = await self.bot.get_context(message)
                         ctx.author, ctx.message.author = user, user
                         await message.remove_reaction(payload.emoji, user)
                         return await ctx.invoke(self.bot.get_command('nest'))
-                    elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+                    elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                         ctx = await self.bot.get_context(message)
                         await asyncio.sleep(0.25)
                         await message.remove_reaction(payload.emoji, self.bot.user)
@@ -277,7 +277,7 @@ class Nest(commands.Cog):
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         nest_embed.description = f"**Nest**: {location.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         result = re.search(r'Meowth! (.*) nest', message.content).group(1)
         message.content = message.content.replace(result, str(pokemon))
@@ -343,7 +343,7 @@ class Nest(commands.Cog):
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn[0])
                 if pokemon.id in self.bot.shiny_dict:
                     if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                        shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                        shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                 if report_count == 0:
                     embed_value += f"**{shiny_str}{pokemon.name.title()}** {pokemon.emoji}"
                     if len(reported_pkmn) > 1:
@@ -454,11 +454,11 @@ class Nest(commands.Cog):
 
     async def send_nest(self, ctx, nest_name, pokemon):
         nest_dict = self.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.channel.id]
-        expire_emoji = self.bot.custom_emoji.get('nest_expire', '\U0001F4A8')
-        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', '\u26BE')
-        info_emoji = ctx.bot.custom_emoji.get('nest_info', '\u2139')
-        report_emoji = ctx.bot.custom_emoji.get('nest_report', '\U0001F4E2')
-        list_emoji = self.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        expire_emoji = self.bot.custom_emoji.get('nest_expire', u'\U0001F4A8')
+        catch_emoji = ctx.bot.custom_emoji.get('wild_catch', u'\U000026be')
+        info_emoji = ctx.bot.custom_emoji.get('nest_info', u'\U00002139\U0000fe0f')
+        report_emoji = ctx.bot.custom_emoji.get('nest_report', u'\U0001F4E2')
+        list_emoji = self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [catch_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         nest_url = f"https://www.google.com/maps/search/?api=1&query={nest_dict.get(nest_name, {}).get('location', nest_name)}"
         migration_utc = self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
@@ -467,7 +467,7 @@ class Nest(commands.Cog):
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=ctx.guild.me.colour)
         nest_embed.title = f"Click here for directions to the nest!"
@@ -609,7 +609,7 @@ class Nest(commands.Cog):
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn[0])
             if pokemon.id in self.bot.shiny_dict:
                 if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                    shiny_str = self.bot.custom_emoji.get('shiny_chance', '\u2728') + " "
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
             if report_count == 0:
                 embed_value += f"**{shiny_str}{str(pokemon)}** {pokemon.emoji} **({pkmn[1]})**"
                 report_count += 1
@@ -740,11 +740,11 @@ class Nest(commands.Cog):
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Nest deletion cancelled.'), delete_after=10)
             return
-        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             for report in copy.deepcopy(self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name].get('reports', {})):
                 try:
@@ -884,11 +884,11 @@ class Nest(commands.Cog):
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
         except TypeError:
             timeout = True
-        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
             confirmation = await channel.send(_('Migration time set cancelled.'), delete_after=10)
             return
-        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             ctx.bot.guild_dict[guild.id]['configure_dict']['nest']['migration'] = migration_utc
             for nest in nest_dict:

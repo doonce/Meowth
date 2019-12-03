@@ -214,8 +214,8 @@ class Trainers(commands.Cog):
         if trade_message and (trade_channel.overwrites_for(ctx.guild.default_role).read_messages or trade_channel.overwrites_for(ctx.guild.default_role).read_messages == None):
             embed.add_field(name="Active Trades", value=f"[Click here]({trade_message}) to view active trades in {trade_channel.mention}.")
         if any([pvp_info.get('champion'), pvp_info.get('elite'), pvp_info.get('leader'), pvp_info.get('badges'), pvp_info.get('record')]):
-            champ_emoji = self.bot.config.custom_emoji.get('pvp_champ', '\U0001F451')
-            elite_emoji = self.bot.config.custom_emoji.get('pvp_elite', '\U0001F3C6')
+            champ_emoji = self.bot.config.custom_emoji.get('pvp_champ', u'\U0001F451')
+            elite_emoji = self.bot.config.custom_emoji.get('pvp_elite', u'\U0001F3C6')
             pvp_value = []
             if pvp_info.get('champion'):
                 pvp_value.append(f"{champ_emoji} {(', ').join([x.title() for x in pvp_info['champion']])} League Champion {champ_emoji}")
@@ -354,9 +354,9 @@ class Trainers(commands.Cog):
         except TypeError:
             timeout = True
         await utils.safe_delete(question)
-        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+        if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             return
-        elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+        elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             pass
         else:
             return
@@ -402,9 +402,9 @@ class Trainers(commands.Cog):
             except TypeError:
                 timeout = True
             await utils.safe_delete(question)
-            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
                 return await ctx.channel.send(f"{ctx.author.display_name}\'s PokeBattler ID is: **{author.get('pokebattlerid')}**")
-            elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+            elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
                 pass
             else:
                 return
@@ -414,7 +414,7 @@ class Trainers(commands.Cog):
             return await ctx.error(f"Please enter your PokeBattler ID. Try again when ready.")
         self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['pokebattlerid'] = int(pbid)
         await ctx.send(f"{ctx.author.mention}, your Pokebattler ID has been set to **{pbid}**!", delete_after=10)
-        await utils.safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', '\u2611'))
+        await utils.safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611')
 
     @commands.command()
     @checks.guildchannel()
@@ -439,9 +439,9 @@ class Trainers(commands.Cog):
             except TypeError:
                 timeout = True
             await utils.safe_delete(question)
-            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
                 return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is: **{author.get('trainercode')}**")
-            elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+            elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
                 pass
             else:
                 return
@@ -452,7 +452,7 @@ class Trainers(commands.Cog):
         trainercode = trainercode.replace(" ", "")
         self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode'] = trainercode[:50]
         await ctx.send(f"{ctx.author.mention}, your trainer code has been set to **{trainercode}**!", delete_after=10)
-        await utils.safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', '\u2611'))
+        await utils.safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611')
 
     @commands.command()
     @checks.guildchannel()
@@ -477,9 +477,9 @@ class Trainers(commands.Cog):
             except TypeError:
                 timeout = True
             await utils.safe_delete(question)
-            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', '\u274e'):
+            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
                 return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name(s) are: **{author.get('ign')}**")
-            elif res.emoji == self.bot.custom_emoji.get('answer_yes', '\u2705'):
+            elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
                 pass
             else:
                 return
@@ -489,7 +489,7 @@ class Trainers(commands.Cog):
             return await ctx.error(f"Please enter your in-game name. Try again when ready.")
         self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign'] = ign[:300]
         await ctx.send(f"{ctx.author.mention}, your in-game name(s) have been set to **{ign}**!", delete_after=10)
-        await utils.safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', '\u2611'))
+        await utils.safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611')
 
 def setup(bot):
     bot.add_cog(Trainers(bot))

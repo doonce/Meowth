@@ -27,8 +27,8 @@ class Trading(commands.Cog):
     @tasks.loop(seconds=86400)
     async def trade_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        yes_emoji = self.bot.custom_emoji.get('trade_complete', '\u2611')
-        no_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
+        yes_emoji = self.bot.custom_emoji.get('trade_complete', u'\U00002611\U0000fe0f')
+        no_emoji = self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f')
         for guild in list(self.bot.guilds):
             try:
                 trade_dict = self.bot.guild_dict[guild.id].setdefault('trade_dict', {})
@@ -150,17 +150,17 @@ class Trading(commands.Cog):
                     i = int(emoji[0])
                     offer = wanted_pokemon[i-1]
                     await self.make_offer(message.guild.id, message.id, user.id, offer)
-                elif payload.user_id == trade_dict[message.id]['lister_id'] and emoji == self.bot.custom_emoji.get('trade_stop', '\u23f9'):
+                elif payload.user_id == trade_dict[message.id]['lister_id'] and emoji == self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f'):
                     await self.cancel_trade(message.guild.id, message.id)
-                elif payload.user_id == trade_dict[message.id]['lister_id'] and emoji == self.bot.custom_emoji.get('wild_info', '\u2139'):
-                    await message.remove_reaction(self.bot.custom_emoji.get('wild_info', '\u2139'), user)
+                elif payload.user_id == trade_dict[message.id]['lister_id'] and emoji == self.bot.custom_emoji.get('trade_info', u'\U00002139\U0000fe0f'):
+                    await message.remove_reaction(self.bot.custom_emoji.get('trade_info', u'\U00002139\U0000fe0f'), user)
                     await self.add_trade_details(ctx, message)
-                elif str(payload.emoji) == self.bot.custom_emoji.get('trade_report', '\U0001F4E2'):
+                elif str(payload.emoji) == self.bot.custom_emoji.get('trade_report', u'\U0001F4E2'):
                     ctx = await self.bot.get_context(message)
                     ctx.author, ctx.message.author = user, user
                     await message.remove_reaction(payload.emoji, user)
                     return await ctx.invoke(self.bot.get_command('trade'))
-                elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', '\U0001f5d2'):
+                elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                     await asyncio.sleep(0.25)
                     await message.remove_reaction(payload.emoji, self.bot.user)
                     await asyncio.sleep(0.25)
@@ -168,17 +168,17 @@ class Trading(commands.Cog):
                     await ctx.invoke(self.bot.get_command("list trades"), search="all")
                     await asyncio.sleep(5)
                     await utils.safe_reaction(message, payload.emoji)
-                elif str(payload.emoji) == self.bot.custom_emoji.get('trade_search', '\U0001f50d'):
+                elif str(payload.emoji) == self.bot.custom_emoji.get('trade_search', u'\U0001f50d'):
                     await message.remove_reaction(payload.emoji, user)
                     await ctx.invoke(self.bot.get_command("list searching"), search="all")
         elif message.id in active_check_dict.keys():
             guild = self.bot.get_guild(active_check_dict[message.id]['guild_id'])
             listing_id = active_check_dict[message.id]['listing_id']
             trade_dict = self.bot.guild_dict[guild.id]['trade_dict'][listing_id]
-            if emoji == self.bot.custom_emoji.get('trade_complete', '\u2611'):
+            if emoji == self.bot.custom_emoji.get('trade_complete', u'\U00002611\U0000fe0f'):
                 self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['exp'] = time.time() + 30*24*60*60
                 self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['active_check'] = None
-            elif emoji == self.bot.custom_emoji.get('trade_stop', '\u23f9'):
+            elif emoji == self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f'):
                 if trade_dict['status'] == "accepted":
                     dm_dict = {
                         trade_dict['lister_id'] : trade_dict['accepted']['lister_msg'],
@@ -189,17 +189,17 @@ class Trading(commands.Cog):
             await message.delete()
         elif message.id in offer_dict.keys():
             guild = self.bot.get_guild(offer_dict[message.id]['guild_id'])
-            if emoji == self.bot.custom_emoji.get('trade_accept', '\u2705'):
+            if emoji == self.bot.custom_emoji.get('trade_accept', u'\U00002705'):
                 await self.accept_offer(guild.id, offer_dict[message.id]['listing_id'], offer_dict[message.id]['buyer_id'])
-            elif emoji == self.bot.custom_emoji.get('trade_reject', '\u274e'):
+            elif emoji == self.bot.custom_emoji.get('trade_reject', u'\U0000274e'):
                 await self.reject_offer(guild.id, offer_dict[message.id]['listing_id'], offer_dict[message.id]['buyer_id'])
             await message.delete()
         elif message.id in accepted_dict.keys():
             guild = self.bot.get_guild(accepted_dict[message.id]['guild_id'])
             trade_dict = self.bot.guild_dict[guild.id]['trade_dict'][accepted_dict[message.id]['listing_id']]
-            if emoji == self.bot.custom_emoji.get('trade_complete', '\u2611'):
+            if emoji == self.bot.custom_emoji.get('trade_complete', u'\U00002611\U0000fe0f'):
                 await self.confirm_trade(guild.id, accepted_dict[message.id]['listing_id'], user.id)
-            elif emoji == self.bot.custom_emoji.get('trade_stop', '\u23f9'):
+            elif emoji == self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f'):
                 if user.id == trade_dict['lister_id']:
                     await self.reject_offer(guild.id, accepted_dict[message.id]['listing_id'], accepted_dict[message.id]['buyer_id'])
                 else:
@@ -223,15 +223,15 @@ class Trading(commands.Cog):
         offer_embed.add_field(name="They Offer", value=str(buyer_pokemon), inline=True)
         offer_embed.set_footer(text=f"Offered by @{buyer.display_name}", icon_url=buyer.avatar_url_as(format=None, static_format='png', size=256))
         offer_embed.set_thumbnail(url=buyer_pokemon.img_url)
-        accept_emoji = self.bot.custom_emoji.get('trade_accept', '\u2705')
-        reject_emoji = self.bot.custom_emoji.get('trade_reject', '\u274e')
+        accept_emoji = self.bot.custom_emoji.get('trade_accept', u'\U00002705')
+        reject_emoji = self.bot.custom_emoji.get('trade_reject', u'\U0000274e')
         offermsg = await lister.send(f"Meowth! {buyer.display_name} offers to trade their {str(pkmn)} for your {str(listing_pokemon)}! React with {accept_emoji} to accept the offer or {reject_emoji} to reject it!", embed=offer_embed)
         self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['offers'][buyer_id] = {
             "offer":str(buyer_pokemon),
             "lister_msg": offermsg.id
         }
-        await utils.safe_reaction(offermsg, self.bot.custom_emoji.get('trade_accept', '\u2705'))
-        await utils.safe_reaction(offermsg, self.bot.custom_emoji.get('trade_reject', '\u274e'))
+        await utils.safe_reaction(offermsg, self.bot.custom_emoji.get('trade_accept', u'\U00002705'))
+        await utils.safe_reaction(offermsg, self.bot.custom_emoji.get('trade_reject', u'\U0000274e'))
 
     async def accept_offer(self, guild_id, listing_id, buyer_id):
         guild = self.bot.get_guild(guild_id)
@@ -250,8 +250,8 @@ class Trading(commands.Cog):
                 return await self.close_trade(guild.id, listing_id)
             offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offered_pokemon'])
             wanted_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offers'][buyer_id]['offer'])
-            complete_emoji = self.bot.custom_emoji.get('trade_complete', '\u2611')
-            cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
+            complete_emoji = self.bot.custom_emoji.get('trade_complete', u'\U00002611\U0000fe0f')
+            cancel_emoji = self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f')
             acceptedmsg = f"Meowth! {lister.display_name} has agreed to trade their {offered_pokemon} for {buyer.display_name}'s {wanted_pokemon}. React with {complete_emoji} when the trade has been completed! To reject or cancel this offer, react with {cancel_emoji}"
             special_check = [offered_pokemon.shiny, offered_pokemon.legendary, wanted_pokemon.shiny, wanted_pokemon.legendary, wanted_pokemon.shadow == "purified"]
             if any(special_check):
@@ -260,10 +260,10 @@ class Trading(commands.Cog):
             listermsg = await lister.send(acceptedmsg)
             self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['status'] = "accepted"
             self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['accepted'] = {"buyer_id":buyer_id, "lister_msg":listermsg.id, "buyer_msg":tradermsg.id, "lister_confirm":False, "buyer_confirm":False}
-            await utils.safe_reaction(tradermsg, self.bot.custom_emoji.get('trade_complete', '\u2611'))
-            await utils.safe_reaction(tradermsg, self.bot.custom_emoji.get('trade_stop', '\u23f9'))
-            await utils.safe_reaction(listermsg, self.bot.custom_emoji.get('trade_complete', '\u2611'))
-            await utils.safe_reaction(listermsg, self.bot.custom_emoji.get('trade_stop', '\u23f9'))
+            await utils.safe_reaction(tradermsg, self.bot.custom_emoji.get('trade_complete', u'\U00002611\U0000fe0f'))
+            await utils.safe_reaction(tradermsg, self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f'))
+            await utils.safe_reaction(listermsg, self.bot.custom_emoji.get('trade_complete', u'\U00002611\U0000fe0f'))
+            await utils.safe_reaction(listermsg, self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f'))
             for offerid in trade_dict['offers'].keys():
                 if offerid != buyer_id:
                     reject = guild.get_member(offerid)
@@ -283,10 +283,10 @@ class Trading(commands.Cog):
             return
         lister = guild.get_member(trade_dict['lister_id'])
         channel = self.bot.get_channel(trade_dict['report_channel_id'])
-        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
-        report_emoji = ctx.bot.custom_emoji.get('trade', '\U0001F4E2')
-        search_emoji = ctx.bot.custom_emoji.get('trade_search', '\U0001f50d')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        info_emoji = ctx.bot.custom_emoji.get('trade_info', u'\U00002139\U0000fe0f')
+        report_emoji = ctx.bot.custom_emoji.get('trade', u'\U0001F4E2')
+        search_emoji = ctx.bot.custom_emoji.get('trade_search', u'\U0001f50d')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         try:
             listing_msg = await channel.fetch_message(listing_id)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
@@ -301,7 +301,7 @@ class Trading(commands.Cog):
             await buyer.send(f"Meowth... {lister.display_name} rejected your offer for their {offered_pokemon}.")
         except:
             pass
-        cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
+        cancel_emoji = self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f')
         if lister.id in self.bot.guild_dict[guild.id].get('trainers', {}):
             trainercode = self.bot.guild_dict[guild.id]['trainers'][lister.id].get('trainercode', None)
         offered_pokemon_str = f"Meowth! {lister.mention} {'(trainercode: **'+trainercode+'**) ' if trainercode else ''}offers a {str(offered_pokemon)} up for trade!"
@@ -313,7 +313,7 @@ class Trading(commands.Cog):
         await listing_msg.edit(content=f"{offered_pokemon_str} {instructions}")
         for i in range(len(wanted_pokemon)):
             await utils.safe_reaction(listing_msg, f'{i+1}\u20e3')
-        await utils.safe_reaction(listing_msg, self.bot.custom_emoji.get('trade_stop', '\u23f9'))
+        await utils.safe_reaction(listing_msg, self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f'))
         del trade_dict['offers'][buyer_id]
         self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['status'] = "active"
 
@@ -323,10 +323,10 @@ class Trading(commands.Cog):
         buyer = guild.get_member(buyer_id)
         lister = guild.get_member(trade_dict['lister_id'])
         channel = self.bot.get_channel(trade_dict['report_channel_id'])
-        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
-        report_emoji = ctx.bot.custom_emoji.get('trade_report', '\U0001F4E2')
-        search_emoji = ctx.bot.custom_emoji.get('trade_search', '\U0001f50d')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        info_emoji = ctx.bot.custom_emoji.get('trade_info', u'\U00002139\U0000fe0f')
+        report_emoji = ctx.bot.custom_emoji.get('trade_report', u'\U0001F4E2')
+        search_emoji = ctx.bot.custom_emoji.get('trade_search', u'\U0001f50d')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         try:
             listing_msg = await channel.fetch_message(listing_id)
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
@@ -338,7 +338,7 @@ class Trading(commands.Cog):
         wanted_pokemon = wanted_pokemon.encode('ascii', 'ignore').decode("utf-8").replace(":", "")
         wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want) for want in wanted_pokemon.split("\n")]
         buyer_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_dict['offers'][buyer_id]['offer'])
-        cancel_emoji = self.bot.custom_emoji.get('trade_stop', '\u23f9')
+        cancel_emoji = self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f')
         await lister.send(f"Meowth... {buyer.display_name} withdrew their trade offer of {str(buyer_pokemon)}.")
         if lister.id in self.bot.guild_dict[guild.id].get('trainers', {}):
             trainercode = self.bot.guild_dict[guild.id]['trainers'][lister.id].get('trainercode', None)
@@ -351,7 +351,7 @@ class Trading(commands.Cog):
         await listing_msg.edit(content=f"{offered_pokemon_str} {instructions}")
         for i in range(len(wanted_pokemon)):
             await utils.safe_reaction(listing_msg, f'{i+1}\u20e3')
-        await utils.safe_reaction(listing_msg, self.bot.custom_emoji.get('trade_stop', '\u23f9'))
+        await utils.safe_reaction(listing_msg, self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f'))
         del trade_dict['offers'][buyer_id]
         self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['status'] = "active"
 
@@ -389,7 +389,7 @@ class Trading(commands.Cog):
         offered_pokemon = trade_dict['offered_pokemon']
         trade_details = str(trade_dict.get('details', ""))
         trade_offers = trade_dict.get('offers', {})
-        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        info_emoji = ctx.bot.custom_emoji.get('trade_info', u'\U00002139\U0000fe0f')
         if not lister:
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
@@ -519,7 +519,7 @@ class Trading(commands.Cog):
         details = None
         all_offered = offered_pokemon.split(',')
         all_offered = [x.strip() for x in all_offered]
-        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
+        info_emoji = ctx.bot.custom_emoji.get('trade_info', u'\U00002139\U0000fe0f')
         for index, item in enumerate(all_offered):
             pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, item)
             all_offered[index] = pokemon
@@ -673,11 +673,11 @@ class Trading(commands.Cog):
     async def send_trade(self, ctx, wanted_pokemon, offered_pokemon, details):
         trade_dict = self.bot.guild_dict[ctx.guild.id].setdefault('trade_dict', {})
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
-        trade_stop =  ctx.bot.custom_emoji.get('trade_stop', '\u23f9')
-        info_emoji = ctx.bot.custom_emoji.get('wild_info', '\u2139')
-        report_emoji = ctx.bot.custom_emoji.get('trade_report', '\U0001F4E2')
-        search_emoji = ctx.bot.custom_emoji.get('trade_search', '\U0001f50d')
-        list_emoji = ctx.bot.custom_emoji.get('list_emoji', '\U0001f5d2')
+        trade_stop =  ctx.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f')
+        info_emoji = ctx.bot.custom_emoji.get('trade_info', u'\U00002139\U0000fe0f')
+        report_emoji = ctx.bot.custom_emoji.get('trade_report', u'\U0001F4E2')
+        search_emoji = ctx.bot.custom_emoji.get('trade_search', u'\U0001f50d')
+        list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [trade_stop, info_emoji, report_emoji, search_emoji, list_emoji]
         if not wanted_pokemon or "open trade" in wanted_pokemon:
             wanted_pokemon = "Open Trade (DM User)"
@@ -743,7 +743,7 @@ class Trading(commands.Cog):
                     embed.remove_field(index)
                 else:
                     index += 1
-        delete_emoji = self.bot.config.custom_emoji.get('delete_dm', '\U0001f5d1')
+        delete_emoji = self.bot.config.custom_emoji.get('delete_dm', u'\U0001f5d1\U0000fe0f')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_pokemon)
         content = f"Meowth! {ctx.author.display_name} offers a {str(trade_pokemon)} up for trade in {ctx.channel.mention}! Use {delete_emoji} if you aren't interested."
         for trainer in copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('trainers', {})):

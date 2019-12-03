@@ -400,19 +400,19 @@ class Pokemon():
         pkmn_types.append(None)
         for type in pkmn_types:
             if self.weather == "clear" and type in clear_boost:
-                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('clear', '\u2600'))
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('clear', u'\U00002600\U0000fe0f'))
             elif self.weather == "foggy" and type in fog_boost:
-                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('foggy', '\U0001F301'))
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('foggy', u'\U0001f32b\U0000fe0f'))
             elif self.weather == "cloudy" and type in cloudy_boost:
-                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('cloudy', '\u2601'))
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('cloudy', u'\U00002601\U0000fe0f'))
             elif self.weather == "partlycloudy" and type in partlycloudy_boost:
-                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('partlycloudy', '\u26C5'))
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('partlycloudy', u'\U0001f325\U0000fe0f'))
             elif self.weather == "rainy" and type in rainy_boost:
-                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('rainy', '\u2614'))
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('rainy', u'\U0001f327\U0000fe0f'))
             elif self.weather == "snowy" and type in snow_boost:
-                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('snowy', '\u2744'))
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('snowy', u'\U00002744\U0000fe0f'))
             elif self.weather == "windy" and type in windy_boost:
-                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('windy', '\U0001F343'))
+                return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('windy', u'\U0001F343'))
         return False
 
     def role(self, guild=None):

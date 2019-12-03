@@ -2011,8 +2011,12 @@ class Configure(commands.Cog):
                     for pkmn in wildfilter_list:
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pkmn)
                         if pokemon:
-                            config_dict_temp['scanners']['wildfilter'].append(pokemon.id)
-                            wildfilter_names.append(pokemon.name)
+                            if not pokemon.form and not pokemon.size and not pokemon.gender and not pokemon.shadow:
+                                config_dict_temp['scanners']['wildfilter'].append(pokemon.id)
+                                wildfilter_names.append(f"{pokemon.name} (all forms)")
+                            else:
+                                config_dict_temp['scanners']['wildfilter'].append(str(pokemon))
+                                wildfilter_names.append(str(pokemon))
                     if len(config_dict_temp['scanners']['wildfilter']) > 0:
                         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Automatic wild filter will block: {wilds}').format(wilds=', '.join(wildfilter_names))))
                         break
