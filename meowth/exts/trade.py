@@ -19,6 +19,7 @@ logger = logging.getLogger("meowth")
 class Trading(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.emoji_dict = {0: u'\U00000030\U0000fe0f\U000020e3', 1: u'\U00000031\U0000fe0f\U000020e3', 2: u'\U00000032\U0000fe0f\U000020e3', 3: u'\U00000033\U0000fe0f\U000020e3', 4: u'\U00000034\U0000fe0f\U000020e3', 5: u'\U00000035\U0000fe0f\U000020e3', 6: u'\U00000036\U0000fe0f\U000020e3', 7: u'\U00000037\U0000fe0f\U000020e3', 8: u'\U00000038\U0000fe0f\U000020e3', 9: u'\U00000039\U0000fe0f\U000020e3', 10: u'\U0001f51f'}
         self.trade_cleanup.start()
 
     def cog_unload(self):
@@ -143,7 +144,7 @@ class Trading(commands.Cog):
         if message.guild:
             trade_dict = self.bot.guild_dict[message.guild.id]['trade_dict']
             if message.id in trade_dict.keys():
-                if user.id != trade_dict[message.id]['lister_id'] and '\u20e3' in emoji:
+                if user.id != trade_dict[message.id]['lister_id'] and (u'\U000020e3' in emoji or u'\U0001f51f' in emoji):
                     wanted_pokemon = trade_dict[message.id]['wanted_pokemon']
                     wanted_pokemon = wanted_pokemon.encode('ascii', 'ignore').decode("utf-8").replace(":", "")
                     wanted_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, want) for want in wanted_pokemon.split("\n")]
@@ -312,7 +313,7 @@ class Trading(commands.Cog):
         instructions += f"\n\n{lister.display_name} can use {trade_stop} to cancel or {info_emoji} to edit details. Everyone can use {report_emoji} to report new, {search_emoji} to list desired pokemon, or {list_emoji} to list all active trades!"
         await listing_msg.edit(content=f"{offered_pokemon_str} {instructions}")
         for i in range(len(wanted_pokemon)):
-            await utils.safe_reaction(listing_msg, f'{i+1}\u20e3')
+            await utils.safe_reaction(listing_msg, f'{self.emoji_dict[i+1]}')
         await utils.safe_reaction(listing_msg, self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f'))
         del trade_dict['offers'][buyer_id]
         self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['status'] = "active"
@@ -350,7 +351,7 @@ class Trading(commands.Cog):
         instructions += f"\n\n{lister.display_name} can use {trade_stop} to cancel or {info_emoji} to edit details. Everyone can use {report_emoji} to report new, {search_emoji} to list desired pokemon, or {list_emoji} to list all active trades!"
         await listing_msg.edit(content=f"{offered_pokemon_str} {instructions}")
         for i in range(len(wanted_pokemon)):
-            await utils.safe_reaction(listing_msg, f'{i+1}\u20e3')
+            await utils.safe_reaction(listing_msg, f'{self.emoji_dict[i+1]}')
         await utils.safe_reaction(listing_msg, self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f'))
         del trade_dict['offers'][buyer_id]
         self.bot.guild_dict[guild.id]['trade_dict'][listing_id]['status'] = "active"
@@ -434,8 +435,8 @@ class Trading(commands.Cog):
                                 if pkmn.shadow == "shadow":
                                     pkmn.shadow = False
                             wanted_pokemon = [str(x) for x in wanted_pokemon if x]
-                            if len(wanted_pokemon) > 9:
-                                error = _("entered more than nine pokemon")
+                            if len(wanted_pokemon) > 10:
+                                error = _("entered more than ten pokemon")
                                 break
                         success.append("wanted")
                     elif value_msg.clean_content.lower().startswith('offer'):
@@ -598,7 +599,7 @@ class Trading(commands.Cog):
                     if list_separate or first_listing:
                         preview_embed.clear_fields()
                         preview_embed.set_thumbnail(url=offered_pokemon.img_url)
-                        preview_embed.add_field(name=f"New Trade Listing", value=f"What pokemon are you willing to accept in exchange for your {str(offered_pokemon) if list_separate else str(len(all_offered))+' trades'}?\n\nList up to 9 pokemon in a comma separated list, reply with **open** to create an open trade and invite offers, or reply with **cancel** to cancel this listing.{' Reply with **stop** to cancel all listed trades.' if len(all_offered) > 1 else ''}", inline=False)
+                        preview_embed.add_field(name=f"New Trade Listing", value=f"What pokemon are you willing to accept in exchange for your {str(offered_pokemon) if list_separate else str(len(all_offered))+' trades'}?\n\nList up to ten pokemon in a comma separated list, reply with **open** to create an open trade and invite offers, or reply with **cancel** to cancel this listing.{' Reply with **stop** to cancel all listed trades.' if len(all_offered) > 1 else ''}", inline=False)
                         want_wait = await ctx.send(embed=preview_embed)
                         try:
                             want_reply = await self.bot.wait_for('message', timeout=60, check=check)
@@ -620,8 +621,8 @@ class Trading(commands.Cog):
                             await error_msg(error)
                             return
                         wanted_pokemon = want_reply.content.lower().split(',')
-                        if len(wanted_pokemon) > 9:
-                            error = _("entered more than 9 pokemon")
+                        if len(wanted_pokemon) > 10:
+                            error = _("entered more than ten pokemon")
                             await error_msg(error)
                             continue
                         if "ask" in wanted_pokemon or "open" in wanted_pokemon:
@@ -682,7 +683,7 @@ class Trading(commands.Cog):
         if not wanted_pokemon or "open trade" in wanted_pokemon:
             wanted_pokemon = "Open Trade (DM User)"
         else:
-            wanted_pokemon = [f'{i+1}\u20e3: {pkmn}' for i, pkmn in enumerate(wanted_pokemon)]
+            wanted_pokemon = [f'{self.emoji_dict[i+1]}: {pkmn}' for i, pkmn in enumerate(wanted_pokemon)]
             wanted_pokemon = '\n'.join(wanted_pokemon)
         offered_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, offered_pokemon)
         if offered_pokemon.gender and (offered_pokemon.shiny or offered_pokemon.shadow):
@@ -709,7 +710,7 @@ class Trading(commands.Cog):
         if "open trade" not in wanted_pokemon.lower():
             for i in range(len(wanted_pokemon.split('\n'))):
                 await asyncio.sleep(0.25)
-                await utils.safe_reaction(ctx.tradereportmsg, f'{i+1}\u20e3')
+                await utils.safe_reaction(ctx.tradereportmsg, f'{self.emoji_dict[i+1]}')
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.safe_reaction(ctx.tradereportmsg, reaction)

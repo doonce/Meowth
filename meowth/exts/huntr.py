@@ -677,7 +677,8 @@ class Huntr(commands.Cog):
         if report_user:
             ctx.message.author = report_user
         message = ctx.message
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, report_details['pokemon'])
+        gender = report_details.setdefault("gender", None)
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, f"{gender if gender else ''} {report_details['pokemon']}")
         if pokemon:
             entered_wild = pokemon.name.lower()
             pokemon.shiny = False
@@ -686,7 +687,6 @@ class Huntr(commands.Cog):
         if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['scanners'].setdefault('wildfilter', []) or str(pokemon) in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict']['scanners'].setdefault('wildfilter', []):
             if not report_details.get("iv_percent", '') and not report_details.get("level", ''):
                 return
-        gender = report_details.setdefault("gender", pokemon.gender)
         wild_details = report_details['coordinates']
         wild_iv = {}
         iv_percent = report_details.get("iv_percent", '')
@@ -716,7 +716,7 @@ class Huntr(commands.Cog):
             pokemon.weather = "clear"
         elif "cloudy" in weather:
             pokemon.weather = "cloudy"
-        elif "windy" in weather:
+        elif "wind" in weather:
             pokemon.weather = "windy"
         elif "snow" in weather:
             pokemon.weather = "snowy"
