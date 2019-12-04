@@ -755,16 +755,14 @@ class Huntr(commands.Cog):
             stop_str = f"{' Details: '+nearest_poi+' |' if nearest_poi and nearest_poi != nearest_stop else ''}{' Nearest Pokestop: '+nearest_stop if nearest_stop else ''}{' | ' if nearest_poi or nearest_stop else ' '}"
         wild_embed = await wild_cog.make_wild_embed(ctx, report_details)
         omw_emoji = ctx.bot.custom_emoji.get('wild_omw', u'\U0001F3CE\U0000fe0f')
-        despawn_emoji = ctx.bot.custom_emoji.get('wild_despawn', u'\U0001F4A8')
+        expire_emoji = ctx.bot.custom_emoji.get('wild_despawn', u'\U0001F4A8')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', u'\U00002139\U0000fe0f')
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', u'\U000026be')
         report_emoji = self.bot.custom_emoji.get('wild_report', u'\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
-        reaction_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji, report_emoji, list_emoji]
+        reaction_list = [omw_emoji, catch_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         despawn = (int(expire.split(' ')[0]) * 60) + int(expire.split(' ')[2])
-        if despawn != 2700:
-            reaction_list.remove(despawn_emoji)
-        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}!{stop_str}Coordinates: {wild_coordinates}{iv_str}\n\nUse {omw_emoji} if coming, {catch_emoji} if caught{', ' + despawn_emoji + ' if despawned' if despawn == 2700 else ''}, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all wilds!", embed=wild_embed)
+        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}!{stop_str}Coordinates: {wild_coordinates}{iv_str}\n\nUse {omw_emoji} if coming, {catch_emoji} if caught, {expire_emoji} if despawned, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all wilds!", embed=wild_embed)
         dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), iv_percent, level, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
         for reaction in reaction_list:
             await asyncio.sleep(0.25)

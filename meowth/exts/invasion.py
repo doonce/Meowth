@@ -328,15 +328,11 @@ class Invasion(commands.Cog):
             if "expire" in field.name.lower():
                 invasion_embed.add_field(name=field.name, value=f"{timer} mins {end_local.strftime(_('(%I:%M %p)'))}")
         if pokemon:
-            invasion_msg = f"Meowth! {pokemon.name.title()} Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} if completed, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
+            invasion_msg = f"Meowth! {pokemon.name.title()} Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} if completed, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         elif reward_type:
-            invasion_msg = f"Meowth! {reward_type.title()} Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} if completed, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
+            invasion_msg = f"Meowth! {reward_type.title()} Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} if completed, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         else:
-            invasion_msg = f"Meowth! Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} completed, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
-        for reaction in ctx.message.reactions:
-            if reaction.emoji == self.bot.custom_emoji.get('invasion_expired', u'\U0001F4A8'):
-                invasion_msg = invasion_msg.replace(f"if completed", f"if completed, {expire_emoji} if expired")
-                break
+            invasion_msg = f"Meowth! Invasion reported by {author.mention}! Details: {nearest_stop}\n\nUse {complete_emoji} completed, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         try:
             await message.edit(content=invasion_msg, embed=invasion_embed)
         except:
@@ -590,9 +586,6 @@ class Invasion(commands.Cog):
             invasion_msg = f"Meowth! {reward_type.title()} Invasion reported by {ctx.author.mention}! Details: {location}\n\nUse {complete_emoji} if completed, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
         else:
             invasion_msg = f"Meowth! Invasion reported by {ctx.author.mention}! Details: {location}\n\nUse {complete_emoji} if completed, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all invasions!"
-        if timer:
-            react_list.remove(expire_emoji)
-            invasion_msg = invasion_msg.replace(f", {expire_emoji} if expired", "")
         invasion_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         invasion_embed.title = _('Meowth! Click here for my directions to the invasion!')
         invasion_embed.description = f"Ask {ctx.author.name} if my directions aren't perfect!\n**Location:** {location}"

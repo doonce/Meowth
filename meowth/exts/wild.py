@@ -215,7 +215,7 @@ class Wild(commands.Cog):
             details_str += f" ♀"
         elif gender and "male" in gender.lower():
             details_str += f" ♂"
-        details_str += f" ({pokemon.id}) {pokemon.emoji}"
+        details_str += f" {pokemon.emoji}"
         if pokemon.name.lower() == "ditto" and disguise:
             details_str += f"\nDisguise: {disguise.name.title()} {disguise.emoji}"
         wild_embed = discord.Embed(description="", title=_('Meowth! Click here for exact directions to the wild {pokemon}!').format(pokemon=pokemon.name.title()), url=wild_gmaps_link, colour=ctx.guild.me.colour)
@@ -637,12 +637,12 @@ class Wild(commands.Cog):
         wild_iv = None
         nearest_stop = ""
         omw_emoji = self.bot.custom_emoji.get('wild_omw', u'\U0001F3CE\U0000fe0f')
-        despawn_emoji = self.bot.custom_emoji.get('wild_despawn', u'\U0001F4A8')
+        expire_emoji = self.bot.custom_emoji.get('wild_despawn', u'\U0001F4A8')
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', u'\U000026be')
         info_emoji = ctx.bot.custom_emoji.get('wild_info', u'\U00002139\U0000fe0f')
         report_emoji = self.bot.custom_emoji.get('wild_report', u'\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
-        react_list = [omw_emoji, catch_emoji, despawn_emoji, info_emoji, report_emoji, list_emoji]
+        react_list = [omw_emoji, catch_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         converter = commands.clean_content()
         iv_test = await converter.convert(ctx, content.split()[-1])
         iv_test = iv_test.lower().strip()
@@ -699,7 +699,7 @@ class Wild(commands.Cog):
         }
         despawn = 2700
         wild_embed = await self.make_wild_embed(ctx, details)
-        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\n\nUse {omw_emoji} if coming, {catch_emoji} if caught, {despawn_emoji} if despawned, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all wilds!", embed=wild_embed)
+        ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\n\nUse {omw_emoji} if coming, {catch_emoji} if caught, {expire_emoji} if despawned, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all wilds!", embed=wild_embed)
         dm_dict = {}
         dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         for reaction in react_list:

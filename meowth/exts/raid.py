@@ -314,7 +314,7 @@ class Raid(commands.Cog):
                                 logger.info('Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
                             logger.info('Channel Expired And Removed From Watchlist - ' + channel.name)
                             break
-                        if (end-now).total_seconds() > 0 and (end-now).total_seconds() < 20:
+                        if end and now and (end-now).total_seconds() > 0 and (end-now).total_seconds() < 20:
                             wait_time = (end-now).total_seconds()
                     else:
                         if self.bot.guild_dict[guild.id][report_dict][channel.id]['active']:
@@ -945,7 +945,7 @@ class Raid(commands.Cog):
                 if pokemon.id in self.bot.shiny_dict:
                     if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                         shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                boss_list.append(f"{shiny_str}{str(pokemon)} ({pokemon.id}) {pokemon.emoji}")
+                boss_list.append(f"{shiny_str}{str(pokemon)} {pokemon.emoji}")
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1" if embed_type == "egg" else pokemon.img_url
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin_exclusive.png?cache=1" if egg_level == "EX" else raid_img_url
         if embed_type == "egg":
@@ -2076,7 +2076,7 @@ class Raid(commands.Cog):
             if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
-        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{str(pokemon)} ({pokemon.id}) {pokemon.emoji}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
+        raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{str(pokemon)} {pokemon.emoji}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=pokemon.weakness_emoji), inline=True)
         index = 0
         for field in oldembed.fields:

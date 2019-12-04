@@ -53,6 +53,7 @@ class MeowthBot(commands.AutoShardedBot):
                       **kwargs)
         super().__init__(**kwargs)
         self.logger = logging.getLogger('meowth')
+        self.report_dicts = ['wildreport_dict:', 'questreport_dict', 'pokealarm_dict', 'trade_dict', 'nest_dict', 'wildreport_dict', 'lure_dict', 'pvp_dict', 'invasion_dict', 'pokehuntr_dict']
         self.channel_report_dicts = ['raidchannel_dict', 'exraidchannel_dict', 'meetup_dict', 'raidtrain_dict']
         self.type_list = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
         self.item_list = ["incense", "poke ball", "great ball", "ultra ball", "master ball", "potion", "super potion", "hyper potion", "max potion", "revive", "max revive", "razz berry", "golden razz berry", "nanab berry", "pinap berry", "silver pinap berry", "fast tm", "charged tm", "rare candy", "lucky egg", "stardust", "lure module", "glacial lure module", "magnetic lure module", "mossy lure module", "star piece", "premium raid pass", "egg incubator", "super incubator", "team medallion", "sun stone", "metal coat", "dragon scale", "up-grade", "sinnoh stone", "unova stone", "mysterious component", "rocket radar"]
@@ -341,13 +342,13 @@ class MeowthBot(commands.AutoShardedBot):
 
     async def on_raw_reaction_add(self, payload):
         emoji = payload.emoji.name
+        try:
+            user = self.get_user(payload.user_id)
+        except AttributeError:
+            return
+        if user == self.user:
+            return
         if config.custom_emoji.get('delete_dm', '\U0001f5d1') in emoji:
-            try:
-                user = self.get_user(payload.user_id)
-            except AttributeError:
-                return
-            if user.bot:
-                return
             channel = user.dm_channel
             if not channel:
                 channel = await user.create_dm()
@@ -359,6 +360,29 @@ class MeowthBot(commands.AutoShardedBot):
                     await message.delete()
             except (discord.errors.NotFound, AttributeError, discord.Forbidden):
                 return
+        elif u'\U0001F4A8' in emoji:
+            channel = self.get_channel(payload.channel_id)
+            guild = getattr(channel, "guild", None)
+            if guild:
+                user = guild.get_member(payload.user_id)
+            else:
+                return
+            can_manage = channel.permissions_for(user).manage_messages
+            if not can_manage:
+                return
+            try:
+                message = await channel.fetch_message(payload.message_id)
+            except (discord.errors.NotFound, AttributeError, discord.Forbidden):
+                return
+            if message.author != self.user:
+                return
+            in_reports = False
+            for report_dict in self.report_dicts:
+                if message.id in self.guild_dict[guild.id].get(report_dict, {}):
+                    in_reports = True
+                    break
+            if not in_reports:
+                await utils.safe_delete(message)
 
     async def process_commands(self, message):
         """Processes commands that are registed with the bot and it's groups.
