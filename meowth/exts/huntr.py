@@ -457,7 +457,9 @@ class Huntr(commands.Cog):
         if not reactuser:
             reporttype = None
             report = None
+            raidhour = False
             embed = message.embeds[0] if message.embeds else None
+            utcnow = datetime.datetime.utcnow()
             now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])
             message.content = message.content.replace("!alarm","").strip()
             await utils.safe_delete(message)
@@ -470,6 +472,10 @@ class Huntr(commands.Cog):
                 if not raid_cog:
                     logger.error("Raid Cog not loaded")
                     return
+                for raidhour in self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {}):
+                    if utcnow >= self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][raidhour]['mute_time'] and self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][raidhour]['event_end'] >= utcnow:
+                        if ctx.author.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][raidhour]['bot_account'] and ctx.channel.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][raidhour]['bot_channel']:
+                            raidhour = True
                 for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
                     channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('coordinates', None)
                     channel_address = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('address', None)
@@ -516,28 +522,32 @@ class Huntr(commands.Cog):
                         auto_report = True
                     else:
                         auto_report = False
-                    if auto_report:
-                        raid_channel = await self.huntr_raid(ctx, report_details)
-                        if embed and raid_channel:
-                            await raid_channel.send(embed=embed)
-                        return
-                    else:
-                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pokemon)
-                        if not pokemon:
+                    if not raidhour:
+                        if auto_report:
+                            raid_channel = await self.huntr_raid(ctx, report_details)
+                            if embed and raid_channel:
+                                await raid_channel.send(embed=embed)
                             return
-                        if pokemon.form == "alolan":
-                            raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
-                        elif pokemon.form == "galarian":
-                            raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-galarian")
                         else:
-                            raid = discord.utils.get(message.guild.roles, name=str(pokemon).replace(' ', '-').lower())
-                        if raid == None:
-                            roletest = ""
-                        else:
-                            roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-                        raidmsg = f"{roletest}Meowth! {str(pokemon)} raid reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!"
-                        ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
-                        dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {str(pokemon)} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
+                            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pokemon)
+                            if not pokemon:
+                                return
+                            if pokemon.form == "alolan":
+                                raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
+                            elif pokemon.form == "galarian":
+                                raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-galarian")
+                            else:
+                                raid = discord.utils.get(message.guild.roles, name=str(pokemon).replace(' ', '-').lower())
+                            if raid == None:
+                                roletest = ""
+                            else:
+                                roletest = _("{pokemon} - ").format(pokemon=raid.mention)
+                            raidmsg = f"{roletest}Meowth! {str(pokemon)} raid reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!"
+                            ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
+                            dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! {str(pokemon)} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
+                    else:
+                        raidmsg = ""
+                        ctx.raidreport = ctx.message
                 elif report_details.get('type', None) == "egg":
                     if not self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('reports', {}).get('egg'):
                         return
@@ -553,15 +563,19 @@ class Huntr(commands.Cog):
                     egg_level = str(egg_level)
                     timeout = int(report_details.get('raidexp', 45))*60
                     expiremsg = ('This level {level} raid egg has hatched!').format(level=egg_level)
-                    if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('egglvls', False):
-                        raid_channel = await self.huntr_raidegg(ctx, report_details)
-                        if embed and raid_channel:
-                            await raid_channel.send(embed=embed)
-                        return
+                    if not raidhour:
+                        if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('egglvls', False):
+                            raid_channel = await self.huntr_raidegg(ctx, report_details)
+                            if embed and raid_channel:
+                                await raid_channel.send(embed=embed)
+                            return
+                        else:
+                            raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!"
+                            ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
+                            dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! Level {egg_level} raid egg reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                     else:
-                        raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!"
-                        ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
-                        dm_dict = await raid_cog.send_dm_messages(ctx, raid_details, f"Meowth! Level {egg_level} raid egg reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
+                        raidmsg = ""
+                        ctx.raidreport = ctx.message
                 self.bot.guild_dict[message.guild.id]['pokealarm_dict'][ctx.raidreport.id] = {
                     "exp":time.time() + timeout,
                     'expedit': {"content":raidmsg.split("React")[0], "embedcontent":expiremsg},
@@ -580,6 +594,8 @@ class Huntr(commands.Cog):
                     "embed":embed,
                     "dm_dict":dm_dict
                 }
+                if raidhour:
+                    return
                 await asyncio.sleep(0.25)
                 for reaction in react_list:
                     await utils.safe_reaction(ctx.raidreport, reaction)
@@ -1371,23 +1387,8 @@ class Huntr(commands.Cog):
                     else:
                         wait_time.append((event_dict['channel_time'] - now).total_seconds())
                 if bot_account:
-                    ow = bot_channel.overwrites_for(bot_account)
-                    if now >= event_dict['mute_time'] and bot_channel.permissions_for(bot_account).read_messages:
-                        ow.send_messages = False
-                        ow.read_messages = False
-                        try:
-                            await bot_channel.set_permissions(bot_account, overwrite=ow)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            pass
-                    else:
+                    if now < event_dict['mute_time']:
                         wait_time.append((event_dict['mute_time'] - now).total_seconds())
-                    if now >= event_dict['event_end']:
-                        ow.send_messages = True
-                        ow.read_messages = True
-                        try:
-                            await bot_channel.set_permissions(bot_account, overwrite=ow)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            pass
                 if now >= event_dict['event_end']:
                     try:
                         user_message = await report_channel.fetch_message(event_dict['user_message'])
@@ -1584,7 +1585,7 @@ class Huntr(commands.Cog):
                             continue
                 if event_dict.get('make_trains') == None:
                     raid_embed.clear_fields()
-                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, would you like some channels to go with this event for coordination? I'll help you make some channels automatically three hours before the scheduled event. Reply with **train** and I'll make train channels, usable for raids. Reply with **meetup** and I'll make meetup channels for other events. Reply with **none** to skip making channels. You can reply with **cancel** to stop anytime.", inline=False)
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Now, would you like some channels to go with this event for coordination? I'll help you make some channels automatically three hours before the scheduled event.\nReply with **train** and I'll make train channels, usable for raids.\nReply with **meetup** and I'll make meetup channels for other events.\nReply with **none** to skip making channels.\nYou can reply with **cancel** to stop anytime.", inline=False)
                     make_trains_wait = await channel.send(embed=raid_embed)
                     try:
                         make_trains_msg = await self.bot.wait_for('message', timeout=60, check=check)

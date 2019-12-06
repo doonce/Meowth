@@ -3073,6 +3073,7 @@ class Raid(commands.Cog):
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['exp'] = time.time() + to_raidend
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['end'] = datetime.datetime.fromtimestamp(time.time() + to_raidend)
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['history'] = [train_location]
+            raid_found = False
             for channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
                 channel_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['address']
                 channel_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['egg_level']
@@ -3091,9 +3092,18 @@ class Raid(commands.Cog):
                         if timer_set:
                             raid_timer = await self.print_raid_timer(raid_channel)
                         await train_channel.send(f"Meowth! I found this raid at {train_location}! {raid_timer}", embed=raid_embed)
+                        raid_found = True
                     except:
                         pass
                     break
+            if not raid_found:
+                for report in self.bot.guild_dict[ctx.guild.id]['pokealarm_dict']:
+                    report_address = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['gym']
+                    report_level = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['level']
+                    report_type = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['reporttype']
+                    if report_address.lower() == train_location.lower() and report_level != "EX" and report_type != "exraid":
+                        raid_embed = await self.make_raid_embed(ctx, self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report], self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['raidexp'])
+                        await train_channel.send(f"Meowth! I found this raid at {train_location}!", embed=raid_embed)
             return train_channel
 
     @train.command(name="title")
@@ -3157,6 +3167,7 @@ class Raid(commands.Cog):
         train_location = str(channel_or_gym)
         await ctx.invoke(self.bot.get_command("location new"), content=train_location)
         self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup'].setdefault('history', []).append(train_location)
+        raid_found = False
         for channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
             channel_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['address']
             channel_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['egg_level']
@@ -3175,8 +3186,17 @@ class Raid(commands.Cog):
                     if timer_set:
                         raid_timer = await self.print_raid_timer(raid_channel)
                     await ctx.send(f"Meowth! I found this raid at {train_location}! {raid_timer}", embed=raid_embed)
+                    raid_found = True
                 except:
                     pass
+        if not raid_found:
+            for report in self.bot.guild_dict[ctx.guild.id]['pokealarm_dict']:
+                report_address = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['gym']
+                report_level = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['level']
+                report_type = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['reporttype']
+                if report_address.lower() == train_location.lower() and report_level != "EX" and report_type != "exraid":
+                    raid_embed = await self.make_raid_embed(ctx, self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report], self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['raidexp'])
+                    await ctx.send(f"Meowth! I found this raid at {train_location}!", embed=raid_embed)
 
     @train.command(name="manager")
     @checks.trainchannel()
@@ -3306,9 +3326,9 @@ class Raid(commands.Cog):
             timerstr += _("No one told me when the {raidtype} will {raidaction}, so I'm assuming it will {raidaction} at {expiry_time}!").format(raidtype=raidtype, raidaction=raidaction, expiry_time=end.strftime(_('%I:%M %p (%H:%M)')))
         return timerstr
 
-    @commands.command()
+    @commands.command(aliases=['timer'])
     @checks.raidchannel()
-    async def timerset(self, ctx, *, timer):
+    async def timerset(self, ctx, *, timer=None):
         """Set the remaining duration on a raid.
 
         Usage: !timerset <minutes>
@@ -3318,8 +3338,51 @@ class Raid(commands.Cog):
         channel = message.channel
         guild = message.guild
         hourminute = False
+        error = False
         report_dict = await utils.get_report_dict(self.bot, channel)
         type = self.bot.guild_dict[guild.id][report_dict][channel.id]['type']
+        timerset_embed = discord.Embed(colour=channel.guild.me.colour).set_author(name="Channel Timer")
+        timerset_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_speedometer.png?cache=1")
+        if ctx.invoked_with == "timer":
+            timerstr = await self.print_raid_timer(ctx.channel)
+            if checks.check_exraidchannel(ctx) or checks.check_meetupreport(ctx) or checks.check_trainchannel(ctx):
+                timerset_embed.description = f"Meowth! {timerstr}\n\nTo change the timer, use **{ctx.prefix}timerset [date and time]**"
+            else:
+                timerset_embed.description = f"Meowth! {timerstr}\n\nTo change the timer, use **{ctx.prefix}timerset [minutes remaining]**"
+            return await ctx.channel.send(embed=timerset_embed)
+        if not timer:
+            while True:
+                async with ctx.typing():
+                    if checks.check_exraidchannel(ctx) or checks.check_meetupreport(ctx) or checks.check_trainchannel(ctx):
+                        timerset_embed.description = f"Meowth! I'll help you set the timer for the current channel. Reply with the **date and time** that the {type} {'hatches' if type == 'egg' else 'ends'}."
+                    else:
+                        timerset_embed.description = f"Meowth! I'll help you set the timer for the current channel. Reply with the **minutes remaining** before the {type} {'hatches' if type == 'egg' else 'ends'}."
+                    time_wait = await channel.send(embed=timerset_embed)
+                    def check(reply):
+                        if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                            return True
+                        else:
+                            return False
+                    try:
+                        time_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        time_msg = None
+                    await utils.safe_delete(time_wait)
+                    if not time_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(time_msg)
+                    if time_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    else:
+                        timer = time_msg.clean_content
+                    break
+            if error:
+                timerset_embed.clear_fields()
+                timerset_embed.add_field(name=_('**Timerset Cancelled**'), value=_("Meowth! Your report has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+                return await channel.send(embed=timerset_embed, delete_after=10)
         if (not checks.check_exraidchannel(ctx)) and not (checks.check_meetupchannel(ctx)) and (not checks.check_trainchannel(ctx)):
             if type == 'egg':
                 raidlevel = self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level']
@@ -3470,17 +3533,6 @@ class Raid(commands.Cog):
             pass
         raidchannel = self.bot.get_channel(raidchannel.id)
         self.bot.loop.create_task(self.expiry_check(raidchannel))
-
-    @commands.command()
-    @checks.rsvpchannel()
-    async def timer(self, ctx):
-        """Have Meowth resend the expire time message for a raid.
-
-        Usage: !timer
-        The expiry time should have been previously set with !timerset."""
-        timerstr = _('Meowth!')
-        timerstr += await self.print_raid_timer(ctx.channel)
-        await ctx.channel.send(timerstr)
 
     @commands.command()
     @checks.raidchannel()
@@ -3700,7 +3752,7 @@ class Raid(commands.Cog):
             newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
             newembed.set_thumbnail(url=oldembed.thumbnail.url)
             newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
-            locationmsg = await channel.send(f"Meowth! Here's the current location for the {'meetup' if meetup else 'raid'}!\nDetails: {location}", embed=newembed, delete_after=60)
+            locationmsg = await channel.send(f"Meowth! Here's the current location for the {'meetup' if meetup else 'raid'}! You can modify using **{ctx.prefix}location new**\nDetails: {location}", embed=newembed, delete_after=60)
 
     @location.command()
     @checks.rsvpchannel()
@@ -4794,6 +4846,11 @@ class Raid(commands.Cog):
         await self._rsvp(ctx, "lobby", party_info)
 
     async def _rsvp(self, ctx, rsvp_type, party_info):
+        if not ctx.prefix:
+            prefix = self.bot._get_prefix(self.bot, ctx.message)
+            ctx.prefix = prefix[-1]
+        if not ctx.invoked_with:
+            ctx.invoked_with = self.bot.get_command(rsvp_type)
         message = ctx.message
         channel = message.channel
         author = message.author
@@ -4869,6 +4926,8 @@ class Raid(commands.Cog):
         if not isinstance(result, list):
             return
         trainer_dict = self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict'].get(author.id, {})
+        if trainer_dict and trainer_dict['status'].get(rsvp_type, None) and result[1] == trainer_dict['party'] and not trainer_dict['status'].get('lobby'):
+            await ctx.send(f"{ctx.author.mention}, your status is already set to **{rsvp_type}**. If you're trying to add more trainers use **{ctx.prefix}{ctx.invoked_with} [total count] [team counts]** like `{ctx.prefix}{ctx.invoked_with} 3 1m 2v`.", delete_after=60)
         count = result[0]
         party = result[1]
         blue_count = 0

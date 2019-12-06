@@ -377,7 +377,7 @@ class GymMatching(commands.Cog):
             await utils.safe_delete(message)
         else:
             poi_embed.clear_fields()
-            poi_embed.add_field(name=_('**POI Edit Completed**'), value=f"Meowth! Your edit completed successfully. {poi_name.title()} has been {poi_action}ed to {poi_target}s.", inline=False)
+            poi_embed.add_field(name=_('**POI Edit Completed**'), value=f"Meowth! Your edit completed successfully. {poi_name.title()} has been {'added' if poi_action == 'add' else 'removed'} {'to' if poi_action == 'add' else 'from'} {poi_target}s.", inline=False)
             confirmation = await channel.send(embed=poi_embed)
             await utils.safe_delete(message)
             self.gym_data = self.init_json()
