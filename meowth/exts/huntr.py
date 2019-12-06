@@ -472,9 +472,9 @@ class Huntr(commands.Cog):
                 if not raid_cog:
                     logger.error("Raid Cog not loaded")
                     return
-                for raidhour in self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {}):
-                    if utcnow >= self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][raidhour]['mute_time'] and self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][raidhour]['event_end'] >= utcnow:
-                        if ctx.author.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][raidhour]['bot_account'] and ctx.channel.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][raidhour]['bot_channel']:
+                for event in self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {}):
+                    if utcnow >= self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['mute_time'] and self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['event_end'] >= utcnow:
+                        if ctx.author.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['bot_account'] and ctx.channel.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['bot_channel']:
                             raidhour = True
                 for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
                     channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('coordinates', None)
