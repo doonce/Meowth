@@ -561,7 +561,7 @@ class Research(commands.Cog):
             if send_research:
                 try:
                     user = ctx.guild.get_member(trainer)
-                    resdmmsg = await user.send(f"Meowth! {pokemon.name.title() + ' ' if pokemon else ''} Field Research reported by {ctx.author.display_name} in {ctx.channel.mention}! Details: {location}", embed=embed)
+                    resdmmsg = await user.send(f"Meowth! {pokemon.name.title() + ' ' if pokemon else ''}Field Research reported by {ctx.author.display_name} in {ctx.channel.mention}! Details: {location}", embed=embed)
                     dm_dict[user.id] = resdmmsg.id
                 except:
                     continue

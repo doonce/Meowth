@@ -2000,7 +2000,7 @@ class Raid(commands.Cog):
         elif pokemon_level != egg_level:
             await utils.safe_delete(ctx.message)
             return await ctx.send(f"Meowth! The Pokemon **{pokemon.name.title()}** appears in level {pokemon_level} raid eggs, not in level {egg_level} raid eggs!", delete_after=10)
-        if sum(pokemon.name.title() in s for s in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon']) > 1:
+        if sum(pokemon.name.title() in s for s in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon']) > 1 and not pokemon.form:
             form_list = [x for x in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon'] if pokemon.name.title() in x]
             form_list = [x.replace(pokemon.name.title(), '').strip() for x in form_list]
             await utils.safe_delete(ctx.message)

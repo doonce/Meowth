@@ -20,44 +20,78 @@ class Trainers(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(aliases=["mystic", "valor", "instinct", "harmony"])
     @checks.allowteam()
-    async def team(self, ctx, *, team):
+    async def team(self, ctx, *, team=None):
         """Set your team role.
 
-        Usage: !team <team name>
+        Usage: !team [team name]
         This command can be used only once. Moderators will have to manually change teams."""
         guild = ctx.guild
-        toprole = guild.me.top_role.name
-        position = guild.me.top_role.position
-        guild_roles = self.bot.guild_dict[guild.id]['configure_dict']['team']['team_roles']
-        team_roles = {k: discord.utils.get(ctx.guild.roles, id=v) for (k, v) in guild_roles.items()}
-        high_roles = []
-        team_colors = [discord.Colour.blue(), discord.Colour.red(), discord.Colour.gold(), discord.Colour.default()]
-        team = team.replace('red', 'valor').replace('blue', 'mystic').replace('yellow', 'instinct')
-        team_msg = _(' or ').join(['**!team {0}**'.format(team) for team in guild_roles.keys()])
-        index = 0
-        for teamrole in copy.deepcopy(guild_roles).keys():
-            role = team_roles.get(teamrole, None)
-            if not role:
-                rolename = f"Meowth{teamrole.capitalize()}"
+        team_assigned = ""
+        error = False
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))
+        guild_roles = self.bot.guild_dict[guild.id]['configure_dict']['team'].setdefault('team_roles', {"mystic":None, "valor":None, "instinct":None, "harmony":None})
+        team_colors = {"mystic":discord.Colour.blue(), "valor":discord.Colour.red(), "instinct":discord.Colour.gold(), "harmony":discord.Colour.default()}
+        if not guild_roles or guild_roles == {}:
+            guild_roles = {"mystic":None, "valor":None, "instinct":None, "harmony":None}
+        for team_name in guild_roles:
+            if not guild_roles[team_name]:
                 try:
-                    role = await guild.create_role(name=rolename, hoist=False, mentionable=True, colour=team_colors[index])
+                    team_role = await guild.create_role(name=f"Meowth{team_name.capitalize()}", hoist=False, mentionable=True, colour=team_colors[team_name])
+                    guild_roles[team_name] = team_role.id
                 except discord.errors.HTTPException:
-                    await ctx.message.channel.send(_('Maximum guild roles reached.'), delete_after=10)
-                    return
+                    return await ctx.channel.send(_('Maximum guild roles reached. Contact an admin.'), delete_after=10)
                 except (discord.errors.Forbidden, discord.errors.InvalidArgument):
-                    await ctx.message.channel.send(_('I can\'t create roles!.'), delete_after=10)
-                    return
-                self.bot.guild_dict[guild.id]['configure_dict']['team']['team_roles'][teamrole] = role.id
-                team_roles[teamrole] = role
-            if role.position > position:
-                high_roles.append(role.name)
-            index += 1
-        if high_roles:
-            await ctx.channel.send(_('Meowth! My roles are ranked lower than the following team roles: **{higher_roles_list}**\nPlease get an admin to move my roles above them!').format(higher_roles_list=', '.join(high_roles)), delete_after=10)
-            return
+                    return await ctx.channel.send(_('I can\'t create roles!. Contact an admin.'), delete_after=10)
+        team_roles = {k: ctx.guild.get_role(v) for (k, v) in guild_roles.items()}
+        for team_name, role in team_roles.items():
+            if role in ctx.author.roles:
+                team_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict[team_name])
+                team_assigned = f"{team_name.title()} {team_emoji}"
+            if role.position > guild.me.top_role.position:
+                return await ctx.channel.send(f"Meowth! My role is ranked lower than the team roles. Contact an admin.", delete_after=10)
         harmony = team_roles.get('harmony', None)
+        if team_assigned and harmony not in ctx.author.roles:
+            return await ctx.channel.send(f"Meowth! You are already in Team {team_assigned}! If you are trying to change your team using a Team Medallion, please contact a moderator.", delete_after=10)
+        if ctx.invoked_with == "mystic" or ctx.invoked_with == "valor" or ctx.invoked_with == "instinct" or ctx.invoked_with == "harmony":
+            team = ctx.invoked_with.lower()
+        if not team:
+            team_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/teams/harmony.png?cache=1')
+            team_embed.set_footer(text=_('Assigning @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
+            while True:
+                async with ctx.typing():
+                    def check(reply):
+                        if reply.author is not guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.author:
+                            return True
+                        else:
+                            return False
+                    team_embed.add_field(name=_('**Team Assignment**'), value=_("Meowth! I'll help you assign your team!\n\nReply with **mystic, valor, instinct, or harmony**. You can reply with **cancel** to stop anytime."), inline=False)
+                    team_wait = await ctx.send(embed=team_embed)
+                    try:
+                        team_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        team_msg = None
+                    await utils.safe_delete(team_wait)
+                    if not team_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(team_msg)
+                    if team_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif not any([team_msg.clean_content.lower() == "mystic", team_msg.clean_content.lower() == "blue", team_msg.clean_content.lower() == "valor", team_msg.clean_content.lower() == "red", team_msg.clean_content.lower() == "instinct", team_msg.clean_content.lower() == "yellow", team_msg.clean_content.lower() == "harmony"]):
+                        error = _("entered an invalid team. Choose from mystic, valor, instinct, harmony")
+                        break
+                    elif team_msg:
+                        team = team_msg.clean_content.lower()
+                        team = team.replace("blue", "mystic").replace("red", "valor").replace("yellow", "instinct")
+                break
+        if error:
+            team_embed.clear_fields()
+            team_embed.add_field(name=_('**Team Assignment Cancelled**'), value=_("Meowth! Your team assignment has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            return await ctx.send(embed=team_embed, delete_after=10)
         team_split = team.lower().split()
         entered_team = team_split[0]
         entered_team = ''.join([i for i in entered_team if i.isalpha()])
@@ -65,16 +99,11 @@ class Trainers(commands.Cog):
         if entered_team in team_roles.keys():
             role = team_roles[entered_team]
         else:
-            await ctx.channel.send(_('Meowth! "{entered_team}" isn\'t a valid team! Try {available_teams}').format(entered_team=entered_team, available_teams=team_msg), delete_after=10)
-            return
-        for team in team_roles.values():
-            if (team in ctx.author.roles) and (harmony not in ctx.author.roles):
-                await ctx.channel.send(_('Meowth! You already have a team role!'), delete_after=10)
-                return
+            return await ctx.channel.send(_('Meowth! "{entered_team}" isn\'t a valid team! Try {available_teams}').format(entered_team=entered_team, available_teams=(' or ').join([f"{ctx.prefix}team {x}" for x in guild_roles.keys()])), delete_after=10)
         if role and (role.name.lower() == 'harmony') and (harmony in ctx.author.roles):
-            await ctx.channel.send(_('Meowth! You are already in Team Harmony!'), delete_after=10)
+            return await ctx.channel.send(_('Meowth! You are already in Team Harmony!'), delete_after=10)
         elif role == None:
-            await ctx.channel.send(_('Meowth! The "{entered_team}" role isn\'t configured on this server! Contact an admin!').format(entered_team=entered_team), delete_after=10)
+            return await ctx.channel.send(_('Meowth! The "{entered_team}" role isn\'t configured on this server! Contact an admin!').format(entered_team=entered_team), delete_after=10)
         else:
             try:
                 if harmony and (harmony in ctx.author.roles):

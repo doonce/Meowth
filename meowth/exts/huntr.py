@@ -1762,10 +1762,7 @@ class Huntr(commands.Cog):
             del self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]
         except:
             pass
-        if bot_account:
-            await ctx.send(f"Raid hour canceled. You will have to manually unmute {bot_account.mention} in {bot_channel.mention} if the cancelled event has muted it already.", delete_after=15)
-        else:
-            await ctx.send(f"Raid hour canceled.", delete_after=15)
+        await ctx.send(f"Raid hour canceled.", delete_after=15)
 
 def setup(bot):
     bot.add_cog(Huntr(bot))
