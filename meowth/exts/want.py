@@ -1093,7 +1093,7 @@ class Want(commands.Cog):
         category_list = ["pokemon", "pokestop", "item", "type"]
         pokemon_options = ["wild", "research", "invasion", "nest", "trade"]
         pokestop_options = ["research", "wild", "lure", "invasion"]
-        type_options = ["wild", "research", "nest", "invasion"]
+        type_options = ["wild", "research", "nest", "invasion", "raid"]
         item_options = ["research", "lure"]
         pokemon_settings = categories.get('pokemon', {})
         if not pokemon_settings:

@@ -556,7 +556,7 @@ class Research(commands.Cog):
                 send_research = True
             if item_setting and item in user_items:
                 send_research = True
-            if type_setting and (pkmn_types[0] in user_types or pkmn_types[1] in user_types):
+            if type_setting and (pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types):
                 send_research = True
             if send_research:
                 try:

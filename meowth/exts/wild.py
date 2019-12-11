@@ -510,7 +510,7 @@ class Wild(commands.Cog):
                 send_wild = True
             if stop_setting and str(wild_details).lower() in user_stops:
                 send_wild = True
-            if type_setting and (wild_types[0] in user_types or wild_types[1] in user_types):
+            if type_setting and (wild_types[0].lower() in user_types or wild_types[1].lower() in user_types):
                 send_wild = True
             if wild_iv in user_ivs or wild_level in user_levels:
                 send_wild = True
