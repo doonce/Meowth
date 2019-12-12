@@ -526,8 +526,7 @@ class Huntr(commands.Cog):
                         if auto_report:
                             raid_channel = await self.huntr_raid(ctx, report_details)
                             if embed and raid_channel:
-                                await raid_channel.send(embed=embed)
-                            return
+                                return await raid_channel.send(embed=embed)
                         else:
                             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pokemon)
                             if not pokemon:
@@ -567,8 +566,7 @@ class Huntr(commands.Cog):
                         if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict']['scanners'].get('egglvls', False):
                             raid_channel = await self.huntr_raidegg(ctx, report_details)
                             if embed and raid_channel:
-                                await raid_channel.send(embed=embed)
-                            return
+                                return await raid_channel.send(embed=embed)
                         else:
                             raidmsg = f"Meowth! Level {egg_level} raid egg reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!"
                             ctx.raidreport = await message.channel.send(raidmsg, embed=embed)

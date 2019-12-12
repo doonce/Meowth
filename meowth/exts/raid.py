@@ -3127,9 +3127,14 @@ class Raid(commands.Cog):
                     report_address = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['gym']
                     report_level = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['level']
                     report_type = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['reporttype']
+                    raidexp = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['raidexp']
                     if report_address.lower() == train_location.lower() and report_level != "EX" and report_type != "exraid":
-                        raid_embed = await self.make_raid_embed(ctx, self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report], self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['raidexp'])
-                        await train_channel.send(f"Meowth! I found this raid at {train_location}!", embed=raid_embed)
+                        raid_embed = await self.make_raid_embed(ctx, self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report], raidexp)
+                        while len(raid_embed.fields) > 2:
+                            raid_embed.remove_field(-1)
+                        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                        raid_timer = (now + datetime.timedelta(minutes=float(raidexp))).strftime(_('%B %d at %I:%M %p (%H:%M)'))
+                        await train_channel.send(f"Meowth! I found this raid at {train_location}! {'Hatches' if report_type == 'egg' else 'Expires'}: {raid_timer}", embed=raid_embed)
             return train_channel
 
     @train.command(name="title")
@@ -3220,9 +3225,14 @@ class Raid(commands.Cog):
                 report_address = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['gym']
                 report_level = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['level']
                 report_type = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['reporttype']
+                raidexp = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['raidexp']
                 if report_address.lower() == train_location.lower() and report_level != "EX" and report_type != "exraid":
-                    raid_embed = await self.make_raid_embed(ctx, self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report], self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['raidexp'])
-                    await ctx.send(f"Meowth! I found this raid at {train_location}!", embed=raid_embed)
+                    raid_embed = await self.make_raid_embed(ctx, self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report], raidexp)
+                    while len(raid_embed.fields) > 2:
+                        raid_embed.remove_field(-1)
+                    now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    raid_timer = (now + datetime.timedelta(minutes=float(raidexp))).strftime(_('%I:%M %p (%H:%M)'))
+                    await ctx.send(f"Meowth! I found this raid at {train_location}! This {'egg will hatch' if report_type == 'egg' else 'raid will end'} at {raid_timer}", embed=raid_embed)
 
     @train.command(name="manager")
     @checks.trainchannel()

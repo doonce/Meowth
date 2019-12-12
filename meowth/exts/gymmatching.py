@@ -453,6 +453,17 @@ class GymMatching(commands.Cog):
                     index += 1
             if active_raids:
                 poi_embed.add_field(name="Current Raids", value=('\n').join(active_raids), inline=False)
+            index = 1
+            for alarm_raid in self.bot.guild_dict[ctx.guild.id].setdefault('pokealarm_dict', {}):
+                if self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('gym', "") == location:
+                    raid_type = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('reporttype')
+                    raid_level = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('egg_level')
+                    raid_pokemon = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('pkmn_obj')
+                    raid_output = f"{'Level ' + raid_level if raid_type == 'egg' else ''}{raid_pokemon if raid_type == 'raid' else ''} Raid"
+                    active_raids.append(f"{index}. {raid_output}")
+                    index += 1
+            if active_raids:
+                poi_embed.add_field(name="Unreported Raids", value=('\n').join(active_raids), inline=False)
             active_raids = []
             index = 1
             for channel in self.bot.guild_dict[ctx.guild.id].setdefault('exraidchannel_dict', {}):
