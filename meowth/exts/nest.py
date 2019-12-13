@@ -289,6 +289,7 @@ class Nest(commands.Cog):
             nest_embed.description = ""
         if "Jump to Message" not in nest_embed.description:
             nest_embed.description = nest_embed.description + f"\n**Report:** [Jump to Message]({message.jump_url})"
+        new_description = str(nest_embed.description)
         index = 0
         for dm_user, dm_message in dm_dict.items():
             try:
@@ -300,9 +301,11 @@ class Nest(commands.Cog):
                     continue
                 dm_message = await dm_channel.fetch_message(dm_message)
                 content = dm_message.content.replace(result, str(pokemon))
+                nest_embed.description = dm_message.embeds[0].description
                 await dm_message.edit(content=content, embed=nest_embed)
             except:
                 pass
+        nest_embed.description = new_description
         ctx.nestreportmsg = message
         dm_dict = await self.send_dm_messages(ctx, location, pokemon, copy.deepcopy(nest_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.channel.id][location]['reports'][message.id]['dm_dict'] = dm_dict
@@ -525,18 +528,26 @@ class Nest(commands.Cog):
                 continue
             if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
                 continue
-            send_nest = False
-            if pokemon_setting and pokemon and (pokemon.id in user_wants or str(pokemon) in user_forms):
-                send_nest = True
-            if type_setting and (nest_types[0].lower() in user_types or nest_types[1].lower() in user_types):
-                send_nest = True
+            send_nest = []
+            if pokemon_setting and pokemon and pokemon.id in user_wants:
+                send_nest.append(f"Pokemon: {pokemon.name.title()}")
+            if pokemon_setting and pokemon and str(pokemon) in user_forms:
+                send_nest.append(f"Pokemon Form: {str(pokemon)}")
+            if type_setting and nest_types[0].lower() in user_types:
+                type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[nest_types[0].lower()])
+                send_nest.append(f"Type: {type_emoji}")
+            if type_setting and nest_types[1].lower() in user_types:
+                type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[nest_types[1].lower()])
+                send_nest.append(f"Type: {type_emoji}")
             if send_nest:
+                embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_nest)}"
                 try:
                     user = ctx.guild.get_member(trainer)
                     nestdmmsg = await user.send(f"Meowth! {str(pokemon)} nest reported by {ctx.author.display_name} in {ctx.channel.mention}! Details: {nest_name.title()}", embed=embed)
                     dm_dict[user.id] = nestdmmsg.id
                 except:
-                    continue
+                    pass
+                embed.description = embed.description.replace(f"\n**Subscription:** {(', ').join(send_nest)}", "")
         return dm_dict
 
     @nest.command()

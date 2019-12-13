@@ -788,6 +788,7 @@ class Listing(commands.Cog):
         user_items = [x.title() for x in user_items]
         user_types = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
         user_types = [x.title() for x in user_types]
+        user_eggs = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('raid_eggs', [])
         user_ivs = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
         user_ivs = sorted(user_ivs)
         user_ivs = [str(x) for x in user_ivs]
@@ -812,7 +813,7 @@ class Listing(commands.Cog):
         if not type_settings:
             type_settings = {k:True for k in type_options}
         wantmsg = ""
-        if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels) or len(user_forms) > 0:
+        if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels) or len(user_forms) > 0 or len(user_eggs) > 0:
             if wantlist:
                 wantmsg += _('**Pokemon:** ({cat_options}{raid_link})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids, trades" if user_link else "", cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
             if user_forms:
@@ -835,6 +836,8 @@ class Listing(commands.Cog):
                 wantmsg += _('**IVs:** (wilds)\n{user_ivs}\n\n').format(user_ivs='\n'.join(textwrap.wrap(', '.join(user_ivs), width=80)))
             if user_levels:
                 wantmsg += _('**Levels:** (wilds)\n{user_levels}\n\n').format(user_levels='\n'.join(textwrap.wrap(', '.join(user_levels), width=80)))
+            if user_eggs:
+                wantmsg += _('**Raid Eggs:** (raids)\n{user_levels}\n\n').format(user_levels='\n'.join(textwrap.wrap(', '.join(user_eggs), width=80)))
         if wantmsg:
             if user_mute and mute_mentions:
                 listmsg = _('Meowth! {author}, your notifications and @mentions are muted, so you will not receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
@@ -890,6 +893,7 @@ class Listing(commands.Cog):
         type_list = []
         iv_list = []
         level_list = []
+        raidegg_list = []
         for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('wants', []):
                 if want not in want_list:
@@ -927,6 +931,9 @@ class Listing(commands.Cog):
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('levels', []):
                 if want not in level_list:
                     level_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('raid_eggs', []):
+                if want not in raidegg_list:
+                    raidegg_list.append(want)
         want_list = sorted(want_list)
         want_list = [utils.get_name(self.bot, x).title() for x in want_list]
         stop_list = [x.title() for x in stop_list]
@@ -939,11 +946,13 @@ class Listing(commands.Cog):
         iv_list = [str(x) for x in iv_list]
         level_list = sorted(level_list)
         level_list = [str(x) for x in level_list]
+        raidegg_list = sorted([int(x) for x in raidegg_list])
+        raidegg_list = [str(x) for x in raidegg_list]
         wantmsg = ""
         if len(want_list) > 0 or len(gym_list) > 0 or len(stop_list) > 0 or len(item_list) > 0 or len(boss_list) > 0 or len(type_list) > 0 or len(iv_list) > 0 or len(level_list):
             if want_list:
                 wantmsg += _('**Pokemon:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(want_list), width=80)))
-            if want_list:
+            if form_list:
                 wantmsg += _('**Pokemon Forms:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(form_list), width=80)))
             if boss_list:
                 wantmsg += _('**Bosses:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(boss_list), width=80)))
@@ -963,6 +972,8 @@ class Listing(commands.Cog):
                 wantmsg += _('**IVs:**\n{user_ivs}\n\n').format(user_ivs='\n'.join(textwrap.wrap(', '.join(iv_list), width=80)))
             if level_list:
                 wantmsg += _('**Levels:**\n{user_levels}\n\n').format(user_levels='\n'.join(textwrap.wrap(', '.join(level_list), width=80)))
+            if raidegg_list:
+                wantmsg += _('**Raid Eggs:**\n{user_levels}\n\n').format(user_levels='\n'.join(textwrap.wrap(', '.join(raidegg_list), width=80)))
         if wantmsg:
             listmsg = _('**Meowth!** The server **!want** list is:')
             paginator = commands.Paginator(prefix="", suffix="")

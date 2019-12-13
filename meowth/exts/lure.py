@@ -247,6 +247,7 @@ class Lure(commands.Cog):
             lure_embed.description = ""
         if "Jump to Message" not in lure_embed.description:
             lure_embed.description = lure_embed.description + f"\n**Report:** [Jump to Message]({message.jump_url})"
+        new_description = str(lure_embed.description)
         index = 0
         for dm_user, dm_message in dm_dict.items():
             try:
@@ -258,9 +259,11 @@ class Lure(commands.Cog):
                     continue
                 dm_message = await dm_channel.fetch_message(dm_message)
                 content = dm_message.content
+                lure_embed.description = dm_message.embeds[0].description
                 await dm_message.edit(content=content, embed=lure_embed)
             except:
                 pass
+        lure_embed.description = new_description
         ctx.lurereportmsg = message
         dm_dict = await self.send_dm_messages(ctx, location, item, content, copy.deepcopy(lure_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['lure_dict'][message.id]['dm_dict'] = dm_dict
@@ -457,23 +460,24 @@ class Lure(commands.Cog):
             stop_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokestop', {}).get('lure', True)
             user_items = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('items', [])
             item_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('item', {}).get('lure', True)
-
             if not any([user_stops, stop_setting, user_items, item_setting]):
                 continue
             if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
                 continue
-            send_lure = False
+            send_lure = []
             if stop_setting and location.lower() in user_stops:
-                send_lure = True
+                send_lure.append(f"Pokestop: {location.title()}")
             if item_setting and item in user_items:
-                send_lure = True
+                send_lure.append(f"Item: {item.title()}")
             if send_lure:
+                embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_lure)}"
                 try:
                     user = ctx.guild.get_member(trainer)
                     luredmmsg = await user.send(content, embed=embed)
                     dm_dict[user.id] = luredmmsg.id
                 except:
-                    continue
+                    pass
+                embed.description = embed.description.replace(f"\n**Subscription:** {(', ').join(send_lure)}", "")
         return dm_dict
 
     @lure.command(aliases=['expire'])

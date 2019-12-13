@@ -798,19 +798,23 @@ class Raid(commands.Cog):
     async def before_reset_roles(self):
         await self.bot.wait_until_ready()
 
-    async def send_dm_messages(self, ctx, raid_pkmn, raid_details, content, embed, dm_dict):
+    async def send_dm_messages(self, ctx, pokemon_or_level, raid_details, content, embed, dm_dict):
         if embed:
             if isinstance(embed.description, discord.embeds._EmptyEmbed):
                 embed.description = ""
-            embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
+            if "Jump to Message" not in embed.description:
+                embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
         content = content.splitlines()[0]
+        egg_level = None
         index = 0
         for field in embed.fields:
             if "list" in field.name.lower():
                 embed.remove_field(index)
             else:
                 index += 1
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, raid_pkmn)
+        if pokemon_or_level.isdigit() or pokemon_or_level.upper() == "EX":
+            egg_level = pokemon_or_level.upper()
+        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon_or_level)
         raid_types = ['None']
         if pokemon:
             raid_types = pokemon.types.copy()
@@ -831,30 +835,44 @@ class Raid(commands.Cog):
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
             type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('raid', True)
             user_gyms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', [])
+            user_eggs = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('raid_eggs', [])
             if not any([user_wants, user_forms, pokemon_setting, user_types, type_setting, user_gyms]):
                 continue
             if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
                 continue
-            send_raid = False
-            # if pokemon_setting and pokemon and (pokemon.id in user_wants or str(pokemon) in user_forms):
-            #     send_raid = True
-            # if type_setting and (raid_types[0].lower() in user_types or raid_types[1].lower() in user_types):
-            #     send_raid = True
+            send_raid = []
+            # if pokemon_setting and pokemon and pokemon.id in user_wants:
+            #     send_raid.append(f"Pokemon: {pokemon.name.title()}")
+            # if pokemon_setting and pokemon and str(pokemon) in user_forms:
+            #     send_raid.append(f"Pokemon Form: {str(pokemon)}")
+            # if type_setting and raid_types[0].lower() in user_types:
+            #     type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[raid_types[0].lower()])
+            #     send_raid.append(f"Type: {type_emoji}")
+            # if type_setting and raid_types[1].lower() in user_types:
+            #     type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[raid_types[1].lower()])
+            #     send_raid.append(f"Type: {type_emoji}")
+            if egg_level and egg_level in user_eggs:
+                send_raid.append(f"Raid Egg: {egg_level}")
             if raid_details.lower() in user_gyms:
-                send_raid = True
+                send_raid.append(f"Gym: {raid_details.title()}")
             if send_raid:
+                embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_raid)}"
                 try:
                     user = ctx.guild.get_member(trainer)
                     raiddmmsg = await user.send(content=content, embed=embed)
                     dm_dict[user.id] = raiddmmsg.id
                 except discord.errors.Forbidden:
-                    continue
+                    pass
+                embed.description = embed.description.replace(f"\n**Subscription:** {(', ').join(send_raid)}", "")
         return dm_dict
 
     async def edit_dm_messages(self, ctx, content, embed, dm_dict):
+        report_dict = await utils.get_report_dict(self.bot, ctx.raid_channel)
         if isinstance(embed.description, discord.embeds._EmptyEmbed):
             embed.description = ""
-        embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
+        if "Jump to Message" not in embed.description:
+            embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
+        new_description = str(embed.description)
         for dm_user, dm_message in dm_dict.items():
             try:
                 dm_user = self.bot.get_user(dm_user)
@@ -864,9 +882,17 @@ class Raid(commands.Cog):
                 if not dm_user or not dm_channel:
                     continue
                 dm_message = await dm_channel.fetch_message(dm_message)
+                embed.description = dm_message.embeds[0].description
                 await dm_message.edit(content=content.splitlines()[0], embed=embed)
             except:
                 pass
+        embed.description = new_description
+        pokemon_or_level = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id].get('pkmn_obj')
+        if not pokemon_or_level:
+            pokemon_or_level = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id].get('egg_level')
+        raid_details = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id].get('address')
+        dm_dict = await self.send_dm_messages(ctx, str(pokemon_or_level), raid_details, ctx.raidreport.content.splitlines()[0].replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(embed), dm_dict)
+        self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id]['dm_dict'] = dm_dict
 
     async def create_raid_channel(self, ctx, entered_raid, raid_details, type):
         message = ctx.message
@@ -1837,8 +1863,6 @@ class Raid(commands.Cog):
                 raid_embed.remove_field(index)
             else:
                 index += 1
-        dm_dict = await self.send_dm_messages(ctx, str(pokemon), raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
-        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
             await asyncio.sleep(0.25)
@@ -1847,6 +1871,8 @@ class Raid(commands.Cog):
             await utils.safe_reaction(ctx.raidreport, reaction)
         await utils.safe_reaction(ctx.raidreport, report_emoji)
         await utils.safe_reaction(ctx.raidreport, list_emoji)
+        dm_dict = await self.send_dm_messages(ctx, str(pokemon), raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
+        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         return raid_channel
 
     async def _raidegg(self, ctx, content):
@@ -1981,15 +2007,6 @@ class Raid(commands.Cog):
         if not ctx.author.bot:
             egg_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('egg', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['egg'] = egg_reports
-        dm_dict = {}
-        dm_dict = await self.send_dm_messages(ctx, None, raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
-        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
-        if len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
-            await self._eggassume(ctx, str(pokemon), raid_channel)
-        elif egg_level == "5" and self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings'].get('regional', None) in self.bot.raid_list:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
-            await self._eggassume(ctx, str(pokemon), raid_channel)
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
             await asyncio.sleep(0.25)
@@ -1998,6 +2015,15 @@ class Raid(commands.Cog):
             await utils.safe_reaction(ctx.raidreport, reaction)
         await utils.safe_reaction(ctx.raidreport, report_emoji)
         await utils.safe_reaction(ctx.raidreport, list_emoji)
+        dm_dict = {}
+        dm_dict = await self.send_dm_messages(ctx, str(egg_level), raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
+        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
+        if len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
+            await self._eggassume(ctx, str(pokemon), raid_channel)
+        elif egg_level == "5" and self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings'].get('regional', None) in self.bot.raid_list:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
+            await self._eggassume(ctx, str(pokemon), raid_channel)
         return raid_channel
 
     @raid.command(name='hatch')
@@ -2062,7 +2088,6 @@ class Raid(commands.Cog):
         raid_message = await raid_channel.fetch_message(eggdetails['raid_message'])
         coordinates = eggdetails.get('coordinates', False)
         boss_list = []
-
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, args)
         matched_boss = False
         for boss in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon']:
@@ -2114,6 +2139,7 @@ class Raid(commands.Cog):
         raid_embed.set_thumbnail(url=oldembed.thumbnail.url)
         raid_embed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
         ctx.raidreport = egg_report
+        ctx.raid_channel = raid_channel
         if ctx.raidreport:
             self.bot.loop.create_task(self.edit_dm_messages(ctx, egg_report.content, copy.deepcopy(raid_embed), dm_dict))
         try:
@@ -2265,6 +2291,7 @@ class Raid(commands.Cog):
         hatch_msg = await raid_channel.send(content=_("{roletest}Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!").format(roletest=roletest, trainer_list=', '.join(trainer_list), pokemon=str(pokemon)))
         ctx = await self.bot.get_context(hatch_msg)
         ctx.raidreport = egg_report
+        ctx.raid_channel = raid_channel
         if ctx.raidreport:
             self.bot.loop.create_task(self.edit_dm_messages(ctx, raidreportcontent, copy.deepcopy(raid_embed), eggdetails.get('dm_dict', {})))
         try:
@@ -2516,9 +2543,6 @@ class Raid(commands.Cog):
             'egg_level':'EX',
             'coordinates':raid_coordinates
         }
-        if len(self.bot.raid_info['raid_eggs']['EX']['pokemon']) == 1:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs']['EX']['pokemon'][0])
-            await self._eggassume(ctx, str(pokemon), raid_channel)
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
         ow = raid_channel.overwrites_for(ctx.author)
         ow.send_messages = True
@@ -2539,6 +2563,12 @@ class Raid(commands.Cog):
             await utils.safe_reaction(ctx.raidreport, reaction)
         await utils.safe_reaction(ctx.raidreport, report_emoji)
         await utils.safe_reaction(ctx.raidreport, list_emoji)
+        dm_dict = {}
+        dm_dict = await self.send_dm_messages(ctx, "EX", raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
+        self.bot.guild_dict[ctx.guild.id]['exraidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
+        if len(self.bot.raid_info['raid_eggs']['EX']['pokemon']) == 1:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs']['EX']['pokemon'][0])
+            await self._eggassume(ctx, str(pokemon), raid_channel)
         return raid_channel
 
     @exraid.command(name='assume', hidden=True)

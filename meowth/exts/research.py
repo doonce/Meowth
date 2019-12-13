@@ -294,6 +294,7 @@ class Research(commands.Cog):
             research_embed.description = ""
         if "Jump to Message" not in research_embed.description:
             research_embed.description = research_embed.description + f"\n**Report:** [Jump to Message]({message.jump_url})"
+        new_description = str(research_embed.description)
         index = 0
         for field in research_embed.fields:
             if "reaction" in field.name.lower():
@@ -310,9 +311,11 @@ class Research(commands.Cog):
                     continue
                 dm_message = await dm_channel.fetch_message(dm_message)
                 content = f"Meowth! {pokemon.name.title() + ' ' if pokemon else ''}Field Research reported by {ctx.author.display_name} in {ctx.channel.mention}! Details: {location}"
+                research_embed.description = dm_message.embeds[0].description
                 await dm_message.edit(content=content, embed=research_embed)
             except:
                 pass
+        research_embed.description = new_description
         ctx.researchreportmsg = message
         dm_dict = await self.send_dm_messages(ctx, pokemon, location, item, copy.deepcopy(research_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][message.id]['dm_dict'] = dm_dict
@@ -549,22 +552,30 @@ class Research(commands.Cog):
                 continue
             if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
                 continue
-            send_research = False
-            if pokemon_setting and pokemon and (pokemon.id in user_wants or str(pokemon) in user_forms):
-                send_research = True
+            send_research = []
+            if pokemon_setting and pokemon and pokemon.id in user_wants:
+                send_research.append(f"Pokemon: {pokemon.name.title()}")
+            if pokemon_setting and pokemon and str(pokemon) in user_forms:
+                send_research.append(f"Pokemon Form: {str(pokemon)}")
             if stop_setting and location.lower() in user_stops:
-                send_research = True
+                send_research.append(f"Pokestop: {location.title()}")
             if item_setting and item in user_items:
-                send_research = True
-            if type_setting and (pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types):
-                send_research = True
+                send_research.append(f"Item: {item.title()}")
+            if type_setting and pkmn_types[0].lower() in user_types:
+                type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[pkmn_types[0].lower()])
+                send_research.append(f"Type: {type_emoji}")
+            if type_setting and pkmn_types[1].lower() in user_types:
+                type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[pkmn_types[1].lower()])
+                send_research.append(f"Type: {type_emoji}")
             if send_research:
+                embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_research)}"
                 try:
                     user = ctx.guild.get_member(trainer)
                     resdmmsg = await user.send(f"Meowth! {pokemon.name.title() + ' ' if pokemon else ''}Field Research reported by {ctx.author.display_name} in {ctx.channel.mention}! Details: {location}", embed=embed)
                     dm_dict[user.id] = resdmmsg.id
                 except:
-                    continue
+                    pass
+                embed.description = embed.description.replace(f"\n**Subscription:** {(', ').join(send_research)}", "")
         return dm_dict
 
     @research.command(aliases=['expire'])

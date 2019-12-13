@@ -746,6 +746,11 @@ class Trading(commands.Cog):
                     index += 1
         delete_emoji = self.bot.config.custom_emoji.get('delete_dm', u'\U0001f5d1\U0000fe0f')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, trade_pokemon)
+        if pokemon:
+            pkmn_types = pokemon.types.copy()
+        else:
+            pkmn_types = ['None']
+        pkmn_types.append('None')
         content = f"Meowth! {ctx.author.display_name} offers a {str(trade_pokemon)} up for trade in {ctx.channel.mention}! Use {delete_emoji} if you aren't interested."
         for trainer in copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('trainers', {})):
             if trainer == ctx.author.id:
@@ -759,21 +764,33 @@ class Trading(commands.Cog):
                 user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('trades', [])
                 user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('trade_forms', [])
                 pokemon_setting = True
+            user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
+            type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('trade', True)
             if not any([pokemon_setting]):
                 continue
             if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
                 continue
-            send_trade = False
-            if pokemon_setting and pokemon and (pokemon.id in user_wants or str(pokemon) in user_forms):
-                send_trade = True
+            send_trade = []
+            if pokemon_setting and pokemon and pokemon.id in user_wants:
+                send_trade.append(f"Pokemon: {pokemon.name.title()}")
+            if pokemon_setting and pokemon and str(pokemon) in user_forms:
+                send_trade.append(f"Pokemon Form: {str(pokemon)}")
+            if type_setting and pkmn_types[0].lower() in user_types:
+                type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[pkmn_types[0].lower()])
+                send_trade.append(f"Type: {type_emoji}")
+            if type_setting and pkmn_types[1].lower() in user_types:
+                type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[pkmn_types[1].lower()])
+                send_trade.append(f"Type: {type_emoji}")
             if send_trade:
+                embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_trade)}"
                 try:
                     user = ctx.guild.get_member(trainer)
                     tradedmmsg = await user.send(content=content, embed=embed)
                     await utils.safe_reaction(tradedmmsg, delete_emoji)
                     dm_dict[user.id] = tradedmmsg.id
                 except:
-                    continue
+                    pass
+                embed.description = embed.description.replace(f"\n**Subscription:** {(', ').join(send_trade)}", "")
         return dm_dict
 
 def setup(bot):

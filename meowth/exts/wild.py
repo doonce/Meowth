@@ -445,6 +445,7 @@ class Wild(commands.Cog):
             wild_embed.description = ""
         if "Jump to Message" not in wild_embed.description:
             wild_embed.description = wild_embed.description + f"\n**Report:** [Jump to Message]({message.jump_url})"
+        new_description = str(wild_embed.description)
         index = 0
         for field in wild_embed.fields:
             if "reaction" in field.name.lower():
@@ -462,6 +463,7 @@ class Wild(commands.Cog):
                 dm_message = await dm_channel.fetch_message(dm_message)
                 content = dm_message.content
                 content = content.replace(result, str(pokemon))
+                wild_embed.description = dm_message.embeds[0].description
                 if (iv_percent or iv_percent == 0) and "IV**" in content:
                     content = re.sub(r" - \*\*[0-9]{1,3}IV\*\*", f" - **{iv_percent}IV**", content, flags=re.IGNORECASE)
                 elif iv_percent or iv_percent == 0:
@@ -471,6 +473,7 @@ class Wild(commands.Cog):
                 await dm_message.edit(content=content, embed=wild_embed)
             except:
                 pass
+        wild_embed.description = new_description
         ctx.wildreportmsg = message
         dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, level, content, copy.deepcopy(wild_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['dm_dict'] = dm_dict
@@ -505,22 +508,32 @@ class Wild(commands.Cog):
                 continue
             if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
                 continue
-            send_wild = False
-            if pokemon_setting and pokemon and (pokemon.id in user_wants or str(pokemon) in user_forms):
-                send_wild = True
+            send_wild = []
+            if pokemon_setting and pokemon and pokemon.id in user_wants:
+                send_wild.append(f"Pokemon: {pokemon.name.title()}")
+            if pokemon_setting and pokemon and str(pokemon) in user_forms:
+                send_wild.append(f"Pokemon Form: {str(pokemon)}")
             if stop_setting and str(wild_details).lower() in user_stops:
-                send_wild = True
-            if type_setting and (wild_types[0].lower() in user_types or wild_types[1].lower() in user_types):
-                send_wild = True
-            if wild_iv in user_ivs or wild_level in user_levels:
-                send_wild = True
+                send_wild.append(f"Pokestop: {wild_details.title()}")
+            if type_setting and wild_types[0].lower() in user_types:
+                type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[wild_types[0].lower()])
+                send_wild.append(f"Type: {type_emoji}")
+            if type_setting and wild_types[1].lower() in user_types:
+                type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[wild_types[1].lower()])
+                send_wild.append(f"Type: {type_emoji}")
+            if wild_iv in user_ivs:
+                send_wild.append(f"IV: {wild_iv}")
+            if wild_level in user_levels:
+                send_wild.append(f"Level: {wild_level}")
             if send_wild:
+                embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_wild)}"
                 try:
                     user = ctx.guild.get_member(trainer)
                     wilddmmsg = await user.send(content=content, embed=embed)
                     dm_dict[user.id] = wilddmmsg.id
                 except:
                     continue
+                embed.description = embed.description.replace(f"\n**Subscription:** {(', ').join(send_wild)}", "")
         return dm_dict
 
     @commands.group(aliases=['w'], invoke_without_command=True, case_insensitive=True)

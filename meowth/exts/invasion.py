@@ -341,6 +341,7 @@ class Invasion(commands.Cog):
             invasion_embed.description = ""
         if "Jump to Message" not in invasion_embed.description:
             invasion_embed.description = invasion_embed.description + f"\n**Report:** [Jump to Message]({message.jump_url})"
+        new_description = str(invasion_embed.description)
         for dm_user, dm_message in dm_dict.items():
             try:
                 dm_user = self.bot.get_user(dm_user)
@@ -356,9 +357,11 @@ class Invasion(commands.Cog):
                     content = f"Meowth! {reward_type.title()} Invasion reported by {author.display_name} in {message.channel.mention}! Details: {nearest_stop}"
                 else:
                     content = f"Meowth! Invasion reported by {author.display_name} in {message.channel.mention}! Details: {nearest_stop}"
+                invasion_embed.description = dm_message.embeds[0].description
                 await dm_message.edit(content=content, embed=invasion_embed)
             except:
                 pass
+        invasion_embed.description = new_description
         ctx.invreportmsg = message
         dm_dict = await self.send_dm_messages(ctx, reward_list, nearest_stop, copy.deepcopy(invasion_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][message.id]['dm_dict'] = dm_dict
@@ -398,22 +401,28 @@ class Invasion(commands.Cog):
                 continue
             if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
                 continue
-            send_invasion = False
+            send_invasion = []
             if pokemon_setting or type_setting:
                 for pokemon in pkmn_list:
                     pkmn_types = pokemon.types.copy()
                     pkmn_types.append("None")
-                    if pokemon_setting and (pokemon.id in user_wants or str(pokemon) in user_forms):
-                        send_invasion = True
-                        break
-                    if type_setting and (pkmn_types[0].lower() in user_types or pkmn_types[1].lower() in user_types):
-                        send_invasion = True
-                        break
+                    if pokemon_setting and pokemon.id in user_wants:
+                        send_invasion.append(f"Pokemon: {pokemon.name.title()}")
+                    if pokemon_setting and str(pokemon) in user_forms:
+                        send_invasion.append(f"Pokemon Form: {str(pokemon)}")
+                    if type_setting and pkmn_types[0].lower() in user_types:
+                        type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[pkmn_types[0].lower()])
+                        send_invasion.append(f"Type: {type_emoji}")
+                    if type_setting and pkmn_types[1].lower() in user_types:
+                        type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[pkmn_types[1].lower()])
+                        send_invasion.append(f"Type: {type_emoji}")
             if stop_setting and str(location).lower() in user_stops:
-                send_invasion = True
+                send_invasion.append(f"Pokestop: {str(location).title()}")
             if type_setting and invasion_type in user_types:
-                send_invasion = True
+                type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[invasion_type])
+                send_invasion.append(f"Type: {type_emoji}")
             if send_invasion:
+                embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_invasion)}"
                 try:
                     user = ctx.guild.get_member(trainer)
                     if pokemon:
@@ -424,7 +433,8 @@ class Invasion(commands.Cog):
                         invdmmsg = await user.send(f"Invasion reported at **{location}** by {ctx.author.display_name} in {ctx.channel.mention}!", embed=embed)
                     dm_dict[user.id] = invdmmsg.id
                 except Exception as e:
-                    continue
+                    pass
+                embed.description = embed.description.replace(f"\n**Subscription:** {(', ').join(send_invasion)}", "")
         return dm_dict
 
     @commands.group(aliases=['inv'], invoke_without_command=True, case_insensitive=True)
