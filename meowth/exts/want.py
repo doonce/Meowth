@@ -423,7 +423,6 @@ class Want(commands.Cog):
         already_want_count = 0
         already_want_list = []
         added_list = []
-        role_list = []
         trade_warn = []
         want_embed = discord.Embed(colour=ctx.me.colour)
         if "boss" in ctx.invoked_with:
@@ -477,40 +476,16 @@ class Want(commands.Cog):
                 match, score = utils.get_match(ctx.bot.pkmn_list, entered_want)
                 spellcheck_dict[entered_want] = match
         for entered_want in want_list:
-            role_str_list = []
-            role_str = ""
+            boss_str = ""
             if entered_want.id in self.bot.raid_list and (user_link or "boss" in ctx.invoked_with):
-                if entered_want.form == "alolan":
-                    role_name = f"{entered_want.name.lower()}-alolan"
-                elif entered_want.form == "galarian":
-                    role_name = f"{entered_want.name.lower()}-galarian"
-                else:
-                    role_name = str(entered_want).replace(' ', '-').lower()
-                for role in guild.roles:
-                    if not entered_want.form and entered_want.form != "alolan" and entered_want.form != "galarian":
-                        if entered_want.name.lower() in role.name.lower() and role not in ctx.author.roles:
-                            role_list.append(role)
-                            role_str_list.append(role.mention)
-                    elif role.name == role_name:
-                        role_list.append(role)
-                        role_str_list.append(role.mention)
-                if not role_list:
-                    try:
-                        role = await guild.create_role(name=role_name, hoist=False, mentionable=True)
-                        role_list.append(role)
-                        role_str_list.append(role.mention)
-                    except discord.errors.HTTPException:
-                        await message.channel.send(_('Maximum guild roles reached. Pokemon not added.'), delete_after=10)
-                        return
-                    await asyncio.sleep(0.5)
-                role_str = f" ({(', ').join(role_str_list)})"
+                boss_str = f" (Level {entered_want.raid_level} Boss)"
             if (entered_want.size or entered_want.gender or entered_want.form or entered_want.shiny or entered_want.shadow) and len(str(entered_want).split()) > 1:
                 if str(entered_want) in user_forms:
                     already_want_list.append(str(entered_want))
                     already_want_count += 1
                 else:
                     user_forms.append(str(entered_want))
-                    added_list.append(f"{str(entered_want)}{role_str}")
+                    added_list.append(f"{str(entered_want)}{boss_str}")
                     added_count += 1
             else:
                 if entered_want.id in user_wants:
@@ -518,9 +493,8 @@ class Want(commands.Cog):
                     already_want_count += 1
                 else:
                     user_wants.append(entered_want.id)
-                    added_list.append(f"{entered_want.name.title()}{role_str}")
+                    added_list.append(f"{entered_want.name.title()}{boss_str}")
                     added_count += 1
-        await ctx.author.add_roles(*role_list)
         want_count = added_count + already_want_count + len(spellcheck_dict)
         confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if want_count > 1 and 'boss' in ctx.invoked_with else ''}:\n\n"
         if added_count > 0:
@@ -545,7 +519,7 @@ class Want(commands.Cog):
     @want.command(name='boss', aliases=['bosses'])
     @checks.allowwant()
     async def want_boss(self, ctx, *, bosses):
-        """Adds a boss role to your wants. Currently used for raid reports.
+        """Adds a boss to your wants. Currently used for raid reports.
 
         Usage: !want boss <boss list>"""
         await ctx.invoke(self.bot.get_command('want pokemon'), pokemon=bosses)
@@ -1015,31 +989,22 @@ class Want(commands.Cog):
 
         Usage: !want settings"""
         await ctx.trigger_typing()
-        mute = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', False)
-        mute_mentions = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
+        user_mute = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', {"raid":False, "invasion":False, "lure":False, "wild":False, "research":False, "nest":False, "trade":False})
+        mute_options = ["raid", "invasion", "lure", "wild", "research", "nest", "trade"]
         start_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_start', None)
         end_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_end', None)
         user_link = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('link', True)
-        if mute:
-            mute_str = f"Reply with **unmute** to unmute your DM alerts from Meowth"
-        else:
-            mute_str = f"Reply with **mute** to globally mute all DM alerts from Meowth"
-        if mute_mentions:
-            mention_str = f"Reply with **mention** to unmute all raid @mentions from Meowth"
-        else:
-            mention_str = f"Reply with **unmention** to mute all raid @mentions from Meowth"
         if user_link:
             link_str = f"Reply with **unlink** to unlink your **!want** list from your boss notifications. You are currently linked meaning your **!want** list controls all pokemon alerts. If you unlink, your **!want** list will be used for wild, research, and nest reports only. **!want boss <pokemon>** will be used for raid boss @mentions and **!want trade <pokemon>** will be used for trade wants."
         else:
             link_str = f"Reply with **link** to link your **!want** list to your boss notifications. Your current **!want** list will be used for wild, research, raid @mentions, and nest reports."
         settings_embed = discord.Embed(description=f"", colour=ctx.me.colour)
-        settings_embed.add_field(name=f"**{'unmute' if mute else 'mute'}**", value=f"{mute_str}", inline=False)
-        settings_embed.add_field(name=f"**{'mention' if mute_mentions else 'unmention'}**", value=f"{mention_str}", inline=False)
+        settings_embed.add_field(name=f"**mute**", value=f"Reply with **mute [report types]** to select DM alerts from Meowth to mute. You will be able to choose `None`, `All`, or any report type combination of {(', ').join(mute_options)}. This will mute all DMs of selected types. To have finer control, try **categories**", inline=False)
         settings_embed.add_field(name=f"**time**", value=f"Reply with **time** to set your active hours. Your start time setting will be when Meowth can start sending DMs each day and your end time setting will be when Meowth will stop sending DMs each day. If you set these to **none**, meowth will DM you regardless of time unless DMs are muted.", inline=False)
         settings_embed.add_field(name=f"**{'unlink' if user_link else 'link'}**", value=f"{link_str}", inline=False)
         settings_embed.add_field(name=f"**categories**", value=f"Reply with **categories** to set your alert categories. For example, if you want a certain pokestop but only want wild alerts but no lures or invasions, use this setting.", inline=False)
         settings_embed.add_field(name=f"**cancel**", value=f"Reply with **cancel** to stop changing settings.", inline=False)
-        settings_embed.add_field(name="**Current Settings**", value=f"DMs Muted: {mute}\n@mentions Muted: {mute_mentions}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}", inline=False)
+        settings_embed.add_field(name="**Current Settings**", value=f"DMs Muted: {(', ').join([x for x in user_mute.keys() if user_mute[x]])}{'None' if not any(user_mute.values()) else ''}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}", inline=False)
         settings_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
         settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:", embed=settings_embed, delete_after=120)
         def check(reply):
@@ -1054,18 +1019,33 @@ class Want(commands.Cog):
         await utils.safe_delete(reply)
         if reply.content.lower() == "cancel":
             return await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed.")
-        elif reply.content.lower() == "mute":
-            await ctx.send(f"{ctx.author.mention} - Your DM alerts are now muted.")
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute'] = True
-        elif reply.content.lower() == "unmute":
-            await ctx.send(f"{ctx.author.mention} - Your DM alerts are now unmuted.")
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute'] = False
-        elif reply.content.lower() == "mention":
-            await ctx.send(f"{ctx.author.mention} - You will now receive raid @mentions.")
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute_mentions'] = False
-        elif reply.content.lower() == "unmention":
-            await ctx.send(f"{ctx.author.mention} - You will no longer receive raid @mentions.")
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute_mentions'] = True
+
+        elif "mute" in reply.content.lower():
+            await ctx.send(f"Please enter the **report types** that you would like to mute. Choose from **{(', ').join(mute_options)}, all, none**", delete_after=120)
+            try:
+                mute_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
+            except asyncio.TimeoutError:
+                return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+            await utils.safe_delete(mute_reply)
+            if mute_reply.content.lower() == "all":
+                reply_list = mute_options
+            elif mute_reply.content.lower() == "none":
+                reply_list = []
+            else:
+                reply_list = mute_reply.content.lower().split(',')
+                reply_list = [x.strip() for x in reply_list]
+                reply_list = [x for x in reply_list if x in mute_options]
+                if not reply_list:
+                    return await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+            user_setting = {}
+            disable_list = set(mute_options) - set(reply_list)
+            enable_list = set(mute_options) - set(disable_list)
+            for item in disable_list:
+                user_setting[item] = False
+            for item in enable_list:
+                user_setting[item] = True
+            await ctx.send(f"{ctx.author.mention} - Your DM alert mute settings are set. DMs muted: {(', ').join([x for x in user_setting.keys() if user_setting[x]])}{'None' if not any(user_setting.values()) else ''}")
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute'] = user_setting
         elif reply.content.lower() == "time":
             await ctx.send(f"Please enter the time you would like to **start receiving** DMs each day. *Ex: 8:00 AM*. You can reply with **none** to turn off active hours and receive all DMs regardless of time.", delete_after=120)
             try:
@@ -1106,61 +1086,6 @@ class Want(commands.Cog):
         else:
             await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
             await utils.safe_delete(settings_msg)
-        if "link" in reply.content.lower() or "mention" in reply.content.lower():
-            boss_names = [str(word) for word in self.bot.raid_list]
-            boss_names = list(set([word for word in boss_names if not word.islower() and not word.isdigit()]))
-            role_names = [x.replace(' ', '-').lower() for x in boss_names]
-            for x in enumerate(role_names):
-                if 'alola' in x[1]:
-                    role_names[x[0]] = f"{x[1].replace('alolan-', '')}-alolan"
-                elif 'galar' in x[1]:
-                    role_names[x[0]] = f"{x[1].replace('galarian-', '')}-galarian"
-            add_list = []
-            remove_list = []
-            if self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute_mentions']:
-                user_wants = []
-                user_forms = []
-            elif self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['link']:
-                user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('wants', [])
-                user_forms = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('forms', [])
-            else:
-                user_wants = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('bosses', [])
-                user_forms = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts'].setdefault('boss_forms', [])
-            want_names = [utils.get_name(self.bot, x) for x in user_wants]
-            want_names = [x.lower() for x in want_names]
-            form_names = [str(x).replace(' ', '-').lower() for x in user_forms]
-            for x in enumerate(form_names):
-                if 'alola' in x[1]:
-                    form_names[x[0]] = f"{x[1].replace('alolan-', '')}-alolan"
-                elif 'galar' in x[1]:
-                    form_names[x[0]] = f"{x[1].replace('galariann-', '')}-galarian"
-            for role in ctx.author.roles:
-                role_pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, role.name)
-                if role_pkmn and role.name.lower() not in role_names:
-                    remove_list.append(role)
-                elif role_pkmn and str(role_pkmn) not in user_forms and role_pkmn.id not in user_wants:
-                    remove_list.append(role)
-            for want in form_names:
-                if want in role_names:
-                    role = discord.utils.get(ctx.guild.roles, name=want)
-                    if role and role not in ctx.author.roles:
-                        add_list.append(role)
-            for want in want_names:
-                for role in role_names:
-                    if want in role:
-                        role = discord.utils.get(ctx.guild.roles, name=role)
-                        if role and role not in ctx.author.roles:
-                            add_list.append(role)
-            if add_list:
-                try:
-                    await ctx.author.add_roles(*add_list)
-                except (discord.errors.Forbidden, discord.errors.HTTPException):
-                    pass
-            if remove_list:
-                try:
-                    await ctx.author.remove_roles(*remove_list)
-                except (discord.errors.Forbidden, discord.errors.HTTPException):
-                    pass
 
     @want.command(hidden=True)
     @checks.allowwant()
@@ -1170,9 +1095,9 @@ class Want(commands.Cog):
         Usage: !want categories"""
         categories = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {})
         category_list = ["pokemon", "pokestop", "item", "type"]
-        pokemon_options = ["wild", "research", "invasion", "nest", "trade"]
+        pokemon_options = ["wild", "research", "invasion", "nest", "trade", "raid"]
         pokestop_options = ["research", "wild", "lure", "invasion"]
-        type_options = ["wild", "research", "nest", "invasion", "raid"]
+        type_options = ["wild", "research", "nest", "invasion", "trade", "raid"]
         item_options = ["research", "lure"]
         gym_options = ["raid"]
         raidegg_options = ["raid"]
@@ -1771,7 +1696,6 @@ class Want(commands.Cog):
         not_wanted_count = 0
         not_wanted_list = []
         removed_list = []
-        role_list = []
         category = "pokemon"
         want_embed = discord.Embed(colour=ctx.me.colour)
         if "boss" in ctx.invoked_with:
@@ -1825,31 +1749,16 @@ class Want(commands.Cog):
                 match, score = utils.get_match(ctx.bot.pkmn_list, entered_unwant)
                 spellcheck_dict[entered_unwant] = match
         for entered_unwant in unwant_list:
-            role_str_list = []
-            role_str = ""
+            boss_str = ""
             if entered_unwant.id in self.bot.raid_list and (user_link or "boss" in ctx.invoked_with):
-                for role in guild.roles:
-                    if entered_unwant.form == "alolan":
-                        role_name = f"{entered_unwant.name.lower()}-alolan"
-                    elif entered_unwant.form == "galarian":
-                        role_name = f"{entered_unwant.name.lower()}-galarian"
-                    else:
-                        role_name = str(entered_unwant).replace(' ', '-').lower()
-                    if not entered_unwant.form and entered_unwant.form != "alolan" and entered_unwant.form != "galarian":
-                        if entered_unwant.name.lower() in role.name.lower() and role in ctx.author.roles:
-                            role_list.append(role)
-                            role_str_list.append(role.mention)
-                    elif role.name == role_name:
-                        role_list.append(role)
-                        role_str_list.append(role.mention)
-                role_str = f" ({(', ').join(role_str_list)})"
+                boss_str = f" (Level {entered_unwant.raid_level} Boss)"
             if (entered_unwant.size or entered_unwant.gender or entered_unwant.form or entered_unwant.shiny or entered_unwant.shadow) and len(str(entered_unwant).split()) > 1:
                 if str(entered_unwant) not in user_forms:
                     not_wanted_list.append(str(entered_unwant))
                     not_wanted_count += 1
                 else:
                     user_forms.remove(str(entered_unwant))
-                    removed_list.append(f"{str(entered_unwant)}{role_str}")
+                    removed_list.append(f"{str(entered_unwant)}{boss_str}")
                     removed_count += 1
             else:
                 if entered_unwant.id not in user_wants:
@@ -1857,9 +1766,8 @@ class Want(commands.Cog):
                     not_wanted_count += 1
                 else:
                     user_wants.remove(entered_unwant.id)
-                    removed_list.append(f"{entered_unwant.name.title()}{role_str}")
+                    removed_list.append(f"{entered_unwant.name.title()}{boss_str}")
                     removed_count += 1
-        await ctx.author.remove_roles(*role_list)
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
         confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if unwant_count > 1 and 'boss' in ctx.invoked_with else ''}:\n\n"
         if removed_count > 0:
@@ -2400,12 +2308,6 @@ class Want(commands.Cog):
         await channel.trigger_typing()
         completed_list = []
         if(category == "all" or category == "pokemon") and len(user_wants) > 0:
-            remove_roles = []
-            for role in author.roles:
-                if role.name in self.bot.pkmn_list:
-                    remove_roles.append(role)
-                    continue
-            await author.remove_roles(*remove_roles)
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['wants'] = []
             completed_list.append(f"{len(user_wants)} pokemon")
         if (category == "all" or category == "form") and len(user_forms) > 0:

@@ -399,7 +399,7 @@ class Invasion(commands.Cog):
             type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('invasion', True)
             if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_types, type_setting]):
                 continue
-            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
+            if not checks.dm_check(ctx, trainer, "invasion") or trainer in dm_dict:
                 continue
             send_invasion = []
             if pokemon_setting or type_setting:

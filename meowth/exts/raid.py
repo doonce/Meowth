@@ -28,13 +28,11 @@ class Raid(commands.Cog):
         self.bot = bot
         self.channel_cleanup.start()
         self.lobby_cleanup.start()
-        self.reset_raid_roles.start()
         self.bot.active_channels = []
 
     def cog_unload(self):
         self.channel_cleanup.cancel()
         self.lobby_cleanup.cancel()
-        self.reset_raid_roles.cancel()
 
     """
     Event Handlers
@@ -691,113 +689,6 @@ class Raid(commands.Cog):
     Helpers
     """
 
-    @tasks.loop(seconds=7200)
-    async def reset_raid_roles(self, loop=True):
-        boss_names = [str(word) for word in self.bot.raid_list]
-        boss_names = list(set([word for word in boss_names if not word.islower() and not word.isdigit()]))
-        role_names = [x.replace(' ', '-').lower() for x in boss_names]
-        for x in enumerate(role_names):
-            if 'alola' in x[1]:
-                role_names[x[0]] = f"{x[1].replace('alolan-', '')}-alolan"
-            elif 'galar' in x[1]:
-                role_names[x[0]] = f"{x[1].replace('galarian-', '')}-galarian"
-        for guild in list(self.bot.guilds):
-            try:
-                if not guild:
-                    continue
-                role_dict = {}
-                for member in guild.members:
-                    if self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False):
-                        user_wants = []
-                    elif self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True):
-                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-                    else:
-                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-                    for role in member.roles:
-                        if role.name.lower() in self.bot.pkmn_list:
-                            number = utils.get_number(self.bot, role.name.lower())
-                            if number not in user_wants:
-                                user_wants.append(number)
-                for role in guild.roles:
-                    role_split = role.name.lower().split('-')
-                    role_pkmn = role_split[0] in self.bot.pkmn_list or (len(role_split) > 1 and role_split[1] in self.bot.pkmn_list)
-                    if role_pkmn:
-                        role_dict[role] = await pkmn_class.Pokemon.async_get_pokemon(self.bot, role.name)
-                    if role_pkmn and role.name not in role_names and role != guild.me.top_role:
-                        try:
-                            await role.delete()
-                            await asyncio.sleep(0.5)
-                        except:
-                            pass
-                for boss in role_names:
-                    role = discord.utils.get(guild.roles, name=boss)
-                    if not role:
-                        try:
-                            role = await guild.create_role(name = boss, hoist = False, mentionable = True)
-                        except discord.errors.Forbidden:
-                            pass
-                        await asyncio.sleep(0.5)
-                for trainer in self.bot.guild_dict[guild.id]['trainers']:
-                    add_list = []
-                    remove_list = []
-                    user = guild.get_member(trainer)
-                    if not user or user.bot:
-                        continue
-                    user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-                    user_mute = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
-                    if user_mute:
-                        user_wants = []
-                        user_forms = []
-                    elif user_link:
-                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('wants', [])
-                        user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('forms', [])
-                    else:
-                        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
-                        user_forms = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('boss_forms', [])
-                    want_names = [utils.get_name(self.bot, x) for x in user_wants]
-                    want_names = [x.lower() for x in want_names]
-                    form_names = [str(x).replace(' ', '-').lower() for x in user_forms]
-                    for x in enumerate(form_names):
-                        if 'alola' in x[1]:
-                            form_names[x[0]] = f"{x[1].replace('alolan-', '')}-alolan"
-                        elif 'galar' in x[1]:
-                            form_names[x[0]] = f"{x[1].replace('galarian-', '')}-galarian"
-                    for want in form_names:
-                        if want in role_names:
-                            role = discord.utils.get(guild.roles, name=want)
-                            if role and role not in user.roles:
-                                add_list.append(role)
-                    for want in want_names:
-                        for role in role_names:
-                            if want in role:
-                                role = discord.utils.get(guild.roles, name=role)
-                                if role and role not in user.roles:
-                                    add_list.append(role)
-                    for role in user.roles:
-                        role_pkmn = role_dict.get(role, None)
-                        if role_pkmn and role.name.lower() not in role_names:
-                            remove_list.append(role)
-                        elif role_pkmn and str(role_pkmn) not in user_forms and role_pkmn.id not in user_wants:
-                            remove_list.append(role)
-                    if add_list:
-                        try:
-                            await user.add_roles(*add_list)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
-                    if remove_list:
-                        try:
-                            await user.remove_roles(*remove_list)
-                        except (discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
-            except Exception as e:
-                print(traceback.format_exc())
-        if not loop:
-            return
-
-    @reset_raid_roles.before_loop
-    async def before_reset_roles(self):
-        await self.bot.wait_until_ready()
-
     async def send_dm_messages(self, ctx, pokemon_or_level, raid_details, content, embed, dm_dict):
         if embed:
             if isinstance(embed.description, discord.embeds._EmptyEmbed):
@@ -821,11 +712,7 @@ class Raid(commands.Cog):
         raid_types.append('None')
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
             user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-            user_mute = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
-            if user_mute:
-                user_wants = []
-                user_forms = []
-            elif user_link:
+            if user_link:
                 user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('alerts', {}).setdefault('wants', [])
                 user_forms = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('alerts', {}).setdefault('forms', [])
             else:
@@ -838,19 +725,19 @@ class Raid(commands.Cog):
             user_eggs = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('raid_eggs', [])
             if not any([user_wants, user_forms, pokemon_setting, user_types, type_setting, user_gyms]):
                 continue
-            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
+            if not checks.dm_check(ctx, trainer, "raid") or trainer in dm_dict:
                 continue
             send_raid = []
-            # if pokemon_setting and pokemon and pokemon.id in user_wants:
-            #     send_raid.append(f"Pokemon: {pokemon.name.title()}")
-            # if pokemon_setting and pokemon and str(pokemon) in user_forms:
-            #     send_raid.append(f"Pokemon Form: {str(pokemon)}")
-            # if type_setting and raid_types[0].lower() in user_types:
-            #     type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[raid_types[0].lower()])
-            #     send_raid.append(f"Type: {type_emoji}")
-            # if type_setting and raid_types[1].lower() in user_types:
-            #     type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[raid_types[1].lower()])
-            #     send_raid.append(f"Type: {type_emoji}")
+            if pokemon_setting and pokemon and pokemon.id in user_wants:
+                send_raid.append(f"{'Pokemon' if user_link else 'Boss'}: {pokemon.name.title()}")
+            if pokemon_setting and pokemon and str(pokemon) in user_forms:
+                send_raid.append(f"{'Pokemon' if user_link else 'Boss'} Form: {str(pokemon)}")
+            if type_setting and raid_types[0].lower() in user_types:
+                type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[raid_types[0].lower()])
+                send_raid.append(f"Type: {type_emoji}")
+            if type_setting and raid_types[1].lower() in user_types:
+                type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[raid_types[1].lower()])
+                send_raid.append(f"Type: {type_emoji}")
             if egg_level and egg_level in user_eggs:
                 send_raid.append(f"Raid Egg: {egg_level}")
             if raid_details.lower() in user_gyms:
@@ -868,6 +755,7 @@ class Raid(commands.Cog):
 
     async def edit_dm_messages(self, ctx, content, embed, dm_dict):
         report_dict = await utils.get_report_dict(self.bot, ctx.raid_channel)
+        dm_dict = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id].get('dm_dict', {})
         if isinstance(embed.description, discord.embeds._EmptyEmbed):
             embed.description = ""
         if "Jump to Message" not in embed.description:
@@ -1007,7 +895,7 @@ class Raid(commands.Cog):
                 raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
             else:
                 raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist}').format(bosslist=''.join(boss_list)), inline=True)
-                raid_embed.add_field(name=_('**Weaknesses:**'), value='\u200b', inline=True)
+                raid_embed.add_field(name=_('**Weaknesses:**'), value=pokemon.weakness_emoji, inline=True)
             raid_embed.set_author(name=f"Level {egg_level} Raid Report", icon_url=raid_img_url)
         elif embed_type == "raid":
             egg_level = utils.get_level(ctx.bot, pokemon.id)
@@ -1197,7 +1085,6 @@ class Raid(commands.Cog):
             await pkmn_class.Pokemon.generate_lists(self.bot)
             self.bot.raid_dict = await utils.get_raid_dict(self.bot)
             self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
-            self.reset_raid_roles.restart()
             for guild in list(self.bot.guilds):
                 for report_dict in self.bot.channel_report_dicts:
                     for channel_id in list(self.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys()):
@@ -1739,7 +1626,6 @@ class Raid(commands.Cog):
         elif pokemon.id not in self.bot.raid_list:
             await utils.safe_delete(ctx.message)
             return await ctx.channel.send(f"Meowth! The Pokemon {pokemon.name.title()} does not appear in raids!", delete_after=10)
-
         matched_boss = False
         level = utils.get_level(self.bot, pokemon.id)
         for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
@@ -1784,16 +1670,6 @@ class Raid(commands.Cog):
             return
         if not weather:
             weather = await self.auto_weather(ctx, raid_coordinates)
-        if pokemon.form == "alolan":
-            raid = discord.utils.get(ctx.guild.roles, name=f"{pokemon.name.lower()}-alolan")
-        elif pokemon.form == "galarian":
-            raid = discord.utils.get(ctx.guild.roles, name=f"{pokemon.name.lower()}-galarian")
-        else:
-            raid = discord.utils.get(ctx.guild.roles, name=str(pokemon).replace(' ', '-').lower())
-        if raid == None:
-            roletest = ""
-        else:
-            roletest = _("{pokemon} - ").format(pokemon=raid.mention)
         if (raidexp or raidexp is 0) and int(raidexp) > int(self.bot.raid_info['raid_eggs'][level]['raidtime']):
             raidexp = False
             await ctx.send(f"Meowth! That's too long! Level {level} raids currently last no more than {self.bot.raid_info['raid_eggs'][level]['raidtime']} minutes. I'll still try to make the channel and you can correct the time later.", delete_after=10)
@@ -1806,7 +1682,7 @@ class Raid(commands.Cog):
         raid_embed = await self.make_raid_embed(ctx, report_details, raidexp)
         ctx.raidreport = await message.channel.send(f"Meowth! {str(pokemon).title()} raid reported by {ctx.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\n\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!", embed=raid_embed)
         await asyncio.sleep(1)
-        raidmsg = f"{roletest}Meowth! {str(pokemon).title()} raid reported by {ctx.author.mention} in {ctx.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
+        raidmsg = f"Meowth! {str(pokemon).title()} raid reported by {ctx.author.mention} in {ctx.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(raidmsg, embed=raid_embed)
         await raid_message.pin()
         self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id] = {
@@ -2083,7 +1959,6 @@ class Raid(commands.Cog):
         egg_level = eggdetails['egg_level']
         manual_timer = eggdetails['manual_timer']
         weather = eggdetails.get('weather', None)
-        dm_dict = eggdetails.get('dm_dict', {})
         egg_report = await report_channel.fetch_message(eggdetails['raid_report'])
         raid_message = await raid_channel.fetch_message(eggdetails['raid_message'])
         coordinates = eggdetails.get('coordinates', False)
@@ -2112,16 +1987,6 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
         oldembed = raid_message.embeds[0]
         raid_gmaps_link = oldembed.url
-        if pokemon.form == "alolan":
-            raidrole = discord.utils.get(raid_channel.guild.roles, name=f"{pokemon.name.lower()}-alolan")
-        elif pokemon.form == "galarian":
-            raidrole = discord.utils.get(raid_channel.guild.roles, name=f"{pokemon.name.lower()}-galarian")
-        else:
-            raidrole = discord.utils.get(raid_channel.guild.roles, name=str(pokemon).replace(' ', '-').lower())
-        if raidrole == None:
-            roletest = ""
-        else:
-            roletest = _("{pokemon} - ").format(pokemon=raidrole.mention)
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
@@ -2150,7 +2015,7 @@ class Raid(commands.Cog):
             await egg_report.edit(new_content=egg_report.content, embed=raid_embed, content=egg_report.content)
         except discord.errors.NotFound:
             egg_report = None
-        await raid_channel.send(f"{roletest}Meowth! This egg will be assumed to be {str(pokemon)} when it hatches!")
+        await raid_channel.send(f"Meowth! This egg will be assumed to be {str(pokemon)} when it hatches!")
         ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), weather)
         if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels']:
             embed = ctrs_dict[0]['embed'] if ctrs_dict else None
@@ -2257,16 +2122,6 @@ class Raid(commands.Cog):
             raidreportcontent = _('Meowth! The EX egg has hatched into a {pokemon} raid! Details: {location_details}. {invitemsgstr} coordinate in {raid_channel}').format(pokemon=str(pokemon), location_details=eggdetails['address'], invitemsgstr=invitemsgstr, raid_channel=raid_channel.mention)
             raidmsg = f"Meowth! {str(pokemon)} EX raid reported by {author.mention} in {report_channel.mention}! Details: {eggdetails['address']}. Coordinate here{invitemsgstr2}!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
         raid_channel_name = f"{pokemon.name.lower()}{'-'+pokemon.form.lower() if pokemon.form else ''}-" + utils.sanitize_channel_name(eggdetails['address'])
-        if pokemon.form == "alolan":
-            raid = discord.utils.get(raid_channel.guild.roles, name=f"{pokemon.name.lower()}-alolan")
-        if pokemon.form == "galarian":
-            raid = discord.utils.get(raid_channel.guild.roles, name=f"{pokemon.name.lower()}-galarian")
-        else:
-            raid = discord.utils.get(raid_channel.guild.roles, name=str(pokemon).replace(' ', '-').lower())
-        if raid == None:
-            roletest = ""
-        else:
-            roletest = _("{pokemon} - ").format(pokemon=raid.mention)
         await raid_channel.edit(name=raid_channel_name, topic=end.strftime(_('Ends on %B %d at %I:%M %p (%H:%M)')))
         trainer_list = []
         trainer_dict = copy.deepcopy(self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['trainer_dict'])
@@ -2288,7 +2143,7 @@ class Raid(commands.Cog):
                 if not user:
                     continue
                 trainer_list.append(user.mention)
-        hatch_msg = await raid_channel.send(content=_("{roletest}Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!").format(roletest=roletest, trainer_list=', '.join(trainer_list), pokemon=str(pokemon)))
+        hatch_msg = await raid_channel.send(content=_("Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!").format(trainer_list=', '.join(trainer_list), pokemon=str(pokemon)))
         ctx = await self.bot.get_context(hatch_msg)
         ctx.raidreport = egg_report
         ctx.raid_channel = raid_channel

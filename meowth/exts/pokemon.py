@@ -415,16 +415,6 @@ class Pokemon():
                 return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('windy', u'\U0001F343'))
         return False
 
-    def role(self, guild=None):
-        """:class:`discord.Role` or :obj:`None` : Returns the role for
-        this Pokemon
-        """
-        if not guild:
-            guild = self.guild
-        if not guild:
-            return None
-        return discord.utils.get(guild.roles, name=self.name)
-
     def set_guild(self, guild):
         """:class:`discord.Guild` or :obj:`None` : Sets the relevant Guild"""
         self.guild = guild

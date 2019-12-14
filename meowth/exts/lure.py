@@ -462,7 +462,7 @@ class Lure(commands.Cog):
             item_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('item', {}).get('lure', True)
             if not any([user_stops, stop_setting, user_items, item_setting]):
                 continue
-            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
+            if not checks.dm_check(ctx, trainer, "lure") or trainer in dm_dict:
                 continue
             send_lure = []
             if stop_setting and location.lower() in user_stops:

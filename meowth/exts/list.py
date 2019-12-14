@@ -795,10 +795,10 @@ class Listing(commands.Cog):
         user_levels = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
         user_levels = sorted(user_levels)
         user_levels = [str(x) for x in user_levels]
-        categories = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {})
-        pokemon_options = ["wild", "research", "invasion", "nest"]
+        categories = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}))
+        pokemon_options = ["wild", "research", "invasion", "nest", "trade", "raid"]
         pokestop_options = ["research", "wild", "lure", "invasion"]
-        type_options = ["wild", "research", "nest", "invasion"]
+        type_options = ["wild", "research", "nest", "invasion", "raid", "trade"]
         item_options = ["research", "lure"]
         pokemon_settings = categories.get('pokemon', {})
         if not pokemon_settings:
@@ -812,10 +812,13 @@ class Listing(commands.Cog):
         type_settings = categories.get('type', {})
         if not type_settings:
             type_settings = {k:True for k in type_options}
+        if not user_link:
+            pokemon_settings['raid'] = False
+            pokemon_settings['trade'] = False
         wantmsg = ""
         if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels) or len(user_forms) > 0 or len(user_eggs) > 0:
             if wantlist:
-                wantmsg += _('**Pokemon:** ({cat_options}{raid_link})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), raid_link=", raids, trades" if user_link else "", cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
+                wantmsg += _('**Pokemon:** ({cat_options})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
             if user_forms:
                 wantmsg += _('**Pokemon Forms:** ({cat_options})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_forms), width=80)), cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
             if user_bosses and not user_link:
@@ -823,7 +826,7 @@ class Listing(commands.Cog):
             if user_bossforms and not user_link:
                 wantmsg += _('**Boss Forms:** (raids)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_bossforms), width=80)))
             if (user_trades or user_tradeforms) and not user_link:
-                wantmsg += _('**Trades:** (trades)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_trades+user_tradeforms), width=80)))
+                wantmsg += _('**Trades:** (trades)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(tradelist+user_tradeforms), width=80)))
             if user_gyms:
                 wantmsg += _('**Gyms:** (raids)\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
             if user_stops:

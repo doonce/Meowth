@@ -194,7 +194,7 @@ class MeowthBot(commands.AutoShardedBot):
                     pass
                 report_dict = {}
                 try:
-                    test_Var = self.guild_dict[guild.id]['configure_dict']['scanners']['autoraid']
+                    test_var = self.guild_dict[guild.id]['configure_dict']['scanners']['autoraid']
                 except KeyError:
                     break
                 auto_raid = self.guild_dict[guild.id]['configure_dict']['scanners']['autoraid']
@@ -211,8 +211,25 @@ class MeowthBot(commands.AutoShardedBot):
                     except KeyError:
                         continue
                 break
+            for role in guild.roles:
+                if 'alolan' in role.name.lower() or 'galarian' in role.name.lower() and len(role.name.lower().split('-')) > 1:
+                    if role.name.lower().split('-')[0] in self.pkmn_list and role != guild.me.top_role:
+                        await role.delete()
+                if role.name.lower() in self.pkmn_list and role != guild.me.top_role:
+                    await role.delete()
             type_list = ["raid", "egg", "ex", "wild", "research", "nest", "lure", "invasion", "trade", "pvp"]
             for trainer in self.guild_dict[guild.id]['trainers']:
+                if isinstance(self.guild_dict[guild.id]['trainers'][trainer].get('alerts', {}).get('settings', {}).get('mute', True), (int, float)):
+                    if self.guild_dict[guild.id]['trainers'][trainer].get('alerts', {}).get('settings', {}).get('mute'):
+                        self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['mute'] = {"raid":True, "invasion":True, "lure":True, "wild":True, "research":True, "nest":True, "trade":True}
+                    else:
+                        self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['mute'] = {"raid":False, "invasion":False, "lure":False, "wild":False, "research":False, "nest":False, "trade":False}
+                if self.guild_dict[guild.id]['trainers'][trainer].get('alerts', {}).get('settings', {}).get('mute_mentions'):
+                    self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['mute']['raid'] = True
+                try:
+                    del self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['mute_mentions']
+                except:
+                    pass
                 try:
                     if isinstance(self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['categories'], list):
                         del self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['categories']
@@ -220,16 +237,16 @@ class MeowthBot(commands.AutoShardedBot):
                     pass
                 try:
                     test_var = self.guild_dict[guild.id]['trainers'][trainer]['reports']
-                    break
                 except KeyError:
-                    pass
-                for item in type_list:
-                    item_name = f"{item}_reports"
-                    item_reports =  self.guild_dict[guild.id]['trainers'][trainer].get(item_name, 0)
-                    if item_reports:
-                        test_var = self.guild_dict[guild.id]['trainers'][trainer].setdefault('reports', {})
-                        self.guild_dict[guild.id]['trainers'][trainer]['reports'][item] = item_reports
-                        del self.guild_dict[guild.id]['trainers'][trainer][item_name]
+                    test_var = False
+                if not test_var:
+                    for item in type_list:
+                        item_name = f"{item}_reports"
+                        item_reports =  self.guild_dict[guild.id]['trainers'][trainer].get(item_name, 0)
+                        if item_reports:
+                            test_var = self.guild_dict[guild.id]['trainers'][trainer].setdefault('reports', {})
+                            self.guild_dict[guild.id]['trainers'][trainer]['reports'][item] = item_reports
+                            del self.guild_dict[guild.id]['trainers'][trainer][item_name]
             # /Run Once
             try:
                 users += guild.member_count

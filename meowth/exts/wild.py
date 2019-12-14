@@ -506,7 +506,7 @@ class Wild(commands.Cog):
             user_levels = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('levels', [])
             if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_types, type_setting, user_ivs, user_levels]):
                 continue
-            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
+            if not checks.dm_check(ctx, trainer, "wild") or trainer in dm_dict:
                 continue
             send_wild = []
             if pokemon_setting and pokemon and pokemon.id in user_wants:

@@ -550,7 +550,7 @@ class Research(commands.Cog):
             type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('research', True)
             if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_items, item_setting, user_types, type_setting]):
                 continue
-            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
+            if not checks.dm_check(ctx, trainer, "research") or trainer in dm_dict:
                 continue
             send_research = []
             if pokemon_setting and pokemon and pokemon.id in user_wants:

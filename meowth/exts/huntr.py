@@ -305,18 +305,8 @@ class Huntr(commands.Cog):
                     if not raid_embed:
                         return
                     pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, entered_raid)
-                    if pokemon.form == "alolan":
-                        raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
-                    elif pokemon.form == "galarian":
-                        raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-galarian")
-                    else:
-                        raid = discord.utils.get(message.guild.roles, name=str(pokemon).replace(' ', '-').lower())
-                    if raid == None:
-                        roletest = ""
-                    else:
-                        roletest = _("{pokemon} - ").format(pokemon=raid.mention)
                     pokehuntr_dict = self.bot.guild_dict[message.guild.id].setdefault('pokehuntr_dict', {})
-                    ctx.raidreport = await message.channel.send(content=f"{roletest}Meowth! {entered_raid.title()} raid reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!", embed=raid_embed)
+                    ctx.raidreport = await message.channel.send(content=f"Meowth! {entered_raid.title()} raid reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!", embed=raid_embed)
                     await asyncio.sleep(0.25)
                     await utils.safe_reaction(ctx.raidreport, self.bot.custom_emoji.get('huntr_report', u'\U00002705'))
                     for reaction in react_list:
@@ -531,17 +521,7 @@ class Huntr(commands.Cog):
                             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pokemon)
                             if not pokemon:
                                 return
-                            if pokemon.form == "alolan":
-                                raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
-                            elif pokemon.form == "galarian":
-                                raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-galarian")
-                            else:
-                                raid = discord.utils.get(message.guild.roles, name=str(pokemon).replace(' ', '-').lower())
-                            if raid == None:
-                                roletest = ""
-                            else:
-                                roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-                            raidmsg = f"{roletest}Meowth! {str(pokemon)} raid reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!"
+                            raidmsg = f"Meowth! {str(pokemon)} raid reported by {message.author.mention}! Details: {raid_details}. React if you want to make a channel for this raid! Use {report_emoji} to report new, or {list_emoji} to list unreported raids!"
                             ctx.raidreport = await message.channel.send(raidmsg, embed=embed)
                             dm_dict = await raid_cog.send_dm_messages(ctx, str(pokemon), raid_details, f"Meowth! {str(pokemon)} raid reported by {message.author.display_name} in {message.channel.mention}! Details: {raid_details}. React in {message.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                     else:
@@ -873,17 +853,7 @@ class Huntr(commands.Cog):
             return
         await asyncio.sleep(1)
         ctx.raidreport = await message.channel.send(content=f"Meowth! {str(pokemon).title()} raid reported by {message.author.mention}! Details: {raid_details}. Coordinate in {raid_channel.mention}\n\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!", embed=raid_embed)
-        if pokemon.form == "alolan":
-            raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-alolan")
-        elif pokemon.form == "galarian":
-            raid = discord.utils.get(message.guild.roles, name=f"{pokemon.name.lower()}-galarian")
-        else:
-            raid = discord.utils.get(message.guild.roles, name=str(pokemon).replace(' ', '-').lower())
-        if raid == None:
-            roletest = ""
-        else:
-            roletest = _("{pokemon} - ").format(pokemon=raid.mention)
-        raidmsg = f"{roletest}Meowth! {str(pokemon).title()} raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel.\n\nThis channel will be deleted five minutes after the timer expires."
+        raidmsg = f"Meowth! {str(pokemon).title()} raid reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel.\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
         await utils.safe_reaction(raid_message, help_reaction)
         for reaction in react_list:
@@ -916,7 +886,8 @@ class Huntr(commands.Cog):
             'egg_level': '0',
             'moveset': 0,
             'weather': weather,
-            'coordinates':raid_coordinates
+            'coordinates':raid_coordinates,
+            'dm_dict':dm_dict
         }
         await raid_cog._timerset(raid_channel, raidexp)
         if not ctx.prefix:
@@ -947,8 +918,9 @@ class Huntr(commands.Cog):
             else:
                 index += 1
         ctx.raid_channel = raid_channel
-        self.bot.loop.create_task(raid_cog.edit_dm_messages(ctx, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict))
+        dm_dict = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id].get('dm_dict', {})
         dm_dict = await raid_cog.send_dm_messages(ctx, str(pokemon), raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
+        self.bot.loop.create_task(raid_cog.edit_dm_messages(ctx, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict))
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         if report_user:
             raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(report_user.id, {}).setdefault('reports', {}).setdefault('raid', 0) + 1
@@ -1027,7 +999,8 @@ class Huntr(commands.Cog):
             'egg_level':egg_level,
             'weather': weather,
             'moveset': 0,
-            'coordinates':raid_coordinates
+            'coordinates':raid_coordinates,
+            'dm_dict':dm_dict
         }
         if raidexp is not False:
             await raid_cog._timerset(raid_channel, raidexp)
@@ -1048,8 +1021,9 @@ class Huntr(commands.Cog):
             else:
                 index += 1
         ctx.raid_channel = raid_channel
-        self.bot.loop.create_task(raid_cog.edit_dm_messages(ctx, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict))
+        dm_dict = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id].get('dm_dict', {})
         dm_dict = await raid_cog.send_dm_messages(ctx, str(egg_level), raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
+        self.bot.loop.create_task(raid_cog.edit_dm_messages(ctx, ctx.raidreport.content, copy.deepcopy(raid_embed), dm_dict))
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         if report_user:
             egg_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(report_user.id, {}).setdefault('reports', {}).setdefault('egg', 0) + 1

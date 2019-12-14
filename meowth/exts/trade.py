@@ -768,7 +768,7 @@ class Trading(commands.Cog):
             type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('trade', True)
             if not any([pokemon_setting]):
                 continue
-            if not checks.dm_check(ctx, trainer) or trainer in dm_dict:
+            if not checks.dm_check(ctx, trainer, "trade") or trainer in dm_dict:
                 continue
             send_trade = []
             if pokemon_setting and pokemon and pokemon.id in user_wants:
