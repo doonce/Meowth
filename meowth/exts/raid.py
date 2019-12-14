@@ -711,6 +711,8 @@ class Raid(commands.Cog):
             raid_types = pokemon.types.copy()
         raid_types.append('None')
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
+            if trainer != 288810647960158220:
+                continue
             user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
             if user_link:
                 user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('alerts', {}).setdefault('wants', [])
@@ -742,6 +744,7 @@ class Raid(commands.Cog):
                 send_raid.append(f"Raid Egg: {egg_level}")
             if raid_details.lower() in user_gyms:
                 send_raid.append(f"Gym: {raid_details.title()}")
+            print(send_raid)
             if send_raid:
                 embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_raid)}"
                 try:
@@ -1959,6 +1962,7 @@ class Raid(commands.Cog):
         egg_level = eggdetails['egg_level']
         manual_timer = eggdetails['manual_timer']
         weather = eggdetails.get('weather', None)
+        dm_dict = eggdetails.get('dm_dict', {})
         egg_report = await report_channel.fetch_message(eggdetails['raid_report'])
         raid_message = await raid_channel.fetch_message(eggdetails['raid_message'])
         coordinates = eggdetails.get('coordinates', False)
