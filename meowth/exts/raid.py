@@ -744,7 +744,6 @@ class Raid(commands.Cog):
                 send_raid.append(f"Raid Egg: {egg_level}")
             if raid_details.lower() in user_gyms:
                 send_raid.append(f"Gym: {raid_details.title()}")
-            print(send_raid)
             if send_raid:
                 embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_raid)}"
                 try:
