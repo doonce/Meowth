@@ -711,8 +711,6 @@ class Raid(commands.Cog):
             raid_types = pokemon.types.copy()
         raid_types.append('None')
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
-            if trainer != 288810647960158220:
-                continue
             user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
             if user_link:
                 user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('alerts', {}).setdefault('wants', [])
@@ -918,18 +916,18 @@ class Raid(commands.Cog):
         return raid_embed
 
     async def auto_weather(self, ctx, coord):
-        wild_dict = self.bot.guild_dict[ctx.guild.id].setdefault('wildreport_dict', {})
-        wild_weather_dict = {}
-        for wild_report in list(wild_dict.keys()):
-            report_time = datetime.datetime.utcfromtimestamp(wild_dict.get(wild_report, {}).get('report_time', time.time()))
-            coordinates = wild_dict.get(wild_report, {}).get('coordinates', None)
-            weather = wild_dict.get(wild_report, {}).get('weather', None)
-            if weather and coordinates and ctx.message.created_at.hour == report_time.hour:
-                wild_weather_dict[coordinates] = weather
-        if not wild_weather_dict:
-            return None
-        weather_search = {k: (float(k.split(",")[0]), float(k.split(",")[1])) for k,v in wild_weather_dict.items()}
         try:
+            wild_dict = self.bot.guild_dict[ctx.guild.id].setdefault('wildreport_dict', {})
+            wild_weather_dict = {}
+            for wild_report in list(wild_dict.keys()):
+                report_time = datetime.datetime.utcfromtimestamp(wild_dict.get(wild_report, {}).get('report_time', time.time()))
+                coordinates = wild_dict.get(wild_report, {}).get('coordinates', None)
+                weather = wild_dict.get(wild_report, {}).get('weather', None)
+                if weather and coordinates and ctx.message.created_at.hour == report_time.hour:
+                    wild_weather_dict[coordinates] = weather
+            if not wild_weather_dict:
+                return None
+            weather_search = {k: (float(k.split(",")[0]), float(k.split(",")[1])) for k,v in wild_weather_dict.items()}
             dist = lambda s, key: (float(s[0]) - float(weather_search[key][0])) ** 2 + \
                                   (float(s[1]) - float(weather_search[key][1])) ** 2
         except:

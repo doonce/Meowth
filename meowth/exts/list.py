@@ -767,8 +767,7 @@ class Listing(commands.Cog):
 
     async def _wantlist(self, ctx):
         user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-        user_mute = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', False)
-        mute_mentions = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute_mentions', False)
+        user_mute = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', {"raid":False, "invasion":False, "lure":False, "wild":False, "research":False, "nest":False, "trade":False})
         user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
         user_wants = sorted(user_wants)
         wantlist = [utils.get_name(self.bot, x).title() for x in user_wants]
@@ -828,7 +827,7 @@ class Listing(commands.Cog):
             if (user_trades or user_tradeforms) and not user_link:
                 wantmsg += _('**Trades:** (trades)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(tradelist+user_tradeforms), width=80)))
             if user_gyms:
-                wantmsg += _('**Gyms:** (raids)\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
+                wantmsg += _('**Gyms:** (raid)\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
             if user_stops:
                 wantmsg += _('**Stops:** ({cat_options})\n{user_stops}\n\n').format(user_stops='\n'.join(textwrap.wrap(', '.join(user_stops), width=80)), cat_options=(', ').join([x for x in pokestop_options if pokestop_settings.get(x)]))
             if user_items:
@@ -842,12 +841,8 @@ class Listing(commands.Cog):
             if user_eggs:
                 wantmsg += _('**Raid Eggs:** (raids)\n{user_levels}\n\n').format(user_levels='\n'.join(textwrap.wrap(', '.join(user_eggs), width=80)))
         if wantmsg:
-            if user_mute and mute_mentions:
-                listmsg = _('Meowth! {author}, your notifications and @mentions are muted, so you will not receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
-            elif user_mute and not mute_mentions:
-                listmsg = _('Meowth! {author}, your DM notifications are muted, so you will only receive @mention notifications for your current **!want** list:').format(author=ctx.author.display_name)
-            elif not user_mute and mute_mentions:
-                listmsg = _('Meowth! {author}, your @mentions are muted, so you will only receive DM notifications for your current **!want** list:').format(author=ctx.author.display_name)
+            if any(list(user_mute.values())):
+                listmsg = f"Meowth! {ctx.author.display_name}, your **{(', ').join([x for x in user_mute if user_mute[x]])}** notifications are muted, so you will not receive those notifications from your current **!want** list:"
             else:
                 listmsg = _('Meowth! {author}, you will receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
             paginator = commands.Paginator(prefix="", suffix="")

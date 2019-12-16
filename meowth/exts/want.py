@@ -999,7 +999,7 @@ class Want(commands.Cog):
         else:
             link_str = f"Reply with **link** to link your **!want** list to your boss notifications. Your current **!want** list will be used for wild, research, raid @mentions, and nest reports."
         settings_embed = discord.Embed(description=f"", colour=ctx.me.colour)
-        settings_embed.add_field(name=f"**mute**", value=f"Reply with **mute [report types]** to select DM alerts from Meowth to mute. You will be able to choose `None`, `All`, or any report type combination of {(', ').join(mute_options)}. This will mute all DMs of selected types. To have finer control, try **categories**", inline=False)
+        settings_embed.add_field(name=f"**mute**", value=f"Reply with **mute** to select DM alerts from Meowth to mute. You will be able to choose `None`, `All`, or any report type combination of {(', ').join(mute_options)}. This will mute all DMs of selected types. To have finer control, try **categories**", inline=False)
         settings_embed.add_field(name=f"**time**", value=f"Reply with **time** to set your active hours. Your start time setting will be when Meowth can start sending DMs each day and your end time setting will be when Meowth will stop sending DMs each day. If you set these to **none**, meowth will DM you regardless of time unless DMs are muted.", inline=False)
         settings_embed.add_field(name=f"**{'unlink' if user_link else 'link'}**", value=f"{link_str}", inline=False)
         settings_embed.add_field(name=f"**categories**", value=f"Reply with **categories** to set your alert categories. For example, if you want a certain pokestop but only want wild alerts but no lures or invasions, use this setting.", inline=False)
