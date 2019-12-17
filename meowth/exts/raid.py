@@ -916,22 +916,19 @@ class Raid(commands.Cog):
         return raid_embed
 
     async def auto_weather(self, ctx, coord):
-        try:
-            wild_dict = self.bot.guild_dict[ctx.guild.id].setdefault('wildreport_dict', {})
-            wild_weather_dict = {}
-            for wild_report in list(wild_dict.keys()):
-                report_time = datetime.datetime.utcfromtimestamp(wild_dict.get(wild_report, {}).get('report_time', time.time()))
-                coordinates = wild_dict.get(wild_report, {}).get('coordinates', None)
-                weather = wild_dict.get(wild_report, {}).get('weather', None)
-                if weather and coordinates and ctx.message.created_at.hour == report_time.hour:
-                    wild_weather_dict[coordinates] = weather
-            if not wild_weather_dict:
-                return None
-            weather_search = {k: (float(k.split(",")[0]), float(k.split(",")[1])) for k,v in wild_weather_dict.items()}
-            dist = lambda s, key: (float(s[0]) - float(weather_search[key][0])) ** 2 + \
-                                  (float(s[1]) - float(weather_search[key][1])) ** 2
-        except:
+        wild_dict = self.bot.guild_dict[ctx.guild.id].setdefault('wildreport_dict', {})
+        wild_weather_dict = {}
+        for wild_report in list(wild_dict.keys()):
+            report_time = datetime.datetime.utcfromtimestamp(wild_dict.get(wild_report, {}).get('report_time', time.time()))
+            coordinates = wild_dict.get(wild_report, {}).get('coordinates', None)
+            weather = wild_dict.get(wild_report, {}).get('weather', None)
+            if weather and coordinates and ctx.message.created_at.hour == report_time.hour:
+                wild_weather_dict[coordinates] = weather
+        if not wild_weather_dict:
             return None
+        weather_search = {k: (float(k.split(",")[0]), float(k.split(",")[1])) for k,v in wild_weather_dict.items()}
+        dist = lambda s, key: (float(s[0]) - float(weather_search[key][0])) ** 2 + \
+                              (float(s[1]) - float(weather_search[key][1])) ** 2
         nearest_wild = min(weather_search, key=functools.partial(dist, coord))
         return wild_weather_dict[nearest_wild]
 
@@ -952,7 +949,11 @@ class Raid(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
         error = False
         first = True
+        tsr = False
         msg = ""
+        old_raid_dict = {}
+        for raid_level in self.bot.raid_info['raid_eggs']:
+            old_raid_dict[raid_level] = self.bot.raid_info['raid_eggs'][raid_level]['pokemon']
         raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
         raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         def check(reply):
@@ -969,7 +970,7 @@ class Raid(commands.Cog):
                     edit_level = level
                 if not edit_level:
                     raid_embed.clear_fields()
-                    raid_embed.add_field(name=_('**Edit Raid Bosses**'), value=f"{'Meowth! I will help you edit raid bosses!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **level** of bosses you'd like to modify. Reply with **1, 2, 3, 4, 5, or EX**. Or, if you want to list all bosses, reply with **list**. You can reply with **cancel** to stop anytime.", inline=False)
+                    raid_embed.add_field(name=_('**Edit Raid Bosses**'), value=f"{'Meowth! I will help you edit raid bosses!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **level** of bosses you'd like to modify. Reply with **1, 2, 3, 4, 5, or EX**. Or, if you want to list all bosses, reply with **list**. You can reply with **cancel** to stop anytime.\n\nAlternatively, reply with **tsr** to attempt to pull data from TSR's raid boss list.", inline=False)
                     boss_level_wait = await channel.send(embed=raid_embed)
                     try:
                         boss_level_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -989,6 +990,50 @@ class Raid(commands.Cog):
                             msg += _('\n**Level {level} bosses:**\n`{raidlist}` \n').format(level=raid_level, raidlist=self.bot.raid_info['raid_eggs'][raid_level]['pokemon'])
                         raid_embed.set_field_at(0, name="Raid Boss List", value=msg)
                         return await ctx.channel.send(embed=raid_embed)
+                    elif boss_level_msg.clean_content.lower() == "tsr":
+                        tsr_bosses = []
+                        tsr_boss_dict = {}
+                        async with aiohttp.ClientSession() as sess:
+                            async with sess.get("https://thesilphroad.com/raid-bosses") as resp:
+                                html = await resp.text()
+                                for line in html.splitlines():
+                                    if "Raids</h4>" in line or "<h4>Tier" in line or "<div class=\"boss-name\">" in line:
+                                        tsr_bosses.append(line.strip())
+                        if tsr_bosses:
+                            for index, item in enumerate(tsr_bosses):
+                                tsr_bosses[index] = item.replace("<h4>", "").replace("</h4>", "").replace("<div class=\"boss-name\">", "").replace("</div>", "").replace("Raids", "").replace("Tier", "").strip()
+                        if tsr_bosses:
+                            for item in tsr_bosses:
+                                if item.isdigit() or item == "EX":
+                                    tsr_boss_dict[item] = []
+                                    current_list = tsr_boss_dict[item]
+                                else:
+                                    current_list.append(item)
+                        if tsr_boss_dict:
+                            msg += _('I will replace this:\n')
+                            for raid_level in tsr_boss_dict:
+                                msg += f"**Level {raid_level} boss list:**\n`{self.bot.raid_info['raid_eggs'][raid_level]['pokemon']}` \n"
+                            msg += _('\nWith this:\n')
+                            for raid_level in tsr_boss_dict:
+                                msg += f"**Level {raid_level} boss list:**\n`{tsr_boss_dict[raid_level]}` \n"
+                            msg += _('\nWould you like to continue?')
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name="Raid Boss Edit", value=msg)
+                            question = await ctx.channel.send(embed=raid_embed)
+                            try:
+                                timeout = False
+                                res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
+                            except TypeError:
+                                timeout = True
+                            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
+                                await utils.safe_delete(question)
+                                error = _('cancelled the command')
+                            elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
+                                tsr = True
+                            else:
+                                error = _('did something invalid')
+                            await utils.safe_delete(question)
+                            break
                     elif not any([boss_level_msg.clean_content.lower() == "ex", boss_level_msg.clean_content.isdigit()]):
                         error = _("entered an invalid option")
                         break
@@ -1057,12 +1102,10 @@ class Raid(commands.Cog):
                     if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
                         await utils.safe_delete(question)
                         error = _('cancelled the command')
-                        break
                     elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
                         pass
                     else:
                         error = _('did something invalid')
-                        break
                     await utils.safe_delete(question)
                     break
         if error:
@@ -1076,10 +1119,16 @@ class Raid(commands.Cog):
             confirmation = await channel.send(embed=raid_embed, delete_after=90)
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
-            tmp = data['raid_eggs'][edit_level]['pokemon']
-            new_list = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in new_list]
-            new_list = [str(x) for x in new_list if x]
-            data['raid_eggs'][edit_level]['pokemon'] = new_list
+            if tsr:
+                for raid_level in tsr_boss_dict:
+                    data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
+                new_raid_dict = copy.deepcopy(tsr_boss_dict)
+            else:
+                tmp = data['raid_eggs'][edit_level]['pokemon']
+                new_list = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in new_list]
+                new_list = [str(x) for x in new_list if x]
+                data['raid_eggs'][edit_level]['pokemon'] = new_list
+                new_raid_dict = {edit_level: new_list}
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
             await pkmn_class.Pokemon.generate_lists(self.bot)
@@ -1088,17 +1137,18 @@ class Raid(commands.Cog):
             for guild in list(self.bot.guilds):
                 for report_dict in self.bot.channel_report_dicts:
                     for channel_id in list(self.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys()):
-                        if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(edit_level):
-                            for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
-                                interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'])
-                                new_bosses = list(set(new_list) - set(tmp))
-                                new_bosses = [x.lower() for x in new_bosses]
-                                self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
-                            self.bot.guild_dict[guild.id][report_dict][channel_id]['pokemon'] = ''
-                            self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
-                            self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
-                            channel = self.bot.get_channel(channel_id)
-                            await self._edit_party(channel)
+                        for raid_level in new_raid_dict:
+                            if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(raid_level):
+                                for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
+                                    interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'])
+                                    new_bosses = list(set(new_raid_dict[raid_level]) - set(old_raid_dict[raid_level]))
+                                    new_bosses = [x.lower() for x in new_bosses]
+                                    self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
+                                self.bot.guild_dict[guild.id][report_dict][channel_id]['pokemon'] = ''
+                                self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
+                                self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
+                                channel = self.bot.get_channel(channel_id)
+                                await self._edit_party(channel)
             await utils.safe_delete(message)
 
     @commands.command()
@@ -1668,7 +1718,7 @@ class Raid(commands.Cog):
         raid_channel = await self.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.form.lower() if boss.form else ''}", raid_details, "raid")
         if not raid_channel:
             return
-        if not weather:
+        if not weather and raid_coordinates:
             weather = await self.auto_weather(ctx, raid_coordinates)
         if (raidexp or raidexp is 0) and int(raidexp) > int(self.bot.raid_info['raid_eggs'][level]['raidtime']):
             raidexp = False
