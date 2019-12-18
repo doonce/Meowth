@@ -837,7 +837,7 @@ class Huntr(commands.Cog):
                     pokemon = boss
                     break
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
-        if not weather:
+        if not weather and raid_coordinates:
             weather = await raid_cog.auto_weather(ctx, raid_coordinates)
         report_details['weather'] = weather
         gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -953,7 +953,7 @@ class Huntr(commands.Cog):
         raid_details = report_details.get('gym', raid_coordinates)
         report_details['address'] = raid_details
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
-        if not weather:
+        if not weather and raid_coordinates:
             weather = await raid_cog.auto_weather(ctx, raid_coordinates)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:

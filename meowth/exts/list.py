@@ -1130,7 +1130,7 @@ class Listing(commands.Cog):
                     search = "shiny"
                 elif "all" in search.lower():
                     search = "all"
-                    list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('trade', {}).setdefault(ctx.channel.id, [])
+                    list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('trade_search', {}).setdefault(ctx.channel.id, [])
                     delete_list = []
                     for msg in list_dict:
                         try:
@@ -1159,7 +1159,7 @@ class Listing(commands.Cog):
                     list_messages.append(listmsg.id)
                     index += 1
                 if search == "all":
-                    self.bot.guild_dict[ctx.guild.id]['list_dict']['trade'][ctx.channel.id] = list_messages
+                    self.bot.guild_dict[ctx.guild.id]['list_dict']['trade_search'][ctx.channel.id] = list_messages
             elif listmsg:
                 listmsg = await ctx.channel.send(listmsg)
                 list_messages.append(listmsg.id)

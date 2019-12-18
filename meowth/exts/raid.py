@@ -444,7 +444,7 @@ class Raid(commands.Cog):
                                 expire_embed.add_field(name=field.name, value=field.value, inline=field.inline)
                     else:
                         expire_embed = None
-                    hatch_message = await channel.send(f"**This egg has hatched!** Trainers {(', ').join(maybe_list)}: Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**.", embed=expire_embed)
+                    hatch_message = await channel.send(f"**This egg has hatched!** {'Trainers ' if maybe_list else ''}{(', ').join(maybe_list)+': ' if maybe_list else ''}Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**.", embed=expire_embed)
                     self.bot.guild_dict[guild.id][report_dict][channel.id]['hatch_message'] = hatch_message.id
                 raid_time = int(self.bot.raid_info['raid_eggs'][str(egg_level)]['raidtime'])
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (raid_time * 60)) - time.time()
@@ -964,6 +964,11 @@ class Raid(commands.Cog):
         while True:
             async with ctx.typing():
                 edit_level = None
+                if str(level).lower() == "list" or str(new_list).lower() == "list":
+                    for raid_level in self.bot.raid_info['raid_eggs']:
+                        msg += _('\n**Level {level} bosses:**\n`{raidlist}` \n').format(level=raid_level, raidlist=self.bot.raid_info['raid_eggs'][raid_level]['pokemon'])
+                    raid_embed.add_field(name="Raid Boss List", value=msg)
+                    return await ctx.channel.send(embed=raid_embed)
                 if level and level.lower() == "ex":
                     edit_level = "EX"
                 elif level and level in self.bot.raid_info['raid_eggs']:
@@ -1013,26 +1018,29 @@ class Raid(commands.Cog):
                             msg += _('I will replace this:\n')
                             for raid_level in tsr_boss_dict:
                                 msg += f"**Level {raid_level} boss list:**\n`{self.bot.raid_info['raid_eggs'][raid_level]['pokemon']}` \n"
-                            msg += _('\nWith this:\n')
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name="Raid Boss Edit", value=msg)
+                            question1 = await ctx.channel.send(embed=raid_embed, delete_after=60)
+                            msg = _('\nWith this:\n')
                             for raid_level in tsr_boss_dict:
                                 msg += f"**Level {raid_level} boss list:**\n`{tsr_boss_dict[raid_level]}` \n"
                             msg += _('\nWould you like to continue?')
                             raid_embed.clear_fields()
                             raid_embed.add_field(name="Raid Boss Edit", value=msg)
-                            question = await ctx.channel.send(embed=raid_embed)
+                            question2 = await ctx.channel.send(embed=raid_embed)
                             try:
                                 timeout = False
-                                res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
+                                res, reactuser = await utils.ask(self.bot, question2, ctx.author.id)
                             except TypeError:
                                 timeout = True
                             if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
-                                await utils.safe_delete(question)
+                                await utils.safe_bulk_delete(ctx.channel, [question1, question2])
                                 error = _('cancelled the command')
                             elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
                                 tsr = True
                             else:
                                 error = _('did something invalid')
-                            await utils.safe_delete(question)
+                            await utils.safe_bulk_delete(ctx.channel, [question1, question2])
                             break
                     elif not any([boss_level_msg.clean_content.lower() == "ex", boss_level_msg.clean_content.isdigit()]):
                         error = _("entered an invalid option")
@@ -1116,7 +1124,7 @@ class Raid(commands.Cog):
         else:
             raid_embed.clear_fields()
             raid_embed.add_field(name=_('**Boss Edit Completed**'), value=_("Meowth! Your edit completed successfully.").format(error=error), inline=False)
-            confirmation = await channel.send(embed=raid_embed, delete_after=90)
+            confirmation = await channel.send(embed=raid_embed)
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
             if tsr:
@@ -2194,12 +2202,10 @@ class Raid(commands.Cog):
                 if not user:
                     continue
                 trainer_list.append(user.mention)
-        hatch_msg = await raid_channel.send(content=_("Meowth! Trainers {trainer_list}: The raid egg has just hatched into a {pokemon} raid!").format(trainer_list=', '.join(trainer_list), pokemon=str(pokemon)))
+        hatch_msg = await raid_channel.send(content=f"Meowth! {'Trainers' if trainer_list else ''}{(', ').join(trainer_list)+': ' if trainer_list else ''}The raid egg has just hatched into a {str(pokemon)} raid!")
         ctx = await self.bot.get_context(hatch_msg)
         ctx.raidreport = egg_report
         ctx.raid_channel = raid_channel
-        if ctx.raidreport:
-            self.bot.loop.create_task(self.edit_dm_messages(ctx, raidreportcontent, copy.deepcopy(raid_embed), eggdetails.get('dm_dict', {})))
         try:
             await raid_message.edit(new_content=raidmsg, embed=raid_embed, content=raidmsg)
             raid_message = raid_message.id
@@ -2245,6 +2251,8 @@ class Raid(commands.Cog):
             raid_reports = self.bot.guild_dict[raid_channel.guild.id].setdefault('trainers', {}).setdefault(author.id, {}).setdefault('reports', {}).setdefault('raid', 0) + 1
             self.bot.guild_dict[raid_channel.guild.id]['trainers'][author.id]['reports']['raid'] = raid_reports
             await self._edit_party(raid_channel, author)
+        if ctx.raidreport:
+            self.bot.loop.create_task(self.edit_dm_messages(ctx, raidreportcontent, copy.deepcopy(raid_embed), eggdetails.get('dm_dict', {})))
         self.bot.loop.create_task(self.expiry_check(raid_channel))
 
     @raid.command(aliases=['expire', 'delete'], name='reset')

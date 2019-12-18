@@ -960,6 +960,36 @@ class Pokedex(commands.Cog):
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
         pokemon.gender = False
         pokemon.size = None
+        weather_boost = []
+        windy_emoji = ctx.bot.config.custom_emoji.get('windy', u"\U0001F343")
+        windy_boost = ["Dragon", "Flying", "Psychic"]
+        snowy_emoji = ctx.bot.config.custom_emoji.get('snowy', u"\U00002744\U0000fe0f")
+        snowy_boost = ["Ice", "Steel"]
+        partlycloudy_emoji = ctx.bot.config.custom_emoji.get('partlycloudy', u"\U0001f325\U0000fe0f")
+        partlycloudy_boost = ["Normal", "Rock"]
+        foggy_emoji = ctx.bot.config.custom_emoji.get('foggy', u"\U0001f32b\U0000fe0f")
+        foggy_boost = ["Dark", "Ghost"]
+        cloudy_emoji = ctx.bot.config.custom_emoji.get('cloudy', u"\U00002601\U0000fe0f")
+        cloudy_boost = ["Fairy", "Fighting", "Poison"]
+        rainy_emoji = ctx.bot.config.custom_emoji.get('rainy', u"\U0001f327\U0000fe0f")
+        rainy_boost = ["Water", "Electric", "Bug"]
+        clear_emoji = ctx.bot.config.custom_emoji.get('clear', u"\U00002600\U0000fe0f")
+        clear_boost = ["Fire", "Grass", "Ground"]
+        for type in pokemon.types:
+            if type in windy_boost and windy_emoji not in weather_boost:
+                weather_boost.append(windy_emoji)
+            elif type in snowy_boost and snowy_emoji not in weather_boost:
+                weather_boost.append(snowy_emoji)
+            elif type in partlycloudy_boost and partlycloudy_emoji not in weather_boost:
+                weather_boost.append(partlycloudy_emoji)
+            elif type in foggy_boost and foggy_emoji not in weather_boost:
+                weather_boost.append(foggy_emoji)
+            elif type in cloudy_boost and cloudy_emoji not in weather_boost:
+                weather_boost.append(cloudy_emoji)
+            elif type in rainy_boost and rainy_emoji not in weather_boost:
+                weather_boost.append(rainy_emoji)
+            elif type in clear_boost and clear_emoji not in weather_boost:
+                weather_boost.append(clear_emoji)
         key_list = []
         forms = [x.title() for x in ctx.bot.pkmn_info[pokemon.name.lower()]['forms'].keys()]
         if not forms:
@@ -988,7 +1018,7 @@ class Pokedex(commands.Cog):
                 form = "Normal"
             form_str = f"{form} {form_key}"
             form_list.append(form_str.strip())
-        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji}", value=pokemon.pokedex, inline=False)
+        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji} - {('').join(weather_boost)}", value=pokemon.pokedex, inline=False)
         if len(forms) > 1 or key_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
         if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:
