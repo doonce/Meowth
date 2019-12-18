@@ -895,7 +895,7 @@ class Raid(commands.Cog):
                 raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
             else:
                 raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist}').format(bosslist=''.join(boss_list)), inline=True)
-                raid_embed.add_field(name=_('**Weaknesses:**'), value=pokemon.weakness_emoji, inline=True)
+                raid_embed.add_field(name=_('**Weaknesses:**'), value=f"{pokemon.weakness_emoji}\u200b", inline=True)
             raid_embed.set_author(name=f"Level {egg_level} Raid Report", icon_url=raid_img_url)
         elif embed_type == "raid":
             egg_level = utils.get_level(ctx.bot, pokemon.id)
