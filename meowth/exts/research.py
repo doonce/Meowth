@@ -8,6 +8,9 @@ import textwrap
 import logging
 import string
 import traceback
+import aiohttp
+import os
+import json
 
 import discord
 from discord.ext import commands, tasks
@@ -319,6 +322,100 @@ class Research(commands.Cog):
         ctx.researchreportmsg = message
         dm_dict = await self.send_dm_messages(ctx, pokemon, location, item, copy.deepcopy(research_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][message.id]['dm_dict'] = dm_dict
+
+    @commands.command()
+    @checks.is_manager()
+    async def res_json(self, ctx):
+        tsr_quests = []
+        tsr_quest_dict = {}
+        added_categories = []
+        added_quests = []
+        error = False
+        async with ctx.typing():
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get("https://thesilphroad.com/research-tasks") as resp:
+                    html = await resp.text()
+            parse_list = re.split('<div|<span|<p', str(html))
+            for line in parse_list:
+                if "Tasks</h3>" in line or "class=\"taskText\">" in line or "class=\"task-reward" in line:
+                    for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "pokemon  \">", "pokemon shinyAvailable \">", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "<h3>", "</p>", ">"]:
+                        line = line.replace(replacement, "").replace("_", " ").strip()
+                    tsr_quests.append(line.strip())
+            for index, item in enumerate(tsr_quests):
+                if len(item.split()) > 2:
+                    continue
+                __, item_name = await utils.get_item(ctx, item)
+                if item_name:
+                    tsr_quests[index] = item_name
+            for item in tsr_quests:
+                if "Tasks" in item:
+                    tsr_quest_dict[item] = {}
+                    added_categories.append(item)
+            for item in tsr_quests:
+                if item in added_categories or item.isdigit() or item.lower() in self.bot.item_list:
+                    continue
+                for category in tsr_quest_dict.keys():
+                    tsr_quest_dict[category][item] = []
+                    if item not in added_quests:
+                        added_quests.append(item)
+            for item in tsr_quests:
+                if item in added_categories:
+                    current_category = item
+                    tsr_quest_dict[item] = {}
+                    continue
+                elif item in added_quests:
+                    current_quest = item
+                    tsr_quest_dict[current_category][item] = []
+                    continue
+                else:
+                    if not item in self.bot.item_list and not item in added_quests and not item in added_categories:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, item, allow_digits=True)
+                        if pokemon:
+                            shiny_str = ""
+                            if pokemon.id in self.bot.shiny_dict:
+                                if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                            item = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
+                    tsr_quest_dict[current_category][current_quest].append(item)
+            research_embed = discord.Embed(discription="", colour=ctx.guild.me.colour)
+            for category in tsr_quest_dict.keys():
+                field_value = ""
+                for quest in tsr_quest_dict[category]:
+                    if (len(field_value) + len(f"**{quest}** - {(', ').join([x.title() for x in tsr_quest_dict[category][quest]])}\n")) >= 1020:
+                        research_embed.add_field(name=category, value=field_value, inline=False)
+                        await ctx.send(embed=research_embed, delete_after=60)
+                        research_embed.clear_fields()
+                        field_value = ""
+                    field_value += f"**{quest}** - {(', ').join([x.title() for x in tsr_quest_dict[category][quest]])}\n"
+                research_embed.add_field(name=category, value=field_value, inline=False)
+            await ctx.send(embed=research_embed, delete_after=60)
+            question = await ctx.send(f"This will be the new research dictionary. The above messages will delete themselves, but they will be in **{ctx.prefix}list tasks**. Continue?")
+            research_embed.set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/field-research.png?cache=1')
+            try:
+                timeout = False
+                res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
+            except TypeError:
+                timeout = True
+            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
+                await utils.safe_delete(question)
+                error = _('cancelled the command')
+            elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
+                pass
+            else:
+                error = _('did something invalid')
+            await utils.safe_delete(question)
+            if error:
+                research_embed.clear_fields()
+                research_embed.add_field(name=_('**Quest Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+                confirmation = await ctx.send(embed=research_embed, delete_after=10)
+                await utils.safe_delete(ctx.message)
+            else:
+                research_embed.clear_fields()
+                research_embed.add_field(name=_('**Quest Edit Completed**'), value=_("Meowth! Your edit completed successfully.").format(error=error), inline=False)
+                confirmation = await ctx.send(embed=research_embed)
+                with open(os.path.join('data', 'quest_info.json'), 'w') as fd:
+                    json.dump(tsr_quest_dict, fd, indent=2, separators=(', ', ': '))
+                self.bot.quest_info = copy.deepcopy(tsr_quest_dict)
 
     @commands.group(aliases=['res'], invoke_without_command=True, case_insensitive=True)
     @checks.allowresearchreport()

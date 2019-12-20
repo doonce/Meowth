@@ -43,6 +43,7 @@ class MeowthBot(commands.AutoShardedBot):
         self.ext_dir = os.path.join(self.bot_dir, "exts")
         self.pkmn_info_path = os.path.join('locale', '{0}', 'pkmn.json').format(self.pkmn_language)
         self.raid_json_path = os.path.join('data', 'raid_info.json')
+        self.quest_json_path = os.path.join('data', 'quest_info.json')
         self.config = config
         self.token = config.bot_token
         self.co_owners = config.bot_coowners
@@ -111,19 +112,36 @@ class MeowthBot(commands.AutoShardedBot):
 
     @property
     def raid_info(self):
-        with open(self.raid_json_path, 'r') as fd:
-            return json.load(fd)
+        try:
+            with open(self.raid_json_path, 'r') as fd:
+                return json.load(fd)
+        except:
+            return {}
+
+    @property
+    def quest_info(self):
+        try:
+            with open(self.quest_json_path, 'r') as fd:
+                return json.load(fd)
+        except:
+            return {}
 
     @property
     def pkmn_info(self):
-        with open(self.pkmn_info_path, 'r', encoding="utf8") as fd:
-            return json.load(fd)
+        try:
+            with open(self.pkmn_info_path, 'r', encoding="utf8") as fd:
+                return json.load(fd)
+        except:
+            return {}
 
     @property
     def type_chart(self):
-        with open(os.path.join('data', 'type_chart.json'), 'r') as fd:
-            return json.load(fd)
-
+        try:
+            with open(os.path.join('data', 'type_chart.json'), 'r') as fd:
+                return json.load(fd)
+        except:
+            return {}
+            
     @property
     def pkmn_list(self):
         pkmn_list = []

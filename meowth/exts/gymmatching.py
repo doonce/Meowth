@@ -453,6 +453,7 @@ class GymMatching(commands.Cog):
                     index += 1
             if active_raids:
                 poi_embed.add_field(name="Current Raids", value=('\n').join(active_raids), inline=False)
+            active_raids = []
             index = 1
             for alarm_raid in self.bot.guild_dict[ctx.guild.id].setdefault('pokealarm_dict', {}):
                 if self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('gym', "") == location:

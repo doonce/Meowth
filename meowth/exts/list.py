@@ -1400,6 +1400,65 @@ class Listing(commands.Cog):
 
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
+    async def tasks(self, ctx):
+        """List the current research tasks
+
+        Usage: !list tasks"""
+        list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('res_tasks', {}).setdefault(ctx.channel.id, [])
+        delete_list = []
+        async with ctx.typing():
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.fetch_message(msg)
+                    delete_list.append(msg)
+                except:
+                    pass
+            list_messages = []
+            await utils.safe_bulk_delete(ctx.channel, delete_list)
+            research_embed = discord.Embed(discription="", colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/field-research.png?cache=1')
+            for category in self.bot.quest_info.keys():
+                field_value = ""
+                for quest in self.bot.quest_info[category]:
+                    if (len(field_value) + len(f"**{quest}** - {(', ').join([x.title() for x in self.bot.quest_info[category][quest]])}\n")) >= 1020:
+                        research_embed.add_field(name=category, value=field_value, inline=False)
+                        msg = await ctx.send(embed=research_embed)
+                        list_messages.append(msg.id)
+                        research_embed.clear_fields()
+                        field_value = ""
+                    field_value += f"**{quest}** - {(', ').join([x.title() for x in self.bot.quest_info[category][quest]])}\n"
+                research_embed.add_field(name=category, value=field_value, inline=False)
+            msg = await ctx.send(embed=research_embed)
+            list_messages.append(msg.id)
+            self.bot.guild_dict[ctx.guild.id]['list_dict']['res_tasks'][ctx.channel.id] = list_messages
+
+    @_list.command(name="raidbosses")
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    async def raid_bosses(self, ctx):
+        """List the current raid bosses
+
+        Usage: !list raidbosses"""
+        list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid_bosses', {}).setdefault(ctx.channel.id, [])
+        delete_list = []
+        async with ctx.typing():
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.fetch_message(msg)
+                    delete_list.append(msg)
+                except:
+                    pass
+            list_messages = []
+            await utils.safe_bulk_delete(ctx.channel, delete_list)
+            list_msg = ""
+            raid_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
+            for raid_level in self.bot.raid_info['raid_eggs']:
+                list_msg += _('\n**Level {level} bosses:**\n`{raidlist}` \n').format(level=raid_level, raidlist=self.bot.raid_info['raid_eggs'][raid_level]['pokemon'])
+            raid_embed.add_field(name="Raid Boss List", value=list_msg)
+            msg = await ctx.channel.send(embed=raid_embed)
+            list_messages.append(msg.id)
+            self.bot.guild_dict[ctx.guild.id]['list_dict']['raid_bosses'][ctx.channel.id] = list_messages
+
+    @_list.command()
+    @commands.cooldown(1, 5, commands.BucketType.channel)
     @checks.allowlurereport()
     async def lures(self, ctx):
         """List the lures for the channel
