@@ -1497,6 +1497,10 @@ class Listing(commands.Cog):
     async def _lurelist(self, ctx):
         lure_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('lure_dict', {}))
         listing_dict = {}
+        normal_emoji = self.bot.custom_emoji.get('normal_lure', self.bot.config.type_id_dict['normal'])
+        glacial_emoji = self.bot.custom_emoji.get('glacial_lure', self.bot.config.type_id_dict['ice'])
+        mossy_emoji = self.bot.custom_emoji.get('mossy_lure', self.bot.config.type_id_dict['grass'])
+        magnetic_emoji = self.bot.custom_emoji.get('normal_lure', self.bot.config.type_id_dict['steel'])
         for lureid in lure_dict:
             luremsg = ""
             if lure_dict[lureid]['report_channel'] == ctx.message.channel.id:
@@ -1504,11 +1508,12 @@ class Listing(commands.Cog):
                     lurereportmsg = await ctx.message.channel.fetch_message(lureid)
                     lureauthor = ctx.channel.guild.get_member(lure_dict[lureid]['report_author'])
                     lure_expire = datetime.datetime.utcfromtimestamp(lure_dict[lureid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    lure_type = lure_dict[lureid]['type']
                     reported_by = ""
                     if lureauthor and not lureauthor.bot:
                         reported_by = f" | **Reported By**: {lureauthor.display_name}"
                     luremsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('lure_bullet', u'\U0001F539')))
-                    luremsg += f"**Lure Type**: {lure_dict[lureid]['type'].title()} | **Location**: [{lure_dict[lureid]['location'].title()}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    luremsg += f"**Lure Type**: {lure_type.title()} {normal_emoji if lure_type == 'normal' else ''}{glacial_emoji if lure_type == 'glacial' else ''}{mossy_emoji if lure_type == 'mossy' else ''}{magnetic_emoji if lure_type == 'magnetic' else ''} | **Location**: [{lure_dict[lureid]['location'].title()}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
                     listing_dict[lureid] = {
                         "message":luremsg,
                         "expire":lure_expire

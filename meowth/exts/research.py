@@ -338,7 +338,7 @@ class Research(commands.Cog):
             parse_list = re.split('<div|<span|<p', str(html))
             for line in parse_list:
                 if "Tasks</h3>" in line or "class=\"taskText\">" in line or "class=\"task-reward" in line:
-                    for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "pokemon  \">", "pokemon shinyAvailable \">", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "<h3>", "</p>", ">"]:
+                    for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "<h3>", "</p>", ">", "unconfirmed", "pokemon", "shinyAvailable",]:
                         line = line.replace(replacement, "").replace("_", " ").strip()
                     tsr_quests.append(line.strip())
             for index, item in enumerate(tsr_quests):

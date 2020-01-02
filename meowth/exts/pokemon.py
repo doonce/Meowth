@@ -130,6 +130,7 @@ class Pokemon():
                 for word in k.split():
                     two_words.append(word)
                     two_words.append(re.sub('[^a-zA-Z0-9]', '', word))
+        two_words.extend(['ho', 'oh', 'o'])
         form_dict = available_dict
         form_dict['list'] = form_list
         form_dict['two_words'] = two_words
@@ -340,7 +341,10 @@ class Pokemon():
     @property
     def game_name(self):
         template = {}
-        search_term = f"{self.name}".lower()
+        name = self.name
+        if self.id == 250:
+            name = "ho_oh"
+        search_term = f"{name}".lower()
         excluded_forms = list(self.bot.pkmn_info['pikachu']['forms'].keys()) + ["sunglasses"]
         if self.id == 201:
             excluded_forms.extend(list(self.bot.pkmn_info['unown']['forms'].keys()))
@@ -354,7 +358,7 @@ class Pokemon():
         if self.shadow:
             form = self.shadow
         if form and form not in excluded_forms:
-            search_term = f"{self.name}_{str(form).strip()}".lower()
+            search_term = f"{name}_{str(form).strip()}".lower()
         return search_term
 
     @property
@@ -610,6 +614,9 @@ class Pokemon():
                 break
             else:
                 form = None
+                
+        if "ho oh" in argument:
+            argument = argument.replace("ho oh", "ho-oh")
 
         return {"argument":argument, "match_list":match_list, "shiny":shiny, "gender":gender, "size":size, "form":form, "shadow":shadow}
 
