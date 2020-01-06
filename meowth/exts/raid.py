@@ -635,6 +635,20 @@ class Raid(commands.Cog):
                             if raid_bonus and report_author and not report_author.bot:
                                 raid_reports = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(report_author.id, {}).setdefault('reports', {}).setdefault('raid', 0) + 1
                                 self.bot.guild_dict[guild.id]['trainers'][report_author.id]['reports']['raid'] = raid_reports
+                        try:
+                            report_channel = self.bot.get_channel(channel_dict['report_channel'])
+                            report_message = await report_channel.fetch_message(channel_dict.get('raid_report'))
+                            raid_type = "event" if channel_dict.get('meetup', False) else " raid"
+                            if raid_type != "event" and channel_dict['type'] == "egg":
+                                expiremsg = f"**This level {channel_dict['egg_level']} raid egg has expired!**"
+                            else:
+                                expiremsg = f"**This {channel_dict.get('pkmn_obj', '')}{raid_type} has expired!**"
+                            await report_message.edit(content=report_message.content.splitlines()[0], embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
+                            await report_message.clear_reactions()
+                            user_message = await report_channel.fetch_message(channel_dict['report_message'])
+                            await utils.safe_delete(user_message)
+                        except:
+                            pass
                         logger.info(f"Server: {guild.name} : Channel: {channelid} - DOESN'T EXIST IN DISCORD -> DELETING")
                     # otherwise, if meowth can still see the channel in discord
                     else:
