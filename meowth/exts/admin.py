@@ -43,7 +43,7 @@ class Admin(commands.Cog):
                 dict_guild_delete.append(s)
             for s in dict_guild_delete:
                 try:
-                    del self.guild_dict[s]
+                    del self.bot.guild_dict[s]
                     logger.info(('Cleared ' + str(s)) +
                                 ' from save data')
                 except KeyError:

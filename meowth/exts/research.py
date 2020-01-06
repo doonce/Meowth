@@ -352,6 +352,8 @@ class Research(commands.Cog):
                     tsr_quest_dict[item] = {}
                     added_categories.append(item)
             for item in tsr_quests:
+                if len(item.split('-')) > 1 and (item.split('-')[0].lower() in self.bot.pkmn_list or item.split('-')[1].lower() in self.bot.pkmn_list):
+                    continue
                 if item in added_categories or item.isdigit() or item.lower() in self.bot.item_list:
                     continue
                 for category in tsr_quest_dict.keys():

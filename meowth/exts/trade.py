@@ -129,6 +129,8 @@ class Trading(commands.Cog):
         accepted_dict = {}
         for guildid in self.bot.guild_dict.keys():
             guild = self.bot.get_guild(guildid)
+            if not guild:
+                continue
             if message.guild and message.channel.id not in self.bot.guild_dict[guild.id]['configure_dict']['trade']['report_channels']:
                 continue
             trade_dict = self.bot.guild_dict[guild.id]['trade_dict']

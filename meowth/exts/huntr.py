@@ -1092,7 +1092,9 @@ class Huntr(commands.Cog):
         gender = report_details.get('gender', None)
         leader = report_details.get('leader', None)
         if gender == "male" and reward == ["snorlax"]:
-            reward = []
+            reward = ["bulbasaur", "charmander", "squirtle"]
+        elif gender == "female" and reward == ["snorlax"]:
+            reward = ["snorlax", "lapras"]
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
@@ -1297,7 +1299,7 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         random_type = random.choice(self.bot.type_list)
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"invasion", "pokestop":"Marilla Park", "reward":random_type, "gps":"39.645742,-79.96908", "gender":"male", "expire":25}).replace("'", '"'))
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"invasion", "pokestop":"Marilla Park", "reward":['snorlax'], "gps":"39.645742,-79.96908", "gender":"female", "expire":25}).replace("'", '"'))
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

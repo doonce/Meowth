@@ -541,7 +541,7 @@ class Pokemon():
     def query_pokemon(bot, argument):
         argument = str(argument)
         shiny = re.search(r'\bshiny\b', argument, re.IGNORECASE)
-        alolan = re.search(r'\balolan*\b', argument, re.IGNORECASE)
+        alolan = re.search(r'\balola\b|\balolan\b', argument, re.IGNORECASE)
         galarian = re.search(r'\bgalar\b|\bgalarian\b', argument, re.IGNORECASE)
         male = re.search(r'\b(?<!fe)male\b', argument, re.IGNORECASE)
         female = re.search(r'\bfemale\b', argument, re.IGNORECASE)
@@ -604,13 +604,11 @@ class Pokemon():
                 form = "alolan"
                 match_list.append(alolan.group(0))
                 argument = re.sub(alolan.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
-                form = alolan.group(0).lower().strip()
                 break
             elif galarian:
                 form = "galarian"
                 match_list.append(galarian.group(0))
                 argument = re.sub(galarian.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
-                form = galarian.group(0).lower().strip()
                 break
             else:
                 form = None

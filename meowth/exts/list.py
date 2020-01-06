@@ -1848,7 +1848,7 @@ class Listing(commands.Cog):
                         if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                     wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('wild_bullet', u'\U0001F539')))
-                    wildmsg += f"**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}{disguise_str} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
+                    wildmsg += f"**Pokemon**: {shiny_str}{str(pokemon).title()} {pokemon.emoji}{disguise_str} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
                     if (disguise and disguise.is_boosted) or (pokemon and pokemon.is_boosted):
                         timestamp = wildreportmsg.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
                         wildmsg += f" | {pokemon.is_boosted or disguise.is_boosted} *({timestamp.strftime('%I:%M %p')})*"
