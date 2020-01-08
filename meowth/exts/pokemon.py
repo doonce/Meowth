@@ -81,72 +81,6 @@ class Pokemon():
                  'research_cp', 'raid_cp', 'boost_raid_cp', 'max_cp', 'weather',
                  'shadow')
 
-    async def generate_lists(bot):
-        available_dict = {}
-        shiny_dict = {}
-        shadow_list = []
-        shadow_dict = {}
-        gender_dict = {}
-        size_dict = {}
-        legendary_list = []
-        mythical_list = []
-        form_dict = {}
-        form_list = []
-        two_words = []
-        for k, v in bot.pkmn_info.items():
-            gender_forms = []
-            size_forms = []
-            shadow_forms = []
-            for form in v['forms']:
-                if form == "list":
-                    continue
-                if v['forms'][form].get('shiny', []):
-                    if v['number'] not in shiny_dict:
-                        shiny_dict[v['number']] = {}
-                    shiny_dict[v['number']][form] = v['forms'][form].get('shiny', [])
-                if v['forms'][form].get('gender', False):
-                    gender_forms.append(form)
-                if v['forms'][form].get('shadow', False):
-                    shadow_forms.append(form)
-                if v['forms'][form].get('size', False):
-                    size_forms.append(form)
-                if len(v['forms']) > 1:
-                    if form not in form_list:
-                        form_list.append(form)
-                    if v['number'] not in available_dict:
-                        available_dict[v['number']] = {}
-                    available_dict[v['number']][form] = v['forms'][form].get('available', [])
-            if gender_forms:
-                gender_dict[v['number']] = gender_forms
-            if shadow_forms:
-                shadow_dict[v['number']] = shadow_forms
-            if size_forms:
-                size_dict[v['number']] = size_forms
-            if v['legendary']:
-                legendary_list.append(bot.pkmn_info[k]['number'])
-            if v['mythical']:
-                mythical_list.append(bot.pkmn_info[k]['number'])
-            if len(k.split()) > 1:
-                for word in k.split():
-                    two_words.append(word)
-                    two_words.append(re.sub('[^a-zA-Z0-9]', '', word))
-        two_words.extend(['ho', 'oh', 'o'])
-        form_dict = available_dict
-        form_dict['list'] = form_list
-        form_dict['two_words'] = two_words
-        bot.size_dict = size_dict
-        bot.gender_dict = gender_dict
-        bot.shadow_dict = shadow_dict
-        bot.legendary_list = legendary_list
-        bot.mythical_list = mythical_list
-        bot.form_dict = form_dict
-        bot.shiny_dict = shiny_dict
-        bot.gamemaster = {}
-        async with aiohttp.ClientSession() as sess:
-            async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/GAME_MASTER.json") as resp:
-                data = await resp.json(content_type=None)
-                bot.gamemaster = data
-
     def __init__(self, bot, pkmn, guild=None, **attribs):
         self.bot = bot
         self.guild = guild
@@ -370,10 +304,6 @@ class Pokemon():
                 break
         return template
 
-    # async def colour(self):
-    #     """:class:`discord.Colour` : Discord colour based on Pokemon sprite."""
-    #     return await url_color(self.img_url)
-
     @property
     def is_raid(self):
         """:class:`bool` : Indicates if the pokemon can show in Raids"""
@@ -418,6 +348,40 @@ class Pokemon():
             elif self.weather == "windy" and type in windy_boost:
                 return "{emoji} ***Boosted***".format(emoji=self.bot.custom_emoji.get('windy', u'\U0001F343'))
         return False
+
+    @property
+    def boost_weather(self):
+        weather_boost = []
+        windy_emoji = self.bot.config.custom_emoji.get('windy', u"\U0001F343")
+        windy_boost = ["Dragon", "Flying", "Psychic"]
+        snowy_emoji = self.bot.config.custom_emoji.get('snowy', u"\U00002744\U0000fe0f")
+        snowy_boost = ["Ice", "Steel"]
+        partlycloudy_emoji = self.bot.config.custom_emoji.get('partlycloudy', u"\U0001f325\U0000fe0f")
+        partlycloudy_boost = ["Normal", "Rock"]
+        foggy_emoji = self.bot.config.custom_emoji.get('foggy', u"\U0001f32b\U0000fe0f")
+        foggy_boost = ["Dark", "Ghost"]
+        cloudy_emoji = self.bot.config.custom_emoji.get('cloudy', u"\U00002601\U0000fe0f")
+        cloudy_boost = ["Fairy", "Fighting", "Poison"]
+        rainy_emoji = self.bot.config.custom_emoji.get('rainy', u"\U0001f327\U0000fe0f")
+        rainy_boost = ["Water", "Electric", "Bug"]
+        clear_emoji = self.bot.config.custom_emoji.get('clear', u"\U00002600\U0000fe0f")
+        clear_boost = ["Fire", "Grass", "Ground"]
+        for type in self.types:
+            if type in windy_boost and windy_emoji not in weather_boost:
+                weather_boost.append(windy_emoji)
+            elif type in snowy_boost and snowy_emoji not in weather_boost:
+                weather_boost.append(snowy_emoji)
+            elif type in partlycloudy_boost and partlycloudy_emoji not in weather_boost:
+                weather_boost.append(partlycloudy_emoji)
+            elif type in foggy_boost and foggy_emoji not in weather_boost:
+                weather_boost.append(foggy_emoji)
+            elif type in cloudy_boost and cloudy_emoji not in weather_boost:
+                weather_boost.append(cloudy_emoji)
+            elif type in rainy_boost and rainy_emoji not in weather_boost:
+                weather_boost.append(rainy_emoji)
+            elif type in clear_boost and clear_emoji not in weather_boost:
+                weather_boost.append(clear_emoji)
+        return weather_boost
 
     def set_guild(self, guild):
         """:class:`discord.Guild` or :obj:`None` : Sets the relevant Guild"""
@@ -612,7 +576,7 @@ class Pokemon():
                 break
             else:
                 form = None
-                
+
         if "ho oh" in argument:
             argument = argument.replace("ho oh", "ho-oh")
 
@@ -802,6 +766,72 @@ class Pokedex(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    async def generate_lists(bot):
+        available_dict = {}
+        shiny_dict = {}
+        shadow_list = []
+        shadow_dict = {}
+        gender_dict = {}
+        size_dict = {}
+        legendary_list = []
+        mythical_list = []
+        form_dict = {}
+        form_list = []
+        two_words = []
+        for k, v in bot.pkmn_info.items():
+            gender_forms = []
+            size_forms = []
+            shadow_forms = []
+            for form in v['forms']:
+                if form == "list":
+                    continue
+                if v['forms'][form].get('shiny', []):
+                    if v['number'] not in shiny_dict:
+                        shiny_dict[v['number']] = {}
+                    shiny_dict[v['number']][form] = v['forms'][form].get('shiny', [])
+                if v['forms'][form].get('gender', False):
+                    gender_forms.append(form)
+                if v['forms'][form].get('shadow', False):
+                    shadow_forms.append(form)
+                if v['forms'][form].get('size', False):
+                    size_forms.append(form)
+                if len(v['forms']) > 1:
+                    if form not in form_list:
+                        form_list.append(form)
+                    if v['number'] not in available_dict:
+                        available_dict[v['number']] = {}
+                    available_dict[v['number']][form] = v['forms'][form].get('available', [])
+            if gender_forms:
+                gender_dict[v['number']] = gender_forms
+            if shadow_forms:
+                shadow_dict[v['number']] = shadow_forms
+            if size_forms:
+                size_dict[v['number']] = size_forms
+            if v['legendary']:
+                legendary_list.append(bot.pkmn_info[k]['number'])
+            if v['mythical']:
+                mythical_list.append(bot.pkmn_info[k]['number'])
+            if len(k.split()) > 1:
+                for word in k.split():
+                    two_words.append(word)
+                    two_words.append(re.sub('[^a-zA-Z0-9]', '', word))
+        two_words.extend(['ho', 'oh', 'o'])
+        form_dict = available_dict
+        form_dict['list'] = form_list
+        form_dict['two_words'] = two_words
+        bot.size_dict = size_dict
+        bot.gender_dict = gender_dict
+        bot.shadow_dict = shadow_dict
+        bot.legendary_list = legendary_list
+        bot.mythical_list = mythical_list
+        bot.form_dict = form_dict
+        bot.shiny_dict = shiny_dict
+        bot.gamemaster = {}
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/GAME_MASTER.json") as resp:
+                data = await resp.json(content_type=None)
+                bot.gamemaster = data
+
     @commands.command()
     @checks.is_manager()
     async def pkmn_json(self, ctx, *, pokemon: Pokemon=None):
@@ -936,7 +966,7 @@ class Pokedex(commands.Cog):
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['shadow'] = pkmn_shadow
             with open(self.bot.pkmn_info_path, 'w', encoding="utf8") as fd:
                 json.dump(pkmn_info, fd, indent=2, separators=(', ', ': '))
-            await Pokemon.generate_lists(self.bot)
+            await self.generate_lists(self.bot)
             pkmn_embed.clear_fields()
             pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}", inline=False)
             confirmation = await channel.send(embed=pkmn_embed)
@@ -965,36 +995,6 @@ class Pokedex(commands.Cog):
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
         pokemon.gender = False
         pokemon.size = None
-        weather_boost = []
-        windy_emoji = ctx.bot.config.custom_emoji.get('windy', u"\U0001F343")
-        windy_boost = ["Dragon", "Flying", "Psychic"]
-        snowy_emoji = ctx.bot.config.custom_emoji.get('snowy', u"\U00002744\U0000fe0f")
-        snowy_boost = ["Ice", "Steel"]
-        partlycloudy_emoji = ctx.bot.config.custom_emoji.get('partlycloudy', u"\U0001f325\U0000fe0f")
-        partlycloudy_boost = ["Normal", "Rock"]
-        foggy_emoji = ctx.bot.config.custom_emoji.get('foggy', u"\U0001f32b\U0000fe0f")
-        foggy_boost = ["Dark", "Ghost"]
-        cloudy_emoji = ctx.bot.config.custom_emoji.get('cloudy', u"\U00002601\U0000fe0f")
-        cloudy_boost = ["Fairy", "Fighting", "Poison"]
-        rainy_emoji = ctx.bot.config.custom_emoji.get('rainy', u"\U0001f327\U0000fe0f")
-        rainy_boost = ["Water", "Electric", "Bug"]
-        clear_emoji = ctx.bot.config.custom_emoji.get('clear', u"\U00002600\U0000fe0f")
-        clear_boost = ["Fire", "Grass", "Ground"]
-        for type in pokemon.types:
-            if type in windy_boost and windy_emoji not in weather_boost:
-                weather_boost.append(windy_emoji)
-            elif type in snowy_boost and snowy_emoji not in weather_boost:
-                weather_boost.append(snowy_emoji)
-            elif type in partlycloudy_boost and partlycloudy_emoji not in weather_boost:
-                weather_boost.append(partlycloudy_emoji)
-            elif type in foggy_boost and foggy_emoji not in weather_boost:
-                weather_boost.append(foggy_emoji)
-            elif type in cloudy_boost and cloudy_emoji not in weather_boost:
-                weather_boost.append(cloudy_emoji)
-            elif type in rainy_boost and rainy_emoji not in weather_boost:
-                weather_boost.append(rainy_emoji)
-            elif type in clear_boost and clear_emoji not in weather_boost:
-                weather_boost.append(clear_emoji)
         key_list = []
         forms = [x.title() for x in ctx.bot.pkmn_info[pokemon.name.lower()]['forms'].keys()]
         if not forms:
@@ -1023,7 +1023,7 @@ class Pokedex(commands.Cog):
                 form = "Normal"
             form_str = f"{form} {form_key}"
             form_list.append(form_str.strip())
-        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji} - {('').join(weather_boost)}", value=pokemon.pokedex, inline=False)
+        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji} - {('').join(pokemon.boost_weather)}", value=pokemon.pokedex, inline=False)
         if len(forms) > 1 or key_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
         if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:
@@ -1042,10 +1042,12 @@ class Pokedex(commands.Cog):
                 field_value += f"Evolution Candy: **{pokemon.evolve_candy}**\n"
             if pokemon.buddy_distance:
                 field_value += f"Buddy Distance: **{pokemon.buddy_distance}km**\n"
-            if pokemon.charge_moves and pokemon.quick_moves:
-                charge_moves = [x.replace('_', ' ').title() for x in pokemon.charge_moves]
-                quick_moves = [x.replace('_FAST', '').replace('_', ' ').title() for x in pokemon.quick_moves]
-                field_value += f"Quick Moves: **{(', ').join(quick_moves)}**\nCharge Moves: **{(', ').join(charge_moves)}**"
+            if pokemon.charge_moves:
+                charge_moves = [f"{x.title()} {utils.type_to_emoji(self.bot, utils.get_move_type(self.bot, x))}" for x in pokemon.charge_moves]
+            if pokemon.quick_moves:
+                quick_moves = [f"{x.title()} {utils.type_to_emoji(self.bot, utils.get_move_type(self.bot, x))}" for x in pokemon.quick_moves]
+            if charge_moves or quick_moves:
+                field_value += f"{'Quick Moves: **'+(', ').join(quick_moves)+'**' if quick_moves else ''}\n{'Charge Moves: **'+(', ').join(charge_moves)+'**' if charge_moves else ''}"
             preview_embed.add_field(name="Other Info:", value=field_value, inline=False)
         preview_embed.set_thumbnail(url=pokemon.img_url)
         if key_list:
@@ -1058,6 +1060,7 @@ class Pokedex(commands.Cog):
 
         Usage: !pokedex stats <pokemon with form, gender, etc>"""
         await ctx.invoke(self.bot.get_command('pokedex'), pokemon=pokemon)
+
 
 def setup(bot):
     bot.add_cog(Pokedex(bot))

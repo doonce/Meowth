@@ -102,6 +102,7 @@ def run_bot(debug=False, launcher=None, from_restart=False):
     if Meowth.token is None or not Meowth.default_prefix:
         Meowth.logger.critical(
             "Token and prefix must be set in order to login.")
+        print("Token and prefix must be set in order to login.")
         sys.exit(1)
     try:
         loop.run_until_complete(Meowth.start(Meowth.token))
@@ -117,6 +118,7 @@ def run_bot(debug=False, launcher=None, from_restart=False):
         Meowth.logger.critical("Fatal exception", exc_info=exc)
         loop.run_until_complete(Meowth.logout())
     finally:
+        Meowth._shutdown_mode = getattr(Meowth, "_shutdown_mode", 1)
         sys.exit(Meowth._shutdown_mode)
 
 def parse_cli_args():

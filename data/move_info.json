@@ -1,0 +1,978 @@
+{
+  "wrap": {
+    "type": "Normal", 
+    "power": 60.0
+  }, 
+  "hyper beam": {
+    "type": "Normal", 
+    "power": 150.0
+  }, 
+  "dark pulse": {
+    "type": "Dark", 
+    "power": 80.0
+  }, 
+  "sludge": {
+    "type": "Poison", 
+    "power": 50.0
+  }, 
+  "vice grip": {
+    "type": "Normal", 
+    "power": 35.0
+  }, 
+  "flame wheel": {
+    "type": "Fire", 
+    "power": 60.0
+  }, 
+  "megahorn": {
+    "type": "Bug", 
+    "power": 90.0
+  }, 
+  "flamethrower": {
+    "type": "Fire", 
+    "power": 70.0
+  }, 
+  "dig": {
+    "type": "Ground", 
+    "power": 100.0
+  }, 
+  "cross chop": {
+    "type": "Fighting", 
+    "power": 50.0
+  }, 
+  "psybeam": {
+    "type": "Psychic", 
+    "power": 70.0
+  }, 
+  "earthquake": {
+    "type": "Ground", 
+    "power": 140.0
+  }, 
+  "stone edge": {
+    "type": "Rock", 
+    "power": 100.0
+  }, 
+  "ice punch": {
+    "type": "Ice", 
+    "power": 50.0
+  }, 
+  "heart stamp": {
+    "type": "Psychic", 
+    "power": 40.0
+  }, 
+  "discharge": {
+    "type": "Electric", 
+    "power": 65.0
+  }, 
+  "flash cannon": {
+    "type": "Steel", 
+    "power": 100.0
+  }, 
+  "drill peck": {
+    "type": "Flying", 
+    "power": 60.0
+  }, 
+  "ice beam": {
+    "type": "Ice", 
+    "power": 90.0
+  }, 
+  "blizzard": {
+    "type": "Ice", 
+    "power": 130.0
+  }, 
+  "heat wave": {
+    "type": "Fire", 
+    "power": 95.0
+  }, 
+  "aerial ace": {
+    "type": "Flying", 
+    "power": 55.0
+  }, 
+  "drill run": {
+    "type": "Ground", 
+    "power": 80.0
+  }, 
+  "petal blizzard": {
+    "type": "Grass", 
+    "power": 110.0
+  }, 
+  "mega drain": {
+    "type": "Grass", 
+    "power": 25.0
+  }, 
+  "bug buzz": {
+    "type": "Bug", 
+    "power": 90.0
+  }, 
+  "poison fang": {
+    "type": "Poison", 
+    "power": 35.0
+  }, 
+  "night slash": {
+    "type": "Dark", 
+    "power": 50.0
+  }, 
+  "bubble beam": {
+    "type": "Water", 
+    "power": 45.0
+  }, 
+  "submission": {
+    "type": "Fighting", 
+    "power": 60.0
+  }, 
+  "low sweep": {
+    "type": "Fighting", 
+    "power": 40.0
+  }, 
+  "aqua jet": {
+    "type": "Water", 
+    "power": 45.0
+  }, 
+  "aqua tail": {
+    "type": "Water", 
+    "power": 50.0
+  }, 
+  "seed bomb": {
+    "type": "Grass", 
+    "power": 55.0
+  }, 
+  "psyshock": {
+    "type": "Psychic", 
+    "power": 65.0
+  }, 
+  "ancient power": {
+    "type": "Rock", 
+    "power": 70.0
+  }, 
+  "rock tomb": {
+    "type": "Rock", 
+    "power": 70.0
+  }, 
+  "rock slide": {
+    "type": "Rock", 
+    "power": 80.0
+  }, 
+  "power gem": {
+    "type": "Rock", 
+    "power": 80.0
+  }, 
+  "shadow sneak": {
+    "type": "Ghost", 
+    "power": 50.0
+  }, 
+  "shadow punch": {
+    "type": "Ghost", 
+    "power": 40.0
+  }, 
+  "ominous wind": {
+    "type": "Ghost", 
+    "power": 50.0
+  }, 
+  "shadow ball": {
+    "type": "Ghost", 
+    "power": 100.0
+  }, 
+  "magnet bomb": {
+    "type": "Steel", 
+    "power": 70.0
+  }, 
+  "iron head": {
+    "type": "Steel", 
+    "power": 60.0
+  }, 
+  "parabolic charge": {
+    "type": "Electric", 
+    "power": 25.0
+  }, 
+  "thunder punch": {
+    "type": "Electric", 
+    "power": 45.0
+  }, 
+  "thunder": {
+    "type": "Electric", 
+    "power": 100.0
+  }, 
+  "thunderbolt": {
+    "type": "Electric", 
+    "power": 80.0
+  }, 
+  "twister": {
+    "type": "Dragon", 
+    "power": 45.0
+  }, 
+  "dragon pulse": {
+    "type": "Dragon", 
+    "power": 90.0
+  }, 
+  "dragon claw": {
+    "type": "Dragon", 
+    "power": 50.0
+  }, 
+  "disarming voice": {
+    "type": "Fairy", 
+    "power": 70.0
+  }, 
+  "draining kiss": {
+    "type": "Fairy", 
+    "power": 60.0
+  }, 
+  "dazzling gleam": {
+    "type": "Fairy", 
+    "power": 100.0
+  }, 
+  "moonblast": {
+    "type": "Fairy", 
+    "power": 130.0
+  }, 
+  "play rough": {
+    "type": "Fairy", 
+    "power": 90.0
+  }, 
+  "cross poison": {
+    "type": "Poison", 
+    "power": 40.0
+  }, 
+  "sludge bomb": {
+    "type": "Poison", 
+    "power": 80.0
+  }, 
+  "sludge wave": {
+    "type": "Poison", 
+    "power": 110.0
+  }, 
+  "gunk shot": {
+    "type": "Poison", 
+    "power": 130.0
+  }, 
+  "bone club": {
+    "type": "Ground", 
+    "power": 40.0
+  }, 
+  "bulldoze": {
+    "type": "Ground", 
+    "power": 80.0
+  }, 
+  "mud bomb": {
+    "type": "Ground", 
+    "power": 55.0
+  }, 
+  "signal beam": {
+    "type": "Bug", 
+    "power": 75.0
+  }, 
+  "x scissor": {
+    "type": "Bug", 
+    "power": 45.0
+  }, 
+  "flame charge": {
+    "type": "Fire", 
+    "power": 70.0
+  }, 
+  "flame burst": {
+    "type": "Fire", 
+    "power": 70.0
+  }, 
+  "fire blast": {
+    "type": "Fire", 
+    "power": 140.0
+  }, 
+  "brine": {
+    "type": "Water", 
+    "power": 60.0
+  }, 
+  "water pulse": {
+    "type": "Water", 
+    "power": 70.0
+  }, 
+  "scald": {
+    "type": "Water", 
+    "power": 80.0
+  }, 
+  "hydro pump": {
+    "type": "Water", 
+    "power": 130.0
+  }, 
+  "psychic": {
+    "type": "Psychic", 
+    "power": 90.0
+  }, 
+  "psystrike": {
+    "type": "Psychic", 
+    "power": 90.0
+  }, 
+  "icy wind": {
+    "type": "Ice", 
+    "power": 60.0
+  }, 
+  "giga drain": {
+    "type": "Grass", 
+    "power": 50.0
+  }, 
+  "fire punch": {
+    "type": "Fire", 
+    "power": 55.0
+  }, 
+  "solar beam": {
+    "type": "Grass", 
+    "power": 180.0
+  }, 
+  "leaf blade": {
+    "type": "Grass", 
+    "power": 70.0
+  }, 
+  "power whip": {
+    "type": "Grass", 
+    "power": 90.0
+  }, 
+  "air cutter": {
+    "type": "Flying", 
+    "power": 60.0
+  }, 
+  "hurricane": {
+    "type": "Flying", 
+    "power": 110.0
+  }, 
+  "brick break": {
+    "type": "Fighting", 
+    "power": 40.0
+  }, 
+  "swift": {
+    "type": "Normal", 
+    "power": 60.0
+  }, 
+  "horn attack": {
+    "type": "Normal", 
+    "power": 40.0
+  }, 
+  "stomp": {
+    "type": "Normal", 
+    "power": 55.0
+  }, 
+  "hyper fang": {
+    "type": "Normal", 
+    "power": 80.0
+  }, 
+  "body slam": {
+    "type": "Normal", 
+    "power": 50.0
+  }, 
+  "rest": {
+    "type": "Normal", 
+    "power": 50.0
+  }, 
+  "struggle": {
+    "type": "Normal", 
+    "power": 35.0
+  }, 
+  "scald blastoise": {
+    "type": "Water", 
+    "power": 50.0
+  }, 
+  "hydro pump blastoise": {
+    "type": "Water", 
+    "power": 90.0
+  }, 
+  "wrap green": {
+    "type": "Normal", 
+    "power": 25.0
+  }, 
+  "wrap pink": {
+    "type": "Normal", 
+    "power": 25.0
+  }, 
+  "fury cutter": {
+    "type": "Bug", 
+    "power": 3.0
+  }, 
+  "bug bite": {
+    "type": "Bug", 
+    "power": 5.0
+  }, 
+  "bite": {
+    "type": "Dark", 
+    "power": 6.0
+  }, 
+  "sucker punch": {
+    "type": "Dark", 
+    "power": 7.0
+  }, 
+  "dragon breath": {
+    "type": "Dragon", 
+    "power": 6.0
+  }, 
+  "thunder shock": {
+    "type": "Electric", 
+    "power": 5.0
+  }, 
+  "spark": {
+    "type": "Electric", 
+    "power": 6.0
+  }, 
+  "low kick": {
+    "type": "Fighting", 
+    "power": 6.0
+  }, 
+  "karate chop": {
+    "type": "Fighting", 
+    "power": 8.0
+  }, 
+  "ember": {
+    "type": "Fire", 
+    "power": 10.0
+  }, 
+  "wing attack": {
+    "type": "Flying", 
+    "power": 8.0
+  }, 
+  "peck": {
+    "type": "Flying", 
+    "power": 10.0
+  }, 
+  "lick": {
+    "type": "Ghost", 
+    "power": 5.0
+  }, 
+  "shadow claw": {
+    "type": "Ghost", 
+    "power": 9.0
+  }, 
+  "vine whip": {
+    "type": "Grass", 
+    "power": 7.0
+  }, 
+  "razor leaf": {
+    "type": "Grass", 
+    "power": 13.0
+  }, 
+  "mud shot": {
+    "type": "Ground", 
+    "power": 5.0
+  }, 
+  "ice shard": {
+    "type": "Ice", 
+    "power": 12.0
+  }, 
+  "frost breath": {
+    "type": "Ice", 
+    "power": 10.0
+  }, 
+  "quick attack": {
+    "type": "Normal", 
+    "power": 8.0
+  }, 
+  "scratch": {
+    "type": "Normal", 
+    "power": 6.0
+  }, 
+  "tackle": {
+    "type": "Normal", 
+    "power": 5.0
+  }, 
+  "pound": {
+    "type": "Normal", 
+    "power": 7.0
+  }, 
+  "cut": {
+    "type": "Normal", 
+    "power": 5.0
+  }, 
+  "poison jab": {
+    "type": "Poison", 
+    "power": 10.0
+  }, 
+  "acid": {
+    "type": "Poison", 
+    "power": 9.0
+  }, 
+  "psycho cut": {
+    "type": "Psychic", 
+    "power": 5.0
+  }, 
+  "rock throw": {
+    "type": "Rock", 
+    "power": 12.0
+  }, 
+  "metal claw": {
+    "type": "Steel", 
+    "power": 8.0
+  }, 
+  "bullet punch": {
+    "type": "Steel", 
+    "power": 9.0
+  }, 
+  "water gun": {
+    "type": "Water", 
+    "power": 5.0
+  }, 
+  "splash": {
+    "type": "Water", 
+    "power": 0
+  }, 
+  "water gun blastoise": {
+    "type": "Water", 
+    "power": 10.0
+  }, 
+  "mud slap": {
+    "type": "Ground", 
+    "power": 18.0
+  }, 
+  "zen headbutt": {
+    "type": "Psychic", 
+    "power": 12.0
+  }, 
+  "confusion": {
+    "type": "Psychic", 
+    "power": 20.0
+  }, 
+  "poison sting": {
+    "type": "Poison", 
+    "power": 5.0
+  }, 
+  "bubble": {
+    "type": "Water", 
+    "power": 12.0
+  }, 
+  "feint attack": {
+    "type": "Dark", 
+    "power": 10.0
+  }, 
+  "steel wing": {
+    "type": "Steel", 
+    "power": 11.0
+  }, 
+  "fire fang": {
+    "type": "Fire", 
+    "power": 12.0
+  }, 
+  "rock smash": {
+    "type": "Fighting", 
+    "power": 15.0
+  }, 
+  "transform": {
+    "type": "Normal", 
+    "power": 0
+  }, 
+  "counter": {
+    "type": "Fighting", 
+    "power": 12.0
+  }, 
+  "powder snow": {
+    "type": "Ice", 
+    "power": 6.0
+  }, 
+  "close combat": {
+    "type": "Fighting", 
+    "power": 100.0
+  }, 
+  "dynamic punch": {
+    "type": "Fighting", 
+    "power": 90.0
+  }, 
+  "focus blast": {
+    "type": "Fighting", 
+    "power": 140.0
+  }, 
+  "aurora beam": {
+    "type": "Ice", 
+    "power": 80.0
+  }, 
+  "charge beam": {
+    "type": "Electric", 
+    "power": 8.0
+  }, 
+  "volt switch": {
+    "type": "Electric", 
+    "power": 20.0
+  }, 
+  "wild charge": {
+    "type": "Electric", 
+    "power": 90.0
+  }, 
+  "zap cannon": {
+    "type": "Electric", 
+    "power": 140.0
+  }, 
+  "dragon tail": {
+    "type": "Dragon", 
+    "power": 15.0
+  }, 
+  "avalanche": {
+    "type": "Ice", 
+    "power": 90.0
+  }, 
+  "air slash": {
+    "type": "Flying", 
+    "power": 14.0
+  }, 
+  "brave bird": {
+    "type": "Flying", 
+    "power": 90.0
+  }, 
+  "sky attack": {
+    "type": "Flying", 
+    "power": 80.0
+  }, 
+  "sand tomb": {
+    "type": "Ground", 
+    "power": 60.0
+  }, 
+  "rock blast": {
+    "type": "Rock", 
+    "power": 50.0
+  }, 
+  "infestation": {
+    "type": "Bug", 
+    "power": 10.0
+  }, 
+  "struggle bug": {
+    "type": "Bug", 
+    "power": 15.0
+  }, 
+  "silver wind": {
+    "type": "Bug", 
+    "power": 70.0
+  }, 
+  "astonish": {
+    "type": "Ghost", 
+    "power": 8.0
+  }, 
+  "hex": {
+    "type": "Ghost", 
+    "power": 10.0
+  }, 
+  "night shade": {
+    "type": "Ghost", 
+    "power": 60.0
+  }, 
+  "iron tail": {
+    "type": "Steel", 
+    "power": 15.0
+  }, 
+  "gyro ball": {
+    "type": "Steel", 
+    "power": 80.0
+  }, 
+  "heavy slam": {
+    "type": "Steel", 
+    "power": 70.0
+  }, 
+  "fire spin": {
+    "type": "Fire", 
+    "power": 14.0
+  }, 
+  "overheat": {
+    "type": "Fire", 
+    "power": 160.0
+  }, 
+  "bullet seed": {
+    "type": "Grass", 
+    "power": 8.0
+  }, 
+  "grass knot": {
+    "type": "Grass", 
+    "power": 90.0
+  }, 
+  "energy ball": {
+    "type": "Grass", 
+    "power": 90.0
+  }, 
+  "extrasensory": {
+    "type": "Psychic", 
+    "power": 12.0
+  }, 
+  "futuresight": {
+    "type": "Psychic", 
+    "power": 120.0
+  }, 
+  "mirror coat": {
+    "type": "Psychic", 
+    "power": 60.0
+  }, 
+  "outrage": {
+    "type": "Dragon", 
+    "power": 110.0
+  }, 
+  "snarl": {
+    "type": "Dark", 
+    "power": 12.0
+  }, 
+  "crunch": {
+    "type": "Dark", 
+    "power": 70.0
+  }, 
+  "foul play": {
+    "type": "Dark", 
+    "power": 70.0
+  }, 
+  "hidden power": {
+    "type": "Normal", 
+    "power": 15.0
+  }, 
+  "take down": {
+    "type": "Normal", 
+    "power": 8.0
+  }, 
+  "waterfall": {
+    "type": "Water", 
+    "power": 16.0
+  }, 
+  "surf": {
+    "type": "Water", 
+    "power": 65.0
+  }, 
+  "draco meteor": {
+    "type": "Dragon", 
+    "power": 150.0
+  }, 
+  "doom desire": {
+    "type": "Steel", 
+    "power": 70.0
+  }, 
+  "yawn": {
+    "type": "Normal", 
+    "power": 0
+  }, 
+  "psycho boost": {
+    "type": "Psychic", 
+    "power": 70.0
+  }, 
+  "origin pulse": {
+    "type": "Water", 
+    "power": 130.0
+  }, 
+  "precipice blades": {
+    "type": "Ground", 
+    "power": 130.0
+  }, 
+  "present": {
+    "type": "Normal", 
+    "power": 5.0
+  }, 
+  "weather ball fire": {
+    "type": "Fire", 
+    "power": 60.0
+  }, 
+  "weather ball ice": {
+    "type": "Ice", 
+    "power": 60.0
+  }, 
+  "weather ball rock": {
+    "type": "Normal", 
+    "power": 60.0
+  }, 
+  "weather ball water": {
+    "type": "Water", 
+    "power": 60.0
+  }, 
+  "frenzy plant": {
+    "type": "Grass", 
+    "power": 100.0
+  }, 
+  "smack down": {
+    "type": "Rock", 
+    "power": 16.0
+  }, 
+  "blast burn": {
+    "type": "Fire", 
+    "power": 110.0
+  }, 
+  "hydro cannon": {
+    "type": "Water", 
+    "power": 90.0
+  }, 
+  "last resort": {
+    "type": "Normal", 
+    "power": 90.0
+  }, 
+  "meteor mash": {
+    "type": "Steel", 
+    "power": 100.0
+  }, 
+  "skull bash": {
+    "type": "Normal", 
+    "power": 130.0
+  }, 
+  "acid spray": {
+    "type": "Poison", 
+    "power": 20.0
+  }, 
+  "earth power": {
+    "type": "Ground", 
+    "power": 100.0
+  }, 
+  "crabhammer": {
+    "type": "Water", 
+    "power": 85.0
+  }, 
+  "lunge": {
+    "type": "Bug", 
+    "power": 0
+  }, 
+  "crush claw": {
+    "type": "Normal", 
+    "power": 0
+  }, 
+  "octazooka": {
+    "type": "Water", 
+    "power": 50.0
+  }, 
+  "mirror shot": {
+    "type": "Steel", 
+    "power": 50.0
+  }, 
+  "super power": {
+    "type": "Fighting", 
+    "power": 85.0
+  }, 
+  "fell stinger": {
+    "type": "Bug", 
+    "power": 50.0
+  }, 
+  "leaf tornado": {
+    "type": "Grass", 
+    "power": 45.0
+  }, 
+  "leech life": {
+    "type": "Bug", 
+    "power": 0
+  }, 
+  "drain punch": {
+    "type": "Fighting", 
+    "power": 0
+  }, 
+  "shadow bone": {
+    "type": "Ghost", 
+    "power": 0
+  }, 
+  "muddy water": {
+    "type": "Water", 
+    "power": 50.0
+  }, 
+  "blaze kick": {
+    "type": "Fire", 
+    "power": 45.0
+  }, 
+  "razor shell": {
+    "type": "Water", 
+    "power": 0
+  }, 
+  "power up punch": {
+    "type": "Fighting", 
+    "power": 50.0
+  }, 
+  "charm": {
+    "type": "Fairy", 
+    "power": 20.0
+  }, 
+  "giga impact": {
+    "type": "Normal", 
+    "power": 200.0
+  }, 
+  "frustration": {
+    "type": "Normal", 
+    "power": 10.0
+  }, 
+  "return": {
+    "type": "Normal", 
+    "power": 35.0
+  }, 
+  "synchronoise": {
+    "type": "Psychic", 
+    "power": 80.0
+  }, 
+  "lock on": {
+    "type": "Normal", 
+    "power": 1.0
+  }, 
+  "thunder fang": {
+    "type": "Electric", 
+    "power": 12.0
+  }, 
+  "ice fang": {
+    "type": "Ice", 
+    "power": 12.0
+  }, 
+  "horn drill": {
+    "type": "Normal", 
+    "power": 0
+  }, 
+  "fissure": {
+    "type": "Ground", 
+    "power": 0
+  }, 
+  "aura sphere": {
+    "type": "Fighting", 
+    "power": 90.0
+  }, 
+  "hidden power normal": {
+    "type": "Normal", 
+    "power": 15
+  }, 
+  "hidden power fighting": {
+    "type": "Fighting", 
+    "power": 15
+  }, 
+  "hidden power flying": {
+    "type": "Flying", 
+    "power": 15
+  }, 
+  "hidden power poison": {
+    "type": "Poison", 
+    "power": 15
+  }, 
+  "hidden power ground": {
+    "type": "Ground", 
+    "power": 15
+  }, 
+  "hidden power rock": {
+    "type": "Rock", 
+    "power": 15
+  }, 
+  "hidden power bug": {
+    "type": "Bug", 
+    "power": 15
+  }, 
+  "hidden power ghost": {
+    "type": "Ghost", 
+    "power": 15
+  }, 
+  "hidden power steel": {
+    "type": "Steel", 
+    "power": 15
+  }, 
+  "hidden power fire": {
+    "type": "Fire", 
+    "power": 15
+  }, 
+  "hidden power water": {
+    "type": "Water", 
+    "power": 15
+  }, 
+  "hidden power grass": {
+    "type": "Grass", 
+    "power": 15
+  }, 
+  "hidden power electric": {
+    "type": "Electric", 
+    "power": 15
+  }, 
+  "hidden power psychic": {
+    "type": "Psychic", 
+    "power": 15
+  }, 
+  "hidden power ice": {
+    "type": "Ice", 
+    "power": 15
+  }, 
+  "hidden power dragon": {
+    "type": "Dragon", 
+    "power": 15
+  }, 
+  "hidden power dark": {
+    "type": "Dark", 
+    "power": 15
+  }, 
+  "hidden power fairy": {
+    "type": "Fairy", 
+    "power": 15
+  }
+}

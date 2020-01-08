@@ -399,6 +399,24 @@ def weakness_to_emoji(bot, weakness_dict):
                 ret += f":{type.lower()}{'x2' if weakness == 2 else ''}:"
     return ret
 
+def get_move_type(bot, move_str):
+    if move_str.lower() in getattr(bot, "move_info", {}):
+        return bot.move_info[move_str.lower()]['type']
+    else:
+        return "Normal"
+
+def type_to_emoji(bot, type):
+    emoji = None
+    try:
+        emoji_id = ''.join(x for x in bot.config.type_id_dict[type.lower()].split(":")[2] if x.isdigit())
+        emoji = discord.utils.get(bot.emojis, id=int(emoji_id))
+        if not emoji:
+            emoji_name = bot.config.type_id_dict[type.lower()].split(":")[1]
+            emoji = discord.utils.get(bot.emojis, name=emoji_name)
+        return f"{str(emoji) if emoji else type.lower()}"
+    except (IndexError, ValueError):
+        return type
+
 def create_gmaps_query(bot, details, channel, type="raid"):
     if type == "raid" or type == "egg":
         report = "raid"
@@ -934,7 +952,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v20.1.6.1 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v20.1.8.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

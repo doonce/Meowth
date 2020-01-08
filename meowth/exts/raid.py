@@ -1207,7 +1207,7 @@ class Raid(commands.Cog):
                 new_raid_dict = {edit_level: new_list}
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
-            await pkmn_class.Pokemon.generate_lists(self.bot)
+            await pkmn_class.Pokedex.generate_lists(self.bot)
             self.bot.raid_dict = await utils.get_raid_dict(self.bot)
             self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
             for guild in list(self.bot.guilds):
@@ -1216,7 +1216,7 @@ class Raid(commands.Cog):
                         for raid_level in new_raid_dict:
                             if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(raid_level):
                                 for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
-                                    interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'])
+                                    interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id].get('interest', []))
                                     new_bosses = list(set(new_raid_dict[raid_level]) - set(old_raid_dict[raid_level]))
                                     new_bosses = [x.lower() for x in new_bosses]
                                     self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
@@ -4447,7 +4447,7 @@ class Raid(commands.Cog):
                 ctrs = data['randomMove']['defenders'][-6:]
                 est = data['randomMove']['total']['estimator']
         def clean(txt):
-            return txt.replace('_', ' ').title()
+            return txt.replace('_FAST', '').replace('_', ' ').title()
         title = f"{str(pkmn).title()} | {weather.replace('_', ' ').title()} | {movesetstr}"
         stats_msg = _("**CP:** {raid_cp}\n").format(raid_cp=raid_cp)
         stats_msg += _("**Weather:** {weather}\n").format(weather=clean(weather))
@@ -4457,18 +4457,29 @@ class Raid(commands.Cog):
         ctrs_embed.set_author(name=title, url=title_url, icon_url=hyperlink_icon)
         ctrs_embed.set_thumbnail(url=img_url)
         ctrs_embed.set_footer(text=_('Results courtesy of Pokebattler'), icon_url=pbtlr_icon)
-        index = 1
+        ctrindex = 1
         for ctr in reversed(ctrs):
             ctr_name = clean(ctr['pokemonId'])
-            ctr_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, ctr_name)
+            if "form" in ctr_name.lower():
+                ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
+            else:
+                ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms']['none']['type']
+            for index, type in enumerate(ctr_type):
+                ctr_type[index] = utils.type_to_emoji(self.bot, type)
+            ctr_emoji = ''.join(ctr_type)
+            moveset = ctr['byMove'][-1]
+            move1 = clean(moveset['move1'])
+            move1 = f"{move1.title()} {utils.type_to_emoji(self.bot, utils.get_move_type(self.bot, move1))}"
+            move2 = clean(moveset['move2'])
+            move2 = f"{move2.title()} {utils.type_to_emoji(self.bot, utils.get_move_type(self.bot, move2))}"
+            moves = f"{move1} | {move2}"
+            name = f"{ctrindex}) {ctr_name.replace(' Form', '')} {ctr_emoji}"
             ctr_nick = clean(ctr.get('name', ''))
             ctr_cp = ctr['cp']
-            moveset = ctr['byMove'][-1]
-            moves = _("{move1} | {move2}").format(move1=clean(moveset['move1'])[:-5], move2=clean(moveset['move2']))
-            name = f"{index}) - {ctr_nick or ctr_name} {ctr_pokemon.emoji}"
+            name = f"{ctrindex}) - {ctr_nick.replace(' Form', '') or ctr_name.replace(' Form', '')} {ctr_emoji}"
             cpstr = _("CP")
             ctrs_embed.add_field(name=name, value=f"{cpstr}: {ctr_cp}\n{moves}")
-            index += 1
+            ctrindex += 1
         ctrs_embed.add_field(name=_("Difficulty Estimate:"), value=_("{est} Trainers").format(est=round(est, 2)), inline=True)
         ctrs_embed.add_field(name=_("Results with {userstr} attackers").format(userstr=userstr), value=_("[See your personalized results!](https://www.pokebattler.com/raids/{pkmn})").format(pkmn=pkmn.name.replace('-', '_').upper()), inline=True)
         if user:
@@ -4526,7 +4537,7 @@ class Raid(commands.Cog):
         atk_levels = '30'
         ctrs = data['randomMove']['defenders'][-6:]
         def clean(txt):
-            return txt.replace('_', ' ').title()
+            return txt.replace('_FAST', '').replace('_', ' ').title()
         title = f"{str(pokemon).title()} | {weather.replace('_', ' ').title()} | Unknown Moveset"
         stats_msg = _("**CP:** {raid_cp}\n").format(raid_cp=raid_cp)
         stats_msg += _("**Weather:** {weather}\n").format(weather=clean(weather))
@@ -4538,10 +4549,20 @@ class Raid(commands.Cog):
         ctrindex = 1
         for ctr in reversed(ctrs):
             ctr_name = clean(ctr['pokemonId'])
-            ctr_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, ctr_name)
+            if "form" in ctr_name.lower():
+                ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
+            else:
+                ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms']['none']['type']
+            for index, type in enumerate(ctr_type):
+                ctr_type[index] = utils.type_to_emoji(self.bot, type)
+            ctr_emoji = ''.join(ctr_type)
             moveset = ctr['byMove'][-1]
-            moves = _("{move1} | {move2}").format(move1=clean(moveset['move1'])[:-5], move2=clean(moveset['move2']))
-            name = f"{ctrindex}) - {ctr_name} {ctr_pokemon.emoji}"
+            move1 = clean(moveset['move1'])
+            move1 = f"{move1.title()} {utils.type_to_emoji(self.bot, utils.get_move_type(self.bot, move1))}"
+            move2 = clean(moveset['move2'])
+            move2 = f"{move2.title()} {utils.type_to_emoji(self.bot, utils.get_move_type(self.bot, move2))}"
+            moves = f"{move1} | {move2}"
+            name = f"{ctrindex}) {ctr_name.replace(' Form', '')} {ctr_emoji}"
             ctrs_embed.add_field(name=name, value=moves)
             ctrindex += 1
         ctrs_dict[ctrs_index]['embed'] = ctrs_embed
@@ -4551,8 +4572,8 @@ class Raid(commands.Cog):
             ctrs_index += 1
             if ctrs_index == 11:
                 break
-            move1 = moveset['move1'][:-5].lower().title().replace('_', ' ')
-            move2 = moveset['move2'].lower().title().replace('_', ' ')
+            move1 = moveset['move1'][:-5].title().replace('_', ' ')
+            move2 = moveset['move2'].title().replace('_', ' ')
             movesetstr = f'{move1} | {move2}'
             ctrs = moveset['defenders'][-6:]
             title = f"{str(pokemon).title()} | {weather.replace('_', ' ').title()} | {movesetstr}"
@@ -4563,16 +4584,32 @@ class Raid(commands.Cog):
             ctrindex = 1
             for ctr in reversed(ctrs):
                 ctr_name = clean(ctr['pokemonId'])
-                ctr_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, ctr_name)
+                if "form" in ctr_name.lower():
+                    ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
+                else:
+                    ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms']['none']['type']
+                for index, type in enumerate(ctr_type):
+                    ctr_type[index] = utils.type_to_emoji(self.bot, type)
+                ctr_emoji = ''.join(ctr_type)
                 moveset = ctr['byMove'][-1]
-                moves = _("{move1} | {move2}").format(move1=clean(moveset['move1'])[:-5], move2=clean(moveset['move2']))
-                name = f"{ctrindex}) - {ctr_name} {ctr_pokemon.emoji}"
+                move1 = clean(moveset['move1'])
+                move1 = f"{move1.title()} {utils.type_to_emoji(self.bot, utils.get_move_type(self.bot, move1))}"
+                move2 = clean(moveset['move2'])
+                move2 = f"{move2.title()} {utils.type_to_emoji(self.bot, utils.get_move_type(self.bot, move2))}"
+                moves = f"{move1} | {move2}"
+                name = f"{ctrindex}) - {ctr_name.replace(' Form', '')} {ctr_emoji}"
                 ctrs_embed.add_field(name=name, value=moves)
                 ctrindex += 1
             ctrs_dict[ctrs_index] = {'moveset': movesetstr, 'embed': ctrs_embed, 'emoji': emoji_dict[ctrs_index], 'estimator': est}
         moveset_list = []
         for moveset in ctrs_dict:
-            moveset_list.append(f"{ctrs_dict[moveset]['emoji']}: {ctrs_dict[moveset]['moveset']}\n")
+            if 'Unknown Moveset' in ctrs_dict[moveset]['moveset']:
+                moveset_list.append(f"{ctrs_dict[moveset]['emoji']}: {ctrs_dict[moveset]['moveset']}\n")
+            else:
+                moves = ctrs_dict[moveset]['moveset'].split('|')
+                moves = [x.lower().strip() for x in moves]
+                moves = [f"{x.title()} {utils.type_to_emoji(self.bot, utils.get_move_type(self.bot, x))}" for x in moves if x != "unknown moveset"]
+                moveset_list.append(f"{ctrs_dict[moveset]['emoji']}: {moves[0]} | {moves[1]}\n")
         for moveset in ctrs_dict:
             ctrs_split = int(round(len(moveset_list)/2+0.1))
             ctrs_dict[moveset]['embed'].add_field(name=_("**Possible Movesets:**"), value=f"{''.join(moveset_list[:ctrs_split])}", inline=True)

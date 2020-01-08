@@ -141,7 +141,15 @@ class MeowthBot(commands.AutoShardedBot):
                 return json.load(fd)
         except:
             return {}
-            
+
+    @property
+    def move_info(self):
+        try:
+            with open(os.path.join('data', 'move_info.json'), 'r') as fd:
+                return json.load(fd)
+        except:
+            return {}
+
     @property
     def pkmn_list(self):
         pkmn_list = []
@@ -187,7 +195,7 @@ class MeowthBot(commands.AutoShardedBot):
         print('Connected to Discord...')
         self.launch_time = datetime.datetime.utcnow()
         await self.change_presence(status=discord.Status.idle)
-        await pkmn_class.Pokemon.generate_lists(self)
+        await pkmn_class.Pokedex.generate_lists(self)
         self.raid_dict = await utils.get_raid_dict(self)
         self.raid_list = list(itertools.chain.from_iterable(self.raid_dict.values()))
 
