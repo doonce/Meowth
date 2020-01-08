@@ -3272,6 +3272,54 @@ class Raid(commands.Cog):
             await ctx.send(f"Meowth! I added **{member.display_name}** as a manager! {member.mention}, check your DMs for instructions!")
             await member.send(embed=manager_embed, delete_after=3600)
 
+    @train.command(name="nominate")
+    @checks.trainchannel()
+    async def train_nominate(self, ctx, *, user=None):
+        if not user:
+            member = ctx.author
+        else:
+            converter = commands.MemberConverter()
+            try:
+                member = await converter.convert(ctx, user)
+            except:
+                return
+        manager_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=_('Raid Manager Help')).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
+        manager_embed.add_field(name=f"{ctx.prefix}train start <date and time>", value=f"Sets the train start time. Example: `!train start 6pm`", inline=False)
+        manager_embed.add_field(name=f"{ctx.prefix}train end <date and time>", value=f"Sets the train end time. Example: `!train end 7pm`", inline=False)
+        manager_embed.add_field(name=f"{ctx.prefix}train manager <user @mention>", value=f"Once you become a train manager, you can promote new train managers using this command. Example: `!train manager @{ctx.guild.me.display_name}`", inline=False)
+        manager_embed.add_field(name=f"{ctx.prefix}train route <gym list>", value=f"If you have a planned route, you can set it using this command. Example: `!train route Hershey Park, Liberty Park`", inline=False)
+        manager_embed.add_field(name=f"{ctx.prefix}next [gym name]", value=f"Alert the channel that you are going to a new gym. Example: `!next Hershey Park`. If a route is set, train will move to next gym without needing a gym name", inline=False)
+        manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
+        yes_emoji = self.bot.custom_emoji.get('answer_yes', u'\U00002705')
+        no_emoji = self.bot.custom_emoji.get('answer_no', u'\U0000274e')
+        if member.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
+            manager_list = [ctx.guild.get_member(x) for x in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])]
+            if manager_list:
+                manager_str = f"Current managers {', '.join([x.mention for x in manager_list])} can react with {yes_emoji} to instantly add {member.display_name} as a manager for this channel. "
+            def check(reaction, user):
+                if reaction.message.id == question.id and (reaction.emoji == yes_emoji or reaction.emoji == no_emoji):
+                    if reaction.emoji == yes_emoji and user in manager_list and user != ctx.guild.me:
+                        return True
+                    if reaction.emoji == no_emoji:
+                        return True
+                    return False
+            question = await ctx.send(f"Meowth! {ctx.author.mention} nominates {member.mention} as a train leader! {manager_str}All others can object with {no_emoji}. If nobody objects with {no_emoji} in 60 seconds, {member.display_name} will be added as a train manager.")
+            await utils.safe_reaction(question, yes_emoji)
+            await utils.safe_reaction(question, no_emoji)
+            try:
+                timeout = False
+                reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=60)
+            except TypeError:
+                timeout = True
+            await utils.safe_delete(question)
+            if timeout or reaction.emoji == no_emoji:
+                return await ctx.send(f"Meowth! The vote for {member.display_name} has failed.", delete_after=10)
+            else:
+                await ctx.send(f"Meowth! I added **{member.display_name}** as a manager! {member.mention}, check your DMs for instructions!")
+                return await member.send(embed=manager_embed, delete_after=3600)
+        else:
+            return await ctx.send(f"Meowth! {member.display_name} is already a manager!", delete_after=10)
+
     @train.command(name="history")
     @checks.trainchannel()
     async def train_history(self, ctx):
