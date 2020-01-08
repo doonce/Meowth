@@ -3300,7 +3300,7 @@ class Raid(commands.Cog):
                 if reaction.message.id == question.id and (reaction.emoji == yes_emoji or reaction.emoji == no_emoji):
                     if reaction.emoji == yes_emoji and user in manager_list and user != ctx.guild.me:
                         return True
-                    if reaction.emoji == no_emoji:
+                    if reaction.emoji == no_emoji and user != ctx.guild.me:
                         return True
                     return False
             question = await ctx.send(f"Meowth! {ctx.author.mention} nominates {member.mention} as a train leader! {manager_str}All others can object with {no_emoji}. If nobody objects with {no_emoji} in 60 seconds, {member.display_name} will be added as a train manager.")
@@ -3315,6 +3315,7 @@ class Raid(commands.Cog):
             if timeout or reaction.emoji == no_emoji:
                 return await ctx.send(f"Meowth! The vote for {member.display_name} has failed.", delete_after=10)
             else:
+                self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
                 await ctx.send(f"Meowth! I added **{member.display_name}** as a manager! {member.mention}, check your DMs for instructions!")
                 return await member.send(embed=manager_embed, delete_after=3600)
         else:

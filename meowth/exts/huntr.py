@@ -132,7 +132,7 @@ class Huntr(commands.Cog):
         pokealarm_dict = copy.deepcopy(ctx.bot.guild_dict[channel.guild.id].get('pokealarm_dict', {}))
         pokehuntr_dict = copy.deepcopy(ctx.bot.guild_dict[channel.guild.id].get('pokehuntr_dict', {}))
         raid_cog = self.bot.cogs.get('Raid')
-        if message.id in pokealarm_dict.keys() and not user.bot:
+        if raid_cog and message.id in pokealarm_dict.keys() and not user.bot:
             if str(payload.emoji) == self.bot.custom_emoji.get('huntr_report', u'\U00002705'):
                 await self.on_pokealarm(ctx, user)
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', u'\U00002753'):
@@ -164,7 +164,7 @@ class Huntr(commands.Cog):
                 await ctx.invoke(self.bot.get_command("list pokealarms"), type="pokealarm")
                 await asyncio.sleep(5)
                 await utils.safe_reaction(message, payload.emoji)
-        elif message.id in pokehuntr_dict.keys() and not user.bot:
+        elif raid_cog and message.id in pokehuntr_dict.keys() and not user.bot:
             if str(payload.emoji) == self.bot.custom_emoji.get('huntr_report', u'\U00002705'):
                 await self.on_huntr(ctx, user)
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', u'\U00002753'):
