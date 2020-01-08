@@ -3275,6 +3275,7 @@ class Raid(commands.Cog):
     @train.command(name="nominate")
     @checks.trainchannel()
     async def train_nominate(self, ctx, *, user=None):
+        """Nominate a new train manager"""
         if not user:
             member = ctx.author
         else:
@@ -3309,7 +3310,7 @@ class Raid(commands.Cog):
             try:
                 timeout = False
                 reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=60)
-            except TypeError:
+            except asyncio.TimeoutError:
                 timeout = True
             await utils.safe_delete(question)
             if timeout or reaction.emoji == no_emoji:
@@ -3378,6 +3379,7 @@ class Raid(commands.Cog):
     @checks.allowtrainreport()
     @checks.is_mod()
     async def reset_trains(self, ctx, *, channel:discord.TextChannel=None):
+        """Reset train channels"""
         await self.raid_reset(ctx, channel, type='train')
 
     """
