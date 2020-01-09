@@ -35,6 +35,9 @@ class Huntr(commands.Cog):
     def cog_unload(self):
         self.huntr_cleanup.cancel()
         self.raidhour_check.cancel()
+        for task in asyncio.Task.all_tasks():
+            if "raidhour_manager" in str(task) and "huntr" in str(task):
+                task.cancel()
 
     @tasks.loop(seconds=600)
     async def huntr_cleanup(self, loop=True):

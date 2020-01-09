@@ -978,7 +978,11 @@ class Raid(commands.Cog):
         else:
             raid_embed.add_field(name=f"{'**Hatches:**' if embed_type == 'egg' else '**Expires:**'}", value=f"Set with **{ctx.prefix}timerset**", inline=True)
         if moveset and embed_type == "raid":
-            raid_embed.add_field(name=_("**Moveset:**"), value=moveset)
+            moveset = moveset.split(' / ')
+            for index, m in enumerate(moveset):
+                if m.lower() in self.bot.move_info.keys():
+                    moveset[index] = f"{m} {utils.type_to_emoji(self.bot, self.bot.move_info[m.lower()]['type'])}"
+            raid_embed.add_field(name=_("**Moveset:**"), value=(' / ').join([x.title() for x in moveset]))
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         raid_embed.set_thumbnail(url=raid_img_url)
         return raid_embed
@@ -2346,7 +2350,7 @@ class Raid(commands.Cog):
         if not channel:
             def check(m):
                 return m.author == ctx.author and m.channel == ctx.channel
-            raid_wait = await ctx.send(f"**Meowth!** {ctx.author.mention}, Reply with a channel mention of the raid you'd like to delete or **all** to reset all raids{' or a **number** to reset all of that level' if type == 'raid' else ''}. If you want to stop, reply with **cancel**.")
+            raid_wait = await ctx.send(f"**Meowth!** {ctx.author.mention}, Reply with a channel mention of the raid you'd like to delete or **all** to reset all {type} channels{' or a **number** to reset all of that level' if type == 'raid' else ''}. If you want to stop, reply with **cancel**.")
             try:
                 raid_reply = await self.bot.wait_for('message', timeout=60, check=check)
                 await utils.safe_delete(raid_wait)
@@ -2784,7 +2788,7 @@ class Raid(commands.Cog):
             'type': 'egg',
             'pokemon': '',
             'egg_level': 'EX',
-            'meetup': {'start':None, 'end':None, 'channel_name':utils.sanitize_channel_name(raid_details)}
+            'meetup': {'start':None, 'end':None, 'channel_name':utils.sanitize_channel_name(raid_details).lower()}
         }
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
         await raid_channel.send(content=f"Meowth! Hey {ctx.author.mention}, if you can, set the time that the {meetup_type} starts with **{ctx.prefix}{meetup_type} start <date and time>** and also set the time that the {meetup_type} ends using **{ctx.prefix}{meetup_type} end <date and time>**. You can also set the title of the {meetup_type} using **{ctx.prefix}{meetup_type} title <title>**.")
@@ -2841,10 +2845,10 @@ class Raid(commands.Cog):
         channel_name = self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['meetup']['channel_name']
         if can_manage or meetup_type == "train":
             if ctx.invoked_with != "title":
-                self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['meetup']['channel_name'] = utils.sanitize_channel_name(title)
+                self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['meetup']['channel_name'] = utils.sanitize_channel_name(title).lower()
                 raid_channel_name = await self.edit_channel_name(channel)
                 return await ctx.channel.edit(name=raid_channel_name)
-            question = await ctx.channel.send(f"Would you like to change the channel name to {ctx.channel.name.replace('train-', '').replace('meetup-', '').replace(channel_name, '')}{meetup_type}-{title}?")
+            question = await ctx.channel.send(f"Would you like to change the channel name to {ctx.channel.name.replace('train-', '').replace('meetup-', '').replace(channel_name, '')}{meetup_type.lower()}-{title.lower()}?")
             try:
                 timeout = False
                 res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
@@ -2856,7 +2860,7 @@ class Raid(commands.Cog):
                 await utils.safe_delete(question)
                 return
             elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
-                self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['meetup']['channel_name'] = utils.sanitize_channel_name(title)
+                self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['meetup']['channel_name'] = utils.sanitize_channel_name(title).lower()
                 raid_channel_name = await self.edit_channel_name(channel)
                 await utils.safe_delete(question)
             await ctx.channel.edit(name=raid_channel_name)
@@ -3101,11 +3105,8 @@ class Raid(commands.Cog):
             manager_embed.add_field(name=f"{ctx.prefix}next [gym name]", value=f"Alert the channel that you are going to a new gym. Example: `!next Hershey Park`. If a route is set, train will move to next gym without needing a gym name", inline=False)
             manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
             await ctx.author.send(embed=manager_embed, delete_after=3600)
-            await train_channel.send(f"{ctx.author.mention}, you can set additional train managers using **{ctx.prefix}train manager <user mention>** and direct the train to a new gym using **{ctx.prefix}train next <channel_or_gym>**. Check your DMs for more instructions!")
+            await train_channel.send(f"{ctx.author.mention}, you can set additional train managers using **{ctx.prefix}train manager <user mention>** and direct the train to a new gym using **{ctx.prefix}train next <channel_or_gym>**. Check your DMs for more instructions!\nOthers can nominate themselves or other people using **{ctx.prefix}train nominate [@mention]**")
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['managers'] = [ctx.author.id]
-            for member in ctx.guild.members:
-                if (ctx.channel.permissions_for(member).manage_channels or train_channel.permissions_for(member).manage_channels) and member.id not in managers:
-                    self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['managers'].append(member.id)
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['raid'] = True
             utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))
             to_raidend = 24*60*60 - ((utcnow-utcnow.replace(hour=21, minute=0, second=0, microsecond=0)).seconds)
@@ -3124,13 +3125,20 @@ class Raid(commands.Cog):
                         timer_set = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['manual_timer']
                         raid_timer = ""
                         raid_message = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['raid_message']
+                        moveset = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('moves', None)
                         raid_message = await raid_channel.fetch_message(raid_message)
                         raid_embed = raid_message.embeds[0]
                         while len(raid_embed.fields) > 2:
                             raid_embed.remove_field(-1)
+                        if moveset:
+                            moveset = moveset.split(' / ')
+                            for index, m in enumerate(moveset):
+                                if m.lower() in self.bot.move_info.keys():
+                                    moveset[index] = f"{m} {utils.type_to_emoji(self.bot, self.bot.move_info[m.lower()]['type'])}"
+                            raid_embed.add_field(name=f"**Moveset:**", value=(' / ').join([x.title() for x in moveset]))
                         if timer_set:
                             raid_timer = await self.print_raid_timer(raid_channel)
-                        await train_channel.send(f"Meowth! I found this raid at {train_location}! {raid_timer}", embed=raid_embed)
+                        await train_channel.send(f"Meowth! I found this raid at **{train_location}**! {raid_timer}", embed=raid_embed)
                         raid_found = True
                     except:
                         pass
@@ -3141,13 +3149,20 @@ class Raid(commands.Cog):
                     report_level = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['level']
                     report_type = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['reporttype']
                     raidexp = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['raidexp']
+                    moveset = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report].get('moves', None)
                     if report_address.lower() == train_location.lower() and report_level != "EX" and report_type != "exraid":
                         raid_embed = await self.make_raid_embed(ctx, self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report], raidexp)
                         while len(raid_embed.fields) > 2:
                             raid_embed.remove_field(-1)
+                        if moveset:
+                            moveset = moveset.split(' / ')
+                            for index, m in enumerate(moveset):
+                                if m.lower() in self.bot.move_info.keys():
+                                    moveset[index] = f"{m} {utils.type_to_emoji(self.bot, self.bot.move_info[m.lower()]['type'])}"
+                            raid_embed.add_field(name=f"**Moveset:**", value=(' / ').join([x.title() for x in moveset]))
                         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
                         raid_timer = (now + datetime.timedelta(minutes=float(raidexp))).strftime(_('%B %d at %I:%M %p (%H:%M)'))
-                        await train_channel.send(f"Meowth! I found this raid at {train_location}! {'Hatches' if report_type == 'egg' else 'Expires'}: {raid_timer}", embed=raid_embed)
+                        await train_channel.send(f"Meowth! I found this raid at **{train_location}**! {'Hatches' if report_type == 'egg' else 'Expires'}: {raid_timer}", embed=raid_embed)
             return train_channel
 
     @train.command(name="title")
@@ -3216,6 +3231,7 @@ class Raid(commands.Cog):
             channel_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['address']
             channel_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['egg_level']
             channel_type = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel]['type']
+            moveset = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('moves', None)
             if channel_address == train_location and channel_level != "EX" and channel_type != "exraid":
                 raid_channel = self.bot.get_channel(channel)
                 await raid_channel.send(f"A raid train channel has chosen this raid as its next raid! You can join them in {ctx.channel.mention}")
@@ -3227,9 +3243,15 @@ class Raid(commands.Cog):
                     raid_embed = raid_message.embeds[0]
                     while len(raid_embed.fields) > 2:
                         raid_embed.remove_field(-1)
+                    if moveset:
+                        moveset = moveset.split(' / ')
+                        for index, m in enumerate(moveset):
+                            if m.lower() in self.bot.move_info.keys():
+                                moveset[index] = f"{m} {utils.type_to_emoji(self.bot, self.bot.move_info[m.lower()]['type'])}"
+                        raid_embed.add_field(name=f"**Moveset:**", value=(' / ').join([x.title() for x in moveset]))
                     if timer_set:
                         raid_timer = await self.print_raid_timer(raid_channel)
-                    await ctx.send(f"Meowth! I found this raid at {train_location}! {raid_timer}", embed=raid_embed)
+                    await ctx.send(f"Meowth! I found this raid at **{train_location}**! {raid_timer}", embed=raid_embed)
                     raid_found = True
                 except:
                     pass
@@ -3239,13 +3261,20 @@ class Raid(commands.Cog):
                 report_level = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['level']
                 report_type = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['reporttype']
                 raidexp = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report]['raidexp']
+                moveset = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report].get('moves', None)
                 if report_address.lower() == train_location.lower() and report_level != "EX" and report_type != "exraid":
                     raid_embed = await self.make_raid_embed(ctx, self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][report], raidexp)
                     while len(raid_embed.fields) > 2:
                         raid_embed.remove_field(-1)
+                    if moveset:
+                        moveset = moveset.split(' / ')
+                        for index, m in enumerate(moveset):
+                            if m.lower() in self.bot.move_info.keys():
+                                moveset[index] = f"{m} {utils.type_to_emoji(self.bot, self.bot.move_info[m.lower()]['type'])}"
+                        raid_embed.add_field(name=f"**Moveset:**", value=(' / ').join([x.title() for x in moveset]))
                     now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
                     raid_timer = (now + datetime.timedelta(minutes=float(raidexp))).strftime(_('%I:%M %p (%H:%M)'))
-                    await ctx.send(f"Meowth! I found this raid at {train_location}! This {'egg will hatch' if report_type == 'egg' else 'raid will end'} at {raid_timer}", embed=raid_embed)
+                    await ctx.send(f"Meowth! I found this raid at **{train_location}**! This {'egg will hatch' if report_type == 'egg' else 'raid will end'} at {raid_timer}", embed=raid_embed)
 
     @train.command(name="manager")
     @checks.trainchannel()
@@ -3272,7 +3301,7 @@ class Raid(commands.Cog):
             await ctx.send(f"Meowth! I added **{member.display_name}** as a manager! {member.mention}, check your DMs for instructions!")
             await member.send(embed=manager_embed, delete_after=3600)
 
-    @train.command(name="nominate")
+    @train.command(name="nominate", aliases=["elect"])
     @checks.trainchannel()
     async def train_nominate(self, ctx, *, user=None):
         """Nominate a new train manager"""
@@ -3284,6 +3313,7 @@ class Raid(commands.Cog):
                 member = await converter.convert(ctx, user)
             except:
                 return
+        can_manage = ctx.channel.permissions_for(ctx.author).manage_channels
         manager_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=_('Raid Manager Help')).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
         manager_embed.add_field(name=f"{ctx.prefix}train start <date and time>", value=f"Sets the train start time. Example: `!train start 6pm`", inline=False)
         manager_embed.add_field(name=f"{ctx.prefix}train end <date and time>", value=f"Sets the train end time. Example: `!train end 7pm`", inline=False)
@@ -3294,6 +3324,10 @@ class Raid(commands.Cog):
         yes_emoji = self.bot.custom_emoji.get('answer_yes', u'\U00002705')
         no_emoji = self.bot.custom_emoji.get('answer_no', u'\U0000274e')
         if member.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
+            if can_manage and member != ctx.author:
+                self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
+                await ctx.send(f"Meowth! I added **{member.display_name}** as a manager! {member.mention}, check your DMs for instructions!")
+                return await member.send(embed=manager_embed, delete_after=3600)
             manager_list = [ctx.guild.get_member(x) for x in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])]
             if manager_list:
                 manager_str = f"Current managers {', '.join([x.mention for x in manager_list])} can react with {yes_emoji} to instantly add {member.display_name} as a manager for this channel. "
@@ -3313,7 +3347,7 @@ class Raid(commands.Cog):
             except asyncio.TimeoutError:
                 timeout = True
             await utils.safe_delete(question)
-            if timeout or reaction.emoji == no_emoji:
+            if reaction and reaction.emoji == no_emoji:
                 return await ctx.send(f"Meowth! The vote for {member.display_name} has failed.", delete_after=10)
             else:
                 self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
@@ -3801,11 +3835,21 @@ class Raid(commands.Cog):
         moves = re.split('\\||/|,', moves)
         moves = [x.strip().title() for x in moves]
         moves = [x for x in moves if x.lower() in pokemon.quick_moves+pokemon.charge_moves]
+        charge_move = ""
+        quick_move = ""
+        for m in moves:
+            if m in [x.title() for x in pokemon.charge_moves]:
+                charge_move = m
+            elif m in [x.title() for x in pokemon.quick_moves]:
+                quick_move = m
+        moves = []
+        if quick_move:
+            moves.append(quick_move)
+        if charge_move:
+            moves.append(charge_move)
         if len(moves) > 2 or len(moves) == 0:
             return
         elif len(moves) == 2:
-            if moves[0] in [x.title() for x in pokemon.charge_moves]:
-                moves.reverse()
             for i in ctrs_dict:
                 if ctrs_dict[i]['moveset'] == (' | ').join(moves):
                     newembed = ctrs_dict[i]['embed']
@@ -3814,17 +3858,20 @@ class Raid(commands.Cog):
             if ctrs_message and newembed:
                 await ctrs_message.edit(embed=newembed)
             self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['moveset'] = moveset
-        await channel.send(f"This {str(pokemon)}'s {'moves are' if len(moves)>1 else 'move is'}: **{(' / ').join(moves)}**")
+        self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['moves'] = (' / ').join(moves)
+        for index, m in enumerate(moves):
+            if m.lower() in self.bot.move_info.keys():
+                moves[index] = f"{m} {utils.type_to_emoji(self.bot, self.bot.move_info[m.lower()]['type'])}"
+        await channel.send(f"This {str(pokemon)}'s {'moves are' if len(moves)>1 else 'move is'}: **{(' / ').join([x.title() for x in moves])}**")
         try:
             raid_msg = await channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][channel.id]['raid_message'])
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
             return
-        self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['moves'] = (' / ').join(moves)
         raid_embed = raid_msg.embeds[0]
         for index, field in enumerate(raid_embed.fields):
             if "list" in field.name.lower() or "moveset" in field.name.lower():
                 raid_embed.remove_field(index)
-        raid_embed.add_field(name="**Moveset**:", value=(' / ').join(moves), inline=True)
+        raid_embed.add_field(name="**Moveset**:", value=(' / ').join([x.title() for x in moves]), inline=True)
         await raid_msg.edit(embed=raid_embed)
         await self._edit_party(channel)
 
@@ -3961,7 +4008,7 @@ class Raid(commands.Cog):
                 raid_channel_name = await self.edit_channel_name(ctx.channel)
                 if report_meetup:
                     channel_name = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['meetup']['channel_name']
-                    question = await ctx.channel.send(f"Would you like to change the channel name to {ctx.channel.name.replace('train-', '').replace('meetup-', '').replace(channel_name, '')}{raidtype}-{utils.sanitize_channel_name(raid_details)}?")
+                    question = await ctx.channel.send(f"Would you like to change the channel name to {ctx.channel.name.replace('train-', '').replace('meetup-', '').replace(channel_name, '')}{raidtype.lower()}-{utils.sanitize_channel_name(raid_details).lower()}?")
                     try:
                         timeout = False
                         res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
@@ -3973,7 +4020,7 @@ class Raid(commands.Cog):
                         await utils.safe_delete(question)
                         return
                     elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
-                        self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['meetup']['channel_name'] = utils.sanitize_channel_name(raid_details)
+                        self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['meetup']['channel_name'] = utils.sanitize_channel_name(raid_details).lower()
                         raid_channel_name = await self.edit_channel_name(ctx.channel)
                         await utils.safe_delete(question)
                 await ctx.channel.edit(name=raid_channel_name)
@@ -5064,7 +5111,7 @@ class Raid(commands.Cog):
             return
         trainer_dict = self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict'].get(author.id, {})
         if trainer_dict and trainer_dict.setdefault('status', {}).get(rsvp_type, None) and result[1] == trainer_dict.setdefault('party', {}) and not trainer_dict['status'].get('lobby'):
-            await ctx.send(f"{ctx.author.mention}, your status is already set to **{rsvp_type}**. If you're trying to add more trainers use **{ctx.prefix}{ctx.invoked_with} [total count] [team counts]** like `{ctx.prefix}{ctx.invoked_with} 3 1m 2v`.", delete_after=60)
+            await ctx.send(f"{ctx.author.display_name}, your status is already set to **{rsvp_type}**. If you're trying to add more trainers use **{ctx.prefix}{ctx.invoked_with} [total count] [team counts]** like `{ctx.prefix}{ctx.invoked_with} 3 1m 2v`.", delete_after=60)
         count = result[0]
         party = result[1]
         blue_count = 0
