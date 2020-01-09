@@ -3828,7 +3828,7 @@ class Raid(commands.Cog):
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, entered_raid)
         weather =  self.bot.guild_dict[channel.guild.id][report_dict][channel.id].get('weather', None)
         if not ctrs_dict:
-            ctrs_dict = await raid_cog._get_generic_counters(channel.guild, entered_raid, weather)
+            ctrs_dict = await self._get_generic_counters(channel.guild, entered_raid, weather)
             self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['ctrs_dict'] = ctrs_dict
         if not moves or not ctrs_dict:
             return
@@ -4557,7 +4557,7 @@ class Raid(commands.Cog):
         ctrs_embed.set_footer(text=_('Results courtesy of Pokebattler'), icon_url=pbtlr_icon)
         ctrindex = 1
         for ctr in reversed(ctrs):
-            ctr_name = clean(ctr['pokemonId'])
+            ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh')
             if "form" in ctr_name.lower():
                 ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
             else:
@@ -4646,7 +4646,7 @@ class Raid(commands.Cog):
         ctrs_embed.set_footer(text=_('Results courtesy of Pokebattler'), icon_url=pbtlr_icon)
         ctrindex = 1
         for ctr in reversed(ctrs):
-            ctr_name = clean(ctr['pokemonId'])
+            ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh')
             if "form" in ctr_name.lower():
                 ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
             else:
@@ -4681,7 +4681,7 @@ class Raid(commands.Cog):
             ctrs_embed.set_footer(text=_('Results courtesy of Pokebattler'), icon_url=pbtlr_icon)
             ctrindex = 1
             for ctr in reversed(ctrs):
-                ctr_name = clean(ctr['pokemonId'])
+                ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh')
                 if "form" in ctr_name.lower():
                     ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
                 else:
