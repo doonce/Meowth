@@ -207,11 +207,17 @@ class MeowthBot(commands.AutoShardedBot):
         guilds = len(self.guilds)
         users = 0
         for guild in list(self.guilds):
+            if guild.id not in self.guild_dict.keys():
+                continue
+            users += guild.member_count
             # RUN ONCE
             try:
                 test_var = self.guild_dict[guild.id]['configure_dict']['train']['report_channels']
             except KeyError:
-                self.guild_dict[guild.id]['configure_dict']['train'] = copy.deepcopy(self.guild_dict[guild.id]['configure_dict']['meetup'])
+                try:
+                    self.guild_dict[guild.id]['configure_dict']['train'] = copy.deepcopy(self.guild_dict[guild.id]['configure_dict'].get('meetup', {}))
+                except:
+                    pass
             while True:
                 try:
                     test_var = self.guild_dict[guild.id]['configure_dict']['scanners']['reports']['raid']
@@ -244,7 +250,7 @@ class MeowthBot(commands.AutoShardedBot):
                 if role.name.lower() in self.pkmn_list and role != guild.me.top_role:
                     await role.delete()
             type_list = ["raid", "egg", "ex", "wild", "research", "nest", "lure", "invasion", "trade", "pvp"]
-            for trainer in self.guild_dict[guild.id]['trainers']:
+            for trainer in self.guild_dict[guild.id].get('trainers', []):
                 if isinstance(self.guild_dict[guild.id]['trainers'][trainer].get('alerts', {}).get('settings', {}).get('mute', True), (int, float)):
                     if self.guild_dict[guild.id]['trainers'][trainer].get('alerts', {}).get('settings', {}).get('mute'):
                         self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['mute'] = {"raid":True, "invasion":True, "lure":True, "wild":True, "research":True, "nest":True, "trade":True}
@@ -274,67 +280,37 @@ class MeowthBot(commands.AutoShardedBot):
                             self.guild_dict[guild.id]['trainers'][trainer]['reports'][item] = item_reports
                             del self.guild_dict[guild.id]['trainers'][trainer][item_name]
             # /Run Once
-            try:
-                users += guild.member_count
-                if guild.id not in self.guild_dict:
-                    self.guild_dict[guild.id] = {
-                        'configure_dict':{
-                            'welcome': {'enabled':False, 'welcomechan':'', 'welcomemsg':'default'},
-                            'want': {'enabled':False, 'report_channels': []},
-                            'raid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}},
-                            'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}, 'permissions':'everyone'},
-                            'wild': {'enabled':False, 'report_channels': {}},
-                            'meetup': {'enabled':False, 'report_channels': {}},
-                            'tutorial': {'enabled':True, 'report_channels': {}},
-                            'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
-                            'trade': {'enabled':False, 'report_channels': []},
-                            'counters': {'enabled':False, 'auto_levels': []},
-                            'research': {'enabled':False, 'report_channels': {}},
-                            'archive': {'enabled':False, 'category':'same', 'list':None},
-                            'invite': {'enabled':False},
-                            'team':{'enabled':False, 'team_roles':{}},
-                            'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':self.default_prefix, 'config_sessions':{}},
-                            'scanners':{'reports':{'raid':False, 'egg':False, 'wild':False, 'research':False, 'invasion':False, 'lure':False}, 'raidlvls':[0], 'egglvls':[0], 'wildfilter':[], 'alarmaction':False}
-                        },
-                        'wildreport_dict':{},
-                        'questreport_dict':{},
-                        'raidchannel_dict':{},
-                        'trainers':{},
-                        'trade_dict': {},
-                        'nest_dict': {}
-                    }
-            except AttributeError:
-                continue
         print("Meowth! That's right!\n\n{server_count} servers connected.\n{member_count} members found.".format(server_count=guilds, member_count=users))
 
-    async def on_guild_join(guild):
+    async def on_guild_join(self, guild):
         owner = guild.owner
-        self.guild_dict[guild.id] = {
-            'configure_dict':{
-                'welcome': {'enabled':False, 'welcomechan':'', 'welcomemsg':'default'},
-                'want': {'enabled':False, 'report_channels': []},
-                'raid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}},
-                'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}, 'permissions':'everyone'},
-                'wild': {'enabled':False, 'report_channels': {}},
-                'meetup': {'enabled':False, 'report_channels': {}, 'categories':'same', 'catgory_dict':{}},
-                'tutorial': {'enabled':True, 'report_channels': {}},
-                'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
-                'trade': {'enabled':False, 'report_channels': []},
-                'counters': {'enabled':False, 'auto_levels': []},
-                'research': {'enabled':False, 'report_channels': {}},
-                'archive': {'enabled':False, 'category':'same', 'list':None},
-                'invite': {'enabled':False},
-                'team':{'enabled':False, 'team_roles':{}},
-                'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':self.default_prefix, 'config_sessions':{}},
-                'scanners':{'reports':{'raid':False, 'egg':False, 'wild':False, 'research':False, 'invasion':False, 'lure':False}, 'raidlvls':[0], 'egglvls':[0], 'wildfilter':[], 'alarmaction':False}
-            },
-            'wildreport_dict:':{},
-            'questreport_dict':{},
-            'raidchannel_dict':{},
-            'trainers':{},
-            'trade_dict': {},
-            'nest_dict': {}
-        }
+        # self.guild_dict[guild.id] = {
+        #     'configure_dict':{
+        #         'welcome': {'enabled':False, 'welcomechan':'', 'welcomemsg':'default'},
+        #         'want': {'enabled':False, 'report_channels': []},
+        #         'raid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}},
+        #         'exraid': {'enabled':False, 'report_channels': {}, 'categories':'same', 'category_dict':{}, 'permissions':'everyone'},
+        #         'wild': {'enabled':False, 'report_channels': {}},
+        #         'meetup': {'enabled':False, 'report_channels': {}, 'categories':'same', 'catgory_dict':{}},
+        #         'tutorial': {'enabled':True, 'report_channels': {}},
+        #         'nest': {'enabled':False, 'report_channels': [], 'migration':datetime.datetime.now()},
+        #         'trade': {'enabled':False, 'report_channels': []},
+        #         'counters': {'enabled':False, 'auto_levels': []},
+        #         'research': {'enabled':False, 'report_channels': {}},
+        #         'archive': {'enabled':False, 'category':'same', 'list':None},
+        #         'invite': {'enabled':False},
+        #         'team':{'enabled':False, 'team_roles':{}},
+        #         'settings':{'offset':0, 'regional':None, 'done':False, 'prefix':self.default_prefix, 'config_sessions':{}},
+        #         'scanners':{'reports':{'raid':False, 'egg':False, 'wild':False, 'research':False, 'invasion':False, 'lure':False}, 'raidlvls':[0], 'egglvls':[0], 'wildfilter':[], 'alarmaction':False}
+        #     },
+        #     'wildreport_dict:':{},
+        #     'questreport_dict':{},
+        #     'raidchannel_dict':{},
+        #     'trainers':{},
+        #     'trade_dict': {},
+        #     'nest_dict': {}
+        # }
+        print(f"I joined a new guild. Name = {guild.name} | ID = {guild.id}")
         await owner.send(_("Meowth! I'm Meowth, a Discord helper bot for Pokemon Go communities, and someone has invited me to your server! Type **!help** to see a list of things I can do, and type **!configure** in any channel of your server to begin!"))
 
     async def on_guild_remove(self, guild):
@@ -346,13 +322,14 @@ class MeowthBot(commands.AutoShardedBot):
                     pass
         except KeyError:
             pass
+        print(f"I left a guild. Name = {guild.name} | ID = {guild.id}")
 
     async def on_member_join(self, member):
         'Welcome message to the server and some basic instructions.'
         guild = member.guild
         team_msg = _(' or ').join(['**!team {0}**'.format(team)
                                for team in config.team_dict.keys()])
-        if not self.guild_dict[guild.id]['configure_dict']['welcome']['enabled']:
+        if not self.guild_dict.get(guild.id, {}).get('configure_dict', {}).get('welcome', {}).get('enabled', False):
             return
         # Build welcome message
         if self.guild_dict[guild.id]['configure_dict']['welcome'].get('welcomemsg', 'default') == "default":
@@ -406,6 +383,8 @@ class MeowthBot(commands.AutoShardedBot):
         elif u'\U0001F4A8' in emoji:
             channel = self.get_channel(payload.channel_id)
             guild = getattr(channel, "guild", None)
+            if guild and guild.id not in list(self.guild_dict.keys()):
+                return
             if guild:
                 user = guild.get_member(payload.user_id)
             else:
@@ -437,8 +416,8 @@ class MeowthBot(commands.AutoShardedBot):
             return
         ctx = await self.get_context(message, cls=Context)
         for report_dict in ctx.bot.channel_report_dicts:
-            if ctx.guild and ctx.channel.id in ctx.bot.guild_dict[ctx.guild.id].setdefault(report_dict, {}):
-                if ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['invite']['enabled']:
+            if ctx.guild and ctx.guild.id in ctx.bot.guild_dict.keys() and ctx.channel.id in ctx.bot.guild_dict[ctx.guild.id].setdefault(report_dict, {}):
+                if ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('invite', {}).get('enabled', False):
                     raid_type = ctx.bot.guild_dict[ctx.guild.id][report_dict].get(ctx.channel.id, {}).get('type', None)
                     raid_level = ctx.bot.guild_dict[ctx.guild.id][report_dict].get(ctx.channel.id, {}).get('egg_level', None)
                     meetup = ctx.bot.guild_dict[ctx.guild.id][report_dict].get(ctx.channel.id, {}).get('meetup', {})
@@ -456,4 +435,9 @@ class MeowthBot(commands.AutoShardedBot):
                                 return
         if not ctx.command:
             return
-        await self.invoke(ctx)
+        if ctx.guild.id in ctx.bot.guild_dict.keys():
+            await self.invoke(ctx)
+        elif ctx.command.cog_name == "Admin" and checks.is_owner_check(ctx):
+            await self.invoke(ctx)
+        elif ctx.command.name == "configure" or ctx.command.name == "help":
+            await self.invoke(ctx)

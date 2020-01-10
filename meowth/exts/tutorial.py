@@ -89,8 +89,10 @@ class Tutorial(commands.Cog):
         logger.info('------ BEGIN ------')
         count = 0
         for guild in list(self.bot.guilds):
+            if guild.id not in list(self.bot.guild_dict.keys()):
+                continue
             try:
-                tutorial_dict = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('tutorial', {}).setdefault('report_channels', {})
+                tutorial_dict = self.bot.guild_dict[guild.id].setdefault('configure_dict', {}).setdefault('tutorial', {}).setdefault('report_channels', {})
                 for channelid in tutorial_dict:
                     channel_exists = self.bot.get_channel(channelid)
                     if not channel_exists:
@@ -154,7 +156,7 @@ class Tutorial(commands.Cog):
 
     async def _tutorial(self, ctx, tutorial_list):
         guild = ctx.message.guild
-        cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+        cfg = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {})
         enabled = [k for k, v in cfg.items() if v.get('enabled', False)]
         no_tutorial = ['welcome', 'counters', 'archive', 'meetup']
         enabled = list(set(enabled) - set(no_tutorial))
@@ -308,7 +310,7 @@ class Tutorial(commands.Cog):
             ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
             # get tutorial settings
-            cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+            cfg = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {})
 
             tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
             await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
@@ -334,7 +336,7 @@ class Tutorial(commands.Cog):
             await self.wait_for_cmd(ctx.tutorial_channel, ctx.author, 'want')
 
             # acknowledge and wait a second before continuing
-            want_channels = self.bot.guild_dict[ctx.guild.id]['configure_dict']['want']['report_channels']
+            want_channels = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {}).get('want', {}).get('report_channels', [])
             newline = "\n"
             msg = f"in the following channel{'s:'+newline if len(want_channels) > 1 else ': '}"
             counter = 0
@@ -386,7 +388,7 @@ class Tutorial(commands.Cog):
             ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
             # get tutorial settings
-            cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+            cfg = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {})
 
             tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
             await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
@@ -459,7 +461,7 @@ class Tutorial(commands.Cog):
             ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
             # get tutorial settings
-            cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+            cfg = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {})
 
             tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
             await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
@@ -671,7 +673,7 @@ class Tutorial(commands.Cog):
             ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
             # get tutorial settings
-            cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+            cfg = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {})
 
             tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
             await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
@@ -740,7 +742,7 @@ class Tutorial(commands.Cog):
             ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
             # get tutorial settings
-            cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+            cfg = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {})
 
             tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
             await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
@@ -804,7 +806,7 @@ class Tutorial(commands.Cog):
             ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
             # get tutorial settings
-            cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+            cfg = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {})
 
             tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
             await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
@@ -868,7 +870,7 @@ class Tutorial(commands.Cog):
             ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
             # get tutorial settings
-            cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+            cfg = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {})
 
             tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
             await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
@@ -932,7 +934,7 @@ class Tutorial(commands.Cog):
             ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
             # get tutorial settings
-            cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+            cfg = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {})
 
             tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
             await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
@@ -998,7 +1000,7 @@ class Tutorial(commands.Cog):
             ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
             # get tutorial settings
-            cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+            cfg = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {})
 
             tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
             await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
@@ -1014,7 +1016,7 @@ class Tutorial(commands.Cog):
     async def team_tutorial(self, ctx, config):
         team_set = False
         for role in ctx.author.roles:
-            if role.id in self.bot.guild_dict[ctx.guild.id]['configure_dict']['team']['team_roles'].values():
+            if role.id in self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {}).get('team', {}).get('team_roles', {}).values():
                 team_set = True
         if team_set:
             msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"You already have a team role set through the **{ctx.prefix}team** command. If you want to change your team, contact a moderator.").set_author(name="Team Tutorial", icon_url=ctx.bot.user.avatar_url))
@@ -1056,7 +1058,7 @@ class Tutorial(commands.Cog):
             ctx.tutorial_channel = await self.create_tutorial_channel(ctx)
 
             # get tutorial settings
-            cfg = self.bot.guild_dict[ctx.guild.id]['configure_dict']
+            cfg = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {})
 
             tutorial_message = f"I created this private channel that only you can see to teach you about the server commands! You can abandon this tutorial at any time and I'll delete this channel after five minutes.\n\nJust so you know, across all of Meowth, **<> denote required arguments, [] denote optional arguments** and you don't type the <>s or []s.\n\nLet's get started!"
             await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
@@ -1209,8 +1211,8 @@ class Tutorial(commands.Cog):
                         command = self.bot.get_command(cmd_match.group())
                     break
         if command:
-            if can_manage and not await predicate(command):
-                city_channels = self.bot.guild_dict[ctx.guild.id]['configure_dict'].get(command.name.lower(), {}).get('report_channels', [])
+            if can_manage and not await predicate(command) and ctx.guild.id in list(self.bot.guild_dict.keys()):
+                city_channels = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {}).get(command.name.lower(), {}).get('report_channels', [])
                 report_channels = []
                 for c in city_channels:
                     channel = discord.utils.get(ctx.guild.channels, id=c)

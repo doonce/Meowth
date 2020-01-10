@@ -32,6 +32,8 @@ class Lure(commands.Cog):
         expire_list = []
         count = 0
         for guild in list(self.bot.guilds):
+            if guild.id not in list(self.bot.guild_dict.keys()):
+                continue
             try:
                 lure_dict = self.bot.guild_dict[guild.id].setdefault('lure_dict', {})
                 for reportid in list(lure_dict.keys()):
@@ -79,6 +81,8 @@ class Lure(commands.Cog):
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         guild = getattr(channel, "guild", None)
+        if guild and guild.id not in list(self.bot.guild_dict.keys()):
+            return
         try:
             user = self.bot.get_user(payload.user_id)
         except AttributeError:
@@ -164,7 +168,7 @@ class Lure(commands.Cog):
         type_list = ["normal", "mossy", "magnetic", "glacial"]
         if not author:
             return
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         success = []
         reply_msg = f"**type <lure type>** - Current: {lure_dict.get('type', 'X')}\n"
@@ -279,7 +283,7 @@ class Lure(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         first = True
         lure_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/TroyKey.png?cache=1')
@@ -384,8 +388,8 @@ class Lure(commands.Cog):
         if timer:
             expire_time = timer
         lure_dict = self.bot.guild_dict[ctx.guild.id].setdefault('lure_dict', {})
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         end = now + datetime.timedelta(minutes=int(expire_time))
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', u'\U000026be')
         info_emoji = ctx.bot.custom_emoji.get('lure_info', u'\U00002139\U0000fe0f')

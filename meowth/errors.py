@@ -228,7 +228,7 @@ def custom_error_handling(bot, logger):
     async def on_command_error(ctx, error):
         channel = ctx.channel
         for report_dict in ctx.bot.channel_report_dicts:
-            if channel and hasattr(channel, "guild") and channel.id in ctx.bot.guild_dict[channel.guild.id].setdefault(report_dict, {}):
+            if channel and hasattr(channel, "guild") and channel.id in ctx.bot.guild_dict.get(channel.guild.id, {}).setdefault(report_dict, {}):
                 break
         if ctx.prefix:
             prefix = ctx.prefix.replace(ctx.bot.user.mention, '@' + ctx.bot.user.name)
@@ -343,7 +343,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, CityChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('raid', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel.')
             else:
@@ -363,7 +363,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, WantChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in the following channel').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            want_channels = bot.guild_dict[guild.id]['configure_dict']['want']['report_channels']
+            want_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('want', {}).get('report_channels', [])
             if len(want_channels) > 1:
                 msg += _('s:\n')
             else:
@@ -387,7 +387,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, RaidChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in a Raid channel. Use **{prefix}list** in any ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('raid', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('Region report channel to see active raids.')
             else:
@@ -407,8 +407,8 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, RSVPChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in a Raid channel. Use **{prefix}list** in any ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            raid_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
-            meetup_channels = bot.guild_dict[guild.id]['configure_dict']['meetup']['report_channels']
+            raid_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('raid', {}).get('report_channels', [])
+            meetup_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('meetup', {}).get('report_channels', [])
             city_channels = {**raid_channels, **meetup_channels}
             if len(city_channels) > 10:
                 msg += _('Region report channel to see active channels.')
@@ -429,7 +429,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, EggChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in an Egg channel. Use **{prefix}list** in any ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('raid', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('Region report channel to see active raids.')
             else:
@@ -454,7 +454,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, ActiveRaidChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in an Active Raid channel. Use **{prefix}list** in any ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('raid', {}).get('report_channels', [])
             egg_check = bot.guild_dict[guild.id][report_dict].get(ctx.channel.id, {}).get('type', "")
             meetup = bot.guild_dict[guild.id][report_dict].get(ctx.channel.id, {}).get('meetup', {})
             if len(city_channels) > 10:
@@ -478,7 +478,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, ActiveChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in an Active channel. Use **{prefix}list** in any ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('raid', {}).get('report_channels', [])
             egg_check = bot.guild_dict[guild.id][report_dict].get(ctx.channel.id, {}).get('type', "")
             meetup = bot.guild_dict[guild.id][report_dict].get(ctx.channel.id, {}).get('meetup', {})
             if len(city_channels) > 10:
@@ -502,7 +502,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, CityRaidChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in either a Raid channel or ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('raid', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel.')
             else:
@@ -522,7 +522,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, RegionEggChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in either a Raid Egg channel or ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['raid']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('raid', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel.')
             else:
@@ -542,7 +542,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, RegionExRaidChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in either a EX Raid channel or ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['exraid']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('exraid', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel.')
             else:
@@ -562,7 +562,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, ExRaidChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in a EX Raid channel. Use **{prefix}list** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['exraid']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('exraid', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel to see active raids.')
             else:
@@ -582,7 +582,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, EXInviteFail):
             guild = ctx.guild
             msg = _('Meowth! {member}, you have not gained access to this raid! Use **{prefix}invite** in ').format(member=ctx.author.mention, cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['exraid']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('exraid', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel to gain access.')
             else:
@@ -602,7 +602,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, ResearchReportChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['research']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('research', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel.')
             else:
@@ -622,7 +622,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, InvasionReportChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['invasion']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('invasion', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel.')
             else:
@@ -642,7 +642,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, LureReportChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['lure']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('lure', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel.')
             else:
@@ -662,7 +662,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, PVPReportChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['pvp']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('pvp', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel.')
             else:
@@ -682,7 +682,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, MeetupReportChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['meetup']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('meetup', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel.')
             else:
@@ -702,7 +702,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, TrainReportChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['train']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('train', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel.')
             else:
@@ -722,7 +722,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, TradeChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['trade']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('trade', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a trading channel.')
             else:
@@ -742,7 +742,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, NestChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['nest']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('nest', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a nest report channel.')
             else:
@@ -762,7 +762,7 @@ def custom_error_handling(bot, logger):
         elif isinstance(error, WildReportChannelCheckFail):
             guild = ctx.guild
             msg = _('Meowth! Please use **{prefix}{cmd_name}** in ').format(cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
-            city_channels = bot.guild_dict[guild.id]['configure_dict']['wild']['report_channels']
+            city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('wild', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel.')
             else:

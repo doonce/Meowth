@@ -29,6 +29,8 @@ class Configure(commands.Cog):
         logger.info('------ BEGIN ------')
         count = 0
         for guild in list(self.bot.guilds):
+            if guild.id not in self.bot.guild_dict.keys():
+                continue
             try:
                 session_dict = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {})
                 for trainer in list(session_dict.keys()):
@@ -159,7 +161,7 @@ class Configure(commands.Cog):
             pass
         try:
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'].get(ctx.author.id, []).remove(ctx.configure_channel.id)
-        except (AttributeError, ValueError):
+        except (AttributeError, ValueError, KeyError):
             pass
         try:
             if not self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'].get(ctx.author.id, []):
@@ -168,7 +170,7 @@ class Configure(commands.Cog):
             pass
 
     async def configure_summary(self, ctx):
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         timestamp = now.strftime(_('%B %d at %I:%M %p (%H:%M)'))
         config_embed = discord.Embed(colour=ctx.guild.me.colour)
         config_embed.set_author(name=f"Meowth Configuration - {timestamp}", icon_url=ctx.bot.user.avatar_url)
@@ -198,14 +200,14 @@ class Configure(commands.Cog):
         guild = ctx.message.guild
         citychannel_dict = {}
         channels = None
-        test_var = config_dict_temp.setdefault(type, {}).setdefault('enabled', False)
+        city_config = config_dict_temp.setdefault(type, {}).setdefault('enabled', False)
         if output == "list":
-            test_var = config_dict_temp.setdefault(type, {}).setdefault('report_channels', [])
+            city_config = config_dict_temp.setdefault(type, {}).setdefault('report_channels', [])
         else:
-            test_var = config_dict_temp.setdefault(type, {}).setdefault('report_channels', {})
+            city_config = config_dict_temp.setdefault(type, {}).setdefault('report_channels', {})
         if output == "category_dict":
-            test_var = config_dict_temp.setdefault(type, {}).setdefault('categories', "region")
-            test_var = config_dict_temp.setdefault(type, {}).setdefault('category_dict', {})
+            city_config = config_dict_temp.setdefault(type, {}).setdefault('categories', "region")
+            city_config = config_dict_temp.setdefault(type, {}).setdefault('category_dict', {})
         if config_dict_temp[type].get('report_channels'):
             if output == "list":
                 channels = [ctx.bot.get_channel(x) for x in config_dict_temp[type]['report_channels']]
@@ -270,7 +272,7 @@ class Configure(commands.Cog):
                         try:
                             await channel.set_permissions(self.bot.user, overwrite = ow)
                         except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
+                            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}permissions**.\n\nIf things don\'t work, you can retry configure after giving me temporary Administrator permissions or give me Send Messages, Read Messages, and Manage Permissions in each reporting channel.').format(prefix=ctx.prefix, channel=channel.mention)))
                     break
                 else:
                     await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("The channel list you provided doesn't match with your servers channels.\n\nThe following aren't in your server: **{invalid_channels}**\n\nPlease double check your channel list and resend your reponse.").format(invalid_channels=', '.join(citychannel_errors))))
@@ -546,16 +548,20 @@ class Configure(commands.Cog):
 
     async def _configure(self, ctx, configlist):
         guild = ctx.message.guild
+        if guild.id not in self.bot.guild_dict:
+            self.bot.guild_dict[guild.id] = {
+                'configure_dict': {}
+            }
         await utils.safe_delete(ctx.message)
         ctx.config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         firstconfig = False
-        all_commands = [str(x) for x in ctx.config_dict_temp.keys()]
+        all_commands = [str(x) for x in ctx.bot.commands] + ["settings", "scanners"]
         enabled_commands = []
         configreplylist = []
         config_error = False
-        if not ctx.config_dict_temp['settings']['done']:
+        if not ctx.config_dict_temp.setdefault('settings', {}).setdefault('done', False):
             firstconfig = True
-        config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+        config_sessions = self.bot.guild_dict.setdefault(ctx.guild.id, {}).setdefault('configure_dict', {}).setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
         if not hasattr(ctx, "configure_channel"):
             ctx.configure_channel = await self.create_configure_channel(ctx)
         if ctx.configure_channel.id not in config_sessions:
@@ -712,11 +718,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -734,8 +740,9 @@ class Configure(commands.Cog):
     async def _configure_team(self, ctx):
         guild = ctx.message.guild
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        team_config = config_dict_temp.setdefault('team', {})
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Team assignment allows users to assign their Pokemon Go team role using the **!team** command. If you have a bot that handles this already, you may want to disable this feature.\n\nIf you are to use this feature, ensure existing team roles are as follows: mystic, valor, instinct. These must be all lowercase letters. If they don't exist yet, I'll make some for you instead.\n\nRespond here with: **N** to disable, **Y** to enable:")).set_author(name=_('Team Assignments'), icon_url=self.bot.user.avatar_url))
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['team']['enabled'])).set_author(name=_("Current Team Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['team'].get('enabled', False))).set_author(name=_("Current Team Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             try:
                 teamreply = await self.wait_for_msg(ctx.configure_channel, ctx.author)
@@ -754,7 +761,7 @@ class Configure(commands.Cog):
                 role_create = ""
                 while True:
                     await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Please respond with the names or IDs for the roles you would like to use for teams in the following order:\n\n**mystic, valor, instinct, harmony**\n\nIf I can't find a role, I'll make a temporary role for you that you can either keep and rename, or you can delete and attempt to configure roles again.")).set_author(name=_('Team Assignments'), icon_url=self.bot.user.avatar_url))
-                    if config_dict_temp['team']['team_roles']:
+                    if config_dict_temp['team'].get('team_roles', False):
                         roles = {k:guild.get_role(v) for k,v in config_dict_temp['team']['team_roles'].items()}
                         roles = {k:v.name for k,v in roles.items() if v}
                         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"{roles}").set_author(name=_("Current Team Roles"), icon_url=self.bot.user.avatar_url), delete_after=300)
@@ -831,11 +838,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -853,14 +860,15 @@ class Configure(commands.Cog):
     async def _configure_welcome(self, ctx):
         guild = ctx.message.guild
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        welcome_config = config_dict_temp.setdefault('welcome', {})
         welcomeconfig = _('I can welcome new members to the server with a short message. Here is an example, but it is customizable:\n\n')
         if config_dict_temp['team']['enabled']:
-            welcomeconfig += _("Meowth! Welcome to {server_name}, {owner_name.mention}! Set your team by typing '**!team mystic**' or '**!team valor**' or '**!team instinct**' without quotations. If you have any questions just ask an admin.").format(server_name=guild.name, owner_name=ctx.author)
+            default_welcome = _("Meowth! Welcome to {server_name}, {owner_name.mention}! Set your team by typing '**!team mystic**' or '**!team valor**' or '**!team instinct**' without quotations. If you have any questions just ask an admin.").format(server_name=guild.name, owner_name=ctx.author)
         else:
-            welcomeconfig += _('Meowth! Welcome to {server_name}, {owner_name.mention}! If you have any questions just ask an admin.').format(server_name=guild, owner_name=ctx.author)
-        welcomeconfig += _('\n\nThis welcome message can be in a specific channel or a direct message. If you have a bot that handles this already, you may want to disable this feature.\n\nRespond with: **N** to disable, **Y** to enable:')
+            default_welcome = _('Meowth! Welcome to {server_name}, {owner_name.mention}! If you have any questions just ask an admin.').format(server_name=guild, owner_name=ctx.author)
+        welcomeconfig += f"{default_welcome}\n\nThis welcome message can be in a specific channel or a direct message. If you have a bot that handles this already, you may want to disable this feature.\n\nRespond with: **N** to disable, **Y** to enable:"
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=welcomeconfig).set_author(name=_('Welcome Message'), icon_url=self.bot.user.avatar_url))
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['welcome']['enabled'])).set_author(name=_("Current Welcome Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['welcome'].get('enabled', False))).set_author(name=_("Current Welcome Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             try:
                 welcomereply = await self.wait_for_msg(ctx.configure_channel, ctx.author)
@@ -884,7 +892,7 @@ class Configure(commands.Cog):
                                  "**{server}** - Will print your server's name\n"
                                  "Surround your message with [] to send it as an embed. **Warning:** Mentions within embeds may be broken on mobile, this is a Discord bug."))).set_author(name=_("Welcome Message"), icon_url=self.bot.user.avatar_url))
                 if config_dict_temp['welcome'].get('welcomemsg', 'default') != 'default':
-                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['welcome']['welcomemsg'])).set_author(name=_("Current Welcome Message"), icon_url=self.bot.user.avatar_url), delete_after=300)
+                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['welcome'].get('welcomemsg', default_welcome))).set_author(name=_("Current Welcome Message"), icon_url=self.bot.user.avatar_url), delete_after=300)
                 while True:
                     try:
                         welcomemsgreply = await self.wait_for_msg(ctx.configure_channel, ctx.author)
@@ -939,7 +947,7 @@ class Configure(commands.Cog):
                             break
                     break
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Which channel in your server would you like me to post the Welcome Messages? You can also choose to have them sent to the new member via Direct Message (DM) instead.\n\nRespond with: **channel-name** or ID of a channel in your server or **DM** to Direct Message:")).set_author(name=_("Welcome Message Channel"), icon_url=self.bot.user.avatar_url))
-                if config_dict_temp['welcome']['welcomechan']:
+                if config_dict_temp['welcome'].get('welcomechan', None):
                     if config_dict_temp['welcome']['welcomechan'] == "dm":
                         channel = "DM"
                     else:
@@ -990,7 +998,7 @@ class Configure(commands.Cog):
                             try:
                                 await channel.set_permissions(self.bot.user, overwrite = ow)
                             except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.InvalidArgument):
-                                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}get perms**.').format(prefix=ctx.prefix, channel=channel.mention)))
+                                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_('I couldn\'t set my own permissions in this channel. Please ensure I have the correct permissions in {channel} using **{prefix}permissions**.').format(prefix=ctx.prefix, channel=channel.mention)))
                             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Welcome Channel set to {channel}').format(channel=welcomechannelreply.content.lower())))
                             break
                         else:
@@ -1018,11 +1026,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1058,11 +1066,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1091,7 +1099,7 @@ class Configure(commands.Cog):
             return None
         if config_dict_temp['exraid']['enabled']:
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Who do you want to be able to **see** the EX Raid channels? Your options are:\n\n**everyone** - To have everyone be able to see all reported EX Raids\n**same** - To only allow those with access to the reporting channel.")).set_author(name=_('EX Raid Channel Read Permissions'), icon_url=self.bot.user.avatar_url))
-            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['exraid']['permissions'])).set_author(name=_("Current Exraid Permissions"), icon_url=self.bot.user.avatar_url), delete_after=300)
+            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['exraid'].setdefault('permissions', 'everyone'))).set_author(name=_("Current Exraid Permissions"), icon_url=self.bot.user.avatar_url), delete_after=300)
             while True:
                 try:
                     permsconfigset = await self.wait_for_msg(ctx.configure_channel, ctx.author)
@@ -1123,11 +1131,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1146,6 +1154,7 @@ class Configure(commands.Cog):
         guild = ctx.message.guild
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         raid_cog = self.bot.cogs.get('Raid')
+        invite_config = config_dict_temp.setdefault('invite', {})
         if not raid_cog:
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Raid Cog is not loaded. Invite cannot be configured.")))
             ctx.config_dict_temp = config_dict_temp
@@ -1153,7 +1162,7 @@ class Configure(commands.Cog):
         if not config_dict_temp['exraid']['enabled']:
             return ctx
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want access to EX raids controlled through members using the **!invite** command?\nIf enabled, members will have read-only permissions for all EX Raids until they use **!invite** to gain access. If disabled, EX Raids will inherit the permissions from their reporting channels.\n\nRespond with: **N** to disable, or **Y** to enable:')).set_author(name=_('Invite Configuration'), icon_url=self.bot.user.avatar_url))
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['invite']['enabled'])).set_author(name=_("Current Invite Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['invite'].get('enabled', False))).set_author(name=_("Current Invite Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             try:
                 inviteconfigset = await self.wait_for_msg(ctx.configure_channel, ctx.author)
@@ -1185,11 +1194,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1207,12 +1216,13 @@ class Configure(commands.Cog):
         guild = ctx.message.guild
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         raid_cog = self.bot.cogs.get('Raid')
+        counters_config = config_dict_temp.setdefault('counters', {})
         if not raid_cog:
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Raid Cog is not loaded. Counters cannot be configured.")))
             ctx.config_dict_temp = config_dict_temp
             return ctx
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want to generate an automatic counters list in newly created raid channels using PokeBattler?\nIf enabled, I will post a message containing the best counters for the raid boss in new raid channels. Users will still be able to use **!counters** to generate this list.\n\nRespond with: **N** to disable, or enable with a comma separated list of boss levels that you would like me to generate counters for. Example:`3, 4, 5, EX`')).set_author(name=_('Automatic Counters Configuration'), icon_url=self.bot.user.avatar_url))
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp['counters']['enabled']}\nLevels: {config_dict_temp['counters']['auto_levels']}").set_author(name=_("Current Counters Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp['counters'].get('enabled', False)}\nLevels: {config_dict_temp['counters'].get('auto_levels', [])}").set_author(name=_("Current Counters Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             try:
                 countersconfigset = await self.wait_for_msg(ctx.configure_channel, ctx.author)
@@ -1255,11 +1265,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1295,11 +1305,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1335,11 +1345,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1375,11 +1385,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1415,11 +1425,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1455,11 +1465,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1496,11 +1506,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1536,11 +1546,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1559,6 +1569,7 @@ class Configure(commands.Cog):
         guild = ctx.message.guild
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         want_cog = self.bot.cogs.get('Want')
+        want_config = config_dict_temp.setdefault('want', {})
         join_roles = config_dict_temp['want'].get('roles', [])
         if not want_cog:
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Want Cog is not loaded. Want cannot be configured.")))
@@ -1617,11 +1628,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1640,12 +1651,13 @@ class Configure(commands.Cog):
         guild = ctx.message.guild
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         raid_cog = self.bot.cogs.get('Raid')
+        archive_config = config_dict_temp.setdefault('archive', {})
         if not raid_cog:
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Raid Cog is not loaded. Archive cannot be configured.")))
             ctx.config_dict_temp = config_dict_temp
             return ctx
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("The **!archive** command marks temporary raid channels for archival rather than deletion. This can be useful for investigating potential violations of your server's rules in these channels.\n\nIf you would like to disable this feature, reply with **N**. Otherwise send the category you would like me to place archived channels in. You can say **same** to keep them in the same category, or type the name or ID of a category in your server.")).set_author(name=_('Archive Configuration'), icon_url=self.bot.user.avatar_url))
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp['archive']['enabled']}\nCategory: {config_dict_temp['archive']['category']}").set_author(name=_("Current Archive Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp['archive'].get('enabled', False)}\nCategory: {config_dict_temp['archive'].get('category', 'same')}").set_author(name=_("Current Archive Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             try:
                 archivemsg = await self.wait_for_msg(ctx.configure_channel, ctx.author)
@@ -1684,7 +1696,7 @@ class Configure(commands.Cog):
         if config_dict_temp['archive']['enabled']:
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("I can also listen in your raid channels for words or phrases that you want to trigger an automatic archival. For example, if discussion of spoofing is against your server rules, you might tell me to listen for the word 'spoofing'.\n\nReply with **none** to disable this feature, or reply with a comma separated list of phrases you want me to listen in raid channels for.")).set_author(name=_('Archive Configuration'), icon_url=self.bot.user.avatar_url))
             if config_dict_temp['archive'].get('list', []):
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['archive']['list'])).set_author(name=_("Current Archive Phrases"), icon_url=self.bot.user.avatar_url), delete_after=300)
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['archive'].get('list', None))).set_author(name=_("Current Archive Phrases"), icon_url=self.bot.user.avatar_url), delete_after=300)
             try:
                 phrasemsg = await self.wait_for_msg(ctx.configure_channel, ctx.author)
             except asyncio.TimeoutError:
@@ -1713,11 +1725,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1735,8 +1747,9 @@ class Configure(commands.Cog):
     async def _configure_settings(self, ctx):
         guild = ctx.message.guild
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
+        settings_config = config_dict_temp.setdefault('settings', {})
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("There are a few settings available that are not within **!configure**. To set these, use **!set <setting>** in any channel to set that setting.\n\nThese include:\n**!set regional <name or number>** - To set a server's regional raid boss\n**!set prefix <prefix>** - To set my command prefix\n**!set timezone <offset>** - To set offset outside of **!configure**\n**!set silph <trainer>** - To set a trainer's SilphRoad card (usable by members)\n**!set pokebattler <ID>** - To set a trainer's pokebattler ID (usable by members)\n\nHowever, we can do your timezone now to help coordinate reports for you. For others, use the **!set** command.\n\nThe current 24-hr time UTC is {utctime}. How many hours off from that are you?\n\nRespond with: A number from **-12** to **12**:").format(utctime=strftime('%H:%M', time.gmtime()))).set_author(name=_('Timezone Configuration and Other Settings'), icon_url=self.bot.user.avatar_url))
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['settings']['offset'])).set_author(name=_("Current Timezone Offset"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['settings'].setdefault('offset', 0))).set_author(name=_("Current Timezone Offset"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             try:
                 offsetmsg = await self.wait_for_msg(ctx.configure_channel, ctx.author)
@@ -1770,11 +1783,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1810,11 +1823,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1850,11 +1863,11 @@ class Configure(commands.Cog):
         try:
             guild = ctx.message.guild
             await utils.safe_delete(ctx.message)
-            if not self.bot.guild_dict[guild.id]['configure_dict']['settings']['done']:
+            if not self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('done', False):
                 await self._configure(ctx, "all")
                 return
             ctx.configure_channel = await self.create_configure_channel(ctx)
-            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings'].setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
+            config_sessions = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('config_sessions', {}).setdefault(ctx.author.id, [])
             if ctx.configure_channel.id not in config_sessions:
                 config_sessions.append(ctx.configure_channel.id)
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['config_sessions'][ctx.author.id] = config_sessions
@@ -1872,19 +1885,21 @@ class Configure(commands.Cog):
         guild = ctx.message.guild
         config_dict_temp = getattr(ctx, 'config_dict_temp', copy.deepcopy(self.bot.guild_dict[guild.id]['configure_dict']))
         huntr_cog = self.bot.cogs.get('Huntr')
+        scanner_config = config_dict_temp.setdefault('scanners', {})
         if not huntr_cog:
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Huntr Cog is not loaded. Scanners cannot be configured.")))
             ctx.config_dict_temp = config_dict_temp
             return ctx
-        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Do you want automatic reports using supported bots enabled?\n\nAny report that a bot posts in a channel that Meowth also has access to will be converted to a Meowth report. If enabled, there are more options available for configuring this setting.\n\nRespond with a comma separated list of available report types to enable or **N** to disable all. Any omitted will be disabled.").set_author(name='Automatic Reports', icon_url=self.bot.user.avatar_url)
+        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Do you want automatic reports using supported bots enabled?\n\nAny report that a bot posts in a channel that Meowth also has access to will be converted to a Meowth report. If enabled, there are more options available for configuring this setting.\n\nRespond with a comma separated list of available report types to enable, **all* to enable all, or **N** to disable all. Any omitted from a list will be disabled.").set_author(name='Automatic Reports', icon_url=self.bot.user.avatar_url)
         scanner_embed.add_field(name=f"**Raid**", value='**Supported Bots:** GymHuntrBot, NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"raid", "pokemon":"[form] <pokemon name>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<end minutes>", "moves":"<move name 1> / <move name 2>"}`', inline=False)
         scanner_embed.add_field(name=f"**Egg**", value='**Supported Bots:** GymHuntrBot, NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"egg", "level":"<raid_level>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<hatch minutes>"}`', inline=False)
         scanner_embed.add_field(name=f"**Wild**", value='**Supported Bots:** HuntrBot, NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"wild", "pokemon":"[gender] [form] <pokemon name>", "gps":"<latitude>,<longitude>, "weather":"[weather boost]"}`', inline=False)
         scanner_embed.add_field(name=f"**Research**", value='**Supported Bots:** NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"research", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "quest":"<quest task>", "reward":"<quest reward>"`', inline=False)
         scanner_embed.add_field(name=f"**Invasion**", value='**Supported Bots:** NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"invasion", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "reward":"<invasion reward>"`', inline=False)
         scanner_embed.add_field(name=f"**Lure**", value='**Supported Bots:** NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"lure", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "lure_type":"<lure_type>"`', inline=False)
+        scanner_embed.add_field(name=f"**All**", value='Reply with **all** to enable all.', inline=False)
         await ctx.configure_channel.send(embed=scanner_embed)
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['reports'])).set_author(name=_("Current Settings"), icon_url=self.bot.user.avatar_url), delete_after=300)
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('reports', {}))).set_author(name=_("Current Settings"), icon_url=self.bot.user.avatar_url), delete_after=300)
         report_types = ["raid", "egg", "wild", "research", "invasion", "lure"]
         report_dict = config_dict_temp.setdefault('scanners', {}).setdefault('reports', {k:True for k in report_types})
         while True:
@@ -1896,6 +1911,8 @@ class Configure(commands.Cog):
                 return None
             autoset_list = autoset_wait.clean_content.lower().split(',')
             autoset_list = [x.strip() for x in autoset_list]
+            if autoset_wait.clean_content.lower() == "all":
+                autoset_list = report_types
             if autoset_list[0] == "n":
                 config_dict_temp['scanners']['reports'] = {k:False for k in report_types}
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Reports disabled'))
@@ -1921,7 +1938,7 @@ class Configure(commands.Cog):
             scanner_embed.add_field(name=_('**GymhuntrBot:**'), value=_("For example: `3, 4, 5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 raids will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ raids will have a channel created."))
             scanner_embed.add_field(name=_('**NovaBot and PokeAlarm:**'), value=_("For example: `3, 4, 5`\n\nIn this example, only 3+ raids will auto reported. You can customize the other levels manually in your alarm settings. "))
             await ctx.configure_channel.send(embed=scanner_embed)
-            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['raidlvls'])).set_author(name=_("Current AutoRaid Levels"), icon_url=self.bot.user.avatar_url), delete_after=300)
+            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('raidlvls', []))).set_author(name=_("Current AutoRaid Levels"), icon_url=self.bot.user.avatar_url), delete_after=300)
             raidlevel_list = []
             config_dict_temp['scanners']['raidlvls'] = []
             while True:
@@ -1955,7 +1972,7 @@ class Configure(commands.Cog):
             scanner_embed.add_field(name=_('**GymhuntrBot:**'), value=_("For example: `3, 4, 5`\n\nIn this example, if **!level 1** for @GymHuntrBot is used, level 1 and 2 eggs will have a re-stylized raid report with a @mention, but no channel will be created. However, all level 3+ eggs will have a channel created."))
             scanner_embed.add_field(name=_('**NovaBot and PokeAlarm:**'), value=_("For example: `3, 4, 5`\n\nIn this example, only 3+ raids will auto reported. You can customize the other levels manually in your alarm settings. "))
             await ctx.configure_channel.send(embed=scanner_embed)
-            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['egglvls'])).set_author(name=_("Current AutoEgg Levels"), icon_url=self.bot.user.avatar_url), delete_after=300)
+            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('egglvls', []))).set_author(name=_("Current AutoEgg Levels"), icon_url=self.bot.user.avatar_url), delete_after=300)
             egglevel_list = []
             config_dict_temp['scanners']['egglvls'] = []
             while True:
@@ -1987,7 +2004,7 @@ class Configure(commands.Cog):
         if config_dict_temp['scanners']['reports']['wild']:
             scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Reports with IV will still be posted. Please enter a list of wild pokemon to block automatic reports of or reply with **N** to disable the filter.").set_author(name='Automatic Wild Report Filter', icon_url=self.bot.user.avatar_url)
             await ctx.configure_channel.send(embed=scanner_embed)
-            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners']['wildfilter'])).set_author(name=_("Current AutoWild Filter"), icon_url=self.bot.user.avatar_url), delete_after=300)
+            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('wildfilter', []))).set_author(name=_("Current AutoWild Filter"), icon_url=self.bot.user.avatar_url), delete_after=300)
             wildfilter_list = []
             wildfilter_names = []
             config_dict_temp['scanners']['wildfilter'] = []

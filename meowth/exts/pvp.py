@@ -33,6 +33,8 @@ class Pvp(commands.Cog):
         expire_list = []
         count = 0
         for guild in list(self.bot.guilds):
+            if guild.id not in list(self.bot.guild_dict.keys()):
+                continue
             try:
                 pvp_dict = self.bot.guild_dict[guild.id].setdefault('pvp_dict', {})
                 for reportid in list(pvp_dict.keys()):
@@ -97,6 +99,8 @@ class Pvp(commands.Cog):
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         guild = getattr(channel, "guild", None)
+        if guild and guild.id not in list(self.bot.guild_dict.keys()):
+            return
         try:
             user = self.bot.get_user(payload.user_id)
         except AttributeError:
@@ -342,7 +346,7 @@ class Pvp(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         first = True
         pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1')
@@ -443,8 +447,8 @@ class Pvp(commands.Cog):
     async def _pvp(self, ctx, pvp_type, location, timer):
         dm_dict = {}
         pvp_dict = self.bot.guild_dict[ctx.guild.id].setdefault('pvp_dict', {})
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         end = now + datetime.timedelta(minutes=int(timer))
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour)
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -502,7 +506,7 @@ class Pvp(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1')
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -620,10 +624,10 @@ class Pvp(commands.Cog):
 
     async def _pvp_tournament(self, ctx, size, pvp_type, location, official_pvp=False):
         dm_dict = {}
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         start_emoji = self.bot.custom_emoji.get('pvp_start', u'\U000025b6\U0000fe0f')
         stop_emoji = self.bot.custom_emoji.get('pvp_stop', u'\U000023f9\U0000fe0f')
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour)
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         pvp_msg = f"PVP Tournament started by {ctx.author.mention} - React with 1\u20e3 through {size}\u20e3 to join!\n\n{ctx.author.mention} can react with {start_emoji} to start the tournament once {size} trainers have joined, or react with {stop_emoji} to cancel the tournament."

@@ -45,6 +45,8 @@ class Raid(commands.Cog):
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         guild = getattr(channel, "guild", None)
+        if guild and guild.id not in list(self.bot.guild_dict.keys()):
+            return
         try:
             user = self.bot.get_user(payload.user_id)
         except AttributeError:
@@ -83,6 +85,10 @@ class Raid(commands.Cog):
                     await message.remove_reaction(payload.emoji, user)
                     react_message = "next_trains"
                     break
+                elif channel.id == report_channel:
+                    await message.remove_reaction(payload.emoji, user)
+                    react_message = "rsvp"
+                    break
             if react_message:
                 break
         if not react_message:
@@ -120,7 +126,7 @@ class Raid(commands.Cog):
                     return await ctx.invoke(self.bot.get_command('exraid'))
                 else:
                     return await ctx.invoke(self.bot.get_command('raid'))
-        elif react_message == "raid_report" or react_message == "raid_message":
+        elif react_message == "raid_report" or react_message == "raid_message" or react_message == "rsvp":
             if str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 channel = self.bot.get_channel(payload.channel_id)
                 ctx.message.channel, ctx.channel = channel, channel
@@ -134,7 +140,7 @@ class Raid(commands.Cog):
                 return await utils.safe_reaction(message, payload.emoji)
             teamcounts = "1"
             if channel.id in self.bot.guild_dict[guild.id][report_dict]:
-                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['invite']['enabled']:
+                if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('invite', {}).get('enabled', False):
                     if self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level'] == "EX" or self.bot.guild_dict[guild.id][report_dict][channel.id]['type'] == "exraid":
                         if user not in channel.overwrites:
                             if not channel.permissions_for(user).manage_guild and not channel.permissions_for(user).manage_channels and not channel.permissions_for(user).manage_messages:
@@ -142,7 +148,7 @@ class Raid(commands.Cog):
             if user.id in self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict']:
                 teamcounts = get_teamcounts(channel, user.id, self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'])
             if str(payload.emoji) == self.bot.custom_emoji.get('raid_info', u'\U00002139\U0000fe0f') and react_message == "raid_message":
-                prefix = self.bot.guild_dict[guild.id]['configure_dict']['settings']['prefix']
+                prefix = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('settings', {}).setdefault('prefix', None)
                 prefix = prefix or self.bot.default_prefix
                 avatar = self.bot.user.avatar_url
                 await utils.get_raid_help(prefix, avatar, user)
@@ -195,8 +201,12 @@ class Raid(commands.Cog):
         guild = message.guild
         channel = message.channel
         author = message.author
+        if not channel or not author or not guild:
+            return
+        if guild.id not in list(self.bot.guild_dict.keys()):
+            return
         report_dict = await utils.get_report_dict(self.bot, channel)
-        if channel and author and guild and channel.id in self.bot.guild_dict[guild.id].get(report_dict, {}) and self.bot.guild_dict[guild.id]['configure_dict']['archive']['enabled']:
+        if channel.id in self.bot.guild_dict.get(guild.id, {}).get(report_dict, {}) and self.bot.guild_dict[guild.id]['configure_dict'].setdefault('archive', {}).setdefault('enabled', False):
             if message.content.strip() == "!archive":
                 self.bot.guild_dict[guild.id][report_dict][channel.id]['archive'] = True
             if self.bot.guild_dict[guild.id][report_dict][channel.id].get('archive', False):
@@ -206,7 +216,7 @@ class Raid(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.guild:
+        if message.guild and message.guild.id in self.bot.guild_dict.keys():
             for report_dict in self.bot.channel_report_dicts:
                 report_dict = self.bot.guild_dict[message.guild.id].setdefault(report_dict, {})
             report_dict = await utils.get_report_dict(self.bot, message.channel)
@@ -296,7 +306,7 @@ class Raid(commands.Cog):
                         self.bot.loop.create_task(self.expire_channel(channel))
                         break
                     if self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', {}):
-                        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         start = self.bot.guild_dict[guild.id][report_dict][channel.id]['meetup'].get('start', False)
                         end = self.bot.guild_dict[guild.id][report_dict][channel.id]['meetup'].get('end', False)
                         if start and self.bot.guild_dict[guild.id][report_dict][channel.id]['type'] == 'egg':
@@ -325,8 +335,8 @@ class Raid(commands.Cog):
                                     egg_level = self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level']
                                     if not pokemon and len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
                                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
-                                    elif not pokemon and egg_level == "5" and self.bot.guild_dict[channel.guild.id]['configure_dict']['settings'].get('regional', None) in self.bot.raid_list:
-                                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['regional'])
+                                    elif not pokemon and egg_level == "5" and self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('regional', None) in self.bot.raid_list:
+                                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {})['regional'])
                                     if pokemon:
                                         logger.info('Egg Auto Hatched - ' + channel.name)
                                         try:
@@ -605,6 +615,8 @@ class Raid(commands.Cog):
                     pass
         # for every server in save data
         for guild in list(self.bot.guilds):
+            if guild.id not in list(self.bot.guild_dict.keys()):
+                continue
             try:
                 logger.info(f"Server: ({guild.name}) - BEGIN CHECKING SERVER")
                 # clear channel lists
@@ -864,7 +876,7 @@ class Raid(commands.Cog):
         elif type == "exraid":
             raid_channel_name = _('ex-egg-')
             raid_channel_category = utils.get_category(self.bot, ctx.channel, "EX", category_type="exraid")
-            if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['permissions'] == "everyone":
+            if self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('exraid', {}).setdefault('permissions', 'everyone') == "everyone":
                 raid_channel_overwrites[ctx.guild.default_role] = discord.PermissionOverwrite(read_messages=True)
         elif type == "meetup":
             raid_channel_name = _('meetup-')
@@ -903,8 +915,8 @@ class Raid(commands.Cog):
         if not ctx.prefix:
             prefix = self.bot._get_prefix(self.bot, ctx.message)
             ctx.prefix = prefix[-1]
-        timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
+        timestamp = (message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         raid_coordinates = report_details.get('coordinates', None)
         raid_location = report_details.get('address', None)
         pokemon = report_details.get('pkmn_obj', None)
@@ -1018,7 +1030,7 @@ class Raid(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         first = True
         tsr = False
@@ -1244,7 +1256,7 @@ class Raid(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         first = True
         msg = ""
@@ -1592,7 +1604,7 @@ class Raid(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin.png?cache=1')
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -1720,7 +1732,7 @@ class Raid(commands.Cog):
         report_emoji = self.bot.custom_emoji.get('raid_report', u'\U0001F4E2')
         list_emoji = self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         raid_split = content.split()
         if len(raid_split) == 0:
             return await ctx.invoke(self.bot.get_command('raid'))
@@ -1839,7 +1851,7 @@ class Raid(commands.Cog):
         else:
             await raid_channel.send(f"Meowth! Hey {ctx.author.mention}, if you can, set the time left on the raid using **{ctx.prefix}timerset <minutes>** so others can check it with **{ctx.prefix}timer**.")
         ctrs_dict = await self._get_generic_counters(ctx.guild, str(pokemon), weather)
-        if str(level) in self.bot.guild_dict[ctx.guild.id]['configure_dict']['counters']['auto_levels']:
+        if str(level) in self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('counters', {}).setdefault('auto_levels', []):
             try:
                 embed = ctrs_dict[0]['embed'] if ctrs_dict else None
                 ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
@@ -1880,7 +1892,7 @@ class Raid(commands.Cog):
 
     async def _raidegg(self, ctx, content):
         message = ctx.message
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         raidexp = False
         hourminute = False
         help_reaction = self.bot.custom_emoji.get('raid_info', u'\U00002139\U0000fe0f')
@@ -1918,7 +1930,7 @@ class Raid(commands.Cog):
             if timeout or res.emoji == '⏲':
                 hourminute = True
             elif res.emoji == '🥚':
-                now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
+                now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                 start = dateparser.parse(raidegg_split[(- 1)])
                 if start.day != now.day:
                     if "m" not in raidegg_split[(- 1)]:
@@ -2024,8 +2036,8 @@ class Raid(commands.Cog):
         if len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
             await self._eggassume(ctx, str(pokemon), raid_channel)
-        elif egg_level == "5" and self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings'].get('regional', None) in self.bot.raid_list:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
+        elif egg_level == "5" and self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {}).get('regional', None) in self.bot.raid_list:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {})['regional'])
             await self._eggassume(ctx, str(pokemon), raid_channel)
         return raid_channel
 
@@ -2145,7 +2157,7 @@ class Raid(commands.Cog):
             egg_report = None
         await raid_channel.send(f"Meowth! This egg will be assumed to be {str(pokemon)} when it hatches!")
         ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), weather)
-        if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels']:
+        if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('counters', {}).get('auto_levels', []):
             embed = ctrs_dict[0]['embed'] if ctrs_dict else None
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=embed)
@@ -2220,8 +2232,8 @@ class Raid(commands.Cog):
             raid_expire = eggdetails['exp'] + 60 * self.bot.raid_info['raid_eggs'][str(egg_level)]['raidtime']
         else:
             raid_expire = eggdetails['exp']
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
-        end = datetime.datetime.utcfromtimestamp(raid_expire) + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+        end = datetime.datetime.utcfromtimestamp(raid_expire) + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         raidexp = (end-now).total_seconds()/60
         report_details = {
             'address': eggdetails['address'],
@@ -2241,7 +2253,7 @@ class Raid(commands.Cog):
             raidmsg = f"Meowth! The egg reported by {author.mention} in {report_channel.mention} hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
         elif egg_level == 'EX':
             hatchtype = 'exraid'
-            if self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['invite']['enabled']:
+            if self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('invite', {}).get('enabled', False):
                 invitemsgstr = _("Use the **!invite** in {report_channel} command to gain access and coordinate").format(report_channel=report_channel.mention)
                 invitemsgstr2 = _(" after using **!invite** in {report_channel} to gain access").format(report_channel=report_channel.mention)
             else:
@@ -2305,7 +2317,7 @@ class Raid(commands.Cog):
         raid_channel_name = await self.edit_channel_name(raid_channel)
         await raid_channel.edit(name=raid_channel_name, topic=end.strftime(_('Ends on %B %d at %I:%M %p (%H:%M)')))
         ctrs_dict = await self._get_generic_counters(raid_channel.guild, str(pokemon), eggdetails.get('weather', None))
-        if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['counters']['auto_levels'] and str(pokemon) and not ctrsmessage:
+        if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('counters', {}).get('auto_levels', []) and str(pokemon) and not ctrsmessage:
             embed = ctrs_dict[0]['embed'] if ctrs_dict else None
             ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=embed)
@@ -2400,7 +2412,7 @@ class Raid(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin_exclusive.png?cache=1')
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -2464,7 +2476,7 @@ class Raid(commands.Cog):
     async def _exraid(self, ctx, location):
         message = ctx.message
         channel = message.channel
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         help_reaction = self.bot.custom_emoji.get('raid_info', u'\U00002139\U0000fe0f')
         maybe_reaction = self.bot.custom_emoji.get('raid_maybe', u'\U00002753')
         omw_reaction = self.bot.custom_emoji.get('raid_omw', u'\U0001f3ce\U0000fe0f')
@@ -2496,7 +2508,7 @@ class Raid(commands.Cog):
         if not raid_channel:
             return
         raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin_exclusive.png?cache=1"
-        if self.bot.guild_dict[channel.guild.id]['configure_dict']['invite']['enabled']:
+        if self.bot.guild_dict[channel.guild.id]['configure_dict'].get('invite', {}).get('enabled', False):
             invitemsgstr = _("Use the **!invite** command to gain access and coordinate")
             invitemsgstr2 = _(" after using **!invite** to gain access")
         else:
@@ -2526,7 +2538,7 @@ class Raid(commands.Cog):
             'egg_level':'EX',
             'coordinates':raid_coordinates
         }
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         ow = raid_channel.overwrites_for(ctx.author)
         ow.send_messages = True
         ow.read_messages = True
@@ -2580,7 +2592,7 @@ class Raid(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         exraidlist = ''
         exraid_dict = {}
@@ -2591,7 +2603,7 @@ class Raid(commands.Cog):
             if (not discord.utils.get(guild.text_channels, id=channelid)):
                 continue
             if (rc_dict[channelid]['egg_level'] == 'EX') or (rc_dict[channelid]['type'] == 'exraid'):
-                if self.bot.guild_dict[guild.id]['configure_dict']['exraid']['permissions'] == "everyone" or (self.bot.guild_dict[guild.id]['configure_dict']['exraid']['permissions'] == "same" and rc_dict[channelid]['report_channel'] == channel.id):
+                if self.bot.guild_dict[guild.id]['configure_dict'].get('exraid', {}).get('permissions', 'everyone') == "everyone" or (self.bot.guild_dict[guild.id]['configure_dict'].get('exraid', {}).get('permissions', 'everyone') == "same" and rc_dict[channelid]['report_channel'] == channel.id):
                     exraid_channel = self.bot.get_channel(channelid)
                     if exraid_channel.mention != '#deleted-channel':
                         exraidcount += 1
@@ -2681,7 +2693,7 @@ class Raid(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         can_manage = ctx.channel.permissions_for(ctx.author).manage_channels
         raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/meetup.png?cache=1')
@@ -2735,7 +2747,7 @@ class Raid(commands.Cog):
             meetup_dict = "meetup_dict"
         message = ctx.message
         channel = message.channel
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         help_reaction = self.bot.custom_emoji.get('raid_info', u'\U00002139\U0000fe0f')
         maybe_reaction = self.bot.custom_emoji.get('raid_maybe', u'\U00002753')
         omw_reaction = self.bot.custom_emoji.get('raid_omw', u'\U0001f3ce\U0000fe0f')
@@ -2790,7 +2802,7 @@ class Raid(commands.Cog):
             'egg_level': 'EX',
             'meetup': {'start':None, 'end':None, 'channel_name':utils.sanitize_channel_name(raid_details).lower()}
         }
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         await raid_channel.send(content=f"Meowth! Hey {ctx.author.mention}, if you can, set the time that the {meetup_type} starts with **{ctx.prefix}{meetup_type} start <date and time>** and also set the time that the {meetup_type} ends using **{ctx.prefix}{meetup_type} end <date and time>**. You can also set the title of the {meetup_type} using **{ctx.prefix}{meetup_type} title <title>**.")
         self.bot.loop.create_task(self.expiry_check(raid_channel))
         return raid_channel
@@ -2808,7 +2820,7 @@ class Raid(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         can_manage = ctx.channel.permissions_for(ctx.author).manage_channels
         try:
@@ -2893,7 +2905,7 @@ class Raid(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         train_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
         train_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -3108,7 +3120,7 @@ class Raid(commands.Cog):
             await train_channel.send(f"{ctx.author.mention}, you can set additional train managers using **{ctx.prefix}train manager <user mention>** and direct the train to a new gym using **{ctx.prefix}train next <channel_or_gym>**. Check your DMs for more instructions!\nOthers can nominate themselves or other people using **{ctx.prefix}train nominate [@mention]**")
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['managers'] = [ctx.author.id]
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['raid'] = True
-            utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))
+            utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
             to_raidend = 24*60*60 - ((utcnow-utcnow.replace(hour=21, minute=0, second=0, microsecond=0)).seconds)
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['exp'] = time.time() + to_raidend
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['end'] = datetime.datetime.fromtimestamp(time.time() + to_raidend)
@@ -3160,7 +3172,7 @@ class Raid(commands.Cog):
                                 if m.lower() in self.bot.move_info.keys():
                                     moveset[index] = f"{m} {utils.type_to_emoji(self.bot, self.bot.move_info[m.lower()]['type'])}"
                             raid_embed.add_field(name=f"**Moveset:**", value=(' / ').join([x.title() for x in moveset]))
-                        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         raid_timer = (now + datetime.timedelta(minutes=float(raidexp))).strftime(_('%B %d at %I:%M %p (%H:%M)'))
                         await train_channel.send(f"Meowth! I found this raid at **{train_location}**! {'Hatches' if report_type == 'egg' else 'Expires'}: {raid_timer}", embed=raid_embed)
             return train_channel
@@ -3272,7 +3284,7 @@ class Raid(commands.Cog):
                             if m.lower() in self.bot.move_info.keys():
                                 moveset[index] = f"{m} {utils.type_to_emoji(self.bot, self.bot.move_info[m.lower()]['type'])}"
                         raid_embed.add_field(name=f"**Moveset:**", value=(' / ').join([x.title() for x in moveset]))
-                    now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     raid_timer = (now + datetime.timedelta(minutes=float(raidexp))).strftime(_('%I:%M %p (%H:%M)'))
                     await ctx.send(f"Meowth! I found this raid at **{train_location}**! This {'egg will hatch' if report_type == 'egg' else 'raid will end'} at {raid_timer}", embed=raid_embed)
 
@@ -3422,7 +3434,7 @@ class Raid(commands.Cog):
 
     async def print_raid_timer(self, channel):
         report_dict = await utils.get_report_dict(self.bot, channel)
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         end = now + datetime.timedelta(seconds=self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['exp'] - time.time())
         timerstr = ' '
         if self.bot.guild_dict[channel.guild.id][report_dict][channel.id].get('meetup', {}):
@@ -3543,7 +3555,7 @@ class Raid(commands.Cog):
                 if timeout or res.emoji == '⏲':
                     hourminute = True
                 elif res.emoji == '🥚' or res.emoji == '💨':
-                    now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset'])
+                    now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     start = dateparser.parse(timer)
                     if now.hour > 12 and start.hour < 12 and "m" not in timer:
                         start = start + datetime.timedelta(hours=12)
@@ -3574,7 +3586,7 @@ class Raid(commands.Cog):
             await self._timerset(channel, raidexp)
         if checks.check_exraidchannel(ctx) or checks.check_meetupchannel(ctx) or checks.check_trainchannel(ctx):
             if checks.check_eggchannel(ctx) or checks.check_exeggchannel(ctx) or checks.check_meetupchannel(ctx) or checks.check_trainchannel(ctx):
-                now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset'])
+                now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                 timer_split = timer.lower().split()
                 try:
                     start = dateparser.parse(' '.join(timer_split).lower(), settings={'DATE_ORDER': 'MDY'})
@@ -3617,7 +3629,7 @@ class Raid(commands.Cog):
         exptime = float(exptime)
         guild = raidchannel.guild
         embed = None
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         end = now + datetime.timedelta(minutes=exptime)
         report_dict = await utils.get_report_dict(self.bot, raidchannel)
         self.bot.guild_dict[guild.id][report_dict][raidchannel.id]['exp'] = time.time() + (exptime * 60)
@@ -3683,7 +3695,7 @@ class Raid(commands.Cog):
         guild = message.guild
         channel = message.channel
         author = message.author
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         report_dict = await utils.get_report_dict(self.bot, ctx.channel)
         rc_d = self.bot.guild_dict[guild.id][report_dict][channel.id]
         already_set = rc_d.get('starttime', None)
@@ -3736,7 +3748,7 @@ class Raid(commands.Cog):
             if len(start_split) > 0:
                 start = dateparser.parse(' '.join(start_split).lower(), settings={'DATE_ORDER': 'MDY'})
                 if egg_level == 'EX':
-                    hatch = datetime.datetime.utcfromtimestamp(rc_d['exp']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                    hatch = datetime.datetime.utcfromtimestamp(rc_d['exp']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     start = start.replace(year=hatch.year, month=hatch.month, day=hatch.day)
                 if not start:
                     await channel.send(_('Meowth! I didn\'t quite get that, try again.'), delete_after=10)
@@ -4050,7 +4062,7 @@ class Raid(commands.Cog):
             egg = re.match(_('[1-5]-egg'), name)
             meetup = re.match(_('meetup'), name)
             train = re.match(_('train'), name)
-            now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+            now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
             reportchannel = None
             raid_message = None
             report_author = None
@@ -4079,7 +4091,7 @@ class Raid(commands.Cog):
                 else:
                     topicsplit = topic.split('|')
                     localhatch = datetime.datetime.strptime(topicsplit[0][:(- 9)], 'Hatches on %B %d at %I:%M %p')
-                    utchatch = localhatch - datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                    utchatch = localhatch - datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     exp = utchatch.replace(year=now.year, tzinfo=datetime.timezone.utc).timestamp()
                     manual_timer = True
                 pokemon = ''
@@ -4100,7 +4112,7 @@ class Raid(commands.Cog):
                     manual_timer = False
                 else:
                     localend = datetime.datetime.strptime(topic[:(- 8)], _('Ends on %B %d at %I:%M %p'))
-                    utcend = localend - datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                    utcend = localend - datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     exp = utcend.replace(year=now.year, tzinfo=datetime.timezone.utc).timestamp()
                     manual_timer = True
                 pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
@@ -4122,7 +4134,7 @@ class Raid(commands.Cog):
                 else:
                     topicsplit = topic.split('|')
                     localhatch = datetime.datetime.strptime(topicsplit[0][:(- 9)], 'Hatches on %B %d at %I:%M %p')
-                    utchatch = localhatch - datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                    utchatch = localhatch - datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     exp = utchatch.replace(year=now.year, tzinfo=datetime.timezone.utc).timestamp()
                     manual_timer = True
                 pokemon = ''
@@ -4192,13 +4204,13 @@ class Raid(commands.Cog):
                                 elif trainerstatus:
                                     count = 1
                                     for role in user.roles:
-                                        if role.id == self.bot.guild_dict[guild.id]['configure_dict']['team']['team_roles']['mystic']:
+                                        if role.id == self.bot.guild_dict[guild.id]['configure_dict'].get('team', {}).get('team_roles', {}).get('mystic', 0):
                                             party = {'mystic':1, 'valor':0, 'instinct':0, 'unknown':0}
                                             break
-                                        elif role.id == self.bot.guild_dict[guild.id]['configure_dict']['team']['team_roles']['valor']:
+                                        elif role.id == self.bot.guild_dict[guild.id]['configure_dict'].get('team', {}).get('team_roles', {}).get('valor', 0):
                                             party = {'mystic':0, 'valor':1, 'instinct':0, 'unknown':0}
                                             break
-                                        elif role.id == self.bot.guild_dict[guild.id]['configure_dict']['team']['team_roles']['instinct']:
+                                        elif role.id == self.bot.guild_dict[guild.id]['configure_dict'].get('team', {}).get('team_roles', {}).get('instinct', 0):
                                             party = {'mystic':0, 'valor':0, 'instinct':1, 'unknown':0}
                                             break
                                         else:
@@ -4768,7 +4780,7 @@ class Raid(commands.Cog):
                 except Exception as e:
                     print(traceback.format_exc())
                 ctrs_dict = await self._get_generic_counters(ctx.guild, pkmn, weather.lower())
-                if str(utils.get_level(self.bot, pkmn)) in self.bot.guild_dict[ctx.guild.id]['configure_dict']['counters']['auto_levels']:
+                if str(utils.get_level(self.bot, pkmn)) in self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('counters', {}).get('auto_levels', []):
                     try:
                         ctrsmessage = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['ctrsmessage'])
                         moveset = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['moveset']
@@ -5046,6 +5058,7 @@ class Raid(commands.Cog):
         meetup = self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', None)
         lobby = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('lobby', None)
         egg_level = self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level']
+        list_emoji = self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         raidtype = _("event") if self.bot.guild_dict[channel.guild.id][report_dict][channel.id].get('meetup', False) else _("raid")
         boss_list = []
         if not meetup:
@@ -5121,13 +5134,13 @@ class Raid(commands.Cog):
         interest_str = ""
         if (not party):
             for role in author.roles:
-                if role.id == self.bot.guild_dict[guild.id]['configure_dict']['team']['team_roles']['mystic']:
+                if role.id == self.bot.guild_dict[guild.id]['configure_dict'].get('team', {}).get('team_roles', {}).get('mystic', 0):
                     blue_count = count
                     break
-                elif role.id == self.bot.guild_dict[guild.id]['configure_dict']['team']['team_roles']['valor']:
+                elif role.id == self.bot.guild_dict[guild.id]['configure_dict'].get('team', {}).get('team_roles', {}).get('valor', 0):
                     red_count = count
                     break
-                elif role.id == self.bot.guild_dict[guild.id]['configure_dict']['team']['team_roles']['instinct']:
+                elif role.id == self.bot.guild_dict[guild.id]['configure_dict'].get('team', {}).get('team_roles', {}).get('instinct', 0):
                     yellow_count = count
                     break
             else:
@@ -5145,13 +5158,13 @@ class Raid(commands.Cog):
             else:
                 team_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict[team_emoji])
             if rsvp_type == "maybe":
-                await channel.send(_('Meowth! {member} is interested{interest_str}! {emoji}: 1').format(member=author.mention, interest_str=interest_str, emoji=team_emoji))
+                rsvp_message = await channel.send(_('Meowth! {member} is interested{interest_str}! {emoji}: 1').format(member=author.mention, interest_str=interest_str, emoji=team_emoji))
             elif rsvp_type == "coming":
-                await channel.send(_('Meowth! {member} is on the way{interest_str}! {emoji}: 1').format(member=author.mention, interest_str=interest_str, emoji=team_emoji))
+                rsvp_message = await channel.send(_('Meowth! {member} is on the way{interest_str}! {emoji}: 1').format(member=author.mention, interest_str=interest_str, emoji=team_emoji))
             elif rsvp_type == "here":
-                await channel.send(_('Meowth! {member} is at the {raidtype}{interest_str}! {emoji}: 1').format(member=author.mention, emoji=team_emoji, interest_str=interest_str, raidtype=raidtype))
+                rsvp_message = await channel.send(_('Meowth! {member} is at the {raidtype}{interest_str}! {emoji}: 1').format(member=author.mention, emoji=team_emoji, interest_str=interest_str, raidtype=raidtype))
             elif rsvp_type == "lobby":
-                await channel.send(_('Meowth! {member} is entering the lobby! {emoji}: 1').format(member=author.mention, emoji=team_emoji))
+                rsvp_message = await channel.send(_('Meowth! {member} is entering the lobby! {emoji}: 1').format(member=author.mention, emoji=team_emoji))
         else:
             blue_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['mystic'])
             red_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['valor'])
@@ -5173,7 +5186,8 @@ class Raid(commands.Cog):
                 msg += f"{yellow_emoji}: {party['instinct']} | "
             if party['unknown']:
                 msg += f"{grey_emoji}: {party['unknown']} | "
-            await channel.send(msg[:-3])
+            rsvp_message = await channel.send(msg[:-3])
+        await utils.safe_reaction(rsvp_message, list_emoji)
         if lobby and rsvp_type == "here":
             if author.id in lobby.get('starting_dict', {}).keys():
                 try:
@@ -5266,6 +5280,8 @@ class Raid(commands.Cog):
     @tasks.loop(seconds=21600)
     async def lobby_cleanup(self, loop=True):
         for guild in self.bot.guilds:
+            if guild.id not in list(self.bot.guild_dict.keys()):
+                continue
             for report_dict in self.bot.channel_report_dicts:
                 try:
                     guild_raids = copy.deepcopy(self.bot.guild_dict[guild.id][report_dict])

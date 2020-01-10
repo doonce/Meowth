@@ -340,7 +340,7 @@ class Silph(commands.Cog):
                     _('This Travelers Card is linked to another Discord account!'), delete_after=10)
 
             try:
-                offset = self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']
+                offset = self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)
             except KeyError:
                 offset = None
 
@@ -371,7 +371,7 @@ class Silph(commands.Cog):
         async with ctx.typing():
             card = await SilphCard.get_trainer_card(silph_user)
         try:
-            offset = guild_data['configure_dict']['settings']['offset']
+            offset = guild_data['configure_dict'].get('settings', {}).get('offset', 0)
         except KeyError:
             offset = None
         if card:

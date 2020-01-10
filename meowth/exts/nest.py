@@ -53,13 +53,15 @@ class Nest(commands.Cog):
         count = 0
         try:
             for guild in list(self.bot.guilds):
+                if guild.id not in list(self.bot.guild_dict.keys()):
+                    continue
                 nest_dict = self.bot.guild_dict[guild.id].setdefault('nest_dict', {})
                 utcnow = datetime.datetime.utcnow()
-                migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest']['migration']
+                migration_utc = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).setdefault('migration', utcnow + datetime.timedelta(days=14))
                 new_migration = False
                 if utcnow > migration_utc:
                     new_migration = migration_utc + datetime.timedelta(days=14)
-                    migration_local = new_migration + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                    migration_local = new_migration + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     self.bot.guild_dict[guild.id]['configure_dict']['nest']['migration'] = new_migration
                 to_migration = migration_utc.timestamp() - utcnow.timestamp()
                 if to_migration > 0:
@@ -128,6 +130,8 @@ class Nest(commands.Cog):
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         guild = getattr(channel, "guild", None)
+        if guild and guild.id not in list(self.bot.guild_dict.keys()):
+            return
         try:
             user = self.bot.get_user(payload.user_id)
         except AttributeError:
@@ -202,7 +206,7 @@ class Nest(commands.Cog):
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, nest_dict.get('pokemon'))
         if not author or not location:
             return
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         entered_pokemon = None
         success = []
@@ -270,8 +274,8 @@ class Nest(commands.Cog):
         author = ctx.guild.get_member(nest_dict.get('report_author', None))
         if author:
             ctx.author = author
-        migration_utc = self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
-        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        migration_utc = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('nest', {}).setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
         nest_embed.set_thumbnail(url=pokemon.img_url)
         shiny_str = ""
@@ -315,8 +319,8 @@ class Nest(commands.Cog):
         guild = ctx.guild
         nest_dict = copy.deepcopy(ctx.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
         nest_list = nest_dict.get('list', [])
-        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
-        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        migration_utc = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
         nest_embed = discord.Embed(colour=guild.me.colour, title="Click here to open the Silph Road Nest Atlas!", url="https://thesilphroad.com/atlas", description=f"Use **{ctx.prefix}nest info** for more information about a nest.")
         nest_embed.set_footer(text=f"Next Migration: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}")
@@ -377,7 +381,7 @@ class Nest(commands.Cog):
         guild = ctx.guild
         message = ctx.message
         channel = ctx.channel
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         list_messages = []
         error = None
         if not message.embeds:
@@ -464,8 +468,8 @@ class Nest(commands.Cog):
         list_emoji = self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [catch_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         nest_url = f"https://www.google.com/maps/search/?api=1&query={nest_dict.get(nest_name, {}).get('location', nest_name)}"
-        migration_utc = self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
-        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        migration_utc = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('nest', {}).setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
@@ -563,8 +567,8 @@ class Nest(commands.Cog):
 
         # get settings
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
-        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
-        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        migration_utc = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         list_messages = []
 
         await utils.safe_delete(message)
@@ -866,8 +870,8 @@ class Nest(commands.Cog):
         channel = ctx.channel
 
         # get settings
-        migration_utc = self.bot.guild_dict[guild.id]['configure_dict']['nest'].setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
-        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        migration_utc = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('nest', {}).setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
 
         await utils.safe_delete(message)
@@ -888,7 +892,7 @@ class Nest(commands.Cog):
         migration_local = dateparser.parse(nest_time_reply.clean_content, settings={'RETURN_AS_TIMEZONE_AWARE': False})
         if not migration_local:
             return await channel.send(f"I couldn't understand your time. Migration time set cancelled.")
-        migration_utc = migration_local - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+        migration_utc = migration_local - datetime.timedelta(hours=ctx.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         rusure = await channel.send(_('Are you sure you\'d like to set the next migration to **{time}**?\n\nThis will also set all current nest reports to expire at this new time.').format(time=migration_local.strftime(_('%B %d %Y at %I:%M %p (%H:%M)'))))
         try:
             timeout = False

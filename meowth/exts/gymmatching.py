@@ -149,7 +149,7 @@ class GymMatching(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         first = True
         poi_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/POI_Submission_Illustration_01.png?cache=1')

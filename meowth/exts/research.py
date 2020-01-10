@@ -35,8 +35,10 @@ class Research(commands.Cog):
         midnight_list = []
         count = 0
         for guild in list(self.bot.guilds):
+            if guild.id not in list(self.bot.guild_dict.keys()):
+                continue
             try:
-                utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
+                utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
                 to_midnight = 24*60*60 - ((utcnow-utcnow.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
                 if to_midnight > 0:
                     midnight_list.append(to_midnight)
@@ -82,6 +84,8 @@ class Research(commands.Cog):
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         guild = getattr(channel, "guild", None)
+        if guild and guild.id not in list(self.bot.guild_dict.keys()):
+            return
         try:
             user = self.bot.get_user(payload.user_id)
         except AttributeError:
@@ -167,7 +171,7 @@ class Research(commands.Cog):
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
         if not author:
             return
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         success = []
         reply_msg = f"**pokestop <pokestop name>** - Current: {research_dict.get('location', 'X')}\n"
@@ -433,7 +437,7 @@ class Research(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         loc_url = utils.create_gmaps_query(self.bot, "", message.channel, type="research")
         research_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/field-research.png?cache=1')
@@ -537,7 +541,7 @@ class Research(commands.Cog):
                 await utils.safe_delete(message)
 
     async def make_research_embed(self, ctx, res_pokemon, poi_info, location, loc_url, quest, reward):
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         research_embed = discord.Embed(colour=ctx.guild.me.colour, url=loc_url).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/field-research.png?cache=1')
         research_embed.title = _('Meowth! Click here for my directions to the research!')
         research_embed.description = _("Ask {author} if my directions aren't perfect!").format(author=ctx.author.name)
@@ -558,7 +562,7 @@ class Research(commands.Cog):
     async def send_research(self, ctx, location, quest, reward):
         dm_dict = {}
         research_dict = self.bot.guild_dict[ctx.guild.id].setdefault('questreport_dict', {})
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         to_midnight = 24*60*60 - ((timestamp-timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
         complete_emoji = self.bot.custom_emoji.get('research_complete', u'\U00002705')
         expire_emoji = self.bot.custom_emoji.get('research_expired', u'\U0001F4A8')

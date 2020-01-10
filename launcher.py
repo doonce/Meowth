@@ -110,7 +110,7 @@ def main():
             wait_time = min([retries**2, 600])
 
             # show crash occured in console
-            print("I crashed!")
+            print(f"I crashed! Exit code: {code}")
             print("Restarting in...", end='\r', flush=True)
 
             try:

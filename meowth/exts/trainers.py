@@ -30,7 +30,7 @@ class Trainers(commands.Cog):
         guild = ctx.guild
         team_assigned = ""
         error = False
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         guild_roles = self.bot.guild_dict[guild.id]['configure_dict']['team'].setdefault('team_roles', {"mystic":None, "valor":None, "instinct":None, "harmony":None})
         team_colors = {"mystic":discord.Colour.blue(), "valor":discord.Colour.red(), "instinct":discord.Colour.gold(), "harmony":discord.Colour.default()}
         if not guild_roles or guild_roles == {}:
@@ -222,23 +222,23 @@ class Trainers(commands.Cog):
         if ign:
             embed.add_field(name="In-Game Name(s)", value=ign)
         field_value = ""
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled'] and raids:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('raid', {}).get('enabled', False) and raids:
             field_value += _("Raid: **{raids}** | ").format(raids=raids)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled'] and eggs:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('raid', {}).get('enabled', False) and eggs:
             field_value += _("Egg: **{eggs}** | ").format(eggs=eggs)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid']['enabled'] and exraids:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['exraid'].get('enabled', False) and exraids:
             field_value += _("EX: **{exraids}** | ").format(exraids=exraids)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled'] and wilds:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('wild', {}).get('enabled', False) and wilds:
             field_value += _("Wild: **{wilds}** | ").format(wilds=wilds)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['research']['enabled'] and research:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('research', {}).get('enabled', False) and research:
             field_value += _("Quest: **{research}** | ").format(research=research)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled'] and nests:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('nest', {}).get('enabled', False) and nests:
             field_value += _("Nest: **{nest}** | ").format(nest=nests)
-        if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled'] and lures:
+        if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('nest', {}).get('enabled', False) and lures:
             field_value += _("Lure: **{lure}** | ").format(lure=lures)
         if field_value:
             embed.add_field(name=_("Reports"), value=field_value[:-3], inline=False)
-        if want_message and self.bot.guild_dict[ctx.guild.id]['configure_dict']['want']['enabled'] and (want_channel.overwrites_for(ctx.guild.default_role).read_messages or want_channel.overwrites_for(ctx.guild.default_role).read_messages == None):
+        if want_message and self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('want', {}).get('enabled', False) and (want_channel.overwrites_for(ctx.guild.default_role).read_messages or want_channel.overwrites_for(ctx.guild.default_role).read_messages == None):
             embed.add_field(name=_("Want List"), value=f"[Click here]({want_message}) to view most recent want list in {want_channel.mention}.")
         if trade_message and (trade_channel.overwrites_for(ctx.guild.default_role).read_messages or trade_channel.overwrites_for(ctx.guild.default_role).read_messages == None):
             embed.add_field(name="Active Trades", value=f"[Click here]({trade_message}) to view active trades in {trade_channel.mention}.")
@@ -307,17 +307,17 @@ class Trainers(commands.Cog):
         for trainer in leaderboard:
             user = ctx.guild.get_member(trainer['trainer'])
             if user:
-                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['raid']['enabled']:
+                if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('raid', {}).get('enabled', False):
                     field_value += f"Raid: **{trainer['raid']+trainer['egg']+trainer['exraid']}** | "
-                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['wild']['enabled']:
+                if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('wild', {}).get('enabled', False):
                     field_value += f"Wild: **{trainer['wild']}** | "
-                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['research']['enabled']:
+                if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('research', {}).get('enabled', False):
                     field_value += f"Research: **{trainer['research']}** | "
-                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['nest']['enabled']:
+                if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('nest', {}).get('enabled', False):
                     field_value += f"Nest: **{trainer['nest']}** | "
-                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['lure']['enabled']:
+                if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('lure', {}).get('enabled', False):
                     field_value += f"Lure: **{trainer['lure']}** | "
-                if self.bot.guild_dict[ctx.guild.id]['configure_dict']['invasion']['enabled']:
+                if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('invasion', {}).get('enabled', False):
                     field_value += f"Invasion: **{trainer['invasion']}** | "
                 embed.add_field(name=f"{rank}. {user.display_name} - {type.title()}: **{trainer[type]}**", value=field_value[:-3], inline=False)
                 field_value = ""

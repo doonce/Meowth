@@ -35,7 +35,7 @@ class Want(commands.Cog):
         channel = message.channel
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
         user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         gym_matching_cog = self.bot.cogs.get("GymMatching")
         error = False
         want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
@@ -43,7 +43,7 @@ class Want(commands.Cog):
         want_msg = f"Meowth! I'll help you add a new alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to subscribe to. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**New Alert Subscription**'), value=want_msg, inline=False)
         want_embed.add_field(name=_('**Pokemon**'), value=f"Reply with **pokemon** to want specific pokemon for research, wild, {'nest, trade, and raid reports.' if user_link else 'and nest reports.'}", inline=False)
-        role_list = self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])
+        role_list = self.bot.guild_dict[guild.id]['configure_dict'].get('want', {}).get('roles', [])
         if not user_link:
             want_embed.add_field(name=_('**Boss** / **Trade**'), value=f"Reply with **boss** to want specific pokemon for raid reports. Reply with **trade** to want specific pokemon for trade listings.", inline=False)
         gyms, stops = [], []
@@ -941,7 +941,7 @@ class Want(commands.Cog):
         role_list = []
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/discord.png?cache=1")
         converter = commands.RoleConverter()
-        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])]
+        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict'].get('want', {}).get('roles', [])]
         for entered_want in want_split:
             try:
                 role = await converter.convert(ctx, entered_want)
@@ -1239,7 +1239,7 @@ class Want(commands.Cog):
         channel = message.channel
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
         user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         gym_matching_cog = self.bot.cogs.get("GymMatching")
         error = False
         user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
@@ -1268,7 +1268,7 @@ class Want(commands.Cog):
         user_types = [x.title() for x in user_types]
         user_eggs = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('raid_eggs', [])
         user_eggs = [x.title() for x in user_eggs]
-        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[ctx.guild.id]['configure_dict']['want'].get('roles', [])]
+        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('want', {}).get('roles', [])]
         user_roles = [x for x in ctx.author.roles if x in join_roles]
         want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -2232,7 +2232,7 @@ class Want(commands.Cog):
         role_list = []
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/discord.png?cache=1")
         converter = commands.RoleConverter()
-        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])]
+        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict'].get('want', {}).get('roles', [])]
         for entered_unwant in unwant_split:
             if len(unwant_split) == 1 and "all" in entered_unwant:
                 await utils.safe_delete(ctx.message)
@@ -2300,7 +2300,7 @@ class Want(commands.Cog):
         user_ivs = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
         user_levels = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
         user_eggs = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('raid_eggs', [])
-        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict']['want'].get('roles', [])]
+        join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict'].get('want', {}).get('roles', [])]
         user_roles = [x for x in join_roles if x in author.roles]
         unwant_msg = ""
         if not any([user_wants, user_bosses, user_gyms, user_stops, user_items, user_types, user_ivs, user_levels, user_forms, user_roles, user_bossforms, user_trades, user_eggs]):

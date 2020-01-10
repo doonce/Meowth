@@ -40,7 +40,7 @@ class Listing(commands.Cog):
                 raid_list = ""
                 guild = ctx.guild
                 channel = ctx.channel
-                now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                 list_messages = []
                 raid_cog = self.bot.cogs.get('Raid')
                 if (checks.check_raidreport(ctx) or checks.check_exraidreport(ctx) or checks.check_meetupreport(ctx)):
@@ -87,7 +87,7 @@ class Listing(commands.Cog):
                     async def list_output(r):
                         trainer_dict = rc_d[r]['trainer_dict']
                         rchan = self.bot.get_channel(r)
-                        end = datetime.datetime.utcfromtimestamp(rc_d[r]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'])
+                        end = datetime.datetime.utcfromtimestamp(rc_d[r]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         output = ''
                         start_str = ''
                         channel_dict, boss_dict = await raid_cog._get_party(rchan)
@@ -364,7 +364,7 @@ class Listing(commands.Cog):
 
     async def _interest(self, ctx, tag=False, team=False):
         ctx_maybecount = 0
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         report_dict = await utils.get_report_dict(self.bot, ctx.channel)
         trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
         maybe_exstr = ''
@@ -417,7 +417,7 @@ class Listing(commands.Cog):
     async def _otw(self, ctx, tag=False, team=False):
         ctx_comingcount = 0
         report_dict = await utils.get_report_dict(self.bot, ctx.channel)
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
         otw_exstr = ''
         otw_list = []
@@ -469,7 +469,7 @@ class Listing(commands.Cog):
     async def _waiting(self, ctx, tag=False, team=False):
         ctx_herecount = 0
         report_dict = await utils.get_report_dict(self.bot, ctx.channel)
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id])
         trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
         here_exstr = ''
@@ -524,7 +524,7 @@ class Listing(commands.Cog):
     async def _lobbylist(self, ctx, tag=False, team=False):
         ctx_lobbycount = 0
         report_dict = await utils.get_report_dict(self.bot, ctx.channel)
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id])
         trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
         lobby_exstr = ''
@@ -567,7 +567,7 @@ class Listing(commands.Cog):
         Works only in raid channels."""
         ctx_lobbycount = 0
         report_dict = await utils.get_report_dict(self.bot, ctx.channel)
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id])
         raid_lobby = raid_dict.get("lobby", None)
         raid_active = raid_dict.get("battling", None)
@@ -1507,7 +1507,7 @@ class Listing(commands.Cog):
                 try:
                     lurereportmsg = await ctx.message.channel.fetch_message(lureid)
                     lureauthor = ctx.channel.guild.get_member(lure_dict[lureid]['report_author'])
-                    lure_expire = datetime.datetime.utcfromtimestamp(lure_dict[lureid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    lure_expire = datetime.datetime.utcfromtimestamp(lure_dict[lureid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     lure_type = lure_dict[lureid]['type']
                     reported_by = ""
                     if lureauthor and not lureauthor.bot:
@@ -1583,7 +1583,7 @@ class Listing(commands.Cog):
             if pokealarm_dict[pokealarmid]['report_channel'] == ctx.message.channel.id:
                 try:
                     pokealarmreportmsg = await ctx.message.channel.fetch_message(pokealarmid)
-                    pokealarm_expire = datetime.datetime.utcfromtimestamp(pokealarm_dict[pokealarmid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    pokealarm_expire = datetime.datetime.utcfromtimestamp(pokealarm_dict[pokealarmid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     pokealarmmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('pokealarm_bullet', u'\U0001F539')))
                     if pokealarm_dict[pokealarmid]['reporttype'] == "raid":
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokealarm_dict[pokealarmid]['pokemon'])
@@ -1675,7 +1675,7 @@ class Listing(commands.Cog):
                         reward_list = [f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"]
                     if not reward_list:
                         reward_list = ["Unknown Pokemon"]
-                    invasion_expire = datetime.datetime.utcfromtimestamp(invasion_dict[invasionid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    invasion_expire = datetime.datetime.utcfromtimestamp(invasion_dict[invasionid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     reported_by = ""
                     if invasionauthor and not invasionauthor.bot:
                         reported_by = f" | **Reported By**: {invasionauthor.display_name}"
@@ -1752,7 +1752,7 @@ class Listing(commands.Cog):
                     pvpreportmsg = await ctx.message.channel.fetch_message(pvpid)
                     pvpauthor = ctx.channel.guild.get_member(pvp_dict[pvpid]['report_author'])
                     pvp_tournament = pvp_dict[pvpid].get('tournament', {})
-                    pvp_expire = datetime.datetime.utcfromtimestamp(pvp_dict[pvpid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    pvp_expire = datetime.datetime.utcfromtimestamp(pvp_dict[pvpid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     reported_by = ""
                     if pvpauthor and not pvpauthor.bot:
                         reported_by = f" | **Requested By**: {pvpauthor.display_name}"
@@ -1828,7 +1828,7 @@ class Listing(commands.Cog):
                     wildmsg = ""
                     wildreportmsg = await ctx.message.channel.fetch_message(wildid)
                     wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['report_author'])
-                    wild_despawn = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                    wild_despawn = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     reported_by = ""
                     if wildauthor and not wildauthor.bot:
                         reported_by = f" | **Reported By**: {wildauthor.display_name}"
@@ -1850,7 +1850,7 @@ class Listing(commands.Cog):
                     wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('wild_bullet', u'\U0001F539')))
                     wildmsg += f"**Pokemon**: {shiny_str}{str(pokemon).title()} {pokemon.emoji}{disguise_str} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
                     if (disguise and disguise.is_boosted) or (pokemon and pokemon.is_boosted):
-                        timestamp = wildreportmsg.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+                        timestamp = wildreportmsg.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         wildmsg += f" | {pokemon.is_boosted or disguise.is_boosted} *({timestamp.strftime('%I:%M %p')})*"
                     if level_check:
                         wildmsg += f" | **Level**: {level_check}"

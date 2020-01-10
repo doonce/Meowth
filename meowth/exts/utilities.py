@@ -448,7 +448,7 @@ def get_category(bot, channel, level, category_type="raid"):
         report = "raid"
     else:
         report = category_type
-    catsort = bot.guild_dict[guild.id]['configure_dict'][report].get('categories', None)
+    catsort = bot.guild_dict[guild.id]['configure_dict'].get(report, {}).get('categories', None)
     if catsort == "same":
         return channel.category
     elif catsort == "region":
@@ -672,6 +672,8 @@ class Utilities(commands.Cog):
                         global_dm_list.append(v)
             return global_dm_list
         for guild in list(self.bot.guilds):
+            if guild.id not in list(self.bot.guild_dict.keys()):
+                continue
             try:
                 dm_list = build_dm_list(guild.id)
                 if not dm_list:
@@ -952,7 +954,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v20.1.9.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v20.1.10.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
@@ -973,6 +975,7 @@ class Utilities(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def regional(self, ctx, regional):
         """Changes server regional pokemon."""
+        regional_config = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('regional', None)
         if regional.isdigit():
             regional = int(regional)
         else:
@@ -1018,6 +1021,7 @@ class Utilities(commands.Cog):
         if not ctx.author.guild_permissions.manage_guild:
             if not checks.is_manager_check(ctx):
                 return
+        offset_config = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('offset', None)
         try:
             timezone = float(timezone)
         except ValueError:
@@ -1027,7 +1031,7 @@ class Utilities(commands.Cog):
             await ctx.channel.send(_("I couldn't convert your answer to an appropriate timezone! Please double check what you sent me and resend a number from **-12** to **12**."), delete_after=10)
             return
         self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'] = timezone
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         await ctx.channel.send(_("Timezone has been set to: `UTC{offset}`\nThe current time is **{now}**").format(offset=timezone, now=now.strftime("%H:%M")), delete_after=10)
         await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
@@ -1157,6 +1161,7 @@ class Utilities(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def prefix(self, ctx, prefix=None):
         """Get and set server prefix."""
+        prefix_config = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('prefix', None)
         if not prefix:
             prefix = self.bot._get_prefix(self.bot, ctx.message)
             return await ctx.channel.send(_('Prefix for this server is: `{}`').format(prefix), delete_after=10)

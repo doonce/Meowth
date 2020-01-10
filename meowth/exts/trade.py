@@ -31,6 +31,8 @@ class Trading(commands.Cog):
         yes_emoji = self.bot.custom_emoji.get('trade_complete', u'\U00002611\U0000fe0f')
         no_emoji = self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f')
         for guild in list(self.bot.guilds):
+            if guild.id not in list(self.bot.guild_dict.keys()):
+                continue
             try:
                 trade_dict = self.bot.guild_dict[guild.id].setdefault('trade_dict', {})
                 for listing_id in list(trade_dict.keys()):
@@ -104,6 +106,8 @@ class Trading(commands.Cog):
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         guild = getattr(channel, "guild", None)
+        if guild and guild.id not in list(self.bot.guild_dict.keys()):
+            return
         try:
             user = self.bot.get_user(payload.user_id)
         except AttributeError:
@@ -131,9 +135,12 @@ class Trading(commands.Cog):
             guild = self.bot.get_guild(guildid)
             if not guild:
                 continue
-            if message.guild and message.channel.id not in self.bot.guild_dict[guild.id]['configure_dict']['trade']['report_channels']:
+            if message.guild and message.channel.id not in self.bot.guild_dict[guild.id]['configure_dict'].get('trade', {}).get('report_channels', []):
                 continue
-            trade_dict = self.bot.guild_dict[guild.id]['trade_dict']
+            try:
+                trade_dict = self.bot.guild_dict[guild.id]['trade_dict']
+            except KeyError:
+                trade_dict = {}
             for listing_id in trade_dict:
                 if trade_dict[listing_id].get("active_check", None):
                     active_check_dict[trade_dict[listing_id]['active_check']] = {"listing_id":listing_id, "guild_id":guildid}
@@ -144,7 +151,10 @@ class Trading(commands.Cog):
                     for offer in trade_dict[listing_id]['offers']:
                         offer_dict[trade_dict[listing_id]['offers'][offer]['lister_msg']] = {"listing_id":listing_id, "guild_id":guildid, "buyer_id":offer}
         if message.guild:
-            trade_dict = self.bot.guild_dict[message.guild.id]['trade_dict']
+            try:
+                trade_dict = self.bot.guild_dict[guild.id]['trade_dict']
+            except KeyError:
+                trade_dict = {}
             if message.id in trade_dict.keys():
                 if user.id != trade_dict[message.id]['lister_id'] and (u'\U000020e3' in emoji or u'\U0001f51f' in emoji):
                     wanted_pokemon = trade_dict[message.id]['wanted_pokemon']
@@ -395,7 +405,7 @@ class Trading(commands.Cog):
         info_emoji = ctx.bot.custom_emoji.get('trade_info', u'\U00002139\U0000fe0f')
         if not lister:
             return
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         success = []
         reply_msg = f"**wanted <want list>** - Current: {(', ').join(wanted_pokemon)}\n"
@@ -517,7 +527,7 @@ class Trading(commands.Cog):
         if not ctx.message.embeds:
             await utils.safe_delete(ctx.message)
         trade_dict = self.bot.guild_dict[ctx.guild.id].setdefault('trade_dict', {})
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         error = False
         details = None
         all_offered = offered_pokemon.split(',')
@@ -675,7 +685,7 @@ class Trading(commands.Cog):
 
     async def send_trade(self, ctx, wanted_pokemon, offered_pokemon, details):
         trade_dict = self.bot.guild_dict[ctx.guild.id].setdefault('trade_dict', {})
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         trade_stop =  ctx.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f')
         info_emoji = ctx.bot.custom_emoji.get('trade_info', u'\U00002139\U0000fe0f')
         report_emoji = ctx.bot.custom_emoji.get('trade_report', u'\U0001F4E2')

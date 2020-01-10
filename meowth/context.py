@@ -11,7 +11,7 @@ class Context(commands.Context):
         super().__init__(**kwargs)
         self.get = GetTools(self)
         if self.guild:
-            guild_data = self.bot.guild_dict[self.guild.id]
+            guild_data = self.bot.guild_dict.get(self.guild.id, {})
             self.data = settings.GuildData(self, guild_data)
 
     async def codeblock(self, contents, syntax="py", send=True, title=None):

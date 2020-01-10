@@ -32,6 +32,8 @@ class Invasion(commands.Cog):
         expire_list = []
         count = 0
         for guild in list(self.bot.guilds):
+            if guild.id not in list(self.bot.guild_dict.keys()):
+                continue
             try:
                 invasion_dict = self.bot.guild_dict[guild.id].setdefault('invasion_dict', {})
                 for reportid in list(invasion_dict.keys()):
@@ -78,6 +80,8 @@ class Invasion(commands.Cog):
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         guild = getattr(channel, "guild", None)
+        if guild and guild.id not in list(self.bot.guild_dict.keys()):
+            return
         try:
             user = self.bot.get_user(payload.user_id)
         except AttributeError:
@@ -163,7 +167,7 @@ class Invasion(commands.Cog):
         info_emoji = ctx.bot.custom_emoji.get('invasion_info', u'\U00002139\U0000fe0f')
         if not author:
             return
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         success = []
         reply_msg = f"**reward <encounter>** - Current: {invasion_dict.get('reward', 'X')}\n"
@@ -274,10 +278,10 @@ class Invasion(commands.Cog):
         dm_dict = invasion_dict.get('dm_dict', {})
         report_time = datetime.datetime.utcfromtimestamp(invasion_dict.get('report_time', time.time()))
         now_utc = datetime.datetime.utcnow()
-        now_local = now_utc + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        now_local = now_utc + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         expire_time = invasion_dict.get('expire_time', "30")
         end_utc = report_time + datetime.timedelta(minutes=int(expire_time))
-        end_local = report_time + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'], minutes=int(expire_time))
+        end_local = report_time + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0), minutes=int(expire_time))
         old_embed = message.embeds[0]
         invasion_embed = discord.Embed(description=old_embed.description, title=old_embed.title, url=old_embed.url, colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/invasion/teamrocket{'_male' if gender == 'male' else ''}{'_female' if gender == 'female' else ''}.png?cache=1")
         nearest_stop = invasion_dict.get('location', None)
@@ -451,8 +455,8 @@ class Invasion(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
-        exp_timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'], minutes=30, seconds=0)).strftime('%I:%M %p')
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        exp_timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0), minutes=30, seconds=0)).strftime('%I:%M %p')
         error = False
         loc_url = utils.create_gmaps_query(self.bot, "", message.channel, type="invasion")
         invasion_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/invasion/teamrocket.png?cache=1')
@@ -549,8 +553,8 @@ class Invasion(commands.Cog):
         if timer:
             expire_time = timer
         invasion_dict = self.bot.guild_dict[ctx.guild.id].setdefault('invasion_dict', {})
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict']['settings']['offset']))
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         end = now + datetime.timedelta(minutes=int(expire_time))
         complete_emoji = self.bot.custom_emoji.get('invasion_complete', 'u\U0001f1f7')
         expire_emoji = self.bot.custom_emoji.get('invasion_expired', u'\U0001F4A8')

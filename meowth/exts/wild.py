@@ -29,6 +29,8 @@ class Wild(commands.Cog):
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         guild = getattr(channel, "guild", None)
+        if guild and guild.id not in list(self.bot.guild_dict.keys()):
+            return
         try:
             user = self.bot.get_user(payload.user_id)
         except AttributeError:
@@ -96,6 +98,8 @@ class Wild(commands.Cog):
         despawn_list = []
         count = 0
         for guild in list(self.bot.guilds):
+            if guild.id not in list(self.bot.guild_dict.keys()):
+                continue
             try:
                 wild_dict = self.bot.guild_dict[guild.id].setdefault('wildreport_dict', {})
                 for reportid in list(wild_dict.keys()):
@@ -164,7 +168,7 @@ class Wild(commands.Cog):
             pass
 
     async def make_wild_embed(self, ctx, details):
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         gender = details.get('gender', None)
         gender = gender if gender else ''
         wild_iv = details.get('wild_iv', {})
@@ -205,7 +209,7 @@ class Wild(commands.Cog):
                 nearest_stop = await gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), ctx.guild.id)
         if details.get('coordinates'):
             wild_gmaps_link = "https://www.google.com/maps/search/?api=1&query={0}".format(details['coordinates'])
-        huntrexpstamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'], minutes=int(expire.split()[0]), seconds=int(expire.split()[2]))).strftime('%I:%M %p')
+        huntrexpstamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0), minutes=int(expire.split()[0]), seconds=int(expire.split()[2]))).strftime('%I:%M %p')
         shiny_str = ""
         if pokemon.id in self.bot.shiny_dict:
             if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
@@ -244,7 +248,7 @@ class Wild(commands.Cog):
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict.get('pkmn_obj', None))
         if not author:
             return
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         success = []
         reply_msg = f"**iv <pokemon iv percentage>** - Current: {wild_dict.get('wild_iv', {}).get('percent', 'X')}\n"
@@ -550,7 +554,7 @@ class Wild(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         wild_iv = None
         wild_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_grass.png?cache=1')
@@ -645,7 +649,7 @@ class Wild(commands.Cog):
 
     async def _wild(self, ctx, content):
         message = ctx.message
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict']['settings']['offset'])).strftime(_('%I:%M %p (%H:%M)'))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         wild_split = content.split()
         wild_iv = None
         nearest_stop = ""

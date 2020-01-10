@@ -74,8 +74,8 @@ class Pokemon():
     """
 
     __slots__ = ('name', 'id', 'types', 'emoji', 'bot', 'guild', 'pkmn_list',
-                 'pb_raid', 'weather', 'moveset', 'form', 'shiny', 'gender',
-                 'size', 'legendary', 'mythical', 'base_stamina',
+                 'pb_raid', 'weather', 'moveset', 'form', 'region', 'shiny',
+                 'gender', 'size', 'legendary', 'mythical', 'base_stamina',
                  'base_attack', 'base_defense', 'charge_moves', 'quick_moves',
                  'height', 'weight', 'evolves', 'evolve_candy', 'buddy_distance',
                  'research_cp', 'raid_cp', 'boost_raid_cp', 'max_cp', 'weather',
@@ -112,6 +112,7 @@ class Pokemon():
                 self.shiny = False
             if self.shadow and "shadow" not in bot.shiny_dict.get(self.id, {}).get(str(self.form).lower(), []):
                 self.shiny = False
+        self.region = attribs.get('region', None)
         self.legendary = True if self.id in bot.legendary_list else False
         self.mythical = True if self.id in bot.mythical_list else False
         self.gender = attribs.get('gender', None)
@@ -148,11 +149,11 @@ class Pokemon():
         if self.id in self.bot.size_dict and self.size:
             if str(self.form).lower() in self.bot.size_dict[self.id]:
                 size = f"{self.size}"
-        if self.form == "alolan":
+        if self.region == "alolan":
             region = f"Alolan"
-        elif self.form == "galarian":
+        elif self.region == "galarian":
             region = f"Galarian"
-        elif self.form:
+        if self.form:
             form = f"{self.form.title()}"
         if self.shadow:
             shadow = f"{self.shadow.title()}"
@@ -246,31 +247,39 @@ class Pokemon():
     def img_url(self):
         """:class:`str` : Pokemon sprite image URL"""
         pkmn_no = str(self.id).zfill(3)
+        gender_str = ""
         form_str = ""
-        if self.id in self.bot.gender_dict:
-            if self.gender == 'female':
-                form_str = "_01"
-            else:
-                form_str = "_00"
-        if self.form and self.id in self.bot.form_dict:
-            if self.form == "alolan":
-                form_str = "_61"
-            elif self.form == "galarian":
-                form_str = "_31"
-            else:
-                form_str = form_str + "_" + str(list(self.bot.form_dict[self.id].keys()).index(self.form)).zfill(2)
+        region_str = ""
+        shiny_str = ""
+        shadow_str = ""
+        if self.region:
+            if self.region == "alolan":
+                region_str = "_61"
+            elif self.region == "galarian":
+                region_str = "_31"
+            if self.form and self.bot.form_dict.get(self.id, {}) and f"{self.region} {str(self.form).lower()}" in self.bot.form_dict[self.id]:
+                form_str = f"{region_str}_{str(list(self.bot.form_dict[self.id].keys()).index(self.region + ' ' + self.form)).zfill(2)}"
+            if self.bot.gender_dict.get(self.id, {}) and f"{self.region} {str(self.form).lower()}" in self.bot.gender_dict[self.id]:
+                if self.gender == 'female':
+                    gender_str = "_01"
+                else:
+                    gender_str = "_00"
+        else:
+            if self.form and self.bot.form_dict.get(self.id, {}) and str(self.form).lower() in self.bot.form_dict[self.id]:
+                form_str = f"_{str(list(self.bot.form_dict[self.id].keys()).index(str(self.form))).zfill(2)}"
+            if self.bot.gender_dict.get(self.id, {}) and str(self.form).lower() in self.bot.gender_dict[self.id]:
+                if self.gender == 'female':
+                    gender_str = "_01"
+                else:
+                    gender_str = "_00"
         if self.id not in self.bot.gender_dict and not self.form:
             form_str = form_str + "_00"
         if self.shiny:
             shiny_str = "_shiny"
-        else:
-            shiny_str = ""
         if self.shadow:
             shadow_str = f"_{self.shadow}"
-        else:
-            shadow_str = ""
 
-        return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{form_str}{shiny_str}.png?cache=2")
+        return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{gender_str}{form_str}{shiny_str}.png?cache=2")
 
     @property
     def game_name(self):
@@ -287,7 +296,7 @@ class Pokemon():
         form = None
         if self.form == "armored":
             form = "a"
-        elif self.form == "alolan":
+        elif self.region == "alolan":
             form = "alola"
         if self.shadow:
             form = self.shadow
@@ -556,23 +565,24 @@ class Pokemon():
             argument = re.sub(small.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
         else:
             size = None
-
+        if alolan:
+            region = "alolan"
+            match_list.append(alolan.group(0))
+            argument = re.sub(alolan.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
+        elif galarian:
+            region = "galarian"
+            match_list.append(galarian.group(0))
+            argument = re.sub(galarian.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
+        else:
+            region = None
         for form in form_list:
+            if form == "alolan" or form == "galarian":
+                continue
             form = re.search(r"\b"+re.escape(form)+r"\b", argument, re.IGNORECASE)
             if form:
                 match_list.append(form.group(0))
                 argument = re.sub(form.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
                 form = form.group(0).lower().strip()
-                break
-            elif alolan:
-                form = "alolan"
-                match_list.append(alolan.group(0))
-                argument = re.sub(alolan.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
-                break
-            elif galarian:
-                form = "galarian"
-                match_list.append(galarian.group(0))
-                argument = re.sub(galarian.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
                 break
             else:
                 form = None
@@ -580,7 +590,7 @@ class Pokemon():
         if "ho oh" in argument:
             argument = argument.replace("ho oh", "ho-oh")
 
-        return {"argument":argument, "match_list":match_list, "shiny":shiny, "gender":gender, "size":size, "form":form, "shadow":shadow}
+        return {"argument":argument, "match_list":match_list, "shiny":shiny, "gender":gender, "size":size, "form":form, "region":region, "shadow":shadow}
 
     @classmethod
     async def convert(self, ctx, argument):
@@ -636,7 +646,7 @@ class Pokemon():
         result = False
         if match:
             if score >= 80:
-                result = self(ctx.bot, str(match), ctx.guild, shiny=query['shiny'], form=query['form'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
+                result = self(ctx.bot, str(match), ctx.guild, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
             else:
                 result = {
                     'suggested' : str(match),
@@ -673,9 +683,9 @@ class Pokemon():
         if not match:
             return None
         if entered_argument.isdigit() and allow_digits:
-            pokemon = self(bot, str(match), None, shiny=False, form=None, gender=None, size=None, shadow=None)
+            pokemon = self(bot, str(match), None, shiny=False, form=None, region=None, gender=None, size=None, shadow=None)
         else:
-            pokemon = self(bot, str(match), None, shiny=query['shiny'], form=query['form'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
+            pokemon = self(bot, str(match), None, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
         return pokemon
 
     @classmethod
@@ -703,9 +713,9 @@ class Pokemon():
         if not match:
             return None
         if entered_argument.isdigit() and allow_digits:
-            pokemon = self(bot, str(match), None, shiny=False, form=None, gender=None, size=None, shadow=None)
+            pokemon = self(bot, str(match), None, shiny=False, form=None, region=None, gender=None, size=None, shadow=None)
         else:
-            pokemon = self(bot, str(match), None, shiny=query['shiny'], form=query['form'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
+            pokemon = self(bot, str(match), None, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
         return pokemon
 
     @classmethod
@@ -757,9 +767,9 @@ class Pokemon():
         if not pokemon:
             return None, None
         if entered_argument.isdigit() and allow_digits:
-            pokemon = self(ctx.bot, str(pokemon), None, shiny=False, form=None, gender=None, size=None, shadow=None)
+            pokemon = self(ctx.bot, str(pokemon), None, shiny=False, form=None, region=None, gender=None, size=None, shadow=None)
         else:
-            pokemon = self(ctx.bot, str(pokemon), None, shiny=query['shiny'], form=query['form'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
+            pokemon = self(ctx.bot, str(pokemon), None, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
         return pokemon, match_list
 
 class Pokedex(commands.Cog):
@@ -800,7 +810,8 @@ class Pokedex(commands.Cog):
                         form_list.append(form)
                     if v['number'] not in available_dict:
                         available_dict[v['number']] = {}
-                    available_dict[v['number']][form] = v['forms'][form].get('available', [])
+                    # available_dict[v['number']][form] = v['forms'][form].get('available', [])
+                    available_dict[v['number']][form] = True
             if gender_forms:
                 gender_dict[v['number']] = gender_forms
             if shadow_forms:
@@ -834,6 +845,22 @@ class Pokedex(commands.Cog):
 
     @commands.command()
     @checks.is_manager()
+    async def move_json(self, ctx):
+        move_info = {}
+        for template in self.bot.gamemaster['itemTemplates']:
+            if "MOVE" in template['templateId'] and "COMBAT_" not in template['templateId'] and "ITEM_" not in template['templateId'] and "SETTINGS" not in template['templateId']:
+                move_name = template['templateId'].split('MOVE_')[1].title()
+                move_type = template['moveSettings']['pokemonType'].replace("POKEMON_TYPE_", "").title()
+                move_power = template['moveSettings'].get('power', 0)
+                move_info[move_name.lower().replace('_fast', '').replace('_', ' ')] = {"type":move_type, "power":move_power}
+        for type in self.bot.type_list:
+            move_info[f"hidden power {type.lower()}"] = {"type":type.title(), "power":15}
+        with open(os.path.join('data', 'move_info.json'), 'w') as fd:
+             json.dump(move_info, fd, indent=2, separators=(', ', ': '))
+        await ctx.send(f"**{len(move_info)}** moves updated.", delete_after=15)
+
+    @commands.command()
+    @checks.is_manager()
     async def pkmn_json(self, ctx, *, pokemon: Pokemon=None):
         """Edits pkmn.json pokemon availability
 
@@ -842,7 +869,7 @@ class Pokedex(commands.Cog):
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset']))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         first = True
         action = "edit"
@@ -981,7 +1008,7 @@ class Pokedex(commands.Cog):
         preview_embed.set_image(url=sprite.img_url)
         sprite_msg = await ctx.send(embed=preview_embed)
 
-    @commands.group(aliases=['dex'], invoke_without_command=True, case_insensitive=True, category="true")
+    @commands.group(aliases=['dex'], invoke_without_command=True, case_insensitive=True)
     async def pokedex(self, ctx, *, pokemon: str=None):
         """Pokedex information for a pokemon
 
@@ -1030,7 +1057,7 @@ class Pokedex(commands.Cog):
             preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"], inline=False)
         if pokemon.id in ctx.bot.legendary_list or pokemon.id in ctx.bot.mythical_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.id in ctx.bot.mythical_list else 'Legendary'}")
-        if all([pokemon.research_cp, pokemon.raid_cp, pokemon.boost_raid_cp, pokemon.max_cp]):
+        if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
             preview_embed.add_field(name=f"{pokemon.name.title()} CP by Level (Raids / Research):", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**", inline=False)
         if "stats" in ctx.invoked_with:
             if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
