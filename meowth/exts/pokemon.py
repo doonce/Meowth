@@ -278,7 +278,6 @@ class Pokemon():
             shiny_str = "_shiny"
         if self.shadow:
             shadow_str = f"_{self.shadow}"
-
         return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{gender_str}{form_str}{shiny_str}.png?cache=2")
 
     @property
@@ -776,6 +775,7 @@ class Pokedex(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @staticmethod
     async def generate_lists(bot):
         available_dict = {}
         shiny_dict = {}
@@ -810,7 +810,6 @@ class Pokedex(commands.Cog):
                         form_list.append(form)
                     if v['number'] not in available_dict:
                         available_dict[v['number']] = {}
-                    # available_dict[v['number']][form] = v['forms'][form].get('available', [])
                     available_dict[v['number']][form] = True
             if gender_forms:
                 gender_dict[v['number']] = gender_forms
@@ -942,7 +941,13 @@ class Pokedex(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif attr_type_msg.clean_content.lower() == "gender":
-                        pkmn_gender = not pkmn_gender
+                        if self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form].get('gender', {}).get('male', False):
+                            pkmn_gender = None
+                        else:
+                            pkmn_gender = {
+                                "male":self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form],
+                                "female":self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]
+                            }
                         break
                     elif attr_type_msg.clean_content.lower() == "size":
                         pkmn_size = not pkmn_size
@@ -987,7 +992,13 @@ class Pokedex(commands.Cog):
         else:
             with open(self.bot.pkmn_info_path, 'r', encoding="utf8") as fd:
                 pkmn_info = json.load(fd)
-            pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['gender'] = pkmn_gender
+            if pkmn_gender:
+                pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['gender'] = pkmn_gender
+            else:
+                try:
+                    del pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['gender']
+                except:
+                    pass
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['shiny'] = pkmn_shiny
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['size'] = pkmn_size
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['shadow'] = pkmn_shadow
@@ -995,7 +1006,7 @@ class Pokedex(commands.Cog):
                 json.dump(pkmn_info, fd, indent=2, separators=(', ', ': '))
             await self.generate_lists(self.bot)
             pkmn_embed.clear_fields()
-            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nShiny available: {pkmn_shiny}\nGender Differences: {pkmn_gender}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}", inline=False)
+            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}", inline=False)
             confirmation = await channel.send(embed=pkmn_embed)
             await utils.safe_delete(message)
 
@@ -1053,8 +1064,8 @@ class Pokedex(commands.Cog):
         preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji} - {('').join(pokemon.boost_weather)}", value=pokemon.pokedex, inline=False)
         if len(forms) > 1 or key_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
-        if len(ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"].split("→")) > 1:
-            preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]["evolution"], inline=False)
+        if len(ctx.bot.pkmn_info[pokemon.name.lower()]['forms'][str(pokemon.form).lower()]["evolution"].split("→")) > 1:
+            preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=ctx.bot.pkmn_info[pokemon.name.lower()]['forms'][str(pokemon.form).lower()]["evolution"], inline=False)
         if pokemon.id in ctx.bot.legendary_list or pokemon.id in ctx.bot.mythical_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.id in ctx.bot.mythical_list else 'Legendary'}")
         if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
