@@ -275,9 +275,8 @@ class Research(commands.Cog):
         if author:
             ctx.author, ctx.message.author = author, author
         shiny_str = ""
-        if pokemon and pokemon.id in self.bot.shiny_dict:
-            if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+        if pokemon and "research" in pokemon.shiny_available:
+            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module", "mysterious", "component", "radar", "sinnoh", "unova", "stone", "scale", "coat", "grade"]
         other_reward = any(x in reward.lower() for x in reward_list)
         if pokemon and not other_reward:
@@ -378,9 +377,8 @@ class Research(commands.Cog):
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, item, allow_digits=True)
                         if pokemon:
                             shiny_str = ""
-                            if pokemon.id in self.bot.shiny_dict:
-                                if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                            if pokemon and "research" in pokemon.shiny_available:
+                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                             item = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
                     tsr_quest_dict[current_category][current_quest].append(item)
             research_embed = discord.Embed(discription="", colour=ctx.guild.me.colour)
@@ -585,9 +583,8 @@ class Research(commands.Cog):
             return
         item = None
         shiny_str = ""
-        if pokemon and pokemon.id in self.bot.shiny_dict:
-            if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "research" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+        if pokemon and "research" in pokemon.shiny_available:
+            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         if pokemon and not other_reward:
             reward = f"{shiny_str}{string.capwords(reward, ' ')} {pokemon.emoji}"
             pokemon.shiny = False

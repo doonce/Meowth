@@ -279,9 +279,8 @@ class Nest(commands.Cog):
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
         nest_embed.set_thumbnail(url=pokemon.img_url)
         shiny_str = ""
-        if pokemon.id in self.bot.shiny_dict:
-            if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+        if pokemon and "wild" in pokemon.shiny_available:
+            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         nest_embed.description = f"**Nest**: {location.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         result = re.search(r'Meowth! (.*) nest', message.content).group(1)
         message.content = message.content.replace(result, str(pokemon))
@@ -348,9 +347,8 @@ class Nest(commands.Cog):
             for pkmn in reported_pkmn:
                 shiny_str = ""
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn[0])
-                if pokemon.id in self.bot.shiny_dict:
-                    if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                        shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                if pokemon and "wild" in pokemon.shiny_available:
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                 if report_count == 0:
                     embed_value += f"**{shiny_str}{pokemon.name.title()}** {pokemon.emoji}"
                     if len(reported_pkmn) > 1:
@@ -472,9 +470,8 @@ class Nest(commands.Cog):
         migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         migration_exp = migration_utc.replace(tzinfo=datetime.timezone.utc).timestamp()
         shiny_str = ""
-        if pokemon.id in self.bot.shiny_dict:
-            if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+        if pokemon and "wild" in pokemon.shiny_available:
+            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         nest_description = f"**Nest**: {nest_name.title()}\n**Pokemon**: {shiny_str}{pokemon.name.title()} {pokemon.emoji}\n**Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
         nest_embed = discord.Embed(colour=ctx.guild.me.colour)
         nest_embed.title = f"Click here for directions to the nest!"
@@ -622,9 +619,8 @@ class Nest(commands.Cog):
         for pkmn in reported_pkmn:
             shiny_str = ""
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn[0])
-            if pokemon.id in self.bot.shiny_dict:
-                if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+            if pokemon and "wild" in pokemon.shiny_available:
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
             if report_count == 0:
                 embed_value += f"**{shiny_str}{str(pokemon)}** {pokemon.emoji} **({pkmn[1]})**"
                 report_count += 1

@@ -211,9 +211,8 @@ class Wild(commands.Cog):
             wild_gmaps_link = "https://www.google.com/maps/search/?api=1&query={0}".format(details['coordinates'])
         huntrexpstamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0), minutes=int(expire.split()[0]), seconds=int(expire.split()[2]))).strftime('%I:%M %p')
         shiny_str = ""
-        if pokemon.id in self.bot.shiny_dict:
-            if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "wild" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+        if pokemon and "wild" in pokemon.shiny_available:
+            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         details_str = f"{shiny_str}{pokemon.name.title()}"
         if gender and "female" in gender.lower():
             details_str += f" ♀"

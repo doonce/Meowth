@@ -2028,7 +2028,7 @@ class Configure(commands.Cog):
                     for pkmn in wildfilter_list:
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pkmn)
                         if pokemon:
-                            if not pokemon.form and not pokemon.size and not pokemon.gender and not pokemon.shadow:
+                            if not pokemon.form and not pokemon.region and not pokemon.size and not pokemon.gender and not pokemon.shadow:
                                 config_dict_temp['scanners']['wildfilter'].append(pokemon.id)
                                 wildfilter_names.append(f"{pokemon.name} (all forms)")
                             else:

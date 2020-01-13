@@ -317,9 +317,8 @@ class Invasion(commands.Cog):
                 pokemon.size = None
                 pokemon.gender = None
                 pokemon.shadow = "shadow"
-                if pokemon.id in self.bot.shiny_dict:
-                    if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                        shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                if pokemon and "shadow" in pokemon.shiny_available:
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                 reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
                 reward_list.append(str(pokemon))
             if not reward_list:
@@ -582,9 +581,8 @@ class Invasion(commands.Cog):
                 if pokemon:
                     pokemon.shiny = False
                     pokemon.shadow = "shadow"
-                    if pokemon.id in self.bot.shiny_dict:
-                        if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "shadow" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                    if pokemon and "shadow" in pokemon.shiny_available:
+                        shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                     reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
                     reward_list.append(str(pokemon))
             if not reward_list:

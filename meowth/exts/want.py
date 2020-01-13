@@ -479,7 +479,7 @@ class Want(commands.Cog):
             boss_str = ""
             if entered_want.id in self.bot.raid_list and (user_link or "boss" in ctx.invoked_with):
                 boss_str = f" (Level {entered_want.raid_level} Boss)"
-            if (entered_want.size or entered_want.gender or entered_want.form or entered_want.shiny or entered_want.shadow) and len(str(entered_want).split()) > 1:
+            if (entered_want.size or entered_want.gender or entered_want.region or entered_want.form or entered_want.shiny or entered_want.shadow) and len(str(entered_want).split()) > 1:
                 if str(entered_want) in user_forms:
                     already_want_list.append(str(entered_want))
                     already_want_count += 1
@@ -1752,7 +1752,7 @@ class Want(commands.Cog):
             boss_str = ""
             if entered_unwant.id in self.bot.raid_list and (user_link or "boss" in ctx.invoked_with):
                 boss_str = f" (Level {entered_unwant.raid_level} Boss)"
-            if (entered_unwant.size or entered_unwant.gender or entered_unwant.form or entered_unwant.shiny or entered_unwant.shadow) and len(str(entered_unwant).split()) > 1:
+            if (entered_unwant.size or entered_unwant.gender or entered_unwant.form or entered_unwant.region or entered_unwant.shiny or entered_unwant.shadow) and len(str(entered_unwant).split()) > 1:
                 if str(entered_unwant) not in user_forms:
                     not_wanted_list.append(str(entered_unwant))
                     not_wanted_count += 1

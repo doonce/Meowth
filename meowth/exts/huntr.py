@@ -830,7 +830,7 @@ class Huntr(commands.Cog):
         elif utils.get_level(ctx.bot, str(pokemon)) == "EX":
             await message.channel.send(_("Meowth! The Pokemon {pokemon} only appears in EX Raids! Use **!exraid** to report one!").format(pokemon=pokemon.name.capitalize()), delete_after=10)
             return
-        level = utils.get_level(ctx.bot, pokemon.id)
+        level = utils.get_level(ctx.bot, str(pokemon))
         matched_boss = False
         for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
             boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
@@ -857,7 +857,7 @@ class Huntr(commands.Cog):
         raid_embed = await raid_cog.make_raid_embed(ctx, report_details, raidexp)
         if not raid_embed:
             return
-        raid_channel = await raid_cog.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.form.lower() if boss.form else ''}", raid_details, "raid")
+        raid_channel = await raid_cog.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.region.lower() if boss.region else ''}{'-'+boss.form.lower() if boss.form else ''}", raid_details, "raid")
         if not raid_channel:
             return
         await asyncio.sleep(1)

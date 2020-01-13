@@ -857,7 +857,7 @@ class Raid(commands.Cog):
             else:
                 channel_name = f"{channel_emoji}{channel_level}-egg-{channel_address.lower()}"
         elif type == "raid" or type == "exraid":
-            channel_name = f"{channel_emoji}{channel_boss.name.lower()}-{channel_boss.form.lower()+'-' if channel_boss and channel_boss.form else ''}-{channel_address.lower()}"
+            channel_name = f"{channel_emoji}{channel_boss.name.lower()}-{channel_boss.region.lower()+'-' if channel_boss and channel_boss.region else ''}-{channel_boss.form.lower()+'-' if channel_boss and channel_boss.form else ''}-{channel_address.lower()}"
         else:
             channel_name = f"{channel_emoji}{type}-{channel_address.lower()}"
         return channel_name
@@ -962,9 +962,8 @@ class Raid(commands.Cog):
                         pokemon.weather = "snowy"
                     elif "fog" in weather:
                         pokemon.weather = "foggy"
-                if pokemon.id in self.bot.shiny_dict:
-                    if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                        shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                if pokemon and "raid" in pokemon.shiny_available:
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                 boss_list.append(f"{shiny_str}{str(pokemon)} {pokemon.emoji}")
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1" if embed_type == "egg" else pokemon.img_url
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin_exclusive.png?cache=1" if egg_level == "EX" else raid_img_url
@@ -978,7 +977,7 @@ class Raid(commands.Cog):
                 raid_embed.add_field(name=_('**Weaknesses:**'), value=f"{pokemon.weakness_emoji}\u200b", inline=True)
             raid_embed.set_author(name=f"Level {egg_level} Raid Report", icon_url=raid_img_url)
         elif embed_type == "raid":
-            egg_level = utils.get_level(ctx.bot, pokemon.id)
+            egg_level = utils.get_level(ctx.bot, str(pokemon))
             raid_embed = discord.Embed(title=f"Meowth! Click here for directions to the level {egg_level} raid!", description=gym_info, url=raid_gmaps_link, colour=ctx.guild.me.colour)
             raid_embed.add_field(name=_('**Details:**'), value=f"{boss_list[0]}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
             raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=pokemon.weakness_emoji), inline=True)
@@ -1766,7 +1765,7 @@ class Raid(commands.Cog):
             await utils.safe_delete(ctx.message)
             return await ctx.channel.send(f"Meowth! The Pokemon {pokemon.name.title()} does not appear in raids!", delete_after=10)
         matched_boss = False
-        level = utils.get_level(self.bot, pokemon.id)
+        level = utils.get_level(self.bot, str(pokemon))
         for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
             boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
             if str(boss) == str(pokemon):
@@ -1804,7 +1803,7 @@ class Raid(commands.Cog):
                 raid_coordinates = gym_url.split('query=')[1]
         if not raid_details:
             return await utils.safe_delete(ctx.message)
-        raid_channel = await self.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.form.lower() if boss.form else ''}", raid_details, "raid")
+        raid_channel = await self.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.region.lower() if boss.region else ''}{'-'+boss.form.lower() if boss.form else ''}", raid_details, "raid")
         if not raid_channel:
             return
         if not weather and raid_coordinates:
@@ -2060,14 +2059,14 @@ class Raid(commands.Cog):
         if not pokemon:
             await utils.safe_delete(ctx.message)
             return await ctx.send(f"Meowth! I'm missing some details! Usage: {ctx.prefix}{ctx.command.parent or ctx.command.name} **<pokemon>**", delete_after=10)
-        pokemon_level = utils.get_level(self.bot, pokemon.name.lower())
+        pokemon_level = utils.get_level(self.bot, str(pokemon))
         if not pokemon.id in self.bot.raid_list:
             await utils.safe_delete(ctx.message)
             return await ctx.send(f"Meowth! The Pokemon **{pokemon.name.title()}** does not appear in raids!", delete_after=10)
         elif pokemon_level != egg_level:
             await utils.safe_delete(ctx.message)
             return await ctx.send(f"Meowth! The Pokemon **{pokemon.name.title()}** appears in level {pokemon_level} raid eggs, not in level {egg_level} raid eggs!", delete_after=10)
-        if sum(pokemon.name.title() in s for s in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon']) > 1 and not pokemon.form:
+        if sum(pokemon.name.title() in s for s in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon']) > 1 and not (pokemon.form or pokemon.region):
             form_list = [x for x in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon'] if pokemon.name.title() in x]
             form_list = [x.replace(pokemon.name.title(), '').strip() for x in form_list]
             await utils.safe_delete(ctx.message)
@@ -2128,9 +2127,8 @@ class Raid(commands.Cog):
         oldembed = raid_message.embeds[0]
         raid_gmaps_link = oldembed.url
         shiny_str = ""
-        if pokemon.id in self.bot.shiny_dict:
-            if str(pokemon.form).lower() in self.bot.shiny_dict.get(pokemon.id, {}) and "raid" in self.bot.shiny_dict.get(pokemon.id, {}).get(str(pokemon.form).lower(), []):
-                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+        if pokemon and "raid" in pokemon.shiny_available:
+            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{str(pokemon)} {pokemon.emoji}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=pokemon.weakness_emoji), inline=True)
@@ -4486,9 +4484,9 @@ class Raid(commands.Cog):
             pkmn, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, args)
             if not pkmn:
                 return await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
-        level = utils.get_level(self.bot, pkmn.name.lower())
+        level = utils.get_level(self.bot, str(pkmn))
         redirect_url = ""
-        url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.game_name.upper()}{'_FORM' if pkmn.form else ''}/levels/RAID_LEVEL_{level}/attackers/"
+        url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.game_name.upper()}{'_FORM' if pkmn.form or pkmn.region else ''}/levels/RAID_LEVEL_{level}/attackers/"
         if user:
             url += "users/{user}/".format(user=user)
             userstr = _("user #{user}'s").format(user=user)
@@ -4519,6 +4517,7 @@ class Raid(commands.Cog):
         if not data or data.get('error', None):
             url = url.replace(f"{pkmn.game_name.upper()}_FORM", pkmn.name.upper())
             pkmn.form = None
+            pkmn.region = None
             async with aiohttp.ClientSession() as sess:
                 async with sess.get(url) as resp:
                     data = await resp.json(content_type=None)
@@ -4624,7 +4623,7 @@ class Raid(commands.Cog):
         else:
             index = weather_list.index(weather)
         weather = match_list[index]
-        url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.game_name.upper()}{'_FORM' if pokemon.form else ''}/levels/RAID_LEVEL_{level}/attackers/"
+        url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.game_name.upper()}{'_FORM' if pokemon.form or pokemon.region else ''}/levels/RAID_LEVEL_{level}/attackers/"
         url += "levels/30/"
         url += "strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=OVERALL&"
         url += "weatherCondition={weather}&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE".format(weather=weather)
@@ -4637,6 +4636,7 @@ class Raid(commands.Cog):
         if not data or data.get('error', None):
             url = url.replace(f"{str(pokemon.game_name).upper()}_FORM", pokemon.name.upper())
             pokemon.form = None
+            pokemon.region = None
             async with aiohttp.ClientSession() as sess:
                 async with sess.get(url) as resp:
                     data = await resp.json(content_type=None)
@@ -4924,9 +4924,8 @@ class Raid(commands.Cog):
             for boss in boss_dict.keys():
                 boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
                 shiny_str = ""
-                if boss.id in self.bot.shiny_dict:
-                    if str(boss.form).lower() in self.bot.shiny_dict.get(boss.id, {}) and "raid" in self.bot.shiny_dict.get(boss.id, {}).get(str(boss.form).lower(), []):
-                        shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                if boss and "raid" in boss.shiny_available:
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                 if boss_dict[str(boss).lower()]['total'] > 0:
                     bossstr = f"{shiny_str}{str(boss).title()} {boss_dict[str(boss).lower()]['type']} : **{boss_dict[str(boss).lower()]['total']}**"
                     display_list.append(bossstr)
