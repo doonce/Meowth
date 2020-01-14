@@ -684,10 +684,10 @@ class Pokemon():
         for pkmn_form in form_list:
             if pkmn_form == "alolan" or pkmn_form == "galarian" or pkmn_form == "none":
                 continue
-            pkmn_form = re.search(r"\b"+re.escape(pkmn_form)+r"\b", argument, re.IGNORECASE)
-            if pkmn_form:
-                match_list.append(pkmn_form.group(0))
-                argument = re.sub(pkmn_form.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
+            form_search = re.search(r"\b"+re.escape(pkmn_form)+r"\b", argument, re.IGNORECASE)
+            if form_search:
+                match_list.append(form_search.group(0))
+                argument = re.sub(form_search.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
                 form = pkmn_form
                 break
             else:
