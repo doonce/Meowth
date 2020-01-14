@@ -15540,6 +15540,24 @@
         "shiny": [],
         "evolution": "[ Zygarde ]"
       },
+      "cell": {
+        "type": [
+          "Dragon",
+          "Ground"
+        ],
+        "pokedex": "Born when around 10% of Zygarde's cells have been gathered from all over, this form is skilled in close-range combat.",
+        "shiny": [],
+        "evolution": "[ Zygarde ]"
+      },
+      "core": {
+        "type": [
+          "Dragon",
+          "Ground"
+        ],
+        "pokedex": "Born when around 10% of Zygarde's cells have been gathered from all over, this form is skilled in close-range combat.",
+        "shiny": [],
+        "evolution": "[ Zygarde ]"
+      },
       "10%": {
         "type": [
           "Dragon",
