@@ -18511,19 +18511,19 @@
     "forms": {
       "none": {
         "type": [
-          "Fire",
-          "Bug"
+          "Poison",
+          "Dragon"
         ],
-        "pokedex": "When it heats up, its body temperature reaches about 1,500 degrees Fahrenheit. It lashes its body like a whip and launches itself at enemies.",
+        "pokedex": "The core on its chest absorbs energy emanating from the lands of the Galar region. This energy is what allows Eternatus to stay active.",
         "shiny": [],
         "evolution": "[ Eternatus ]"
       },
       "eternamax": {
         "type": [
-          "Fire",
-          "Bug"
+          "Poison",
+          "Dragon"
         ],
-        "pokedex": "When it heats up, its body temperature reaches about 1,500 degrees Fahrenheit. It lashes its body like a whip and launches itself at enemies.",
+        "pokedex": "Infinite amounts of energy pour from this Pokémon's enlarged core, warping the surrounding space-time.",
         "shiny": [],
         "evolution": "[ Eternatus ]"
       }

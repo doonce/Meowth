@@ -1250,7 +1250,7 @@ class Pokedex(commands.Cog):
         if len(forms) > 1 or key_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
         if len(pokemon.evolution.split("→")) > 1:
-            preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=pokemon.evolution, inline=False)
+            preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=pokemon.evolution.replace(pokemon.name.title(), f"**{pokemon.name.title()}**"), inline=False)
         if pokemon.legendary or pokemon.mythical:
             preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.mythical else 'Legendary'}")
         if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
