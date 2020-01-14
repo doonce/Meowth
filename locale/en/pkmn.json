@@ -14072,6 +14072,15 @@
         "shiny": [],
         "evolution": "[ Genesect ]"
       },
+      "douse": {
+        "type": [
+          "Bug",
+          "Steel"
+        ],
+        "pokedex": "This Pokemon existed 300 million years ago. Team Plasma altered it and attached a cannon to its back.",
+        "shiny": [],
+        "evolution": "[ Genesect ]"
+      },
       "shock": {
         "type": [
           "Bug",
@@ -14091,15 +14100,6 @@
         "evolution": "[ Genesect ]"
       },
       "chill": {
-        "type": [
-          "Bug",
-          "Steel"
-        ],
-        "pokedex": "This Pokemon existed 300 million years ago. Team Plasma altered it and attached a cannon to its back.",
-        "shiny": [],
-        "evolution": "[ Genesect ]"
-      },
-      "douse": {
         "type": [
           "Bug",
           "Steel"
@@ -18516,7 +18516,16 @@
         ],
         "pokedex": "When it heats up, its body temperature reaches about 1,500 degrees Fahrenheit. It lashes its body like a whip and launches itself at enemies.",
         "shiny": [],
-        "evolution": "[ Sizzlipede ] \u2192 [ Centiskorch ]"
+        "evolution": "[ Eternatus ]"
+      },
+      "eternamax": {
+        "type": [
+          "Fire",
+          "Bug"
+        ],
+        "pokedex": "When it heats up, its body temperature reaches about 1,500 degrees Fahrenheit. It lashes its body like a whip and launches itself at enemies.",
+        "shiny": [],
+        "evolution": "[ Eternatus ]"
       }
     }
   }

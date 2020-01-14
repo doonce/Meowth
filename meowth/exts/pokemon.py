@@ -69,8 +69,8 @@ class Pokemon():
         Weather during the encounter
     guild: :class:`discord.Guild`
         Guild that created the Pokemon
-    bot: :class:`eevee.core.bot.Eevee`
-        Current instance of Eevee
+    bot: :class:`meowth.bot`
+        Current instance of Meowth
     """
 
     __slots__ = ('name', 'id', 'types', 'emoji', 'bot', 'guild', 'pkmn_list',
@@ -355,34 +355,27 @@ class Pokemon():
         region_str = ""
         shiny_str = ""
         shadow_str = ""
-        if self.region:
-            if self.region == "alolan":
-                region_str = "_61"
-            elif self.region == "galarian":
-                region_str = "_31"
-            if self.form and self.bot.form_dict.get(self.id, {}) and f"{self.region} {str(self.form).lower()}" in self.bot.form_dict[self.id]:
-                form_str = f"{region_str}_{str(list(self.bot.form_dict[self.id].keys()).index(self.region + ' ' + self.form)).zfill(2)}"
-            else:
-                form_str = region_str
-            if self.gender:
-                if self.gender == 'female':
-                    gender_str = "_01"
-                else:
-                    gender_str = "_00"
-        else:
-            if self.form and self.bot.form_dict.get(self.id, {}) and str(self.form).lower() in self.bot.form_dict[self.id]:
-                form_str = f"_{str(list(self.bot.form_dict[self.id].keys()).index(str(self.form))).zfill(2)}"
-            if self.gender:
-                if self.gender == 'female':
-                    gender_str = "_01"
-                else:
-                    gender_str = "_00"
-        if not self.gender and not self.form and not self.region:
-            form_str = form_str + "_00"
+        region_list = ["alolan", "galarian"]
+        if self.gender == "female":
+            gender_str = "_01"
+        elif self.gender == "male":
+            gender_str = "_00"
+        if self.region == "alolan":
+            region_str = "_61"
+        elif self.region == "galarian":
+            region_str = "_31"
+        if self.form:
+            form_list = [x for x in list(self.bot.pkmn_info[self.name.lower()]['forms'].keys()) if x not in region_list]
+            form_index = form_list.index(f"{self.region+' ' if self.region else ''}{str(self.form).lower()}")
+            form_str = f"{region_str}_{str(form_index).zfill(2)}"
+        elif self.region:
+            form_str = region_str
         if self.shiny:
             shiny_str = "_shiny"
         if self.shadow:
             shadow_str = f"_{self.shadow}"
+        if not self.gender and not self.form and not self.region:
+            form_str = "_00"
         return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{gender_str}{form_str}{shiny_str}.png?cache=2")
 
     @property
@@ -573,14 +566,13 @@ class Pokemon():
     def _get_cp(self, level, attack, defense, stamina):
         if not all([self.base_attack, self.base_defense, self.base_stamina]):
             return None
-        if level == 15:
-            cpm = 0.51739395
-        elif level == 20:
-            cpm = 0.5974
-        elif level == 25:
-            cpm = 0.667934
-        elif level == 40:
-            cpm = 0.7903
+        modifier_dict = {
+            "15": 0.51739395,
+            "20": 0.5974,
+            "25": 0.667934,
+            "40": 0.7903
+        }
+        cpm = modifier_dict.get(str(level), 0)
         attack = (self.base_attack + attack)*cpm
         defense = (self.base_defense + defense)*cpm
         stamina = (self.base_stamina + stamina)*cpm
@@ -895,7 +887,6 @@ class Pokedex(commands.Cog):
 
     @staticmethod
     async def generate_lists(bot):
-        available_dict = {}
         form_dict = {}
         form_list = []
         two_words = []
@@ -906,15 +897,14 @@ class Pokedex(commands.Cog):
                 if len(v['forms']) > 1:
                     if form not in form_list:
                         form_list.append(form)
-                    if v['number'] not in available_dict:
-                        available_dict[v['number']] = {}
-                    available_dict[v['number']][form] = True
+                    if v['number'] not in form_dict:
+                        form_dict[v['number']] = {}
+                    form_dict[v['number']][form] = True
             if len(k.split()) > 1:
                 for word in k.split():
                     two_words.append(word)
                     two_words.append(re.sub('[^a-zA-Z0-9]', '', word))
         two_words.extend(['ho', 'oh', 'o'])
-        form_dict = available_dict
         form_dict['list'] = form_list
         form_dict['two_words'] = two_words
         bot.form_dict = form_dict
@@ -1202,7 +1192,7 @@ class Pokedex(commands.Cog):
             confirmation = await channel.send(embed=pkmn_embed)
             await utils.safe_delete(message)
 
-    @commands.command()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def sprite(self, ctx, *, sprite: Pokemon):
         """Displays a pokemon sprite
 
@@ -1210,6 +1200,10 @@ class Pokedex(commands.Cog):
         preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
         preview_embed.set_image(url=sprite.img_url)
         sprite_msg = await ctx.send(embed=preview_embed)
+
+    @sprite.command(name="img", hidden=True)
+    async def sprite_img(self, ctx, *, sprite: Pokemon):
+        sprite_msg = await ctx.send(sprite.img_url)
 
     @commands.group(aliases=['dex'], invoke_without_command=True, case_insensitive=True)
     async def pokedex(self, ctx, *, pokemon: str=None):
