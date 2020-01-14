@@ -631,19 +631,14 @@ class Pokemon():
         small = re.search(r'\bsmall\b|\btiny\b|xs\b', argument, re.IGNORECASE)
         shadow = re.search(r'\bshadow\b', argument, re.IGNORECASE)
         purified = re.search(r'\bpurified\b', argument, re.IGNORECASE)
-        form_list = bot.form_dict['list']
-        try:
-            form_list.remove("none")
-        except ValueError:
-            pass
-        pokemon = False
         match_list = []
+        form_list = []
+        shiny = False
         if shiny:
             match_list.append(shiny.group(0))
             argument = re.sub(shiny.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
             shiny = True
-        else:
-            shiny = False
+        shadow = False
         if shadow:
             match_list.append(shadow.group(0))
             argument = re.sub(shadow.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
@@ -652,8 +647,7 @@ class Pokemon():
             match_list.append(purified.group(0))
             argument = re.sub(purified.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
             shadow = "purified"
-        else:
-            shadow = False
+        gender = None
         if male:
             match_list.append(male.group(0))
             argument = re.sub(male.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
@@ -662,8 +656,7 @@ class Pokemon():
             match_list.append(female.group(0))
             argument = re.sub(female.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
             gender = "female"
-        else:
-            gender = None
+        size = None
         if large:
             size = "XL"
             match_list.append(large.group(0))
@@ -672,32 +665,33 @@ class Pokemon():
             size = "XS"
             match_list.append(small.group(0))
             argument = re.sub(small.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
-        else:
-            size = None
+        region = None
         if alolan:
             region = "alolan"
             match_list.append(alolan.group(0))
-            argument = re.sub(alolan.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
+            argument = re.sub(alolan.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
         elif galarian:
             region = "galarian"
             match_list.append(galarian.group(0))
-            argument = re.sub(galarian.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
-        else:
-            region = None
-        for form in form_list:
-            if form == "alolan" or form == "galarian":
+            argument = re.sub(galarian.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
+        for word in argument.lower().split():
+            if word in bot.pkmn_info.keys():
+                form_list.extend(list(bot.pkmn_info[word]['forms'].keys()))
+        if not form_list:
+            form_list = list(bot.form_dict['list'])
+        argument = argument.replace("ho oh", "ho-oh").replace("jangmo o", "jangmo-o").replace("hakamo o", "hakamo-o").replace("kommo o", "kommo-o")
+        form = None
+        for pkmn_form in form_list:
+            if pkmn_form == "alolan" or pkmn_form == "galarian" or pkmn_form == "none":
                 continue
-            form = re.search(r"\b"+re.escape(form)+r"\b", argument, re.IGNORECASE)
-            if form:
-                match_list.append(form.group(0))
-                argument = re.sub(form.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
-                form = form.group(0).lower().strip()
+            pkmn_form = re.search(r"\b"+re.escape(pkmn_form)+r"\b", argument, re.IGNORECASE)
+            if pkmn_form:
+                match_list.append(pkmn_form.group(0))
+                argument = re.sub(pkmn_form.group(0), '', argument, count=1, flags=re.IGNORECASE).strip()
+                form = pkmn_form
                 break
             else:
                 form = None
-
-        if "ho oh" in argument:
-            argument = argument.replace("ho oh", "ho-oh")
 
         return {"argument":argument, "match_list":match_list, "shiny":shiny, "gender":gender, "size":size, "form":form, "region":region, "shadow":shadow}
 
@@ -1213,10 +1207,68 @@ class Pokedex(commands.Cog):
         if not pokemon and checks.check_hatchedraid(ctx):
             report_dict = await utils.get_report_dict(ctx.bot, ctx.channel)
             pokemon = self.bot.guild_dict[ctx.guild.id].setdefault(report_dict, {}).get(ctx.channel.id, {}).get('pkmn_obj', None)
-        pokemon = await Pokemon.async_get_pokemon(self.bot, pokemon)
+        pokemon = await Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=True)
+        preview_embed = discord.Embed(colour=utils.colour(ctx.guild)).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Pokedex_GOLD_01.png?cache=1')
+        error = False
+        stats = False
         if not pokemon:
-            return await ctx.send(f"Meowth! I'm missing some details! Usage: {ctx.prefix}{ctx.invoked_with} **<pokemon>**", delete_after=30)
-        preview_embed = discord.Embed(colour=utils.colour(ctx.guild))
+            while True:
+                async with ctx.typing():
+                    preview_embed.add_field(name=_('**Search Pokedex**'), value=_("Meowth! Welcome to my pokedex! I'll help you get information for pokemon!\n\nFirst, I'll need to know what **pokemon** you'd like information for. Reply with the name of a **pokemon** with any form, gender, etc. You can reply with **cancel** to stop anytime."), inline=False)
+                    mon_wait = await ctx.channel.send(embed=preview_embed)
+                    def check(reply):
+                        if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:
+                            return True
+                        else:
+                            return False
+                    try:
+                        mon_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        mon_msg = None
+                    await utils.safe_delete(mon_wait)
+                    if not mon_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(mon_msg)
+                    if mon_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    else:
+                        pokemon = None
+                        pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, mon_msg.clean_content)
+                        if not pokemon:
+                            error = _("entered an invalid pokemon")
+                            break
+                        else:
+                            preview_embed.set_thumbnail(url=pokemon.img_url)
+                    preview_embed.clear_fields()
+                    preview_embed.add_field(name=_('**Search Pokedex**'), value=f"Great! Now, would you like extra details for **{str(pokemon)}**, such as moves, height, and weight?\n\nReply with **yes** or **no**. You can reply with **cancel** to stop anytime.", inline=False)
+                    mon_wait = await ctx.channel.send(embed=preview_embed)
+                    try:
+                        mon_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        mon_msg = None
+                    await utils.safe_delete(mon_wait)
+                    if not mon_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(mon_msg)
+                    if mon_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif "y" in mon_msg.clean_content.lower():
+                        stats = True
+                        break
+                    elif "n" in mon_msg.clean_content.lower():
+                        break
+        if error:
+            preview_embed.clear_fields()
+            preview_embed.add_field(name=_('**Pokedex Cancelled**'), value=_("Meowth! Your search has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await ctx.channel.send(embed=preview_embed, delete_after=10)
+            return
+        preview_embed.clear_fields()
         pokemon.size = None
         key_list = []
         forms = [x.title() for x in ctx.bot.pkmn_info[pokemon.name.lower()]['forms'].keys()]
@@ -1255,7 +1307,7 @@ class Pokedex(commands.Cog):
             preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.mythical else 'Legendary'}")
         if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
             preview_embed.add_field(name=f"{pokemon.name.title()} CP by Level (Raids / Research):", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**", inline=False)
-        if "stats" in ctx.invoked_with:
+        if "stats" in ctx.invoked_with or stats:
             if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
                 preview_embed.add_field(name="Base Stats", value=f"Attack: **{pokemon.base_attack}** | Defense: **{pokemon.base_defense}** | Stamina: **{pokemon.base_stamina}**\n", inline=False)
             field_value = ""
