@@ -3333,6 +3333,7 @@ class Raid(commands.Cog):
         manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
         yes_emoji = self.bot.custom_emoji.get('answer_yes', u'\U00002705')
         no_emoji = self.bot.custom_emoji.get('answer_no', u'\U0000274e')
+        reaction = None
         if member.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
             if can_manage and member != ctx.author:
                 self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)

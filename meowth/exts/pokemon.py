@@ -119,7 +119,7 @@ class Pokemon():
         self.height = self.game_template.get('pokemonSettings', {}).get('pokedexHeightM', None)
         self.weight = self.game_template.get('pokemonSettings', {}).get('pokedexWeightKg', None)
         self.evolves = self.game_template.get('pokemonSettings', {}).get('evolutionIds', False) or self.game_template.get('pokemonSettings', {}).get('evolutionBranch', False)
-        self.evolve_candy = self.game_template.get('pokemonSettings', {}).get('candyToEvolve', False) or self.game_template.get('pokemonSettings', {}).get('evolutionBranch', [{}])[0].get('candyCost', False)
+        self.evolve_candy = self.game_template.get('pokemonSettings', {}).get('evolutionBranch', [{}])[0].get('candyCost', False) or self.game_template.get('pokemonSettings', {}).get('candyToEvolve', False)
         self.buddy_distance = self.game_template.get('pokemonSettings', {}).get('kmBuddyDistance', None)
         self.research_cp = f"{self._get_cp(15, 10, 10, 10)}-{self._get_cp(15, 15, 15, 15)}"
         self.raid_cp = f"{self._get_cp(20, 10, 10, 10)}-{self._get_cp(20, 15, 15, 15)}"
@@ -1298,19 +1298,19 @@ class Pokedex(commands.Cog):
                 form = "Normal"
             form_str = f"{form} {form_key}"
             form_list.append(form_str.strip())
-        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji} - {('').join(pokemon.boost_weather)}", value=pokemon.pokedex, inline=False)
+        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji} - {('').join(pokemon.boost_weather)}{' - *Legendary*' if pokemon.legendary else ''}{' - *Mythical*' if pokemon.mythical else ''}", value=pokemon.pokedex, inline=False)
         if len(forms) > 1 or key_list:
             preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
         if len(pokemon.evolution.split("→")) > 1:
             preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=pokemon.evolution.replace(pokemon.name.title(), f"**{pokemon.name.title()}**"), inline=False)
-        if pokemon.legendary or pokemon.mythical:
-            preview_embed.add_field(name=f"{pokemon.name.title()} Rarity:", value=f"{'Mythical' if pokemon.mythical else 'Legendary'}")
         if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
             preview_embed.add_field(name=f"{pokemon.name.title()} CP by Level (Raids / Research):", value=f"15: **{pokemon.research_cp}** | 20: **{pokemon.raid_cp}** | 25: **{pokemon.boost_raid_cp}** | 40: **{pokemon.max_cp}**", inline=False)
         if "stats" in ctx.invoked_with or stats:
-            if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
-                preview_embed.add_field(name="Base Stats", value=f"Attack: **{pokemon.base_attack}** | Defense: **{pokemon.base_defense}** | Stamina: **{pokemon.base_stamina}**\n", inline=False)
+            charge_moves = []
+            quick_moves = []
             field_value = ""
+            if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
+                field_value += f"Base Stats: Attack: **{pokemon.base_attack}** | Defense: **{pokemon.base_defense}** | Stamina: **{pokemon.base_stamina}**\n"
             if pokemon.height and pokemon.weight:
                 field_value += f"Height: **{round(pokemon.height, 3)}m** | Weight: **{round(pokemon.weight, 3)}kg**\n"
             if pokemon.evolves:
@@ -1323,7 +1323,8 @@ class Pokedex(commands.Cog):
                 quick_moves = [f"{x.title()} {utils.type_to_emoji(self.bot, utils.get_move_type(self.bot, x))}" for x in pokemon.quick_moves]
             if charge_moves or quick_moves:
                 field_value += f"{'Quick Moves: **'+(', ').join(quick_moves)+'**' if quick_moves else ''}\n{'Charge Moves: **'+(', ').join(charge_moves)+'**' if charge_moves else ''}"
-            preview_embed.add_field(name="Other Info:", value=field_value, inline=False)
+            if field_value:
+                preview_embed.add_field(name="Other Info:", value=field_value, inline=False)
         preview_embed.set_thumbnail(url=pokemon.img_url)
         if key_list:
             preview_embed.set_footer(text=(' | ').join(key_list))
