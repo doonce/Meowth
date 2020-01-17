@@ -25,9 +25,11 @@ class Research(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.research_cleanup.start()
+        self.auto_res_json.start()
 
     def cog_unload(self):
         self.research_cleanup.cancel()
+        self.auto_res_json.cancel()
 
     @tasks.loop(seconds=0)
     async def research_cleanup(self, loop=True):
@@ -233,7 +235,7 @@ class Research(commands.Cog):
                                 self.bot.guild_dict[ctx.guild.id]['questreport_dict'][message.id]['reward'] = pokemon.name.lower()
                                 success.append("reward")
                             else:
-                                __, item = await utils.get_item(ctx, value.replace("reward", "").strip())
+                                __, item = await utils.get_item(value.replace("reward", "").strip())
                                 if not item:
                                     item = value.replace("reward", "").strip()
                                 self.bot.guild_dict[ctx.guild.id]['questreport_dict'][message.id]['reward'] = item
@@ -288,7 +290,7 @@ class Research(commands.Cog):
         research_embed = await self.make_research_embed(ctx, pokemon, stop_info, location, loc_url, quest, reward)
         if pokemon:
             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
-        __, item = await utils.get_item(ctx, reward)
+        __, item = await utils.get_item(reward)
         content = message.content.splitlines()
         content[0] = f"Meowth! {pokemon.name.title() + ' ' if pokemon else ''}Field Research reported by {ctx.author.mention}! Details: {location}"
         content = ('\n').join(content)
@@ -326,6 +328,71 @@ class Research(commands.Cog):
         dm_dict = await self.send_dm_messages(ctx, pokemon, location, item, copy.deepcopy(research_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][message.id]['dm_dict'] = dm_dict
 
+    @tasks.loop(seconds=0)
+    async def auto_res_json(self):
+        tsr_quests = []
+        tsr_quest_dict = {}
+        added_categories = []
+        added_quests = []
+        to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+        to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
+        to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
+        to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
+        await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get("https://thesilphroad.com/research-tasks") as resp:
+                html = await resp.text()
+        parse_list = re.split('<div|<span|<p', str(html))
+        for line in parse_list:
+            if "Tasks</h3>" in line or "class=\"taskText\">" in line or "class=\"task-reward" in line:
+                for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "<h3>", "</p>", ">", "unconfirmed", "pokemon", "shinyAvailable",]:
+                    line = line.replace(replacement, "").replace("_", " ").strip()
+                tsr_quests.append(line.strip())
+        for index, item in enumerate(tsr_quests):
+            if len(item.split()) > 2:
+                continue
+            __, item_name = await utils.get_item(item)
+            if item_name:
+                tsr_quests[index] = item_name
+        for item in tsr_quests:
+            if "Tasks" in item:
+                tsr_quest_dict[item] = {}
+                added_categories.append(item)
+        for item in tsr_quests:
+            if len(item.split('-')) > 1 and (item.split('-')[0].lower() in self.bot.pkmn_list or item.split('-')[1].lower() in self.bot.pkmn_list):
+                continue
+            if item in added_categories or item.isdigit() or item.lower() in self.bot.item_list:
+                continue
+            for category in tsr_quest_dict.keys():
+                tsr_quest_dict[category][item] = []
+                if item not in added_quests:
+                    added_quests.append(item)
+        for item in tsr_quests:
+            if item in added_categories:
+                current_category = item
+                tsr_quest_dict[item] = {}
+                continue
+            elif item in added_quests:
+                current_quest = item
+                tsr_quest_dict[current_category][item] = []
+                continue
+            else:
+                if not item in self.bot.item_list and not item in added_quests and not item in added_categories:
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item, allow_digits=True)
+                    if pokemon:
+                        shiny_str = ""
+                        if pokemon and "research" in pokemon.shiny_available:
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                        item = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
+                tsr_quest_dict[current_category][current_quest].append(item)
+        if tsr_quest_dict:
+            with open(os.path.join('data', 'quest_info.json'), 'w') as fd:
+                json.dump(tsr_quest_dict, fd, indent=2, separators=(', ', ': '))
+
+    @auto_res_json.before_loop
+    async def before_auto_res_json(self):
+        await self.bot.wait_until_ready()
+
     @commands.command()
     @checks.is_manager()
     async def res_json(self, ctx):
@@ -347,7 +414,7 @@ class Research(commands.Cog):
             for index, item in enumerate(tsr_quests):
                 if len(item.split()) > 2:
                     continue
-                __, item_name = await utils.get_item(ctx, item)
+                __, item_name = await utils.get_item(item)
                 if item_name:
                     tsr_quests[index] = item_name
             for item in tsr_quests:
@@ -419,7 +486,6 @@ class Research(commands.Cog):
                 confirmation = await ctx.send(embed=research_embed)
                 with open(os.path.join('data', 'quest_info.json'), 'w') as fd:
                     json.dump(tsr_quest_dict, fd, indent=2, separators=(', ', ': '))
-                self.bot.quest_info = copy.deepcopy(tsr_quest_dict)
 
     @commands.group(aliases=['res'], invoke_without_command=True, case_insensitive=True)
     @checks.allowresearchreport()
@@ -547,7 +613,7 @@ class Research(commands.Cog):
         if res_pokemon:
             research_embed.set_thumbnail(url=res_pokemon.img_url)
         else:
-            thumbnail_url, item = await utils.get_item(ctx, reward)
+            thumbnail_url, item = await utils.get_item(reward)
             if item:
                 research_embed.set_thumbnail(url=thumbnail_url)
         research_embed.add_field(name=_("**Pokestop:**"), value=f"{string.capwords(location, ' ')} {poi_info}", inline=True)
@@ -595,7 +661,7 @@ class Research(commands.Cog):
         if pokemon:
             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
         else:
-            __, item = await utils.get_item(ctx, reward)
+            __, item = await utils.get_item(reward)
         ctx.resreportmsg = await ctx.channel.send(research_msg, embed=research_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)

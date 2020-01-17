@@ -28,6 +28,7 @@ class Raid(commands.Cog):
         self.bot = bot
         self.channel_cleanup.start()
         self.lobby_cleanup.start()
+        self.auto_raid_json.start()
         self.bot.active_channels = []
 
     def cog_unload(self):
@@ -36,6 +37,7 @@ class Raid(commands.Cog):
                 task.cancel()
         self.channel_cleanup.cancel()
         self.lobby_cleanup.cancel()
+        self.auto_raid_json.cancel()
 
     """
     Event Handlers
@@ -931,7 +933,7 @@ class Raid(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         gym_info = ""
         if gym_matching_cog and not raid_coordinates:
-            gym_info, raid_locagion, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_location, "raid", dupe_check=False, autocorrect=False)
+            gym_info, raid_location, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_location, "raid", dupe_check=False, autocorrect=False)
             if gym_url:
                 raid_gmaps_link = gym_url
         if not raid_location and not raid_coordinates:
@@ -1018,6 +1020,62 @@ class Raid(commands.Cog):
     """
     Admin Commands
     """
+
+    @tasks.loop(seconds=0)
+    async def auto_raid_json(self):
+        to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+        to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
+        to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
+        to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
+        await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+        tsr_bosses = []
+        tsr_boss_dict = {}
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get("https://thesilphroad.com/raid-bosses") as resp:
+                html = await resp.text()
+                for line in html.splitlines():
+                    if "Raids</h4>" in line or "<h4>Tier" in line or "<div class=\"boss-name\">" in line:
+                        tsr_bosses.append(line.strip())
+        if tsr_bosses:
+            for index, item in enumerate(tsr_bosses):
+                tsr_bosses[index] = item.replace("<h4>", "").replace("</h4>", "").replace("<div class=\"boss-name\">", "").replace("</div>", "").replace("Raids", "").replace("Tier", "").strip()
+        if tsr_bosses:
+            for item in tsr_bosses:
+                if item.isdigit() or item == "EX":
+                    tsr_boss_dict[item] = []
+                    current_list = tsr_boss_dict[item]
+                else:
+                    current_list.append(item)
+        if tsr_boss_dict:
+            with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
+                data = json.load(fd)
+            for raid_level in tsr_boss_dict:
+                data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
+            new_raid_dict = copy.deepcopy(tsr_boss_dict)
+            with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                json.dump(data, fd, indent=2, separators=(', ', ': '))
+            await pkmn_class.Pokedex.generate_lists(self.bot)
+            self.bot.raid_dict = await utils.get_raid_dict(self.bot)
+            self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
+            for guild in list(self.bot.guilds):
+                for report_dict in self.bot.channel_report_dicts:
+                    for channel_id in list(self.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys()):
+                        for raid_level in new_raid_dict:
+                            if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(raid_level):
+                                for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
+                                    interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id].get('interest', []))
+                                    new_bosses = list(set(new_raid_dict[raid_level]) - set(old_raid_dict[raid_level]))
+                                    new_bosses = [x.lower() for x in new_bosses]
+                                    self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
+                                self.bot.guild_dict[guild.id][report_dict][channel_id]['pokemon'] = ''
+                                self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
+                                self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
+                                channel = self.bot.get_channel(channel_id)
+                                await self._edit_party(channel)
+
+    @auto_raid_json.before_loop
+    async def before_auto_raid_json(self):
+        await self.bot.wait_until_ready()
 
     @commands.command()
     @checks.is_manager()

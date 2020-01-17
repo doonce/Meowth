@@ -681,7 +681,7 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         if len(added_list) == 1:
-            thumbnail_url, item = await utils.get_item(ctx, added_list[0])
+            thumbnail_url, item = await utils.get_item(added_list[0])
             want_embed.set_thumbnail(url=thumbnail_url)
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
@@ -1961,7 +1961,7 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         if len(removed_list) == 1:
-            thumbnail_url, item = await utils.get_item(ctx, removed_list[0])
+            thumbnail_url, item = await utils.get_item(removed_list[0])
             want_embed.set_thumbnail(url=thumbnail_url)
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
         unwant_confirmation = await channel.send(embed=want_embed)

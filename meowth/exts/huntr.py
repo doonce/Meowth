@@ -9,6 +9,7 @@ import urllib
 import textwrap
 import logging
 import string
+import os
 import json
 import random
 import functools
@@ -851,9 +852,41 @@ class Huntr(commands.Cog):
         report_details['weather'] = weather
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
-            test_gym = await gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
-            if test_gym:
-                raid_details = test_gym
+            gym_info, raid_location, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid", dupe_check=False, autocorrect=False)
+            if gym_url:
+                raid_details = raid_location
+            else:
+                pokestops = gym_matching_cog.get_stops(ctx.guild.id)
+                if raid_location in list(pokestops.keys()):
+                    with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
+                        data = json.load(fd)
+                    convert_dict = {}
+                    poi_data_coords = data[str(ctx.guild.id)].get(raid_details, {}).get('coordinates')
+                    poi_data_alias = data[str(ctx.guild.id)].get(raid_details, {}).get('alias')
+                    poi_data_notes = data[str(ctx.guild.id)].get(raid_details, {}).get('notes')
+                    convert_dict[raid_details] = {"coordinates": poi_data_coords, "alias": poi_data_alias, "notes": poi_data_alias}
+                    del data[str(ctx.guild.id)][raid_details]
+                    for k in list(data[str(ctx.guild.id)].keys()):
+                        if data[str(ctx.guild.id)][k].get('alias', None) == raid_details:
+                            convert_dict[k] = {"coordinates": data[str(ctx.guild.id)][k].get('coordinates'), "alias": data[str(ctx.guild.id)][k].get('alias'), "notes":data[str(ctx.guild.id)][k].get('notes')}
+                            del data[str(ctx.guild.id)][k]
+                    with open(os.path.join('data', 'stop_data.json'), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                    with open(os.path.join('data', 'gym_data.json'), 'r') as fd:
+                        data = json.load(fd)
+                    data[str(ctx.guild.id)] = {**data[str(ctx.guild.id)], **convert_dict}
+                    with open(os.path.join('data', 'gym_data.json'), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                else:
+                    with open(os.path.join('data', 'gym_data.json'), 'r') as fd:
+                        data = json.load(fd)
+                    add_gym_dict = {}
+                    add_gym_dict[raid_details] = {"coordinates":raid_coordinates}
+                    data[str(ctx.ctx.guild.id)] = {**data[str(ctx.ctx.guild.id)], **add_gym_dict}
+                    with open(os.path.join('data', 'gym_data.json'), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                gym_matching_cog.gym_data = gym_matching_cog.init_json()
+                gym_matching_cog.stop_data = gym_matching_cog.init_stop_json()
         raid_embed = await raid_cog.make_raid_embed(ctx, report_details, raidexp)
         if not raid_embed:
             return
@@ -966,9 +999,39 @@ class Huntr(commands.Cog):
             weather = await raid_cog.auto_weather(ctx, raid_coordinates)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
-            test_gym = await gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), message.guild.id)
-            if test_gym:
-                raid_details = test_gym
+            gym_info, raid_location, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid", dupe_check=False, autocorrect=False)
+            if gym_url:
+                raid_details = raid_location
+            else:
+                pokestops = gym_matching_cog.get_stops(ctx.guild.id)
+                if raid_location in list(pokestops.keys()):
+                    with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
+                        data = json.load(fd)
+                    convert_dict = {}
+                    poi_data_coords = data[str(ctx.guild.id)].get(raid_details, {}).get('coordinates')
+                    poi_data_alias = data[str(ctx.guild.id)].get(raid_details, {}).get('alias')
+                    poi_data_notes = data[str(ctx.guild.id)].get(raid_details, {}).get('notes')
+                    convert_dict[raid_details] = {"coordinates": poi_data_coords, "alias": poi_data_alias, "notes": poi_data_alias}
+                    del data[str(ctx.guild.id)][raid_details]
+                    for k in list(data[str(ctx.guild.id)].keys()):
+                        if data[str(ctx.guild.id)][k].get('alias', None) == raid_details:
+                            convert_dict[k] = {"coordinates": data[str(ctx.guild.id)][k].get('coordinates'), "alias": data[str(ctx.guild.id)][k].get('alias'), "notes":data[str(ctx.guild.id)][k].get('notes')}
+                            del data[str(ctx.guild.id)][k]
+                    with open(os.path.join('data', 'stop_data.json'), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                    with open(os.path.join('data', 'gym_data.json'), 'r') as fd:
+                        data = json.load(fd)
+                    data[str(ctx.guild.id)] = {**data[str(ctx.guild.id)], **convert_dict}
+                    with open(os.path.join('data', 'gym_data.json'), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                else:
+                    with open(os.path.join('data', 'gym_data.json'), 'r') as fd:
+                        data = json.load(fd)
+                    add_gym_dict = {}
+                    add_gym_dict[raid_details] = {"coordinates":raid_coordinates}
+                    data[str(ctx.ctx.guild.id)] = {**data[str(ctx.ctx.guild.id)], **add_gym_dict}
+                    with open(os.path.join('data', 'gym_data.json'), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
         raid_embed = await raid_cog.make_raid_embed(ctx, report_details, raidexp)
         if not raid_embed:
             return
@@ -1055,14 +1118,19 @@ class Huntr(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
-            nearest_stop = await gym_matching_cog.find_nearest_stop((gps.split(",")[0],gps.split(",")[1]), guild.id)
-            if nearest_stop:
-                location = nearest_stop
-            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "research")
+            stop_info, stop_location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "research", dupe_check=False, autocorrect=False)
             if stop_url:
-                loc_url = stop_url
-        if not location:
-            return
+                location = stop_location
+            else:
+                with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
+                    data = json.load(fd)
+                add_stop_dict = {}
+                add_stop_dict[location] = {"coordinates":gps, "alias":None, "notes":None}
+                data[str(ctx.guild.id)] = {**data[str(ctx.guild.id)], **add_stop_dict}
+                with open(os.path.join('data', 'stop_data.json'), 'w') as fd:
+                    json.dump(data, fd, indent=2, separators=(', ', ': '))
+                gym_matching_cog.gym_data = gym_matching_cog.init_json()
+                gym_matching_cog.stop_data = gym_matching_cog.init_stop_json()
         await research_cog.send_research(ctx, location, quest, reward)
 
     async def huntr_lure(self, ctx, report_details):
@@ -1279,7 +1347,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send('!alarm {"type":"research", "pokestop":"Marilla Park", "gps":"39.645742,-79.96908", "quest":"Catch 5 Electric Pokemon", "reward":"Pikachu Encounter"}')
+        huntrmessage = await ctx.channel.send('!alarm {"type":"research", "pokestop":"Disney Park", "gps":"39.645742,-79.96908", "quest":"Catch 5 Electric Pokemon", "reward":"Pikachu Encounter"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

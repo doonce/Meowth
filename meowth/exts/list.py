@@ -1078,8 +1078,7 @@ class Listing(commands.Cog):
                 try:
                     offer_channel = self.bot.get_channel(
                         target_trades[offer_id]['report_channel_id'])
-                    offer_message = await offer_channel.fetch_message(offer_id)
-                    offer_url = offer_message.jump_url
+                    offer_url = f"https://discordapp.com/channels/{ctx.guild.id}/{ctx.channel.id}/{offer_id}"
                 except:
                     continue
                 lister = ctx.guild.get_member(target_trades[offer_id]['lister_id'])
@@ -1581,14 +1580,14 @@ class Listing(commands.Cog):
             pokealarmmsg = ""
             if pokealarm_dict[pokealarmid]['report_channel'] == ctx.message.channel.id:
                 try:
-                    pokealarmreportmsg = await ctx.message.channel.fetch_message(pokealarmid)
+                    jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{ctx.channel.id}/{pokealarmid}"
                     pokealarm_expire = datetime.datetime.utcfromtimestamp(pokealarm_dict[pokealarmid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     pokealarmmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('pokealarm_bullet', u'\U0001F539')))
                     if pokealarm_dict[pokealarmid]['reporttype'] == "raid":
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokealarm_dict[pokealarmid]['pokemon'])
-                        pokealarmmsg += f"**Boss**: {str(pokemon)} {pokemon.emoji} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Expires**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({pokealarmreportmsg.jump_url})"
+                        pokealarmmsg += f"**Boss**: {str(pokemon)} {pokemon.emoji} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Expires**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({jump_url})"
                     elif pokealarm_dict[pokealarmid]['reporttype'] == "egg":
-                        pokealarmmsg += f"**Level**: {pokealarm_dict[pokealarmid]['level']} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Hatches**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({pokealarmreportmsg.jump_url})"
+                        pokealarmmsg += f"**Level**: {pokealarm_dict[pokealarmid]['level']} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Hatches**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({jump_url})"
                     listing_dict[pokealarmid] = {
                         "message":pokealarmmsg,
                         "expire":pokealarm_expire

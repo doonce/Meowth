@@ -163,7 +163,7 @@ class GymMatching(commands.Cog):
             async with ctx.typing():
                 if checks.is_owner_check(ctx) and len(self.bot.guilds) > 1:
                     poi_embed.clear_fields()
-                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! I'll help you edit a POI!\n\nFirst, I'll need to know what **guild** you would like to edit. By default I will edit **{guild.name}**, would you like to continue with this guild?\n\nReply with **Y** to stay on **{guild.name}** or reply with any of the {len(self.bot.guilds)} **Guild IDs** that I have access to. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! I'll help you edit a POI!\n\nFirst, I'll need to know what **guild** you would like to edit. By default I will edit **{guild.name}**, would you like to continue with this guild?\n\nReply with **yes** to stay on **{guild.name}** or reply with any of the {len(self.bot.guilds)} **Guild IDs** that I have access to.\n\n{(', ').join(['**'+str(x.id)+'** - '+x.name for x in self.bot.guilds])}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
                     poi_guild_wait = await channel.send(embed=poi_embed)
                     try:
                         poi_guild_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -178,7 +178,7 @@ class GymMatching(commands.Cog):
                     if poi_guild_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
-                    elif poi_guild_msg.clean_content.lower() == "y":
+                    elif "y" in poi_guild_msg.clean_content.lower():
                         guild = ctx.guild
                     elif not poi_guild_msg.clean_content.isdigit() or int(poi_guild_msg.clean_content) not in [x.id for x in self.bot.guilds]:
                         error = _("entered an invalid guild")
@@ -211,11 +211,11 @@ class GymMatching(commands.Cog):
                     else:
                         poi_target = poi_type_msg.clean_content.lower()
                     first = False
-                if action and any([action.lower() == "add", action.lower() == "remove", action.lower() == "list"]):
+                if action and any([action.lower() == "add", action.lower() == "remove", action.lower() == "list", action.lower() == "convert"]):
                     poi_action = action
-                elif not action or (action and not any([action.lower() == "add", action.lower() == "remove"])):
+                elif not action or (action and not any([action.lower() == "add", action.lower() == "remove", action.lower() == "convert"])):
                     poi_embed.clear_fields()
-                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"{'Meowth! I will help you edit a POI!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **action** you'd like to use. Reply with **add**, **remove**, or **list**. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"{'Meowth! I will help you edit a POI!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **action** you'd like to use. Reply with **add**, **remove**, **convert**, or **list**. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_action_wait = await channel.send(embed=poi_embed)
                     try:
                         poi_action_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -230,7 +230,7 @@ class GymMatching(commands.Cog):
                     if poi_action_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
-                    elif not any([poi_action_msg.clean_content.lower() == "add", poi_action_msg.clean_content.lower() == "remove", poi_action_msg.clean_content.lower() == "list"]):
+                    elif not any([poi_action_msg.clean_content.lower() == "add", poi_action_msg.clean_content.lower() == "remove", poi_action_msg.clean_content.lower() == "list", poi_action_msg.clean_content.lower() == "convert"]):
                         error = _("entered an invalid option")
                         break
                     else:
@@ -294,6 +294,33 @@ class GymMatching(commands.Cog):
                     for k in list(data[str(guild.id)].keys()):
                         if data[str(guild.id)][k].get('alias', None) == poi_data_name:
                             del data[str(guild.id)][k]
+                    with open(os.path.join('data', file_name), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                    break
+                elif poi_target and poi_action == "convert":
+                    convert_dict = {}
+                    poi_data_name = list(data[str(guild.id)].keys())[data_keys.index(poi_name.lower())]
+                    poi_data_coords = data[str(guild.id)].get(poi_data_name, {}).get('coordinates')
+                    poi_data_alias = data[str(guild.id)].get(poi_data_name, {}).get('alias')
+                    poi_data_notes = data[str(guild.id)].get(poi_data_name, {}).get('notes')
+                    convert_dict[poi_data_name] = {"coordinates": poi_data_coords, "alias": poi_data_alias, "notes": poi_data_alias}
+                    del data[str(guild.id)][poi_data_name]
+                    for k in list(data[str(guild.id)].keys()):
+                        if data[str(guild.id)][k].get('alias', None) == poi_data_name:
+                            convert_dict[k] = {"coordinates": data[str(guild.id)][k].get('coordinates'), "alias": data[str(guild.id)][k].get('alias'), "notes":data[str(guild.id)][k].get('notes')}
+                            del data[str(guild.id)][k]
+                    with open(os.path.join('data', file_name), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                    if poi_target == "stop":
+                        file_name = 'gym_data.json'
+                    else:
+                        file_name = 'stop_data.json'
+                    try:
+                        with open(os.path.join('data', file_name), 'r') as fd:
+                            data = json.load(fd)
+                    except:
+                        data = {}
+                    data[str(guild.id)] = {**data[str(guild.id)], **convert_dict}
                     with open(os.path.join('data', file_name), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
                     break
@@ -377,7 +404,7 @@ class GymMatching(commands.Cog):
             await utils.safe_delete(message)
         else:
             poi_embed.clear_fields()
-            poi_embed.add_field(name=_('**POI Edit Completed**'), value=f"Meowth! Your edit completed successfully. {poi_name.title()} has been {'added' if poi_action == 'add' else 'removed'} {'to' if poi_action == 'add' else 'from'} {poi_target}s.", inline=False)
+            poi_embed.add_field(name=_('**POI Edit Completed**'), value=f"Meowth! Your edit completed successfully. {poi_name.title()} has been {poi_action}{'d' if poi_action == 'remove' else 'ed'} {'from' if poi_action in ['convert', 'remove'] else 'to'} {poi_target}s.", inline=False)
             confirmation = await channel.send(embed=poi_embed)
             await utils.safe_delete(message)
             self.gym_data = self.init_json()

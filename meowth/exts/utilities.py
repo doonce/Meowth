@@ -487,7 +487,7 @@ async def get_object(ctx, snowflake, return_type="object"):
     else:
         return object
 
-async def get_item(ctx, search_term):
+async def get_item(search_term):
     """Given search_term, returns thumbnail_url, item"""
     dust = re.search(r'(?i)dust', search_term)
     candy = re.search(r'(?i)candy|(?i)candies', search_term)
@@ -524,6 +524,7 @@ async def get_item(ctx, search_term):
     team_medalion = re.search(r'(?i)rocket radar', search_term)
     egg_incubator = re.search(r'(?i)incubator', search_term)
     super_incubator = re.search(r'(?i)super.*incubator', search_term)
+    poffin = re.search(r'(?i)poffin', search_term)
     if dust:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/stardust_painted.png?cache=1", "stardust"
     elif candy:
@@ -594,6 +595,8 @@ async def get_item(ctx, search_term):
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/EggIncubatorEmpty.png?cache=1", "egg incubator"
     elif super_incubator:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/EggIncubatorSuper_Empty.png?cache=1", "super incubator"
+    elif poffin:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0704.png?cache=1", "poffin"
     else:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/MysteryItem.png?cache=1", None
 
