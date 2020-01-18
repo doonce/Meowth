@@ -1030,6 +1030,9 @@ class Raid(commands.Cog):
         await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
         tsr_bosses = []
         tsr_boss_dict = {}
+        old_raid_dict = {}
+        for raid_level in self.bot.raid_info['raid_eggs']:
+            old_raid_dict[raid_level] = self.bot.raid_info['raid_eggs'][raid_level]['pokemon']
         with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
             data = json.load(fd)
         async with aiohttp.ClientSession() as sess:
@@ -1285,6 +1288,9 @@ class Raid(commands.Cog):
         tsr_bosses = []
         tsr_boss_dict = {}
         msg = ""
+        old_raid_dict = {}
+        for raid_level in self.bot.raid_info['raid_eggs']:
+            old_raid_dict[raid_level] = self.bot.raid_info['raid_eggs'][raid_level]['pokemon']
         async with ctx.typing():
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
@@ -1366,6 +1372,9 @@ class Raid(commands.Cog):
                                         self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
                                         channel = self.bot.get_channel(channel_id)
                                         await self._edit_party(channel)
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**Boss Edit Successful**'), value=_("Meowth! Your edit was successful!."), inline=False)
+                    return await ctx.send(embed=raid_embed, delete_after=10)
                 else:
                     raid_embed.clear_fields()
                     raid_embed.add_field(name=_('**Boss Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you did something invalid! Retry when you're ready."), inline=False)
