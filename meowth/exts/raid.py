@@ -1120,15 +1120,15 @@ class Raid(commands.Cog):
         for raid_level in self.bot.raid_info['raid_eggs']:
             old_raid_dict[raid_level] = self.bot.raid_info['raid_eggs'][raid_level]['pokemon']
         if level.lower() == "list" and not new_list:
-            return await ctx.invoke(self.bot.get_command('raid_json2 list'))
+            return await ctx.invoke(self.bot.get_command('raid_json list'))
         elif level.lower() == "tsr" or new_list.lower() == "tsr" or action == "tsr":
-            return await ctx.invoke(self.bot.get_command('raid_json2 tsr'))
+            return await ctx.invoke(self.bot.get_command('raid_json tsr'))
         elif (level.isdigit() and level in self.bot.raid_info['raid_eggs']) or level.lower() == "ex":
             edit_level = level.lower()
             if new_list.lower() == "list":
-                return await ctx.invoke(self.bot.get_command('raid_json2 list'), level=edit_level)
+                return await ctx.invoke(self.bot.get_command('raid_json list'), level=edit_level)
             elif new_list.lower() == "overwrite":
-                return await ctx.invoke(self.bot.get_command('raid_json2 overwrite'), level=edit_level)
+                return await ctx.invoke(self.bot.get_command('raid_json overwrite'), level=edit_level)
             else:
                 edit_list = new_list.split(',')
                 edit_list = [x.strip() for x in edit_list]
@@ -1155,9 +1155,9 @@ class Raid(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif boss_level_msg.clean_content.lower() == "list":
-                        return await ctx.invoke(self.bot.get_command('raid_json2 list'))
+                        return await ctx.invoke(self.bot.get_command('raid_json list'))
                     elif boss_level_msg.clean_content.lower() == "tsr":
-                        return await ctx.invoke(self.bot.get_command('raid_json2 tsr'))
+                        return await ctx.invoke(self.bot.get_command('raid_json tsr'))
                     elif not any([boss_level_msg.clean_content.lower() == "ex", boss_level_msg.clean_content.isdigit()]):
                         error = _("entered an invalid option")
                         break
@@ -1185,9 +1185,9 @@ class Raid(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif boss_list_msg.clean_content.lower() == "list":
-                        return await ctx.invoke(self.bot.get_command('raid_json2 list'), level=edit_level)
+                        return await ctx.invoke(self.bot.get_command('raid_json list'), level=edit_level)
                     elif boss_list_msg.clean_content.lower() == "overwrite":
-                        return await ctx.invoke(self.bot.get_command('raid_json2 overwrite'), level=edit_level)
+                        return await ctx.invoke(self.bot.get_command('raid_json overwrite'), level=edit_level)
                     else:
                         new_list = re.sub(r'\[|\]|\'|\"', '', str(boss_list_msg.clean_content.lower())).split(',')
                         edit_list = [x.strip() for x in new_list]
