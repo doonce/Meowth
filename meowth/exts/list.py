@@ -196,7 +196,7 @@ class Listing(commands.Cog):
                         list_message = await channel.send(f"Meowth! No active channels!", embed=discord.Embed(colour=ctx.guild.me.colour, description=_('Report a new one with **!raid <name> <location> [weather] [timer]**')))
                         list_messages.append(list_message.id)
                     else:
-                        listmsg += _("**Here's the current channels for {0}**\n\n").format(channel.mention)
+                        listmsg += f"**Here are the {'active' if 'all' not in ctx.message.content.lower() else 'current'} channels for {channel.mention}**{'. You can use **'+ctx.prefix+'list all** to see all channels!' if 'all' not in ctx.message.content.lower() else ''}\n\n"
                         paginator = commands.Paginator(prefix="", suffix="")
                         index = 0
                         for line in raid_list.splitlines():

@@ -1030,6 +1030,8 @@ class Raid(commands.Cog):
         await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
         tsr_bosses = []
         tsr_boss_dict = {}
+        with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
+            data = json.load(fd)
         async with aiohttp.ClientSession() as sess:
             async with sess.get("https://thesilphroad.com/raid-bosses") as resp:
                 html = await resp.text()
@@ -1046,6 +1048,19 @@ class Raid(commands.Cog):
                     current_list = tsr_boss_dict[item]
                 else:
                     current_list.append(item)
+        for raid_level in tsr_boss_dict:
+            if not data['raid_eggs'][str(raid_level)].get('overwrites', {}):
+                continue
+            for overwrite in copy.deepcopy(data['raid_eggs'][str(raid_level)]['overwrites']):
+                if time.time() >= data['raid_eggs'][str(raid_level)]['overwrites'][overwrite]['replace_until']:
+                    del data['raid_eggs'][str(raid_level)]['overwrites'][overwrite]
+            with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                json.dump(data, fd, indent=2, separators=(', ', ': '))
+            for index, pokemon in enumerate(tsr_boss_dict[raid_level]):
+                if pokemon in self.bot.raid_info['raid_eggs'][str(raid_level)].get('overwrites', {}):
+                    replace_with = self.bot.raid_info['raid_eggs'][str(raid_level)]['overwrites'][pokemon]['replace_with']
+                    tsr_boss_dict[raid_level][index] = replace_with
+            tsr_boss_dict[raid_level] = [x for x in tsr_boss_dict[raid_level] if x]
         if tsr_boss_dict:
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
@@ -1077,9 +1092,9 @@ class Raid(commands.Cog):
     async def before_auto_raid_json(self):
         await self.bot.wait_until_ready()
 
-    @commands.command()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     @checks.is_manager()
-    async def raid_json(self, ctx, level=None, *, new_list=None):
+    async def raid_json(self, ctx, level="", *, new_list=""):
         """Edits or displays raid_info.json
 
         Usage: !raid_json [level] [list]"""
@@ -1088,13 +1103,6 @@ class Raid(commands.Cog):
         author = message.author
         guild = message.guild
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
-        error = False
-        first = True
-        tsr = False
-        msg = ""
-        old_raid_dict = {}
-        for raid_level in self.bot.raid_info['raid_eggs']:
-            old_raid_dict[raid_level] = self.bot.raid_info['raid_eggs'][raid_level]['pokemon']
         raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
         raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         def check(reply):
@@ -1102,18 +1110,33 @@ class Raid(commands.Cog):
                 return True
             else:
                 return False
+        error = False
+        first = True
+        action = ""
+        msg = ""
+        edit_level = ""
+        edit_list = []
+        old_raid_dict = {}
+        for raid_level in self.bot.raid_info['raid_eggs']:
+            old_raid_dict[raid_level] = self.bot.raid_info['raid_eggs'][raid_level]['pokemon']
+        if level.lower() == "list" and not new_list:
+            return await ctx.invoke(self.bot.get_command('raid_json2 list'))
+        elif level.lower() == "tsr" or new_list.lower() == "tsr" or action == "tsr":
+            return await ctx.invoke(self.bot.get_command('raid_json2 tsr'))
+        elif (level.isdigit() and level in self.bot.raid_info['raid_eggs']) or level.lower() == "ex":
+            edit_level = level.lower()
+            if new_list.lower() == "list":
+                return await ctx.invoke(self.bot.get_command('raid_json2 list'), level=edit_level)
+            elif new_list.lower() == "overwrite":
+                return await ctx.invoke(self.bot.get_command('raid_json2 overwrite'), level=edit_level)
+            else:
+                edit_list = new_list.split(',')
+                edit_list = [x.strip() for x in edit_list]
+                edit_list = [re.sub('[^a-zA-Z0-9 ]' , '' , x) for x in edit_list]
+                edit_list = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in edit_list]
+                edit_list = [str(x) for x in edit_list if x]
         while True:
             async with ctx.typing():
-                edit_level = None
-                if str(level).lower() == "list" or str(new_list).lower() == "list":
-                    for raid_level in self.bot.raid_info['raid_eggs']:
-                        msg += _('\n**Level {level} bosses:**\n`{raidlist}` \n').format(level=raid_level, raidlist=self.bot.raid_info['raid_eggs'][raid_level]['pokemon'])
-                    raid_embed.add_field(name="Raid Boss List", value=msg)
-                    return await ctx.channel.send(embed=raid_embed)
-                if level and level.lower() == "ex":
-                    edit_level = "EX"
-                elif level and level in self.bot.raid_info['raid_eggs']:
-                    edit_level = level
                 if not edit_level:
                     raid_embed.clear_fields()
                     raid_embed.add_field(name=_('**Edit Raid Bosses**'), value=f"{'Meowth! I will help you edit raid bosses!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **level** of bosses you'd like to modify. Reply with **1, 2, 3, 4, 5, or EX**. Or, if you want to list all bosses, reply with **list**. You can reply with **cancel** to stop anytime.\n\nAlternatively, reply with **tsr** to attempt to pull data from TSR's raid boss list.", inline=False)
@@ -1132,57 +1155,9 @@ class Raid(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif boss_level_msg.clean_content.lower() == "list":
-                        for raid_level in self.bot.raid_info['raid_eggs']:
-                            msg += _('\n**Level {level} bosses:**\n`{raidlist}` \n').format(level=raid_level, raidlist=self.bot.raid_info['raid_eggs'][raid_level]['pokemon'])
-                        raid_embed.set_field_at(0, name="Raid Boss List", value=msg)
-                        return await ctx.channel.send(embed=raid_embed)
+                        return await ctx.invoke(self.bot.get_command('raid_json2 list'))
                     elif boss_level_msg.clean_content.lower() == "tsr":
-                        tsr_bosses = []
-                        tsr_boss_dict = {}
-                        async with aiohttp.ClientSession() as sess:
-                            async with sess.get("https://thesilphroad.com/raid-bosses") as resp:
-                                html = await resp.text()
-                                for line in html.splitlines():
-                                    if "Raids</h4>" in line or "<h4>Tier" in line or "<div class=\"boss-name\">" in line:
-                                        tsr_bosses.append(line.strip())
-                        if tsr_bosses:
-                            for index, item in enumerate(tsr_bosses):
-                                tsr_bosses[index] = item.replace("<h4>", "").replace("</h4>", "").replace("<div class=\"boss-name\">", "").replace("</div>", "").replace("Raids", "").replace("Tier", "").strip()
-                        if tsr_bosses:
-                            for item in tsr_bosses:
-                                if item.isdigit() or item == "EX":
-                                    tsr_boss_dict[item] = []
-                                    current_list = tsr_boss_dict[item]
-                                else:
-                                    current_list.append(item)
-                        if tsr_boss_dict:
-                            msg += _('I will replace this:\n')
-                            for raid_level in tsr_boss_dict:
-                                msg += f"**Level {raid_level} boss list:**\n`{self.bot.raid_info['raid_eggs'][raid_level]['pokemon']}` \n"
-                            raid_embed.clear_fields()
-                            raid_embed.add_field(name="Raid Boss Edit", value=msg)
-                            question1 = await ctx.channel.send(embed=raid_embed, delete_after=60)
-                            msg = _('\nWith this:\n')
-                            for raid_level in tsr_boss_dict:
-                                msg += f"**Level {raid_level} boss list:**\n`{tsr_boss_dict[raid_level]}` \n"
-                            msg += _('\nWould you like to continue?')
-                            raid_embed.clear_fields()
-                            raid_embed.add_field(name="Raid Boss Edit", value=msg)
-                            question2 = await ctx.channel.send(embed=raid_embed)
-                            try:
-                                timeout = False
-                                res, reactuser = await utils.ask(self.bot, question2, ctx.author.id)
-                            except TypeError:
-                                timeout = True
-                            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
-                                await utils.safe_bulk_delete(ctx.channel, [question1, question2])
-                                error = _('cancelled the command')
-                            elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
-                                tsr = True
-                            else:
-                                error = _('did something invalid')
-                            await utils.safe_bulk_delete(ctx.channel, [question1, question2])
-                            break
+                        return await ctx.invoke(self.bot.get_command('raid_json2 tsr'))
                     elif not any([boss_level_msg.clean_content.lower() == "ex", boss_level_msg.clean_content.isdigit()]):
                         error = _("entered an invalid option")
                         break
@@ -1192,18 +1167,9 @@ class Raid(commands.Cog):
                     else:
                         edit_level = boss_level_msg.clean_content.lower()
                     first = False
-                edit_list = []
-                if new_list:
-                    new_list = re.sub(r'\[|\]|\'|\"', '', str(new_list)).split(',')
-                    new_list = [str(item.title().strip()) for item in new_list]
-                    for pokemon in new_list:
-                        pokemon = re.sub('[^a-zA-Z0-9 ]' , '' , pokemon)
-                        pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
-                        if pokemon:
-                            edit_list.append(str(pokemon))
                 if not edit_list:
                     raid_embed.clear_fields()
-                    raid_embed.add_field(name=_('**Edit Raid Bosses**'), value=f"{'Meowth! I will help you edit raid bosses!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **bosses** you'd like to set for level {edit_level} raids. Reply with a comma separated list of bosses including any forms. Or, if you want to list all bosses in level {edit_level} raids, reply with **list**. You can reply with **cancel** to stop anytime.", inline=False)
+                    raid_embed.add_field(name=_('**Edit Raid Bosses**'), value=f"{'Meowth! I will help you edit raid bosses!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **bosses** you'd like to set for level {edit_level} raids. Reply with a comma separated list of bosses including any forms. Or, if you want to list all bosses in level {edit_level} raids, reply with **list**.\n\nAlternatively, if TSR is giving incorrect forms or gives unwanted upcoming pokemon, you can overwrite using **overwrite**. \n\nYou can reply with **cancel** to stop anytime.", inline=False)
                     boss_list_wait = await channel.send(embed=raid_embed)
                     try:
                         boss_list_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1219,17 +1185,15 @@ class Raid(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif boss_list_msg.clean_content.lower() == "list":
-                        msg = _('**Level {level} bosses:**\n`{raidlist}` \n').format(level=edit_level, raidlist=self.bot.raid_info['raid_eggs'][edit_level]['pokemon'])
-                        raid_embed.set_field_at(0, name="Raid Boss List", value=msg)
-                        return await ctx.channel.send(embed=raid_embed)
+                        return await ctx.invoke(self.bot.get_command('raid_json2 list'), level=edit_level)
+                    elif boss_list_msg.clean_content.lower() == "overwrite":
+                        return await ctx.invoke(self.bot.get_command('raid_json2 overwrite'), level=edit_level)
                     else:
                         new_list = re.sub(r'\[|\]|\'|\"', '', str(boss_list_msg.clean_content.lower())).split(',')
-                        new_list = [str(item.title().strip()) for item in new_list]
-                        for pokemon in new_list:
-                            pokemon = re.sub('[^a-zA-Z0-9 ]' , '' , pokemon)
-                            pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
-                            if pokemon:
-                                edit_list.append(str(pokemon))
+                        edit_list = [x.strip() for x in new_list]
+                        edit_list = [re.sub('[^a-zA-Z0-9 ]' , '' , x) for x in edit_list]
+                        edit_list = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in edit_list]
+                        edit_list = [str(x) for x in edit_list if x]
                         if not edit_list:
                             error = _("didn't enter any pokemon")
                             break
@@ -1268,16 +1232,11 @@ class Raid(commands.Cog):
             confirmation = await channel.send(embed=raid_embed)
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
-            if tsr:
-                for raid_level in tsr_boss_dict:
-                    data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
-                new_raid_dict = copy.deepcopy(tsr_boss_dict)
-            else:
-                tmp = data['raid_eggs'][edit_level]['pokemon']
-                new_list = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in new_list]
-                new_list = [str(x) for x in new_list if x]
-                data['raid_eggs'][edit_level]['pokemon'] = new_list
-                new_raid_dict = {edit_level: new_list}
+            tmp = data['raid_eggs'][edit_level]['pokemon']
+            new_list = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in new_list]
+            new_list = [str(x) for x in new_list if x]
+            data['raid_eggs'][edit_level]['pokemon'] = new_list
+            new_raid_dict = {edit_level: new_list}
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
             await pkmn_class.Pokedex.generate_lists(self.bot)
@@ -1299,6 +1258,207 @@ class Raid(commands.Cog):
                                 channel = self.bot.get_channel(channel_id)
                                 await self._edit_party(channel)
             await utils.safe_delete(message)
+
+    @raid_json.command(name="list", hidden=True)
+    @checks.is_manager()
+    async def raid_json_list(self, ctx, level=None):
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        raid_embed = discord.Embed(colour=ctx.message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
+        raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
+        msg = ""
+        if not level:
+            for raid_level in self.bot.raid_info['raid_eggs']:
+                msg += _('\n**Level {level} bosses:**\n`{raidlist}` \n').format(level=raid_level, raidlist=self.bot.raid_info['raid_eggs'][raid_level]['pokemon'])
+            raid_embed.add_field(name="Raid Boss List", value=msg)
+            return await ctx.channel.send(embed=raid_embed)
+        elif (level.isdigit() and level in self.bot.raid_info['raid_eggs']) or level.lower() == "ex":
+            msg = _('**Level {level} bosses:**\n`{raidlist}` \n').format(level=level, raidlist=self.bot.raid_info['raid_eggs'][level]['pokemon'])
+            raid_embed.add_field(name="Raid Boss List", value=msg)
+            return await ctx.channel.send(embed=raid_embed)
+
+    @raid_json.command(name="tsr", hidden=True)
+    @checks.is_manager()
+    async def raid_json_tsr(self, ctx):
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        raid_embed = discord.Embed(colour=ctx.message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
+        raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
+        tsr_bosses = []
+        tsr_boss_dict = {}
+        msg = ""
+        async with ctx.typing():
+            with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
+                data = json.load(fd)
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get("https://thesilphroad.com/raid-bosses") as resp:
+                    html = await resp.text()
+                    for line in html.splitlines():
+                        if "Raids</h4>" in line or "<h4>Tier" in line or "<div class=\"boss-name\">" in line:
+                            tsr_bosses.append(line.strip())
+            if tsr_bosses:
+                for index, item in enumerate(tsr_bosses):
+                    tsr_bosses[index] = item.replace("<h4>", "").replace("</h4>", "").replace("<div class=\"boss-name\">", "").replace("</div>", "").replace("Raids", "").replace("Tier", "").strip()
+            if tsr_bosses:
+                for item in tsr_bosses:
+                    if item.isdigit() or item == "EX":
+                        tsr_boss_dict[item] = []
+                        current_list = tsr_boss_dict[item]
+                    else:
+                        current_list.append(item)
+            for raid_level in tsr_boss_dict:
+                if not data['raid_eggs'][str(raid_level)].get('overwrites', {}):
+                    continue
+                for overwrite in copy.deepcopy(data['raid_eggs'][str(raid_level)]['overwrites']):
+                    if time.time() >= data['raid_eggs'][str(raid_level)]['overwrites'][overwrite]['replace_until']:
+                        del data['raid_eggs'][str(raid_level)]['overwrites'][overwrite]
+                with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                    json.dump(data, fd, indent=2, separators=(', ', ': '))
+                for index, pokemon in enumerate(tsr_boss_dict[raid_level]):
+                    if pokemon in self.bot.raid_info['raid_eggs'][str(raid_level)].get('overwrites', {}):
+                        replace_with = self.bot.raid_info['raid_eggs'][str(raid_level)]['overwrites'][pokemon]['replace_with']
+                        tsr_boss_dict[raid_level][index] = replace_with
+                tsr_boss_dict[raid_level] = [x for x in tsr_boss_dict[raid_level] if x]
+            if tsr_boss_dict:
+                msg += _('I will replace this:\n')
+                for raid_level in tsr_boss_dict:
+                    msg += f"**Level {raid_level} boss list:**\n`{self.bot.raid_info['raid_eggs'][raid_level]['pokemon']}` \n"
+                raid_embed.clear_fields()
+                raid_embed.add_field(name="Raid Boss Edit", value=msg)
+                question1 = await ctx.channel.send(embed=raid_embed, delete_after=60)
+                msg = _('\nWith this:\n')
+                for raid_level in tsr_boss_dict:
+                    msg += f"**Level {raid_level} boss list:**\n`{tsr_boss_dict[raid_level]}` \n"
+                msg += f"\nWould you like to continue? If this doesn't look correct, remember there may be overwrites in **{ctx.prefix}raid_json overwrite**"
+                raid_embed.clear_fields()
+                raid_embed.add_field(name="Raid Boss Edit", value=msg)
+                question2 = await ctx.channel.send(embed=raid_embed)
+                try:
+                    timeout = False
+                    res, reactuser = await utils.ask(self.bot, question2, ctx.author.id)
+                except TypeError:
+                    timeout = True
+                await utils.safe_bulk_delete(ctx.channel, [question1, question2])
+                if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**Boss Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you cancelled the command! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=raid_embed, delete_after=10)
+                elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
+                    with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
+                        data = json.load(fd)
+                    for raid_level in tsr_boss_dict:
+                        data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
+                    with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                    await pkmn_class.Pokedex.generate_lists(self.bot)
+                    self.bot.raid_dict = await utils.get_raid_dict(self.bot)
+                    self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
+                    for guild in list(self.bot.guilds):
+                        for report_dict in self.bot.channel_report_dicts:
+                            for channel_id in list(self.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys()):
+                                for raid_level in tsr_boss_dict:
+                                    if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(raid_level):
+                                        for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
+                                            interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id].get('interest', []))
+                                            new_bosses = list(set(tsr_boss_dict[raid_level]) - set(old_raid_dict[raid_level]))
+                                            new_bosses = [x.lower() for x in new_bosses]
+                                            self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
+                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['pokemon'] = ''
+                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
+                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
+                                        channel = self.bot.get_channel(channel_id)
+                                        await self._edit_party(channel)
+                else:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**Boss Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you did something invalid! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=raid_embed, delete_after=10)
+
+    @raid_json.command(name="overwrite", hidden=True)
+    @checks.is_manager()
+    async def raid_json_overwrite(self, ctx, level=None):
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        raid_embed = discord.Embed(colour=ctx.message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
+        def check(reply):
+            if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.author:
+                return True
+            else:
+                return False
+        if (level.isdigit() and level in self.bot.raid_info['raid_eggs']) or level.lower() == "ex":
+            level = level.upper()
+        if not level:
+            raid_embed.clear_fields()
+            raid_embed.add_field(name=_('**Boss Overwrite Cancelled**'), value=_("Meowth! Your edit has been cancelled because you didn't give me a level! Retry when you're ready."), inline=False)
+            return await ctx.send(embed=raid_embed, delete_after=10)
+        current_overwrites = self.bot.raid_info['raid_eggs'][level].get('overwrites', {})
+        new_overwrites = {}
+        raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
+        raid_embed.add_field(name=_('**Edit Raid Overwrtes**'), value=f"Meowth! I will help you edit raid boss overwrites! This is useful if TSR doesn't include a form for a pokemon, or is sending upcoming pokemon, or something similar.\n\nYou are changing overwrites of level {level} raids. The current list is: {str(current_overwrites) if current_overwrites else 'None'}\n\nThe correct format for this is:\n\n`Incorrect Pokemon = Correct Pokemon, Incorrect Pokemon=Correct Pokemon, Unwanted Pokemon=None`.\n\nReply with your list, **none** to remove all overwrites for level {level} raids, reply with any overwrites to add to my current list, or **cancel** to stop anytime.", inline=False)
+        boss_list_wait = await ctx.send(embed=raid_embed)
+        try:
+            boss_list_msg = await self.bot.wait_for('message', timeout=60, check=check)
+        except asyncio.TimeoutError:
+            boss_list_msg = None
+        await utils.safe_delete(boss_list_wait)
+        if not boss_list_msg:
+            raid_embed.clear_fields()
+            raid_embed.add_field(name=_('**Boss Overwrite Cancelled**'), value=_("Meowth! Your edit has been cancelled because you took too long to respond! Retry when you're ready."), inline=False)
+            return await ctx.send(embed=raid_embed, delete_after=10)
+        else:
+            await utils.safe_delete(boss_list_msg)
+        if boss_list_msg.clean_content.lower() == "cancel":
+            raid_embed.clear_fields()
+            raid_embed.add_field(name=_('**Boss Overwrite Cancelled**'), value=_("Meowth! Your edit has been cancelled because you canceled the report! Retry when you're ready."), inline=False)
+            return await ctx.send(embed=raid_embed, delete_after=10)
+        elif boss_list_msg.clean_content.lower() == "none":
+            new_overwrites = {}
+        else:
+            overwrite_list = boss_list_msg.clean_content.split(',')
+            overwrite_list = [x.strip() for x in overwrite_list]
+            for overwrite in overwrite_list:
+                if len(overwrite.split('=')) != 2:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**Boss Overwrite Cancelled**'), value=_("Meowth! Your edit has been cancelled because you entered an incorrect format! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=raid_embed, delete_after=10)
+                to_replace = await pkmn_class.Pokemon.async_get_pokemon(self.bot, overwrite.split('=')[0].strip())
+                replace_with = await pkmn_class.Pokemon.async_get_pokemon(self.bot, overwrite.split('=')[1].strip())
+                if not to_replace:
+                    continue
+                raid_embed.clear_fields()
+                raid_embed.add_field(name=_('**Edit Raid Overwrtes**'), value=f"Meowth! Now, when do you want me to stop overwriting {str(to_replace)} with {str(replace_with)}? Is it part of an event with an end date or an upcoming event with a start date? Reply with a date and time for the following overwrite:\n\n**{str(to_replace)} = {str(replace_with)}**", inline=False)
+                boss_time_wait = await ctx.send(embed=raid_embed)
+                try:
+                    boss_time_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    boss_time_msg = None
+                await utils.safe_delete(boss_time_wait)
+                if not boss_time_msg:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**Boss Overwrite Cancelled**'), value=_("Meowth! Your edit has been cancelled because you took too long to respond! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=raid_embed, delete_after=10)
+                else:
+                    await utils.safe_delete(boss_time_msg)
+                if boss_time_msg.clean_content.lower() == "cancel":
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**Boss Overwrite Cancelled**'), value=_("Meowth! Your edit has been cancelled because you canceled the request! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=raid_embed, delete_after=10)
+                else:
+                    replace_until = dateparser.parse(boss_time_msg.clean_content, settings={'DATE_ORDER': 'MDY'})
+                    replace_until = replace_until - datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+                    replace_until = replace_until - datetime.timedelta(hours=6)
+                if replace_with:
+                    new_overwrites[str(to_replace)] = {"replace_with":str(replace_with), "replace_until":replace_until.timestamp()}
+                else:
+                    new_overwrites[str(to_replace)] = {"replace_with":None, "replace_until":replace_until.timestamp()}
+        if new_overwrites or boss_list_msg.clean_content.lower() == "none":
+            with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
+                data = json.load(fd)
+            if boss_list_msg.clean_content.lower() == "none":
+                data['raid_eggs'][level]['overwrites'] = {}
+            else:
+                data['raid_eggs'][level]['overwrites'] = {**current_overwrites, **new_overwrites}
+            with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                json.dump(data, fd, indent=2, separators=(', ', ': '))
+            raid_embed.clear_fields()
+            raid_embed.add_field(name=_('**Boss Overwrite Successful**'), value=_("Meowth! Your overwrites were successful!"), inline=False)
+            return await ctx.send(embed=raid_embed, delete_after=10)
 
     @commands.command()
     @checks.is_manager()
