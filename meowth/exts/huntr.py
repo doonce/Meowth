@@ -1441,6 +1441,9 @@ class Huntr(commands.Cog):
                         self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['make_meetups'] = False
                     else:
                         wait_time.append((event_dict['channel_time'] - now).total_seconds())
+                if event_dict.get('event_pokemon'):
+                    if event_dict['event_pokemon'] not in self.bot.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter']:
+                        self.bot.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter'].append(event_dict['event_pokemon'])
                 if bot_account:
                     if now < event_dict['mute_time']:
                         wait_time.append((event_dict['mute_time'] - now).total_seconds())
@@ -1448,6 +1451,10 @@ class Huntr(commands.Cog):
                     try:
                         user_message = await report_channel.fetch_message(event_dict['user_message'])
                         await utils.safe_delete(user_message)
+                    except:
+                        pass
+                    try:
+                        self.bot.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter'].remove(event_dict['event_pokemon'])
                     except:
                         pass
                     try:
@@ -1495,7 +1502,9 @@ class Huntr(commands.Cog):
             "train_channel":None,
             "channel_time": None,
             "event_title": None,
-            "event_locations": []
+            "event_locations": [],
+            "event_pokemon":None,
+            "event_pokemon_str":None
         }
         raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin.png?cache=1')
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -1738,7 +1747,35 @@ class Huntr(commands.Cog):
                             event_locations = event_loc_msg.clean_content.split(',')
                             event_locations = [x.strip() for x in event_locations]
                             event_dict['event_locations'] = event_locations
-                break
+                if ctx.invoked_with == "commday":
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=_("Meowth! Since this is a community day, would you like to add a pokemon to my wild filter to not flood report channels? Reply with **no** or a pokemon. You can reply with **cancel** to stop anytime."), inline=False)
+                    bot_account_wait = await channel.send(embed=raid_embed)
+                    try:
+                        bot_account_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        bot_account_msg = None
+                    await utils.safe_delete(bot_account_wait)
+                    if not bot_account_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(bot_account_msg)
+                    if bot_account_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif bot_account_msg.clean_content.lower() == "no":
+                        break
+                    else:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, bot_account_msg.clean_content.lower())
+                        if pokemon:
+                            if not pokemon.form and not pokemon.region and not pokemon.size and not pokemon.gender and not pokemon.shadow:
+                                event_dict['event_pokemon'] = pokemon.id
+                                event_dict['event_pokemon_str'] = f"{pokemon.name} (all forms)"
+                            else:
+                                event_dict['event_pokemon'] = str(pokemon)
+                                event_dict['event_pokemon_str'] = str(pokemon)
+            break
         raid_embed.clear_fields()
         if not error:
             local_start = event_dict['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
@@ -1750,6 +1787,8 @@ class Huntr(commands.Cog):
                 success_str += f"I will mute {bot_account.mention} in {bot_channel.mention} on {local_mute.strftime('%B %d at %I:%M %p')} and will unmute at the end of the event.\n\n"
             if event_dict['make_trains']:
                 success_str += f"I will make {len(event_dict['event_locations'])} channels in {train_channel.mention} on {local_channel.strftime('%B %d at %I:%M %p')} and remove them at the end of the event. These channels will be for: {(', ').join(event_dict['event_locations'])}. The title for the trains will be: {event_dict['event_title']}."
+            if event_dict['event_pokemon']:
+                success_str += f"I will mute **{event_dict['event_pokemon_str']}** during the event."
             raid_embed.add_field(name=_('**Raid Hour Report**'), value=f"Meowth! A raid hour has been successfully scheduled. To cancel an event use **{ctx.prefix}raidhour cancel**\n\n{success_str}", inline=False)
             raid_hour_var = self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {})
             self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][ctx.message.id] = copy.deepcopy(event_dict)

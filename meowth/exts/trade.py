@@ -152,7 +152,7 @@ class Trading(commands.Cog):
                         offer_dict[trade_dict[listing_id]['offers'][offer]['lister_msg']] = {"listing_id":listing_id, "guild_id":guildid, "buyer_id":offer}
         if message.guild:
             try:
-                trade_dict = self.bot.guild_dict[guild.id]['trade_dict']
+                trade_dict = self.bot.guild_dict[message.guild.id]['trade_dict']
             except KeyError:
                 trade_dict = {}
             if message.id in trade_dict.keys():

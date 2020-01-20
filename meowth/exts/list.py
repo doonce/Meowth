@@ -34,6 +34,9 @@ class Listing(commands.Cog):
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'tag']:
             await utils.safe_delete(ctx.message)
         if ctx.invoked_subcommand == None:
+            if not ctx.prefix:
+                prefix = self.bot._get_prefix(self.bot, ctx.message)
+                ctx.prefix = prefix[-1]
             async with ctx.typing():
                 listmsg = _('**Meowth!** ')
                 temp_list = ""
