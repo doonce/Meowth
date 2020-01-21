@@ -212,6 +212,9 @@ class Listing(commands.Cog):
                             list_messages.append(list_message.id)
                             index += 1
                     self.bot.guild_dict[ctx.guild.id]['list_dict']['raid'][ctx.channel.id] = list_messages
+                    for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['raid']):
+                        if not ctx.guild.get_channel(channel):
+                            del self.bot.guild_dict[ctx.guild.id]['list_dict']['raid'][channel]
 
                 elif checks.check_rsvpchannel(ctx):
                     report_dict = await utils.get_report_dict(self.bot, ctx.channel)
@@ -280,6 +283,9 @@ class Listing(commands.Cog):
                         list_msg = await ctx.channel.send(embed=list_embed)
                     list_messages.append(list_msg.id)
                     self.bot.guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {})[channel.id] = list_messages
+                    for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['raid']):
+                        if not ctx.guild.get_channel(channel):
+                            del self.bot.guild_dict[ctx.guild.id]['list_dict']['raid'][channel]
                     return
                 elif checks.check_wantchannel(ctx):
                     if not (checks.check_wildreport(ctx) or checks.check_nestreport(ctx) or checks.check_researchreport(ctx) or checks.check_tradereport(ctx) or checks.check_lurereport(ctx) or checks.check_pvpreport(ctx) or checks.check_invasionreport(ctx)):
@@ -642,18 +648,20 @@ class Listing(commands.Cog):
                 mention_list.append(user.mention)
             await ctx.send(f"Hey {', '.join(mention_list)}! {ctx.author.mention} is trying to get your attention!")
 
-
-    @_list.command(aliases=['boss'])
-    @checks.activeraidchannel()
+    @_list.command(aliases=['boss', 'raidbossses'])
     async def bosses(self, ctx):
-        """List each possible boss and the number of users that have RSVP'd for it.
+        """List each possible boss and the number of users that have RSVP'd for it if used in a raid channel.
+        Otherwise lists possible raid bosses.
 
         Usage: !list bosses
         Works only in raid channels."""
-        async with ctx.typing():
-            listmsg = _('**Meowth!**')
-            listmsg += await self._bosslist(ctx)
-            await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+        if (checks.check_exraidchannel(ctx) or checks.check_raidchannel(ctx)) and checks.check_eggchannel(ctx) and ctx.invoked_with != "raidbosses":
+            async with ctx.typing():
+                listmsg = _('**Meowth!**')
+                listmsg += await self._bosslist(ctx)
+                return await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+        else:
+            return await self._raidbosslist(ctx)
 
     async def _bosslist(self, ctx):
         message = ctx.message
@@ -695,6 +703,30 @@ class Listing(commands.Cog):
         else:
             listmsg = _(' Nobody has told me what boss they want!')
         return listmsg
+
+    async def _raidbosslist(self, ctx):
+        list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid_bosses', {}).setdefault(ctx.channel.id, [])
+        delete_list = []
+        async with ctx.typing():
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.fetch_message(msg)
+                    delete_list.append(msg)
+                except:
+                    pass
+            list_messages = []
+            await utils.safe_bulk_delete(ctx.channel, delete_list)
+            list_msg = ""
+            raid_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
+            for raid_level in self.bot.raid_info['raid_eggs']:
+                list_msg += _('\n**Level {level} bosses:**\n`{raidlist}` \n').format(level=raid_level, raidlist=self.bot.raid_info['raid_eggs'][raid_level]['pokemon'])
+            raid_embed.add_field(name="Raid Boss List", value=list_msg)
+            msg = await ctx.channel.send(embed=raid_embed)
+            list_messages.append(msg.id)
+            self.bot.guild_dict[ctx.guild.id]['list_dict']['raid_bosses'][ctx.channel.id] = list_messages
+            for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['raid_bosses']):
+                if not ctx.guild.get_channel(channel):
+                    del self.bot.guild_dict[ctx.guild.id]['list_dict']['raid_bosses'][channel]
 
     @_list.command(aliases=['team'])
     @checks.rsvpchannel()
@@ -820,29 +852,29 @@ class Listing(commands.Cog):
         wantmsg = ""
         if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels) or len(user_forms) > 0 or len(user_eggs) > 0:
             if wantlist:
-                wantmsg += _('**Pokemon:** ({cat_options})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(wantlist), width=80)), cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
+                wantmsg += f"'**Pokemon:** ({(', ').join([x for x in pokemon_options if pokemon_settings.get(x)])})\n{', '.join(wantlist)}\n\n"
             if user_forms:
-                wantmsg += _('**Pokemon Forms:** ({cat_options})\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_forms), width=80)), cat_options=(', ').join([x for x in pokemon_options if pokemon_settings.get(x)]))
+                wantmsg += f"**Pokemon Forms:** ({(', ').join([x for x in pokemon_options if pokemon_settings.get(x)])})\n{', '.join(user_forms)}\n\n"
             if user_bosses and not user_link:
-                wantmsg += _('**Bosses:** (raids)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(bosslist), width=80)))
+                wantmsg += f"**Bosses:** (raids)\n{', '.join(bosslist)}\n\n"
             if user_bossforms and not user_link:
-                wantmsg += _('**Boss Forms:** (raids)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(user_bossforms), width=80)))
+                wantmsg += f"**Boss Forms:** (raids)\n{', '.join(user_bossforms)}\n\n"
             if (user_trades or user_tradeforms) and not user_link:
-                wantmsg += _('**Trades:** (trades)\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(tradelist+user_tradeforms), width=80)))
+                wantmsg += f"**Trades:** (trades)\n{', '.join(tradelist+user_tradeforms)}\n\n"
             if user_gyms:
-                wantmsg += _('**Gyms:** (raid)\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(user_gyms), width=80)))
+                wantmsg += f"**Gyms:** (raid)\n{', '.join(user_gyms)}\n\n"
             if user_stops:
-                wantmsg += _('**Stops:** ({cat_options})\n{user_stops}\n\n').format(user_stops='\n'.join(textwrap.wrap(', '.join(user_stops), width=80)), cat_options=(', ').join([x for x in pokestop_options if pokestop_settings.get(x)]))
+                wantmsg += f"**Stops:** ({(', ').join([x for x in pokestop_options if pokestop_settings.get(x)])})\n{', '.join(user_stops)}\n\n"
             if user_items:
-                wantmsg += _('**Items:** ({cat_options})\n{user_items}\n\n').format(user_items='\n'.join(textwrap.wrap(', '.join(user_items), width=80)), cat_options=(', ').join([x for x in item_options if item_settings.get(x)]))
+                wantmsg += f"**Items:** ({(', ').join([x for x in item_options if item_settings.get(x)])})\n{', '.join(user_items)}\n\n"
             if user_types:
-                wantmsg += _('**Types:** ({cat_options})\n{user_types}\n\n').format(user_types='\n'.join(textwrap.wrap(', '.join(user_types), width=80)), cat_options=(', ').join([x for x in type_options if type_settings.get(x)]))
+                wantmsg += f"**Types:** ({(', ').join([x for x in type_options if type_settings.get(x)])})\n{', '.join(user_types)}\n\n"
             if user_ivs:
-                wantmsg += _('**IVs:** (wilds)\n{user_ivs}\n\n').format(user_ivs='\n'.join(textwrap.wrap(', '.join(user_ivs), width=80)))
+                wantmsg += f"**IVs:** (wilds)\n{', '.join(user_ivs)}\n\n"
             if user_levels:
-                wantmsg += _('**Levels:** (wilds)\n{user_levels}\n\n').format(user_levels='\n'.join(textwrap.wrap(', '.join(user_levels), width=80)))
+                wantmsg += f"**Levels:** (wilds)\n{', '.join(user_levels)}\n\n"
             if user_eggs:
-                wantmsg += _('**Raid Eggs:** (raids)\n{user_levels}\n\n').format(user_levels='\n'.join(textwrap.wrap(', '.join(user_eggs), width=80)))
+                wantmsg += f"**Raid Eggs:** (raids)\n{', '.join(user_eggs)}\n\n"
         if wantmsg:
             if any(list(user_mute.values())):
                 listmsg = f"Meowth! {ctx.author.display_name}, your **{(', ').join([x for x in user_mute if user_mute[x]])}** notifications are muted, so you will not receive those notifications from your current **!want** list:"
@@ -952,29 +984,29 @@ class Listing(commands.Cog):
         wantmsg = ""
         if len(want_list) > 0 or len(gym_list) > 0 or len(stop_list) > 0 or len(item_list) > 0 or len(boss_list) > 0 or len(type_list) > 0 or len(iv_list) > 0 or len(level_list):
             if want_list:
-                wantmsg += _('**Pokemon:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(want_list), width=80)))
+                wantmsg += f"**Pokemon:**\n{', '.join(want_list)}\n\n"
             if form_list:
-                wantmsg += _('**Pokemon Forms:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(form_list), width=80)))
+                wantmsg += f"**Pokemon Forms:**\n{', '.join(form_list)}\n\n"
             if boss_list:
-                wantmsg += _('**Bosses:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(boss_list), width=80)))
+                wantmsg += f"**Bosses:**\n{', '.join(boss_list)}\n\n"
             if bossform_list:
-                wantmsg += _('**Boss Forms:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(bossform_list), width=80)))
+                wantmsg += f"**Boss Forms:**\n{', '.join(bossform_list)}\n\n"
             if trade_list:
-                wantmsg += _('**Trades:**\n{want_list}\n\n').format(want_list='\n'.join(textwrap.wrap(', '.join(trade_list), width=80)))
+                wantmsg += f"**Trades:**\n{', '.join(trade_list)}\n\n"
             if gym_list:
-                wantmsg += _('**Gyms:**\n{user_gyms}\n\n').format(user_gyms='\n'.join(textwrap.wrap(', '.join(gym_list), width=80)))
+                wantmsg += f"**Gyms:**\n{', '.join(gym_list)}\n\n"
             if stop_list:
-                wantmsg += _('**Stops:**\n{user_stops}\n\n').format(user_stops='\n'.join(textwrap.wrap(', '.join(stop_list), width=80)))
+                wantmsg += f"**Stops:**\n{', '.join(stop_list)}\n\n"
             if item_list:
-                wantmsg += _('**Items:**\n{user_items}\n\n').format(user_items='\n'.join(textwrap.wrap(', '.join(item_list), width=80)))
+                wantmsg += f"**Items:**\n{', '.join(item_list)}\n\n"
             if type_list:
-                wantmsg += _('**Types:**\n{user_types}\n\n').format(user_types='\n'.join(textwrap.wrap(', '.join(type_list), width=80)))
+                wantmsg += f"**Types:**\n{', '.join(type_list)}\n\n"
             if iv_list:
-                wantmsg += _('**IVs:**\n{user_ivs}\n\n').format(user_ivs='\n'.join(textwrap.wrap(', '.join(iv_list), width=80)))
+                wantmsg += f"**IVs:**\n{', '.join(iv_list)}\n\n"
             if level_list:
-                wantmsg += _('**Levels:**\n{user_levels}\n\n').format(user_levels='\n'.join(textwrap.wrap(', '.join(level_list), width=80)))
+                wantmsg += f"**Levels:**\n{', '.join(level_list)}\n\n"
             if raidegg_list:
-                wantmsg += _('**Raid Eggs:**\n{user_levels}\n\n').format(user_levels='\n'.join(textwrap.wrap(', '.join(raidegg_list), width=80)))
+                wantmsg += f"**Raid Eggs:**\n{', '.join(raidegg_list)}\n\n"
         if wantmsg:
             listmsg = _('**Meowth!** The server **!want** list is:')
             paginator = commands.Paginator(prefix="", suffix="")
@@ -1035,6 +1067,9 @@ class Listing(commands.Cog):
                     index += 1
                 if search == "all":
                     self.bot.guild_dict[ctx.guild.id]['list_dict']['trade'][ctx.channel.id] = list_messages
+                    for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['trade']):
+                        if not ctx.guild.get_channel(channel):
+                            del self.bot.guild_dict[ctx.guild.id]['list_dict']['trade'][channel]
             elif listmsg:
                 listmsg = await ctx.channel.send(listmsg)
                 list_messages.append(listmsg.id)
@@ -1162,6 +1197,9 @@ class Listing(commands.Cog):
                     index += 1
                 if search == "all":
                     self.bot.guild_dict[ctx.guild.id]['list_dict']['trade_search'][ctx.channel.id] = list_messages
+                    for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['trade_search']):
+                        if not ctx.guild.get_channel(channel):
+                            del self.bot.guild_dict[ctx.guild.id]['list_dict']['trade_search'][channel]
             elif listmsg:
                 listmsg = await ctx.channel.send(listmsg)
                 list_messages.append(listmsg.id)
@@ -1258,6 +1296,9 @@ class Listing(commands.Cog):
             else:
                 return
             self.bot.guild_dict[ctx.guild.id]['list_dict']['research'][ctx.channel.id] = list_messages
+            for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['research']):
+                if not ctx.guild.get_channel(channel):
+                    del self.bot.guild_dict[ctx.guild.id]['list_dict']['research'][channel]
 
     async def _researchlist(self, ctx):
         research_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('questreport_dict', {}))
@@ -1431,32 +1472,9 @@ class Listing(commands.Cog):
             msg = await ctx.send(embed=research_embed)
             list_messages.append(msg.id)
             self.bot.guild_dict[ctx.guild.id]['list_dict']['res_tasks'][ctx.channel.id] = list_messages
-
-    @_list.command(name="raidbosses")
-    @commands.cooldown(1, 5, commands.BucketType.channel)
-    async def raid_bosses(self, ctx):
-        """List the current raid bosses
-
-        Usage: !list raidbosses"""
-        list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid_bosses', {}).setdefault(ctx.channel.id, [])
-        delete_list = []
-        async with ctx.typing():
-            for msg in list_dict:
-                try:
-                    msg = await ctx.channel.fetch_message(msg)
-                    delete_list.append(msg)
-                except:
-                    pass
-            list_messages = []
-            await utils.safe_bulk_delete(ctx.channel, delete_list)
-            list_msg = ""
-            raid_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
-            for raid_level in self.bot.raid_info['raid_eggs']:
-                list_msg += _('\n**Level {level} bosses:**\n`{raidlist}` \n').format(level=raid_level, raidlist=self.bot.raid_info['raid_eggs'][raid_level]['pokemon'])
-            raid_embed.add_field(name="Raid Boss List", value=list_msg)
-            msg = await ctx.channel.send(embed=raid_embed)
-            list_messages.append(msg.id)
-            self.bot.guild_dict[ctx.guild.id]['list_dict']['raid_bosses'][ctx.channel.id] = list_messages
+            for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['res_tasks']):
+                if not ctx.guild.get_channel(channel):
+                    del self.bot.guild_dict[ctx.guild.id]['list_dict']['res_tasks'][channel]
 
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -1494,6 +1512,9 @@ class Listing(commands.Cog):
             else:
                 return
             self.bot.guild_dict[ctx.guild.id]['list_dict']['lure'][ctx.channel.id] = list_messages
+            for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['lure']):
+                if not ctx.guild.get_channel(channel):
+                    del self.bot.guild_dict[ctx.guild.id]['list_dict']['lure'][channel]
 
     async def _lurelist(self, ctx):
         lure_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('lure_dict', {}))
@@ -1575,6 +1596,9 @@ class Listing(commands.Cog):
             else:
                 return
             self.bot.guild_dict[ctx.guild.id]['list_dict'][report_type][ctx.channel.id] = list_messages
+            for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict'][report_type]):
+                if not ctx.guild.get_channel(channel):
+                    del self.bot.guild_dict[ctx.guild.id]['list_dict'][report_type][channel]
 
     async def _pokealarmlist(self, ctx, report_type):
         pokealarm_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get(f"{report_type}_dict", {}))
@@ -1647,6 +1671,9 @@ class Listing(commands.Cog):
             else:
                 return
             self.bot.guild_dict[ctx.guild.id]['list_dict']['invasion'][ctx.channel.id] = list_messages
+            for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['invasion']):
+                if not ctx.guild.get_channel(channel):
+                    del self.bot.guild_dict[ctx.guild.id]['list_dict']['invasion'][channel]
 
     async def _invasionlist(self, ctx):
         invasion_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('invasion_dict', {}))
@@ -1741,6 +1768,9 @@ class Listing(commands.Cog):
             else:
                 return
             self.bot.guild_dict[ctx.guild.id]['list_dict']['pvp'][ctx.channel.id] = list_messages
+            for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['pvp']):
+                if not ctx.guild.get_channel(channel):
+                    del self.bot.guild_dict[ctx.guild.id]['list_dict']['pvp'][channel]
 
     async def _pvplist(self, ctx):
         pvp_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('pvp_dict', {}))
@@ -1818,6 +1848,9 @@ class Listing(commands.Cog):
             else:
                 return
             self.bot.guild_dict[ctx.guild.id]['list_dict']['wild'][ctx.channel.id] = list_messages
+            for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['wild']):
+                if not ctx.guild.get_channel(channel):
+                    del self.bot.guild_dict[ctx.guild.id]['list_dict']['wild'][channel]
 
     async def _wildlist(self, ctx):
         wild_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('wildreport_dict', {}))
@@ -1912,6 +1945,9 @@ class Listing(commands.Cog):
                 list_messages.append(listmsg.id)
                 index += 1
             self.bot.guild_dict[ctx.guild.id]['list_dict']['nest'][ctx.channel.id] = list_messages
+            for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['nest']):
+                if not ctx.guild.get_channel(channel):
+                    del self.bot.guild_dict[ctx.guild.id]['list_dict']['nest'][channel]
 
 def setup(bot):
     bot.add_cog(Listing(bot))

@@ -914,28 +914,31 @@ class Pokedex(commands.Cog):
 
     @tasks.loop(seconds=0)
     async def auto_move_json(self):
-        to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
-        to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
-        to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
-        to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
-        await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
-        data = {}
-        async with aiohttp.ClientSession() as sess:
-            async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/GAME_MASTER.json") as resp:
-                data = await resp.json(content_type=None)
-                self.bot.gamemaster = data
-        move_info = {}
-        for template in self.bot.gamemaster['itemTemplates']:
-            if "MOVE" in template['templateId'] and "COMBAT_" not in template['templateId'] and "ITEM_" not in template['templateId'] and "SETTINGS" not in template['templateId']:
-                move_name = template['templateId'].split('MOVE_')[1].title()
-                move_type = template['moveSettings']['pokemonType'].replace("POKEMON_TYPE_", "").title()
-                move_power = template['moveSettings'].get('power', 0)
-                move_info[move_name.lower().replace('_fast', '').replace('_', ' ')] = {"type":move_type, "power":move_power}
-        for type in self.bot.type_list:
-            move_info[f"hidden power {type.lower()}"] = {"type":type.title(), "power":15}
-        if move_info:
-            with open(os.path.join('data', 'move_info.json'), 'w') as fd:
-                 json.dump(move_info, fd, indent=2, separators=(', ', ': '))
+        try:
+            to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+            to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
+            to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
+            to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
+            await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+            data = {}
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/GAME_MASTER.json") as resp:
+                    data = await resp.json(content_type=None)
+                    self.bot.gamemaster = data
+            move_info = {}
+            for template in self.bot.gamemaster['itemTemplates']:
+                if "MOVE" in template['templateId'] and "COMBAT_" not in template['templateId'] and "ITEM_" not in template['templateId'] and "SETTINGS" not in template['templateId']:
+                    move_name = template['templateId'].split('MOVE_')[1].title()
+                    move_type = template['moveSettings']['pokemonType'].replace("POKEMON_TYPE_", "").title()
+                    move_power = template['moveSettings'].get('power', 0)
+                    move_info[move_name.lower().replace('_fast', '').replace('_', ' ')] = {"type":move_type, "power":move_power}
+            for type in self.bot.type_list:
+                move_info[f"hidden power {type.lower()}"] = {"type":type.title(), "power":15}
+            if move_info:
+                with open(os.path.join('data', 'move_info.json'), 'w') as fd:
+                     json.dump(move_info, fd, indent=2, separators=(', ', ': '))
+        except Exception as e:
+            print(traceback.format_exc())
 
     @auto_move_json.before_loop
     async def before_auto_move_json(self):

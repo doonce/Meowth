@@ -330,64 +330,67 @@ class Research(commands.Cog):
 
     @tasks.loop(seconds=0)
     async def auto_res_json(self):
-        tsr_quests = []
-        tsr_quest_dict = {}
-        added_categories = []
-        added_quests = []
-        to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
-        to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
-        to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
-        to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
-        await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
-        async with aiohttp.ClientSession() as sess:
-            async with sess.get("https://thesilphroad.com/research-tasks") as resp:
-                html = await resp.text()
-        parse_list = re.split('<div|<span|<p', str(html))
-        for line in parse_list:
-            if "Tasks</h3>" in line or "class=\"taskText\">" in line or "class=\"task-reward" in line:
-                for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "<h3>", "</p>", ">", "unconfirmed", "pokemon", "shinyAvailable",]:
-                    line = line.replace(replacement, "").replace("_", " ").strip()
-                tsr_quests.append(line.strip())
-        for index, item in enumerate(tsr_quests):
-            if len(item.split()) > 2:
-                continue
-            __, item_name = await utils.get_item(item)
-            if item_name:
-                tsr_quests[index] = item_name
-        for item in tsr_quests:
-            if "Tasks" in item:
-                tsr_quest_dict[item] = {}
-                added_categories.append(item)
-        for item in tsr_quests:
-            if len(item.split('-')) > 1 and (item.split('-')[0].lower() in self.bot.pkmn_list or item.split('-')[1].lower() in self.bot.pkmn_list):
-                continue
-            if item in added_categories or item.isdigit() or item.lower() in self.bot.item_list:
-                continue
-            for category in tsr_quest_dict.keys():
-                tsr_quest_dict[category][item] = []
-                if item not in added_quests:
-                    added_quests.append(item)
-        for item in tsr_quests:
-            if item in added_categories:
-                current_category = item
-                tsr_quest_dict[item] = {}
-                continue
-            elif item in added_quests:
-                current_quest = item
-                tsr_quest_dict[current_category][item] = []
-                continue
-            else:
-                if not item in self.bot.item_list and not item in added_quests and not item in added_categories:
-                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item, allow_digits=True)
-                    if pokemon:
-                        shiny_str = ""
-                        if pokemon and "research" in pokemon.shiny_available:
-                            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                        item = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
-                tsr_quest_dict[current_category][current_quest].append(item)
-        if tsr_quest_dict:
-            with open(os.path.join('data', 'quest_info.json'), 'w') as fd:
-                json.dump(tsr_quest_dict, fd, indent=2, separators=(', ', ': '))
+        try:
+            tsr_quests = []
+            tsr_quest_dict = {}
+            added_categories = []
+            added_quests = []
+            to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+            to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
+            to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
+            to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
+            await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get("https://thesilphroad.com/research-tasks") as resp:
+                    html = await resp.text()
+            parse_list = re.split('<div|<span|<p', str(html))
+            for line in parse_list:
+                if "Tasks</h3>" in line or "class=\"taskText\">" in line or "class=\"task-reward" in line:
+                    for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "<h3>", "</p>", ">", "unconfirmed", "pokemon", "shinyAvailable",]:
+                        line = line.replace(replacement, "").replace("_", " ").strip()
+                    tsr_quests.append(line.strip())
+            for index, item in enumerate(tsr_quests):
+                if len(item.split()) > 2:
+                    continue
+                __, item_name = await utils.get_item(item)
+                if item_name:
+                    tsr_quests[index] = item_name
+            for item in tsr_quests:
+                if "Tasks" in item:
+                    tsr_quest_dict[item] = {}
+                    added_categories.append(item)
+            for item in tsr_quests:
+                if len(item.split('-')) > 1 and (item.split('-')[0].lower() in self.bot.pkmn_list or item.split('-')[1].lower() in self.bot.pkmn_list):
+                    continue
+                if item in added_categories or item.isdigit() or item.lower() in self.bot.item_list:
+                    continue
+                for category in tsr_quest_dict.keys():
+                    tsr_quest_dict[category][item] = []
+                    if item not in added_quests:
+                        added_quests.append(item)
+            for item in tsr_quests:
+                if item in added_categories:
+                    current_category = item
+                    tsr_quest_dict[item] = {}
+                    continue
+                elif item in added_quests:
+                    current_quest = item
+                    tsr_quest_dict[current_category][item] = []
+                    continue
+                else:
+                    if not item in self.bot.item_list and not item in added_quests and not item in added_categories:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item, allow_digits=True)
+                        if pokemon:
+                            shiny_str = ""
+                            if pokemon and "research" in pokemon.shiny_available:
+                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                            item = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
+                    tsr_quest_dict[current_category][current_quest].append(item)
+            if tsr_quest_dict:
+                with open(os.path.join('data', 'quest_info.json'), 'w') as fd:
+                    json.dump(tsr_quest_dict, fd, indent=2, separators=(', ', ': '))
+        except Exception as e:
+            print(traceback.format_exc())
 
     @auto_res_json.before_loop
     async def before_auto_res_json(self):
