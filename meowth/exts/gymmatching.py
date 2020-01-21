@@ -54,8 +54,8 @@ class GymMatching(commands.Cog):
             gyms = {}
         pois = {**gyms, **stops}
         match, score = utils.get_match(list(pois.keys()), poi_name)
-        if match:
-            match = pois[match].get('alias', match)
+        if pois[match].get('alias') and match:
+            match = pois[match]['alias']
         return(match, score)
 
     async def find_nearest_stop(self, coord, guild_id):
@@ -300,14 +300,14 @@ class GymMatching(commands.Cog):
                 elif poi_target and poi_action == "convert":
                     convert_dict = {}
                     poi_data_name = list(data[str(guild.id)].keys())[data_keys.index(poi_name.lower())]
-                    poi_data_coords = data[str(guild.id)].get(poi_data_name, {}).get('coordinates')
-                    poi_data_alias = data[str(guild.id)].get(poi_data_name, {}).get('alias')
-                    poi_data_notes = data[str(guild.id)].get(poi_data_name, {}).get('notes')
+                    poi_data_coords = data[str(guild.id)].get(poi_data_name, {}).get('coordinates', "")
+                    poi_data_alias = data[str(guild.id)].get(poi_data_name, {}).get('alias', "")
+                    poi_data_notes = data[str(guild.id)].get(poi_data_name, {}).get('notes', "")
                     convert_dict[poi_data_name] = {"coordinates": poi_data_coords, "alias": poi_data_alias, "notes": poi_data_alias}
                     del data[str(guild.id)][poi_data_name]
                     for k in list(data[str(guild.id)].keys()):
                         if data[str(guild.id)][k].get('alias', None) == poi_data_name:
-                            convert_dict[k] = {"coordinates": data[str(guild.id)][k].get('coordinates'), "alias": data[str(guild.id)][k].get('alias'), "notes":data[str(guild.id)][k].get('notes')}
+                            convert_dict[k] = {"coordinates": data[str(guild.id)][k].get('coordinates'), "alias": data[str(guild.id)][k].get('alias', ""), "notes":data[str(guild.id)][k].get('notes', "")}
                             del data[str(guild.id)][k]
                     with open(os.path.join('data', file_name), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
@@ -389,7 +389,7 @@ class GymMatching(commands.Cog):
                         poi_notes = None
                     else:
                         poi_notes = poi_note_wait.clean_content.lower()
-                    data[str(guild.id)][poi_name] = {"coordinates":poi_coords}
+                    data[str(guild.id)][poi_name] = {"coordinates":poi_coords, "alias":"", "notes":""}
                     if poi_alias:
                         data[str(guild.id)][poi_name]['alias'] = poi_alias
                     if poi_notes:

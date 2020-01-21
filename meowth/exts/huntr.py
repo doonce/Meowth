@@ -861,14 +861,14 @@ class Huntr(commands.Cog):
                     with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
                         data = json.load(fd)
                     convert_dict = {}
-                    poi_data_coords = data[str(ctx.guild.id)].get(raid_details, {}).get('coordinates')
-                    poi_data_alias = data[str(ctx.guild.id)].get(raid_details, {}).get('alias')
-                    poi_data_notes = data[str(ctx.guild.id)].get(raid_details, {}).get('notes')
+                    poi_data_coords = data[str(ctx.guild.id)].get(raid_details, {}).get('coordinates', "")
+                    poi_data_alias = data[str(ctx.guild.id)].get(raid_details, {}).get('alias', "")
+                    poi_data_notes = data[str(ctx.guild.id)].get(raid_details, {}).get('notes', "")
                     convert_dict[raid_details] = {"coordinates": poi_data_coords, "alias": poi_data_alias, "notes": poi_data_alias}
                     del data[str(ctx.guild.id)][raid_details]
                     for k in list(data[str(ctx.guild.id)].keys()):
                         if data[str(ctx.guild.id)][k].get('alias', None) == raid_details:
-                            convert_dict[k] = {"coordinates": data[str(ctx.guild.id)][k].get('coordinates'), "alias": data[str(ctx.guild.id)][k].get('alias'), "notes":data[str(ctx.guild.id)][k].get('notes')}
+                            convert_dict[k] = {"coordinates": data[str(ctx.guild.id)][k].get('coordinates'), "alias": data[str(ctx.guild.id)][k].get('alias', ""), "notes":data[str(ctx.guild.id)][k].get('notes', "")}
                             del data[str(ctx.guild.id)][k]
                     with open(os.path.join('data', 'stop_data.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
@@ -881,7 +881,7 @@ class Huntr(commands.Cog):
                     with open(os.path.join('data', 'gym_data.json'), 'r') as fd:
                         data = json.load(fd)
                     add_gym_dict = {}
-                    add_gym_dict[raid_details] = {"coordinates":raid_coordinates}
+                    add_gym_dict[raid_details] = {"coordinates":raid_coordinates, "alias":"", "notes":""}
                     data[str(ctx.ctx.guild.id)] = {**data[str(ctx.ctx.guild.id)], **add_gym_dict}
                     with open(os.path.join('data', 'gym_data.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
@@ -1008,14 +1008,14 @@ class Huntr(commands.Cog):
                     with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
                         data = json.load(fd)
                     convert_dict = {}
-                    poi_data_coords = data[str(ctx.guild.id)].get(raid_details, {}).get('coordinates')
-                    poi_data_alias = data[str(ctx.guild.id)].get(raid_details, {}).get('alias')
-                    poi_data_notes = data[str(ctx.guild.id)].get(raid_details, {}).get('notes')
+                    poi_data_coords = data[str(ctx.guild.id)].get(raid_details, {}).get('coordinates', "")
+                    poi_data_alias = data[str(ctx.guild.id)].get(raid_details, {}).get('alias', "")
+                    poi_data_notes = data[str(ctx.guild.id)].get(raid_details, {}).get('notes', "")
                     convert_dict[raid_details] = {"coordinates": poi_data_coords, "alias": poi_data_alias, "notes": poi_data_alias}
                     del data[str(ctx.guild.id)][raid_details]
                     for k in list(data[str(ctx.guild.id)].keys()):
                         if data[str(ctx.guild.id)][k].get('alias', None) == raid_details:
-                            convert_dict[k] = {"coordinates": data[str(ctx.guild.id)][k].get('coordinates'), "alias": data[str(ctx.guild.id)][k].get('alias'), "notes":data[str(ctx.guild.id)][k].get('notes')}
+                            convert_dict[k] = {"coordinates": data[str(ctx.guild.id)][k].get('coordinates'), "alias": data[str(ctx.guild.id)][k].get('alias', ""), "notes":data[str(ctx.guild.id)][k].get('notes', "")}
                             del data[str(ctx.guild.id)][k]
                     with open(os.path.join('data', 'stop_data.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
@@ -1028,7 +1028,7 @@ class Huntr(commands.Cog):
                     with open(os.path.join('data', 'gym_data.json'), 'r') as fd:
                         data = json.load(fd)
                     add_gym_dict = {}
-                    add_gym_dict[raid_details] = {"coordinates":raid_coordinates}
+                    add_gym_dict[raid_details] = {"coordinates":raid_coordinates, "alias":"", "notes":""}
                     data[str(ctx.ctx.guild.id)] = {**data[str(ctx.ctx.guild.id)], **add_gym_dict}
                     with open(os.path.join('data', 'gym_data.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
@@ -1125,7 +1125,7 @@ class Huntr(commands.Cog):
                 with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
                     data = json.load(fd)
                 add_stop_dict = {}
-                add_stop_dict[location] = {"coordinates":gps, "alias":None, "notes":None}
+                add_stop_dict[location] = {"coordinates":gps, "alias":"", "notes":""}
                 data[str(ctx.guild.id)] = {**data[str(ctx.guild.id)], **add_stop_dict}
                 with open(os.path.join('data', 'stop_data.json'), 'w') as fd:
                     json.dump(data, fd, indent=2, separators=(', ', ': '))
