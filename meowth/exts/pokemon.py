@@ -917,34 +917,35 @@ class Pokedex(commands.Cog):
 
     @tasks.loop(seconds=0)
     async def auto_move_json(self):
-        try:
-            to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
-            to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
-            to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
-            to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
+        while True:
             try:
-                await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
-            except asyncio.CancelledError:
-                pass
-            data = {}
-            async with aiohttp.ClientSession() as sess:
-                async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/GAME_MASTER.json") as resp:
-                    data = await resp.json(content_type=None)
-                    self.bot.gamemaster = data
-            move_info = {}
-            for template in self.bot.gamemaster['itemTemplates']:
-                if "MOVE" in template['templateId'] and "COMBAT_" not in template['templateId'] and "ITEM_" not in template['templateId'] and "SETTINGS" not in template['templateId']:
-                    move_name = template['templateId'].split('MOVE_')[1].title()
-                    move_type = template['moveSettings']['pokemonType'].replace("POKEMON_TYPE_", "").title()
-                    move_power = template['moveSettings'].get('power', 0)
-                    move_info[move_name.lower().replace('_fast', '').replace('_', ' ')] = {"type":move_type, "power":move_power}
-            for type in self.bot.type_list:
-                move_info[f"hidden power {type.lower()}"] = {"type":type.title(), "power":15}
-            if move_info:
-                with open(os.path.join('data', 'move_info.json'), 'w') as fd:
-                     json.dump(move_info, fd, indent=2, separators=(', ', ': '))
-        except Exception as e:
-            print(traceback.format_exc())
+                to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+                to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
+                to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
+                to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
+                try:
+                    await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+                except asyncio.CancelledError:
+                    break
+                data = {}
+                async with aiohttp.ClientSession() as sess:
+                    async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/GAME_MASTER.json") as resp:
+                        data = await resp.json(content_type=None)
+                        self.bot.gamemaster = data
+                move_info = {}
+                for template in self.bot.gamemaster['itemTemplates']:
+                    if "MOVE" in template['templateId'] and "COMBAT_" not in template['templateId'] and "ITEM_" not in template['templateId'] and "SETTINGS" not in template['templateId']:
+                        move_name = template['templateId'].split('MOVE_')[1].title()
+                        move_type = template['moveSettings']['pokemonType'].replace("POKEMON_TYPE_", "").title()
+                        move_power = template['moveSettings'].get('power', 0)
+                        move_info[move_name.lower().replace('_fast', '').replace('_', ' ')] = {"type":move_type, "power":move_power}
+                for type in self.bot.type_list:
+                    move_info[f"hidden power {type.lower()}"] = {"type":type.title(), "power":15}
+                if move_info:
+                    with open(os.path.join('data', 'move_info.json'), 'w') as fd:
+                         json.dump(move_info, fd, indent=2, separators=(', ', ': '))
+            except Exception as e:
+                print(traceback.format_exc())
 
     @auto_move_json.before_loop
     async def before_auto_move_json(self):
@@ -968,52 +969,54 @@ class Pokedex(commands.Cog):
 
     @tasks.loop(seconds=0)
     async def auto_egg_json(self):
-        try:
-            to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
-            to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
-            to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
-            to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
+        while True:
             try:
-                await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
-            except asyncio.CancelledError:
-                pass
-            async with aiohttp.ClientSession() as sess:
-                async with sess.get("https://thesilphroad.com/egg-distances") as resp:
-                    html = await resp.text()
-            parse_list = re.split('<div|<span|<p', str(html))
-            for line in parse_list:
-                if "img/pogo-assets/egg" in line or "img/pokemon/icons/96x96/" in line:
-                    egg_img = re.search(r'(?i)img/pogo-assets/egg(.*).png', line)
-                    if egg_img:
-                        current_egg = egg_dict.setdefault(str(egg_img.group(1)), [])
-                        continue
-                    pkmn_img = re.search(r'(?i)img/pokemon/icons/96x96/(.*).png', line)
-                    if pkmn_img:
-                        current_egg.append(str(pkmn_img.group(1)))
-                        continue
-            for egg_distance in egg_dict:
-                for index, item in enumerate(egg_dict[egg_distance]):
-                    shiny_str = ""
-                    if item.isdigit():
-                        pokemon = utils.get_name(self.bot, item)
-                        if pokemon:
-                            pokemon_shiny = self.bot.pkmn_info[pokemon]['forms']['none']['shiny']
-                            if "hatch" in pokemon_shiny:
-                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                            pokemon_types = [utils.type_to_emoji(self.bot, x) for x in self.bot.pkmn_info[pokemon]['forms']['none']['type']]
-                            egg_dict[egg_distance][index] = f"{shiny_str}{pokemon.title()} {(''.join(pokemon_types))}"
-                    else:
-                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, item, allow_digits=True)
-                        if pokemon:
-                            if "hatch" in pokemon.shiny_available:
-                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                            egg_dict[egg_distance][index] = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
-            with open(os.path.join('data', 'egg_info.json'), 'w') as fd:
-                json.dump(egg_dict, fd, indent=2, separators=(', ', ': '))
-        except Exception as e:
-            print(traceback.format_exc())
+                to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+                to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
+                to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
+                to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
+                try:
+                    await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+                except asyncio.CancelledError:
+                    break
+                egg_dict = {}
+                async with aiohttp.ClientSession() as sess:
+                    async with sess.get("https://thesilphroad.com/egg-distances") as resp:
+                        html = await resp.text()
+                parse_list = re.split('<div|<span|<p', str(html))
+                for line in parse_list:
+                    if "img/pogo-assets/egg" in line or "img/pokemon/icons/96x96/" in line:
+                        egg_img = re.search(r'(?i)img/pogo-assets/egg(.*).png', line)
+                        if egg_img:
+                            current_egg = egg_dict.setdefault(str(egg_img.group(1)), [])
+                            continue
+                        pkmn_img = re.search(r'(?i)img/pokemon/icons/96x96/(.*).png', line)
+                        if pkmn_img:
+                            current_egg.append(str(pkmn_img.group(1)))
+                            continue
+                for egg_distance in egg_dict:
+                    for index, item in enumerate(egg_dict[egg_distance]):
+                        shiny_str = ""
+                        if item.isdigit():
+                            pokemon = utils.get_name(self.bot, item)
+                            if pokemon:
+                                pokemon_shiny = self.bot.pkmn_info[pokemon]['forms']['none']['shiny']
+                                if "hatch" in pokemon_shiny:
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                                pokemon_types = [utils.type_to_emoji(self.bot, x) for x in self.bot.pkmn_info[pokemon]['forms']['none']['type']]
+                                egg_dict[egg_distance][index] = f"{shiny_str}{pokemon.title()} {(''.join(pokemon_types))}"
+                        else:
+                            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item, allow_digits=True)
+                            if pokemon:
+                                if "hatch" in pokemon.shiny_available:
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                                egg_dict[egg_distance][index] = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
+                with open(os.path.join('data', 'egg_info.json'), 'w') as fd:
+                    json.dump(egg_dict, fd, indent=2, separators=(', ', ': '))
+            except:
+                print(traceback.format_exc())
 
-    @auto_move_json.before_loop
+    @auto_egg_json.before_loop
     async def before_auto_egg_json(self):
         await self.bot.wait_until_ready()
 
@@ -1056,20 +1059,23 @@ class Pokedex(commands.Cog):
                             egg_dict[egg_distance][index] = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
             egg_embed = discord.Embed(discription="", colour=ctx.guild.me.colour)
             for egg_distance in egg_dict.keys():
+                egg_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_distance}km.png?cache=1")
                 current_length = 0
                 egg_list = []
                 for item in egg_dict[egg_distance]:
-                    if len(item) + current_length < 1000:
+                    if len(item) + current_length < 900:
                         egg_list.append(item)
                         current_length += len(item)
                     else:
                         egg_embed.add_field(name=f"{egg_distance}KM Eggs", value=(', ').join(egg_list), inline=False)
                         current_length = 0
                         egg_list = []
-                egg_embed.add_field(name=f"{egg_distance}KM Eggs", value=(', ').join(egg_list), inline=False)
-            await ctx.send(embed=egg_embed, delete_after=60)
+                if egg_list:
+                    egg_embed.add_field(name=f"{egg_distance}KM Eggs", value=(', ').join(egg_list), inline=False)
+                await ctx.send(embed=egg_embed, delete_after=60)
+                egg_embed.clear_fields()
             question = await ctx.send(f"This will be the new egg dictionary. The above messages will delete themselves, but they will be in **{ctx.prefix}list eggs**. Continue?")
-            egg_embed.set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/1.png?cache=1')
+            egg_embed.set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/2km.png?cache=1')
             try:
                 timeout = False
                 res, reactuser = await utils.ask(self.bot, question, ctx.author.id)

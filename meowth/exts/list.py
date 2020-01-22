@@ -1507,14 +1507,15 @@ class Listing(commands.Cog):
                 current_length = 0
                 egg_list = []
                 for item in self.bot.egg_info[egg_distance]:
-                    if len(item) + current_length < 1000:
+                    if len(item) + current_length < 900:
                         egg_list.append(item)
                         current_length += len(item)
                     else:
                         egg_embed.add_field(name=f"{egg_distance}KM Eggs", value=(', ').join(egg_list), inline=False)
                         current_length = 0
                         egg_list = []
-                egg_embed.add_field(name=f"{egg_distance}KM Eggs", value=(', ').join(egg_list), inline=False)
+                if egg_list:
+                    egg_embed.add_field(name=f"{egg_distance}KM Eggs", value=(', ').join(egg_list), inline=False)
                 msg = await ctx.send(embed=egg_embed)
                 egg_embed.clear_fields()
                 list_messages.append(msg.id)

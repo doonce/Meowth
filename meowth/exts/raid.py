@@ -1023,79 +1023,80 @@ class Raid(commands.Cog):
 
     @tasks.loop(seconds=0)
     async def auto_raid_json(self):
-        try:
-            to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
-            to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
-            to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
-            to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
+        while True:
             try:
-                await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
-            except asyncio.CancelledError:
-                pass
-            tsr_bosses = []
-            tsr_boss_dict = {}
-            old_raid_dict = {}
-            for raid_level in self.bot.raid_info['raid_eggs']:
-                old_raid_dict[raid_level] = self.bot.raid_info['raid_eggs'][raid_level]['pokemon']
-            with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
-                data = json.load(fd)
-            async with aiohttp.ClientSession() as sess:
-                async with sess.get("https://thesilphroad.com/raid-bosses") as resp:
-                    html = await resp.text()
-                    for line in html.splitlines():
-                        if "Raids</h4>" in line or "<h4>Tier" in line or "<div class=\"boss-name\">" in line:
-                            tsr_bosses.append(line.strip())
-            if tsr_bosses:
-                for index, item in enumerate(tsr_bosses):
-                    tsr_bosses[index] = item.replace("<h4>", "").replace("</h4>", "").replace("<div class=\"boss-name\">", "").replace("</div>", "").replace("Raids", "").replace("Tier", "").strip()
-            if tsr_bosses:
-                for item in tsr_bosses:
-                    if item.isdigit() or item == "EX":
-                        tsr_boss_dict[item] = []
-                        current_list = tsr_boss_dict[item]
-                    else:
-                        current_list.append(item)
-            for raid_level in tsr_boss_dict:
-                if not data['raid_eggs'][str(raid_level)].get('overwrites', {}):
-                    continue
-                for overwrite in copy.deepcopy(data['raid_eggs'][str(raid_level)]['overwrites']):
-                    if time.time() >= data['raid_eggs'][str(raid_level)]['overwrites'][overwrite]['replace_until']:
-                        del data['raid_eggs'][str(raid_level)]['overwrites'][overwrite]
-                with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
-                    json.dump(data, fd, indent=2, separators=(', ', ': '))
-                for index, pokemon in enumerate(tsr_boss_dict[raid_level]):
-                    if pokemon in self.bot.raid_info['raid_eggs'][str(raid_level)].get('overwrites', {}):
-                        replace_with = self.bot.raid_info['raid_eggs'][str(raid_level)]['overwrites'][pokemon]['replace_with']
-                        tsr_boss_dict[raid_level][index] = replace_with
-                tsr_boss_dict[raid_level] = [x for x in tsr_boss_dict[raid_level] if x]
-            if tsr_boss_dict:
+                to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+                to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
+                to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
+                to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
+                try:
+                    await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+                except asyncio.CancelledError:
+                    break
+                tsr_bosses = []
+                tsr_boss_dict = {}
+                old_raid_dict = {}
+                for raid_level in self.bot.raid_info['raid_eggs']:
+                    old_raid_dict[raid_level] = self.bot.raid_info['raid_eggs'][raid_level]['pokemon']
                 with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                     data = json.load(fd)
+                async with aiohttp.ClientSession() as sess:
+                    async with sess.get("https://thesilphroad.com/raid-bosses") as resp:
+                        html = await resp.text()
+                        for line in html.splitlines():
+                            if "Raids</h4>" in line or "<h4>Tier" in line or "<div class=\"boss-name\">" in line:
+                                tsr_bosses.append(line.strip())
+                if tsr_bosses:
+                    for index, item in enumerate(tsr_bosses):
+                        tsr_bosses[index] = item.replace("<h4>", "").replace("</h4>", "").replace("<div class=\"boss-name\">", "").replace("</div>", "").replace("Raids", "").replace("Tier", "").strip()
+                if tsr_bosses:
+                    for item in tsr_bosses:
+                        if item.isdigit() or item == "EX":
+                            tsr_boss_dict[item] = []
+                            current_list = tsr_boss_dict[item]
+                        else:
+                            current_list.append(item)
                 for raid_level in tsr_boss_dict:
-                    data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
-                new_raid_dict = copy.deepcopy(tsr_boss_dict)
-                with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
-                    json.dump(data, fd, indent=2, separators=(', ', ': '))
-                await pkmn_class.Pokedex.generate_lists(self.bot)
-                self.bot.raid_dict = await utils.get_raid_dict(self.bot)
-                self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
-                for guild in list(self.bot.guilds):
-                    for report_dict in self.bot.channel_report_dicts:
-                        for channel_id in list(self.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys()):
-                            for raid_level in new_raid_dict:
-                                if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(raid_level):
-                                    for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
-                                        interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id].get('interest', []))
-                                        new_bosses = list(set(new_raid_dict[raid_level]) - set(old_raid_dict[raid_level]))
-                                        new_bosses = [x.lower() for x in new_bosses]
-                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
-                                    self.bot.guild_dict[guild.id][report_dict][channel_id]['pokemon'] = ''
-                                    self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
-                                    self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
-                                    channel = self.bot.get_channel(channel_id)
-                                    await self._edit_party(channel)
-        except Exception as e:
-            print(traceback.format_exc())
+                    if not data['raid_eggs'][str(raid_level)].get('overwrites', {}):
+                        continue
+                    for overwrite in copy.deepcopy(data['raid_eggs'][str(raid_level)]['overwrites']):
+                        if time.time() >= data['raid_eggs'][str(raid_level)]['overwrites'][overwrite]['replace_until']:
+                            del data['raid_eggs'][str(raid_level)]['overwrites'][overwrite]
+                    with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                    for index, pokemon in enumerate(tsr_boss_dict[raid_level]):
+                        if pokemon in self.bot.raid_info['raid_eggs'][str(raid_level)].get('overwrites', {}):
+                            replace_with = self.bot.raid_info['raid_eggs'][str(raid_level)]['overwrites'][pokemon]['replace_with']
+                            tsr_boss_dict[raid_level][index] = replace_with
+                    tsr_boss_dict[raid_level] = [x for x in tsr_boss_dict[raid_level] if x]
+                if tsr_boss_dict:
+                    with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
+                        data = json.load(fd)
+                    for raid_level in tsr_boss_dict:
+                        data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
+                    new_raid_dict = copy.deepcopy(tsr_boss_dict)
+                    with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                    await pkmn_class.Pokedex.generate_lists(self.bot)
+                    self.bot.raid_dict = await utils.get_raid_dict(self.bot)
+                    self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
+                    for guild in list(self.bot.guilds):
+                        for report_dict in self.bot.channel_report_dicts:
+                            for channel_id in list(self.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys()):
+                                for raid_level in new_raid_dict:
+                                    if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(raid_level):
+                                        for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
+                                            interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id].get('interest', []))
+                                            new_bosses = list(set(new_raid_dict[raid_level]) - set(old_raid_dict[raid_level]))
+                                            new_bosses = [x.lower() for x in new_bosses]
+                                            self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
+                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['pokemon'] = ''
+                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
+                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
+                                        channel = self.bot.get_channel(channel_id)
+                                        await self._edit_party(channel)
+            except Exception as e:
+                print(traceback.format_exc())
 
     @auto_raid_json.before_loop
     async def before_auto_raid_json(self):
