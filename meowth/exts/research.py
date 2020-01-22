@@ -386,6 +386,7 @@ class Research(commands.Cog):
                         continue
                     else:
                         if not item in self.bot.item_list and not item in added_quests and not item in added_categories:
+                            shiny_str = ""
                             if item.isdigit():
                                 pokemon = utils.get_name(self.bot, item)
                                 if pokemon:
@@ -397,7 +398,6 @@ class Research(commands.Cog):
                             else:
                                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item, allow_digits=True)
                                 if pokemon:
-                                    shiny_str = ""
                                     if "research" in pokemon.shiny_available:
                                         shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                                     item = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
@@ -469,6 +469,7 @@ class Research(commands.Cog):
                     continue
                 else:
                     if not item in self.bot.item_list and not item in added_quests and not item in added_categories:
+                        shiny_str = ""
                         if item.isdigit():
                             pokemon = utils.get_name(self.bot, item)
                             if pokemon:
@@ -480,7 +481,6 @@ class Research(commands.Cog):
                         else:
                             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item, allow_digits=True)
                             if pokemon:
-                                shiny_str = ""
                                 if "research" in pokemon.shiny_available:
                                     shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                                 item = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
