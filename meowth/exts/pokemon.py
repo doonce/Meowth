@@ -11,6 +11,7 @@ import os
 import json
 import functools
 import aiohttp
+import traceback
 from dateutil.relativedelta import relativedelta
 from string import ascii_lowercase
 from math import log, floor
@@ -879,9 +880,11 @@ class Pokedex(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.auto_move_json.start()
+        self.auto_egg_json.start()
 
     def cog_unload(self):
         self.auto_move_json.cancel()
+        self.auto_egg_json.cancel()
 
     @staticmethod
     async def generate_lists(bot):
@@ -919,7 +922,10 @@ class Pokedex(commands.Cog):
             to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
             to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
             to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
-            await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+            try:
+                await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+            except asyncio.CancelledError:
+                pass
             data = {}
             async with aiohttp.ClientSession() as sess:
                 async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/GAME_MASTER.json") as resp:
@@ -959,6 +965,135 @@ class Pokedex(commands.Cog):
         with open(os.path.join('data', 'move_info.json'), 'w') as fd:
              json.dump(move_info, fd, indent=2, separators=(', ', ': '))
         await ctx.send(f"**{len(move_info)}** moves updated.", delete_after=15)
+
+    @tasks.loop(seconds=0)
+    async def auto_egg_json(self):
+        try:
+            to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
+            to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
+            to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
+            to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
+            try:
+                await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+            except asyncio.CancelledError:
+                pass
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get("https://thesilphroad.com/egg-distances") as resp:
+                    html = await resp.text()
+            parse_list = re.split('<div|<span|<p', str(html))
+            for line in parse_list:
+                if "img/pogo-assets/egg" in line or "img/pokemon/icons/96x96/" in line:
+                    egg_img = re.search(r'(?i)img/pogo-assets/egg(.*).png', line)
+                    if egg_img:
+                        current_egg = egg_dict.setdefault(str(egg_img.group(1)), [])
+                        continue
+                    pkmn_img = re.search(r'(?i)img/pokemon/icons/96x96/(.*).png', line)
+                    if pkmn_img:
+                        current_egg.append(str(pkmn_img.group(1)))
+                        continue
+            for egg_distance in egg_dict:
+                for index, item in enumerate(egg_dict[egg_distance]):
+                    shiny_str = ""
+                    if item.isdigit():
+                        pokemon = utils.get_name(self.bot, item)
+                        if pokemon:
+                            pokemon_shiny = self.bot.pkmn_info[pokemon]['forms']['none']['shiny']
+                            if "hatch" in pokemon_shiny:
+                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                            pokemon_types = [utils.type_to_emoji(self.bot, x) for x in self.bot.pkmn_info[pokemon]['forms']['none']['type']]
+                            egg_dict[egg_distance][index] = f"{shiny_str}{pokemon.title()} {(''.join(pokemon_types))}"
+                    else:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, item, allow_digits=True)
+                        if pokemon:
+                            if "hatch" in pokemon.shiny_available:
+                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                            egg_dict[egg_distance][index] = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
+            with open(os.path.join('data', 'egg_info.json'), 'w') as fd:
+                json.dump(egg_dict, fd, indent=2, separators=(', ', ': '))
+        except Exception as e:
+            print(traceback.format_exc())
+
+    @auto_move_json.before_loop
+    async def before_auto_egg_json(self):
+        await self.bot.wait_until_ready()
+
+    @commands.command()
+    @checks.is_manager()
+    async def egg_json(self, ctx):
+        egg_dict = {}
+        error = False
+        async with ctx.typing():
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get("https://thesilphroad.com/egg-distances") as resp:
+                    html = await resp.text()
+            parse_list = re.split('<div|<span|<p', str(html))
+            for line in parse_list:
+                if "img/pogo-assets/egg" in line or "img/pokemon/icons/96x96/" in line:
+                    egg_img = re.search(r'(?i)img/pogo-assets/egg(.*).png', line)
+                    if egg_img:
+                        current_egg = egg_dict.setdefault(str(egg_img.group(1)), [])
+                        continue
+                    pkmn_img = re.search(r'(?i)img/pokemon/icons/96x96/(.*).png', line)
+                    if pkmn_img:
+                        current_egg.append(str(pkmn_img.group(1)))
+                        continue
+            for egg_distance in egg_dict:
+                for index, item in enumerate(egg_dict[egg_distance]):
+                    shiny_str = ""
+                    if item.isdigit():
+                        pokemon = utils.get_name(self.bot, item)
+                        if pokemon:
+                            pokemon_shiny = self.bot.pkmn_info[pokemon]['forms']['none']['shiny']
+                            if "hatch" in pokemon_shiny:
+                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                            pokemon_types = [utils.type_to_emoji(self.bot, x) for x in self.bot.pkmn_info[pokemon]['forms']['none']['type']]
+                            egg_dict[egg_distance][index] = f"{shiny_str}{pokemon.title()} {(''.join(pokemon_types))}"
+                    else:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, item, allow_digits=True)
+                        if pokemon:
+                            if "hatch" in pokemon.shiny_available:
+                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                            egg_dict[egg_distance][index] = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
+            egg_embed = discord.Embed(discription="", colour=ctx.guild.me.colour)
+            for egg_distance in egg_dict.keys():
+                current_length = 0
+                egg_list = []
+                for item in egg_dict[egg_distance]:
+                    if len(item) + current_length < 1000:
+                        egg_list.append(item)
+                        current_length += len(item)
+                    else:
+                        egg_embed.add_field(name=f"{egg_distance}KM Eggs", value=(', ').join(egg_list), inline=False)
+                        current_length = 0
+                        egg_list = []
+                egg_embed.add_field(name=f"{egg_distance}KM Eggs", value=(', ').join(egg_list), inline=False)
+            await ctx.send(embed=egg_embed, delete_after=60)
+            question = await ctx.send(f"This will be the new egg dictionary. The above messages will delete themselves, but they will be in **{ctx.prefix}list eggs**. Continue?")
+            egg_embed.set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/1.png?cache=1')
+            try:
+                timeout = False
+                res, reactuser = await utils.ask(self.bot, question, ctx.author.id)
+            except TypeError:
+                timeout = True
+            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
+                await utils.safe_delete(question)
+                error = _('cancelled the command')
+            elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
+                pass
+            else:
+                error = _('did something invalid')
+            await utils.safe_delete(question)
+            if error:
+                egg_embed.clear_fields()
+                egg_embed.add_field(name=_('**Egg Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+                confirmation = await ctx.send(embed=egg_embed, delete_after=10)
+                await utils.safe_delete(ctx.message)
+            else:
+                egg_embed.clear_fields()
+                egg_embed.add_field(name=_('**Egg Edit Completed**'), value=_("Meowth! Your edit completed successfully.").format(error=error), inline=False)
+                confirmation = await ctx.send(embed=egg_embed)
+                with open(os.path.join('data', 'egg_info.json'), 'w') as fd:
+                    json.dump(egg_dict, fd, indent=2, separators=(', ', ': '))
 
     @commands.command()
     @checks.is_manager()
@@ -1334,9 +1469,11 @@ class Pokedex(commands.Cog):
                 form = "Normal"
             form_str = f"{form} {form_key}"
             form_list.append(form_str.strip())
-        preview_embed.add_field(name=f"{str(pokemon)} - #{pokemon.id} - {pokemon.emoji} - {('').join(pokemon.boost_weather)}{' - *Legendary*' if pokemon.legendary else ''}{' - *Mythical*' if pokemon.mythical else ''}", value=pokemon.pokedex, inline=False)
+        if pokemon.shiny_available:
+            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+        preview_embed.add_field(name=f"{shiny_str}{str(pokemon)} {pokemon.emoji} - #{pokemon.id} - {('').join(pokemon.boost_weather)}{' - *Legendary*' if pokemon.legendary else ''}{' - *Mythical*' if pokemon.mythical else ''}", value=f"{pokemon.pokedex}", inline=False)
         if len(forms) > 1 or key_list:
-            preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=True)
+            preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=False)
         if len(pokemon.evolution.split("→")) > 1:
             preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=pokemon.evolution.replace(pokemon.name.title(), f"**{pokemon.name.title()}**"), inline=False)
         if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
@@ -1345,6 +1482,8 @@ class Pokedex(commands.Cog):
             charge_moves = []
             quick_moves = []
             field_value = ""
+            if pokemon.weakness_emoji:
+                field_value += f"Weaknesses: {pokemon.weakness_emoji}\n"
             if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
                 field_value += f"Base Stats: Attack: **{pokemon.base_attack}** | Defense: **{pokemon.base_defense}** | Stamina: **{pokemon.base_stamina}**\n"
             if pokemon.height and pokemon.weight:

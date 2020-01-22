@@ -4,11 +4,13 @@
       "egg": "normal", 
       "egg_img": "1.png", 
       "pokemon": [
-        "Ekans", 
-        "Zubat", 
-        "Meowth", 
-        "Cubone", 
-        "Koffing"
+        "Sandshrew", 
+        "Magikarp", 
+        "Wailmer", 
+        "Shinx", 
+        "Oshawott", 
+        "Timburr", 
+        "Klink"
       ], 
       "hatchtime": 60, 
       "raidtime": 45
@@ -17,11 +19,12 @@
       "egg": "normal", 
       "egg_img": "2.png", 
       "pokemon": [
-        "Sandslash", 
-        "Magneton", 
-        "Muk", 
-        "Cloyster", 
-        "Kingler"
+        "Kingler", 
+        "Marowak", 
+        "Gligar", 
+        "Breloom", 
+        "Mawile", 
+        "Prinplup"
       ], 
       "hatchtime": 60, 
       "raidtime": 45
@@ -31,22 +34,26 @@
       "egg_img": "3.png", 
       "pokemon": [
         "Alolan Raichu", 
-        "Persian", 
         "Machamp", 
-        "Onix"
+        "Onix", 
+        "Vaporeon", 
+        "Donphan", 
+        "Claydol"
       ], 
       "hatchtime": 60, 
-      "raidtime": 45
+      "raidtime": 45, 
+      "overwrites": {}
     }, 
     "4": {
       "egg": "rare", 
       "egg_img": "4.png", 
       "pokemon": [
-        "Nidoking", 
         "Golem", 
         "Alolan Marowak", 
+        "Galarian Weezing", 
         "Rhydon", 
-        "Absol"
+        "Tyranitar", 
+        "Excadrill"
       ], 
       "hatchtime": 60, 
       "raidtime": 45
@@ -55,16 +62,28 @@
       "egg": "legendary", 
       "egg_img": "5.png", 
       "pokemon": [
-        "Cobalion"
+        "Latias", 
+        "Latios", 
+        "Heatran"
       ], 
       "hatchtime": 60, 
-      "raidtime": 45
+      "raidtime": 45, 
+      "overwrites": {
+        "Latios": {
+          "replace_with": null, 
+          "replace_until": 1579896000.0
+        }, 
+        "Latias": {
+          "replace_with": null, 
+          "replace_until": 1579896000.0
+        }
+      }
     }, 
     "EX": {
       "egg": "EX", 
       "egg_img": "EX.png", 
       "pokemon": [
-        "Mewtwo"
+        "Regigigas"
       ], 
       "hatchtime": 14, 
       "raidtime": 45

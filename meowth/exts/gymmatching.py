@@ -54,7 +54,7 @@ class GymMatching(commands.Cog):
             gyms = {}
         pois = {**gyms, **stops}
         match, score = utils.get_match(list(pois.keys()), poi_name)
-        if pois[match].get('alias') and match:
+        if match and pois[match].get('alias'):
             match = pois[match]['alias']
         return(match, score)
 

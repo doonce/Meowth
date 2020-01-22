@@ -1326,7 +1326,7 @@ class Listing(commands.Cog):
             pokemon = None
             if research_dict[questid]['report_channel'] == ctx.message.channel.id:
                 try:
-                    questreportmsg = await ctx.message.channel.fetch_message(questid)
+                    # questreportmsg = await ctx.message.channel.fetch_message(questid)
                     questauthor = ctx.channel.guild.get_member(research_dict[questid]['report_author'])
                     reported_by = ""
                     if questauthor and not questauthor.bot:
@@ -1442,10 +1442,10 @@ class Listing(commands.Cog):
 
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
-    async def tasks(self, ctx):
+    async def tasks(self, ctx, list_type="all"):
         """List the current research tasks
 
-        Usage: !list tasks"""
+        Usage: !list tasks [all / pokemon / items]"""
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('res_tasks', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -1458,16 +1458,18 @@ class Listing(commands.Cog):
             list_messages = []
             await utils.safe_bulk_delete(ctx.channel, delete_list)
             research_embed = discord.Embed(discription="", colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/field-research.png?cache=1')
-            for category in self.bot.quest_info.keys():
+            if not any([list_type == "all", list_type == "pokemon", list_type == "items"]):
+                list_type = "all"
+            for category in self.bot.quest_info[list_type].keys():
                 field_value = ""
-                for quest in self.bot.quest_info[category]:
-                    if (len(field_value) + len(f"**{quest}** - {(', ').join([x.title() for x in self.bot.quest_info[category][quest]])}\n")) >= 1020:
+                for quest in self.bot.quest_info[list_type][category]:
+                    if (len(field_value) + len(f"**{quest}** - {(', ').join([x.title() for x in self.bot.quest_info[list_type][category][quest]])}\n")) >= 1020:
                         research_embed.add_field(name=category, value=field_value, inline=False)
                         msg = await ctx.send(embed=research_embed)
                         list_messages.append(msg.id)
                         research_embed.clear_fields()
                         field_value = ""
-                    field_value += f"**{quest}** - {(', ').join([x.title() for x in self.bot.quest_info[category][quest]])}\n"
+                    field_value += f"**{quest}** - {(', ').join([x.title() for x in self.bot.quest_info[list_type][category][quest]])}\n"
                 research_embed.add_field(name=category, value=field_value, inline=False)
             msg = await ctx.send(embed=research_embed)
             list_messages.append(msg.id)
@@ -1475,6 +1477,51 @@ class Listing(commands.Cog):
             for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['res_tasks']):
                 if not ctx.guild.get_channel(channel):
                     del self.bot.guild_dict[ctx.guild.id]['list_dict']['res_tasks'][channel]
+
+    @_list.command()
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    async def eggs(self, ctx, level=""):
+        """List the current egg distances
+
+        Usage: !list eggs"""
+        list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('egg_list', {}).setdefault(ctx.channel.id, [])
+        delete_list = []
+        async with ctx.typing():
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.fetch_message(msg)
+                    delete_list.append(msg)
+                except:
+                    pass
+            list_messages = []
+            await utils.safe_bulk_delete(ctx.channel, delete_list)
+            egg_embed = discord.Embed(discription="", colour=ctx.guild.me.colour)
+            if level.isdigit() and any([level == "2", level == "5", level == "7", level == "10"]):
+                distance_list = level
+            if not level:
+                distance_list = ["2", "5", "7", "10"]
+            for egg_distance in self.bot.egg_info.keys():
+                if egg_distance not in distance_list:
+                    continue
+                egg_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_distance}km.png?cache=1")
+                current_length = 0
+                egg_list = []
+                for item in self.bot.egg_info[egg_distance]:
+                    if len(item) + current_length < 1000:
+                        egg_list.append(item)
+                        current_length += len(item)
+                    else:
+                        egg_embed.add_field(name=f"{egg_distance}KM Eggs", value=(', ').join(egg_list), inline=False)
+                        current_length = 0
+                        egg_list = []
+                egg_embed.add_field(name=f"{egg_distance}KM Eggs", value=(', ').join(egg_list), inline=False)
+                msg = await ctx.send(embed=egg_embed)
+                egg_embed.clear_fields()
+                list_messages.append(msg.id)
+            self.bot.guild_dict[ctx.guild.id]['list_dict']['egg_list'][ctx.channel.id] = list_messages
+            for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['egg_list']):
+                if not ctx.guild.get_channel(channel):
+                    del self.bot.guild_dict[ctx.guild.id]['list_dict']['egg_list'][channel]
 
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -1527,7 +1574,7 @@ class Listing(commands.Cog):
             luremsg = ""
             if lure_dict[lureid]['report_channel'] == ctx.message.channel.id:
                 try:
-                    lurereportmsg = await ctx.message.channel.fetch_message(lureid)
+                    # lurereportmsg = await ctx.message.channel.fetch_message(lureid)
                     lureauthor = ctx.channel.guild.get_member(lure_dict[lureid]['report_author'])
                     lure_expire = datetime.datetime.utcfromtimestamp(lure_dict[lureid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     lure_type = lure_dict[lureid]['type']
@@ -1683,7 +1730,7 @@ class Listing(commands.Cog):
                 try:
                     invasionmsg = ""
                     reward_list = []
-                    invasionreportmsg = await ctx.message.channel.fetch_message(invasionid)
+                    # invasionreportmsg = await ctx.message.channel.fetch_message(invasionid)
                     invasionauthor = ctx.channel.guild.get_member(invasion_dict[invasionid]['report_author'])
                     reward = invasion_dict[invasionid]['reward']
                     reward_type = invasion_dict[invasionid].get('reward_type', None)
@@ -1779,7 +1826,7 @@ class Listing(commands.Cog):
             if pvp_dict[pvpid]['report_channel'] == ctx.message.channel.id:
                 try:
                     pvpmsg = ""
-                    pvpreportmsg = await ctx.message.channel.fetch_message(pvpid)
+                    # pvpreportmsg = await ctx.message.channel.fetch_message(pvpid)
                     pvpauthor = ctx.channel.guild.get_member(pvp_dict[pvpid]['report_author'])
                     pvp_tournament = pvp_dict[pvpid].get('tournament', {})
                     pvp_expire = datetime.datetime.utcfromtimestamp(pvp_dict[pvpid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
@@ -1859,7 +1906,6 @@ class Listing(commands.Cog):
             if wild_dict[wildid]['report_channel'] == ctx.message.channel.id:
                 try:
                     wildmsg = ""
-                    wildreportmsg = await ctx.message.channel.fetch_message(wildid)
                     wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['report_author'])
                     wild_despawn = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     reported_by = ""
@@ -1882,6 +1928,7 @@ class Listing(commands.Cog):
                     wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('wild_bullet', u'\U0001F539')))
                     wildmsg += f"**Pokemon**: {shiny_str}{str(pokemon).title()} {pokemon.emoji}{disguise_str} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
                     if (disguise and disguise.is_boosted) or (pokemon and pokemon.is_boosted):
+                        wildreportmsg = await ctx.message.channel.fetch_message(wildid)
                         timestamp = wildreportmsg.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         wildmsg += f" | {pokemon.is_boosted or disguise.is_boosted} *({timestamp.strftime('%I:%M %p')})*"
                     if level_check:

@@ -93,15 +93,16 @@ class Tutorial(commands.Cog):
                 continue
             try:
                 tutorial_dict = self.bot.guild_dict[guild.id].setdefault('configure_dict', {}).setdefault('tutorial', {}).setdefault('report_channels', {})
-                for channelid in tutorial_dict:
-                    channel_exists = self.bot.get_channel(channelid)
+                for tutorial_channel in list(tutorial_dict.keys()):
+                    report_message = tutorial_dict[tutorial_channel]['report_message']
+                    channel_exists = self.bot.get_channel(tutorial_channel)
                     if not channel_exists:
                         try:
-                            del self.bot.guild_dict[guild.id]['configure_dict']['tutorial']['report_channels'][channelid]
+                            del self.bot.guild_dict[guild.id]['configure_dict']['tutorial']['report_channels'][tutorial_channel]
                         except KeyError:
                             pass
                         try:
-                            del self.bot.guild_dict[guild.id]['configure_dict']['raid']['category_dict'][channelid]
+                            del self.bot.guild_dict[guild.id]['configure_dict']['raid']['category_dict'][tutorial_channel]
                         except KeyError:
                             pass
                     else:
@@ -113,7 +114,7 @@ class Tutorial(commands.Cog):
                                     newbie = overwrite
                                     break
                         try:
-                            tutorial_message = await channel_exists.fetch_message(tutorial_dict[channelid])
+                            tutorial_message = await channel_exists.fetch_message(report_message)
                         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                             pass
                         if tutorial_message:
@@ -122,6 +123,8 @@ class Tutorial(commands.Cog):
                             count += 1
                             ctx.author = newbie
                             ctx.tutorial_channel = channel_exists
+                            if tutorial_dict[tutorial_channel]['completed']:
+                                return await self.delete_tutorial_channel(ctx)
                             if not ctx.prefix:
                                 prefix = self.bot._get_prefix(self.bot, ctx.message)
                                 ctx.prefix = prefix[-1]
@@ -178,7 +181,7 @@ class Tutorial(commands.Cog):
             tutorial_message += _("\n\n**Enabled Commands:**\n{enabled}").format(enabled=", ".join(enabled))
             msg = await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Tutorial - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
             report_channels = cfg.setdefault('tutorial', {}).setdefault('report_channels', {})
-            report_channels[ctx.tutorial_channel.id] = msg.id
+            report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
             while True:
                 try:
                     tutorial_reply = await self.wait_for_msg(ctx.tutorial_channel, ctx.author)
@@ -205,7 +208,7 @@ class Tutorial(commands.Cog):
         else:
             msg = await ctx.tutorial_channel.send(f"Hi {ctx.author.mention}! I'm Meowth, a Discord helper bot for Pokemon Go communities!", embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=tutorial_message).set_author(name=_('Meowth Configuration - {guild}').format(guild=ctx.guild.name), icon_url=self.bot.user.avatar_url))
             report_channels = cfg.setdefault('tutorial', {}).setdefault('report_channels', {})
-            report_channels[ctx.tutorial_channel.id] = msg.id
+            report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
         try:
             # start want tutorial
             if 'want' in tutorial_reply_list:
@@ -281,7 +284,7 @@ class Tutorial(commands.Cog):
 
             # finish tutorial
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
-
+            self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
             await asyncio.sleep(30)
         except (discord.errors.NotFound, discord.errors.HTTPException, discord.errors.Forbidden):
             await self.delete_tutorial_channel(ctx)
@@ -317,6 +320,7 @@ class Tutorial(commands.Cog):
             completed = await self.want_tutorial(ctx, cfg)
             if completed:
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+                self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
                 await asyncio.sleep(30)
         except:
             await self.delete_tutorial_channel(ctx)
@@ -331,7 +335,7 @@ class Tutorial(commands.Cog):
             msg_text += f"\n\nTry the want command by sending **{ctx.prefix}want** and following the prompts. You can use Pokemon and then Unown in this example."
             msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=msg_text).set_author(name="Want Tutorial", icon_url=ctx.bot.user.avatar_url))
 
-            report_channels[ctx.tutorial_channel.id] = msg.id
+            report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
 
             await self.wait_for_cmd(ctx.tutorial_channel, ctx.author, 'want')
 
@@ -370,10 +374,7 @@ class Tutorial(commands.Cog):
 
         # clean up by removing tutorial from report channel config
         finally:
-            try:
-                del report_channels[ctx.tutorial_channel.id]
-            except KeyError:
-                pass
+            pass
 
         return True
 
@@ -395,6 +396,7 @@ class Tutorial(commands.Cog):
             completed = await self.wild_tutorial(ctx, cfg)
             if completed:
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+                self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
                 await asyncio.sleep(30)
         except:
             await self.delete_tutorial_channel(ctx)
@@ -409,7 +411,7 @@ class Tutorial(commands.Cog):
                 colour=discord.Colour.lighter_grey(),
                 description=f"This server utilizes the **{ctx.prefix}wild** command to report wild spawns! When you use it, I will send a message summarizing the report and containing a link to my best guess of the spawn location. If users have **{ctx.prefix}want**ed your reported pokemon, I will DM them details.\n\nTry out the wild command by sending **{ctx.prefix}wild** and following the prompts. You can use Pikachu, downtown, and 98 for this example.").set_author(name="Wild Tutorial", icon_url=ctx.bot.user.avatar_url))
 
-            report_channels[ctx.tutorial_channel.id] = msg.id
+            report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
 
             wild_ctx = await self.wait_for_cmd(
                 ctx.tutorial_channel, ctx.author, 'wild')
@@ -443,10 +445,7 @@ class Tutorial(commands.Cog):
 
         # clean up by removing tutorial from report channel config
         finally:
-            try:
-                del report_channels[ctx.tutorial_channel.id]
-            except KeyError:
-                pass
+            pass
 
         return True
 
@@ -468,6 +467,7 @@ class Tutorial(commands.Cog):
             completed = await self.raid_tutorial(ctx, cfg)
             if completed:
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+                self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
                 await asyncio.sleep(30)
         except:
             await self.delete_tutorial_channel(ctx)
@@ -501,7 +501,7 @@ class Tutorial(commands.Cog):
 
         msg = await tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{prefix}raid** command to report raids! When you use it, I will send a message summarizing the report and create a text channel for coordination. \n\nTry reporting a raid by sending **{prefix}raid** and following the prompts. You can use {tier5}, downtown, and 40 for this example.").set_author(name="Raid Tutorial", icon_url=ctx.bot.user.avatar_url))
 
-        report_channels[ctx.tutorial_channel.id] = msg.id
+        report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
 
         try:
             while True:
@@ -680,6 +680,7 @@ class Tutorial(commands.Cog):
             completed = await self.research_tutorial(ctx, cfg)
             if completed:
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+                self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
                 await asyncio.sleep(30)
         except:
             await self.delete_tutorial_channel(ctx)
@@ -692,7 +693,7 @@ class Tutorial(commands.Cog):
 
             msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}research** command to report field research tasks!\n\nTry out the research command by sending **{ctx.prefix}research** and following the prompts. You can use Downtown, Catch 10 pokemon, and Pikachu for this example.").set_author(name="Research Tutorial", icon_url=ctx.bot.user.avatar_url))
 
-            report_channels[ctx.tutorial_channel.id] = msg.id
+            report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
 
             # wait for research command completion
             research_ctx = await self.wait_for_cmd(
@@ -724,10 +725,7 @@ class Tutorial(commands.Cog):
 
         # clean up by removing tutorial from report channel config
         finally:
-            try:
-                del report_channels[ctx.tutorial_channel.id]
-            except KeyError:
-                pass
+            pass
 
         return True
 
@@ -749,6 +747,7 @@ class Tutorial(commands.Cog):
             completed = await self.lure_tutorial(ctx, cfg)
             if completed:
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+                self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
                 await asyncio.sleep(30)
         except:
             await self.delete_tutorial_channel(ctx)
@@ -761,7 +760,7 @@ class Tutorial(commands.Cog):
 
             msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}lure** command to report lures!\n\nTry out the lure command by sending **{ctx.prefix}lure** and following the prompts. You can use mossy, downtown, and 10 in this example.").set_author(name="Lure Tutorial", icon_url=ctx.bot.user.avatar_url))
 
-            report_channels[ctx.tutorial_channel.id] = msg.id
+            report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
 
             # wait for lure command completion
             lure_ctx = await self.wait_for_cmd(
@@ -772,9 +771,9 @@ class Tutorial(commands.Cog):
 
             await asyncio.sleep(1)
 
-            for report in ctx.bot.guild_dict[ctx.guild.id]['questreport_dict']:
-                if ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'] == ctx.tutorial_channel.id:
-                    await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {}))
+            for report in ctx.bot.guild_dict[ctx.guild.id]['lure_dict']:
+                if ctx.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['report_channel'] == ctx.tutorial_channel.id:
+                    await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['lure_dict'][report].get('dm_dict', {}))
 
             await asyncio.sleep(1)
 
@@ -788,10 +787,7 @@ class Tutorial(commands.Cog):
 
         # clean up by removing tutorial from report channel config
         finally:
-            try:
-                del report_channels[ctx.tutorial_channel.id]
-            except KeyError:
-                pass
+            pass
 
         return True
 
@@ -813,6 +809,7 @@ class Tutorial(commands.Cog):
             completed = await self.invasion_tutorial(ctx, cfg)
             if completed:
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+                self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
                 await asyncio.sleep(30)
         except:
             await self.delete_tutorial_channel(ctx)
@@ -825,7 +822,7 @@ class Tutorial(commands.Cog):
 
             msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}invasion** command to report invasions!\n\nTry out the invasion command by sending **{ctx.prefix}invasion** and following the prompts. You can use downtown, and Bulbasaur in this example.").set_author(name="Invasion Tutorial", icon_url=ctx.bot.user.avatar_url))
 
-            report_channels[ctx.tutorial_channel.id] = msg.id
+            report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
 
             # wait for invasion command completion
             invasion_ctx = await self.wait_for_cmd(
@@ -836,9 +833,9 @@ class Tutorial(commands.Cog):
 
             await asyncio.sleep(1)
 
-            for report in ctx.bot.guild_dict[ctx.guild.id]['questreport_dict']:
-                if ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'] == ctx.tutorial_channel.id:
-                    await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {}))
+            for report in ctx.bot.guild_dict[ctx.guild.id]['invasion_dict']:
+                if ctx.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['report_channel'] == ctx.tutorial_channel.id:
+                    await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['invasion_dict'][report].get('dm_dict', {}))
 
             await asyncio.sleep(1)
 
@@ -852,10 +849,7 @@ class Tutorial(commands.Cog):
 
         # clean up by removing tutorial from report channel config
         finally:
-            try:
-                del report_channels[ctx.tutorial_channel.id]
-            except KeyError:
-                pass
+            pass
 
         return True
 
@@ -877,6 +871,7 @@ class Tutorial(commands.Cog):
             completed = await self.pvp_tutorial(ctx, cfg)
             if completed:
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+                self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
                 await asyncio.sleep(30)
         except:
             await self.delete_tutorial_channel(ctx)
@@ -889,7 +884,7 @@ class Tutorial(commands.Cog):
 
             msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}pvp** command to report PVP battle requests!\n\nTry out the pvp command by sending **{ctx.prefix}pvp** and following the prompts. You can use great, downtown, and 10 in this example.").set_author(name="PVP Tutorial", icon_url=ctx.bot.user.avatar_url))
 
-            report_channels[ctx.tutorial_channel.id] = msg.id
+            report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
 
             # wait for pvp command completion
             pvp_ctx = await self.wait_for_cmd(
@@ -900,9 +895,9 @@ class Tutorial(commands.Cog):
 
             await asyncio.sleep(1)
 
-            for report in ctx.bot.guild_dict[ctx.guild.id]['questreport_dict']:
-                if ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'] == ctx.tutorial_channel.id:
-                    await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {}))
+            for report in ctx.bot.guild_dict[ctx.guild.id]['pvp_dict']:
+                if ctx.bot.guild_dict[ctx.guild.id]['pvp_dict'][report]['report_channel'] == ctx.tutorial_channel.id:
+                    await utils.expire_dm_reports(ctx.bot, ctx.bot.guild_dict[ctx.guild.id]['pvp_dict'][report].get('dm_dict', {}))
 
             await asyncio.sleep(1)
 
@@ -916,10 +911,7 @@ class Tutorial(commands.Cog):
 
         # clean up by removing tutorial from report channel config
         finally:
-            try:
-                del report_channels[ctx.tutorial_channel.id]
-            except KeyError:
-                pass
+            pass
 
         return True
 
@@ -941,6 +933,7 @@ class Tutorial(commands.Cog):
             completed = await self.trade_tutorial(ctx, cfg)
             if completed:
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+                self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
                 await asyncio.sleep(30)
         except Exception as e:
             await self.delete_tutorial_channel(ctx)
@@ -954,7 +947,7 @@ class Tutorial(commands.Cog):
 
             msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}trade** command to list your pokemon up for trade. You can also use forms of pokemon such as `alolan vulpix`, `unown y`, or `shiny absol`.\n\nTry out the trade command by sending **{ctx.prefix}trade** and following the prompts. You can use Unown, ask, and N for this example.").set_author(name="Trade Tutorial", icon_url=ctx.bot.user.avatar_url))
 
-            report_channels[ctx.tutorial_channel.id] = msg.id
+            report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
 
             # wait for trade command completion
             trade_msg = await self.wait_for_cmd(
@@ -978,10 +971,6 @@ class Tutorial(commands.Cog):
 
         # clean up by removing tutorial from report channel config
         finally:
-            try:
-                del report_channels[ctx.tutorial_channel.id]
-            except KeyError:
-                pass
             for trade in ctx.bot.guild_dict[ctx.guild.id]['trade_dict']:
                 if ctx.bot.guild_dict[ctx.guild.id]['trade_dict'][trade]['report_channel_id'] == ctx.tutorial_channel.id:
                     del ctx.bot.guild_dict[ctx.guild.id]['trade_dict'][trade]
@@ -1007,6 +996,7 @@ class Tutorial(commands.Cog):
             completed = await self.team_tutorial(ctx, cfg)
             if completed:
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+                self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
                 await asyncio.sleep(30)
         except:
             await self.delete_tutorial_channel(ctx)
@@ -1026,7 +1016,7 @@ class Tutorial(commands.Cog):
 
             msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}team** command to allow members to select which Pokemon Go team they belong to! Type `{ctx.prefix}team mystic` for example if you are in Team Mystic.").set_author(name="Team Tutorial", icon_url=ctx.bot.user.avatar_url))
 
-            report_channels[ctx.tutorial_channel.id] = msg.id
+            report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
             # wait for team command completion
             await self.wait_for_cmd(
                 ctx.tutorial_channel, ctx.author, 'team')
@@ -1065,6 +1055,7 @@ class Tutorial(commands.Cog):
             completed = await self.nest_tutorial(ctx, cfg)
             if completed:
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
+                self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
                 await asyncio.sleep(30)
         except:
             await self.delete_tutorial_channel(ctx)
@@ -1078,7 +1069,7 @@ class Tutorial(commands.Cog):
 
             msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}nest** command to keep track of nesting pokemon.\n\nTry the nest command by sending **{ctx.prefix}nest** and following the prompts. You can use Pikachu and Hershey Park in this example.").set_author(name="Nest Tutorial", icon_url=ctx.bot.user.avatar_url))
 
-            report_channels[ctx.tutorial_channel.id] = msg.id
+            report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
             await self.wait_for_cmd(ctx.tutorial_channel, ctx.author, 'nest')
 
             # acknowledge and wait a second before continuing
@@ -1089,17 +1080,13 @@ class Tutorial(commands.Cog):
         except asyncio.TimeoutError:
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You took too long to complete the **{ctx.prefix}nest** command! This channel will be deleted in ten seconds."))
             await asyncio.sleep(10)
-
             return False
-        except:
+        except Exception as e:
+            print(e)
             await self.delete_tutorial_channel(ctx)
 
         # clean up by removing tutorial from report channel config
         finally:
-            try:
-                del report_channels[ctx.tutorial_channel.id]
-            except KeyError:
-                pass
             del ctx.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.tutorial_channel.id]
 
         return True

@@ -333,13 +333,19 @@ class Research(commands.Cog):
         try:
             tsr_quests = []
             tsr_quest_dict = {}
+            all_quests = {}
+            item_quests = {}
+            pokemon_quests = {}
             added_categories = []
             added_quests = []
             to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
             to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
             to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
             to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
-            await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+            try:
+                await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+            except asyncio.CancelledError:
+                pass
             async with aiohttp.ClientSession() as sess:
                 async with sess.get("https://thesilphroad.com/research-tasks") as resp:
                     html = await resp.text()
@@ -357,35 +363,50 @@ class Research(commands.Cog):
                     tsr_quests[index] = item_name
             for item in tsr_quests:
                 if "Tasks" in item:
-                    tsr_quest_dict[item] = {}
+                    all_quests[item] = {}
                     added_categories.append(item)
             for item in tsr_quests:
                 if len(item.split('-')) > 1 and (item.split('-')[0].lower() in self.bot.pkmn_list or item.split('-')[1].lower() in self.bot.pkmn_list):
                     continue
                 if item in added_categories or item.isdigit() or item.lower() in self.bot.item_list:
                     continue
-                for category in tsr_quest_dict.keys():
-                    tsr_quest_dict[category][item] = []
+                for category in all_quests.keys():
+                    all_quests[category][item] = []
                     if item not in added_quests:
                         added_quests.append(item)
             for item in tsr_quests:
                 if item in added_categories:
                     current_category = item
-                    tsr_quest_dict[item] = {}
+                    all_quests[item] = {}
                     continue
                 elif item in added_quests:
                     current_quest = item
-                    tsr_quest_dict[current_category][item] = []
+                    all_quests[current_category][item] = []
                     continue
                 else:
                     if not item in self.bot.item_list and not item in added_quests and not item in added_categories:
-                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item, allow_digits=True)
-                        if pokemon:
-                            shiny_str = ""
-                            if pokemon and "research" in pokemon.shiny_available:
-                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                            item = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
-                    tsr_quest_dict[current_category][current_quest].append(item)
+                        if item.isdigit():
+                            pokemon = utils.get_name(self.bot, item)
+                            if pokemon:
+                                pokemon_shiny = self.bot.pkmn_info[pokemon]['forms']['none']['shiny']
+                                if "research" in pokemon_shiny:
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                                pokemon_types = [utils.type_to_emoji(self.bot, x) for x in self.bot.pkmn_info[pokemon]['forms']['none']['type']]
+                                item = f"{shiny_str}{pokemon.title()} {(''.join(pokemon_types))}"
+                        else:
+                            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item, allow_digits=True)
+                            if pokemon:
+                                shiny_str = ""
+                                if "research" in pokemon.shiny_available:
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                                item = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
+                        setup_var = pokemon_quests.setdefault(current_category, {}).setdefault(current_quest, [])
+                        pokemon_quests[current_category][current_quest].append(item)
+                    else:
+                        setup_var = item_quests.setdefault(current_category, {}).setdefault(current_quest, [])
+                        item_quests[current_category][current_quest].append(item)
+                    all_quests[current_category][current_quest].append(item)
+            tsr_quest_dict = {"all": all_quests, "pokemon": pokemon_quests, "items": item_quests}
             if tsr_quest_dict:
                 with open(os.path.join('data', 'quest_info.json'), 'w') as fd:
                     json.dump(tsr_quest_dict, fd, indent=2, separators=(', ', ': '))
@@ -401,6 +422,9 @@ class Research(commands.Cog):
     async def res_json(self, ctx):
         tsr_quests = []
         tsr_quest_dict = {}
+        all_quests = {}
+        pokemon_quests = {}
+        item_quests = {}
         added_categories = []
         added_quests = []
         error = False
@@ -422,45 +446,60 @@ class Research(commands.Cog):
                     tsr_quests[index] = item_name
             for item in tsr_quests:
                 if "Tasks" in item:
-                    tsr_quest_dict[item] = {}
+                    all_quests[item] = {}
                     added_categories.append(item)
             for item in tsr_quests:
                 if len(item.split('-')) > 1 and (item.split('-')[0].lower() in self.bot.pkmn_list or item.split('-')[1].lower() in self.bot.pkmn_list):
                     continue
                 if item in added_categories or item.isdigit() or item.lower() in self.bot.item_list:
                     continue
-                for category in tsr_quest_dict.keys():
-                    tsr_quest_dict[category][item] = []
+                for category in all_quests.keys():
+                    all_quests[category][item] = []
                     if item not in added_quests:
                         added_quests.append(item)
             for item in tsr_quests:
                 if item in added_categories:
                     current_category = item
-                    tsr_quest_dict[item] = {}
+                    all_quests[item] = {}
                     continue
                 elif item in added_quests:
                     current_quest = item
-                    tsr_quest_dict[current_category][item] = []
+                    all_quests[current_category][item] = []
                     continue
                 else:
                     if not item in self.bot.item_list and not item in added_quests and not item in added_categories:
-                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, item, allow_digits=True)
-                        if pokemon:
-                            shiny_str = ""
-                            if pokemon and "research" in pokemon.shiny_available:
-                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                            item = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
-                    tsr_quest_dict[current_category][current_quest].append(item)
+                        if item.isdigit():
+                            pokemon = utils.get_name(self.bot, item)
+                            if pokemon:
+                                pokemon_shiny = self.bot.pkmn_info[pokemon]['forms']['none']['shiny']
+                                if "research" in pokemon_shiny:
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                                pokemon_types = [utils.type_to_emoji(self.bot, x) for x in self.bot.pkmn_info[pokemon]['forms']['none']['type']]
+                                item = f"{shiny_str}{pokemon.title()} {(''.join(pokemon_types))}"
+                        else:
+                            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item, allow_digits=True)
+                            if pokemon:
+                                shiny_str = ""
+                                if "research" in pokemon.shiny_available:
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                                item = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
+                        setup_var = pokemon_quests.setdefault(current_category, {}).setdefault(current_quest, [])
+                        pokemon_quests[current_category][current_quest].append(item)
+                    else:
+                        setup_var = item_quests.setdefault(current_category, {}).setdefault(current_quest, [])
+                        item_quests[current_category][current_quest].append(item)
+                    all_quests[current_category][current_quest].append(item)
+            tsr_quest_dict = {"all": all_quests, "pokemon": pokemon_quests, "items": item_quests}
             research_embed = discord.Embed(discription="", colour=ctx.guild.me.colour)
-            for category in tsr_quest_dict.keys():
+            for category in tsr_quest_dict['all'].keys():
                 field_value = ""
-                for quest in tsr_quest_dict[category]:
-                    if (len(field_value) + len(f"**{quest}** - {(', ').join([x.title() for x in tsr_quest_dict[category][quest]])}\n")) >= 1020:
+                for quest in tsr_quest_dict['all'][category]:
+                    if (len(field_value) + len(f"**{quest}** - {(', ').join([x.title() for x in tsr_quest_dict['all'][category][quest]])}\n")) >= 1020:
                         research_embed.add_field(name=category, value=field_value, inline=False)
                         await ctx.send(embed=research_embed, delete_after=60)
                         research_embed.clear_fields()
                         field_value = ""
-                    field_value += f"**{quest}** - {(', ').join([x.title() for x in tsr_quest_dict[category][quest]])}\n"
+                    field_value += f"**{quest}** - {(', ').join([x.title() for x in tsr_quest_dict['all'][category][quest]])}\n"
                 research_embed.add_field(name=category, value=field_value, inline=False)
             await ctx.send(embed=research_embed, delete_after=60)
             question = await ctx.send(f"This will be the new research dictionary. The above messages will delete themselves, but they will be in **{ctx.prefix}list tasks**. Continue?")

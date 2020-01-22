@@ -1028,7 +1028,10 @@ class Raid(commands.Cog):
             to_sixam = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)).seconds)
             to_noon = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)).seconds)
             to_sixpm = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=18, minute=0, second=0, microsecond=0)).seconds)
-            await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+            try:
+                await asyncio.sleep(min([to_sixpm, to_sixam, to_midnight, to_noon]))
+            except asyncio.CancelledError:
+                pass
             tsr_bosses = []
             tsr_boss_dict = {}
             old_raid_dict = {}

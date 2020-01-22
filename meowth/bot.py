@@ -151,6 +151,14 @@ class MeowthBot(commands.AutoShardedBot):
             return {}
 
     @property
+    def egg_info(self):
+        try:
+            with open(os.path.join('data', 'egg_info.json'), 'r') as fd:
+                return json.load(fd)
+        except:
+            return {}
+
+    @property
     def pkmn_list(self):
         pkmn_list = []
         count = 1

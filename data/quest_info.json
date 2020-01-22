@@ -1,297 +1,606 @@
 {
-  "Catching Tasks": {
-    "Use 10 Nanab Berries while catching Pok\u00e9mon.": [
-      "\u2728 Scyther <:bug1:346750028494143488><:flying:346750029001654272>"
-    ], 
-    "Catch 3 Fire-, Water-, or Electric-type Pok\u00e9mon.": [
-      "Doduo <:normal:346750029152780288><:flying:346750029001654272>"
-    ], 
-    "Catch 3 different species of Psychic-type Pok\u00e9mon.": [
-      "\u2728 Drowzee <:psychic:346750028678692866>"
-    ], 
-    "Use 5 Razz Berries to help catch Pok\u00e9mon.": [
-      "\u2728 Swinub <:ice:346750029115162624><:ground:346750028767035404>"
-    ], 
-    "Catch 4 Grass- or Ice-type Pok\u00e9mon.": [
-      "\u2728 Seel <:water:346750028733480964>"
-    ], 
-    "Catch 5 Pok\u00e9mon with Weather Boost.": [
-      "stardust", 
-      "razz berry", 
-      "pinap berry", 
-      "poke ball", 
-      "\u2728 Poliwag <:water:346750028733480964>", 
-      "Vulpix <:fire1:346750028863242240>"
-    ], 
-    "Catch 5 Fairy-type Pok\u00e9mon.": [
-      "Marill <:water:346750028733480964><:fairy:346750028431228930>"
-    ], 
-    "Catch 10 Pok\u00e9mon.": [
-      "\u2728 Magikarp <:water:346750028733480964>"
-    ], 
-    "Catch 5 Normal-type Pok\u00e9mon.": [
-      "\u2728 Zigzagoon <:normal:346750029152780288>"
-    ], 
-    "Use 5 Berries to help catch Pok\u00e9mon.": [
-      "stardust", 
-      "razz berry", 
-      "pinap berry", 
-      "great ball", 
-      "\u2728 Snorunt <:ice:346750029115162624>"
-    ], 
-    "Catch 15 Pok\u00e9mon.": [
-      "\u2728 Sandshrew <:ground:346750028767035404>"
-    ], 
-    "Catch 3 different species of Dark-type Pok\u00e9mon.": [
-      "\u2728 Poochyena <:dark:346750028506988544>"
-    ], 
-    "Catch a Dragon-type Pok\u00e9mon.": [
-      "stardust", 
-      "rare candy", 
-      "golden razz berry", 
-      "ultra ball", 
-      "\u2728 Dratini <:dragon1:346750028892733440>"
-    ], 
-    "Catch 10 Pok\u00e9mon with Weather Boost.": [
-      "stardust", 
-      "razz berry", 
-      "pinap berry", 
-      "great ball"
-    ], 
-    "Catch 10 Normal-type Pok\u00e9mon.": [
-      "stardust", 
-      "razz berry", 
-      "pinap berry", 
-      "great ball"
-    ], 
-    "Catch a Ditto.": [
-      "stardust", 
-      "rare candy", 
-      "golden razz berry", 
-      "ultra ball"
-    ]
+  "all": {
+    "Buddy Tasks": {
+      "Take a snapshot of your buddy.": [
+        "\u2728 Snover <:grass:346750029681262592><:ice:346750029115162624>"
+      ], 
+      "Earn 5 hearts with your buddy.": [
+        "\u2728 Stantler <:normal:346750029152780288>"
+      ]
+    }, 
+    "Catching Tasks": {
+      "Catch 10 Pok\u00e9mon.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball", 
+        "\u2728 Magikarp <:water:346750028733480964>"
+      ], 
+      "Catch 5 Pok\u00e9mon with Weather Boost.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball", 
+        "\u2728 Poliwag <:water:346750028733480964>", 
+        "\u2728 Vulpix <:fire1:346750028863242240>"
+      ], 
+      "Catch 5 Fire-type Pok\u00e9mon.": [
+        "\u2728 Snorunt <:ice:346750029115162624>"
+      ], 
+      "Catch 3 Normal-, Water-, or Ice-type Pok\u00e9mon.": [
+        "\u2728 Dewgong <:water:346750028733480964><:ice:346750029115162624>"
+      ], 
+      "Catch a Dragon-type Pok\u00e9mon.": [
+        "stardust", 
+        "rare candy", 
+        "golden razz berry", 
+        "ultra ball", 
+        "\u2728 Dratini <:dragon1:346750028892733440>"
+      ], 
+      "Catch 3 different species of Ice-type Pok\u00e9mon.": [
+        "rare candy"
+      ], 
+      "Catch 10 Pok\u00e9mon with Weather Boost.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "great ball"
+      ], 
+      "Use 5 Berries to help catch Pok\u00e9mon.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "great ball"
+      ], 
+      "Catch 10 Normal-type Pok\u00e9mon.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "great ball"
+      ], 
+      "Catch a Ditto.": [
+        "stardust", 
+        "rare candy", 
+        "golden razz berry", 
+        "ultra ball"
+      ]
+    }, 
+    "Throwing Tasks": {
+      "Make 3 Great Throws.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball", 
+        "\u2728 Gastly <:ghost1:346750028406325259><:poison:346750028964036619>", 
+        "\u2728 Anorith <:rock:346750029123551233><:bug1:346750028494143488>", 
+        "\u2728 Lileep <:rock:346750029123551233><:grass:346750029681262592>"
+      ], 
+      "Make 5 Nice Throws.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball", 
+        "\u2728 Voltorb <:electric:346750028511182850>"
+      ], 
+      "Make 3 Great Throws in a row.": [
+        "stardust", 
+        "rare candy", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball", 
+        "ultra ball", 
+        "\u2728 Onix <:rock:346750029123551233><:ground:346750028767035404>"
+      ], 
+      "Make 5 Great Curveball Throws in a row.": [
+        "\u2728 Spinda <:normal:346750029152780288>"
+      ], 
+      "Make 3 Excellent Throws in a row.": [
+        "\u2728 Larvitar <:rock:346750029123551233><:ground:346750028767035404>"
+      ], 
+      "Make 3 Great Curveball Throws in a row.": [
+        "stardust", 
+        "rare candy", 
+        "golden razz berry", 
+        "ultra ball"
+      ], 
+      "Make 3 Great Curveball Throws.": [
+        "stardust", 
+        "rare candy", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball", 
+        "ultra ball"
+      ], 
+      "Make 5 Curveball Throws in a row.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "great ball"
+      ], 
+      "Make 2 Nice Curveball Throws in a row.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball"
+      ], 
+      "Make 3 Nice Throws in a row.": [
+        "stardust", 
+        "pinap berry", 
+        "great ball", 
+        "ultra ball"
+      ], 
+      "Make an Excellent Throw.": [
+        "stardust", 
+        "pinap berry", 
+        "great ball", 
+        "ultra ball"
+      ]
+    }, 
+    "Battling Tasks": {
+      "Battle in a raid.": [
+        "stardust", 
+        "nanab berry", 
+        "potion", 
+        "revive", 
+        "\u2728 Swinub <:ice:346750029115162624><:ground:346750028767035404>"
+      ], 
+      "Defeat a Team GO Rocket Grunt.": [
+        "\u2728 Sneasel <:dark:346750028506988544><:ice:346750029115162624>"
+      ], 
+      "Battle another Trainer 3 times.": [
+        "\u2728 Shellder <:water:346750028733480964>"
+      ], 
+      "Battle in a Gym.": [
+        "stardust", 
+        "nanab berry", 
+        "potion", 
+        "revive", 
+        "\u2728 Mankey <:fighting:346750028817367040>"
+      ], 
+      "Win a Gym battle.": [
+        "stardust", 
+        "nanab berry", 
+        "super potion", 
+        "revive", 
+        "\u2728 Bulbasaur <:grass:346750029681262592><:poison:346750028964036619>", 
+        "\u2728 Charmander <:fire1:346750028863242240>", 
+        "\u2728 Squirtle <:water:346750028733480964>"
+      ], 
+      "Battle in a Gym 5 times.": [
+        "stardust", 
+        "nanab berry", 
+        "super potion", 
+        "revive", 
+        "\u2728 Machop <:fighting:346750028817367040>"
+      ], 
+      "Win a level 3 or higher raid.": [
+        "stardust", 
+        "rare candy", 
+        "hyper potion", 
+        "revive", 
+        "max revive", 
+        "\u2728 Kabuto <:rock:346750029123551233><:water:346750028733480964>", 
+        "\u2728 Omanyte <:rock:346750029123551233><:water:346750028733480964>"
+      ], 
+      "Win 5 raids.": [
+        "\u2728 Aerodactyl <:rock:346750029123551233><:flying:346750029001654272>"
+      ], 
+      "Win 3 Gym battles.": [
+        "stardust", 
+        "rare candy", 
+        "hyper potion", 
+        "revive", 
+        "max revive", 
+        "\u2728 Jynx <:ice:346750029115162624><:psychic:346750028678692866>"
+      ], 
+      "Use a supereffective Charged Attack in 7 Gym battles.": [
+        "stardust", 
+        "rare candy", 
+        "hyper potion", 
+        "revive", 
+        "max revive", 
+        "\u2728 Electabuzz <:electric:346750028511182850>"
+      ], 
+      "Use a supereffective Charged Attack in a Gym battle.": [
+        "stardust", 
+        "nanab berry", 
+        "super potion", 
+        "revive"
+      ], 
+      "Win a raid.": [
+        "stardust", 
+        "nanab berry", 
+        "super potion", 
+        "revive"
+      ], 
+      "Win 3 raids.": [
+        "stardust", 
+        "max potion", 
+        "revive", 
+        "max revive"
+      ]
+    }, 
+    "Hatching Tasks": {
+      "Hatch an Egg.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball", 
+        "\u2728 Exeggcute <:grass:346750029681262592><:psychic:346750028678692866>"
+      ], 
+      "Hatch 3 Eggs.": [
+        "stardust", 
+        "rare candy", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball", 
+        "ultra ball", 
+        "\u2728 Magmar <:fire1:346750028863242240>"
+      ], 
+      "Hatch 5 Eggs.": [
+        "\u2728 Chansey <:normal:346750029152780288>", 
+        "\u2728 Alolan Vulpix <:ice:346750029115162624>"
+      ]
+    }, 
+    "Miscellaneous Tasks": {
+      "Trade a Pok\u00e9mon.": [
+        "\u2728 Glalie <:ice:346750029115162624>"
+      ], 
+      "Evolve a Pok\u00e9mon.": [
+        "\u2728 Cubchoo <:ice:346750029115162624>", 
+        "\u2728 Eevee <:normal:346750029152780288>"
+      ], 
+      "Transfer 3 Pok\u00e9mon.": [
+        "\u2728 Lotad <:water:346750028733480964><:grass:346750029681262592>"
+      ], 
+      "Power up Pok\u00e9mon 5 times.": [
+        "\u2728 Bulbasaur <:grass:346750029681262592><:poison:346750028964036619>", 
+        "\u2728 Charmander <:fire1:346750028863242240>", 
+        "\u2728 Squirtle <:water:346750028733480964>"
+      ], 
+      "Send 10 Gifts to friends.": [
+        "\u2728 Clamperl <:water:346750028733480964>"
+      ], 
+      "Spin 10 Pok\u00e9Stops or Gyms.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "silver pinap berry", 
+        "poke ball"
+      ]
+    }, 
+    "group7Sponsored Tasks": {
+      "Sponsored: Catch 8 Pok\u00e9mon.": [
+        "stardust", 
+        "rare candy"
+      ], 
+      "Sponsored: Send 3 Gifts to friends.": [
+        "stardust", 
+        "rare candy"
+      ]
+    }
   }, 
-  "Throwing Tasks": {
-    "Make 3 Great Throws.": [
-      "stardust", 
-      "razz berry", 
-      "pinap berry", 
-      "poke ball", 
-      "\u2728 Gastly <:ghost1:346750028406325259><:poison:346750028964036619>", 
-      "\u2728 Buneary <:normal:346750029152780288>", 
-      "\u2728 Anorith <:rock:346750029123551233><:bug1:346750028494143488>", 
-      "\u2728 Lileep <:rock:346750029123551233><:grass:346750029681262592>"
-    ], 
-    "Make 5 Nice Throws.": [
-      "stardust", 
-      "razz berry", 
-      "pinap berry", 
-      "poke ball", 
-      "Voltorb <:electric:346750028511182850>"
-    ], 
-    "Make 5 Great Curveball Throws in a row.": [
-      "\u2728 Spinda <:normal:346750029152780288>"
-    ], 
-    "Make 3 Great Throws in a row.": [
-      "stardust", 
-      "rare candy", 
-      "razz berry", 
-      "pinap berry", 
-      "poke ball", 
-      "ultra ball", 
-      "\u2728 Onix <:rock:346750029123551233><:ground:346750028767035404>"
-    ], 
-    "Make 3 Excellent Throws in a row.": [
-      "\u2728 Larvitar <:rock:346750029123551233><:ground:346750028767035404>"
-    ], 
-    "Make 3 Great Curveball Throws in a row.": [
-      "stardust", 
-      "rare candy", 
-      "golden razz berry", 
-      "ultra ball"
-    ], 
-    "Make 3 Great Curveball Throws.": [
-      "stardust", 
-      "rare candy", 
-      "razz berry", 
-      "pinap berry", 
-      "poke ball", 
-      "ultra ball"
-    ], 
-    "Make 5 Curveball Throws in a row.": [
-      "stardust", 
-      "razz berry", 
-      "pinap berry", 
-      "great ball"
-    ], 
-    "Make 2 Nice Curveball Throws in a row.": [
-      "stardust", 
-      "razz berry", 
-      "pinap berry", 
-      "poke ball"
-    ], 
-    "Make 3 Nice Throws in a row.": [
-      "stardust", 
-      "pinap berry", 
-      "great ball", 
-      "ultra ball"
-    ], 
-    "Make an Excellent Throw.": [
-      "stardust", 
-      "pinap berry", 
-      "great ball", 
-      "ultra ball"
-    ]
+  "pokemon": {
+    "Buddy Tasks": {
+      "Take a snapshot of your buddy.": [
+        "\u2728 Snover <:grass:346750029681262592><:ice:346750029115162624>"
+      ], 
+      "Earn 5 hearts with your buddy.": [
+        "\u2728 Stantler <:normal:346750029152780288>"
+      ]
+    }, 
+    "Catching Tasks": {
+      "Catch 10 Pok\u00e9mon.": [
+        "\u2728 Magikarp <:water:346750028733480964>"
+      ], 
+      "Catch 5 Pok\u00e9mon with Weather Boost.": [
+        "\u2728 Poliwag <:water:346750028733480964>", 
+        "\u2728 Vulpix <:fire1:346750028863242240>"
+      ], 
+      "Catch 5 Fire-type Pok\u00e9mon.": [
+        "\u2728 Snorunt <:ice:346750029115162624>"
+      ], 
+      "Catch 3 Normal-, Water-, or Ice-type Pok\u00e9mon.": [
+        "\u2728 Dewgong <:water:346750028733480964><:ice:346750029115162624>"
+      ], 
+      "Catch a Dragon-type Pok\u00e9mon.": [
+        "\u2728 Dratini <:dragon1:346750028892733440>"
+      ]
+    }, 
+    "Throwing Tasks": {
+      "Make 3 Great Throws.": [
+        "\u2728 Gastly <:ghost1:346750028406325259><:poison:346750028964036619>", 
+        "\u2728 Anorith <:rock:346750029123551233><:bug1:346750028494143488>", 
+        "\u2728 Lileep <:rock:346750029123551233><:grass:346750029681262592>"
+      ], 
+      "Make 5 Nice Throws.": [
+        "\u2728 Voltorb <:electric:346750028511182850>"
+      ], 
+      "Make 3 Great Throws in a row.": [
+        "\u2728 Onix <:rock:346750029123551233><:ground:346750028767035404>"
+      ], 
+      "Make 5 Great Curveball Throws in a row.": [
+        "\u2728 Spinda <:normal:346750029152780288>"
+      ], 
+      "Make 3 Excellent Throws in a row.": [
+        "\u2728 Larvitar <:rock:346750029123551233><:ground:346750028767035404>"
+      ]
+    }, 
+    "Battling Tasks": {
+      "Battle in a raid.": [
+        "\u2728 Swinub <:ice:346750029115162624><:ground:346750028767035404>"
+      ], 
+      "Defeat a Team GO Rocket Grunt.": [
+        "\u2728 Sneasel <:dark:346750028506988544><:ice:346750029115162624>"
+      ], 
+      "Battle another Trainer 3 times.": [
+        "\u2728 Shellder <:water:346750028733480964>"
+      ], 
+      "Battle in a Gym.": [
+        "\u2728 Mankey <:fighting:346750028817367040>"
+      ], 
+      "Win a Gym battle.": [
+        "\u2728 Bulbasaur <:grass:346750029681262592><:poison:346750028964036619>", 
+        "\u2728 Charmander <:fire1:346750028863242240>", 
+        "\u2728 Squirtle <:water:346750028733480964>"
+      ], 
+      "Battle in a Gym 5 times.": [
+        "\u2728 Machop <:fighting:346750028817367040>"
+      ], 
+      "Win a level 3 or higher raid.": [
+        "\u2728 Kabuto <:rock:346750029123551233><:water:346750028733480964>", 
+        "\u2728 Omanyte <:rock:346750029123551233><:water:346750028733480964>"
+      ], 
+      "Win 5 raids.": [
+        "\u2728 Aerodactyl <:rock:346750029123551233><:flying:346750029001654272>"
+      ], 
+      "Win 3 Gym battles.": [
+        "\u2728 Jynx <:ice:346750029115162624><:psychic:346750028678692866>"
+      ], 
+      "Use a supereffective Charged Attack in 7 Gym battles.": [
+        "\u2728 Electabuzz <:electric:346750028511182850>"
+      ]
+    }, 
+    "Hatching Tasks": {
+      "Hatch an Egg.": [
+        "\u2728 Exeggcute <:grass:346750029681262592><:psychic:346750028678692866>"
+      ], 
+      "Hatch 3 Eggs.": [
+        "\u2728 Magmar <:fire1:346750028863242240>"
+      ], 
+      "Hatch 5 Eggs.": [
+        "\u2728 Chansey <:normal:346750029152780288>", 
+        "\u2728 Alolan Vulpix <:ice:346750029115162624>"
+      ]
+    }, 
+    "Miscellaneous Tasks": {
+      "Trade a Pok\u00e9mon.": [
+        "\u2728 Glalie <:ice:346750029115162624>"
+      ], 
+      "Evolve a Pok\u00e9mon.": [
+        "\u2728 Cubchoo <:ice:346750029115162624>", 
+        "\u2728 Eevee <:normal:346750029152780288>"
+      ], 
+      "Transfer 3 Pok\u00e9mon.": [
+        "\u2728 Lotad <:water:346750028733480964><:grass:346750029681262592>"
+      ], 
+      "Power up Pok\u00e9mon 5 times.": [
+        "\u2728 Bulbasaur <:grass:346750029681262592><:poison:346750028964036619>", 
+        "\u2728 Charmander <:fire1:346750028863242240>", 
+        "\u2728 Squirtle <:water:346750028733480964>"
+      ], 
+      "Send 10 Gifts to friends.": [
+        "\u2728 Clamperl <:water:346750028733480964>"
+      ]
+    }
   }, 
-  "Battling Tasks": {
-    "Battle in a raid.": [
-      "stardust", 
-      "nanab berry", 
-      "potion", 
-      "revive", 
-      "\u2728 Spoink <:psychic:346750028678692866>"
-    ], 
-    "Battle in a Gym.": [
-      "stardust", 
-      "nanab berry", 
-      "potion", 
-      "revive", 
-      "\u2728 Mankey <:fighting:346750028817367040>", 
-      "\u2728 Makuhita <:fighting:346750028817367040>"
-    ], 
-    "Battle another Trainer.": [
-      "\u2728 Electrike <:electric:346750028511182850>"
-    ], 
-    "Battle a team leader 2 times.": [
-      "\u2728 Natu <:psychic:346750028678692866><:flying:346750029001654272>"
-    ], 
-    "Battle in a Gym 5 times.": [
-      "stardust", 
-      "nanab berry", 
-      "super potion", 
-      "revive", 
-      "\u2728 Machop <:fighting:346750028817367040>"
-    ], 
-    "Win a Gym battle.": [
-      "stardust", 
-      "nanab berry", 
-      "super potion", 
-      "revive", 
-      "\u2728 Bulbasaur <:grass:346750029681262592><:poison:346750028964036619>", 
-      "\u2728 Charmander <:fire1:346750028863242240>", 
-      "\u2728 Squirtle <:water:346750028733480964>"
-    ], 
-    "Use a supereffective Charged Attack in 7 Gym battles.": [
-      "stardust", 
-      "rare candy", 
-      "hyper potion", 
-      "revive", 
-      "max revive", 
-      "Electabuzz <:electric:346750028511182850>"
-    ], 
-    "Win 5 raids.": [
-      "\u2728 Aerodactyl <:rock:346750029123551233><:flying:346750029001654272>"
-    ], 
-    "Win a level 3 or higher raid.": [
-      "stardust", 
-      "rare candy", 
-      "hyper potion", 
-      "revive", 
-      "max revive", 
-      "\u2728 Kabuto <:rock:346750029123551233><:water:346750028733480964>", 
-      "\u2728 Omanyte <:rock:346750029123551233><:water:346750028733480964>"
-    ], 
-    "Win 3 Gym battles.": [
-      "stardust", 
-      "rare candy", 
-      "hyper potion", 
-      "revive", 
-      "max revive", 
-      "Jynx <:ice:346750029115162624><:psychic:346750028678692866>"
-    ], 
-    "Use a supereffective Charged Attack in a Gym battle.": [
-      "stardust", 
-      "nanab berry", 
-      "super potion", 
-      "revive"
-    ], 
-    "Win a raid.": [
-      "stardust", 
-      "nanab berry", 
-      "super potion", 
-      "revive"
-    ], 
-    "Win 3 raids.": [
-      "stardust", 
-      "max potion", 
-      "revive", 
-      "max revive"
-    ]
-  }, 
-  "Hatching Tasks": {
-    "Hatch an Egg.": [
-      "stardust", 
-      "razz berry", 
-      "pinap berry", 
-      "poke ball", 
-      "Exeggcute <:grass:346750029681262592><:psychic:346750028678692866>", 
-      "Hoppip <:grass:346750029681262592><:flying:346750029001654272>"
-    ], 
-    "Hatch 3 Eggs.": [
-      "stardust", 
-      "rare candy", 
-      "razz berry", 
-      "pinap berry", 
-      "poke ball", 
-      "ultra ball", 
-      "Magmar <:fire1:346750028863242240>"
-    ], 
-    "Hatch 5 Eggs.": [
-      "rare candy", 
-      "Chansey <:normal:346750029152780288>"
-    ]
-  }, 
-  "Miscellaneous Tasks": {
-    "Transfer 3 Pok\u00e9mon.": [
-      "\u2728 Sableye <:dark:346750028506988544><:ghost1:346750028406325259>"
-    ], 
-    "Trade a Pok\u00e9mon.": [
-      "\u2728 Bronzor <:steel:346750029177815050><:psychic:346750028678692866>"
-    ], 
-    "Earn 3 Candies walking with your buddy.": [
-      "\u2728 Ponyta <:fire1:346750028863242240>"
-    ], 
-    "Evolve a Pok\u00e9mon.": [
-      "\u2728 Cubone <:ground:346750028767035404>", 
-      "\u2728 Eevee <:normal:346750029152780288>"
-    ], 
-    "Take 5 snapshots of Eevee.": [
-      "Gulpin <:poison:346750028964036619>"
-    ], 
-    "Power up Pok\u00e9mon 5 times.": [
-      "\u2728 Bulbasaur <:grass:346750029681262592><:poison:346750028964036619>", 
-      "\u2728 Charmander <:fire1:346750028863242240>", 
-      "\u2728 Squirtle <:water:346750028733480964>"
-    ], 
-    "Send 10 Gifts to friends.": [
-      "\u2728 Sneasel <:dark:346750028506988544><:ice:346750029115162624>"
-    ], 
-    "Spin 10 Pok\u00e9Stops or Gyms.": [
-      "stardust", 
-      "razz berry", 
-      "pinap berry", 
-      "silver pinap berry", 
-      "poke ball"
-    ]
-  }, 
-  "Sponsored Tasks": {
-    "Sponsored: Catch 8 Pok\u00e9mon.": [
-      "stardust", 
-      "rare candy"
-    ], 
-    "Sponsored: Send 3 Gifts to friends.": [
-      "stardust", 
-      "rare candy"
-    ]
+  "items": {
+    "Catching Tasks": {
+      "Catch 10 Pok\u00e9mon.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball"
+      ], 
+      "Catch 5 Pok\u00e9mon with Weather Boost.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball"
+      ], 
+      "Catch a Dragon-type Pok\u00e9mon.": [
+        "stardust", 
+        "rare candy", 
+        "golden razz berry", 
+        "ultra ball"
+      ], 
+      "Catch 3 different species of Ice-type Pok\u00e9mon.": [
+        "rare candy"
+      ], 
+      "Catch 10 Pok\u00e9mon with Weather Boost.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "great ball"
+      ], 
+      "Use 5 Berries to help catch Pok\u00e9mon.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "great ball"
+      ], 
+      "Catch 10 Normal-type Pok\u00e9mon.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "great ball"
+      ], 
+      "Catch a Ditto.": [
+        "stardust", 
+        "rare candy", 
+        "golden razz berry", 
+        "ultra ball"
+      ]
+    }, 
+    "Throwing Tasks": {
+      "Make 3 Great Throws.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball"
+      ], 
+      "Make 5 Nice Throws.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball"
+      ], 
+      "Make 3 Great Throws in a row.": [
+        "stardust", 
+        "rare candy", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball", 
+        "ultra ball"
+      ], 
+      "Make 3 Great Curveball Throws in a row.": [
+        "stardust", 
+        "rare candy", 
+        "golden razz berry", 
+        "ultra ball"
+      ], 
+      "Make 3 Great Curveball Throws.": [
+        "stardust", 
+        "rare candy", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball", 
+        "ultra ball"
+      ], 
+      "Make 5 Curveball Throws in a row.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "great ball"
+      ], 
+      "Make 2 Nice Curveball Throws in a row.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball"
+      ], 
+      "Make 3 Nice Throws in a row.": [
+        "stardust", 
+        "pinap berry", 
+        "great ball", 
+        "ultra ball"
+      ], 
+      "Make an Excellent Throw.": [
+        "stardust", 
+        "pinap berry", 
+        "great ball", 
+        "ultra ball"
+      ]
+    }, 
+    "Battling Tasks": {
+      "Battle in a raid.": [
+        "stardust", 
+        "nanab berry", 
+        "potion", 
+        "revive"
+      ], 
+      "Battle in a Gym.": [
+        "stardust", 
+        "nanab berry", 
+        "potion", 
+        "revive"
+      ], 
+      "Win a Gym battle.": [
+        "stardust", 
+        "nanab berry", 
+        "super potion", 
+        "revive"
+      ], 
+      "Battle in a Gym 5 times.": [
+        "stardust", 
+        "nanab berry", 
+        "super potion", 
+        "revive"
+      ], 
+      "Win a level 3 or higher raid.": [
+        "stardust", 
+        "rare candy", 
+        "hyper potion", 
+        "revive", 
+        "max revive"
+      ], 
+      "Win 3 Gym battles.": [
+        "stardust", 
+        "rare candy", 
+        "hyper potion", 
+        "revive", 
+        "max revive"
+      ], 
+      "Use a supereffective Charged Attack in 7 Gym battles.": [
+        "stardust", 
+        "rare candy", 
+        "hyper potion", 
+        "revive", 
+        "max revive"
+      ], 
+      "Use a supereffective Charged Attack in a Gym battle.": [
+        "stardust", 
+        "nanab berry", 
+        "super potion", 
+        "revive"
+      ], 
+      "Win a raid.": [
+        "stardust", 
+        "nanab berry", 
+        "super potion", 
+        "revive"
+      ], 
+      "Win 3 raids.": [
+        "stardust", 
+        "max potion", 
+        "revive", 
+        "max revive"
+      ]
+    }, 
+    "Hatching Tasks": {
+      "Hatch an Egg.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball"
+      ], 
+      "Hatch 3 Eggs.": [
+        "stardust", 
+        "rare candy", 
+        "razz berry", 
+        "pinap berry", 
+        "poke ball", 
+        "ultra ball"
+      ]
+    }, 
+    "Miscellaneous Tasks": {
+      "Spin 10 Pok\u00e9Stops or Gyms.": [
+        "stardust", 
+        "razz berry", 
+        "pinap berry", 
+        "silver pinap berry", 
+        "poke ball"
+      ]
+    }, 
+    "group7Sponsored Tasks": {
+      "Sponsored: Catch 8 Pok\u00e9mon.": [
+        "stardust", 
+        "rare candy"
+      ], 
+      "Sponsored: Send 3 Gifts to friends.": [
+        "stardust", 
+        "rare candy"
+      ]
+    }
   }
 }

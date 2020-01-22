@@ -391,6 +391,8 @@ def dm_check(ctx, trainer, report_type):
         return False
     if not user:
         return False
+    if "tutorial" in ctx.channel.name and user != ctx.author:
+        return False
     perms = user.permissions_in(ctx.channel)
     if not perms.read_messages:
         return False
