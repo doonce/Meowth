@@ -960,11 +960,8 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v20.1.22.0 | Built with discord.py")
-        try:
-            await channel.send(embed=embed)
-        except discord.HTTPException:
-            await channel.send(_('I need the `Embed links` permission to send this'))
+        embed.set_footer(text="Running Meowth v20.1.22.1 | Built with discord.py")
+        await channel.send(embed=embed)
 
     @commands.group(name='set', case_insensitive=True)
     async def _set(self, ctx):

@@ -1475,6 +1475,7 @@ class Pokedex(commands.Cog):
                 form = "Normal"
             form_str = f"{form} {form_key}"
             form_list.append(form_str.strip())
+        shiny_str = ""
         if pokemon.shiny_available:
             shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         preview_embed.add_field(name=f"{shiny_str}{str(pokemon)} {pokemon.emoji} - #{pokemon.id} - {('').join(pokemon.boost_weather)}{' - *Legendary*' if pokemon.legendary else ''}{' - *Mythical*' if pokemon.mythical else ''}", value=f"{pokemon.pokedex}", inline=False)

@@ -5592,7 +5592,7 @@ class Raid(commands.Cog):
             report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('report_channel', None))
             if not start_lobby and not battling:
                 return
-            if report_channel and "tutorial" in report_channel.name.lower():
+            if report_channel and checks.check_tutorialchannel(ctx):
                 return
             completed = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].setdefault('completed', [])
             egg_level = utils.get_level(self.bot, self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['pokemon'])
