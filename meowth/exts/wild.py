@@ -74,23 +74,23 @@ class Wild(commands.Cog):
                 if not ctx.prefix:
                     prefix = self.bot._get_prefix(self.bot, message)
                     ctx.prefix = prefix[-1]
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 ctx.author = user
                 await self.add_wild_info(ctx, message)
             elif str(payload.emoji) == self.bot.custom_emoji.get('wild_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('wild'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, self.bot.user)
+                await utils.remove_reaction(message, payload.emoji, self.bot.user)
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 await ctx.invoke(self.bot.get_command("list wild"))
                 await asyncio.sleep(5)
-                await utils.safe_reaction(message, payload.emoji)
+                await utils.add_reaction(message, payload.emoji)
 
     @tasks.loop(seconds=10)
     async def wild_cleanup(self, loop=True):
@@ -720,7 +720,7 @@ class Wild(commands.Cog):
         dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         for reaction in react_list:
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(ctx.wildreportmsg, reaction)
+            await utils.add_reaction(ctx.wildreportmsg, reaction)
         self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'report_time':time.time(),
             'exp':time.time() + despawn,

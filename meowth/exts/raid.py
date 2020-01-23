@@ -68,27 +68,27 @@ class Raid(commands.Cog):
         for report_dict in self.bot.channel_report_dicts:
             for report_channel in self.bot.guild_dict[guild.id][report_dict]:
                 if message.id == self.bot.guild_dict[guild.id][report_dict][report_channel].get('raid_report'):
-                    await message.remove_reaction(payload.emoji, user)
+                    await utils.remove_reaction(message, payload.emoji, user)
                     channel = guild.get_channel(report_channel)
                     ctx.message.author, ctx.author = user, user
                     ctx.message.channel, ctx.channel = channel, channel
                     react_message = "raid_report"
                     break
                 elif message.id == self.bot.guild_dict[guild.id][report_dict][report_channel].get('raid_message'):
-                    await message.remove_reaction(payload.emoji, user)
+                    await utils.remove_reaction(message, payload.emoji, user)
                     ctx.message.author, ctx.author = user, user
                     react_message = "raid_message"
                     break
                 elif message.id == self.bot.guild_dict[guild.id][report_dict][report_channel].get('ctrsmessage'):
-                    await message.remove_reaction(payload.emoji, user)
+                    await utils.remove_reaction(message, payload.emoji, user)
                     react_message = "ctrsmessage"
                     break
                 elif message.id in self.bot.guild_dict[guild.id][report_dict][report_channel].get('next_trains', {}):
-                    await message.remove_reaction(payload.emoji, user)
+                    await utils.remove_reaction(message, payload.emoji, user)
                     react_message = "next_trains"
                     break
                 elif channel.id == report_channel:
-                    await message.remove_reaction(payload.emoji, user)
+                    await utils.remove_reaction(message, payload.emoji, user)
                     react_message = "rsvp"
                     break
             if react_message:
@@ -133,13 +133,13 @@ class Raid(commands.Cog):
                 channel = self.bot.get_channel(payload.channel_id)
                 ctx.message.channel, ctx.channel = channel, channel
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, self.bot.user)
+                await utils.remove_reaction(message, payload.emoji, self.bot.user)
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 ctx.message.content = ""
                 await ctx.invoke(self.bot.get_command("list"))
                 await asyncio.sleep(5)
-                return await utils.safe_reaction(message, payload.emoji)
+                return await utils.add_reaction(message, payload.emoji)
             teamcounts = "1"
             if channel.id in self.bot.guild_dict[guild.id][report_dict]:
                 if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('invite', {}).get('enabled', False):
@@ -2124,7 +2124,7 @@ class Raid(commands.Cog):
                 ctrsmessage_id = ctrsmessage.id
                 await ctrsmessage.pin()
                 for moveset in ctrs_dict:
-                    await utils.safe_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
+                    await utils.add_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
                     await asyncio.sleep(0.25)
             except Exception as e:
                 ctrsmessage_id = None
@@ -2143,14 +2143,14 @@ class Raid(commands.Cog):
                 raid_embed.remove_field(index)
             else:
                 index += 1
-        await utils.safe_reaction(raid_message, help_reaction)
+        await utils.add_reaction(raid_message, help_reaction)
         for reaction in react_list:
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(raid_message, reaction)
+            await utils.add_reaction(raid_message, reaction)
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(ctx.raidreport, reaction)
-        await utils.safe_reaction(ctx.raidreport, report_emoji)
-        await utils.safe_reaction(ctx.raidreport, list_emoji)
+            await utils.add_reaction(ctx.raidreport, reaction)
+        await utils.add_reaction(ctx.raidreport, report_emoji)
+        await utils.add_reaction(ctx.raidreport, list_emoji)
         dm_dict = await self.send_dm_messages(ctx, str(pokemon), raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         return raid_channel
@@ -2287,14 +2287,14 @@ class Raid(commands.Cog):
         if not ctx.author.bot:
             egg_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('egg', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['egg'] = egg_reports
-        await utils.safe_reaction(raid_message, help_reaction)
+        await utils.add_reaction(raid_message, help_reaction)
         for reaction in react_list:
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(raid_message, reaction)
+            await utils.add_reaction(raid_message, reaction)
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(ctx.raidreport, reaction)
-        await utils.safe_reaction(ctx.raidreport, report_emoji)
-        await utils.safe_reaction(ctx.raidreport, list_emoji)
+            await utils.add_reaction(ctx.raidreport, reaction)
+        await utils.add_reaction(ctx.raidreport, report_emoji)
+        await utils.add_reaction(ctx.raidreport, list_emoji)
         dm_dict = {}
         dm_dict = await self.send_dm_messages(ctx, str(egg_level), raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
@@ -2428,7 +2428,7 @@ class Raid(commands.Cog):
             ctrsmessage_id = ctrsmessage.id
             await ctrsmessage.pin()
             for moveset in ctrs_dict:
-                await utils.safe_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
+                await utils.add_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
                 await asyncio.sleep(0.25)
         else:
             ctrsmessage_id = eggdetails.get('ctrsmessage', None)
@@ -2588,7 +2588,7 @@ class Raid(commands.Cog):
             ctrsmessage_id = ctrsmessage.id
             await ctrsmessage.pin()
             for moveset in ctrs_dict:
-                await utils.safe_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
+                await utils.add_reaction(ctrsmessage, ctrs_dict[moveset]['emoji'])
                 await asyncio.sleep(0.25)
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['ctrs_dict'] = ctrs_dict
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['ctrsmessage'] = ctrsmessage_id
@@ -2814,14 +2814,14 @@ class Raid(commands.Cog):
         ex_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('ex', 0) + 1
         self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['ex'] = ex_reports
         self.bot.loop.create_task(self.expiry_check(raid_channel))
-        await utils.safe_reaction(raid_message, help_reaction)
+        await utils.add_reaction(raid_message, help_reaction)
         for reaction in react_list:
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(raid_message, reaction)
+            await utils.add_reaction(raid_message, reaction)
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(ctx.raidreport, reaction)
-        await utils.safe_reaction(ctx.raidreport, report_emoji)
-        await utils.safe_reaction(ctx.raidreport, list_emoji)
+            await utils.add_reaction(ctx.raidreport, reaction)
+        await utils.add_reaction(ctx.raidreport, report_emoji)
+        await utils.add_reaction(ctx.raidreport, list_emoji)
         dm_dict = {}
         dm_dict = await self.send_dm_messages(ctx, "EX", raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['exraidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
@@ -3038,14 +3038,14 @@ class Raid(commands.Cog):
         await asyncio.sleep(1)
         raidmsg = f"Meowth! {meetup_type.title()} reported by {message.author.mention} in {message.channel.mention}! Details: {raid_details}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
         raid_message = await raid_channel.send(content=raidmsg, embed=raid_embed)
-        await utils.safe_reaction(raid_message, help_reaction)
+        await utils.add_reaction(raid_message, help_reaction)
         for reaction in react_list:
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(raid_message, reaction)
+            await utils.add_reaction(raid_message, reaction)
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(ctx.raidreport, reaction)
-        await utils.safe_reaction(ctx.raidreport, report_emoji)
-        await utils.safe_reaction(ctx.raidreport, list_emoji)
+            await utils.add_reaction(ctx.raidreport, reaction)
+        await utils.add_reaction(ctx.raidreport, report_emoji)
+        await utils.add_reaction(ctx.raidreport, list_emoji)
         await raid_message.pin()
         self.bot.guild_dict[message.guild.id][meetup_dict][raid_channel.id] = {
             'report_channel':channel.id,
@@ -3303,7 +3303,7 @@ class Raid(commands.Cog):
                         break
                     train_emoji = self.bot.custom_emoji.get('train_emoji', u'\U0001F682')
                     train_msg = await ctx.send(f"Meowth! {ctx.author.mention} wants to keep this **raid train** moving in {channel_or_gym.mention}!\n\nReact to this message with {train_emoji} to automatically RSVP in {channel_or_gym.mention} with your current party.")
-                    await utils.safe_reaction(train_msg, train_emoji)
+                    await utils.add_reaction(train_msg, train_emoji)
                     teamcounts = ""
                     def get_teamcounts(raid_channel, trainer, lobby):
                         total = lobby[trainer]['count']
@@ -3445,40 +3445,45 @@ class Raid(commands.Cog):
     @checks.trainchannel()
     async def train_title(self, ctx, *, title):
         """Set raid train channel title"""
-        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
-            return
+        can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
+        if not can_manage:
+            return await ctx.send(f"**{ctx.prefix}train {ctx.invoked_with}** can only be used by managers. Use **{ctx.prefix}train nominate [@mention]** to nominate yourself or @mention!", delete_after=60)
         await ctx.invoke(self.bot.get_command("meetup title"), title=title)
 
     @train.command(name="start")
     @checks.trainchannel()
     async def train_start(self, ctx, *, timer):
         """Set raid train channel start time"""
-        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
-            return
+        can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
+        if not can_manage:
+            return await ctx.send(f"**{ctx.prefix}train {ctx.invoked_with}** can only be used by managers. Use **{ctx.prefix}train nominate [@mention]** to nominate yourself or @mention!", delete_after=60)
         await ctx.invoke(self.bot.get_command("starttime"), start_time=timer)
 
     @train.command(name="end")
     @checks.trainchannel()
     async def train_end(self, ctx, *, timer):
         """Set raid train channel end time"""
-        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
-            return
+        can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
+        if not can_manage:
+            return await ctx.send(f"**{ctx.prefix}train {ctx.invoked_with}** can only be used by managers. Use **{ctx.prefix}train nominate [@mention]** to nominate yourself or @mention!", delete_after=60)
         await ctx.invoke(self.bot.get_command("timerset"), timer=timer)
 
     @commands.command(name="next", hidden=True)
     @checks.trainchannel()
     async def train_next_parent(self, ctx, *, channel_or_gym=''):
         """Proceed to next train location"""
-        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
-            return
+        can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
+        if not can_manage:
+            return await ctx.send(f"**{ctx.prefix}train {ctx.invoked_with}** can only be used by managers. Use **{ctx.prefix}train nominate [@mention]** to nominate yourself or @mention!", delete_after=60)
         await ctx.invoke(self.bot.get_command("train next"), channel_or_gym=channel_or_gym)
 
     @train.command(name="next")
     @checks.trainchannel()
     async def train_next(self, ctx, *, channel_or_gym=''):
         """Proceed to next train location"""
-        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
-            return
+        can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
+        if not can_manage:
+            return await ctx.send(f"**{ctx.prefix}train {ctx.invoked_with}** can only be used by managers. Use **{ctx.prefix}train nominate [@mention]** to nominate yourself or @mention!", delete_after=60)
         train_path = self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup'].setdefault('route', [])
         if train_path and not channel_or_gym:
             location, channel_or_gym = train_path[0], train_path[0]
@@ -3552,12 +3557,11 @@ class Raid(commands.Cog):
                     raid_timer = (now + datetime.timedelta(minutes=float(raidexp))).strftime(_('%I:%M %p (%H:%M)'))
                     await ctx.send(f"Meowth! I found this raid at **{train_location}**! This {'egg will hatch' if report_type == 'egg' else 'raid will end'} at {raid_timer}", embed=raid_embed)
 
-    @train.command(name="manager")
+    @train.command(name="manager", aliases=["nominate", "elect"])
     @checks.trainchannel()
-    async def train_manager(self, ctx, *, user):
+    async def train_manager(self, ctx, *, user=None):
         """Add new train manager"""
-        if ctx.author.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
-            return
+        can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
         manager_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=_('Raid Manager Help')).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
         manager_embed.add_field(name=f"{ctx.prefix}train start <date and time>", value=f"Sets the train start time. Example: `!train start 6pm`", inline=False)
         manager_embed.add_field(name=f"{ctx.prefix}train end <date and time>", value=f"Sets the train end time. Example: `!train end 7pm`", inline=False)
@@ -3565,22 +3569,6 @@ class Raid(commands.Cog):
         manager_embed.add_field(name=f"{ctx.prefix}train route <gym list>", value=f"If you have a planned route, you can set it using this command. Example: `!train route Hershey Park, Liberty Park`", inline=False)
         manager_embed.add_field(name=f"{ctx.prefix}next [gym name]", value=f"Alert the channel that you are going to a new gym. Example: `!next Hershey Park`. If a route is set, train will move to next gym without needing a gym name", inline=False)
         manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
-        if user == "help":
-            return await ctx.send(embed=manager_embed)
-        converter = commands.MemberConverter()
-        try:
-            member = await converter.convert(ctx, user)
-        except:
-            return
-        if member.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
-            self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
-            await ctx.send(f"Meowth! I added **{member.display_name}** as a manager! {member.mention}, check your DMs for instructions!")
-            await member.send(embed=manager_embed, delete_after=3600)
-
-    @train.command(name="nominate", aliases=["elect"])
-    @checks.trainchannel()
-    async def train_nominate(self, ctx, *, user=None):
-        """Nominate a new train manager"""
         if not user:
             member = ctx.author
         else:
@@ -3589,22 +3577,15 @@ class Raid(commands.Cog):
                 member = await converter.convert(ctx, user)
             except:
                 return
-        can_manage = ctx.channel.permissions_for(ctx.author).manage_channels
-        manager_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=_('Raid Manager Help')).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
-        manager_embed.add_field(name=f"{ctx.prefix}train start <date and time>", value=f"Sets the train start time. Example: `!train start 6pm`", inline=False)
-        manager_embed.add_field(name=f"{ctx.prefix}train end <date and time>", value=f"Sets the train end time. Example: `!train end 7pm`", inline=False)
-        manager_embed.add_field(name=f"{ctx.prefix}train manager <user @mention>", value=f"Once you become a train manager, you can promote new train managers using this command. Example: `!train manager @{ctx.guild.me.display_name}`", inline=False)
-        manager_embed.add_field(name=f"{ctx.prefix}train route <gym list>", value=f"If you have a planned route, you can set it using this command. Example: `!train route Hershey Park, Liberty Park`", inline=False)
-        manager_embed.add_field(name=f"{ctx.prefix}next [gym name]", value=f"Alert the channel that you are going to a new gym. Example: `!next Hershey Park`. If a route is set, train will move to next gym without needing a gym name", inline=False)
-        manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
         yes_emoji = self.bot.custom_emoji.get('answer_yes', u'\U00002705')
         no_emoji = self.bot.custom_emoji.get('answer_no', u'\U0000274e')
         reaction = None
         if member.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', []):
-            if can_manage and member != ctx.author:
+            if can_manage:
                 self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
                 await ctx.send(f"Meowth! I added **{member.display_name}** as a manager! {member.mention}, check your DMs for instructions!")
                 return await member.send(embed=manager_embed, delete_after=3600)
+            manager_str = ""
             manager_list = [ctx.guild.get_member(x) for x in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])]
             if manager_list:
                 manager_str = f"Current managers {', '.join([x.mention for x in manager_list])} can react with {yes_emoji} to instantly add {member.display_name} as a manager for this channel. "
@@ -3616,8 +3597,8 @@ class Raid(commands.Cog):
                         return True
                     return False
             question = await ctx.send(f"Meowth! {ctx.author.mention} nominates {member.mention} as a train leader! {manager_str}All others can object with {no_emoji}. If nobody objects with {no_emoji} in 60 seconds, {member.display_name} will be added as a train manager.")
-            await utils.safe_reaction(question, yes_emoji)
-            await utils.safe_reaction(question, no_emoji)
+            await utils.add_reaction(question, yes_emoji)
+            await utils.add_reaction(question, no_emoji)
             try:
                 timeout = False
                 reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=60)
@@ -3659,9 +3640,9 @@ class Raid(commands.Cog):
         """Set raid train route"""
         if ctx.channel.id not in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict']:
             return
-        is_manager = ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
+        can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
         train_path = self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup'].setdefault('route', [])
-        if path and is_manager:
+        if path and can_manage:
             gym_matching_cog = self.bot.cogs.get('GymMatching')
             path_list = []
             path_split = path.split(',')
@@ -4927,7 +4908,10 @@ class Raid(commands.Cog):
         for ctr in reversed(ctrs):
             ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh')
             if "form" in ctr_name.lower():
-                ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
+                try:
+                    ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
+                except:
+                    print("sunny error", ctr_name)
             else:
                 ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms']['none']['type']
             for index, type in enumerate(ctr_type):
@@ -5453,7 +5437,7 @@ class Raid(commands.Cog):
             if party['unknown']:
                 msg += f"{grey_emoji}: {party['unknown']} | "
             rsvp_message = await channel.send(msg[:-3])
-        await utils.safe_reaction(rsvp_message, list_emoji)
+        await utils.add_reaction(rsvp_message, list_emoji)
         if lobby and rsvp_type == "here":
             if author.id in lobby.get('starting_dict', {}).keys():
                 try:

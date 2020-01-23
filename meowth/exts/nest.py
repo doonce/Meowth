@@ -91,8 +91,8 @@ class Nest(commands.Cog):
                                 except:
                                     print(traceback.format_exc())
                                 try:
-                                    self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report].get('dm_dict', {})))
-                                    del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report]
+                                    self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['nest_dict'][channel][nest]['reports'][report].get('dm_dict', {})))
+                                    del self.bot.guild_dict[guild.id]['nest_dict'][channel][nest]['reports'][report]
                                     count += 1
                                     continue
                                 except KeyError:
@@ -171,24 +171,24 @@ class Nest(commands.Cog):
                         if not ctx.prefix:
                             prefix = self.bot._get_prefix(self.bot, message)
                             ctx.prefix = prefix[-1]
-                        await message.remove_reaction(payload.emoji, user)
+                        await utils.remove_reaction(message, payload.emoji, user)
                         ctx.author = user
                         if user.id == nest_dict[channel.id][nest]['reports'][message.id]['report_author'] or can_manage:
                             await self.edit_nest_info(ctx, message)
                     elif str(payload.emoji) == self.bot.custom_emoji.get('nest_report', u'\U0001F4E2'):
                         ctx = await self.bot.get_context(message)
                         ctx.author, ctx.message.author = user, user
-                        await message.remove_reaction(payload.emoji, user)
+                        await utils.remove_reaction(message, payload.emoji, user)
                         return await ctx.invoke(self.bot.get_command('nest'))
                     elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                         ctx = await self.bot.get_context(message)
                         await asyncio.sleep(0.25)
-                        await message.remove_reaction(payload.emoji, self.bot.user)
+                        await utils.remove_reaction(message, payload.emoji, self.bot.user)
                         await asyncio.sleep(0.25)
-                        await message.remove_reaction(payload.emoji, user)
+                        await utils.remove_reaction(message, payload.emoji, user)
                         await ctx.invoke(self.bot.get_command("list nests"))
                         await asyncio.sleep(5)
-                        return await utils.safe_reaction(message, payload.emoji)
+                        return await utils.add_reaction(message, payload.emoji)
 
     async def edit_nest_info(self, ctx, message):
         nest_dict = self.bot.guild_dict[ctx.guild.id]['nest_dict'].get(ctx.channel.id, {})
@@ -486,7 +486,7 @@ class Nest(commands.Cog):
         ctx.nestreportmsg = await ctx.send(f"Meowth! {str(pokemon)} nest reported by {ctx.author.mention}! Details: {nest_name.title()}!\n\nUse {catch_emoji} if you visited, {expire_emoji} if expired, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all nests!", embed=nest_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(ctx.nestreportmsg, reaction)
+            await utils.add_reaction(ctx.nestreportmsg, reaction)
         nest_dict[nest_name]['reports'][ctx.nestreportmsg.id] = {
             'exp':migration_exp,
             'expedit': "delete",

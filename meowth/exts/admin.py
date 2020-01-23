@@ -214,7 +214,7 @@ class Admin(commands.Cog):
         else:
             value = stdout.getvalue()
             try:
-                await utils.safe_reaction(ctx.message, ctx.bot.custom_emoji.get('command_done', u'\U00002611'))
+                await utils.add_reaction(ctx.message, ctx.bot.custom_emoji.get('command_done', u'\U00002611'))
             except:
                 pass
             if ret is None:

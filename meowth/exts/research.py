@@ -122,23 +122,23 @@ class Research(commands.Cog):
                 if not ctx.prefix:
                     prefix = self.bot._get_prefix(self.bot, message)
                     ctx.prefix = prefix[-1]
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 ctx.author, ctx.message.author = user, user
                 await self.add_research_info(ctx, message)
             elif str(payload.emoji) == self.bot.custom_emoji.get('research_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('research'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, self.bot.user)
+                await utils.remove_reaction(message, payload.emoji, self.bot.user)
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 await ctx.invoke(self.bot.get_command("list research"))
                 await asyncio.sleep(5)
-                await utils.safe_reaction(message, payload.emoji)
+                await utils.add_reaction(message, payload.emoji)
 
     async def expire_research(self, message):
         guild = message.channel.guild
@@ -708,7 +708,7 @@ class Research(commands.Cog):
         ctx.resreportmsg = await ctx.channel.send(research_msg, embed=research_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(ctx.resreportmsg, reaction)
+            await utils.add_reaction(ctx.resreportmsg, reaction)
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][ctx.resreportmsg.id] = {
             'exp':time.time() + to_midnight - 60,
             'expedit':"delete",

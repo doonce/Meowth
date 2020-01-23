@@ -119,23 +119,23 @@ class Lure(commands.Cog):
                 if not ctx.prefix:
                     prefix = self.bot._get_prefix(self.bot, message)
                     ctx.prefix = prefix[-1]
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 ctx.author = user
                 if user.id == lure_dict['report_author'] or can_manage:
                     await self.edit_lure_info(ctx, message)
             elif str(payload.emoji) == self.bot.custom_emoji.get('lure_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('lure'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, self.bot.user)
+                await utils.remove_reaction(message, payload.emoji, self.bot.user)
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 await ctx.invoke(self.bot.get_command("list lures"))
                 await asyncio.sleep(5)
-                await utils.safe_reaction(message, payload.emoji)
+                await utils.add_reaction(message, payload.emoji)
 
     async def expire_lure(self, message):
         guild = message.channel.guild
@@ -438,7 +438,7 @@ class Lure(commands.Cog):
         }
         for reaction in react_list:
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(ctx.lurereportmsg, reaction)
+            await utils.add_reaction(ctx.lurereportmsg, reaction)
         if not ctx.message.author.bot:
             lure_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('lure', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['lure'] = lure_reports

@@ -1113,18 +1113,18 @@ class Tutorial(commands.Cog):
                     command = None
         if not command:
             help_embed.description = f"Reply with the name of a command, if known, or the name of a command category to view commands available in {ctx.channel.mention}. Other commands may be available in different channels."
-            help_categories = {k:[] for k in list(self.bot.cogs.keys())}
-            help_categories["No Category"] = []
-            help_categories["Not Run"] = []
+            help_categories = {k.lower():[] for k in list(self.bot.cogs.keys())}
+            help_categories["no category"] = []
+            help_categories["not run"] = []
             for cmd in self.bot.commands:
                 can_run = await predicate(cmd)
                 if can_run and cmd.cog_name and not cmd.hidden:
-                    help_categories[cmd.cog_name].append(cmd)
+                    help_categories[cmd.cog_name.lower()].append(cmd)
                 elif can_run and not cmd.hidden:
-                    help_categories["No Category"].append(cmd)
+                    help_categories["no category"].append(cmd)
                 else:
-                    help_categories["Not Run"].append(cmd)
-            help_embed.add_field(name="**Available Command Categories**", value=', '.join([f"{x}" for x in help_categories.keys() if help_categories.get(x) and x != "Not Run"]), inline=False)
+                    help_categories["not run"].append(cmd)
+            help_embed.add_field(name="**Available Command Categories**", value=', '.join([f"{x.title()}" for x in help_categories.keys() if help_categories.get(x) and x != "not run"]), inline=False)
             help_embed.add_field(name="**README**", value=f"For a full list of commands, Meowth's readme is available [here](https://github.com/doonce/Meowth/blob/Rewrite/README.md).")
             if can_manage:
                 help_embed.description += f" Moderators can view help for other commands by replying with **Not Run**."
@@ -1145,21 +1145,22 @@ class Tutorial(commands.Cog):
                         return
                     else:
                         await utils.safe_delete(cat_msg)
-                    cog_match = re.search(cat_msg.clean_content, str(help_categories.keys()), re.IGNORECASE)
-                    cmd_match = re.search(cat_msg.clean_content, str([x.name for x in self.bot.commands]))
+                    cog_match = True if cat_msg.clean_content.lower() in [x.lower() for x in list(help_categories.keys())] else False
+                    cmd_match = True if cat_msg.clean_content.lower() in [x.name.lower() for x in self.bot.commands] else False
+                    subcmd_match = True if cat_msg.clean_content.lower() in [alias.lower() for command in self.bot.walk_commands() for alias in command.aliases if not command.parent] else False
                     help_embed.clear_fields()
                     if cog_match:
-                        if len(help_categories[cog_match.group()]) == 1:
-                            command = help_categories[cog_match.group()][0]
+                        if len(help_categories[cat_msg.clean_content.lower()]) == 1:
+                            command = help_categories[cat_msg.clean_content.lower()][0]
                             break
-                        elif len(help_categories[cog_match.group()]) == 0:
+                        elif len(help_categories[cat_msg.clean_content.lower()]) == 0:
                             return
-                        help_embed.set_author(name=f"{cog_match.group()} Category Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
+                        help_embed.set_author(name=f"{cat_msg.clean_content.lower()} Category Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
                         help_embed.description = f"Reply with the name of a command to view command information.\n\n"
                         cmd_text = []
-                        for cmd in help_categories[cog_match.group()]:
+                        for cmd in help_categories[cat_msg.clean_content.lower()]:
                             cmd_text.append(f"**{cmd.name}** - {cmd.short_doc}")
-                        if cog_match.group().lower() == "not run" and can_manage:
+                        if cat_msg.clean_content.lower() == "not run" and can_manage:
                             cmd_text = [x.split(' - ')[0] for x in cmd_text]
                             field_value = ""
                             for index, item in enumerate(cmd_text):
@@ -1191,11 +1192,12 @@ class Tutorial(commands.Cog):
                             return
                         else:
                             await utils.safe_delete(cmd_msg)
-                        cmd_match = re.search(cmd_msg.clean_content, str([x.name for x in help_categories[cog_match.group()]]), re.IGNORECASE)
-                        if cmd_match:
-                            command = self.bot.get_command(cmd_match.group())
-                    elif cmd_match:
-                        command = self.bot.get_command(cmd_match.group())
+                        cmd_match = True if cmd_msg.clean_content.lower() in [x.name.lower() for x in self.bot.commands] else False
+                        subcmd_match = True if cmd_msg.clean_content.lower() in [alias.lower() for command in self.bot.walk_commands() for alias in command.aliases if not command.parent] else False
+                        if cmd_match or subcmd_match:
+                            command = self.bot.get_command(cmd_msg.clean_content.lower())
+                    elif subcmd_match or cmd_match:
+                        command = self.bot.get_command(cat_msg.clean_content.lower())
                     break
         if command:
             if can_manage and not await predicate(command) and ctx.guild.id in list(self.bot.guild_dict.keys()):

@@ -649,7 +649,7 @@ class Listing(commands.Cog):
             await ctx.send(f"Hey {', '.join(mention_list)}! {ctx.author.mention} is trying to get your attention!")
 
     @_list.command(aliases=['boss', 'raidbossses'])
-    async def bosses(self, ctx):
+    async def bosses(self, ctx, level=""):
         """List each possible boss and the number of users that have RSVP'd for it if used in a raid channel.
         Otherwise lists possible raid bosses.
 
@@ -661,7 +661,7 @@ class Listing(commands.Cog):
                 listmsg += await self._bosslist(ctx)
                 return await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
         else:
-            return await self._raidbosslist(ctx)
+            return await self._raidbosslist(ctx, level)
 
     async def _bosslist(self, ctx):
         message = ctx.message
@@ -704,7 +704,7 @@ class Listing(commands.Cog):
             listmsg = _(' Nobody has told me what boss they want!')
         return listmsg
 
-    async def _raidbosslist(self, ctx):
+    async def _raidbosslist(self, ctx, level=""):
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid_bosses', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -718,7 +718,11 @@ class Listing(commands.Cog):
             await utils.safe_bulk_delete(ctx.channel, delete_list)
             list_msg = ""
             raid_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
-            for raid_level in self.bot.raid_info['raid_eggs']:
+            if level.isdigit() and any([level == "1", level == "2", level == "3", level == "4", level == "5", level.lower() == "ex"]):
+                level_list = [level.upper()]
+            if not level:
+                level_list = ["1", "2", "3", "4", "5", "EX"]
+            for raid_level in level_list:
                 list_msg += _('\n**Level {level} bosses:**\n`{raidlist}` \n').format(level=raid_level, raidlist=self.bot.raid_info['raid_eggs'][raid_level]['pokemon'])
             raid_embed.add_field(name="Raid Boss List", value=list_msg)
             msg = await ctx.channel.send(embed=raid_embed)

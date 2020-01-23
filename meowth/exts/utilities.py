@@ -260,7 +260,7 @@ async def ask(bot, message, user_list=None, timeout=60, *, react_list=[]):
             return (user.id != message.author.id) and (reaction.message.id == message.id) and (reaction.emoji in react_list)
     for r in react_list:
         await asyncio.sleep(0.25)
-        await safe_reaction(message, r)
+        await add_reaction(message, r)
     try:
         reaction, user = await bot.wait_for('reaction_add', check=check, timeout=timeout)
         return reaction, user
@@ -630,9 +630,15 @@ async def safe_bulk_delete(channel, message_list):
     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.ClientException, AttributeError):
         pass
 
-async def safe_reaction(message, reaction):
+async def add_reaction(message, reaction):
     try:
         await message.add_reaction(reaction)
+    except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.NotFound, discord.errors.InvalidArgument, AttributeError):
+        pass
+
+async def remove_reaction(message, reaction, user):
+    try:
+        await message.remove_reaction(reaction, user)
     except (discord.errors.Forbidden, discord.errors.HTTPException, discord.errors.NotFound, discord.errors.InvalidArgument, AttributeError):
         pass
 
@@ -960,8 +966,11 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v20.1.22.1 | Built with discord.py")
-        await channel.send(embed=embed)
+        embed.set_footer(text="Running Meowth v20.1.23.0 | Built with discord.py")
+        try:
+            await channel.send(embed=embed)
+        except discord.HTTPException:
+            await channel.send(_('I need the `Embed links` permission to send this'))
 
     @commands.group(name='set', case_insensitive=True)
     async def _set(self, ctx):
@@ -1012,7 +1021,7 @@ class Utilities(commands.Cog):
         if regional in self.bot.raid_list:
             self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['regional'] = regional
             await ctx.message.channel.send(_("Meowth! Regional raid boss set to **{boss}**!").format(boss=get_name(self.bot, regional).title()), delete_after=10)
-            await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
+            await add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
         else:
             await ctx.message.channel.send(_("Meowth! That Pokemon doesn't appear in raids!"), delete_after=10)
             return
@@ -1036,7 +1045,7 @@ class Utilities(commands.Cog):
         self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'] = timezone
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         await ctx.channel.send(_("Timezone has been set to: `UTC{offset}`\nThe current time is **{now}**").format(offset=timezone, now=now.strftime("%H:%M")), delete_after=10)
-        await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
+        await add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
     @_set.command()
     @checks.is_owner()
@@ -1177,7 +1186,7 @@ class Utilities(commands.Cog):
         else:
             default_prefix = self.bot.default_prefix
             await ctx.channel.send(_('Prefix has been reset to default: `{}`').format(default_prefix))
-        await safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
+        await add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
     @commands.command()
     @commands.has_permissions(manage_guild=True)

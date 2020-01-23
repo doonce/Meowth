@@ -35,7 +35,7 @@ class Advanced(commands.Cog):
         if message.guild not in list(self.bot.guild_dict.keys()):
             return
         if "niandick" in message.content.lower():
-            await utils.safe_reaction(message, "\U0001F346")
+            await utils.add_reaction(message, "\U0001F346")
         if message.author.id == 358090000371286018:
             if message.channel.id == 458696131594158099 and message.attachments:
                 ctx = await self.get_context(message)

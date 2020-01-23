@@ -126,16 +126,16 @@ class Pvp(commands.Cog):
             if str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, self.bot.user)
+                await utils.remove_reaction(message, payload.emoji, self.bot.user)
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 await ctx.invoke(self.bot.get_command("list pvp"))
                 await asyncio.sleep(5)
-                return await utils.safe_reaction(message, payload.emoji)
+                return await utils.add_reaction(message, payload.emoji)
             elif str(payload.emoji) == self.bot.custom_emoji.get('pvp_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('pvp'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('pvp_stop', u'\U000023f9\U0000fe0f'):
                 for reaction in message.reactions:
@@ -260,9 +260,9 @@ class Pvp(commands.Cog):
         await ctx.message.edit(content=f"PVP Tournament started by {creator.mention}\n\n{creator.mention}, react with the emoji 1\u20e3 through {len(trainer_list)}\u20e3 that matches the **winner** of each match!\n\n{creator.mention} can react with {start_emoji} to go to next round once all matches are decided, or react with {stop_emoji} to cancel the tournament.", embed=new_embed)
         await ctx.message.clear_reactions()
         for i in range(8):
-            await utils.safe_reaction(ctx.message, f'{i+1}\u20e3')
-        await utils.safe_reaction(ctx.message, start_emoji)
-        await utils.safe_reaction(ctx.message, stop_emoji)
+            await utils.add_reaction(ctx.message, f'{i+1}\u20e3')
+        await utils.add_reaction(ctx.message, start_emoji)
+        await utils.add_reaction(ctx.message, stop_emoji)
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['round'] = round
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['trainers'] = trainer_list
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['next_size'] = 4
@@ -294,9 +294,9 @@ class Pvp(commands.Cog):
         await ctx.message.edit(content=f"PVP Tournament started by {creator.mention}\n\n{creator.mention}, react with the emoji 1\u20e3 through {len(trainer_list)}\u20e3 for each winner of each match!\n\n{creator.mention} can react with {start_emoji} to go to next round once all matches are decided, or react with {stop_emoji} to cancel the tournament.", embed=new_embed)
         await ctx.message.clear_reactions()
         for i in range(4):
-            await utils.safe_reaction(ctx.message, f'{i+1}\u20e3')
-        await utils.safe_reaction(ctx.message, start_emoji)
-        await utils.safe_reaction(ctx.message, stop_emoji)
+            await utils.add_reaction(ctx.message, f'{i+1}\u20e3')
+        await utils.add_reaction(ctx.message, start_emoji)
+        await utils.add_reaction(ctx.message, stop_emoji)
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['round'] = round
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['trainers'] = trainer_list
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['next_size'] = 2
@@ -327,9 +327,9 @@ class Pvp(commands.Cog):
         await ctx.message.edit(content=f"PVP Tournament started by {creator.mention}\n\n{creator.mention}, react with the emoji 1\u20e3 through {len(trainer_list)}\u20e3 for each winner of each match!\n\n{creator.mention} can react with {start_emoji} to go to next round once all matches are decided, or react with {stop_emoji} to cancel the tournament.", embed=new_embed)
         await ctx.message.clear_reactions()
         for i in range(2):
-            await utils.safe_reaction(ctx.message, f'{i+1}\u20e3')
-        await utils.safe_reaction(ctx.message, start_emoji)
-        await utils.safe_reaction(ctx.message, stop_emoji)
+            await utils.add_reaction(ctx.message, f'{i+1}\u20e3')
+        await utils.add_reaction(ctx.message, start_emoji)
+        await utils.add_reaction(ctx.message, stop_emoji)
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['round'] = round
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['trainers'] = trainer_list
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][message.id]['tournament']['next_size'] = 1
@@ -481,7 +481,7 @@ class Pvp(commands.Cog):
         confirmation = await ctx.channel.send(pvp_msg, embed=pvp_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(confirmation, reaction)
+            await utils.add_reaction(confirmation, reaction)
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][confirmation.id] = {
             'exp':time.time() + int(timer)*60,
             'expedit':"delete",
@@ -655,9 +655,9 @@ class Pvp(commands.Cog):
         pvp_embed.add_field(name=f"**Tournament Size:**", value=str(size))
         confirmation = await ctx.channel.send(pvp_msg, embed=pvp_embed)
         for i in range(int(size)):
-            await utils.safe_reaction(confirmation, f'{i+1}\u20e3')
-        await utils.safe_reaction(confirmation, start_emoji)
-        await utils.safe_reaction(confirmation, stop_emoji)
+            await utils.add_reaction(confirmation, f'{i+1}\u20e3')
+        await utils.add_reaction(confirmation, start_emoji)
+        await utils.add_reaction(confirmation, stop_emoji)
         test_var = self.bot.guild_dict[ctx.guild.id].setdefault('pvp_dict', {}).setdefault(confirmation.id, {})
         self.bot.guild_dict[ctx.guild.id]['pvp_dict'][confirmation.id] = {
             'exp':time.time() + 4*60*60,

@@ -349,7 +349,7 @@ class Silph(commands.Cog):
             await ctx.send(
                 _('This Travelers Card has been successfully linked to you!'),
                 embed=card.embed(offset), delete_after=30)
-            await utils.safe_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
+            await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
     @commands.command()
     @checks.guildchannel()

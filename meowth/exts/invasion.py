@@ -116,23 +116,23 @@ class Invasion(commands.Cog):
                 if not ctx.prefix:
                     prefix = self.bot._get_prefix(self.bot, message)
                     ctx.prefix = prefix[-1]
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 ctx.author = user
                 await self.add_invasion_info(ctx, message, user)
             elif str(payload.emoji) == self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2'):
                 ctx = await self.bot.get_context(message)
                 ctx.author, ctx.message.author = user, user
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 return await ctx.invoke(self.bot.get_command('invasion'))
             elif str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                 ctx = await self.bot.get_context(message)
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, self.bot.user)
+                await utils.remove_reaction(message, payload.emoji, self.bot.user)
                 await asyncio.sleep(0.25)
-                await message.remove_reaction(payload.emoji, user)
+                await utils.remove_reaction(message, payload.emoji, user)
                 await ctx.invoke(self.bot.get_command("list invasions"))
                 await asyncio.sleep(5)
-                await utils.safe_reaction(message, payload.emoji)
+                await utils.add_reaction(message, payload.emoji)
 
     async def expire_invasion(self, message):
         guild = message.channel.guild
@@ -620,7 +620,7 @@ class Invasion(commands.Cog):
         ctx.invreportmsg = await ctx.channel.send(invasion_msg, embed=invasion_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
-            await utils.safe_reaction(ctx.invreportmsg, reaction)
+            await utils.add_reaction(ctx.invreportmsg, reaction)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id] = {
             'exp':time.time() + int(expire_time)*60,
             'expedit':"delete",
