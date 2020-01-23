@@ -1886,7 +1886,7 @@ class Raid(commands.Cog):
                     ctx.raid_channel = new_channel
                     return
                 else:
-                    raid_embed.add_field(name=_('**New Raid Report**'), value=_("Meowth! I'll help you report a raid!\n\nFirst, I'll need to know what **pokemon or level** the raid is. Reply with the name of a **pokemon** or an **egg level** number 1-5. You can reply with **cancel** to stop anytime."), inline=False)
+                    raid_embed.add_field(name=_('**New Raid Report**'), value=_("Meowth! I'll help you report a raid!\n\nFirst, I'll need to know what **pokemon or level** the raid is. Reply with the name of a **pokemon**, an **egg level** number 1-5, or EX. You can reply with **cancel** to stop anytime."), inline=False)
                     mon_or_lvl_wait = await channel.send(embed=raid_embed)
                     def check(reply):
                         if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
@@ -1906,6 +1906,8 @@ class Raid(commands.Cog):
                     if mon_or_lvl_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
+                    elif mon_or_lvl_msg.clean_content.lower() == "ex":
+                        return await ctx.invoke(self.bot.get_command("exraid"))
                     elif mon_or_lvl_msg.clean_content.isdigit() and (int(mon_or_lvl_msg.clean_content) == 0 or int(mon_or_lvl_msg.clean_content) > 5):
                         error = _("entered an invalid level")
                         break
