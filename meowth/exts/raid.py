@@ -1488,13 +1488,13 @@ class Raid(commands.Cog):
                     raid_embed.add_field(name=_('**Boss Overwrite Cancelled**'), value=_("Meowth! Your edit has been cancelled because you canceled the request! Retry when you're ready."), inline=False)
                     return await ctx.send(embed=raid_embed, delete_after=10)
                 else:
-                    replace_until = dateparser.parse(boss_time_msg.clean_content, settings={'DATE_ORDER': 'MDY'})
+                    replace_until = dateparser.parse(boss_time_msg.clean_content, settings={'DATE_ORDER': 'MDY', 'RETURN_AS_TIMEZONE_AWARE': False})
                     replace_until = replace_until - datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     replace_until = replace_until - datetime.timedelta(hours=6)
                 if replace_with:
-                    new_overwrites[str(to_replace)] = {"replace_with":str(replace_with), "replace_until":replace_until.timestamp()}
+                    new_overwrites[str(to_replace)] = {"replace_with":str(replace_with), "replace_until":replace_until.replace(tzinfo=datetime.timezone.utc).timestamp()}
                 else:
-                    new_overwrites[str(to_replace)] = {"replace_with":None, "replace_until":replace_until.timestamp()}
+                    new_overwrites[str(to_replace)] = {"replace_with":None, "replace_until":replace_until.replace(tzinfo=datetime.timezone.utc).timestamp()}
         if new_overwrites or boss_list_msg.clean_content.lower() == "none":
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)

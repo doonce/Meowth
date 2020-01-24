@@ -1442,8 +1442,9 @@ class Huntr(commands.Cog):
                     else:
                         wait_time.append((event_dict['channel_time'] - now).total_seconds())
                 if event_dict.get('event_pokemon'):
-                    if event_dict['event_pokemon'] not in self.bot.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter']:
-                        self.bot.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter'].append(event_dict['event_pokemon'])
+                    for pokemon in event_dict['event_pokemon']:
+                        if pokemon not in self.bot.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter']:
+                            self.bot.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter'].append(pokemon)
                 if bot_account:
                     if now < event_dict['mute_time']:
                         wait_time.append((event_dict['mute_time'] - now).total_seconds())
@@ -1503,8 +1504,8 @@ class Huntr(commands.Cog):
             "channel_time": None,
             "event_title": None,
             "event_locations": [],
-            "event_pokemon":None,
-            "event_pokemon_str":None
+            "event_pokemon":[],
+            "event_pokemon_str":""
         }
         raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin.png?cache=1')
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -1749,7 +1750,7 @@ class Huntr(commands.Cog):
                             event_dict['event_locations'] = event_locations
                 if ctx.invoked_with == "commday":
                     raid_embed.clear_fields()
-                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=_("Meowth! Since this is a community day, would you like to add a pokemon to my wild filter to not flood report channels? Reply with **no** or a pokemon. You can reply with **cancel** to stop anytime."), inline=False)
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=_("Meowth! Since this is a community day, would you like to add pokemon to my wild filter to not flood report channels? Reply with **no** or a pokemon. You can reply with **cancel** to stop anytime."), inline=False)
                     bot_account_wait = await channel.send(embed=raid_embed)
                     try:
                         bot_account_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1767,14 +1768,19 @@ class Huntr(commands.Cog):
                     elif bot_account_msg.clean_content.lower() == "no":
                         break
                     else:
-                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, bot_account_msg.clean_content.lower())
-                        if pokemon:
+                        reply_pokemon = bot_account_msg.clean_content.lower().split(',')
+                        reply_pokemon = [x.strip() for x in reply_pokemon]
+                        reply_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in reply_pokemon]
+                        reply_pokemon = [x for x in reply_pokemon if x]
+                        string_list = []
+                        for pokemon in reply_pokemon:
                             if not pokemon.form and not pokemon.region and not pokemon.size and not pokemon.gender and not pokemon.shadow:
-                                event_dict['event_pokemon'] = pokemon.id
-                                event_dict['event_pokemon_str'] = f"{pokemon.name} (all forms)"
+                                event_dict['event_pokemon'].append(pokemon.id)
+                                string_list.append(f"{pokemon.name} (all forms)")
                             else:
-                                event_dict['event_pokemon'] = str(pokemon)
-                                event_dict['event_pokemon_str'] = str(pokemon)
+                                event_dict['event_pokemon'].append(str(pokemon))
+                                string_list.append(str(pokemon))
+                        event_dict['event_pokemon_str'] = ', '.join(string_list)        
             break
         raid_embed.clear_fields()
         if not error:
