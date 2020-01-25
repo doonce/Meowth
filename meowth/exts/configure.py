@@ -1890,7 +1890,7 @@ class Configure(commands.Cog):
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Huntr Cog is not loaded. Scanners cannot be configured.")))
             ctx.config_dict_temp = config_dict_temp
             return ctx
-        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Do you want automatic reports using supported bots enabled?\n\nAny report that a bot posts in a channel that Meowth also has access to will be converted to a Meowth report. If enabled, there are more options available for configuring this setting.\n\nRespond with a comma separated list of available report types to enable, **all* to enable all, or **N** to disable all. Any omitted from a list will be disabled.").set_author(name='Automatic Reports', icon_url=self.bot.user.avatar_url)
+        scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Do you want automatic reports using supported bots enabled?\n\nAny report that a bot posts in a channel that Meowth also has access to will be converted to a Meowth report. If enabled, there are more options available for configuring this setting.\n\nRespond with a comma separated list of available report types to enable, **all** to enable all, or **N** to disable all. Any omitted from a list will be disabled.").set_author(name='Automatic Reports', icon_url=self.bot.user.avatar_url)
         scanner_embed.add_field(name=f"**Raid**", value='**Supported Bots:** GymHuntrBot, NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"raid", "pokemon":"[form] <pokemon name>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<end minutes>", "moves":"<move name 1> / <move name 2>"}`', inline=False)
         scanner_embed.add_field(name=f"**Egg**", value='**Supported Bots:** GymHuntrBot, NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"egg", "level":"<raid_level>", "gps":"<longitude>,<latitude>", "gym":"<gym name>", "raidexp":"<hatch minutes>"}`', inline=False)
         scanner_embed.add_field(name=f"**Wild**", value='**Supported Bots:** HuntrBot, NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"wild", "pokemon":"[gender] [form] <pokemon name>", "gps":"<latitude>,<longitude>, "weather":"[weather boost]"}`', inline=False)
@@ -2026,7 +2026,7 @@ class Configure(commands.Cog):
                 else:
                     wildfilter_list = wildfilters.content.lower().split(',')
                     for pkmn in wildfilter_list:
-                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pkmn)
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pkmn, allow_digits=True)
                         if pokemon:
                             if not pokemon.form and not pokemon.region and not pokemon.size and not pokemon.gender and not pokemon.shadow:
                                 config_dict_temp['scanners']['wildfilter'].append(pokemon.id)

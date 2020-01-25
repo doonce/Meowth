@@ -13,6 +13,7 @@ import os
 import json
 import random
 import functools
+import itertools
 import traceback
 
 import discord
@@ -489,8 +490,35 @@ class Huntr(commands.Cog):
                             await channel.send(embed=embed)
                         if channel_type == 'egg':
                             if not utils.get_level(self.bot, report_details.get('pokemon', None)):
-                                logger.error(f"{report_details.get('pokemon', None)} not in raid_json")
-                                return
+                                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, report_details.get('pokemon', None))
+                                if not pokemon:
+                                    return
+                                if str(pokemon) not in self.bot.raid_list:
+                                    old_raid_dict = {}
+                                    for raid_level in self.bot.raid_info['raid_eggs']:
+                                        old_raid_dict[raid_level] = self.bot.raid_info['raid_eggs'][raid_level]['pokemon']
+                                    with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
+                                        data = json.load(fd)
+                                    data['raid_eggs'][channel_level]['pokemon'].append(str(pokemon))
+                                    with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                                        json.dump(data, fd, indent=2, separators=(', ', ': '))
+                                    await pkmn_class.Pokedex.generate_lists(self.bot)
+                                    self.bot.raid_dict = await utils.get_raid_dict(self.bot)
+                                    self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
+                                    for guild in list(self.bot.guilds):
+                                        for report_dict in self.bot.channel_report_dicts:
+                                            for channel_id in list(self.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys()):
+                                                if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(channel_level):
+                                                    for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
+                                                        interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id].get('interest', []))
+                                                        new_bosses = list(set(new_raid_dict[channel_level]) - set(old_raid_dict[channel_level]))
+                                                        new_bosses = [x.lower() for x in new_bosses]
+                                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
+                                                    self.bot.guild_dict[guild.id][report_dict][channel_id]['pokemon'] = ''
+                                                    self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
+                                                    self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
+                                                    channel = self.bot.get_channel(channel_id)
+                                                    await self._edit_party(channel)
                             await raid_cog._eggtoraid(report_details.get('pokemon', None), channel, message.author, moveset=report_details.get('moves', None))
                         raidexp = report_details.get('raidexp')
                         if raidexp and channel:
@@ -1307,7 +1335,7 @@ class Huntr(commands.Cog):
         random_raid = random.choice(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'])
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, random_raid)
         embed = discord.Embed(title="Title", description="Embed Description")
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":random_raid.lower(), "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":f"{pokemon.quick_moves[0].title()} / {pokemon.charge_moves[0].title()}", "raidexp":10}).replace("'", '"'), embed=embed)
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":"lugia", "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":f"{pokemon.quick_moves[0].title()} / {pokemon.charge_moves[0].title()}", "raidexp":10}).replace("'", '"'), embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
@@ -1750,7 +1778,7 @@ class Huntr(commands.Cog):
                             event_dict['event_locations'] = event_locations
                 if ctx.invoked_with == "commday":
                     raid_embed.clear_fields()
-                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=_("Meowth! Since this is a community day, would you like to add pokemon to my wild filter to not flood report channels? Reply with **no** or a pokemon. You can reply with **cancel** to stop anytime."), inline=False)
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=_("Meowth! Since this is a community day, would you like to add **pokemon** to my wild filter to not flood report channels? Note: This will only block reports without IV and without level. Reply with **no** or a **pokemon**. You can reply with **cancel** to stop anytime."), inline=False)
                     bot_account_wait = await channel.send(embed=raid_embed)
                     try:
                         bot_account_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1770,7 +1798,7 @@ class Huntr(commands.Cog):
                     else:
                         reply_pokemon = bot_account_msg.clean_content.lower().split(',')
                         reply_pokemon = [x.strip() for x in reply_pokemon]
-                        reply_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in reply_pokemon]
+                        reply_pokemon = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x, allow_digits=True) for x in reply_pokemon]
                         reply_pokemon = [x for x in reply_pokemon if x]
                         string_list = []
                         for pokemon in reply_pokemon:
@@ -1780,7 +1808,7 @@ class Huntr(commands.Cog):
                             else:
                                 event_dict['event_pokemon'].append(str(pokemon))
                                 string_list.append(str(pokemon))
-                        event_dict['event_pokemon_str'] = ', '.join(string_list)        
+                        event_dict['event_pokemon_str'] = ', '.join(string_list)
             break
         raid_embed.clear_fields()
         if not error:
