@@ -1915,7 +1915,7 @@ class Configure(commands.Cog):
                 autoset_list = report_types
             if autoset_list[0] == "n":
                 config_dict_temp['scanners']['reports'] = {k:False for k in report_types}
-                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Reports disabled'))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='All Automatic Reports disabled'))
                 break
             elif autoset_list[0] == "cancel":
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
@@ -1929,6 +1929,10 @@ class Configure(commands.Cog):
                     config_dict_temp['scanners']['reports'][item] = False
                 for item in enable_list:
                     config_dict_temp['scanners']['reports'][item] = True
+                if disable_list:
+                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"Automatic {', '.join([x.title() for x in disable_list])} Reports disabled"))
+                if enable_list:
+                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Automatic {', '.join([x.title() for x in enable_list])} Reports enabled"))
                 break
             else:
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="I'm sorry I don't understand. Please reply with either **N** to disable, or **Y** to enable."))

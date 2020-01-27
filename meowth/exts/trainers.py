@@ -114,7 +114,6 @@ class Trainers(commands.Cog):
                 await ctx.channel.send(_("Meowth! I can't add roles!"), delete_after=10)
 
     @commands.command(aliases=['whois'])
-    @checks.guildchannel()
     async def profile(self, ctx, *, member=""):
         """Displays a member's social and reporting profile.
 
@@ -264,7 +263,6 @@ class Trainers(commands.Cog):
         await ctx.send(msg, embed=embed)
 
     @commands.group(case_insensitive=True, invoke_without_command=True)
-    @checks.guildchannel()
     async def leaderboard(self, ctx, type="total", range="1"):
         """Displays the top ten reporters of a server.
 
@@ -409,7 +407,6 @@ class Trainers(commands.Cog):
         await ctx.send("This server's report stats have been reset!", delete_after=10)
 
     @commands.command()
-    @checks.guildchannel()
     async def pokebattler(self, ctx, *, pbid: str = ""):
         """Links a server member to a PokeBattler ID.
 
@@ -446,7 +443,6 @@ class Trainers(commands.Cog):
         await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
     @commands.command()
-    @checks.guildchannel()
     async def trainercode(self, ctx, *, trainercode: str = ""):
         """Links a server member to a Pokemon Go Trainer Code.
 
@@ -484,7 +480,6 @@ class Trainers(commands.Cog):
         await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
     @commands.command()
-    @checks.guildchannel()
     async def ign(self, ctx, *, ign: str = ""):
         """Links a server member to a comma separated list of Pokemon Go in-game name(s).
 

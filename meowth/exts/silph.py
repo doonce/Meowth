@@ -291,7 +291,6 @@ class Silph(commands.Cog):
         return await SilphCard.get_trainer_card(silph_user)
 
     @commands.command()
-    @checks.guildchannel()
     async def silph(self, ctx, silph_user: str = ""):
         """Links a server member to a Silph Road Travelers Card.
 
@@ -352,7 +351,6 @@ class Silph(commands.Cog):
             await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
     @commands.command()
-    @checks.guildchannel()
     async def silphcard(self, ctx, silph_user: str = None):
         """Displays a user's Silph Road Trainer Card."""
         guild_data = ctx.bot.guild_dict[ctx.guild.id]

@@ -23,7 +23,6 @@ class Listing(commands.Cog):
         self.bot = bot
 
     @commands.group(name="list", aliases=['lists', 'tag', 'l'], case_insensitive=True)
-    @checks.guildchannel()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def _list(self, ctx):
         """Lists all info for the current channel depending on channel type.

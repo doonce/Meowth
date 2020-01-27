@@ -883,7 +883,7 @@ class Huntr(commands.Cog):
             gym_info, raid_location, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid", dupe_check=False, autocorrect=False)
             if gym_url:
                 raid_details = raid_location
-            else:
+            elif raid_details.lower() != "unknown":
                 pokestops = gym_matching_cog.get_stops(ctx.guild.id)
                 if raid_location in list(pokestops.keys()):
                     with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
@@ -964,7 +964,7 @@ class Huntr(commands.Cog):
             prefix = self.bot._get_prefix(self.bot, ctx.message)
             ctx.prefix = prefix[-1]
         await raid_channel.send(f"This raid was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.\nThe weather may be inaccurate for this raid, use **{ctx.prefix}weather** to set the correct weather.")
-        ctrs_dict = await raid_cog._get_generic_counters(message.guild, str(pokemon), weather)
+        ctrs_dict = await raid_cog._get_generic_counters(message.channel, str(pokemon), weather)
         if str(level) in ctx.bot.guild_dict[message.guild.id]['configure_dict'].get('counters', {}).get('auto_levels', []):
             try:
                 ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
@@ -1149,7 +1149,7 @@ class Huntr(commands.Cog):
             stop_info, stop_location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "research", dupe_check=False, autocorrect=False)
             if stop_url:
                 location = stop_location
-            else:
+            elif location.lower() != "unknown":
                 with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
                     data = json.load(fd)
                 add_stop_dict = {}
