@@ -5570,7 +5570,7 @@ class Raid(commands.Cog):
                     try:
                         self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['battling'].remove(lobby)
                         self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['completed'].append(lobby)
-                    except ValueError:
+                    except:
                         pass
         while True:
             check_battling()
@@ -5628,7 +5628,7 @@ class Raid(commands.Cog):
                 try:
                     self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['battling'].remove(start_lobby)
                     self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['completed'].append(start_lobby)
-                except ValueError:
+                except:
                     pass
                 raid_channel_name = await self.edit_channel_name(ctx.channel)
                 await ctx.channel.edit(name=raid_channel_name)

@@ -881,6 +881,9 @@ class Huntr(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
             gym_info, raid_location, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid", dupe_check=False, autocorrect=False)
+            test_gym = await gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), ctx.guild.id)
+            if test_gym != raid_location:
+                gym_info, raid_location, gym_url = await gym_matching_cog.get_poi_info(ctx, test_gym, "raid", dupe_check=False, autocorrect=False)
             if gym_url:
                 raid_details = raid_location
             elif raid_details.lower() != "unknown":
@@ -1028,6 +1031,9 @@ class Huntr(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
             gym_info, raid_location, gym_url = await gym_matching_cog.get_poi_info(ctx, raid_details, "raid", dupe_check=False, autocorrect=False)
+            test_gym = await gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), ctx.guild.id)
+            if test_gym != raid_location:
+                gym_info, raid_location, gym_url = await gym_matching_cog.get_poi_info(ctx, test_gym, "raid", dupe_check=False, autocorrect=False)
             if gym_url:
                 raid_details = raid_location
             else:
@@ -1335,7 +1341,7 @@ class Huntr(commands.Cog):
         random_raid = random.choice(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'])
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, random_raid)
         embed = discord.Embed(title="Title", description="Embed Description")
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":"lugia", "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":f"{pokemon.quick_moves[0].title()} / {pokemon.charge_moves[0].title()}", "raidexp":10}).replace("'", '"'), embed=embed)
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":str(pokemon), "gym":"White Park", "gps":"39.628941,-79.935063", "moves":f"{pokemon.quick_moves[0].title()} / {pokemon.charge_moves[0].title()}", "raidexp":10}).replace("'", '"'), embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

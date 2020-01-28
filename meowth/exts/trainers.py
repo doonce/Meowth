@@ -20,7 +20,7 @@ class Trainers(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(aliases=["mystic", "valor", "instinct", "harmony"])
+    @commands.group(aliases=["mystic", "valor", "instinct", "harmony"], case_insensitive=True, invoke_without_command=True)
     @checks.allowteam()
     async def team(self, ctx, *, team=None):
         """Set your team role.
@@ -82,8 +82,10 @@ class Trainers(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif not any([team_msg.clean_content.lower() == "mystic", team_msg.clean_content.lower() == "blue", team_msg.clean_content.lower() == "valor", team_msg.clean_content.lower() == "red", team_msg.clean_content.lower() == "instinct", team_msg.clean_content.lower() == "yellow", team_msg.clean_content.lower() == "harmony"]):
-                        error = _("entered an invalid team. Choose from mystic, valor, instinct, harmony")
-                        break
+                        team_embed.clear_fields()
+                        team_embed.add_field(name=f"**Team Assignment Error**", value=f"Meowth! You entered an invalid team! Choose from mystic, valor, instinct, harmony.", inline=False)
+                        await ctx.send(embed=team_embed, delete_after=10)
+                        continue
                     elif team_msg:
                         team = team_msg.clean_content.lower()
                         team = team.replace("blue", "mystic").replace("red", "valor").replace("yellow", "instinct")
@@ -112,6 +114,72 @@ class Trainers(commands.Cog):
                 await ctx.channel.send(_('Meowth! Added {member} to Team {team_name}! {team_emoji}').format(member=ctx.author.mention, team_name=entered_team.capitalize(), team_emoji=utils.parse_emoji(ctx.guild, self.bot.config.team_dict[entered_team])))
             except discord.Forbidden:
                 await ctx.channel.send(_("Meowth! I can't add roles!"), delete_after=10)
+
+    @team.command()
+    @checks.is_mod()
+    @checks.allowteam()
+    async def change(self, ctx, *, user=""):
+        if not user:
+            member = ctx.author
+        else:
+            converter = commands.MemberConverter()
+            try:
+                member = await converter.convert(ctx, user)
+            except:
+                return
+        error = False
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        guild_roles = self.bot.guild_dict[ctx.guild.id]['configure_dict']['team'].setdefault('team_roles', {"mystic":None, "valor":None, "instinct":None, "harmony":None})
+        team_colors = {"mystic":discord.Colour.blue(), "valor":discord.Colour.red(), "instinct":discord.Colour.gold(), "harmony":discord.Colour.default()}
+        team_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/teams/harmony.png?cache=1')
+        team_embed.set_footer(text=_('Assigning @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
+        while True:
+            async with ctx.typing():
+                team_embed.clear_fields()
+                def check(reply):
+                    if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.author:
+                        return True
+                    else:
+                        return False
+                team_embed.add_field(name=_('**Team Assignment**'), value=f"Meowth! I'll help you change {member.mention}'s team!\n\nReply with **mystic, valor, instinct, or harmony**. You can reply with **cancel** to stop anytime.", inline=False)
+                team_wait = await ctx.send(embed=team_embed)
+                try:
+                    team_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    team_msg = None
+                await utils.safe_delete(team_wait)
+                if not team_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(team_msg)
+                if team_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                elif not any([team_msg.clean_content.lower() == "mystic", team_msg.clean_content.lower() == "blue", team_msg.clean_content.lower() == "valor", team_msg.clean_content.lower() == "red", team_msg.clean_content.lower() == "instinct", team_msg.clean_content.lower() == "yellow", team_msg.clean_content.lower() == "harmony"]):
+                    team_embed.clear_fields()
+                    team_embed.add_field(name=f"**Team Assignment Error**", value=f"Meowth! You entered an invalid team! Choose from mystic, valor, instinct, harmony.", inline=False)
+                    await ctx.send(embed=team_embed, delete_after=10)
+                    continue
+                elif team_msg:
+                    team = team_msg.clean_content.lower()
+                    team = team.replace("blue", "mystic").replace("red", "valor").replace("yellow", "instinct")
+            break
+        if error:
+            team_embed.clear_fields()
+            team_embed.add_field(name=_('**Team Assignment Cancelled**'), value=_("Meowth! Team assignment has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            return await ctx.send(embed=team_embed, delete_after=10)
+        old_team = ""
+        team_roles = {k: ctx.guild.get_role(v) for (k, v) in guild_roles.items()}
+        for team_name, role in team_roles.items():
+            if role in member.roles:
+                team_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict[team_name])
+                old_team = f"{team_name.title()} {team_emoji}"
+                await member.remove_roles(role)
+        team_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict[team])
+        new_team = f"{team.title()} {team_emoji}"
+        await member.add_roles(team_roles[team])
+        return await ctx.send(f"I changed **{member.display_name}** from **{'No ' if not old_team else ''}Team {old_team}** to **Team {new_team}**!")
 
     @commands.command(aliases=['whois'])
     async def profile(self, ctx, *, member=""):
