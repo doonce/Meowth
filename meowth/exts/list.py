@@ -855,7 +855,7 @@ class Listing(commands.Cog):
         wantmsg = ""
         if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels) or len(user_forms) > 0 or len(user_eggs) > 0:
             if wantlist:
-                wantmsg += f"'**Pokemon:** ({(', ').join([x for x in pokemon_options if pokemon_settings.get(x)])})\n{', '.join(wantlist)}\n\n"
+                wantmsg += f"**Pokemon:** ({(', ').join([x for x in pokemon_options if pokemon_settings.get(x)])})\n{', '.join(wantlist)}\n\n"
             if user_forms:
                 wantmsg += f"**Pokemon Forms:** ({(', ').join([x for x in pokemon_options if pokemon_settings.get(x)])})\n{', '.join(user_forms)}\n\n"
             if user_bosses and not user_link:

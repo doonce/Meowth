@@ -1074,6 +1074,7 @@ class Raid(commands.Cog):
                         data = json.load(fd)
                     for raid_level in tsr_boss_dict:
                         data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
+                    json.loads(data)
                     new_raid_dict = copy.deepcopy(tsr_boss_dict)
                     with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
@@ -1359,6 +1360,12 @@ class Raid(commands.Cog):
                         data = json.load(fd)
                     for raid_level in tsr_boss_dict:
                         data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
+                    try:
+                        json.loads(data)
+                    except:
+                        raid_embed.clear_fields()
+                        raid_embed.add_field(name=_('**Boss Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because TSR didn't respond correctly! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=raid_embed, delete_after=10)
                     with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
                     await pkmn_class.Pokedex.generate_lists(self.bot)

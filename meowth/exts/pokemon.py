@@ -944,6 +944,7 @@ class Pokedex(commands.Cog):
                 for type in self.bot.type_list:
                     move_info[f"hidden power {type.lower()}"] = {"type":type.title(), "power":15}
                 if move_info:
+                    json.loads(move_info)
                     with open(os.path.join('data', 'move_info.json'), 'w') as fd:
                          json.dump(move_info, fd, indent=2, separators=(', ', ': '))
             except Exception as e:
@@ -965,6 +966,10 @@ class Pokedex(commands.Cog):
                 move_info[move_name.lower().replace('_fast', '').replace('_', ' ')] = {"type":move_type, "power":move_power}
         for type in self.bot.type_list:
             move_info[f"hidden power {type.lower()}"] = {"type":type.title(), "power":15}
+        try:
+            json.loads(data)
+        except:
+            return await ctx.send("Meowth! Your edit has been cancelled because TSR didn't respond correctly! Retry when you're ready.", delete_after=10)
         with open(os.path.join('data', 'move_info.json'), 'w') as fd:
              json.dump(move_info, fd, indent=2, separators=(', ', ': '))
         await ctx.send(f"**{len(move_info)}** moves updated.", delete_after=15)
@@ -1013,6 +1018,7 @@ class Pokedex(commands.Cog):
                                 if "hatch" in pokemon.shiny_available:
                                     shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                                 egg_dict[egg_distance][index] = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
+                json.loads(egg_dict)
                 with open(os.path.join('data', 'egg_info.json'), 'w') as fd:
                     json.dump(egg_dict, fd, indent=2, separators=(', ', ': '))
             except:
@@ -1097,11 +1103,17 @@ class Pokedex(commands.Cog):
                 confirmation = await ctx.send(embed=egg_embed, delete_after=10)
                 await utils.safe_delete(ctx.message)
             else:
+                try:
+                    json.loads(data)
+                except:
+                    egg_embed.clear_fields()
+                    egg_embed.add_field(name=_('**Egg Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because TSR didn't respond correctly! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=raid_embed, delete_after=10)
+                with open(os.path.join('data', 'egg_info.json'), 'w') as fd:
+                    json.dump(egg_dict, fd, indent=2, separators=(', ', ': '))
                 egg_embed.clear_fields()
                 egg_embed.add_field(name=_('**Egg Edit Completed**'), value=_("Meowth! Your edit completed successfully.").format(error=error), inline=False)
                 confirmation = await ctx.send(embed=egg_embed)
-                with open(os.path.join('data', 'egg_info.json'), 'w') as fd:
-                    json.dump(egg_dict, fd, indent=2, separators=(', ', ': '))
 
     @commands.command()
     @checks.is_manager()
