@@ -1174,6 +1174,8 @@ class Huntr(commands.Cog):
                 stop_info, stop_location, stop_url = await gym_matching_cog.get_poi_info(ctx, test_stop, "research", dupe_check=False, autocorrect=False)
                 if stop_url:
                     location = stop_location
+        if not location:
+            return
         await research_cog.send_research(ctx, location, quest, reward)
 
     async def huntr_lure(self, ctx, report_details):
@@ -1184,16 +1186,30 @@ class Huntr(commands.Cog):
         lure_cog = self.bot.cogs.get('Lure')
         nearest_stop = ""
         location = report_details['pokestop']
-        gps = report_details['gps']
+        lure_coordinates = report_details['gps']
         lure_type = report_details['lure_type'].lower()
         timer = report_details.get('expire', 30)
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
-            nearest_stop = await gym_matching_cog.find_nearest_stop((gps.split(",")[0],gps.split(",")[1]), guild.id)
-            if nearest_stop:
-                location = nearest_stop
-            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "lure")
+            stop_info, stop_location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "lure", dupe_check=False, autocorrect=False)
+            if stop_url:
+                location = stop_location
+            elif location.lower() != "unknown" and lure_coordinates not in str(gym_matching_cog.get_stops(ctx.guild.id)):
+                with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
+                    data = json.load(fd)
+                add_stop_dict = {}
+                add_stop_dict[location] = {"coordinates":lure_coordinates, "alias":"", "notes":""}
+                data[str(ctx.guild.id)] = {**data[str(ctx.guild.id)], **add_stop_dict}
+                with open(os.path.join('data', 'stop_data.json'), 'w') as fd:
+                    json.dump(data, fd, indent=2, separators=(', ', ': '))
+                gym_matching_cog.gym_data = gym_matching_cog.init_json()
+                gym_matching_cog.stop_data = gym_matching_cog.init_stop_json()
+            elif lure_coordinates in str(gym_matching_cog.get_stops(ctx.guild.id)):
+                test_stop = await gym_matching_cog.find_nearest_stop((lure_coordinates.split(",")[0], lure_coordinates.split(",")[1]), ctx.guild.id)
+                stop_info, stop_location, stop_url = await gym_matching_cog.get_poi_info(ctx, test_stop, "lure", dupe_check=False, autocorrect=False)
+                if stop_url:
+                    location = stop_location
         if not location:
             return
         await lure_cog.send_lure(ctx, lure_type, location, timer)
@@ -1206,7 +1222,7 @@ class Huntr(commands.Cog):
         invasion_cog = self.bot.cogs.get('Invasion')
         nearest_stop = ""
         location = report_details['pokestop']
-        gps = report_details['gps']
+        invasion_coordinates = report_details['gps']
         timer = report_details.get('expire', 30)
         reward = report_details.get('reward', None)
         gender = report_details.get('gender', None)
@@ -1218,10 +1234,26 @@ class Huntr(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         stop_info = ""
         if gym_matching_cog:
-            nearest_stop = await gym_matching_cog.find_nearest_stop((gps.split(",")[0],gps.split(",")[1]), guild.id)
-            if nearest_stop:
-                location = nearest_stop
-            stop_info, location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "invasion")
+            stop_info, stop_location, stop_url = await gym_matching_cog.get_poi_info(ctx, location, "lure", dupe_check=False, autocorrect=False)
+            if stop_url:
+                location = stop_location
+            elif location.lower() != "unknown" and invasion_coordinates not in str(gym_matching_cog.get_stops(ctx.guild.id)):
+                with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
+                    data = json.load(fd)
+                add_stop_dict = {}
+                add_stop_dict[location] = {"coordinates":invasion_coordinates, "alias":"", "notes":""}
+                data[str(ctx.guild.id)] = {**data[str(ctx.guild.id)], **add_stop_dict}
+                with open(os.path.join('data', 'stop_data.json'), 'w') as fd:
+                    json.dump(data, fd, indent=2, separators=(', ', ': '))
+                gym_matching_cog.gym_data = gym_matching_cog.init_json()
+                gym_matching_cog.stop_data = gym_matching_cog.init_stop_json()
+            elif invasion_coordinates in str(gym_matching_cog.get_stops(ctx.guild.id)):
+                test_stop = await gym_matching_cog.find_nearest_stop((invasion_coordinates.split(",")[0], invasion_coordinates.split(",")[1]), ctx.guild.id)
+                stop_info, stop_location, stop_url = await gym_matching_cog.get_poi_info(ctx, test_stop, "lure", dupe_check=False, autocorrect=False)
+                if stop_url:
+                    location = stop_location
+        if not location:
+            return
         if not location:
             return
         await invasion_cog.send_invasion(ctx, location, reward, gender, leader, timer)

@@ -532,7 +532,7 @@ class GymMatching(commands.Cog):
                     report_message = await report_channel.fetch_message(report)
                     reward = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['reward']
                     reward_str = (', ').join(reward)
-                    if not reward_str:
+                    if not reward_str or str(reward).lower() == "unknown":
                         reward_str = "Unknown Pokemon"
                     active_invasions.append(f"{index}. [{reward_str}]({report_message.jump_url})")
                     index += 1
