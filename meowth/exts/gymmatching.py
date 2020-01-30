@@ -211,11 +211,11 @@ class GymMatching(commands.Cog):
                     else:
                         poi_target = poi_type_msg.clean_content.lower()
                     first = False
-                if action and any([action.lower() == "add", action.lower() == "remove", action.lower() == "list", action.lower() == "convert"]):
+                if action and any([action.lower() == "add", action.lower() == "remove", action.lower() == "list", action.lower() == "convert", action.lower() == "edit"]):
                     poi_action = action
-                elif not action or (action and not any([action.lower() == "add", action.lower() == "remove", action.lower() == "convert"])):
+                elif not action or (action and not any([action.lower() == "add", action.lower() == "remove", action.lower() == "convert", action.lower() == "edit"])):
                     poi_embed.clear_fields()
-                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"{'Meowth! I will help you edit a POI!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **action** you'd like to use. Reply with **add**, **remove**, **convert**, or **list**. You can reply with **cancel** to stop anytime.", inline=False)
+                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"{'Meowth! I will help you edit a POI!' if first else ''}\n\n{'First' if first else 'Meowth! Now'}, I'll need to know what **action** you'd like to use. Reply with **add**, **remove**, **convert**, **edit**, or **list**. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_action_wait = await channel.send(embed=poi_embed)
                     try:
                         poi_action_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -230,7 +230,7 @@ class GymMatching(commands.Cog):
                     if poi_action_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
-                    elif not any([poi_action_msg.clean_content.lower() == "add", poi_action_msg.clean_content.lower() == "remove", poi_action_msg.clean_content.lower() == "list", poi_action_msg.clean_content.lower() == "convert"]):
+                    elif not any([poi_action_msg.clean_content.lower() == "add", poi_action_msg.clean_content.lower() == "remove", poi_action_msg.clean_content.lower() == "list", poi_action_msg.clean_content.lower() == "convert", poi_action_msg.clean_content.lower() == "edit"]):
                         error = _("entered an invalid option")
                         break
                     else:
@@ -324,28 +324,32 @@ class GymMatching(commands.Cog):
                     with open(os.path.join('data', file_name), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
                     break
-                elif poi_target and poi_action == "add":
-                    poi_embed.clear_fields()
-                    poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Now I'll need to know the **coordinates** of the {poi_name} {poi_target} you'd like to {poi_action}. Reply with the coordinates of the {poi_target}. You can reply with **cancel** to stop anytime.", inline=False)
-                    poi_coord_wait = await channel.send(embed=poi_embed)
-                    try:
-                        poi_coord_msg = await self.bot.wait_for('message', timeout=60, check=check)
-                    except asyncio.TimeoutError:
-                        poi_coord_msg = None
-                    await utils.safe_delete(poi_coord_wait)
-                    if not poi_coord_msg:
-                        error = _("took too long to respond")
-                        break
-                    else:
-                        await utils.safe_delete(poi_coord_msg)
-                    if poi_coord_msg.clean_content.lower() == "cancel":
-                        error = _("cancelled the report")
-                        break
-                    elif not re.match(r'^\s*-?\d{1,2}\.?\d*,\s*-?\d{1,3}\.?\d*\s*$', poi_coord_msg.clean_content.lower()):
-                        error = _("entered something invalid")
-                        break
-                    else:
-                        poi_coords = poi_coord_msg.clean_content.lower().replace(" ", "")
+                elif poi_target and (poi_action == "add" or poi_action == "edit"):
+                    if poi_action == "add":
+                        poi_embed.clear_fields()
+                        poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Now I'll need to know the **coordinates** of the {poi_name} {poi_target} you'd like to {poi_action}. Reply with the coordinates of the {poi_target}. You can reply with **cancel** to stop anytime.", inline=False)
+                        poi_coord_wait = await channel.send(embed=poi_embed)
+                        try:
+                            poi_coord_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            poi_coord_msg = None
+                        await utils.safe_delete(poi_coord_wait)
+                        if not poi_coord_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(poi_coord_msg)
+                        if poi_coord_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif not re.match(r'^\s*-?\d{1,2}\.?\d*,\s*-?\d{1,3}\.?\d*\s*$', poi_coord_msg.clean_content.lower()):
+                            error = _("entered something invalid")
+                            break
+                        else:
+                            poi_coords = poi_coord_msg.clean_content.lower().replace(" ", "")
+                    elif poi_action == "edit":
+                        poi_name = list(data[str(guild.id)].keys())[data_keys.index(poi_name.lower())]
+                        poi_coords = data[str(guild.id)][poi_name]['coordinates']
                     poi_embed.clear_fields()
                     poi_embed.add_field(name=_('**Edit Server POIs**'), value=f"Meowth! Is this an **alias** for a {poi_target} you've previously added? Reply with the **N** if not or the in-game name of the of the {poi_target} you've previously added. You can reply with **cancel** to stop anytime.", inline=False)
                     poi_alias_wait = await channel.send(embed=poi_embed)
@@ -354,7 +358,7 @@ class GymMatching(commands.Cog):
                     except asyncio.TimeoutError:
                         poi_alias_msg = None
                     await utils.safe_delete(poi_alias_wait)
-                    if not poi_alias_wait:
+                    if not poi_alias_msg:
                         error = _("took too long to respond")
                         break
                     else:
@@ -363,7 +367,7 @@ class GymMatching(commands.Cog):
                         error = _("cancelled the report")
                         break
                     elif poi_alias_msg.clean_content.lower() == "n":
-                        poi_alias = None
+                        poi_alias = ""
                     elif poi_alias_msg.clean_content.lower().strip() not in data_keys:
                         error = _("entered a POI not on my **list**")
                         break
@@ -377,23 +381,19 @@ class GymMatching(commands.Cog):
                     except asyncio.TimeoutError:
                         poi_note_msg = None
                     await utils.safe_delete(poi_note_wait)
-                    if not poi_note_wait:
+                    if not poi_note_msg:
                         error = _("took too long to respond")
                         break
                     else:
                         await utils.safe_delete(poi_note_msg)
-                    if poi_note_wait.clean_content.lower() == "cancel":
+                    if poi_note_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
-                    elif poi_note_wait.clean_content.lower() == "n":
-                        poi_notes = None
+                    elif poi_note_msg.clean_content.lower() == "n":
+                        poi_notes = ""
                     else:
-                        poi_notes = poi_note_wait.clean_content.lower()
-                    data[str(guild.id)][poi_name] = {"coordinates":poi_coords, "alias":"", "notes":""}
-                    if poi_alias:
-                        data[str(guild.id)][poi_name]['alias'] = poi_alias
-                    if poi_notes:
-                        data[str(guild.id)][poi_name]['notes'] = poi_notes
+                        poi_notes = poi_note_msg.clean_content
+                    data[str(guild.id)][poi_name] = {"coordinates":poi_coords, "alias":poi_alias, "notes":poi_notes}
                     with open(os.path.join('data', file_name), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
                     break
@@ -558,7 +558,10 @@ class GymMatching(commands.Cog):
         if not match:
             return None
         if ctx.author.bot:
-            return match
+            if score > 80:
+                return match
+            else:
+                return None
         if score < 80:
             if not autocorrect:
                 return None
