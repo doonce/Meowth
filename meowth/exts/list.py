@@ -717,6 +717,9 @@ class Listing(commands.Cog):
             await utils.safe_bulk_delete(ctx.channel, delete_list)
             list_msg = ""
             raid_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
+            if self.bot.raid_info.get('last_edit', False):
+                last_edit = datetime.datetime.utcfromtimestamp(self.bot.raid_info['last_edit']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+                raid_embed.set_footer(text=f"Last Update: {last_edit.strftime('%B %d at %I:%M %p')}")
             if level.isdigit() and any([level == "1", level == "2", level == "3", level == "4", level == "5", level.lower() == "ex"]):
                 level_list = [level.upper()]
             if not level:
@@ -1461,6 +1464,9 @@ class Listing(commands.Cog):
             list_messages = []
             await utils.safe_bulk_delete(ctx.channel, delete_list)
             research_embed = discord.Embed(discription="", colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/field-research.png?cache=1')
+            if self.bot.quest_info.get('last_edit', False):
+                last_edit = datetime.datetime.utcfromtimestamp(self.bot.quest_info['last_edit']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+                research_embed.set_footer(text=f"Last Update: {last_edit.strftime('%B %d at %I:%M %p')}")
             if not any([list_type == "all", list_type == "pokemon", list_type == "items"]):
                 list_type = "all"
             for category in self.bot.quest_info[list_type].keys():
@@ -1499,6 +1505,9 @@ class Listing(commands.Cog):
             list_messages = []
             await utils.safe_bulk_delete(ctx.channel, delete_list)
             egg_embed = discord.Embed(discription="", colour=ctx.guild.me.colour)
+            if self.bot.egg_info.get('last_edit', False):
+                last_edit = datetime.datetime.utcfromtimestamp(self.bot.egg_info['last_edit']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+                egg_embed.set_footer(text=f"Last Update: {last_edit.strftime('%B %d at %I:%M %p')}")
             if level.isdigit() and any([level == "2", level == "5", level == "7", level == "10"]):
                 distance_list = level
             if not level:

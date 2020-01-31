@@ -32,7 +32,9 @@ class Advanced(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.guild not in list(self.bot.guild_dict.keys()):
+        if not message.guild:
+            return
+        if message.guild.id not in list(self.bot.guild_dict.keys()):
             return
         if "niandick" in message.content.lower():
             await utils.add_reaction(message, "\U0001F346")

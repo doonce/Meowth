@@ -1074,7 +1074,8 @@ class Raid(commands.Cog):
                         data = json.load(fd)
                     for raid_level in tsr_boss_dict:
                         data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
-                    json.loads(data)
+                    json.loads(str(data).replace("'", '"').replace('fetch"D', "fetch'D"))
+                    data['last_edit'] = time.time()
                     new_raid_dict = copy.deepcopy(tsr_boss_dict)
                     with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
@@ -1247,6 +1248,7 @@ class Raid(commands.Cog):
             new_list = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in new_list]
             new_list = [str(x) for x in new_list if x]
             data['raid_eggs'][edit_level]['pokemon'] = new_list
+            data['last_edit'] = time.time()
             new_raid_dict = {edit_level: new_list}
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
@@ -1273,9 +1275,10 @@ class Raid(commands.Cog):
     @raid_json.command(name="list", hidden=True)
     @checks.is_manager()
     async def raid_json_list(self, ctx, level=None):
-        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         raid_embed = discord.Embed(colour=ctx.message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
-        raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
+        if self.bot.raid_info.get('last_edit', False):
+            last_edit = datetime.datetime.utcfromtimestamp(self.bot.raid_info['last_edit']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+            raid_embed.set_footer(text=f"Last Update: {last_edit.strftime('%B %d at %I:%M %p')}")
         msg = ""
         if not level:
             for raid_level in self.bot.raid_info['raid_eggs']:
@@ -1361,11 +1364,12 @@ class Raid(commands.Cog):
                     for raid_level in tsr_boss_dict:
                         data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
                     try:
-                        json.loads(data)
+                        json.loads(str(data).replace("'", '"').replace('fetch"D', "fetch'D"))
                     except:
                         raid_embed.clear_fields()
                         raid_embed.add_field(name=_('**Boss Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because TSR didn't respond correctly! Retry when you're ready."), inline=False)
                         return await ctx.send(embed=raid_embed, delete_after=10)
+                    data['last_edit'] = time.time()
                     with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
                     await pkmn_class.Pokedex.generate_lists(self.bot)

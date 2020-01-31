@@ -1534,13 +1534,19 @@ class Huntr(commands.Cog):
                     except:
                         pass
                     try:
-                        del self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]
-                    except:
-                        pass
-                    try:
                         self.bot.active_raidhours.remove(event_id)
                     except:
                         pass
+                    if self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id].get('recur_weekly', False):
+                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['mute_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['mute_time'] + datetime.timedelta(days=7)
+                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_start'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_start'] + datetime.timedelta(days=7)
+                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_end'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_end'] + datetime.timedelta(days=7)
+                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['channel_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['channel_time'] + datetime.timedelta(days=7)
+                    else:
+                        try:
+                            del self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]
+                        except:
+                            pass
                     return
                 else:
                     wait_time.append((event_dict['event_end'] - now).total_seconds())
@@ -1579,8 +1585,9 @@ class Huntr(commands.Cog):
             "channel_time": None,
             "event_title": None,
             "event_locations": [],
-            "event_pokemon":[],
-            "event_pokemon_str":""
+            "event_pokemon": [],
+            "event_pokemon_str": "",
+            "recur_weekly": None
         }
         raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin.png?cache=1')
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -1856,6 +1863,30 @@ class Huntr(commands.Cog):
                                 event_dict['event_pokemon'].append(str(pokemon))
                                 string_list.append(str(pokemon))
                         event_dict['event_pokemon_str'] = ', '.join(string_list)
+                if ctx.invoked_with == "raidhour" and event_dict.get('recur_weekly') == None:
+                    local_start = event_dict['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Since this is a raid hour event, would you like to have this event recur weekly on **{local_start.strftime('%As at %I:%M %p')}** until the event is canceled? You can also skip weeks using **{ctx.prefix}raidhour cancel**. Reply with **yes** or **no**. You can reply with **cancel** to stop anytime.", inline=False)
+                    bot_account_wait = await channel.send(embed=raid_embed)
+                    try:
+                        bot_account_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        bot_account_msg = None
+                    await utils.safe_delete(bot_account_wait)
+                    if not bot_account_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(bot_account_msg)
+                    if bot_account_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif bot_account_msg.clean_content.lower() == "yes":
+                        event_dict['recur_weekly'] = True
+                    elif bot_account_msg.clean_content.lower() == "no":
+                        event_dict['recur_weekly'] = False
+                    else:
+                        continue
             break
         raid_embed.clear_fields()
         if not error:
@@ -1867,9 +1898,11 @@ class Huntr(commands.Cog):
             if bot_account:
                 success_str += f"I will mute {bot_account.mention} in {bot_channel.mention} on {local_mute.strftime('%B %d at %I:%M %p')} and will unmute at the end of the event.\n\n"
             if event_dict['make_trains']:
-                success_str += f"I will make {len(event_dict['event_locations'])} channels in {train_channel.mention} on {local_channel.strftime('%B %d at %I:%M %p')} and remove them at the end of the event. These channels will be for: {(', ').join(event_dict['event_locations'])}. The title for the trains will be: {event_dict['event_title']}."
+                success_str += f"I will make {len(event_dict['event_locations'])} channels in {train_channel.mention} on {local_channel.strftime('%B %d at %I:%M %p')} and remove them at the end of the event. These channels will be for: {(', ').join(event_dict['event_locations'])}. The title for the trains will be: {event_dict['event_title']}.\n\n"
             if event_dict['event_pokemon']:
-                success_str += f"I will mute **{event_dict['event_pokemon_str']}** during the event."
+                success_str += f"I will mute **{event_dict['event_pokemon_str']}** during the event.\n\n"
+            if event_dict['recur_weekly']:
+                success_str += f"I will make this event every **{local_start.strftime('%As at %I:%M %p')}**."
             raid_embed.add_field(name=_('**Raid Hour Report**'), value=f"Meowth! A raid hour has been successfully scheduled. To cancel an event use **{ctx.prefix}raidhour cancel**\n\n{success_str}", inline=False)
             raid_hour_var = self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {})
             self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][ctx.message.id] = copy.deepcopy(event_dict)
@@ -1891,6 +1924,7 @@ class Huntr(commands.Cog):
             bot_account = ctx.guild.get_member(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['bot_account'])
             bot_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['bot_channel'])
             report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['train_channel'])
+            event_recurs = self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event].get('recur_weekly', False)
             if self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['make_trains']:
                 channel_type = "train "
             elif self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['make_meetups']:
@@ -1905,11 +1939,17 @@ class Huntr(commands.Cog):
                 cancel_str += f"-- Muting: {bot_account.mention} {'in '+bot_channel.mention if bot_channel else ''}\n"
             if report_channel:
                 cancel_str += f"-- {channel_type.title()}Channels: {(', ').join(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_locations'])} in {report_channel.mention}\n"
+            if event_recurs:
+                cancel_str += f"-- Recurring Event: {local_start.strftime('%As at %I:%M %p')}\n"
             cancel_str += "\n"
+        paginator = commands.Paginator(prefix=None, suffix=None)
+        for line in cancel_str.split('\n'):
+            paginator.add_line(line.rstrip())
+        for p in paginator.pages:
+            await ctx.send(p)
         if ctx.invoked_with == "list":
-            await ctx.send(cancel_str)
             return
-        event_list_wait = await ctx.send(f"{ctx.author.mention} please send the event ID of the event you would like to cancel.\n{cancel_str}", delete_after=60)
+        event_list_wait = await ctx.send(f"{ctx.author.mention} please send the event ID of the event you would like to cancel.", delete_after=60)
         def check(reply):
             if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:
                 return True
@@ -1927,16 +1967,35 @@ class Huntr(commands.Cog):
         event_reply = event_list_msg.clean_content.lower().strip()
         if event_reply not in [str(x) for x in list(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict').keys())]:
             return await ctx.send("You entered an invalid ID", delete_after=15)
+        remove_event = True
+        if self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)].get('recur_weekly', False):
+            event_list_wait = await ctx.send(f"This is a recurring event. Would you like to cancel **this** event or **all** future events? Reply with **this** or **all**.", delete_after=60)
+            try:
+                event_list_msg = await self.bot.wait_for('message', timeout=60, check=check)
+            except asyncio.TimeoutError:
+                event_list_msg = None
+            await utils.safe_delete(event_list_wait)
+            if not event_list_msg:
+                return await ctx.send("You took too long to respond.", delete_after=15)
+            else:
+                await utils.safe_delete(event_list_msg)
+            if event_list_msg.clean_content.lower() == "this":
+                remove_event = False
+                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['mute_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['mute_time'] + datetime.timedelta(days=7)
+                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_start'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_start'] + datetime.timedelta(days=7)
+                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_end'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_end'] + datetime.timedelta(days=7)
+                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['channel_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['channel_time'] + datetime.timedelta(days=7)
+            elif event_list_msg.clean_content.lower() == "all":
+                remove_event = True
         try:
             self.bot.active_raidhours.remove(int(event_reply))
         except:
             pass
-        bot_account = ctx.guild.get_member(self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['bot_account'])
-        bot_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['bot_channel'])
-        try:
-            del self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]
-        except:
-            pass
+        if remove_event:
+            try:
+                del self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]
+            except:
+                pass
         await ctx.send(f"Raid hour canceled.", delete_after=15)
 
 def setup(bot):

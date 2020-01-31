@@ -407,7 +407,8 @@ class Research(commands.Cog):
                             setup_var = item_quests.setdefault(current_category, {}).setdefault(current_quest, [])
                             item_quests[current_category][current_quest].append(item)
                         all_quests[current_category][current_quest].append(item)
-                tsr_quest_dict = {"all": all_quests, "pokemon": pokemon_quests, "items": item_quests}
+                tsr_quest_dict = {"all": all_quests, "pokemon": pokemon_quests, "items": item_quests, "last_edit": time.time()}
+                json.loads(str(tsr_quest_dict).replace("'", '"').replace('fetch"D', "fetch'D"))
                 if tsr_quest_dict:
                     with open(os.path.join('data', 'quest_info.json'), 'w') as fd:
                         json.dump(tsr_quest_dict, fd, indent=2, separators=(', ', ': '))
@@ -436,7 +437,7 @@ class Research(commands.Cog):
             parse_list = re.split('<div|<span|<p', str(html))
             for line in parse_list:
                 if "Tasks</h3>" in line or "class=\"taskText\">" in line or "class=\"task-reward" in line:
-                    for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "<h3>", "</p>", ">", "unconfirmed", "pokemon", "shinyAvailable",]:
+                    for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "group7", "group8", "group9", "<h3>", "</p>", ">", "unconfirmed", "pokemon", "shinyAvailable",]:
                         line = line.replace(replacement, "").replace("_", " ").strip()
                     tsr_quests.append(line.strip())
             for index, item in enumerate(tsr_quests):
@@ -490,7 +491,7 @@ class Research(commands.Cog):
                         setup_var = item_quests.setdefault(current_category, {}).setdefault(current_quest, [])
                         item_quests[current_category][current_quest].append(item)
                     all_quests[current_category][current_quest].append(item)
-            tsr_quest_dict = {"all": all_quests, "pokemon": pokemon_quests, "items": item_quests}
+            tsr_quest_dict = {"all": all_quests, "pokemon": pokemon_quests, "items": item_quests, "last_edit": time.time()}
             research_embed = discord.Embed(discription="", colour=ctx.guild.me.colour)
             for category in tsr_quest_dict['all'].keys():
                 field_value = ""
@@ -524,6 +525,12 @@ class Research(commands.Cog):
                 confirmation = await ctx.send(embed=research_embed, delete_after=10)
                 await utils.safe_delete(ctx.message)
             else:
+                try:
+                    json.loads(str(tsr_quest_dict).replace("'", '"').replace('fetch"D', "fetch'D"))
+                except:
+                    research_embed.clear_fields()
+                    research_embed.add_field(name=_('**Quest Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because TSR didn't respond correctly! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=research_embed, delete_after=10)
                 research_embed.clear_fields()
                 research_embed.add_field(name=_('**Quest Edit Completed**'), value=_("Meowth! Your edit completed successfully.").format(error=error), inline=False)
                 confirmation = await ctx.send(embed=research_embed)
