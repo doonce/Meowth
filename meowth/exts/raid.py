@@ -1505,7 +1505,7 @@ class Raid(commands.Cog):
                 if replace_with:
                     new_overwrites[str(to_replace)] = {"replace_with":str(replace_with), "replace_until":replace_until.replace(tzinfo=datetime.timezone.utc).timestamp()}
                 else:
-                    new_overwrites[str(to_replace)] = {"replace_with":None, "replace_until":replace_until.replace(tzinfo=datetime.timezone.utc).timestamp()}
+                    new_overwrites[str(to_replace)] = {"replace_with":"", "replace_until":replace_until.replace(tzinfo=datetime.timezone.utc).timestamp()}
         if new_overwrites or boss_list_msg.clean_content.lower() == "none":
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
