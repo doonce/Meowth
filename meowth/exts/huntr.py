@@ -519,7 +519,7 @@ class Huntr(commands.Cog):
                                                     self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
                                                     self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
                                                     channel = self.bot.get_channel(channel_id)
-                                                    await self._edit_party(channel)
+                                                    await raid_cog._edit_party(channel)
                             await raid_cog._eggtoraid(report_details.get('pokemon', None), channel, message.author, moveset=report_details.get('moves', None))
                         raidexp = report_details.get('raidexp')
                         if raidexp and channel:
@@ -736,6 +736,21 @@ class Huntr(commands.Cog):
             pokemon.shiny = False
         else:
             return
+        if "rain" in weather:
+            pokemon.weather = "rainy"
+        elif "partly" in weather:
+            pokemon.weather = "partlycloudy"
+        elif "clear" in weather:
+            pokemon.weather = "clear"
+        elif "cloudy" in weather:
+            pokemon.weather = "cloudy"
+        elif "wind" in weather:
+            pokemon.weather = "windy"
+        elif "snow" in weather:
+            pokemon.weather = "snowy"
+        elif "fog" in weather:
+            pokemon.weather = "foggy"
+        report_details['weather'] = pokemon.weather
         if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('scanners', {}).setdefault('wildfilter', []) or str(pokemon) in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('scanners', {}).setdefault('wildfilter', []):
             if not report_details.get("iv_percent", '') and not report_details.get("level", ''):
                 if weather:
@@ -744,7 +759,7 @@ class Huntr(commands.Cog):
                         'exp':time.time() + 60*(60-datetime.datetime.utcnow().minute),
                         'coordinates':wild_details,
                         'pkmn_obj':str(pokemon),
-                        'weather':weather,
+                        'weather':pokemon.weather,
                         'filtered': True
                     }
                 return
@@ -765,21 +780,6 @@ class Huntr(commands.Cog):
             iv_str = f" - **{iv_percent}IV**"
         else:
             iv_str = ""
-        if "rain" in weather:
-            pokemon.weather = "rainy"
-        elif "partly" in weather:
-            pokemon.weather = "partlycloudy"
-        elif "clear" in weather:
-            pokemon.weather = "clear"
-        elif "cloudy" in weather:
-            pokemon.weather = "cloudy"
-        elif "wind" in weather:
-            pokemon.weather = "windy"
-        elif "snow" in weather:
-            pokemon.weather = "snowy"
-        elif "fog" in weather:
-            pokemon.weather = "foggy"
-        report_details['weather'] = pokemon.weather
         height = report_details.get("height", '')
         weight = report_details.get("weight", '')
         moveset = report_details.get("moveset", '')
@@ -1753,7 +1753,7 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         embed = discord.Embed(title="Title", description="Embed Description")
-        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"1", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}', embed=embed)
+        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"5", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}', embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
