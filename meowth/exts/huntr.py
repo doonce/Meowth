@@ -112,8 +112,9 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(message)
         if not ctx.guild or ctx.guild.id not in list(self.bot.guild_dict.keys()):
             return
-        if (ctx.author.bot or message.webhook_id or ctx.author.id in self.bot.managers or ctx.author.id == self.bot.owner) and ctx.author != ctx.guild.me and message.content.lower().startswith("!alarm"):
-            await self.on_pokealarm(ctx)
+        if (ctx.author.bot or message.webhook_id or ctx.author.id in self.bot.managers or ctx.author.id == self.bot.owner) and ctx.author != ctx.guild.me:
+            if message.content.lower().startswith("!alarm") and "{" in message.content:
+                await self.on_pokealarm(ctx)
         if (str(ctx.author) == 'GymHuntrBot#7279') or (str(ctx.author) == 'HuntrBot#1845'):
             await self.on_huntr(ctx)
 
@@ -531,6 +532,9 @@ class Huntr(commands.Cog):
                     reporttype = "raid"
                     pokemon = report_details.setdefault('pokemon', None)
                     pkmn_obj = report_details.setdefault('pkmn_obj', pokemon)
+                    pkmn_obj = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn_obj)
+                    if str(pkmn_obj) in ctx.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('filters', {}).get('raid', []) or pkmn_obj.id in ctx.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('filters', {}).get('raid', []):
+                        return
                     if not utils.get_level(self.bot, pokemon):
                         logger.error(f"{pokemon} not in raid_json")
                         return
@@ -570,6 +574,8 @@ class Huntr(commands.Cog):
                     reporttype = "egg"
                     egg_level = report_details.setdefault('level', None)
                     egg_level = report_details.setdefault('egg_level', egg_level)
+                    if egg_level in ctx.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('filters', {}).get('egg', []):
+                        return
                     coordinates = report_details.setdefault('gps', None)
                     raid_details = report_details.setdefault('gym', None)
                     if not all([egg_level, coordinates, raid_details]):
@@ -631,8 +637,7 @@ class Huntr(commands.Cog):
                 report_details['coordinates'] = coordinates
                 if not all([pokemon, coordinates]):
                     return
-                await self.huntr_wild(ctx, report_details)
-                return
+                return await self.huntr_wild(ctx, report_details)
             elif report_details.get('type', None) == "research":
                 if not self.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('reports', {}).get('research'):
                     return
@@ -645,10 +650,19 @@ class Huntr(commands.Cog):
                 coordinates = report_details.get('gps', None)
                 quest = report_details.get('quest', None)
                 reward = report_details.get('reward', None)
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
+                reward_list = ["ball", "nanab", "pinap", "razz", "berr", "stardust", "potion", "revive", "candy", "lure", "module", "mysterious", "component", "radar", "sinnoh", "unova", "stone", "scale", "coat", "grade"]
+                other_reward = any(x in reward.lower() for x in reward_list)
+                if pokemon and not other_reward:
+                    if str(pokemon) in ctx.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('filters', {}).get('research', []) or pokemon.id in ctx.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('filters', {}).get('research', []):
+                        return
+                else:
+                    __, item_name = await utils.get_item(reward)
+                    if item_name in ctx.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('filters', {}).get('research', []):
+                        return
                 if not all([pokestop, coordinates, quest, reward]):
                     return
-                await self.huntr_research(ctx, report_details)
-                return
+                return await self.huntr_research(ctx, report_details)
             elif report_details.get('type', None) == "lure":
                 if not self.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('reports', {}).get('lure'):
                     return
@@ -660,10 +674,11 @@ class Huntr(commands.Cog):
                 pokestop = report_details.get('pokestop', None)
                 coordinates = report_details.get('gps', None)
                 lure_type = report_details.get('lure_type', None)
+                if lure_type in ctx.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('filters', {}).get('lure', []):
+                    return
                 if not all([pokestop, coordinates, lure_type]):
                     return
-                await self.huntr_lure(ctx, report_details)
-                return
+                return await self.huntr_lure(ctx, report_details)
             elif report_details.get('type', None) == "invasion":
                 if not self.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('reports', {}).get('invasion'):
                     return
@@ -674,10 +689,12 @@ class Huntr(commands.Cog):
                 reporttype = "invasion"
                 pokestop = report_details.get('pokestop', None)
                 coordinates = report_details.get('gps', None)
+                reward = report_details.get('reward', None)
+                if reward in ctx.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('filters', {}).get('invasion', []):
+                    return
                 if not all([pokestop, coordinates]):
                     return
-                await self.huntr_invasion(ctx, report_details)
-                return
+                return await self.huntr_invasion(ctx, report_details)
         else:
             await utils.safe_delete(message)
             pokealarm_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id].get('pokealarm_dict', {}))
@@ -709,6 +726,10 @@ class Huntr(commands.Cog):
             ctx.message.author = report_user
         message = ctx.message
         gender = report_details.setdefault("gender", None)
+        wild_details = report_details['coordinates']
+        level = str(report_details.get("level", ''))
+        cp = str(report_details.get("cp", ''))
+        weather = report_details.get("weather", '')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, f"{gender if gender else ''} {report_details['pokemon']}")
         if pokemon:
             entered_wild = pokemon.name.lower()
@@ -717,8 +738,16 @@ class Huntr(commands.Cog):
             return
         if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('scanners', {}).setdefault('wildfilter', []) or str(pokemon) in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('scanners', {}).setdefault('wildfilter', []):
             if not report_details.get("iv_percent", '') and not report_details.get("level", ''):
+                if weather:
+                    ctx.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.message.id] = {
+                        'report_time':time.time(),
+                        'exp':time.time() + 60*(60-datetime.datetime.utcnow().minute),
+                        'coordinates':wild_details,
+                        'pkmn_obj':str(pokemon),
+                        'weather':weather,
+                        'filtered': True
+                    }
                 return
-        wild_details = report_details['coordinates']
         wild_iv = {}
         iv_percent = report_details.get("iv_percent", '')
         iv_long = report_details.get("iv_long", 'X / X / X')
@@ -736,9 +765,6 @@ class Huntr(commands.Cog):
             iv_str = f" - **{iv_percent}IV**"
         else:
             iv_str = ""
-        level = str(report_details.get("level", ''))
-        cp = str(report_details.get("cp", ''))
-        weather = report_details.get("weather", '')
         if "rain" in weather:
             pokemon.weather = "rainy"
         elif "partly" in weather:
@@ -1258,63 +1284,394 @@ class Huntr(commands.Cog):
             return
         await invasion_cog.send_invasion(ctx, location, reward, gender, leader, timer)
 
-    @commands.command()
+    # @commands.command()
+    # @commands.has_permissions(manage_guild=True)
+    # async def huntrraid(self, ctx):
+    #     """Simulates a huntr raid"""
+    #     author = ctx.author
+    #     guild = ctx.guild
+    #     message = ctx.message
+    #     channel = ctx.channel
+    #     await utils.safe_delete(message)
+    #     tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
+    #     description = f"**Marilla Park.**\n{tier5}\n**CP:** 60540 - **Moves:** Confusion / Shadow Ball\n*Raid Ending: 0 hours 10 min 50 sec*"
+    #     url = "https://gymhuntr.com/#34.008618,-118.49125"
+    #     img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=1'
+    #     huntrembed = discord.Embed(title=_('Level 5 Raid has started!'), description=description, url=url, colour=message.guild.me.colour)
+    #     huntrembed.set_thumbnail(url=img_url)
+    #     huntrmessage = await ctx.channel.send(embed=huntrembed)
+    #     ctx = await self.bot.get_context(huntrmessage)
+    #     await self.on_huntr(ctx)
+    #
+    # @commands.command()
+    # @commands.has_permissions(manage_guild=True)
+    # async def huntregg(self, ctx):
+    #     """Simulates a huntr raid egg"""
+    #     author = ctx.author
+    #     guild = ctx.guild
+    #     message = ctx.message
+    #     channel = ctx.channel
+    #     await utils.safe_delete(message)
+    #     description = "**Marilla Park.**\n*Raid Starting: 0 hours 46 min 50 sec*"
+    #     url = "https://gymhuntr.com/#34.008618,-118.49125"
+    #     img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1'
+    #     huntrembed = discord.Embed(title=_('Level 5 Raid is starting soon!!'), description=description, url=url, colour=message.guild.me.colour)
+    #     huntrembed.set_thumbnail(url=img_url)
+    #     huntrmessage = await ctx.channel.send(embed=huntrembed)
+    #     ctx = await self.bot.get_context(huntrmessage)
+    #     await self.on_huntr(ctx)
+    #
+    # @commands.command()
+    # @commands.has_permissions(manage_guild=True)
+    # async def huntrwild(self, ctx):
+    #     """Simulates a huntr wild"""
+    #     author = ctx.author
+    #     guild = ctx.guild
+    #     message = ctx.message
+    #     channel = ctx.channel
+    #     await utils.safe_delete(message)
+    #     description = "Click above to view the wild\n\n*Remaining: 25 min 3 sec*\nWeather: *None*"
+    #     url = "https://gymhuntr.com/#34.008618,-118.49125"
+    #     img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=1'
+    #     huntrembed = discord.Embed(title=_('A wild Mewtwo (150) has appeared!'), description=description, url=url, colour=message.guild.me.colour)
+    #     huntrembed.set_thumbnail(url=img_url)
+    #     huntrmessage = await ctx.channel.send(embed=huntrembed)
+    #     ctx = await self.bot.get_context(huntrmessage)
+    #     await self.on_huntr(ctx)
+
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     @commands.has_permissions(manage_guild=True)
-    async def huntrraid(self, ctx):
-        """Simulates a huntr raid"""
+    async def alarm(self, ctx):
+        pass
+
+    @alarm.command()
+    @commands.has_permissions(manage_guild=True)
+    async def filter(self, ctx, filter_type=None):
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
         channel = ctx.channel
-        await utils.safe_delete(message)
-        tier5 = str(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'][0]).lower()
-        description = f"**Marilla Park.**\n{tier5}\n**CP:** 60540 - **Moves:** Confusion / Shadow Ball\n*Raid Ending: 0 hours 10 min 50 sec*"
-        url = "https://gymhuntr.com/#34.008618,-118.49125"
-        img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=1'
-        huntrembed = discord.Embed(title=_('Level 5 Raid has started!'), description=description, url=url, colour=message.guild.me.colour)
-        huntrembed.set_thumbnail(url=img_url)
-        huntrmessage = await ctx.channel.send(embed=huntrembed)
-        ctx = await self.bot.get_context(huntrmessage)
-        await self.on_huntr(ctx)
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        error = False
+        first = True
+        raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin.png?cache=1')
+        raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
+        while True:
+            async with ctx.typing():
+                def check(reply):
+                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                        return True
+                    else:
+                        return False
+                if not filter_type or filter_type.lower() not in ["wild", "egg", "raid", "invasion", "research", "lure"]:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Alarm Filter**'), value=_("Meowth! I'll help you add an Alarm Filter.\n\nFirst, I'll need to know what **type** of filter you'd like to add. Reply with **wild, egg, raid, invasion, research, or lure**. You can reply with **cancel** to stop anytime."), inline=False)
+                    filter_type_wait = await channel.send(embed=raid_embed)
+                    try:
+                        filter_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        filter_type_msg = None
+                    await utils.safe_delete(filter_type_wait)
+                    if not filter_type_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(filter_type_msg)
+                    if filter_type_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif filter_type_msg.clean_content.lower() not in ["wild", "egg", "raid", "invasion", "research", "lure"]:
+                        raid_embed.clear_fields()
+                        raid_embed.add_field(name=_('**New Alarm Filter**'), value=f"Meowth! I couldn't understand your filter type! Retry or reply with **cancel**.", inline=False)
+                        await channel.send(embed=raid_embed, delete_after=20)
+                        continue
+                    else:
+                        filter_type = filter_type_msg.clean_content.lower()
+                if filter_type and filter_type == "wild":
+                    current_filter = self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners'].get('wildfilter', [])
+                    temp_filter = self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners'].setdefault('filters', {}).setdefault('wild', [])
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Wild Filter**'), value=f"If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Reports with IV will still be posted. Please enter a list of wild pokemon to block automatic reports of or reply with **N** to disable the filter.\n\n**Current Filter**:\n\n{str(current_filter)}")
+                    filter_type_wait = await channel.send(embed=raid_embed)
+                    wildfilter_list = []
+                    wildfilter_names = []
+                    while True:
+                        try:
+                            filter_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            filter_type_msg = None
+                        await utils.safe_delete(filter_type_wait)
+                        if not filter_type_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(filter_type_msg)
+                        if filter_type_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif filter_type_msg.content.lower() == 'n':
+                            self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['wildfilter'] = []
+                            self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['wild'] = []
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name=_('**New Wild Filter**'), value=f"Automatic wild filter disabled")
+                            await channel.send(embed=raid_embed, delete_after=60)
+                        else:
+                            wildfilter_list = filter_type_msg.content.lower().split(',')
+                            for pkmn in wildfilter_list:
+                                pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pkmn, allow_digits=True)
+                                if pokemon:
+                                    if not pokemon.form and not pokemon.region and not pokemon.size and not pokemon.gender and not pokemon.shadow:
+                                        if pokemon.id not in current_filter:
+                                            current_filter.append(pokemon.id)
+                                            wildfilter_names.append(f"{pokemon.name} (all forms)")
+                                    else:
+                                        if str(pokemon) not in current_filter:
+                                            current_filter.append(str(pokemon))
+                                            wildfilter_names.append(str(pokemon))
+                            if len(wildfilter_names) > 0:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New Wild Filter**'), value=f"Automatic wild filter will block: {', '.join(wildfilter_names)}")
+                                await channel.send(embed=raid_embed, delete_after=60)
+                                self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['wildfilter'] = current_filter
+                                self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['wild'] = current_filter
+                                break
+                            else:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New Wild Filter**'), value=f"Please enter at least one pokemon or **N** to turn off automatic wild filter.")
+                                await channel.send(embed=raid_embed, delete_after=60)
+                                continue
+                        break
+                if filter_type and filter_type == "raid":
+                    current_filter = self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners'].setdefault('filters', {}).setdefault('raid', [])
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New raid Filter**'), value=f"If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Please enter a list of raid pokemon to block automatic reports of or reply with **N** to disable the filter.\n\n**Current Filter**:\n\n{str(current_filter)}")
+                    filter_type_wait = await channel.send(embed=raid_embed)
+                    raidfilter_list = []
+                    raidfilter_names = []
+                    while True:
+                        try:
+                            filter_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            filter_type_msg = None
+                        await utils.safe_delete(filter_type_wait)
+                        if not filter_type_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(filter_type_msg)
+                        if filter_type_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif filter_type_msg.content.lower() == 'n':
+                            self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['raid'] = []
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name=_('**New raid Filter**'), value=f"Automatic raid filter disabled")
+                            await channel.send(embed=raid_embed, delete_after=60)
+                        else:
+                            raidfilter_list = filter_type_msg.content.lower().split(',')
+                            for pkmn in raidfilter_list:
+                                pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pkmn, allow_digits=True)
+                                if pokemon:
+                                    if not pokemon.form and not pokemon.region and not pokemon.size and not pokemon.gender and not pokemon.shadow:
+                                        if pokemon.id not in current_filter:
+                                            current_filter.append(pokemon.id)
+                                            raidfilter_names.append(f"{pokemon.name} (all forms)")
+                                    else:
+                                        if str(pokemon) not in current_filter:
+                                            current_filter.append(str(pokemon))
+                                            raidfilter_names.append(str(pokemon))
+                            if len(raidfilter_names) > 0:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New raid Filter**'), value=f"Automatic raid filter will block: {', '.join(raidfilter_names)}")
+                                await channel.send(embed=raid_embed, delete_after=60)
+                                self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['raid'] = current_filter
+                                break
+                            else:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New raid Filter**'), value=f"Please enter at least one pokemon or **N** to turn off automatic raid filter.")
+                                await channel.send(embed=raid_embed, delete_after=60)
+                                continue
+                        break
+                elif filter_type and filter_type == "egg":
+                    current_filter = self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners'].setdefault('filters', {}).setdefault('egg', [])
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Egg Filter**'), value=f"If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Please enter a list of egg levels to block automatic reports of or reply with **N** to disable the filter.\n\n**Current Filter**:\n\n{str(current_filter)}")
+                    filter_type_wait = await channel.send(embed=raid_embed)
+                    eggfilter_list = []
+                    while True:
+                        try:
+                            filter_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            filter_type_msg = None
+                        await utils.safe_delete(filter_type_wait)
+                        if not filter_type_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(filter_type_msg)
+                        if filter_type_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif filter_type_msg.content.lower() == 'n':
+                            self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['egg'] = []
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name=_('**New Egg Filter**'), value=f"Automatic Egg filter disabled")
+                            await channel.send(embed=raid_embed, delete_after=60)
+                        else:
+                            eggfilter_list = filter_type_msg.content.lower().split(',')
+                            eggfilter_list = [x for x in eggfilter_list if x in ["1", "2", "3", "4", "5"]]
+                            if len(eggfilter_list) > 0:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New Egg Filter**'), value=f"Automatic Egg filter will block: {', '.join(eggfilter_list)}")
+                                await channel.send(embed=raid_embed, delete_after=60)
+                                self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['egg'] = eggfilter_list
+                                break
+                            else:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New Egg Filter**'), value=f"Please enter at least one level or **N** to turn off automatic Egg filter.")
+                                await channel.send(embed=raid_embed, delete_after=60)
+                                continue
+                        break
+                elif filter_type and filter_type == "lure":
+                    current_filter = self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners'].setdefault('filters', {}).setdefault('lure', [])
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New lure Filter**'), value=f"If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Please enter a list of lure types to block automatic reports of or reply with **N** to disable the filter.\n\n**Current Filter**:\n\n{str(current_filter)}")
+                    filter_type_wait = await channel.send(embed=raid_embed)
+                    lurefilter_list = []
+                    while True:
+                        try:
+                            filter_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            filter_type_msg = None
+                        await utils.safe_delete(filter_type_wait)
+                        if not filter_type_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(filter_type_msg)
+                        if filter_type_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif filter_type_msg.content.lower() == 'n':
+                            self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['lure'] = []
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name=_('**New lure Filter**'), value=f"Automatic lure filter disabled")
+                            await channel.send(embed=raid_embed, delete_after=60)
+                        else:
+                            lurefilter_list = filter_type_msg.content.lower().split(',')
+                            lurefilter_list = [x for x in lurefilter_list if x in ["normal", "magnetic", "mossy", "glacial"]]
+                            if len(lurefilter_list) > 0:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New lure Filter**'), value=f"Automatic lure filter will block: {', '.join(lurefilter_list)}")
+                                await channel.send(embed=raid_embed, delete_after=60)
+                                self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['lure'] = lurefilter_list
+                                break
+                            else:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New lure Filter**'), value=f"Please enter at least one level or **N** to turn off automatic lure filter.")
+                                await channel.send(embed=raid_embed, delete_after=60)
+                                continue
+                        break
+                elif filter_type and filter_type == "invasion":
+                    current_filter = self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners'].setdefault('filters', {}).setdefault('invasion', [])
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New invasion Filter**'), value=f"If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Please enter a list of invasion types to block automatic reports of or reply with **N** to disable the filter.\n\n**Current Filter**:\n\n{str(current_filter)}")
+                    filter_type_wait = await channel.send(embed=raid_embed)
+                    invasionfilter_list = []
+                    while True:
+                        try:
+                            filter_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            filter_type_msg = None
+                        await utils.safe_delete(filter_type_wait)
+                        if not filter_type_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(filter_type_msg)
+                        if filter_type_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif filter_type_msg.content.lower() == 'n':
+                            self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['invasion'] = []
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name=_('**New invasion Filter**'), value=f"Automatic invasion filter disabled")
+                            await channel.send(embed=raid_embed, delete_after=60)
+                        else:
+                            invasionfilter_list = filter_type_msg.content.lower().split(',')
+                            invasionfilter_list = [x for x in invasionfilter_list if x in self.bot.type_list]
+                            if len(invasionfilter_list) > 0:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New invasion Filter**'), value=f"Automatic invasion filter will block: {', '.join(invasionfilter_list)}")
+                                await channel.send(embed=raid_embed, delete_after=60)
+                                self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['invasion'] = invasionfilter_list
+                                break
+                            else:
+                                raid_embed.clear_fields()
+                                raid_embed.add_field(name=_('**New invasion Filter**'), value=f"Please enter at least one level or **N** to turn off automatic invasion filter.")
+                                await channel.send(embed=raid_embed, delete_after=60)
+                                continue
+                        break
+                elif filter_type and filter_type == "research":
+                    current_filter = self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners'].setdefault('filters', {}).setdefault('research', [])
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New research Filter**'), value=f"If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Please enter a list of research rewrds (pokemon or items) to block automatic reports of or reply with **N** to disable the filter.\n\n**Current Filter**:\n\n{str(current_filter)}")
+                    filter_type_wait = await channel.send(embed=raid_embed)
+                    researchfilter_list = []
+                    researchfilter_names = []
+                    while True:
+                        try:
+                            filter_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            filter_type_msg = None
+                        await utils.safe_delete(filter_type_wait)
+                        if not filter_type_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(filter_type_msg)
+                        if filter_type_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled the report")
+                            break
+                        elif filter_type_msg.content.lower() == 'n':
+                            self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['research'] = []
+                            raid_embed.clear_fields()
+                            raid_embed.add_field(name=_('**New Research Filter**'), value=f"Automatic research filter disabled")
+                            await channel.send(embed=raid_embed, delete_after=60)
+                        else:
+                            researchfilter_list = filter_type_msg.content.lower().split(',')
+                            for reward in researchfilter_list:
+                                __, item_name = await utils.get_item(reward)
+                                if item_name and item_name not in current_filter:
+                                    current_filter.append(item_name)
+                                    researchfilter_names.append(item_name.title())
+                                else:
+                                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, reward, allow_digits=True)
+                                    if pokemon:
+                                        if not pokemon.form and not pokemon.region and not pokemon.size and not pokemon.gender and not pokemon.shadow:
+                                            if pokemon.id not in current_filter:
+                                                current_filter.append(pokemon.id)
+                                                researchfilter_names.append(f"{pokemon.name} (all forms)")
+                                        else:
+                                            if str(pokemon) not in current_filter:
+                                                current_filter.append(str(pokemon))
+                                                researchfilter_names.append(str(pokemon))
+                                if len(researchfilter_names) > 0:
+                                    raid_embed.clear_fields()
+                                    raid_embed.add_field(name=_('**New research Filter**'), value=f"Automatic research filter will block: {', '.join(researchfilter_names)}")
+                                    await channel.send(embed=raid_embed, delete_after=60)
+                                    self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['research'] = current_filter
+                                    break
+                                else:
+                                    raid_embed.clear_fields()
+                                    raid_embed.add_field(name=_('**New research Filter**'), value=f"Please enter at least one research reward or **N** to turn off automatic research filter.")
+                                    await channel.send(embed=raid_embed, delete_after=60)
+                                    continue
+                        break
+            break
 
-    @commands.command()
-    @commands.has_permissions(manage_guild=True)
-    async def huntregg(self, ctx):
-        """Simulates a huntr raid egg"""
-        author = ctx.author
-        guild = ctx.guild
-        message = ctx.message
-        channel = ctx.channel
-        await utils.safe_delete(message)
-        description = "**Marilla Park.**\n*Raid Starting: 0 hours 46 min 50 sec*"
-        url = "https://gymhuntr.com/#34.008618,-118.49125"
-        img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1'
-        huntrembed = discord.Embed(title=_('Level 5 Raid is starting soon!!'), description=description, url=url, colour=message.guild.me.colour)
-        huntrembed.set_thumbnail(url=img_url)
-        huntrmessage = await ctx.channel.send(embed=huntrembed)
-        ctx = await self.bot.get_context(huntrmessage)
-        await self.on_huntr(ctx)
-
-    @commands.command()
-    @commands.has_permissions(manage_guild=True)
-    async def huntrwild(self, ctx):
-        """Simulates a huntr wild"""
-        author = ctx.author
-        guild = ctx.guild
-        message = ctx.message
-        channel = ctx.channel
-        await utils.safe_delete(message)
-        description = "Click above to view the wild\n\n*Remaining: 25 min 3 sec*\nWeather: *None*"
-        url = "https://gymhuntr.com/#34.008618,-118.49125"
-        img_url = 'https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn/150_.png?cache=1'
-        huntrembed = discord.Embed(title=_('A wild Mewtwo (150) has appeared!'), description=description, url=url, colour=message.guild.me.colour)
-        huntrembed.set_thumbnail(url=img_url)
-        huntrmessage = await ctx.channel.send(embed=huntrembed)
-        ctx = await self.bot.get_context(huntrmessage)
-        await self.on_huntr(ctx)
-
-    @commands.command()
-    async def alarmrecover(self, ctx):
+    @alarm.command()
+    async def recover(self, ctx):
         """Recovers bot reports that Meowth missed."""
         message_list = []
         await utils.safe_delete(ctx.message)
@@ -1370,9 +1727,9 @@ class Huntr(commands.Cog):
                             message_list.append(message)
             await utils.safe_bulk_delete(ctx.channel, message_list)
 
-    @commands.command()
+    @alarm.command()
     @commands.has_permissions(manage_guild=True)
-    async def alarmraid(self, ctx):
+    async def raid(self, ctx):
         """Simulates an alarm raid"""
         author = ctx.author
         guild = ctx.guild
@@ -1386,9 +1743,9 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
-    @commands.command()
+    @alarm.command()
     @commands.has_permissions(manage_guild=True)
-    async def alarmegg(self, ctx):
+    async def egg(self, ctx):
         """Simulates an alarm raid egg"""
         author = ctx.author
         guild = ctx.guild
@@ -1396,26 +1753,26 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         embed = discord.Embed(title="Title", description="Embed Description")
-        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"5", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}', embed=embed)
+        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"1", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}', embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
-    @commands.command()
+    @alarm.command()
     @commands.has_permissions(manage_guild=True)
-    async def alarmwild(self, ctx):
+    async def wild(self, ctx):
         """Simulates an alarm wild"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Ditto", "gps":"39.645742,-79.96908", "expire":"5 min 0 sec", "iv_percent":"95.5", "iv_long":"14 / 14/ 15", "level":"27", "gender":"male", "height":"0.4", "weight":"6", "moveset":"Quick Attack / Wild Charge", "disguise":"Yanma"}')
+        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Ditto", "gps":"39.645742,-79.96908", "expire":"5 min 0 sec","gender":"male", "height":"0.4", "weight":"6", "moveset":"Quick Attack / Wild Charge", "disguise":"Yanma", "weather":"snowy"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
-    @commands.command()
+    @alarm.command()
     @commands.has_permissions(manage_guild=True)
-    async def alarmquest(self, ctx):
+    async def quest(self, ctx):
         """Simulates an alarm quest"""
         author = ctx.author
         guild = ctx.guild
@@ -1426,9 +1783,9 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
-    @commands.command()
+    @alarm.command()
     @commands.has_permissions(manage_guild=True)
-    async def alarmlure(self, ctx):
+    async def lure(self, ctx):
         """Simulates an alarm lure"""
         author = ctx.author
         guild = ctx.guild
@@ -1441,9 +1798,9 @@ class Huntr(commands.Cog):
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
-    @commands.command()
+    @alarm.command()
     @commands.has_permissions(manage_guild=True)
-    async def alarminv(self, ctx):
+    async def invasion(self, ctx):
         """Simulates an alarm invasion"""
         author = ctx.author
         guild = ctx.guild
@@ -1451,7 +1808,7 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         random_type = random.choice(self.bot.type_list)
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"invasion", "pokestop":"Marilla Park", "reward":['snorlax'], "gps":"39.645742,-79.96908", "gender":"female", "expire":25}).replace("'", '"'))
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"invasion", "pokestop":"Marilla Park", "reward":"ground", "gps":"39.645742,-79.96908", "gender":"female", "expire":25}).replace("'", '"'))
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

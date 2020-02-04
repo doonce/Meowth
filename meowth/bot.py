@@ -116,7 +116,16 @@ class MeowthBot(commands.AutoShardedBot):
             with open(self.raid_json_path, 'r') as fd:
                 return json.load(fd)
         except:
-            return {}
+            return {
+                "raid_eggs": {
+                    "1": {},
+                    "2": {},
+                    "3": {},
+                    "4": {},
+                    "5": {},
+                    "EX": {},
+                }
+            }
 
     @property
     def quest_info(self):
@@ -219,6 +228,11 @@ class MeowthBot(commands.AutoShardedBot):
                 continue
             users += guild.member_count
             # RUN ONCE
+            try:
+                set_var = self.guild_dict[guild.id]['configure_dict']['scanners'].setdefault('filters', {})
+                self.guild_dict[guild.id]['configure_dict']['scanners']['filters']['wild'] = self.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter']
+            except:
+                pass
             try:
                 test_var = self.guild_dict[guild.id]['configure_dict']['train']['report_channels']
             except KeyError:
@@ -443,9 +457,11 @@ class MeowthBot(commands.AutoShardedBot):
                                 return
         if not ctx.command:
             return
-        if ctx.guild.id in ctx.bot.guild_dict.keys():
+        if ctx.guild and ctx.guild.id in ctx.bot.guild_dict.keys():
             await self.invoke(ctx)
         elif ctx.command.cog_name == "Admin" and checks.is_owner_check(ctx):
             await self.invoke(ctx)
+        elif not ctx.guild:
+            await ctx.bot.on_command_error(ctx, errors.GuildCheckFail())
         elif ctx.command.name == "configure" or ctx.command.name == "help":
             await self.invoke(ctx)

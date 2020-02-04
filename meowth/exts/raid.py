@@ -87,7 +87,7 @@ class Raid(commands.Cog):
                     await utils.remove_reaction(message, payload.emoji, user)
                     react_message = "next_trains"
                     break
-                elif channel.id == report_channel:
+                elif channel.id == report_channel and str(payload.emoji) == self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f'):
                     await utils.remove_reaction(message, payload.emoji, user)
                     react_message = "rsvp"
                     break

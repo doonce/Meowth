@@ -787,7 +787,7 @@ class Wild(commands.Cog):
                 report_message = await channel.fetch_message(report_message)
                 await self.expire_wild(report_message)
             except:
-                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['wild_dict'][report_message].get('dm_dict', {})))
+                self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['wildreport_dict'][report_message].get('dm_dict', {})))
                 del self.bot.guild_dict[guild.id]['wild_dict'][report_message]
             return
         rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all wild reports?'))
@@ -808,8 +808,8 @@ class Wild(commands.Cog):
                         report_message = await channel.fetch_message(report)
                         self.bot.loop.create_task(self.expire_wild(report_message))
                     except:
-                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['wild_dict'][report].get('dm_dict', {})))
-                        del self.bot.guild_dict[guild.id]['wild_dict'][report]
+                        self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['wildreport_dict'][report].get('dm_dict', {})))
+                        del self.bot.guild_dict[guild.id]['wildreport_dict'][report]
                 confirmation = await channel.send(_('Wilds reset.'), delete_after=10)
                 return
         else:

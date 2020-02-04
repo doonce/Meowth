@@ -1916,7 +1916,7 @@ class Listing(commands.Cog):
         wild_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('wildreport_dict', {}))
         listing_dict = {}
         for wildid in wild_dict:
-            if wild_dict[wildid]['report_channel'] == ctx.message.channel.id:
+            if wild_dict[wildid].get('report_channel') == ctx.message.channel.id:
                 try:
                     wildmsg = ""
                     wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['report_author'])

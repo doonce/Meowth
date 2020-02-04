@@ -1898,6 +1898,7 @@ class Configure(commands.Cog):
         scanner_embed.add_field(name=f"**Invasion**", value='**Supported Bots:** NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"invasion", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "reward":"<invasion reward>"`', inline=False)
         scanner_embed.add_field(name=f"**Lure**", value='**Supported Bots:** NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"lure", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "lure_type":"<lure_type>"`', inline=False)
         scanner_embed.add_field(name=f"**All**", value='Reply with **all** to enable all.', inline=False)
+        scanner_embed.add_field(name=f"**Filtering**", value=f"You can filter reports using {ctx.prefix}alarm filter.", inline=False)
         await ctx.configure_channel.send(embed=scanner_embed)
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('reports', {}))).set_author(name=_("Current Settings"), icon_url=self.bot.user.avatar_url), delete_after=300)
         report_types = ["raid", "egg", "wild", "research", "invasion", "lure"]
@@ -2004,45 +2005,6 @@ class Configure(commands.Cog):
                         break
                     else:
                         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1, 2, 3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic eggs."))
-                        continue
-        if config_dict_temp['scanners']['reports']['wild']:
-            scanner_embed = discord.Embed(colour=discord.Colour.lighter_grey(), description="If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Reports with IV will still be posted. Please enter a list of wild pokemon to block automatic reports of or reply with **N** to disable the filter.").set_author(name='Automatic Wild Report Filter', icon_url=self.bot.user.avatar_url)
-            await ctx.configure_channel.send(embed=scanner_embed)
-            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('wildfilter', []))).set_author(name=_("Current AutoWild Filter"), icon_url=self.bot.user.avatar_url), delete_after=300)
-            wildfilter_list = []
-            wildfilter_names = []
-            config_dict_temp['scanners']['wildfilter'] = []
-            while True:
-                try:
-                    wildfilters = await self.wait_for_msg(ctx.configure_channel, ctx.author)
-                except asyncio.TimeoutError:
-                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG TIMEOUT!**\n\nNo changes have been made.')))
-                    await self.end_configure(ctx)
-                    return None
-                if wildfilters.content.lower() == 'cancel':
-                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='**CONFIG CANCELLED!**\n\nNo changes have been made.'))
-                    await self.end_configure(ctx)
-                    return None
-                elif wildfilters.content.lower() == 'n':
-                    config_dict_temp['scanners']['wildfilter'] = []
-                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description='Automatic Wild filter disabled'))
-                    break
-                else:
-                    wildfilter_list = wildfilters.content.lower().split(',')
-                    for pkmn in wildfilter_list:
-                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, pkmn, allow_digits=True)
-                        if pokemon:
-                            if not pokemon.form and not pokemon.region and not pokemon.size and not pokemon.gender and not pokemon.shadow:
-                                config_dict_temp['scanners']['wildfilter'].append(pokemon.id)
-                                wildfilter_names.append(f"{pokemon.name} (all forms)")
-                            else:
-                                config_dict_temp['scanners']['wildfilter'].append(str(pokemon))
-                                wildfilter_names.append(str(pokemon))
-                    if len(config_dict_temp['scanners']['wildfilter']) > 0:
-                        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Automatic wild filter will block: {wilds}').format(wilds=', '.join(wildfilter_names))))
-                        break
-                    else:
-                        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one pokemon or **N** to turn off automatic wild filter."))
                         continue
         ctx.config_dict_temp = config_dict_temp
         return ctx
