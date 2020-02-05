@@ -336,9 +336,9 @@ class Raid(commands.Cog):
                                     pokemon = self.bot.guild_dict[guild.id][report_dict][channel.id]['pokemon']
                                     egg_level = self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level']
                                     if not pokemon and len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
-                                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
+                                        pokemon = self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0]
                                     elif not pokemon and egg_level == "5" and self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('regional', None) in self.bot.raid_list:
-                                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {})['regional'])
+                                        pokemon = self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('regional', None)
                                     if pokemon:
                                         logger.info('Egg Auto Hatched - ' + channel.name)
                                         try:
@@ -922,6 +922,8 @@ class Raid(commands.Cog):
         raid_coordinates = report_details.get('coordinates', None)
         raid_location = report_details.get('address', None)
         pokemon = report_details.get('pkmn_obj', None)
+        if pokemon:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
         weather = report_details.get('weather', None)
         egg_level = report_details.get('egg_level', "0")
         moveset = report_details.get('moves', None)
@@ -941,32 +943,27 @@ class Raid(commands.Cog):
         egg_level = str(egg_level)
         egg_info = ctx.bot.raid_info['raid_eggs'].get(egg_level, {"pokemon":[pokemon]})
         boss_list = []
-        for p in egg_info['pokemon']:
-            shiny_str = ""
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, p)
-            if pokemon:
-                pokemon.shiny = False
-                pokemon.gender = False
-                pokemon.size = False
-                pokemon.shadow = False
-                if weather:
-                    if "rain" in weather:
-                        pokemon.weather = "rainy"
-                    elif "partly" in weather:
-                        pokemon.weather = "partlycloudy"
-                    elif "clear" in weather:
-                        pokemon.weather = "clear"
-                    elif "cloudy" in weather:
-                        pokemon.weather = "cloudy"
-                    elif "windy" in weather:
-                        pokemon.weather = "windy"
-                    elif "snow" in weather:
-                        pokemon.weather = "snowy"
-                    elif "fog" in weather:
-                        pokemon.weather = "foggy"
-                if pokemon and "raid" in pokemon.shiny_available:
+        for boss in self.bot.raid_dict.get(str(egg_level), []):
+            if isinstance(boss, pkmn_class.Pokemon):
+                shiny_str = ""
+                if "raid" in boss.shiny_available:
                     shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                boss_list.append(f"{shiny_str}{str(pokemon)} {pokemon.emoji}")
+                boss_list.append(f"{shiny_str}{str(boss)} {boss.emoji}")
+        if pokemon and weather:
+            if "rain" in weather:
+                pokemon.weather = "rainy"
+            elif "partly" in weather:
+                pokemon.weather = "partlycloudy"
+            elif "clear" in weather:
+                pokemon.weather = "clear"
+            elif "cloudy" in weather:
+                pokemon.weather = "cloudy"
+            elif "windy" in weather:
+                pokemon.weather = "windy"
+            elif "snow" in weather:
+                pokemon.weather = "snowy"
+            elif "fog" in weather:
+                pokemon.weather = "foggy"
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1" if embed_type == "egg" else pokemon.img_url
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin_exclusive.png?cache=1" if egg_level == "EX" else raid_img_url
         if embed_type == "egg":
@@ -975,13 +972,17 @@ class Raid(commands.Cog):
                 raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist1}').format(bosslist1='\n'.join(boss_list[::2])), inline=True)
                 raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist2}').format(bosslist2='\n'.join(boss_list[1::2])), inline=True)
             else:
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, egg_info['pokemon'][0])
                 raid_embed.add_field(name=_('**Possible Bosses:**'), value=_('{bosslist}').format(bosslist=''.join(boss_list)), inline=True)
                 raid_embed.add_field(name=_('**Weaknesses:**'), value=f"{pokemon.weakness_emoji}\u200b", inline=True)
             raid_embed.set_author(name=f"Level {egg_level} Raid Report", icon_url=raid_img_url)
         elif embed_type == "raid":
             egg_level = utils.get_level(ctx.bot, str(pokemon))
+            shiny_str = ""
+            if "raid" in pokemon.shiny_available:
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
             raid_embed = discord.Embed(title=f"Meowth! Click here for directions to the level {egg_level} raid!", description=gym_info, url=raid_gmaps_link, colour=ctx.guild.me.colour)
-            raid_embed.add_field(name=_('**Details:**'), value=f"{boss_list[0]}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
+            raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{str(pokemon)} {pokemon.emoji}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
             raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=pokemon.weakness_emoji), inline=True)
             raid_embed.set_author(name=f"{pokemon.name.title()} Raid Report", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin.png?cache=1")
         raid_embed.add_field(name=_('**Next Group:**'), value=f"Set with **{ctx.prefix}starttime**", inline=True)
@@ -1065,8 +1066,9 @@ class Raid(commands.Cog):
                     with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
                     for index, pokemon in enumerate(tsr_boss_dict[raid_level]):
-                        if pokemon in self.bot.raid_info['raid_eggs'][str(raid_level)].get('overwrites', {}):
-                            replace_with = self.bot.raid_info['raid_eggs'][str(raid_level)]['overwrites'][pokemon]['replace_with']
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                        if str(pokemon) in self.bot.raid_info['raid_eggs'][str(raid_level)].get('overwrites', {}):
+                            replace_with = self.bot.raid_info['raid_eggs'][str(raid_level)]['overwrites'][str(pokemon)]['replace_with']
                             tsr_boss_dict[raid_level][index] = replace_with
                     tsr_boss_dict[raid_level] = [x for x in tsr_boss_dict[raid_level] if x]
                 if tsr_boss_dict:
@@ -1146,7 +1148,7 @@ class Raid(commands.Cog):
                 edit_list = [x.strip() for x in edit_list]
                 edit_list = [re.sub('[^a-zA-Z0-9 ]' , '' , x) for x in edit_list]
                 edit_list = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in edit_list]
-                edit_list = [str(x) for x in edit_list if x]
+                edit_list = [x for x in edit_list if x]
         while True:
             async with ctx.typing():
                 if not edit_level:
@@ -1205,16 +1207,21 @@ class Raid(commands.Cog):
                         edit_list = [x.strip() for x in new_list]
                         edit_list = [re.sub('[^a-zA-Z0-9 ]' , '' , x) for x in edit_list]
                         edit_list = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in edit_list]
-                        edit_list = [str(x) for x in edit_list if x]
+                        edit_list = [x for x in edit_list if x]
                         if not edit_list:
                             error = _("didn't enter any pokemon")
                             break
                     first = False
                 if edit_level and edit_list:
+                    for pokemon in edit_list:
+                        pokemon.shiny = False
+                        pokemon.gender = False
+                        pokemon.size = False
+                        pokemon.shadow = False
                     msg += _('I will replace this:\n')
                     msg += _('**Level {level} boss list:**\n`{raidlist}` \n').format(level=edit_level, raidlist=self.bot.raid_info['raid_eggs'][edit_level]['pokemon'])
                     msg += _('\nWith this:\n')
-                    msg += _('**Level {level} boss list:**\n`{raidlist}` \n').format(level=edit_level, raidlist=str(new_list))
+                    msg += _('**Level {level} boss list:**\n`{raidlist}` \n').format(level=edit_level, raidlist=[str(x) for x in edit_list])
                     msg += _('\nWould you like to continue?')
                     raid_embed.clear_fields()
                     raid_embed.add_field(name="Raid Boss Edit", value=msg)
@@ -1245,11 +1252,10 @@ class Raid(commands.Cog):
             with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                 data = json.load(fd)
             tmp = data['raid_eggs'][edit_level]['pokemon']
-            new_list = [await pkmn_class.Pokemon.async_get_pokemon(self.bot, x) for x in new_list]
-            new_list = [str(x) for x in new_list if x]
-            data['raid_eggs'][edit_level]['pokemon'] = new_list
+            edit_list = [str(x) for x in edit_list if x]
+            data['raid_eggs'][edit_level]['pokemon'] = edit_list
             data['last_edit'] = time.time()
-            new_raid_dict = {edit_level: new_list}
+            new_raid_dict = {edit_level: edit_list}
             with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                 json.dump(data, fd, indent=2, separators=(', ', ': '))
             await pkmn_class.Pokedex.generate_lists(self.bot)
@@ -1330,8 +1336,9 @@ class Raid(commands.Cog):
                 with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                     json.dump(data, fd, indent=2, separators=(', ', ': '))
                 for index, pokemon in enumerate(tsr_boss_dict[raid_level]):
-                    if pokemon in self.bot.raid_info['raid_eggs'][str(raid_level)].get('overwrites', {}):
-                        replace_with = self.bot.raid_info['raid_eggs'][str(raid_level)]['overwrites'][pokemon]['replace_with']
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                    if str(pokemon) in self.bot.raid_info['raid_eggs'][str(raid_level)].get('overwrites', {}):
+                        replace_with = self.bot.raid_info['raid_eggs'][str(raid_level)]['overwrites'][str(pokemon)]['replace_with']
                         tsr_boss_dict[raid_level][index] = replace_with
                 tsr_boss_dict[raid_level] = [x for x in tsr_boss_dict[raid_level] if x]
             if tsr_boss_dict:
@@ -2045,27 +2052,24 @@ class Raid(commands.Cog):
             return await ctx.channel.send(f"Meowth! The Pokemon {pokemon.name.title()} does not appear in raids!", delete_after=10)
         matched_boss = False
         level = utils.get_level(self.bot, str(pokemon))
-        for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
-            boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
-            if str(boss) == str(pokemon):
-                pokemon = boss
+        for boss in self.bot.raid_dict[str(level)]:
+            if isinstance(boss, pkmn_class.Pokemon) and str(boss) == str(pokemon):
+                pokemon = copy.copy(boss)
                 matched_boss = True
                 break
         if not matched_boss:
-            for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
-                boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
-                if boss and boss.id == pokemon.id:
+            for boss in self.bot.raid_dict[str(level)]:
+                if isinstance(boss, pkmn_class.Pokemon) and boss.id == pokemon.id:
                     if sum(boss.name.title() in s for s in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']) > 1:
                         form_list = [x for x in self.bot.raid_info['raid_eggs'][str(level)]['pokemon'] if boss.name.title() in x]
                         form_list = [x.replace(boss.name.title(), '').strip() for x in form_list]
                         return await ctx.send(f"Meowth! **{boss.name.title()}** has multiple forms at level {str(level)}! Please try again with the form name so I know which one to use! Please choose from: **{(', ').join(form_list)}**", delete_after=10)
-                    pokemon = boss
+                    pokemon = copy.copy(boss)
                     break
         pokemon.shiny = False
         pokemon.gender = False
         pokemon.size = False
         pokemon.shadow = False
-        pokemon.weather = weather
         raid_details = " ".join(raid_split).strip()
         for word in match_list:
             raid_details = re.sub(word, '', raid_details, flags=re.IGNORECASE).strip()
@@ -2253,6 +2257,8 @@ class Raid(commands.Cog):
                 raid_coordinates = raid_gmaps_link.split('query=')[1]
         if not raid_details:
             return
+        if not weather and raid_coordinates:
+            weather = await self.auto_weather(ctx, raid_coordinates)
         egg_level = str(egg_level)
         raid_channel = await self.create_raid_channel(ctx, egg_level, raid_details, "egg")
         if not raid_channel:
@@ -2312,11 +2318,9 @@ class Raid(commands.Cog):
         dm_dict = await self.send_dm_messages(ctx, str(egg_level), raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         if len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
-            await self._eggassume(ctx, str(pokemon), raid_channel)
+            await self._eggassume(ctx, str(self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0]), raid_channel)
         elif egg_level == "5" and self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {}).get('regional', None) in self.bot.raid_list:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {})['regional'])
-            await self._eggassume(ctx, str(pokemon), raid_channel)
+            await self._eggassume(ctx, str(self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {})['regional']), raid_channel)
         return raid_channel
 
     @raid.command(name='hatch')
@@ -2380,23 +2384,24 @@ class Raid(commands.Cog):
         egg_report = await report_channel.fetch_message(eggdetails['raid_report'])
         raid_message = await raid_channel.fetch_message(eggdetails['raid_message'])
         coordinates = eggdetails.get('coordinates', False)
+        if coordinates:
+            weather = await self.auto_weather(ctx, coordinates)
         boss_list = []
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, args)
         matched_boss = False
-        for boss in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon']:
-            boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
-            boss_list.append(boss.name.lower())
-            if str(boss) == str(pokemon):
-                pokemon = boss
-                matched_boss = True
-                break
+        for boss in self.bot.raid_dict[str(egg_level)]:
+            if isinstance(boss, pkmn_class.Pokemon):
+                boss_list.append(boss.name.lower())
+                if str(boss) == str(pokemon):
+                    pokemon = copy.copy(boss)
+                    matched_boss = True
+                    break
         if not matched_boss:
-            for boss in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon']:
-                boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
-                if boss and boss.id == pokemon.id:
+            for boss in self.bot.raid_dict[str(egg_level)]:
+                if isinstance(boss, pkmn_class.Pokemon) and boss.id == pokemon.id:
                     if sum(boss.name.title() in s for s in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon']) > 1:
                         return
-                    pokemon = boss
+                    pokemon = copy.copy(boss)
                     break
         pokemon.weather = weather
         if pokemon.name.lower() not in boss_list:
@@ -2470,26 +2475,26 @@ class Raid(commands.Cog):
         boss_list = []
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, entered_raid)
         matched_boss = False
-        for boss in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon']:
-            boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
-            boss_list.append(boss.name.lower())
-            if str(boss) == str(pokemon):
-                pokemon = boss
-                matched_boss = True
-                break
+        for boss in self.bot.raid_dict[str(egg_level)]:
+            if isinstance(boss, pkmn_class.Pokemon):
+                boss_list.append(boss.name.lower())
+                if str(boss) == str(pokemon):
+                    pokemon = copy.copy(boss)
+                    matched_boss = True
+                    break
         if not matched_boss:
-            for boss in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon']:
-                boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
-                if not boss or not pokemon:
-                    continue
-                if boss and boss.id == pokemon.id:
+            for boss in self.bot.raid_dict[str(egg_level)]:
+                if isinstance(boss, pkmn_class.Pokemon) and pokemon and boss.id == pokemon.id:
                     if sum(boss.name.title() in s for s in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon']) > 1:
                         form_list = [x for x in self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon'] if boss.name.title() in x]
                         form_list = [x.replace(boss.name.title(), '').strip() for x in form_list]
                         return await raid_channel.send(f"Meowth! **{boss.name.title()}** has multiple forms at level {str(egg_level)}! Please try again with the form name so I know which one to use! Please choose from: **{(', ').join(form_list)}**", delete_after=10)
-                    pokemon = boss
+                    pokemon = copy.copy(boss)
                     break
-        weather = eggdetails.get('weather', None)
+        weather = eggdetails.get('weather')
+        raid_coordinates = eggdetails.get('coordinates')
+        if raid_coordinates:
+            weather = await self.auto_weather(ctx, raid_coordinates)
         pokemon.weather = weather
         pokemon.shiny = False
         pokemon.gender = False
@@ -2839,8 +2844,7 @@ class Raid(commands.Cog):
         dm_dict = await self.send_dm_messages(ctx, "EX", raid_details, ctx.raidreport.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(raid_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['exraidchannel_dict'][raid_channel.id]['dm_dict'] = dm_dict
         if len(self.bot.raid_info['raid_eggs']['EX']['pokemon']) == 1:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.raid_info['raid_eggs']['EX']['pokemon'][0])
-            await self._eggassume(ctx, str(pokemon), raid_channel)
+            await self._eggassume(ctx, str(self.bot.raid_info['raid_eggs']['EX']['pokemon'][0]), raid_channel)
         return raid_channel
 
     @exraid.command(name='assume', hidden=True)
@@ -5148,14 +5152,14 @@ class Raid(commands.Cog):
         boss_dict = {}
         boss_list = []
         if egg_level != "0":
-            for p in self.bot.raid_info['raid_eggs'][egg_level]['pokemon']:
-                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, p)
-                boss_list.append(str(pokemon).lower())
-                boss_dict[str(pokemon).lower()] = {
-                    "type": pokemon.emoji,
-                    "weakness":pokemon.weakness_emoji,
-                    "total": 0
-                }
+            for boss in self.bot.raid_dict[str(egg_level)]:
+                if isinstance(boss, pkmn_class.Pokemon):
+                    boss_list.append(str(boss).lower())
+                    boss_dict[str(boss).lower()] = {
+                        "type": boss.emoji,
+                        "weakness":boss.weakness_emoji,
+                        "total": 0
+                    }
         channel_dict = {"mystic":0, "valor":0, "instinct":0, "unknown":0, "maybe":0, "coming":0, "here":0, "lobby":0, "total":0, "boss":0}
         team_list = ["mystic", "valor", "instinct", "unknown"]
         status_list = ["maybe", "coming", "here", "lobby"]
@@ -5186,17 +5190,17 @@ class Raid(commands.Cog):
         channel_dict, boss_dict = await self._get_party(channel, author)
         display_list = []
         if egg_level != "0":
-            for boss in boss_dict.keys():
-                boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
-                shiny_str = ""
-                if boss and "raid" in boss.shiny_available:
-                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                if boss_dict[str(boss).lower()]['total'] > 0:
-                    bossstr = f"{shiny_str}{str(boss).title()} {boss_dict[str(boss).lower()]['type']} : **{boss_dict[str(boss).lower()]['total']}**"
-                    display_list.append(bossstr)
-                elif boss_dict[str(boss).lower()]['total'] == 0:
-                    bossstr = f"{shiny_str}{str(boss).title()} {boss_dict[str(boss).lower()]['type']}"
-                    display_list.append(bossstr)
+            for boss in self.bot.raid_dict[str(egg_level)]:
+                if isinstance(boss, pkmn_class.Pokemon):
+                    shiny_str = ""
+                    if boss and "raid" in boss.shiny_available:
+                        shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                    if boss_dict[str(boss).lower()]['total'] > 0:
+                        bossstr = f"{shiny_str}{str(boss).title()} {boss_dict[str(boss).lower()]['type']} : **{boss_dict[str(boss).lower()]['total']}**"
+                        display_list.append(bossstr)
+                    elif boss_dict[str(boss).lower()]['total'] == 0:
+                        bossstr = f"{shiny_str}{str(boss).title()} {boss_dict[str(boss).lower()]['type']}"
+                        display_list.append(bossstr)
         reportchannel = self.bot.get_channel(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['report_channel'])
         try:
             reportmsg = await reportchannel.fetch_message(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['raid_report'])
@@ -5221,6 +5225,7 @@ class Raid(commands.Cog):
                         newembed.add_field(name=field.name, value=field.value, inline=field.inline)
             else:
                 if len(boss_dict.keys()) == 1 or pokemon:
+                    boss = self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon'][0]
                     newembed.add_field(name=_("**Boss Interest:**") if channel_dict["boss"] > 0 else _("**Possible Bosses:**"), value=_('{bosslist1}').format(bosslist1='\n'.join(display_list)), inline=True)
                     newembed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=boss_dict[str(boss).lower()]['weakness']), inline=True)
                 elif len(boss_dict.keys()) > 1:
@@ -5327,9 +5332,9 @@ class Raid(commands.Cog):
         boss_list = []
         if not meetup:
             if not pokemon:
-                for boss in self.bot.raid_info['raid_eggs'][egg_level]['pokemon']:
-                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, boss)
-                    boss_list.append(str(pokemon).lower())
+                for boss in self.bot.raid_dict[str(egg_level)]:
+                    if isinstance(boss, pkmn_class.Pokemon):
+                        boss_list.append(str(boss).lower())
             else:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 boss_list.append(str(pokemon).lower())

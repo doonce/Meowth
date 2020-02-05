@@ -716,7 +716,7 @@ class Listing(commands.Cog):
             list_messages = []
             await utils.safe_bulk_delete(ctx.channel, delete_list)
             list_msg = ""
-            raid_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
+            raid_embed = discord.Embed(colour=ctx.guild.me.colour, title=f"Raid Boss List").set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/raid_tut_raid.png?cache=1')
             if self.bot.raid_info.get('last_edit', False):
                 last_edit = datetime.datetime.utcfromtimestamp(self.bot.raid_info['last_edit']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                 raid_embed.set_footer(text=f"Last Update: {last_edit.strftime('%B %d at %I:%M %p')}")
@@ -725,8 +725,19 @@ class Listing(commands.Cog):
             if not level:
                 level_list = ["1", "2", "3", "4", "5", "EX"]
             for raid_level in level_list:
-                list_msg += _('\n**Level {level} bosses:**\n`{raidlist}` \n').format(level=raid_level, raidlist=self.bot.raid_info['raid_eggs'][raid_level]['pokemon'])
-            raid_embed.add_field(name="Raid Boss List", value=list_msg)
+                pokemon_list = []
+                overwrite_list = []
+                for pokemon in self.bot.raid_dict[raid_level]:
+                    shiny_str = ""
+                    if isinstance(pokemon, pkmn_class.Pokemon):
+                        if "raid" in pokemon.shiny_available:
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                        pokemon_list.append(f"{shiny_str}{str(pokemon)} {pokemon.emoji}")
+                for overwrite in self.bot.raid_info['raid_eggs'][raid_level].get('overwrites', {}):
+                    replace_with = self.bot.raid_info['raid_eggs'][raid_level]['overwrites'][overwrite]['replace_with'] or "None"
+                    replace_until = datetime.datetime.utcfromtimestamp(self.bot.raid_info['raid_eggs'][raid_level]['overwrites'][overwrite]['replace_until']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+                    overwrite_list.append(f"Replacing **{overwrite}** with **{replace_with}** until {replace_until.strftime('%B %d at %I:%M %p')}")
+                raid_embed.add_field(name=f"Level {raid_level} Boss List", value=f"{(', ').join(pokemon_list)}\n\n{'**Overwrites**: ' if overwrite_list else ''}{(', ').join(overwrite_list) if overwrite_list else ''}", inline=False)
             msg = await ctx.channel.send(embed=raid_embed)
             list_messages.append(msg.id)
             self.bot.guild_dict[ctx.guild.id]['list_dict']['raid_bosses'][ctx.channel.id] = list_messages

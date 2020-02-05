@@ -887,17 +887,15 @@ class Huntr(commands.Cog):
             return
         level = utils.get_level(ctx.bot, str(pokemon))
         matched_boss = False
-        for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
-            boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
-            if str(boss) == str(pokemon):
-                pokemon = boss
+        for boss in self.bot.raid_dict[str(egg_level)]:
+            if isinstance(boss, pkmn_class.Pokemon) and str(boss) == str(pokemon):
+                pokemon = copy.copy(boss)
                 matched_boss = True
                 break
         if not matched_boss:
-            for boss in self.bot.raid_info['raid_eggs'][str(level)]['pokemon']:
-                boss = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, boss)
-                if boss and boss.id == pokemon.id:
-                    pokemon = boss
+            for boss in self.bot.raid_dict[str(egg_level)]:
+                if isinstance(boss, pkmn_class.Pokemon) and boss and boss.id == pokemon.id:
+                    pokemon = copy.copy(boss)
                     break
         weather = ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'].get(message.channel.id, {}).get('weather', None)
         if not weather and raid_coordinates:
@@ -1144,11 +1142,9 @@ class Huntr(commands.Cog):
             await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
         await raid_channel.send(f"This egg was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.\nThe weather may be inaccurate for this raid, use **{ctx.prefix}weather** to set the correct weather.")
         if len(ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0])
-            await raid_cog._eggassume(ctx, str(pokemon), raid_channel)
+            await raid_cog._eggassume(ctx, str(ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0]), raid_channel)
         elif egg_level == "5" and ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {}).get('regional', None) in ctx.bot.raid_list:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional'])
-            await raid_cog._eggassume(ctx, str(pokemon), raid_channel)
+            await raid_cog._eggassume(ctx, str(ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict']['settings']['regional']), raid_channel)
         self.event_loop.create_task(raid_cog.expiry_check(raid_channel))
         index = 0
         for field in raid_embed.fields:

@@ -1202,6 +1202,7 @@ class Pokedex(commands.Cog):
                         pkmn_evo = self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['evolution']
                     pkmn_embed.clear_fields()
                     pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist in my records. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **shiny** to set shiny availability, **gender** to toggle gender differences, or **size** to toggle size relevance, **shadow** to toggle shadow. Others include **type**, **pokedex**, and **evolution**. You can reply with **cancel** to stop anytime.\n\n**Current {str(pokemon)} Settings**\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}", inline=False)
+                    pkmn_embed.set_thumbnail(url=pokemon.img_url)
                     attr_type_wait = await channel.send(embed=pkmn_embed)
                     try:
                         attr_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1242,6 +1243,9 @@ class Pokedex(commands.Cog):
                     elif attr_type_msg.clean_content.lower() == "shiny":
                         pkmn_embed.clear_fields()
                         pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"Shiny **{str(pokemon)}** is {'not currently available' if not pkmn_shiny else 'currently available in the following: '+str(pkmn_shiny)}.\n\nTo change availability, reply with a comma separated list of all possible occurrences that shiny {str(pokemon)} can appear in-game. You can reply with **cancel** to stop anytime.\n\nSelect from the following options:\n**hatch, raid, wild, research, evolution, shadow, none**", inline=False)
+                        pokemon.shiny = True
+                        pkmn_embed.set_thumbnail(url=pokemon.img_url)
+                        pokemon.shiny = False
                         shiny_type_wait = await channel.send(embed=pkmn_embed)
                         try:
                             shiny_type_msg = await self.bot.wait_for('message', timeout=60, check=check)
