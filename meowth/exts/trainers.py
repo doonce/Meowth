@@ -194,7 +194,7 @@ class Trainers(commands.Cog):
                 member = await converter.convert(ctx, member)
             except:
                 member_found = False
-                for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+                for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
                     search_list = []
                     user = ctx.guild.get_member(trainer)
                     if not user:
@@ -202,18 +202,18 @@ class Trainers(commands.Cog):
                     search_list.append(user.name.lower())
                     search_list.append(user.display_name.lower())
                     search_list.append(str(user.id))
-                    pbid = str(self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pokebattlerid', "")).lower()
+                    pbid = str(self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).get('pokebattlerid', "")).lower()
                     if pbid:
                         search_list.append(pbid)
-                    trainercode = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('trainercode', "").replace(" ", "").lower()
+                    trainercode = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('trainercode', "").replace(" ", "").lower()
                     if trainercode:
                         search_list.append(trainercode)
-                    ign = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('ign', "")
+                    ign = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('ign', "")
                     if ign:
                         ign = ign.split(',')
                         ign = [x.strip().lower() for x in ign]
                         search_list = search_list + ign
-                    silphid = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('silphid', "").lower()
+                    silphid = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('silphid', "").lower()
                     if silphid:
                         search_list.append(silphid)
                     if member.lower() in search_list:
@@ -227,19 +227,19 @@ class Trainers(commands.Cog):
                     member = None
         if not member:
             member = ctx.message.author
-        trainers = self.bot.guild_dict[ctx.guild.id]['trainers']
-        silph = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('silphid', None)
+        trainers = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})
+        silph = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('silphid', None)
         if silph:
             silph = f"[Traveler Card](https://sil.ph/{silph.lower()})"
         else:
             silph = f"Set with {ctx.prefix}silph"
-        trainercode = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('trainercode', None)
+        trainercode = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('trainercode', None)
         if not trainercode:
             trainercode = f"Set with {ctx.prefix}trainercode"
-        pokebattler = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('pokebattlerid', None)
+        pokebattler = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('pokebattlerid', None)
         if not pokebattler:
             pokebattler = f"Set with {ctx.prefix}pokebattler"
-        trade_list = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('trade_list', None)
+        trade_list = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('trade_list', None)
         trade_message = None
         if trade_list:
             for k,v in trade_list.items():
@@ -249,7 +249,7 @@ class Trainers(commands.Cog):
                     trade_message = trade_message.jump_url
                 except:
                     trade_message = None
-        want_list = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('want_list', None)
+        want_list = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('want_list', None)
         want_message = None
         if want_list:
             for k,v in want_list.items():
@@ -259,8 +259,8 @@ class Trainers(commands.Cog):
                     want_message = want_message.jump_url
                 except:
                     want_message = None
-        ign = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('ign', None)
-        pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('pvp', {})
+        ign = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('ign', None)
+        pvp_info = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('pvp', {})
         raids = trainers.get(member.id, {}).get('reports', {}).get('raid', 0)
         eggs = trainers.get(member.id, {}).get('reports', {}).get('egg', 0)
         exraids = trainers.get(member.id, {}).get('reports', {}).get('ex', 0)
@@ -337,7 +337,7 @@ class Trainers(commands.Cog):
         Usage: !leaderboard [type] [page]
         Accepted types: raid, egg, exraid, wild, research, nest, lure, invasion
         Page: 1 = 1 through 10, 2 = 11 through 20, etc."""
-        trainers = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['trainers'])
+        trainers = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}))
         leaderboard = []
         field_value = ""
         typelist = ["total", "raid", "exraid", "wild", "research", "egg", "nest", "lure", "invasion"]
@@ -399,7 +399,7 @@ class Trainers(commands.Cog):
 
         Usage: !leaderboard reset [user] [type]"""
         guild = ctx.guild
-        trainers = self.bot.guild_dict[guild.id]['trainers']
+        trainers = self.bot.guild_dict[guild.id].setdefault('trainers', {})
         tgt_string = ""
         tgt_trainer = None
         type_list = ["raid", "egg", "ex", "wild", "research", "nest", "lure", "invasion", "trade", "pvp"]
@@ -479,7 +479,7 @@ class Trainers(commands.Cog):
         """Links a server member to a PokeBattler ID.
 
         To clear your setting, use !pokebattler clear."""
-        trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
+        trainers = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})
         author = trainers.get(ctx.author.id, {})
         if author.get('pokebattlerid') and (pbid.lower() == "clear" or pbid.lower() == "reset"):
             await ctx.send(_('Your PokeBattler ID has been cleared!'), delete_after=10)

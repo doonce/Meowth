@@ -252,10 +252,10 @@ class Pvp(commands.Cog):
         trainer_mentions = [self.bot.get_user(x) for x in trainer_list]
         trainer_mentions = [x.mention for x in trainer_mentions]
         trainer_mentions.insert(0, None)
-        new_embed.add_field(name=f"**Round {round} Match 1:**", value=f"1\u20e3 {trainer_mentions[1]} **VS** {trainer_mentions[2]} 2\u20e3")
-        new_embed.add_field(name=f"**Round {round} Match 2:**", value=f"3\u20e3 {trainer_mentions[3]} **VS** {trainer_mentions[4]} 4\u20e3")
-        new_embed.add_field(name=f"**Round {round} Match 3:**", value=f"5\u20e3 {trainer_mentions[5]} **VS** {trainer_mentions[6]} 6\u20e3")
-        new_embed.add_field(name=f"**Round {round} Match 4:**", value=f"7\u20e3 {trainer_mentions[7]} **VS** {trainer_mentions[8]} 8\u20e3")
+        new_embed.add_field(name=f"**Round {round} Match 1:**", value=f"1\u20e3 {trainer_mentions[1]} **VS** {trainer_mentions[2]} 2\u20e3", inline=False)
+        new_embed.add_field(name=f"**Round {round} Match 2:**", value=f"3\u20e3 {trainer_mentions[3]} **VS** {trainer_mentions[4]} 4\u20e3", inline=False)
+        new_embed.add_field(name=f"**Round {round} Match 3:**", value=f"5\u20e3 {trainer_mentions[5]} **VS** {trainer_mentions[6]} 6\u20e3", inline=False)
+        new_embed.add_field(name=f"**Round {round} Match 4:**", value=f"7\u20e3 {trainer_mentions[7]} **VS** {trainer_mentions[8]} 8\u20e3", inline=False)
         trainer_mentions.remove(None)
         await ctx.message.edit(content=f"PVP Tournament started by {creator.mention}\n\n{creator.mention}, react with the emoji 1\u20e3 through {len(trainer_list)}\u20e3 that matches the **winner** of each match!\n\n{creator.mention} can react with {start_emoji} to go to next round once all matches are decided, or react with {stop_emoji} to cancel the tournament.", embed=new_embed)
         await ctx.message.clear_reactions()
@@ -288,8 +288,8 @@ class Pvp(commands.Cog):
         trainer_mentions = [self.bot.get_user(x) for x in trainer_list]
         trainer_mentions = [x.mention for x in trainer_mentions]
         trainer_mentions.insert(0, None)
-        new_embed.add_field(name=f"**Round {round} Match 1:**", value=f"1\u20e3 {trainer_mentions[1]} **VS** {trainer_mentions[2]} 2\u20e3")
-        new_embed.add_field(name=f"**Round {round} Match 2:**", value=f"3\u20e3 {trainer_mentions[3]} **VS** {trainer_mentions[4]} 4\u20e3")
+        new_embed.add_field(name=f"**Round {round} Match 1:**", value=f"1\u20e3 {trainer_mentions[1]} **VS** {trainer_mentions[2]} 2\u20e3", inline=False)
+        new_embed.add_field(name=f"**Round {round} Match 2:**", value=f"3\u20e3 {trainer_mentions[3]} **VS** {trainer_mentions[4]} 4\u20e3", inline=False)
         trainer_mentions.remove(None)
         await ctx.message.edit(content=f"PVP Tournament started by {creator.mention}\n\n{creator.mention}, react with the emoji 1\u20e3 through {len(trainer_list)}\u20e3 for each winner of each match!\n\n{creator.mention} can react with {start_emoji} to go to next round once all matches are decided, or react with {stop_emoji} to cancel the tournament.", embed=new_embed)
         await ctx.message.clear_reactions()
@@ -322,7 +322,7 @@ class Pvp(commands.Cog):
         trainer_mentions = [self.bot.get_user(x) for x in trainer_list]
         trainer_mentions = [x.mention for x in trainer_mentions]
         trainer_mentions.insert(0, None)
-        new_embed.add_field(name=f"**Round {round} Match 1:**", value=f"1\u20e3 {trainer_mentions[1]} **VS** {trainer_mentions[2]} 2\u20e3")
+        new_embed.add_field(name=f"**Round {round} Match 1:**", value=f"1\u20e3 {trainer_mentions[1]} **VS** {trainer_mentions[2]} 2\u20e3", inline=False)
         trainer_mentions.remove(None)
         await ctx.message.edit(content=f"PVP Tournament started by {creator.mention}\n\n{creator.mention}, react with the emoji 1\u20e3 through {len(trainer_list)}\u20e3 for each winner of each match!\n\n{creator.mention} can react with {start_emoji} to go to next round once all matches are decided, or react with {stop_emoji} to cancel the tournament.", embed=new_embed)
         await ctx.message.clear_reactions()
@@ -510,8 +510,8 @@ class Pvp(commands.Cog):
         error = False
         pvp_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1')
         pvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
-        pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id].get('pvp', {})
-        is_moderator = checks.is_mod_check_mod(ctx)
+        pvp_info = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).get('pvp', {})
+        is_moderator = checks.is_mod_check(ctx)
         is_ranked = any([pvp_info.get('leader', []), pvp_info.get('elite', []), pvp_info.get('champion', [])])
         while True:
             def check(reply):
@@ -743,15 +743,15 @@ class Pvp(commands.Cog):
         guild = message.guild
         channel = message.channel
         error = ""
-        is_moderator = checks.is_mod_check_mod(ctx)
-        if not is_moderator and not self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('pvp', {}).setdefault('leader', []):
+        is_moderator = checks.is_mod_check(ctx)
+        if not is_moderator and not self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('pvp', {}).setdefault('leader', []):
             return await utils.safe_delete(cxx.message)
         output = []
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         if is_moderator:
             type_list = self.bot.type_list
         else:
-            type_list = list(self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('pvp', {}).setdefault('leader', []))
+            type_list = list(self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('pvp', {}).setdefault('leader', []))
         for type in self.bot.type_list:
             emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[type])
             output.append(f"{emoji} {type.title()}")
@@ -779,7 +779,7 @@ class Pvp(commands.Cog):
                     error = _("cancelled the report")
                     break
                 elif badge_type_msg.clean_content.lower() == "reset" and is_moderator:
-                    for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+                    for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pvp', {}).get('badges'):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['badges'] = []
                     return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Removed badges from all users."))
@@ -811,7 +811,7 @@ class Pvp(commands.Cog):
                 except:
                     error = _("entered an invalid member")
                     break
-                if badge_type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).setdefault('pvp', {}).setdefault('badges', []):
+                if badge_type in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('pvp', {}).setdefault('badges', []):
                     pvp_embed.clear_fields()
                     pvp_embed.add_field(name=_('**Award PVP Badge**'), value=f"It looks like {member.mention} already has this badge. Would you like to remove it? Reply with **yes** or **no** or with **cancel** to stop anytime.", inline=False)
                     confirm_wait = await channel.send(embed=pvp_embed)
@@ -856,11 +856,11 @@ class Pvp(commands.Cog):
         channel = message.channel
         error = ""
         output = []
-        is_moderator = checks.is_mod_check_mod(ctx)
+        is_moderator = checks.is_mod_check(ctx)
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         leader_dict = {k:{"emoji":utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[k]), "leaders":[]} for k in self.bot.type_list}
-        for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
-            if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
+        for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
+            if self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
                 for type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
                     user = guild.get_member(trainer)
                     leader_dict[type]['leaders'].append(user)
@@ -890,7 +890,7 @@ class Pvp(commands.Cog):
                     error = _("cancelled the report")
                     break
                 elif badge_type_msg.clean_content.lower() == "reset" and is_moderator:
-                    for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+                    for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pvp', {}).get('leader'):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['leader'] = []
                     return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Removed all gym leaders."))
@@ -922,7 +922,7 @@ class Pvp(commands.Cog):
                 except:
                     error = _("entered an invalid member")
                     break
-                if badge_type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).setdefault('pvp', {}).setdefault('leader', []):
+                if badge_type in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('pvp', {}).setdefault('leader', []):
                     pvp_embed.clear_fields()
                     pvp_embed.add_field(name=_('**Promote Gym Leader**'), value=f"It looks like {member.mention} already is already a leader for that type. Would you like to remove them? Reply with **yes** or **no** or with **cancel** to stop anytime.", inline=False)
                     confirm_wait = await channel.send(embed=pvp_embed)
@@ -947,12 +947,12 @@ class Pvp(commands.Cog):
                         break
                 break
         if not error:
-            for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+            for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
                 if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
                     if badge_type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('leader', []):
                         self.bot.guild_dict[ctx.guild.id]['trainers']['pvp']['leader'].remove(badge_type)
             self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['leader'].append(badge_type)
-            if "leader" not in self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp'].setdefault('record', {}).setdefault('title', []):
+            if "leader" not in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('pvp', {}).setdefault('record', {}).setdefault('title', []):
                 self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['record']['title'].append('leader')
             return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Promoted {member.mention} as the {badge_emoji} {badge_type.title()} gym leader"))
         else:
@@ -976,8 +976,9 @@ class Pvp(commands.Cog):
         elite_emoji = self.bot.config.custom_emoji.get('pvp_elite', u'\U0001F3C6')
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         elite_list = []
-        for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
-            if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('elite', []):
+        is_moderator = checks.is_mod_check(ctx)
+        for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
+            if self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('pvp', {}).setdefault('elite', []):
                 user = guild.get_member(trainer)
                 elite_list.append(user)
         while len(elite_list) < 4:
@@ -1010,7 +1011,7 @@ class Pvp(commands.Cog):
                     error = _("cancelled the report")
                     break
                 elif slot_msg.clean_content.lower() == "reset" and is_moderator:
-                    for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+                    for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pvp', {}).get('elite'):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['elite'] = []
                     return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Removed all Elite Four."))
@@ -1044,7 +1045,7 @@ class Pvp(commands.Cog):
                 try:
                     member = await converter.convert(ctx, user_msg.content)
                     self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['elite'] = True
-                    if "elite" not in self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp'].setdefault('record', {}).setdefault('title', []):
+                    if "elite" not in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('pvp', {}).setdefault('record', {}).setdefault('title', []):
                         self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['record']['title'].append('elite')
                     if remove_user:
                         self.bot.guild_dict[ctx.guild.id]['trainers'][remove_user.id]['pvp']['elite'] = False
@@ -1073,13 +1074,13 @@ class Pvp(commands.Cog):
         error = ""
         output = []
         champ_emoji = self.bot.config.custom_emoji.get('pvp_champ', u'\U0001F451')
-        is_moderator = checks.is_mod_check_mod(ctx)
+        is_moderator = checks.is_mod_check(ctx)
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Master.png?cache=1')
         league_list = ["great", "ultra", "master"]
         leader_dict = {k:[] for k in league_list}
-        for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
-            if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
-                for type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
+        for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
+            if self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
+                for type in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
                     user = guild.get_member(trainer)
                     leader_dict[type].append(user)
         for type in leader_dict:
@@ -1108,7 +1109,7 @@ class Pvp(commands.Cog):
                     error = _("cancelled the report")
                     break
                 elif league_type_msg.clean_content.lower() == "reset" and is_moderator:
-                    for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+                    for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('pvp', {}).get('champion'):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['champion'] = []
                     return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Removed all champions."))
@@ -1139,7 +1140,7 @@ class Pvp(commands.Cog):
                 except:
                     error = _("entered an invalid member")
                     break
-                if badge_type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).setdefault('pvp', {}).setdefault('champion', []):
+                if badge_type in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('pvp', {}).setdefault('champion', []):
                     pvp_embed.clear_fields()
                     pvp_embed.add_field(name=_('**Promote Champion**'), value=f"It looks like {member.mention} already is the {badge_type} champion. Would you like to remove them? Reply with **yes** or **no** or with **cancel** to stop anytime.", inline=False)
                     confirm_wait = await channel.send(embed=pvp_embed)
@@ -1164,12 +1165,12 @@ class Pvp(commands.Cog):
                         break
                 break
         if not error:
-            for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+            for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
                 if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
                     if badge_type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
                         self.bot.guild_dict[ctx.guild.id]['trainers']['pvp']['champion'].remove(badge_type)
             self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['champion'].append(badge_type)
-            if "champion" not in self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp'].setdefault('record', {}).setdefault('title', []):
+            if "champion" not in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('pvp', {}).setdefault('record', {}).setdefault('title', []):
                 self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['pvp']['record']['title'].append('champion')
             return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Promoted {member.mention} as the {champ_emoji} {badge_type.title()} League Champion {champ_emoji}"))
         else:
@@ -1189,7 +1190,7 @@ class Pvp(commands.Cog):
         guild = message.guild
         channel = message.channel
         error = ""
-        is_moderator = checks.is_mod_check_mod(ctx)
+        is_moderator = checks.is_mod_check(ctx)
         pvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/CombatButton.png?cache=1')
         while True:
             def check(reply):
@@ -1214,7 +1215,7 @@ class Pvp(commands.Cog):
                     error = _("cancelled the report")
                     break
                 elif (user_msg.clean_content.lower() == "reset" or user_msg.clean_content.lower() == "wipe") and is_moderator:
-                    for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+                    for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
                         if self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('pvp', {}).get('record', {}).get('win', 0):
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['record']['win'] = 0
                             self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['pvp']['record']['loss'] = 0
@@ -1264,7 +1265,7 @@ class Pvp(commands.Cog):
                         error = _("entered an invalid number")
                         break
                     else:
-                        pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).setdefault('pvp', {}).setdefault('record', {})
+                        pvp_info = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('pvp', {}).setdefault('record', {})
                         pvp_info['win'] = int(user_msg.clean_content)
                         return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Manually set win record for {member.mention} to {user_msg.clean_content}."))
                 elif user_msg.clean_content.lower() == "loss":
@@ -1288,7 +1289,7 @@ class Pvp(commands.Cog):
                         error = _("entered an invalid number")
                         break
                     else:
-                        pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).setdefault('pvp', {}).setdefault('record', {})
+                        pvp_info = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('pvp', {}).setdefault('record', {})
                         pvp_info['loss'] = int(user_msg.clean_content)
                         return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Manually set loss record for {member.mention} to {user_msg.clean_content}."))
                 elif user_msg.clean_content.lower() == "title":
@@ -1313,12 +1314,12 @@ class Pvp(commands.Cog):
                         title_split = user_msg.clean_content.lower().split(',')
                         title_split = [x.strip() for x in title_split]
                         titie_split = [x for x in title_split if x in title_list]
-                        pvp_info = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(member.id, {}).setdefault('pvp', {}).setdefault('record', {})
+                        pvp_info = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(member.id, {}).setdefault('pvp', {}).setdefault('record', {})
                         pvp_info['title'] = title_split
                         return await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Manually set titles for {member.mention} to {(', ').join(title_split)}."))
                 break
         if not error:
-            for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+            for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
                 if self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
                     if badge_type in self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(trainer, {}).setdefault('pvp', {}).setdefault('champion', []):
                         self.bot.guild_dict[ctx.guild.id]['trainers']['pvp']['champion'].remove(badge_type)

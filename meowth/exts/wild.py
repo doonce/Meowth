@@ -206,7 +206,7 @@ class Wild(commands.Cog):
             if poi_url:
                 wild_gmaps_link = poi_url
                 wild_coordinates = poi_url.split("query=")[1]
-                nearest_stop = await gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), ctx.guild.id)
+                nearest_stop = await gym_matching_cog.find_nearest_stop(wild_coordinates, ctx.guild.id)
         if details.get('coordinates'):
             wild_gmaps_link = "https://www.google.com/maps/search/?api=1&query={0}".format(details['coordinates'])
         huntrexpstamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0), minutes=int(expire.split()[0]), seconds=int(expire.split()[2]))).strftime('%I:%M %p')
@@ -690,7 +690,7 @@ class Wild(commands.Cog):
             if poi_url:
                 wild_gmaps_link = poi_url
                 wild_coordinates = poi_url.split("query=")[1]
-                nearest_stop = await gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0],wild_coordinates.split(",")[1]), ctx.guild.id)
+                nearest_stop = await gym_matching_cog.find_nearest_stop(wild_coordinates, ctx.guild.id)
         if not wild_details:
             await utils.safe_delete(ctx.message)
             return

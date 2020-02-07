@@ -69,6 +69,10 @@ class Listing(commands.Cog):
                         except:
                             pass
                     await utils.safe_bulk_delete(ctx.channel, delete_list)
+                    mystic_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['mystic'])
+                    valor_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['valor'])
+                    instinct_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['instinct'])
+                    unknown_emoji = utils.parse_emoji(ctx.guild, self.bot.config.unknown)
                     for r in rc_d:
                         report_channel = self.bot.get_channel(rc_d[r]['report_channel'])
                         if not report_channel:
@@ -141,17 +145,13 @@ class Listing(commands.Cog):
                         if channel_dict['lobby']:
                             output += f" | Lobby: **{channel_dict['lobby']}**"
                         if channel_dict['mystic']:
-                            emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['mystic'])
-                            output += f" | {emoji}: **{channel_dict['mystic']}**"
+                            output += f" | {mystic_emoji}: **{channel_dict['mystic']}**"
                         if channel_dict['valor']:
-                            emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['valor'])
-                            output += f" | {emoji}: **{channel_dict['valor']}**"
+                            output += f" | {valor_emoji}: **{channel_dict['valor']}**"
                         if channel_dict['instinct']:
-                            emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['instinct'])
-                            output += f" | {emoji}: **{channel_dict['instinct']}**"
+                            output += f" | {instinct_emoji}: **{channel_dict['instinct']}**"
                         if channel_dict['unknown']:
-                            emoji = utils.parse_emoji(channel.guild, self.bot.config.unknown)
-                            output += f" | {emoji}: **{channel_dict['unknown']}**"
+                            output += f" | {unknown_emoji}: **{channel_dict['unknown']}**"
                         if start_str:
                             output += f"{start_str}\n"
                         else:
@@ -669,34 +669,42 @@ class Listing(commands.Cog):
         egg_level = self.bot.guild_dict[message.guild.id].setdefault(report_dict, {}).get(channel.id, {}).get('egg_level', None)
         egg_level = str(egg_level)
         if egg_level == "0":
-            listmsg = _(' The egg has already hatched!')
-            return listmsg
+            return await self._raidbosslist(ctx)
+        mystic_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['mystic'])
+        valor_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['valor'])
+        instinct_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['instinct'])
+        unknown_emoji = utils.parse_emoji(ctx.guild, self.bot.config.unknown)
         egg_info = self.bot.raid_info['raid_eggs'][egg_level]
         egg_img = egg_info['egg_img']
         boss_dict = {}
-        boss_list = []
-        boss_dict["unspecified"] = {"type": "❔", "total": 0, "maybe": 0, "coming": 0, "here": 0}
-        for p in egg_info['pokemon']:
-            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, p)
-            boss_list.append(str(pokemon).lower())
-            boss_dict[str(pokemon).lower()] = {"type": "{}".format(pokemon.emoji), "total": 0, "maybe": 0, "coming": 0, "here": 0, "trainers":[]}
-        boss_list.append('unspecified')
-        trainer_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id][report_dict][channel.id]['trainer_dict'])
+        boss_dict["unspecified"] = {"string": "Unspecified ❔", "total": 0, "maybe": 0, "coming": 0, "here": 0, "mystic": 0, "valor": 0, "instinct": 0, "unknown": 0}
+        for boss in self.bot.raid_dict[egg_level]:
+            if isinstance(boss, pkmn_class.Pokemon):
+                shiny_str = ""
+                if boss and "raid" in boss.shiny_available:
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                boss_dict[str(boss).lower()] = {"string": f"{shiny_str}{str(boss)} {boss.emoji}", "total": 0, "maybe": 0, "coming": 0, "here": 0, "mystic": 0, "valor": 0, "instinct": 0, "unknown": 0, "trainers":[]}
+        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][channel.id]['trainer_dict'])
         for trainer in trainer_dict:
             user = ctx.guild.get_member(trainer)
             if not user:
                 continue
             interest = trainer_dict[trainer].get('interest', ['unspecified'])
             for item in interest:
-                status = max(trainer_dict[trainer]['status'], key=lambda key: trainer_dict[trainer]['status'][key])
-                count = trainer_dict[trainer]['count']
-                boss_dict[item][status] += count
-                boss_dict[item]['total'] += count
+                boss_dict[item]['maybe'] += trainer_dict[trainer]['status']['maybe']
+                boss_dict[item]['coming'] += trainer_dict[trainer]['status']['coming']
+                boss_dict[item]['here'] += trainer_dict[trainer]['status']['here']
+                boss_dict[item]['mystic'] += trainer_dict[trainer]['party']['mystic']
+                boss_dict[item]['valor'] += trainer_dict[trainer]['party']['valor']
+                boss_dict[item]['instinct'] += trainer_dict[trainer]['party']['instinct']
+                boss_dict[item]['unknown'] += trainer_dict[trainer]['party']['unknown']
+                boss_dict[item]['total'] += sum(trainer_dict[trainer]['party'].values())
                 boss_dict[item]['trainers'].append(user.display_name)
         bossliststr = ''
-        for boss in boss_list:
+        for boss in boss_dict.keys():
             if boss_dict[boss]['total'] > 0:
-                bossliststr += _('{type} {name}: **{total} total,** {interested} interested, {coming} coming, {here} waiting {type}\n**Trainers:** {trainers}\n\n').format(type=boss_dict[boss]['type'], name=boss.title(), total=boss_dict[boss]['total'], interested=boss_dict[boss]['maybe'], coming=boss_dict[boss]['coming'], here=boss_dict[boss]['here'], trainers=', '.join(boss_dict[boss]['trainers']))
+                bossliststr += f"{boss_dict[boss]['string']}\n**Total: {boss_dict[boss]['total']}**{' | Maybe: **'+str(boss_dict[boss]['maybe'])+'**' if boss_dict[boss]['maybe'] else ''}{' | Coming: **'+str(boss_dict[boss]['coming'])+'**' if boss_dict[boss]['coming'] else ''}{' | Here: **'+str(boss_dict[boss]['here'])+'**' if boss_dict[boss]['here'] else ''}{' | '+mystic_emoji+': **'+str(boss_dict[boss]['mystic'])+'**' if boss_dict[boss]['mystic'] else ''}{' | '+valor_emoji+' **'+str(boss_dict[boss]['valor'])+'**' if boss_dict[boss]['valor'] else ''}{' | '+instinct_emoji+' **'+str(boss_dict[boss]['instinct'])+'**' if boss_dict[boss]['instinct'] else ''}{' | '+unknown_emoji+' **'+str(boss_dict[boss]['unknown'])+'**' if boss_dict[boss]['unknown'] else ''}\n"
+                bossliststr += f"**Trainers:** {', '.join(boss_dict[boss]['trainers'])}\n\n"
         if bossliststr:
             listmsg = _(' Boss numbers for the raid:\n\n{}').format(bossliststr)
         else:
@@ -846,7 +854,7 @@ class Listing(commands.Cog):
         user_levels = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
         user_levels = sorted(user_levels)
         user_levels = [str(x) for x in user_levels]
-        categories = copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}))
+        categories = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}))
         pokemon_options = ["wild", "research", "invasion", "nest", "trade", "raid"]
         pokestop_options = ["research", "wild", "lure", "invasion"]
         type_options = ["wild", "research", "nest", "invasion", "raid", "trade"]
@@ -1077,6 +1085,7 @@ class Listing(commands.Cog):
                     if index == 0:
                         listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                         if search == ctx.author:
+                            profile = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {})
                             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trade_list'] = {ctx.channel.id: listmsg.id}
                     else:
                         listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
@@ -1207,6 +1216,7 @@ class Listing(commands.Cog):
                     if index == 0:
                         listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                         if search == ctx.author:
+                            profile = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {})
                             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trade_list'] = {ctx.channel.id: listmsg.id}
                     else:
                         listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
@@ -1234,7 +1244,7 @@ class Listing(commands.Cog):
         trademsg = ""
         shiny_emoji = self.bot.custom_emoji.get('shiny_chance', u'\U00002728')
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search)
-        for trainer in self.bot.guild_dict[ctx.guild.id]['trainers']:
+        for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
             if isinstance(search, discord.member.Member):
                 trainer = search.id
             user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)

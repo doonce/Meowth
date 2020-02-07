@@ -391,12 +391,12 @@ def dm_check(ctx, trainer, report_type):
         return False
     if not user:
         return False
-    if "tutorial" in ctx.channel.name and user != ctx.author:
+    if check_tutorialchannel(ctx) and user != ctx.author:
         return False
     perms = user.permissions_in(ctx.channel)
     if not perms.read_messages:
         return False
-    mute = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('settings', {}).get('mute', {}).get(report_type, False)
+    mute = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(trainer, {}).get('alerts', {}).get('settings', {}).get('mute', {}).get(report_type, False)
     if mute:
         return False
     report_time = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))

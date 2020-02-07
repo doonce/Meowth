@@ -458,7 +458,7 @@ class Nest(commands.Cog):
             await utils.safe_delete(ctx.message)
 
     async def send_nest(self, ctx, nest_name, pokemon):
-        nest_dict = self.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.channel.id]
+        nest_dict = self.bot.guild_dict[ctx.guild.id].setdefault('nest_dict', {}).setdefault(ctx.channel.id, {})
         expire_emoji = self.bot.custom_emoji.get('nest_expire', u'\U0001F4A8')
         catch_emoji = ctx.bot.custom_emoji.get('wild_catch', u'\U000026be')
         info_emoji = ctx.bot.custom_emoji.get('nest_info', u'\U00002139\U0000fe0f')

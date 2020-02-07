@@ -797,8 +797,8 @@ class Huntr(commands.Cog):
         wild_gmaps_link = f"https://www.google.com/maps/search/?api=1&query={wild_coordinates}"
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
-            nearest_poi = await gym_matching_cog.find_nearest_poi((wild_coordinates.split(",")[0], wild_coordinates.split(",")[1]), message.guild.id)
-            nearest_stop = await gym_matching_cog.find_nearest_stop((wild_coordinates.split(",")[0], wild_coordinates.split(",")[1]), message.guild.id)
+            nearest_poi = await gym_matching_cog.find_nearest_poi(wild_coordinates, message.guild.id)
+            nearest_stop = await gym_matching_cog.find_nearest_stop(wild_coordinates, message.guild.id)
             if nearest_poi:
                 wild_details = nearest_poi
                 poi_info, __, __ = await gym_matching_cog.get_poi_info(ctx, wild_details.strip(), "wild")
@@ -940,7 +940,7 @@ class Huntr(commands.Cog):
                 gym_matching_cog.gym_data = gym_matching_cog.init_json()
                 gym_matching_cog.stop_data = gym_matching_cog.init_stop_json()
             elif raid_coordinates in str(gym_matching_cog.get_gyms(ctx.guild.id)):
-                test_gym = await gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), ctx.guild.id)
+                test_gym = await gym_matching_cog.find_nearest_gym(raid_coordinates, ctx.guild.id)
                 gym_info, raid_location, gym_url = await gym_matching_cog.get_poi_info(ctx, test_gym, "raid", dupe_check=False, autocorrect=False)
                 if gym_url:
                     raid_details = raid_location
@@ -1090,7 +1090,7 @@ class Huntr(commands.Cog):
                     with open(os.path.join('data', 'gym_data.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
             elif raid_coordinates in str(gym_matching_cog.get_gyms(ctx.guild.id)):
-                test_gym = await gym_matching_cog.find_nearest_gym((raid_coordinates.split(",")[0], raid_coordinates.split(",")[1]), ctx.guild.id)
+                test_gym = await gym_matching_cog.find_nearest_gym(raid_coordinates, ctx.guild.id)
                 gym_info, raid_location, gym_url = await gym_matching_cog.get_poi_info(ctx, test_gym, "raid", dupe_check=False, autocorrect=False)
                 if gym_url:
                     raid_details = raid_location
@@ -1192,7 +1192,7 @@ class Huntr(commands.Cog):
                 gym_matching_cog.gym_data = gym_matching_cog.init_json()
                 gym_matching_cog.stop_data = gym_matching_cog.init_stop_json()
             elif quest_coordinates in str(gym_matching_cog.get_stops(ctx.guild.id)):
-                test_stop = await gym_matching_cog.find_nearest_stop((quest_coordinates.split(",")[0], quest_coordinates.split(",")[1]), ctx.guild.id)
+                test_stop = await gym_matching_cog.find_nearest_stop(quest_coordinates, ctx.guild.id)
                 stop_info, stop_location, stop_url = await gym_matching_cog.get_poi_info(ctx, test_stop, "research", dupe_check=False, autocorrect=False)
                 if stop_url:
                     location = stop_location
@@ -1228,7 +1228,7 @@ class Huntr(commands.Cog):
                 gym_matching_cog.gym_data = gym_matching_cog.init_json()
                 gym_matching_cog.stop_data = gym_matching_cog.init_stop_json()
             elif lure_coordinates in str(gym_matching_cog.get_stops(ctx.guild.id)):
-                test_stop = await gym_matching_cog.find_nearest_stop((lure_coordinates.split(",")[0], lure_coordinates.split(",")[1]), ctx.guild.id)
+                test_stop = await gym_matching_cog.find_nearest_stop(lure_coordinates, ctx.guild.id)
                 stop_info, stop_location, stop_url = await gym_matching_cog.get_poi_info(ctx, test_stop, "lure", dupe_check=False, autocorrect=False)
                 if stop_url:
                     location = stop_location
@@ -1270,7 +1270,7 @@ class Huntr(commands.Cog):
                 gym_matching_cog.gym_data = gym_matching_cog.init_json()
                 gym_matching_cog.stop_data = gym_matching_cog.init_stop_json()
             elif invasion_coordinates in str(gym_matching_cog.get_stops(ctx.guild.id)):
-                test_stop = await gym_matching_cog.find_nearest_stop((invasion_coordinates.split(",")[0], invasion_coordinates.split(",")[1]), ctx.guild.id)
+                test_stop = await gym_matching_cog.find_nearest_stop(invasion_coordinates, ctx.guild.id)
                 stop_info, stop_location, stop_url = await gym_matching_cog.get_poi_info(ctx, test_stop, "lure", dupe_check=False, autocorrect=False)
                 if stop_url:
                     location = stop_location
@@ -1762,7 +1762,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Ditto", "gps":"39.645742,-79.96908", "expire":"5 min 0 sec","gender":"male", "height":"0.4", "weight":"6", "moveset":"Quick Attack / Wild Charge", "disguise":"Yanma", "weather":"snowy"}')
+        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Ditto", "gps":"39.637087,-79.954375", "expire":"5 min 0 sec","gender":"male", "height":"0.4", "weight":"6", "moveset":"Quick Attack / Wild Charge", "disguise":"Yanma", "weather":"snowy"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

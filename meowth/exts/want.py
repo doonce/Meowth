@@ -989,7 +989,7 @@ class Want(commands.Cog):
 
         Usage: !want settings"""
         await ctx.trigger_typing()
-        user_mute = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', {"raid":False, "invasion":False, "lure":False, "wild":False, "research":False, "nest":False, "trade":False})
+        user_mute = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', {"raid":False, "invasion":False, "lure":False, "wild":False, "research":False, "nest":False, "trade":False})
         mute_options = ["raid", "invasion", "lure", "wild", "research", "nest", "trade"]
         start_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_start', None)
         end_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_end', None)
@@ -1093,7 +1093,7 @@ class Want(commands.Cog):
         """Changes your want category (pokemon, type, item, etc.) preferences per report type (research, wild, invasion, etc.).
 
         Usage: !want categories"""
-        categories = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {})
+        categories = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {})
         category_list = ["pokemon", "pokestop", "item", "type"]
         pokemon_options = ["wild", "research", "invasion", "nest", "trade", "raid"]
         pokestop_options = ["research", "wild", "lure", "invasion"]

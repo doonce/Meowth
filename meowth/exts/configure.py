@@ -705,6 +705,7 @@ class Configure(commands.Cog):
                 self.bot.guild_dict[guild.id]['configure_dict'] = ctx.config_dict_temp
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Meowth! Alright! Your settings have been saved and I'm ready to go! If you need to change any of these settings, just type **!configure** in your server again. I'll DM you a summary of my configuration.")).set_author(name=_('Configuration Complete'), icon_url=self.bot.user.avatar_url))
                 await self.configure_summary(ctx)
+                trainers_set = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})
             await self.end_configure(ctx)
 
     @configure.command(name='all')

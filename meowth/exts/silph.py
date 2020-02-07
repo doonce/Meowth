@@ -295,7 +295,7 @@ class Silph(commands.Cog):
         """Links a server member to a Silph Road Travelers Card.
 
         To reset use !silph clear"""
-        trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
+        trainers = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})
         author = trainers.get(ctx.author.id, {})
         silph_command = self.bot.get_command("silphcard")
         if author.get('silphid') and (silph_user.lower() == "clear" or silph_user.lower() == "reset"):
@@ -355,7 +355,7 @@ class Silph(commands.Cog):
         """Displays a user's Silph Road Trainer Card."""
         guild_data = ctx.bot.guild_dict[ctx.guild.id]
         if not silph_user:
-            silph_user = guild_data['trainers'].setdefault(ctx.author.id, {}).get('silphid', None)
+            silph_user = guild_data.setdefault('trainers', {}).setdefault(ctx.author.id, {}).get('silphid', None)
             if not silph_user:
                 return await ctx.error(f"You haven't setup a silphcard!")
         else:

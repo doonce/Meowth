@@ -10,7 +10,9 @@ import aiohttp
 import os
 import json
 import functools
+import math
 from dateutil.relativedelta import relativedelta
+from scipy import spatial
 
 import discord
 from discord.ext import commands, tasks
@@ -58,24 +60,35 @@ class GymMatching(commands.Cog):
             match = pois[match]['alias']
         return(match, score)
 
+    def haversine_distance(self, origin, destination):
+        lat1, lon1 = origin
+        lat2, lon2 = destination
+        radius = 6371 # km
+
+        dlat = math.radians(lat2-lat1)
+        dlon = math.radians(lon2-lon1)
+        a = math.sin(dlat/2) * math.sin(dlat/2) + math.cos(math.radians(lat1)) \
+            * math.cos(math.radians(lat2)) * math.sin(dlon/2) * math.sin(dlon/2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        d = radius * c
+        return d
+
     async def find_nearest_stop(self, coord, guild_id):
         stops = self.get_stops(guild_id)
         if not stops:
             return None
-        stop_search = {k: (float(stops[k]["coordinates"].split(",")[0]), float(stops[k]["coordinates"].split(",")[1])) for k,v in stops.items()}
-        dist = lambda s, key: (float(s[0]) - float(stop_search[key][0])) ** 2 + \
-                              (float(s[1]) - float(stop_search[key][1])) ** 2
-        nearest_stop = min(stop_search, key=functools.partial(dist, coord))
+        search_dict = {self.haversine_distance((float(stops[k]['coordinates'].split(',')[0]), float(stops[k]['coordinates'].split(',')[1])), (float(coord.split(',')[0]), float(coord.split(',')[1]))):k for k,v in stops.items()}
+        nearest_stop = min(list(search_dict.keys()))
+        nearest_stop = search_dict[nearest_stop]
         return stops[nearest_stop].get('alias', nearest_stop)
 
     async def find_nearest_gym(self, coord, guild_id):
         gyms = self.get_gyms(guild_id)
         if not gyms:
             return None
-        gym_search = {k: (float(gyms[k]["coordinates"].split(",")[0]), float(gyms[k]["coordinates"].split(",")[1])) for k,v in gyms.items()}
-        dist = lambda s, key: (float(s[0]) - float(gym_search[key][0])) ** 2 + \
-                              (float(s[1]) - float(gym_search[key][1])) ** 2
-        nearest_gym = min(gym_search, key=functools.partial(dist, coord))
+        search_dict = {self.haversine_distance((float(gyms[k]['coordinates'].split(',')[0]), float(gyms[k]['coordinates'].split(',')[1])), (float(coord.split(',')[0]), float(coord.split(',')[1]))):k for k,v in gyms.items()}
+        nearest_gym = min(list(search_dict.keys()))
+        nearest_gym = search_dict[nearest_gym]
         return gyms[nearest_gym].get('alias', nearest_gym)
 
     async def find_nearest_poi(self, coord, guild_id):
@@ -84,10 +97,9 @@ class GymMatching(commands.Cog):
         if not gyms and not stops:
             return None
         pois = {**gyms, **stops}
-        poi_search = {k: (float(pois[k]["coordinates"].split(",")[0]), float(pois[k]["coordinates"].split(",")[1])) for k,v in pois.items()}
-        dist = lambda s, key: (float(s[0]) - float(poi_search[key][0])) ** 2 + \
-                              (float(s[1]) - float(poi_search[key][1])) ** 2
-        nearest_poi = min(poi_search, key=functools.partial(dist, coord))
+        search_dict = {self.haversine_distance((float(pois[k]['coordinates'].split(',')[0]), float(pois[k]['coordinates'].split(',')[1])), (float(coord.split(',')[0]), float(coord.split(',')[1]))):k for k,v in pois.items()}
+        nearest_poi = min(list(search_dict.keys()))
+        nearest_poi = search_dict[nearest_poi]
         return pois[nearest_poi].get('alias', nearest_poi)
 
     def do_gym_stats(self, guild_id, channel_dict):

@@ -634,12 +634,12 @@ class Pokemon():
         purified = re.search(r'\bpurified\b', argument, re.IGNORECASE)
         match_list = []
         form_list = []
-        shiny = False
         if shiny:
             match_list.append(shiny.group(0))
             argument = re.sub(shiny.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
             shiny = True
-        shadow = False
+        else:
+            shiny = False
         if shadow:
             match_list.append(shadow.group(0))
             argument = re.sub(shadow.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
@@ -648,6 +648,8 @@ class Pokemon():
             match_list.append(purified.group(0))
             argument = re.sub(purified.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
             shadow = "purified"
+        else:
+            shadow = False
         gender = None
         if male:
             match_list.append(male.group(0))

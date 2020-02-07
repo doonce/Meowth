@@ -422,7 +422,7 @@ class Tutorial(commands.Cog):
                 description=f"Great job!"))
 
             try:
-                wild_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['reports']['wild']
+                wild_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(wild_ctx.author.id, {}).setdefault('reports', {}).setdefault('wild', 0)
                 ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['reports']['wild'] = wild_reports - 1
             except KeyError:
                 pass
@@ -540,10 +540,10 @@ class Tutorial(commands.Cog):
 
         try:
             if "level" in raid_channel.name:
-                egg_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['reports']['egg']
+                egg_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(raid_ctx.author.id, {}).setdefault('reports', {}).setdefault('egg', {})
                 ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['reports']['egg'] = egg_reports - 1
             else:
-                raid_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['reports']['raid']
+                raid_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(raid_ctx.author.id, {}).setdefault('reports', {}).setdefault('raid', {})
                 ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['reports']['raid'] = raid_reports - 1
         except KeyError:
             pass
@@ -702,7 +702,7 @@ class Tutorial(commands.Cog):
             # acknowledge and wait a second before continuing
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Great job!"))
             try:
-                research_reports = ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['reports']['research']
+                research_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(research_ctx.author.id, {}).setdefault('reports', {}).setdefault('research', {})
                 ctx.bot.guild_dict[ctx.guild.id]['trainers'][research_ctx.author.id]['reports']['research'] = research_reports - 1
             except KeyError:
                 pass

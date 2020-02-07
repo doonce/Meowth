@@ -272,7 +272,7 @@ class MeowthBot(commands.AutoShardedBot):
                 if role.name.lower() in self.pkmn_list and role != guild.me.top_role:
                     await role.delete()
             type_list = ["raid", "egg", "ex", "wild", "research", "nest", "lure", "invasion", "trade", "pvp"]
-            for trainer in self.guild_dict[guild.id].get('trainers', []):
+            for trainer in self.guild_dict[guild.id].setdefault('trainers', {}):
                 if isinstance(self.guild_dict[guild.id]['trainers'][trainer].get('alerts', {}).get('settings', {}).get('mute', True), (int, float)):
                     if self.guild_dict[guild.id]['trainers'][trainer].get('alerts', {}).get('settings', {}).get('mute'):
                         self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['mute'] = {"raid":True, "invasion":True, "lure":True, "wild":True, "research":True, "nest":True, "trade":True}

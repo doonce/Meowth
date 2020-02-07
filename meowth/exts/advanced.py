@@ -70,7 +70,7 @@ class Advanced(commands.Cog):
         except (discord.errors.NotFound, AttributeError, discord.Forbidden):
             return
         if payload.emoji.name =='\U00002705' and message.id == 644615360968130603:
-            categories = self.bot.guild_dict[guild.id]['trainers'].setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}).setdefault('pokemon', {})
+            categories = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}).setdefault('pokemon', {})
             self.bot.guild_dict[guild.id]['trainers'][user.id]['alerts']['settings']['categories']['pokemon']['trade'] = True
 
 def setup(bot):
