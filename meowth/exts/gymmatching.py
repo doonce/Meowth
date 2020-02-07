@@ -12,7 +12,6 @@ import json
 import functools
 import math
 from dateutil.relativedelta import relativedelta
-from scipy import spatial
 
 import discord
 from discord.ext import commands, tasks
