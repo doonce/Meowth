@@ -79,7 +79,9 @@ class GymMatching(commands.Cog):
         search_dict = {self.haversine_distance((float(stops[k]['coordinates'].split(',')[0]), float(stops[k]['coordinates'].split(',')[1])), (float(coord.split(',')[0]), float(coord.split(',')[1]))):k for k,v in stops.items()}
         nearest_stop = min(list(search_dict.keys()))
         nearest_stop = search_dict[nearest_stop]
-        return stops[nearest_stop].get('alias', nearest_stop)
+        if stops[nearest_stop].get('alias'):
+            nearest_stop = stops[nearest_stop]['alias']
+        return nearest_stop
 
     async def find_nearest_gym(self, coord, guild_id):
         gyms = self.get_gyms(guild_id)
@@ -88,7 +90,9 @@ class GymMatching(commands.Cog):
         search_dict = {self.haversine_distance((float(gyms[k]['coordinates'].split(',')[0]), float(gyms[k]['coordinates'].split(',')[1])), (float(coord.split(',')[0]), float(coord.split(',')[1]))):k for k,v in gyms.items()}
         nearest_gym = min(list(search_dict.keys()))
         nearest_gym = search_dict[nearest_gym]
-        return gyms[nearest_gym].get('alias', nearest_gym)
+        if gyms[nearest_gym].get('alias'):
+            nearest_gym = gyms[nearest_gym]['alias']
+        return nearest_gym
 
     async def find_nearest_poi(self, coord, guild_id):
         gyms = self.get_gyms(guild_id)
@@ -99,7 +103,9 @@ class GymMatching(commands.Cog):
         search_dict = {self.haversine_distance((float(pois[k]['coordinates'].split(',')[0]), float(pois[k]['coordinates'].split(',')[1])), (float(coord.split(',')[0]), float(coord.split(',')[1]))):k for k,v in pois.items()}
         nearest_poi = min(list(search_dict.keys()))
         nearest_poi = search_dict[nearest_poi]
-        return pois[nearest_poi].get('alias', nearest_poi)
+        if pois[nearest_poi].get('alias'):
+            nearest_poi = pois[nearest_poi]['alias']
+        return nearest_poi
 
     def do_gym_stats(self, guild_id, channel_dict):
         trainers = 0

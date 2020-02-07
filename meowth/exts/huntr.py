@@ -887,13 +887,13 @@ class Huntr(commands.Cog):
             return
         level = utils.get_level(ctx.bot, str(pokemon))
         matched_boss = False
-        for boss in self.bot.raid_dict[str(egg_level)]:
+        for boss in self.bot.raid_dict[str(level)]:
             if isinstance(boss, pkmn_class.Pokemon) and str(boss) == str(pokemon):
                 pokemon = copy.copy(boss)
                 matched_boss = True
                 break
         if not matched_boss:
-            for boss in self.bot.raid_dict[str(egg_level)]:
+            for boss in self.bot.raid_dict[str(level)]:
                 if isinstance(boss, pkmn_class.Pokemon) and boss and boss.id == pokemon.id:
                     pokemon = copy.copy(boss)
                     break
