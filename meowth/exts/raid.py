@@ -211,6 +211,18 @@ class Raid(commands.Cog):
         if guild.id not in list(self.bot.guild_dict.keys()):
             return
         report_dict = await utils.get_report_dict(self.bot, channel)
+        if message.author == self.bot.user and report_dict:
+            if message.id == self.bot.guild_dict.get(guild.id, {}).get(report_dict, {}).get(message.channel.id, {}).get('raid_message'):
+                raid_message = await channel.send(message.content, embed=message.embeds[0] if message.embeds else None)
+                self.bot.guild_dict[guild.id][report_dict][message.channel.id]['raid_message'] = raid_message.id
+            elif message.id == self.bot.guild_dict.get(guild.id, {}).get(report_dict, {}).get(message.channel.id, {}).get('weather_msg'):
+                weather_msg = await channel.send(message.content, embed=message.embeds[0] if message.embeds else None)
+                self.bot.guild_dict[guild.id][report_dict][message.channel.id]['weather_msg'] = weather_msg.id
+            elif message.id == self.bot.guild_dict.get(guild.id, {}).get(report_dict, {}).get(message.channel.id, {}).get('ctrsmessage'):
+                ctrsmessage = await channel.send(message.content, embed=message.embeds[0] if message.embeds else None)
+                for reaction in message.reactions:
+                    await utils.add_reaction(ctrsmessage, reaction.emoji)
+                self.bot.guild_dict[guild.id][report_dict][message.channel.id]['ctrsmessage'] = ctrsmessage.id
         if channel.id in self.bot.guild_dict.get(guild.id, {}).get(report_dict, {}) and self.bot.guild_dict[guild.id]['configure_dict'].setdefault('archive', {}).setdefault('enabled', False):
             if message.content.strip() == "!archive":
                 self.bot.guild_dict[guild.id][report_dict][channel.id]['archive'] = True
@@ -242,21 +254,17 @@ class Raid(commands.Cog):
                         count = 1
                     if message.content.startswith("❓"):
                         emoji_count = message.content.count("❓")
-                        await self._rsvp(ctx, "maybe", str(emoji_count))
-                        return
+                        return await self._rsvp(ctx, "maybe", str(emoji_count))
                     elif message.content.startswith(omw_emoji):
                         emoji_count = message.content.count(omw_emoji)
-                        await self._rsvp(ctx, "coming", str(emoji_count))
-                        return
+                        return await self._rsvp(ctx, "coming", str(emoji_count))
                     elif message.content.startswith(here_emoji) or message.content.startswith("🚁"):
                         emoji_count = message.content.count(here_emoji)
                         if not emoji_count:
                             emoji_count = message.content.count("🚁")
-                        await self._rsvp(ctx, "here", str(emoji_count))
-                        return
+                        return await self._rsvp(ctx, "here", str(emoji_count))
                     elif message.content.startswith("❌"):
-                        await self._cancel(ctx)
-                        return
+                        return await self._cancel(ctx)
                     if "/maps" in message.content and "http" in message.content and 'raidchannel' in report_dict:
                         newcontent = message.content.replace("<", "").replace(">", "")
                         newloc = utils.create_gmaps_query(self.bot, newcontent, message.channel, type=self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['type'])
@@ -473,7 +481,7 @@ class Raid(commands.Cog):
                     await channel.edit(name=new_name)
                     expire_embed = discord.Embed(colour=channel.guild.me.colour, description=f"The channel has been deactivated and will be deleted in 5 minutes.\nTo reactivate the channel, use **!timerset** to set the timer again.")
                     expire_embed.set_author(name=f"This channel timer has expired!")
-                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_speedometer.png?cache=1")
+                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_expired.png?cache=1")
                     await channel.send(embed=expire_embed)
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (5 * 60)) - time.time()
             raidtype = _("event") if self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', False) else _(" raid")
@@ -2020,6 +2028,7 @@ class Raid(commands.Cog):
         report_emoji = self.bot.custom_emoji.get('raid_report', u'\U0001F4E2')
         list_emoji = self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         react_list = [maybe_reaction, omw_reaction, here_reaction, cancel_reaction]
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         raid_split = content.split()
         if len(raid_split) == 0:
@@ -2135,11 +2144,17 @@ class Raid(commands.Cog):
             await self._timerset(raid_channel, raidexp)
         else:
             await raid_channel.send(f"Meowth! Hey {ctx.author.mention}, if you can, set the time left on the raid using **{ctx.prefix}timerset <minutes>** so others can check it with **{ctx.prefix}timer**.")
+        weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
+        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
+        if weather:
+            weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+        weather_msg = await raid_channel.send(embed=weather_embed)
+        ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['weather_msg'] = weather_msg.id
         ctrs_dict = await self._get_generic_counters(ctx.channel, str(pokemon), weather)
         if str(level) in self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('counters', {}).setdefault('auto_levels', []):
             try:
                 embed = ctrs_dict[0]['embed'] if ctrs_dict else None
-                ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
+                ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
                 ctrsmessage = await raid_channel.send(ctrsmsg, embed=embed)
                 ctrsmessage_id = ctrsmessage.id
                 await ctrsmessage.pin()
@@ -2177,6 +2192,7 @@ class Raid(commands.Cog):
 
     async def _raidegg(self, ctx, content):
         message = ctx.message
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         raidexp = False
         hourminute = False
@@ -2305,6 +2321,12 @@ class Raid(commands.Cog):
             await self._timerset(raid_channel, raidexp)
         else:
             await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=ctx.author.mention))
+        weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
+        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
+        if weather:
+            weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+        weather_msg = await raid_channel.send(embed=weather_embed)
+        ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['weather_msg'] = weather_msg.id
         self.bot.loop.create_task(self.expiry_check(raid_channel))
         if not ctx.author.bot:
             egg_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('egg', 0) + 1
@@ -2378,7 +2400,7 @@ class Raid(commands.Cog):
         report_dict = await utils.get_report_dict(ctx.bot, raid_channel)
         if 'raidchannel' not in str(report_dict):
             return
-        eggdetails = self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]
+        eggdetails = self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]
         report_channel = self.bot.get_channel(eggdetails['report_channel'])
         egg_level = eggdetails['egg_level']
         manual_timer = eggdetails['manual_timer']
@@ -2409,14 +2431,14 @@ class Raid(commands.Cog):
         pokemon.weather = weather
         if pokemon.name.lower() not in boss_list:
             return
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pokemon'] = pokemon.name.lower()
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
+        self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]['pokemon'] = pokemon.name.lower()
+        self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
         oldembed = raid_message.embeds[0]
         raid_gmaps_link = oldembed.url
         shiny_str = ""
-        if pokemon and "raid" in pokemon.shiny_available:
+        if "raid" in pokemon.shiny_available:
             shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-        raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=oldembed.description, url=raid_gmaps_link, colour=raid_channel.guild.me.colour)
+        raid_embed = discord.Embed(title=_('Meowth! Click here for directions to the coming level {level} raid!').format(level=egg_level), description=oldembed.description, url=raid_gmaps_link, colour=ctx.guild.me.colour)
         raid_embed.add_field(name=_('**Details:**'), value=f"{shiny_str}{str(pokemon)} {pokemon.emoji}\n{pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         raid_embed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=pokemon.weakness_emoji), inline=True)
         index = 0
@@ -2440,11 +2462,13 @@ class Raid(commands.Cog):
             await egg_report.edit(new_content=egg_report.content, embed=raid_embed, content=egg_report.content)
         except discord.errors.NotFound:
             egg_report = None
-        await raid_channel.send(f"Meowth! This egg will be assumed to be {str(pokemon)} when it hatches!")
+        assume_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=pokemon.img_url)
+        assume_embed.add_field(name=f"Raid Assumed", value=f"Meowth! This egg will be assumed to be {str(pokemon)} when it hatches!")
+        await raid_channel.send(embed=assume_embed)
         ctrs_dict = await self._get_generic_counters(ctx.channel, str(pokemon), weather)
-        if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('counters', {}).get('auto_levels', []):
+        if str(egg_level) in self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('counters', {}).get('auto_levels', []):
             embed = ctrs_dict[0]['embed'] if ctrs_dict else None
-            ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
+            ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=embed)
             ctrsmessage_id = ctrsmessage.id
             await ctrsmessage.pin()
@@ -2455,7 +2479,7 @@ class Raid(commands.Cog):
             ctrsmessage_id = eggdetails.get('ctrsmessage', None)
         eggdetails['ctrs_dict'] = ctrs_dict
         eggdetails['ctrsmessage'] = ctrsmessage_id
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id] = eggdetails
+        self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id] = eggdetails
 
     async def _eggtoraid(self, entered_raid, raid_channel, author=None, moveset=None):
         report_dict = await utils.get_report_dict(self.bot, raid_channel)
@@ -2498,6 +2522,16 @@ class Raid(commands.Cog):
         raid_coordinates = eggdetails.get('coordinates')
         if raid_coordinates:
             weather = await self.auto_weather(ctx, raid_coordinates)
+            if weather != eggdetails.get('weather'):
+                weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
+                weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
+                if weather:
+                    weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+                try:
+                    weather_msg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['weather_msg'])
+                    await weather_msg.edit(embed=weather_embed)
+                except:
+                    pass
         pokemon.weather = weather
         pokemon.shiny = False
         pokemon.gender = False
@@ -2566,7 +2600,9 @@ class Raid(commands.Cog):
                 if not user:
                     continue
                 trainer_list.append(user.mention)
-        hatch_msg = await raid_channel.send(content=f"Meowth! {'Trainers ' if trainer_list else ''}{(', ').join(trainer_list)+': ' if trainer_list else ''}The raid egg has just hatched into a {str(pokemon)} raid!")
+        hatch_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=pokemon.img_url)
+        hatch_embed.add_field(name="**Raid Hatched**", value=f"Meowth! {'Trainers ' if trainer_list else ''}{(', ').join(trainer_list)+': ' if trainer_list else ''}The raid egg has just hatched into a {str(pokemon)} raid!")
+        hatch_msg = await raid_channel.send(embed=hatch_embed)
         ctx = await self.bot.get_context(hatch_msg)
         ctx.raidreport = egg_report
         ctx.raid_channel = raid_channel
@@ -2601,10 +2637,10 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['moveset'] = 0
         raid_channel_name = await self.edit_channel_name(raid_channel)
         await raid_channel.edit(name=raid_channel_name, topic=end.strftime(_('Ends on %B %d at %I:%M %p (%H:%M)')))
-        ctrs_dict = await self._get_generic_counters(raid_channel, str(pokemon), eggdetails.get('weather', None))
+        ctrs_dict = await self._get_generic_counters(raid_channel, str(pokemon), weather)
         if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('counters', {}).get('auto_levels', []) and str(pokemon) and not ctrsmessage:
             embed = ctrs_dict[0]['embed'] if ctrs_dict else None
-            ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
+            ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
             ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=embed)
             ctrsmessage_id = ctrsmessage.id
             await ctrsmessage.pin()
@@ -3844,7 +3880,7 @@ class Raid(commands.Cog):
         report_dict = await utils.get_report_dict(self.bot, channel)
         type = self.bot.guild_dict[guild.id][report_dict][channel.id]['type']
         timerset_embed = discord.Embed(colour=channel.guild.me.colour).set_author(name="Channel Timer")
-        timerset_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_speedometer.png?cache=1")
+        timerset_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
         if ctx.invoked_with == "timer":
             timerstr = await self.print_raid_timer(ctx.channel)
             if checks.check_exraidchannel(ctx) or checks.check_meetupreport(ctx) or checks.check_trainchannel(ctx):
@@ -4012,7 +4048,9 @@ class Raid(commands.Cog):
             endtime = end.strftime(_('%B %d at %I:%M %p (%H:%M)'))
             field_name = "**Expires:**"
         timerstr = await self.print_raid_timer(raidchannel)
-        await raidchannel.send(timerstr)
+        timerset_embed = discord.Embed(colour=raidchannel.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
+        timerset_embed.add_field(name=f"**Channel Timer**", value=f"{timerstr}")
+        await raidchannel.send(embed=timerset_embed)
         raid_channel_name = await self.edit_channel_name(raidchannel)
         await raidchannel.edit(name=raid_channel_name, topic=topicstr)
         report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id][report_dict][raidchannel.id]['report_channel'])
@@ -4230,7 +4268,9 @@ class Raid(commands.Cog):
         for index, m in enumerate(moves):
             if m.lower() in self.bot.move_info.keys():
                 moves[index] = f"{m} {utils.type_to_emoji(self.bot, self.bot.move_info[m.lower()]['type'])}"
-        await channel.send(f"This {str(pokemon)}'s {'moves are' if len(moves)>1 else 'move is'}: **{(' / ').join([x.title() for x in moves])}**")
+        moveset_embed = discord.Embed(colour=channel.guild.me.colour).set_thumbnail(url=pokemon.img_url)
+        moveset_embed.add_field(name=f"**Boss Moveset**", value=f"This {str(pokemon)}'s {'moves are' if len(moves)>1 else 'move is'}: **{(' / ').join([x.title() for x in moves])}**")
+        await channel.send(embed=moveset_embed)
         try:
             raid_msg = await channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][channel.id]['raid_message'])
         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
@@ -5097,6 +5137,7 @@ class Raid(commands.Cog):
         Usage: !weather <weather>
         Only usable in raid channels.
         Acceptable options: none, extreme, clear, rainy, partlycloudy, cloudy, windy, snowy, foggy"""
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         report_dict = await utils.get_report_dict(ctx.bot, ctx.channel)
         weather_list = [_('none'), _('extreme'), _('clear'), _('sunny'), _('rainy'),
                         _('partlycloudy'), _('cloudy'), _('windy'), _('snowy'), _('foggy')]
@@ -5120,6 +5161,16 @@ class Raid(commands.Cog):
             else:
                 return await ctx.channel.send(_("Meowth! Enter one of the following weather conditions: {}").format(", ".join(weather_list)), delete_after=10)
             self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['weather'] = weather
+            weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
+            weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. If this changes you can set the correct weather using **{ctx.prefix}weather**.")
+            if weather:
+                weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+            try:
+                weather_msg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['weather_msg'])
+                await weather_msg.edit(embed=weather_embed)
+            except:
+                pass
+            await ctx.channel.send(embed=weather_embed)
             pkmn = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('pkmn_obj', None)
             if pkmn:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
@@ -5151,7 +5202,6 @@ class Raid(commands.Cog):
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
                         pass
                     self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['ctrs_dict'] = ctrs_dict
-            return await ctx.channel.send(_("Meowth! Weather set to {}!").format(weather.lower()))
 
     """
     Status Management
@@ -5279,7 +5329,7 @@ class Raid(commands.Cog):
     async def _edit_party(self, channel, author=None):
         report_dict = await utils.get_report_dict(self.bot, channel)
         egg_level = self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['egg_level']
-        pokemon = self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['pokemon']
+        pokemon = self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['pkmn_obj']
         channel_dict, boss_dict = await self._get_party(channel, author)
         display_list = []
         if egg_level != "0":
@@ -5317,8 +5367,14 @@ class Raid(commands.Cog):
                     if _('weakness') in field.name.lower() or _('details') in field.name.lower():
                         newembed.add_field(name=field.name, value=field.value, inline=field.inline)
             else:
-                if len(boss_dict.keys()) == 1 or pokemon:
-                    boss = self.bot.raid_info['raid_eggs'][str(egg_level)]['pokemon'][0]
+                if pokemon:
+                    newembed.add_field(name=_("**Boss Interest:**") if channel_dict["boss"] > 0 else _("**Possible Bosses:**"), value=_('{bosslist1}').format(bosslist1='\n'.join(display_list)), inline=True)
+                    newembed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=boss_dict[str(pokemon).lower()]['weakness']), inline=True)
+                elif len(boss_dict.keys()) == 1:
+                    for boss in self.bot.raid_dict[str(egg_level)]:
+                        if isinstance(boss, pkmn_class.Pokemon):
+                            print(boss)
+                            break
                     newembed.add_field(name=_("**Boss Interest:**") if channel_dict["boss"] > 0 else _("**Possible Bosses:**"), value=_('{bosslist1}').format(bosslist1='\n'.join(display_list)), inline=True)
                     newembed.add_field(name=_('**Weaknesses:**'), value=_('{weakness_list}\u200b').format(weakness_list=boss_dict[str(boss).lower()]['weakness']), inline=True)
                 elif len(boss_dict.keys()) > 1:

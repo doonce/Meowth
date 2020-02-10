@@ -851,6 +851,7 @@ class Huntr(commands.Cog):
         if not dm_dict:
             dm_dict = {}
         raid_cog = self.bot.cogs.get('Raid')
+        bot_account = ctx.author
         if report_user:
             ctx.author, ctx.message.author = report_user, report_user
         message = ctx.message
@@ -995,11 +996,20 @@ class Huntr(commands.Cog):
         if not ctx.prefix:
             prefix = self.bot._get_prefix(self.bot, ctx.message)
             ctx.prefix = prefix[-1]
-        await raid_channel.send(f"This raid was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.\nThe weather may be inaccurate for this raid, use **{ctx.prefix}weather** to set the correct weather.")
+        if bot_account.bot:
+            duplicate_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=bot_account.avatar_url)
+            duplicate_embed.add_field(name=f"**Bot Reported Channel**", value=f"This raid was reported by a bot ({bot_account.mention}). If it is a duplicate of a channel already reported by a human, I can remove it with three **{ctx.prefix}duplicate** messages.")
+            duplicate_msg = await raid_channel.send(embed=duplicate_embed)
+        weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
+        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
+        if weather:
+            weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+        weather_msg = await raid_channel.send(embed=weather_embed)
+        ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['weather_msg'] = weather_msg.id
         ctrs_dict = await raid_cog._get_generic_counters(message.channel, str(pokemon), weather)
         if str(level) in ctx.bot.guild_dict[message.guild.id]['configure_dict'].get('counters', {}).get('auto_levels', []):
             try:
-                ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! Update weather with **!weather**. If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
+                ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
                 ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
                 ctrsmessage_id = ctrsmessage.id
                 await ctrsmessage.pin()
@@ -1034,6 +1044,7 @@ class Huntr(commands.Cog):
         if not dm_dict:
             dm_dict = {}
         raid_cog = self.bot.cogs.get('Raid')
+        bot_account = ctx.author
         if report_user:
             ctx.author, ctx.message.author = report_user, report_user
         message = ctx.message
@@ -1144,9 +1155,16 @@ class Huntr(commands.Cog):
         }
         if raidexp is not False:
             await raid_cog._timerset(raid_channel, raidexp)
-        else:
-            await raid_channel.send(content=_('Meowth! Hey {member}, if you can, set the time left until the egg hatches using **!timerset <minutes>** so others can check it with **!timer**.').format(member=message.author.mention))
-        await raid_channel.send(f"This egg was reported by a bot. If it is a duplicate of a raid already reported by a human, I can delete it with three **!duplicate** messages.\nThe weather may be inaccurate for this raid, use **{ctx.prefix}weather** to set the correct weather.")
+        if bot_account.bot:
+            duplicate_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=bot_account.avatar_url)
+            duplicate_embed.add_field(name=f"**Bot Reported Channel**", value=f"This raid was reported by a bot ({bot_account.mention}). If it is a duplicate of a channel already reported by a human, I can remove it with three **{ctx.prefix}duplicate** messages.")
+            duplicate_msg = await raid_channel.send(embed=duplicate_embed)
+        weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
+        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
+        if weather:
+            weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+        weather_msg = await raid_channel.send(embed=weather_embed)
+        ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['weather_msg'] = weather_msg.id
         if len(ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
             await raid_cog._eggassume(ctx, str(ctx.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0]), raid_channel)
         elif egg_level == "5" and ctx.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {}).get('regional', None) in ctx.bot.raid_list:
