@@ -930,11 +930,14 @@ class Huntr(commands.Cog):
                     with open(os.path.join('data', 'gym_data.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
                 else:
-                    with open(os.path.join('data', 'gym_data.json'), 'r') as fd:
-                        data = json.load(fd)
+                    try:
+                        with open(os.path.join('data', 'gym_data.json'), 'r') as fd:
+                            data = json.load(fd)
+                    except:
+                        data = {}
                     add_gym_dict = {}
                     add_gym_dict[raid_details] = {"coordinates":raid_coordinates, "alias":"", "notes":""}
-                    data[str(ctx.guild.id)] = {**data[str(ctx.guild.id)], **add_gym_dict}
+                    data[str(ctx.guild.id)] = {**data.get(str(ctx.guild.id), {}), **add_gym_dict}
                     with open(os.path.join('data', 'gym_data.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
                 gym_matching_cog.gym_data = gym_matching_cog.init_json()
@@ -1082,11 +1085,14 @@ class Huntr(commands.Cog):
                     with open(os.path.join('data', 'gym_data.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
                 else:
-                    with open(os.path.join('data', 'gym_data.json'), 'r') as fd:
-                        data = json.load(fd)
+                    try:
+                        with open(os.path.join('data', 'gym_data.json'), 'r') as fd:
+                            data = json.load(fd)
+                    except:
+                        data = {}
                     add_gym_dict = {}
                     add_gym_dict[raid_details] = {"coordinates":raid_coordinates, "alias":"", "notes":""}
-                    data[str(ctx.guild.id)] = {**data[str(ctx.guild.id)], **add_gym_dict}
+                    data[str(ctx.guild.id)] = {**data.get(str(ctx.guild.id), {}), **add_gym_dict}
                     with open(os.path.join('data', 'gym_data.json'), 'w') as fd:
                         json.dump(data, fd, indent=2, separators=(', ', ': '))
             elif raid_coordinates in str(gym_matching_cog.get_gyms(ctx.guild.id)):
@@ -1182,11 +1188,14 @@ class Huntr(commands.Cog):
             if stop_url:
                 location = stop_location
             elif location.lower() != "unknown" and quest_coordinates not in str(gym_matching_cog.get_stops(ctx.guild.id)):
-                with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
-                    data = json.load(fd)
+                try:
+                    with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
+                        data = json.load(fd)
+                except:
+                    data = {}
                 add_stop_dict = {}
                 add_stop_dict[location] = {"coordinates":quest_coordinates, "alias":"", "notes":""}
-                data[str(ctx.guild.id)] = {**data[str(ctx.guild.id)], **add_stop_dict}
+                data[str(ctx.guild.id)] = {**data.get(str(ctx.guild.id), {}), **add_stop_dict}
                 with open(os.path.join('data', 'stop_data.json'), 'w') as fd:
                     json.dump(data, fd, indent=2, separators=(', ', ': '))
                 gym_matching_cog.gym_data = gym_matching_cog.init_json()
@@ -1218,11 +1227,14 @@ class Huntr(commands.Cog):
             if stop_url:
                 location = stop_location
             elif location.lower() != "unknown" and lure_coordinates not in str(gym_matching_cog.get_stops(ctx.guild.id)):
-                with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
-                    data = json.load(fd)
+                try:
+                    with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
+                        data = json.load(fd)
+                except:
+                    data = {}
                 add_stop_dict = {}
                 add_stop_dict[location] = {"coordinates":lure_coordinates, "alias":"", "notes":""}
-                data[str(ctx.guild.id)] = {**data[str(ctx.guild.id)], **add_stop_dict}
+                data[str(ctx.guild.id)] = {**data.get(str(ctx.guild.id), {}), **add_stop_dict}
                 with open(os.path.join('data', 'stop_data.json'), 'w') as fd:
                     json.dump(data, fd, indent=2, separators=(', ', ': '))
                 gym_matching_cog.gym_data = gym_matching_cog.init_json()
@@ -1260,11 +1272,14 @@ class Huntr(commands.Cog):
             if stop_url:
                 location = stop_location
             elif location.lower() != "unknown" and invasion_coordinates not in str(gym_matching_cog.get_stops(ctx.guild.id)):
-                with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
-                    data = json.load(fd)
+                try:
+                    with open(os.path.join('data', 'stop_data.json'), 'r') as fd:
+                        data = json.load(fd)
+                except:
+                    data = {}
                 add_stop_dict = {}
                 add_stop_dict[location] = {"coordinates":invasion_coordinates, "alias":"", "notes":""}
-                data[str(ctx.guild.id)] = {**data[str(ctx.guild.id)], **add_stop_dict}
+                data[str(ctx.guild.id)] = {**data.get(str(ctx.guild.id), {}), **add_stop_dict}
                 with open(os.path.join('data', 'stop_data.json'), 'w') as fd:
                     json.dump(data, fd, indent=2, separators=(', ', ': '))
                 gym_matching_cog.gym_data = gym_matching_cog.init_json()

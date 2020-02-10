@@ -153,7 +153,10 @@ class Raid(commands.Cog):
                 prefix = self.bot.guild_dict[guild.id]['configure_dict'].setdefault('settings', {}).setdefault('prefix', None)
                 prefix = prefix or self.bot.default_prefix
                 avatar = self.bot.user.avatar_url
-                await utils.get_raid_help(prefix, avatar, user)
+                if report_dict == "raidtrain_dict":
+                    await utils.get_train_help(prefix, avatar, user)
+                else:
+                    await utils.get_raid_help(prefix, avatar, user)
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_maybe', u'\U00002753'):
                 await self._rsvp(ctx, "maybe", teamcounts)
             elif str(payload.emoji) == self.bot.custom_emoji.get('raid_omw', u'\U0001f3ce\U0000fe0f'):
@@ -3374,6 +3377,7 @@ class Raid(commands.Cog):
     async def _train_channel(self, ctx, channel_or_gym):
         location = ""
         raidhour_check = getattr(ctx, "raidhour", False)
+        help_reaction = self.bot.custom_emoji.get('raid_info', u'\U00002139\U0000fe0f')
         if isinstance(channel_or_gym, discord.TextChannel):
             if channel_or_gym.id in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
                 location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel_or_gym.id]['address']
@@ -3398,7 +3402,11 @@ class Raid(commands.Cog):
             manager_embed.add_field(name=f"{ctx.prefix}next [gym name]", value=f"Alert the channel that you are going to a new gym. Example: `!next Hershey Park`. If a route is set, train will move to next gym without needing a gym name", inline=False)
             manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
             await ctx.author.send(embed=manager_embed, delete_after=3600)
-            await train_channel.send(f"{ctx.author.mention}, you can set additional train managers using **{ctx.prefix}train manager <user mention>** and direct the train to a new gym using **{ctx.prefix}train next <channel_or_gym>**. Check your DMs for more instructions!\nOthers can nominate themselves or other people using **{ctx.prefix}train nominate [@mention]**")
+            train_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=f"Raid Train Instructions").set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
+            train_embed.add_field(name="**Assigning Managers**", value=f"**Managers** - You can additional train managers using **{ctx.prefix}train manager <user mention>**\n**Others** - Nominate yourself or other trainers using **{ctx.prefix}train nominate [@mention]**", inline=False)
+            train_embed.add_field(name="**Directing Train**", value=f"**Managers** - You can direct the train to a new gym using **{ctx.prefix}next <channel_or_gym>**\n**Others** - Direct the train using **{ctx.prefix}next vote**", inline=False)
+            train_embed.add_field(name="**Other Commands**", value=f"Use {help_reaction} above to see available commands", inline=False)
+            await train_channel.send(f"{ctx.author.mention}, you are the current manager of this train! Check your DMs for more instructions!", embed=train_embed)
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['managers'] = [ctx.author.id]
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['meetup']['raid'] = True
             utcnow = (datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
@@ -5423,39 +5431,34 @@ class Raid(commands.Cog):
             else:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 boss_list.append(str(pokemon).lower())
-        rgx = '[^a-zA-Z0-9]'
         pkmn_match = None
         if party_info:
-            if "all" in party_info.lower():
-                party_info = "{party_info} {bosslist}".format(party_info=party_info, bosslist=", ".join(boss_list))
-                party_info = party_info.lower().replace("all", "").strip()
-            pkmn_match = next((p for p in self.bot.pkmn_list if re.sub(rgx, '', p) in re.sub(rgx, '', party_info.lower())), None)
-            pkmn_interest = copy.copy(party_info.lower())
-            for sep in pkmn_interest.split(','):
-                for word in sep.split():
-                    if word.isdigit():
-                        continue
-                    if word.lower() not in self.bot.form_dict['list'] and word.lower() not in self.bot.pkmn_list:
-                        pkmn_interest = pkmn_interest.replace(word.lower(), "").strip()
-                    else:
-                        party_info = party_info.lower().replace(word.lower(), "").replace(",", "").strip()
-        if pkmn_match and self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['type'] == "egg":
-            entered_interest = []
-            for mon in pkmn_interest.lower().split(','):
-                pkmn = await pkmn_class.Pokemon.async_get_pokemon(self.bot, mon.lower().strip())
-                if pkmn and str(pkmn).lower() in boss_list:
-                    if str(pkmn).lower() not in entered_interest:
-                        entered_interest.append(str(pkmn).lower())
-                elif mon.lower() in self.bot.pkmn_list:
-                    for boss in boss_list:
-                        if mon.lower() in boss:
-                            entered_interest.append(boss.lower())
-        elif not pkmn_match and self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['type'] == 'egg':
-            entered_interest = boss_list
-            interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
-            if interest:
-                entered_interest = interest
-        if (not party_info):
+            party_info = party_info.lower()
+            pkmn_split = re.split(' |,', party_info)
+            for index, item in enumerate(pkmn_split):
+                if len(item) < 4:
+                    continue
+                pkmn_match = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item)
+                if pkmn_match:
+                    pkmn_split[index] = str(pkmn_match).lower()
+                    party_info = party_info.replace(item, '').strip()
+            if "all" in party_info:
+                pkmn_split = boss_list
+                party_info = party_info.replace('all', '')
+                pkmn_match = True
+            pkmn_split = [x for x in pkmn_split if len(x) >= 4 and x in boss_list]
+            party_info = party_info.replace(',', '').strip()
+            if pkmn_match and self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['type'] == 'egg':
+                entered_interest = []
+                for pkmn in pkmn_split:
+                    if pkmn not in entered_interest:
+                        entered_interest.append(pkmn)
+            elif not pkmn_match and self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['type'] == 'egg':
+                entered_interest = boss_list
+                interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
+                if interest:
+                    entered_interest = interest
+        else:
             if ctx.author.id in trainer_dict:
                 bluecount = str(trainer_dict[ctx.author.id]['party']['mystic']) + 'm '
                 redcount = str(trainer_dict[ctx.author.id]['party']['valor']) + 'v '
@@ -5464,6 +5467,11 @@ class Raid(commands.Cog):
                 party_info = ((((str(trainer_dict[ctx.author.id]['count']) + ' ') + bluecount) + redcount) + yellowcount) + unknowncount
             else:
                 party_info = '1'
+            if self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['type'] == 'egg':
+                entered_interest = boss_list
+                interest = trainer_dict.get(ctx.author.id, {}).get('interest', [])
+                if interest:
+                    entered_interest = interest
         if party_info and party_info.split()[0].isdigit():
             total = int(party_info.split()[0])
         elif (ctx.author.id in trainer_dict) and (sum(trainer_dict[ctx.author.id]['status'].values()) > 0):

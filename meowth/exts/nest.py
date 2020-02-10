@@ -422,7 +422,7 @@ class Nest(commands.Cog):
                 nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
                 nest_embed, nest_pages = await self.get_nest_reports(ctx)
                 nest_embed.set_thumbnail(url=pokemon.img_url)
-                nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the number of the nest you'd like to add a **{pokemon}** report to?\n\nIf you want to stop your report, reply with **cancel**.".format(mention=author.mention, pokemon=pokemon.name.title()))
+                nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, what's the name or number of the nest you'd like to add a **{pokemon}** report to?\n\nIf you want to stop your report, reply with **cancel**.".format(mention=author.mention, pokemon=pokemon.name.title()))
                 list_messages.append(nest_list)
                 for p in nest_pages:
                     nest_embed.description = p
@@ -437,16 +437,19 @@ class Nest(commands.Cog):
                         await utils.safe_delete(msg)
                     error = _("took too long to respond")
                     break
-                if nest_name_reply.content.lower() == "cancel" or not nest_name_reply.content.isdigit():
+                if nest_name_reply.content.lower() == "cancel" or nest_name_reply.content.lower() == "list":
                     await utils.safe_delete(nest_name_reply)
-                    error = _("cancelled the report or didn't enter a number")
+                    error = _("cancelled the report")
                     break
                 else:
                     await utils.safe_delete(nest_name_reply)
-                try:
-                    nest_name = nest_dict['list'][int(nest_name_reply.content)-1]
-                except IndexError:
-                    error = _("entered something invalid")
+                if nest_name_reply.clean_content.lower().isdigit():
+                    try:
+                        nest_name = nest_dict['list'][int(nest_name_reply.content)-1]
+                    except IndexError:
+                        error = _("entered something invalid")
+                elif nest_name_reply.clean_content.lower() in nest_dict.keys():
+                    nest_name = nest_name_reply.clean_content.lower()
                 break
         if not error:
             await self.send_nest(ctx, nest_name, pokemon)

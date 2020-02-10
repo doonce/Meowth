@@ -203,6 +203,29 @@ async def get_raid_help(prefix, avatar, user=None):
         return helpembed
     await user.send(embed=helpembed)
 
+async def get_train_help(prefix, avatar, user=None):
+    helpembed = discord.Embed(colour=discord.Colour.lighter_grey())
+    helpembed.set_author(name="Train Coordination Help", icon_url=avatar)
+    helpembed.add_field(name="Key", value="<> denote required arguments, [] denote optional arguments", inline=False)
+    helpembed.add_field(name="**Train Channel Management Commands**", value="These commands control details of the raid and channel", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}location**", value=f"Displays location of train. You can change raid location by sending a Google Maps URL or by using {prefix}location new <location>", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}train history**", value=f"Displays where the train has gone so far.", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}train route**", value=f"Displays current planned route of the train.", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}next vote**", value=f"Suggest a vote for next train locations.", inline=False)
+    helpembed.add_field(name=f"**RSVP Commands**", value="These commands control your status for the raid", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}i/c/h [total] [teamcounts] [boss list] | {prefix}x**", value="Sets your status to **i**nterested, **c**oming, **h**ere, or cancels your status (x)\n[total] is your total party count, [teamcounts] format looks like `2m 2v 1i` where `m/v/i` tells me your mystic, valor, instinct counts. This is all optional and Meowth will assume a party of 1 if not provided.", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}starting [team]**", value="Starts a train at current location.", inline=False)
+    helpembed.add_field(name=f"**List Commands**", value="These commands list aspects of the raid", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}list [status] [tag]**", value="Main listing function that will show all trainers that have RSVP'd by default. Optionally supply a [status] of interested, coming, here, lobby to see that status. Optionally add `tag` to command to @mention to get trainers' attention", inline=False)
+    helpembed.add_field(name=f"–– **{prefix}list teams**", value="Lists trainers by team", inline=False)
+    helpembed.add_field(
+        name="README",
+        value=f"Visit our [README](https://github.com/doonce/meowth#directions-for-using-meowth) for a full list of commands. You can also use {prefix}tutorial raid to learn more",
+        inline=False)
+    if not user:
+        return helpembed
+    await user.send(embed=helpembed)
+
 def get_number(bot, pkmn_name):
     pkmn_name = pkmn_name.lower()
     try:
@@ -965,7 +988,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v20.2.7.1 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v20.2.9.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
