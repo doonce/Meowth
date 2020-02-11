@@ -2431,9 +2431,19 @@ class Raid(commands.Cog):
                         return
                     pokemon = copy.copy(boss)
                     break
-        pokemon.weather = weather
         if pokemon.name.lower() not in boss_list:
-            return
+            return                    
+        pokemon.weather = weather
+        if weather != eggdetails.get('weather') or pokemon.is_boosted:
+            weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
+            weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
+            if weather:
+                weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+            try:
+                weather_msg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['weather_msg'])
+                await weather_msg.edit(embed=weather_embed)
+            except:
+                pass
         self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]['pokemon'] = pokemon.name.lower()
         self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
         oldembed = raid_message.embeds[0]
@@ -5013,10 +5023,12 @@ class Raid(commands.Cog):
                 if raid_id == channel.id:
                     continue
                 if self.bot.guild_dict[guild_id]['raidchannel_dict'][raid_id].get('pkmn_obj') == str(pokemon):
-                    if self.bot.guild_dict[guild_id]['raidchannel_dict'][raid_id].get('weather', None) == weather:
-                        ctrs_dict = self.bot.guild_dict[guild_id]['raidchannel_dict'][raid_id].get('ctrs_dict', {})
-                        if ctrs_dict:
-                            return ctrs_dict
+                    ctrs_dict = self.bot.guild_dict[guild_id]['raidchannel_dict'][raid_id].get('ctrs_dict', {})
+                    if not ctrs_dict:
+                        continue
+                    ctr_weather = ctrs_dict[0]['embed'].author.name.split(' | ')[1].lower().replace('overcast', 'cloudy').replace('no weather', 'None').strip()
+                    if ctr_weather == str(weather):
+                        return ctrs_dict
         ctrs_dict = {}
         ctrs_index = 0
         ctrs_dict[ctrs_index] = {}
@@ -5203,9 +5215,6 @@ class Raid(commands.Cog):
                 weather = "foggy"
             elif "none" in weather.lower() or "extreme" in weather.lower():
                 weather = None
-            else:
-                return await ctx.channel.send(_("Meowth! Enter one of the following weather conditions: {}").format(", ".join(weather_list)), delete_after=10)
-            self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['weather'] = weather
             pkmn = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('pkmn_obj', None)
             if pkmn:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
@@ -5222,7 +5231,7 @@ class Raid(commands.Cog):
                 await weather_msg.edit(embed=weather_embed)
             except:
                 pass
-            await ctx.channel.send(embed=weather_embed, delete_after=600)
+            await ctx.channel.send(embed=weather_embed, delete_after=30)
             if pokemon:
                 try:
                     raid_message = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['raid_message'])
@@ -5251,6 +5260,7 @@ class Raid(commands.Cog):
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, KeyError):
                         pass
                     self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['ctrs_dict'] = ctrs_dict
+            self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['weather'] = weather
 
     """
     Status Management

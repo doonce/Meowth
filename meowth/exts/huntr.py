@@ -1768,7 +1768,7 @@ class Huntr(commands.Cog):
         random_raid = random.choice(ctx.bot.raid_info['raid_eggs']["5"]['pokemon'])
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, random_raid)
         embed = discord.Embed(title="Title", description="Embed Description")
-        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":"shinx", "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":f"{pokemon.quick_moves[0].title()} / {pokemon.charge_moves[0].title()}", "raidexp":10}).replace("'", '"'), embed=embed)
+        huntrmessage = await ctx.channel.send('!alarm ' + str({"type":"raid", "pokemon":random_raid, "gym":"Marilla Park", "gps":"39.628941,-79.935063", "moves":f"{pokemon.quick_moves[0].title()} / {pokemon.charge_moves[0].title()}", "raidexp":10}).replace("'", '"'), embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
@@ -1782,7 +1782,7 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         embed = discord.Embed(title="Title", description="Embed Description")
-        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"1", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}', embed=embed)
+        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"5", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}', embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 

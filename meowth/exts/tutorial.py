@@ -1215,7 +1215,7 @@ class Tutorial(commands.Cog):
                 manage_msg = f"\n\nThis command will not run in {ctx.channel.mention}{' and will only run in ' if city_channels else ''}{(', ').join(report_channels) if city_channels else ''}"
             help_embed = discord.Embed(description="<> denote required arguments, [] denote optional arguments", title="", colour=ctx.guild.me.colour)
             help_embed.set_author(name=f"{command.name.title()} Command Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
-            help_embed.add_field(name="**Usage**", value=f"{ctx.prefix}{command.name} {command.signature}{manage_msg}", inline=False)
+            help_embed.add_field(name="**Usage**", value=f"{ctx.prefix}{str(command.parent.name)+' ' if command.parent else ''}{command.name} {command.signature}{manage_msg}", inline=False)
             if command.aliases:
                 help_embed.add_field(name="**Aliases**", value=(', ').join(command.aliases), inline=False)
             if command.help:
@@ -1236,7 +1236,7 @@ class Tutorial(commands.Cog):
                     help_embed.add_field(name=f"**Subommands**", value=field_value)
             tutorial_command = self.bot.get_command('tutorial')
             if command.name in [x.name for x in tutorial_command.commands]:
-                help_embed.add_field(name="**Tutorial**", value=f"Tutorial is available for {command.name} using **{ctx.prefix}tutorial {command.name}**")
+                help_embed.add_field(name="**Tutorial**", value=f"Tutorial is available for {command.name} using **{ctx.prefix}tutorial {command.name}**", inline=False)
             return await ctx.send(embed=help_embed)
 
 def setup(bot):
