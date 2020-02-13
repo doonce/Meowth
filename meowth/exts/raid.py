@@ -3153,7 +3153,7 @@ class Raid(commands.Cog):
         }
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         timerset_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
-        timerset_embed.add_field(name=f"**Channel Timer**", value=f"set the time that the {meetup_type} starts and ends with **{ctx.prefix}{meetup_type} start <date and time>** and **{ctx.prefix}{meetup_type} end <date and time>**. You can also set the title of the {meetup_type} using **{ctx.prefix}{meetup_type} title <title>**.\n\nThe current timer is ***unknown***.")
+        timerset_embed.add_field(name=f"**Channel Timer**", value=f"If you can, set the time that the {meetup_type} starts and ends with **{ctx.prefix}{meetup_type} start <date and time>** and **{ctx.prefix}{meetup_type} end <date and time>**. You can also set the title of the {meetup_type} using **{ctx.prefix}{meetup_type} title <title>**.\n\nThe current timer is ***unknown***.")
         timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
         ctx.bot.guild_dict[message.guild.id][meetup_dict][raid_channel.id]['timerset_msg'] = timerset_msg.id
         self.bot.loop.create_task(self.expiry_check(raid_channel))
