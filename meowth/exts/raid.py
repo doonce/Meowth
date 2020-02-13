@@ -4333,7 +4333,7 @@ class Raid(commands.Cog):
             if m.lower() in self.bot.move_info.keys():
                 moves[index] = f"{m} {utils.type_to_emoji(self.bot, self.bot.move_info[m.lower()]['type'])}"
         moveset_embed = discord.Embed(colour=channel.guild.me.colour).set_thumbnail(url=pokemon.img_url)
-        moveset_embed.add_field(name=f"**Boss Moveset**", value=f"This {str(pokemon)}'s {'moves are' if len(moves)>1 else 'move is'}: **{(' / ').join([x.title() for x in moves])}**")
+        moveset_embed.add_field(name=f"**Boss Moveset**", value=f"This {str(pokemon)}'s {'moves are' if len(moves)>1 else 'move is'}:\n**{(' / ').join([x.title() for x in moves])}**")
         await channel.send(embed=moveset_embed, delete_after=600)
         try:
             raid_msg = await channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][channel.id]['raid_message'])
@@ -5921,9 +5921,10 @@ class Raid(commands.Cog):
         team_names = ["mystic", "valor", "instinct", "unknown"]
         team = team if team and team.lower() in team_names else "all"
         trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
+        starting_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/236/black-right-pointing-triangle_25b6.png")
         if checks.check_meetupchannel(ctx):
-            starting_str = f"Meowth! Meetup channels do not support **{ctx.prefix}starting**"
-            return await ctx.channel.send(starting_str, delete_after=10)
+            starting_embed.add_field(name=f"**Not Supported**", value=f"Meowth! Meetup channels do not support **{ctx.prefix}starting**")
+            return await ctx.channel.send(embed=starting_embed, delete_after=10)
         if checks.check_trainchannel(ctx):
             if not self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('meetup', {}).get('raid', False):
                 return await utils.safe_delete(ctx.message)
@@ -5936,16 +5937,19 @@ class Raid(commands.Cog):
                     continue
                 all_trainers.append(user)
             if all_trainers:
-                starting_str = f"Starting - Meowth! The group that was waiting is starting at the current train location! Trainers {(', ').join([x.mention for x in all_trainers])}, if you are with them you should start as well. If you are not with them wait for next train location to be announced if it has not already. If you are no longer following the train, reply with **{ctx.prefix}x** or react with {cancel_reaction} above to leave the train."
+                starting_str = f"Starting - Trainers {(', ').join([x.mention for x in all_trainers])}"
+                starting_embed.add_field(name=f"**Starting**", value=f"Meowth! The group that was waiting is starting at the current train location! If you are with them you should start as well. If you are not with them wait for next train location to be announced if it has not already. If you are no longer following the train, reply with **{ctx.prefix}x** or react with {cancel_reaction} above to leave the train.")
+                starting_str = f" Meowth! The group that was waiting is starting at the current train location! "
             else:
-                starting_str = f"Meowth! How can you start when there's no one waiting at this raid!?"
-            return await ctx.channel.send(starting_str)
+                starting_str = ""
+                starting_embed.add_field(name=f"**Starting Error**", value=f"Meowth! How can you start when there's no one waiting at this raid!?")
+            return await ctx.channel.send(starting_str, embed=starting_embed)
         if self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('type', None) == 'egg' and not checks.check_meetupchannel(ctx):
-            starting_str = _("Meowth! How can you start when the egg hasn't hatched!?")
-            return await ctx.channel.send(starting_str, delete_after=10)
+            starting_embed.add_field(name=f"**Starting Error**", value=f"Meowth! How can you start when the egg hasn't hatched!?")
+            return await ctx.channel.send(embed=starting_embed, delete_after=10)
         if self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('lobby', False):
-            starting_str = _("Meowth! Please wait for the group in the lobby to enter the raid.")
-            await ctx.channel.send(starting_str, delete_after=10)
+            starting_embed.add_field(name=f"**Starting Error**", value=f"Meowth! Please wait for the group in the lobby to enter the raid.")
+            await ctx.channel.send(embed=starting_embed, delete_after=10)
             return await self.lobby_countdown(ctx)
         for trainer in trainer_dict:
             ctx.count = trainer_dict[trainer].get('count', 1)
@@ -5971,19 +5975,23 @@ class Raid(commands.Cog):
             if trainer_dict[trainer]['status']['lobby']:
                 starting_dict[trainer] = {"count":trainer_dict[trainer]['count'], "status":trainer_dict[trainer]['status'], "party":trainer_dict[trainer]['party'], "herecount":herecount, "teamcount":teamcount, "lobbycount":lobbycount}
         if len(ctx_startinglist) == 0:
-            starting_str = _("Meowth! How can you start when there's no one waiting at this raid!?")
-            return await ctx.channel.send(starting_str, delete_after=10)
+            starting_embed.add_field(name=f"", value=f"Meowth! How can you start when there's no one waiting at this raid!?")
+            return await ctx.channel.send(embed=starting_embed, delete_after=10)
         if team in team_names:
-            question = await ctx.channel.send(_("Are you sure you would like to start this raid? Trainers {trainer_list}, react to this message to confirm or cancel the start of the raid.").format(trainer_list=', '.join([x.mention for x in ctx_startinglist])))
+            starting_embed.add_field(name=f"**Confirm Starting**", value=f"Are you sure you would like to start this raid? React to this message to confirm or cancel the start of the raid.")
+            question = await ctx.channel.send(f"Confirm Starting - Trainers {', '.join([x.mention for x in ctx_startinglist])}", embed=starting_embed)
         else:
-            question = await ctx.channel.send(_("Are you sure you would like to start this raid? You can also use **!starting [team]** to start that team only. Trainers {trainer_list}, react to this message to confirm or cancel the start of the raid.").format(trainer_list=', '.join([x.mention for x in ctx_startinglist])))
+            starting_embed.add_field(name=f"**Confirm Starting**", value=f"Are you sure you would like to start this raid? You can also use **{ctx.prefix}starting [team]** to start that team only. React to this message to confirm or cancel the start of the raid.")
+            question = await ctx.channel.send(f"Confirm Starting - Trainers {', '.join([x.mention for x in ctx_startinglist])}", embed=starting_embed)
+        starting_embed.clear_fields()
         try:
             timeout = False
             res, reactuser = await utils.ask(self.bot, question, id_startinglist)
         except TypeError:
             timeout = True
         if timeout:
-            await ctx.channel.send(_('Meowth! The **!starting** command was not confirmed. I\'m not sure if the group started.'))
+            starting_embed.add_field(name=f"**Starting Error**", value=f"Meowth! The **{ctx.prefix}starting** command was not confirmed. I\'m not sure if the group started.")
+            await ctx.channel.send(embed=starting_embed)
         if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             return await utils.safe_delete(question)
         elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
@@ -5996,9 +6004,16 @@ class Raid(commands.Cog):
             else:
                 timestr = ' '
             self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['lobby'] = {"exp":time.time() + 120, "team":team, "starting_dict":starting_dict}
-            starting_str = _('Starting - Meowth! The group that was waiting{timestr}is starting the raid! Trainers {trainer_list}, if you are not in this group and are waiting for the next group, please respond with {here_emoji} or **!here**. If you need to ask those that just started to back out of their lobby, use **!backout**').format(timestr=timestr, trainer_list=', '.join([x.mention for x in ctx_startinglist]), here_emoji=utils.parse_emoji(ctx.guild, self.bot.config.here_id))
+            here_emoji = utils.parse_emoji(ctx.guild, self.bot.config.here_id)
+            starting_str = f"Meowth! The group that was waiting{timestr}is starting the raid! If you are waiting for another group, reply with {here_emoji} or **{ctx.prefix}here**. If you need to ask those that just started to back out of their lobby, use **{ctx.prefix}backout**"
             if starttime:
-                starting_str += '\n\nThe start time has also been cleared, new groups can set a new start time wtih **!starttime HH:MM AM/PM** (You can also omit AM/PM and use 24-hour time!).'
+                starting_str += f"\n\nThe start time has also been cleared, new groups can set a new start time wtih **{ctx.prefix}starttime [HH:MM AM/PM]** (You can also omit AM/PM and use 24-hour time!)."
+            starting_embed.add_field(name=f"**Starting**", value=f"{starting_str}")
+            await ctx.channel.send(f"Starting - Trainers {', '.join([x.mention for x in ctx_startinglist])}", embed=starting_embed)
+            await self.lobby_countdown(ctx)
+            raid_channel_name = await self.edit_channel_name(ctx.channel)
+            await ctx.channel.edit(name=raid_channel_name)
+            if starttime:
                 report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['report_channel'])
                 raidmsg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['raid_message'])
                 reportmsg = await report_channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['raid_report'])
@@ -6021,16 +6036,12 @@ class Raid(commands.Cog):
                 try:
                     timerset_embed = discord.Embed(colour=channel.guild.me.colour).set_author(name="Channel Timer")
                     timerset_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
-                    timerstr = await self.print_raid_timer(raid_channel)
+                    timerstr = await self.print_raid_timer(ctx.channel)
                     timerset_embed.add_field(name=f"**Channel Timer**", value=f"{timerstr}")
-                    timerset_msg = await raid_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][raid_channel.id]['timerset_msg'])
+                    timerset_msg = await ctx.channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][ctx.channel.id]['timerset_msg'])
                     await timerset_msg.edit(content=None, embed=timerset_embed)
                 except:
                     pass
-            raid_channel_name = await self.edit_channel_name(ctx.channel)
-            await ctx.channel.edit(name=raid_channel_name)
-            await ctx.channel.send(starting_str)
-            await self.lobby_countdown(ctx)
 
     @commands.command()
     @checks.activeraidchannel()
