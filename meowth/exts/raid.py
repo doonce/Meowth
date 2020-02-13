@@ -3094,6 +3094,9 @@ class Raid(commands.Cog):
         else:
             meetup_type = "meetup"
             meetup_dict = "meetup_dict"
+        if not ctx.prefix:
+            prefix = self.bot._get_prefix(self.bot, ctx.message)
+            ctx.prefix = prefix[-1]
         message = ctx.message
         channel = message.channel
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
@@ -4080,7 +4083,11 @@ class Raid(commands.Cog):
             field_name = "**Expires:**"
         timerstr = await self.print_raid_timer(raid_channel)
         timerset_embed = discord.Embed(colour=raid_channel.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
-        timerset_embed.add_field(name=f"**Channel Timer**", value=f"{timerstr}")
+        if self.bot.guild_dict[guild.id][report_dict][raid_channel.id].get('starttime') and now < self.bot.guild_dict[guild.id][report_dict][raid_channel.id].get('starttime') and not self.bot.guild_dict[guild.id][report_dict][raid_channel.id].get('meetup', {}):
+            timerset_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_timer.png?cache=1")
+            timerset_embed.add_field(name=f"**Channel Timer**", value=f"Meowth! The current start time is: **{self.bot.guild_dict[guild.id][report_dict][raid_channel.id].get('starttime').strftime(_('%I:%M %p (%H:%M)'))}**\n\n{timerstr}")
+        else:
+            timerset_embed.add_field(name=f"**Channel Timer**", value=f"{timerstr}")
         if self.bot.guild_dict[guild.id][report_dict][raid_channel.id].get('timerset_msg'):
             try:
                 timerset_msg = await raid_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][raid_channel.id]['timerset_msg'])
@@ -4141,6 +4148,7 @@ class Raid(commands.Cog):
         tags = True if "tags" in start_split or "tag" in start_split else False
         timeset = None
         start = None
+        starttime_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_timer.png?cache=1")
         if tags:
             start_time = start_time.replace("tags", "").replace("tag", "")
             start_split = start_time.lower().split()
@@ -4154,20 +4162,21 @@ class Raid(commands.Cog):
                         user = ctx.guild.get_member(trainer)
                         if (rc_d['trainer_dict'][trainer]['status']['maybe'] or rc_d['trainer_dict'][trainer]['status']['coming']) and user:
                             trainer_list.append(user.mention)
-                await channel.send(_('{trainer_list}\n\nMeowth! The current start time is: **{starttime}**').format(trainer_list=", ".join(trainer_list), starttime=already_set.strftime(_('%I:%M %p (%H:%M)'))))
+                starttime_embed.add_field(name=f"**Channel Start Time**", value=f"{', '.join(trainer_list)}\n\nMeowth! The current start time is: **{already_set.strftime(_('%I:%M %p (%H:%M)'))}**")
+                return await channel.send(embed=starttime_embed, delete_after=60)
             else:
-                await channel.send(_('Meowth! No start time has been set, set one with **!starttime HH:MM AM/PM**! (You can also omit AM/PM and use 24-hour time!)'), delete_after=10)
-            return
+                starttime_embed.add_field(name=f"**Channel Start Time**", value=f"Meowth! No start time has been set, set one with **!starttime HH:MM AM/PM**! (You can also omit AM/PM and use 24-hour time!")
+                return await channel.send(embed=starttime_embed, delete_after=10)
         if meetup:
             try:
                 start = dateparser.parse(' '.join(start_split).lower(), settings={'DATE_ORDER': 'MDY'})
                 endtime = self.bot.guild_dict[guild.id][report_dict][channel.id]['meetup'].get('end', False)
                 if start < now:
-                    await channel.send(_('Meowth! Please enter a time in the future.'), delete_after=10)
-                    return
+                    starttime_embed.add_field(name=f"**Channel Start Time**", value=f"Meowth! Please enter a time in the future.")
+                    return await channel.send(embed=starttime_embed, delete_after=10)
                 if endtime and start > endtime:
-                    await channel.send(_('Meowth! Please enter a time before your end time.'), delete_after=10)
-                    return
+                    starttime_embed.add_field(name=f"**Channel Start Time**", value=f"Meowth! Please enter a time before your end time.")
+                    return await channel.send(embed=starttime_embed, delete_after=10)
                 timeset = True
                 rc_d['meetup']['start'] = start
             except:
@@ -4187,21 +4196,22 @@ class Raid(commands.Cog):
                     hatch = datetime.datetime.utcfromtimestamp(rc_d['exp']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     start = start.replace(year=hatch.year, month=hatch.month, day=hatch.day)
                 if not start:
-                    await channel.send(_('Meowth! I didn\'t quite get that, try again.'), delete_after=10)
-                    return
+                    starttime_embed.add_field(name=f"**Channel Start Time**", value=f"Meowth! I didn\'t quite get that, try again.")
+                    return await channel.send(embed=starttime_embed, delete_after=10)
                 diff = start - now
                 total = diff.total_seconds() / 60
                 if total > maxtime and egg_level != 'EX':
-                    await channel.send(_('Meowth! The raid will be over before that....'), delete_after=10)
-                    return
+                    starttime_embed.add_field(name=f"**Channel Start Time**", value=f"Meowth! The raid will be over before that....")
+                    return await channel.send(embed=starttime_embed, delete_after=10)
                 if now > start and egg_level != 'EX':
-                    await channel.send(_('Meowth! Please enter a time in the future.'), delete_after=10)
-                    return
+                    starttime_embed.add_field(name=f"**Channel Start Time**", value=f"Meowth! Please enter a time in the future.")
+                    return await channel.send(embed=starttime_embed, delete_after=10)
                 if int(total) < int(mintime) and egg_level != 'EX':
-                    await channel.send(_('Meowth! The egg will not hatch by then!'), delete_after=10)
-                    return
+                    starttime_embed.add_field(name=f"**Channel Start Time**", value=f"Meowth! The egg will not hatch by then!")
+                    return await channel.send(embed=starttime_embed, delete_after=10)
                 if already_set:
-                    rusure = await channel.send(_('Meowth! There is already a start time of **{start}** set! Do you want to change it?').format(start=already_set.strftime(_('%I:%M %p (%H:%M)'))))
+                    starttime_embed.add_field(name=f"**Channel Start Time**", value=f"Meowth! There is already a start time of **{already_set.strftime(_('%I:%M %p (%H:%M)'))}** set! Do you want to change it?")
+                    rusure = await channel.send(embed=starttime_embed)
                     try:
                         timeout = False
                         res, reactuser = await utils.ask(self.bot, rusure, author.id)
@@ -4218,6 +4228,8 @@ class Raid(commands.Cog):
                     else:
                         return
         if (start and now <= start) or timeset:
+            meetup = self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup')
+            starttime_embed.clear_fields()
             rc_d['starttime'] = start
             nextgroup = start.strftime(_('%I:%M %p (%H:%M)'))
             if rc_d.get('meetup', {}):
@@ -4228,7 +4240,12 @@ class Raid(commands.Cog):
                 else:
                     topicstr = _("Starts on {expiry}").format(expiry=start.strftime(_('%B %d at %I:%M %p (%H:%M)')))
                 await channel.edit(topic=topicstr)
-            await channel.send(_('Meowth! The current start time has been set to: **{starttime}**').format(starttime=nextgroup))
+            timerstr = await self.print_raid_timer(ctx.channel)
+            if meetup:
+                starttime_embed.add_field(name=f"**Channel Start Time**", value=f"{timerstr}").set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
+            else:
+                starttime_embed.add_field(name=f"**Channel Start Time**", value=f"Meowth! The current start time has been set to: **{nextgroup}**\n\n{timerstr}")
+            await channel.send(embed=starttime_embed, delete_after=60)
             report_channel = self.bot.get_channel(rc_d['report_channel'])
             raidmsg = await channel.fetch_message(rc_d['raid_message'])
             reportmsg = await report_channel.fetch_message(rc_d['raid_report'])
@@ -4247,6 +4264,11 @@ class Raid(commands.Cog):
             try:
                 await reportmsg.edit(content=reportmsg.content, embed=embed)
             except discord.errors.NotFound:
+                pass
+            try:
+                timerset_msg = await ctx.channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][ctx.channel.id]['timerset_msg'])
+                await timerset_msg.edit(content=None, embed=starttime_embed)
+            except:
                 pass
             return
 
@@ -5990,11 +6012,20 @@ class Raid(commands.Cog):
                         index += 1
                 try:
                     await raidmsg.edit(content=raidmsg.content, embed=embed)
-                except discord.errors.NotFound:
+                except:
                     pass
                 try:
                     await reportmsg.edit(content=reportmsg.content, embed=embed)
-                except discord.errors.NotFound:
+                except:
+                    pass
+                try:
+                    timerset_embed = discord.Embed(colour=channel.guild.me.colour).set_author(name="Channel Timer")
+                    timerset_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
+                    timerstr = await self.print_raid_timer(raid_channel)
+                    timerset_embed.add_field(name=f"**Channel Timer**", value=f"{timerstr}")
+                    timerset_msg = await raid_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][raid_channel.id]['timerset_msg'])
+                    await timerset_msg.edit(content=None, embed=timerset_embed)
+                except:
                     pass
             raid_channel_name = await self.edit_channel_name(ctx.channel)
             await ctx.channel.edit(name=raid_channel_name)

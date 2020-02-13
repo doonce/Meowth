@@ -1876,9 +1876,12 @@ class Huntr(commands.Cog):
                 self.bot.active_raidhours.remove(event_id)
                 del self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]
                 return
+            report_author = guild.get_member(event_dict['report_author'])
             bot_account = guild.get_member(event_dict['bot_account'])
             bot_channel = self.bot.get_channel(event_dict['bot_channel'])
             channels_made = False
+            if self.bot.guild_dict[guild.id]['raidhour_dict'][event_id].get('currently_active'):
+                channels_made = True
             while True:
                 now = datetime.datetime.utcnow()
                 wait_time = [600]
@@ -1889,6 +1892,7 @@ class Huntr(commands.Cog):
                         event_end = event_dict['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         train_channel = self.bot.get_channel(event_dict['train_channel'])
                         for location in event_dict['event_locations']:
+                            ctx.author, ctx.message.author = report_author, report_author
                             ctx.channel, ctx.message.channel = train_channel, train_channel
                             ctx.raidhour = True
                             if event_dict['make_trains']:
@@ -1901,6 +1905,7 @@ class Huntr(commands.Cog):
                             await ctx.invoke(self.bot.get_command("meetup title"), title=f"{location} - {event_dict['event_title']}")
                             await ctx.invoke(self.bot.get_command("starttime"), start_time=event_start.strftime('%B %d %I:%M %p'))
                             await ctx.invoke(self.bot.get_command("timerset"), timer=event_end.strftime('%B %d %I:%M %p'))
+                        self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['currently_active'] = True
                         channels_made = True
                     else:
                         wait_time.append((event_dict['channel_time'] - now).total_seconds())
@@ -1930,6 +1935,7 @@ class Huntr(commands.Cog):
                         self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_start'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_start'] + datetime.timedelta(days=7)
                         self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_end'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_end'] + datetime.timedelta(days=7)
                         self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['channel_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['channel_time'] + datetime.timedelta(days=7)
+                        self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['currently_active'] = False
                     else:
                         try:
                             del self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]
