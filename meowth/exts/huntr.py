@@ -999,7 +999,7 @@ class Huntr(commands.Cog):
         if bot_account.bot:
             duplicate_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=bot_account.avatar_url)
             duplicate_embed.add_field(name=f"**Bot Reported Channel**", value=f"This raid was reported by a bot ({bot_account.mention}). If it is a duplicate of a channel already reported by a human, I can remove it with three **{ctx.prefix}duplicate** messages.")
-            duplicate_msg = await raid_channel.send(embed=duplicate_embed)
+            duplicate_msg = await raid_channel.send(embed=duplicate_embed, delete_after=1800)
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
         weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
         if weather:
@@ -1009,7 +1009,7 @@ class Huntr(commands.Cog):
         ctrs_dict = await raid_cog._get_generic_counters(message.channel, str(pokemon), weather)
         if str(level) in ctx.bot.guild_dict[message.guild.id]['configure_dict'].get('counters', {}).get('auto_levels', []):
             try:
-                ctrsmsg = "Here are the best counters for the raid boss in currently known weather conditions! If you know the moveset of the boss, you can react to this message with the matching emoji and I will update the counters."
+                ctrsmsg = f"Here are the best counters for **{str(pokemon)}**! React below to change the moveset."
                 ctrsmessage = await raid_channel.send(content=ctrsmsg, embed=ctrs_dict[0]['embed'])
                 ctrsmessage_id = ctrsmessage.id
                 await ctrsmessage.pin()
@@ -1873,14 +1873,17 @@ class Huntr(commands.Cog):
                 report_message = await report_channel.fetch_message(event_id)
                 ctx = await self.bot.get_context(report_message)
             except:
+                self.bot.active_raidhours.remove(event_id)
+                del self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]
                 return
             bot_account = guild.get_member(event_dict['bot_account'])
             bot_channel = self.bot.get_channel(event_dict['bot_channel'])
+            channels_made = False
             while True:
                 now = datetime.datetime.utcnow()
                 wait_time = [600]
                 event_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['raidhour_dict'][event_id])
-                if event_dict['make_trains'] or event_dict.get('make_meetups'):
+                if event_dict['make_trains'] or event_dict.get('make_meetups') and not channels_made:
                     if now >= event_dict['channel_time']:
                         event_start = event_dict['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         event_end = event_dict['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
@@ -1898,8 +1901,7 @@ class Huntr(commands.Cog):
                             await ctx.invoke(self.bot.get_command("meetup title"), title=f"{location} - {event_dict['event_title']}")
                             await ctx.invoke(self.bot.get_command("starttime"), start_time=event_start.strftime('%B %d %I:%M %p'))
                             await ctx.invoke(self.bot.get_command("timerset"), timer=event_end.strftime('%B %d %I:%M %p'))
-                        self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['make_trains'] = False
-                        self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['make_meetups'] = False
+                        channels_made = True
                     else:
                         wait_time.append((event_dict['channel_time'] - now).total_seconds())
                 if event_dict.get('event_pokemon'):
@@ -2288,11 +2290,12 @@ class Huntr(commands.Cog):
             if event_dict['event_pokemon']:
                 success_str += f"I will mute **{event_dict['event_pokemon_str']}** during the event.\n\n"
             if event_dict['recur_weekly']:
-                success_str += f"I will make this event every **{local_start.strftime('%As at %I:%M %p')}**."
+                success_str += f"I will make this event every **{local_start.strftime('%As at %I:%M %p')}**.\n\n"
+            success_str += f"If this message is deleted the event will be cancelled."
             raid_embed.add_field(name=_('**Raid Hour Report**'), value=f"Meowth! A raid hour has been successfully scheduled. To cancel an event use **{ctx.prefix}raidhour cancel**\n\n{success_str}", inline=False)
             raid_hour_var = self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {})
-            self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][ctx.message.id] = copy.deepcopy(event_dict)
             confirmation = await channel.send(embed=raid_embed)
+            self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][confirmation.id] = copy.deepcopy(event_dict)
         else:
             raid_embed.add_field(name=_('**Raid Hour Report Cancelled**'), value=_("Meowth! Your raid hour has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=raid_embed, delete_after=10)

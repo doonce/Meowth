@@ -229,6 +229,16 @@ class MeowthBot(commands.AutoShardedBot):
             users += guild.member_count
             # RUN ONCE
             try:
+                for raidhour in self.guild_dict[guild.id]['raidhour_dict']:
+                    if self.guild_dict[guild.id]['raidhour_dict'][raidhour].get('train_channel') and self.guild_dict[guild.id]['raidhour_dict'][raidhour].get('recur_weekly'):
+                        try:
+                            make_meetups = self.guild_dict[guild.id]['raidhour_dict'][raidhour]['make_meetups']
+                            self.guild_dict[guild.id]['raidhour_dict'][raidhour]['make_meetups'] = True
+                        except KeyError:
+                            self.guild_dict[guild.id]['raidhour_dict'][raidhour]['make_trains'] = True
+            except:
+                pass
+            try:
                 set_var = self.guild_dict[guild.id]['configure_dict']['scanners'].setdefault('filters', {})
                 self.guild_dict[guild.id]['configure_dict']['scanners']['filters']['wild'] = self.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter']
             except:
