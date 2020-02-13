@@ -2892,7 +2892,7 @@ class Raid(commands.Cog):
         timerset_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
         timerset_embed.add_field(name=f"**Channel Timer**", value=f"If you can, set the time left on the raid using **{ctx.prefix}timerset <date and time>** so others can check it with **{ctx.prefix}timer**. **<date and time>** can be written exactly how it appears on your EX Raid Pass.\n\nThe current timer is ***unknown***.")
         timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
-        ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['timerset_msg'] = timerset_msg.id
+        ctx.bot.guild_dict[message.guild.id]['exraidchannel_dict'][raid_channel.id]['timerset_msg'] = timerset_msg.id
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
         weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to None. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
         weather_msg = await raid_channel.send(embed=weather_embed)
@@ -3152,7 +3152,10 @@ class Raid(commands.Cog):
             'meetup': {'start':None, 'end':None, 'channel_name':utils.sanitize_channel_name(raid_details).lower()}
         }
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
-        await raid_channel.send(content=f"Meowth! Hey {ctx.author.mention}, if you can, set the time that the {meetup_type} starts with **{ctx.prefix}{meetup_type} start <date and time>** and also set the time that the {meetup_type} ends using **{ctx.prefix}{meetup_type} end <date and time>**. You can also set the title of the {meetup_type} using **{ctx.prefix}{meetup_type} title <title>**.")
+        timerset_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
+        timerset_embed.add_field(name=f"**Channel Timer**", value=f"set the time that the {meetup_type} starts and ends with **{ctx.prefix}{meetup_type} start <date and time>** and **{ctx.prefix}{meetup_type} end <date and time>**. You can also set the title of the {meetup_type} using **{ctx.prefix}{meetup_type} title <title>**.\n\nThe current timer is ***unknown***.")
+        timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
+        ctx.bot.guild_dict[message.guild.id][meetup_dict][raid_channel.id]['timerset_msg'] = timerset_msg.id
         self.bot.loop.create_task(self.expiry_check(raid_channel))
         return raid_channel
 
@@ -3468,8 +3471,8 @@ class Raid(commands.Cog):
             manager_embed.add_field(name=f"{ctx.prefix}starting", value=f"Alert the channel that you are starting at the current location", inline=False)
             await ctx.author.send(embed=manager_embed, delete_after=3600)
             train_embed = discord.Embed(colour=ctx.guild.me.colour).set_author(name=f"Raid Train Instructions").set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
-            train_embed.add_field(name="**Assigning Managers**", value=f"**Nominate yourself or other trainers using **{ctx.prefix}train nominate [@mention]**", inline=False)
-            train_embed.add_field(name="**Directing Train**", value=f"**Direct the train using **{ctx.prefix}next vote**", inline=False)
+            train_embed.add_field(name="**Assigning Managers**", value=f"Nominate yourself or other trainers using **{ctx.prefix}train nominate [@mention]**", inline=False)
+            train_embed.add_field(name="**Directing Train**", value=f"Direct the train using **{ctx.prefix}next vote**", inline=False)
             train_embed.add_field(name="**Other Commands**", value=f"Use {help_reaction} above to see available commands", inline=False)
             await train_channel.send(f"{ctx.author.mention}, you are the current manager of this train! Check your DMs for manager instructions! Everyone else, you can control the channel using these instructions:", embed=train_embed)
             self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][train_channel.id]['managers'] = [ctx.author.id]
@@ -3564,7 +3567,7 @@ class Raid(commands.Cog):
         """Proceed to next train location"""
         can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
         if not can_manage:
-            return await ctx.send(f"**{ctx.prefix}train {ctx.invoked_with}** can only be used by managers. Use **{ctx.prefix}train nominate [@mention]** to nominate yourself or @mention!", delete_after=60)
+            return await ctx.invoke(self.bot.get_command("next vote"))
         await ctx.invoke(self.bot.get_command("train next"), channel_or_gym=channel_or_gym)
 
     @train_next_parent.command(name="vote")
