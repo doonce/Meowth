@@ -408,7 +408,8 @@ class Research(commands.Cog):
                             item_quests[current_category][current_quest].append(item)
                         all_quests[current_category][current_quest].append(item)
                 tsr_quest_dict = {"all": all_quests, "pokemon": pokemon_quests, "items": item_quests, "last_edit": time.time()}
-                json.loads(str(tsr_quest_dict).replace("'", '"').replace('fetch"D', "fetch'D"))
+                data = json.dumps(tsr_quest_dict)
+                json.loads(data)
                 if tsr_quest_dict:
                     with open(os.path.join('data', 'quest_info.json'), 'w') as fd:
                         json.dump(tsr_quest_dict, fd, indent=2, separators=(', ', ': '))
@@ -526,7 +527,8 @@ class Research(commands.Cog):
                 await utils.safe_delete(ctx.message)
             else:
                 try:
-                    json.loads(str(tsr_quest_dict).replace("'", '"').replace('fetch"D', "fetch'D"))
+                    data = json.dumps(tsr_quest_dict)
+                    json.loads(data)
                 except:
                     research_embed.clear_fields()
                     research_embed.add_field(name=_('**Quest Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because TSR didn't respond correctly! Retry when you're ready."), inline=False)

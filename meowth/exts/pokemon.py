@@ -946,7 +946,8 @@ class Pokedex(commands.Cog):
                 for type in self.bot.type_list:
                     move_info[f"hidden power {type.lower()}"] = {"type":type.title(), "power":15}
                 if move_info:
-                    json.loads(str(move_info).replace("'", '"').replace('fetch"D', "fetch'D"))
+                    data = json.dumps(move_info)
+                    json.loads(data)
                     with open(os.path.join('data', 'move_info.json'), 'w') as fd:
                          json.dump(move_info, fd, indent=2, separators=(', ', ': '))
             except Exception as e:
@@ -969,7 +970,8 @@ class Pokedex(commands.Cog):
         for type in self.bot.type_list:
             move_info[f"hidden power {type.lower()}"] = {"type":type.title(), "power":15}
         try:
-            json.loads(str(move_info).replace("'", '"').replace('fetch"D', "fetch'D"))
+            data = json.dumps(move_info)
+            json.loads(data)
         except:
             return await ctx.send("Meowth! Your edit has been cancelled because the gamemaster didn't respond correctly! Retry when you're ready.", delete_after=10)
         with open(os.path.join('data', 'move_info.json'), 'w') as fd:
@@ -1020,7 +1022,8 @@ class Pokedex(commands.Cog):
                                 if "hatch" in pokemon.shiny_available:
                                     shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                                 egg_dict[egg_distance][index] = f"{shiny_str}{str(pokemon)} {pokemon.emoji}"
-                json.loads(str(egg_dict).replace("'", '"').replace('fetch"D', "fetch'D"))
+                data = json.dumps(egg_dict)
+                json.loads(data)
                 egg_dict['last_edit'] = time.time()
                 with open(os.path.join('data', 'egg_info.json'), 'w') as fd:
                     json.dump(egg_dict, fd, indent=2, separators=(', ', ': '))
@@ -1107,7 +1110,8 @@ class Pokedex(commands.Cog):
                 await utils.safe_delete(ctx.message)
             else:
                 try:
-                    json.loads(str(egg_dict).replace("'", '"').replace('fetch"D', "fetch'D"))
+                    data = json.dumps(egg_dict)
+                    json.loads(data)
                 except:
                     egg_embed.clear_fields()
                     egg_embed.add_field(name=_('**Egg Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because TSR didn't respond correctly! Retry when you're ready."), inline=False)

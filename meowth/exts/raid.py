@@ -1107,7 +1107,8 @@ class Raid(commands.Cog):
                         data = json.load(fd)
                     for raid_level in tsr_boss_dict:
                         data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
-                    json.loads(str(data).replace("'", '"').replace('fetch"D', "fetch'D"))
+                    test = json.dumps(data)
+                    json.loads(test)
                     data['last_edit'] = time.time()
                     new_raid_dict = copy.deepcopy(tsr_boss_dict)
                     with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
@@ -1402,7 +1403,8 @@ class Raid(commands.Cog):
                     for raid_level in tsr_boss_dict:
                         data['raid_eggs'][raid_level]['pokemon'] = list(tsr_boss_dict[raid_level])
                     try:
-                        json.loads(str(data).replace("'", '"').replace('fetch"D', "fetch'D"))
+                        test = json.dumps(data)
+                        json.loads(test)
                     except:
                         raid_embed.clear_fields()
                         raid_embed.add_field(name=_('**Boss Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because TSR didn't respond correctly! Retry when you're ready."), inline=False)
