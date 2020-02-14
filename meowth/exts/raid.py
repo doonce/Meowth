@@ -2168,7 +2168,7 @@ class Raid(commands.Cog):
             timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['timerset_msg'] = timerset_msg.id
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
-        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
+        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
         if weather:
             weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
         weather_msg = await raid_channel.send(embed=weather_embed)
@@ -2348,7 +2348,7 @@ class Raid(commands.Cog):
             timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['timerset_msg'] = timerset_msg.id
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
-        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
+        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
         if weather:
             weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
         weather_msg = await raid_channel.send(embed=weather_embed)
@@ -2459,7 +2459,7 @@ class Raid(commands.Cog):
         pokemon.weather = weather
         if weather != eggdetails.get('weather') or pokemon.is_boosted:
             weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
-            weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
+            weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
             if weather:
                 weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
             try:
@@ -2565,7 +2565,7 @@ class Raid(commands.Cog):
         pokemon.weather = weather
         if weather != eggdetails.get('weather') or pokemon.is_boosted:
             weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
-            weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
+            weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
             if weather:
                 weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
             try:
@@ -2642,7 +2642,7 @@ class Raid(commands.Cog):
                 trainer_list.append(user.mention)
         hatch_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=pokemon.img_url)
         hatch_embed.add_field(name="**Raid Hatched**", value=f"Meowth! The raid egg has just hatched into a {str(pokemon)} raid!")
-        hatch_msg = await raid_channel.send(f"{'Trainers ' if trainer_list else ''}{(', ').join(trainer_list)+': ' if trainer_list else ''}", embed=hatch_embed, delete_after=600)
+        hatch_msg = await raid_channel.send(f"{'Hatched - Trainers ' if trainer_list else ''}{(', ').join(trainer_list) if trainer_list else ''}", embed=hatch_embed, delete_after=600)
         ctx = await self.bot.get_context(hatch_msg)
         ctx.raidreport = egg_report
         ctx.raid_channel = raid_channel
@@ -5284,9 +5284,9 @@ class Raid(commands.Cog):
                 pokemon.weather = weather
             weather_embed.clear_fields()
             if pkmn:
-                weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. If this changes you can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
+                weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. If this changes you can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
             else:
-                weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. If this changes you can set the correct weather using **{ctx.prefix}weather**.")
+                weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. If this changes you can set the correct weather using **{ctx.prefix}weather**.")
             if weather:
                 weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
             try:
@@ -5579,6 +5579,126 @@ class Raid(commands.Cog):
 
         Party is also optional. Format is #m #v #i #u to tell your party's teams."""
         await self._rsvp(ctx, "lobby", party_info)
+
+    @commands.command()
+    @checks.rsvpchannel()
+    async def rsvp(self, ctx):
+        """RSVP (interested, coming, here, lobby) for the current channel."""
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
+        rsvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_speechballoon.png?cache=1')
+        rsvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
+        def check(reply):
+            if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:
+                return True
+            else:
+                return False
+        while True:
+            async with ctx.typing():
+                rsvp_embed.clear_fields()
+                rsvp_embed.add_field(name=_('**Set RSVP Status**'), value=f"Meowth! I'll help you set your status in this channel!\n\nReply with your status from the following:\n**interested** - You are interested in this but can't commit.\n**coming** - You are on your way.\n**here** - You are at the location and ready\n**cancel** - You are no longer interested\n**lobby** - You are joining the raid lobby (raids only).\n\nYou can reply with **exit** to stop anytime.", inline=False)
+                rsvp_wait = await ctx.send(embed=rsvp_embed)
+                try:
+                    rsvp_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    rsvp_msg = None
+                await utils.safe_delete(rsvp_wait)
+                if not rsvp_msg:
+                    rsvp_embed.clear_fields()
+                    rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you took too long to respond! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=rsvp_embed, delete_after=10)
+                else:
+                    await utils.safe_delete(rsvp_msg)
+                if rsvp_msg.clean_content.lower() == "exit":
+                    rsvp_embed.clear_fields()
+                    rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you cancelled the report! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=rsvp_embed, delete_after=10)
+                else:
+                    rsvp_type = rsvp_msg.clean_content.lower()
+                    if not any([rsvp_type == "interested", rsvp_type == "coming", rsvp_type == "here", rsvp_type == "cancel", rsvp_type == "lobby"]):
+                        rsvp_embed.clear_fields()
+                        rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you entered an invalid option! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=rsvp_embed, delete_after=10)
+                if rsvp_type == "cancel":
+                    return await self._cancel(ctx)
+                elif rsvp_type == "lobby":
+                    return await self._rsvp(ctx, "lobby", "1")
+                rsvp_embed.clear_fields()
+                rsvp_embed.add_field(name=_('**Set RSVP Status**'), value=f"Meowth! Next, I'll need to know your **party count**. Reply with the amount of people in your party. If it is just you, reply with **1**. You can reply with **exit** to stop anytime.", inline=False)
+                rsvp_wait = await ctx.send(embed=rsvp_embed)
+                party_count = 1
+                try:
+                    rsvp_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    rsvp_msg = None
+                await utils.safe_delete(rsvp_wait)
+                if not rsvp_msg:
+                    rsvp_embed.clear_fields()
+                    rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you took too long to respond! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=rsvp_embed, delete_after=10)
+                else:
+                    await utils.safe_delete(rsvp_msg)
+                if rsvp_msg.clean_content.lower() == "exit":
+                    rsvp_embed.clear_fields()
+                    rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you cancelled the report! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=rsvp_embed, delete_after=10)
+                else:
+                    party_count = rsvp_msg.clean_content.lower()
+                    if not party_count.isdigit():
+                        rsvp_embed.clear_fields()
+                        rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you entered an invalid option! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=rsvp_embed, delete_after=10)
+                party_teams = ""
+                if int(party_count) > 1:
+                    rsvp_embed.clear_fields()
+                    rsvp_embed.add_field(name=_('**Set RSVP Status**'), value=f"Meowth! Next, I'll need to know your **team counts**. If everybody in your party is in the same team, reply with **same**. Otherwise, build a message like this: **2m 3v** where m = mystic count, v = valor count, and i = instinct count. You can reply with **exit** to stop anytime.", inline=False)
+                    rsvp_wait = await ctx.send(embed=rsvp_embed)
+                    try:
+                        rsvp_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        rsvp_msg = None
+                    await utils.safe_delete(rsvp_wait)
+                    if not rsvp_msg:
+                        rsvp_embed.clear_fields()
+                        rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you took too long to respond! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=rsvp_embed, delete_after=10)
+                    else:
+                        await utils.safe_delete(rsvp_msg)
+                    if rsvp_msg.clean_content.lower() == "exit":
+                        rsvp_embed.clear_fields()
+                        rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you cancelled the report! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=rsvp_embed, delete_after=10)
+                    else:
+                        if rsvp_msg.clean_content.lower() != "same":
+                            party_teams = rsvp_msg.clean_content.lower()
+                entered_interest = ""
+                if "raid" in report_dict:
+                    egg_level = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('egg_level')
+                    if len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) > 1 and self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('type') == "egg":
+                        rsvp_embed.clear_fields()
+                        rsvp_embed.add_field(name=_('**Set RSVP Status**'), value=f"Meowth! Next, Do you have any specific pokemon you are interested in? Reply with either **no** or a comma separated list of {', '.join(self.bot.raid_info['raid_eggs'][egg_level]['pokemon'])}. You can reply with **exit** to stop anytime.", inline=False)
+                        rsvp_wait = await ctx.send(embed=rsvp_embed)
+                        try:
+                            rsvp_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            rsvp_msg = None
+                        await utils.safe_delete(rsvp_wait)
+                        if not rsvp_msg:
+                            rsvp_embed.clear_fields()
+                            rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you took too long to respond! Retry when you're ready."), inline=False)
+                            return await ctx.send(embed=rsvp_embed, delete_after=10)
+                        else:
+                            await utils.safe_delete(rsvp_msg)
+                        if rsvp_msg.clean_content.lower() == "exit":
+                            rsvp_embed.clear_fields()
+                            rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you cancelled the report! Retry when you're ready."), inline=False)
+                            return await ctx.send(embed=rsvp_embed, delete_after=10)
+                        else:
+                            if rsvp_msg.clean_content.lower() != "no":
+                                entered_interest = rsvp_msg.clean_content.lower()
+                    break
+        party_info = f"{party_count} {party_teams} {entered_interest}"
+        await self._rsvp(ctx, rsvp_type, party_info)
 
     async def _rsvp(self, ctx, rsvp_type, party_info):
         if not ctx.prefix:
@@ -6029,7 +6149,7 @@ class Raid(commands.Cog):
                 timestr = ' '
             self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['lobby'] = {"exp":time.time() + 120, "team":team, "starting_dict":starting_dict}
             here_emoji = utils.parse_emoji(ctx.guild, self.bot.config.here_id)
-            starting_str = f"Meowth! The group that was waiting{timestr}is starting the raid! If you are waiting for another group, reply with {here_emoji} or **{ctx.prefix}here**. If you need to ask those that just started to back out of their lobby, use **{ctx.prefix}backout**"
+            starting_str = f"Meowth! The group that was waiting{timestr}is starting the raid! If you are waiting for another group, reply with {here_emoji} or **{ctx.prefix}here**. If you need to ask for the group to back out of their lobby, use **{ctx.prefix}backout**. If you aren't listed, join the current lobby using **{ctx.prefix}lobby**."
             if starttime:
                 starting_str += f"\n\nThe start time has also been cleared, new groups can set a new start time wtih **{ctx.prefix}starttime [HH:MM AM/PM]** (You can also omit AM/PM and use 24-hour time!)."
             starting_embed.add_field(name=f"**Starting**", value=f"{starting_str}")
