@@ -349,7 +349,7 @@ class Raid(commands.Cog):
                         if self.bot.guild_dict[guild.id][report_dict][channel.id]['active']:
                             if self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] <= time.time():
                                 if self.bot.guild_dict[guild.id][report_dict][channel.id]['type'] == 'egg':
-                                    pokemon = self.bot.guild_dict[guild.id][report_dict][channel.id]['pkmn_obj']
+                                    pokemon = self.bot.guild_dict[guild.id][report_dict][channel.id].get('pkmn_obj')
                                     egg_level = self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level']
                                     if not pokemon and len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
                                         pokemon = self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0]
@@ -471,13 +471,21 @@ class Raid(commands.Cog):
                     new_name = await self.edit_channel_name(channel)
                     await channel.edit(name=new_name)
                     if reportmsg:
-                        expire_embed = discord.Embed(colour=channel.guild.me.colour, description=reportmsg.embeds[0].description, title=reportmsg.embeds[0].title, url=reportmsg.embeds[0].url)
+                        hatch_embed = discord.Embed(colour=channel.guild.me.colour, description=reportmsg.embeds[0].description, title=reportmsg.embeds[0].title, url=reportmsg.embeds[0].url)
                         for field in reportmsg.embeds[0].fields:
                             if _('possible') in field.name.lower() or _('interest') in field.name.lower():
-                                expire_embed.add_field(name=field.name, value=field.value, inline=field.inline)
+                                hatch_embed.add_field(name=field.name, value=field.value, inline=field.inline)
                     else:
-                        expire_embed = None
-                    hatch_message = await channel.send(f"**This egg has hatched!** {'Trainers ' if maybe_list else ''}{(', ').join(maybe_list)+': ' if maybe_list else ''}Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**.", embed=expire_embed)
+                        hatch_embed = None
+                    expire_embed = discord.Embed(colour=channel.guild.me.colour, description=f"Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**.")
+                    expire_embed.set_author(name=f"This egg has hatched!")
+                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_warning.png?cache=1")
+                    try:
+                        timerset_msg = await channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][channel.id]['timerset_msg'])
+                        await timerset_msg.edit(content=None, embed=expire_embed)
+                    except:
+                        pass
+                    hatch_message = await channel.send(f"**This egg has hatched!** {'Trainers ' if maybe_list else ''}{(', ').join(maybe_list)+': ' if maybe_list else ''}Update the raid to the pokemon that hatched using **!raid <pokemon>** or reset the hatch timer with **!timerset**.", embed=hatch_embed)
                     self.bot.guild_dict[guild.id][report_dict][channel.id]['hatch_message'] = hatch_message.id
                 raid_time = int(self.bot.raid_info['raid_eggs'][str(egg_level)]['raidtime'])
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (raid_time * 60)) - time.time()
