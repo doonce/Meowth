@@ -444,8 +444,13 @@ class Raid(commands.Cog):
                 if (not alreadyexpired):
                     expire_embed = discord.Embed(colour=channel.guild.me.colour, description=f"The channel has been deleted in 1 minute. Check the channel list for the other raid channel to coordinate in!\nIf this was an error, reset the raid with **!timerset**.")
                     expire_embed.set_author(name=f"Duplicate Reported!")
-                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_speedometer.png?cache=1")
-                    await channel.send(embed=expire_embed)
+                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_noentry.png?cache=1")
+                    await channel.send(embed=expire_embed, delete_after=310)
+                    try:
+                        timerset_msg = await channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][channel.id]['timerset_msg'])
+                        await timerset_msg.edit(content=None, embed=expire_embed)
+                    except:
+                        pass
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (1 * 60)) - time.time()
             elif self.bot.guild_dict[guild.id][report_dict][channel.id]['type'] == 'egg' and not self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', {}) and not delete_raid:
                 if (not alreadyexpired):
@@ -485,8 +490,13 @@ class Raid(commands.Cog):
                     await channel.edit(name=new_name)
                     expire_embed = discord.Embed(colour=channel.guild.me.colour, description=f"The channel has been deactivated and will be deleted in 5 minutes.\nTo reactivate the channel, use **!timerset** to set the timer again.")
                     expire_embed.set_author(name=f"This channel timer has expired!")
-                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_expired.png?cache=1")
-                    await channel.send(embed=expire_embed)
+                    expire_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_noentry.png?cache=1")
+                    await channel.send(embed=expire_embed, delete_after=310)
+                    try:
+                        timerset_msg = await channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][channel.id]['timerset_msg'])
+                        await timerset_msg.edit(content=None, embed=expire_embed)
+                    except:
+                        pass
                 delete_time = (self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] + (5 * 60)) - time.time()
             raidtype = _("event") if self.bot.guild_dict[guild.id][report_dict][channel.id].get('meetup', False) else _(" raid")
             if delete_raid:
@@ -5885,7 +5895,9 @@ class Raid(commands.Cog):
                     if start_lobby not in battling:
                         self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['battling'].append(start_lobby)
                     if ctx_lobbycount > 0:
-                        await ctx.channel.send(_('Meowth! The group of {count} in the lobby has entered the raid! Wish them luck!').format(count=str(ctx_lobbycount)))
+                        battling_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_collision.png?cache=1")
+                        battling_embed.add_field(name=f"**Lobby Battling**", value=f"Meowth! The group of {str(ctx_lobbycount)} in the lobby has entered the raid! Wish them luck!")
+                        await ctx.channel.send(embed=battling_embed, delete_after=battle_time)
                 del self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['lobby']
                 self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'] = trainer_dict
                 raid_channel_name = await self.edit_channel_name(ctx.channel)
@@ -5893,6 +5905,10 @@ class Raid(commands.Cog):
                 await self._edit_party(ctx.channel, ctx.author)
                 check_battling()
                 await asyncio.sleep(battle_time)
+                trainer_list = [ctx.guild.get_member(x) for x in trainer_delete_list]
+                battling_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_whitecheck.png?cache=1")
+                battling_embed.add_field(name=f"**Battle Completed**", value=f"Meowth! The group of {', '.join([x.mention for x in trainer_list])} has finished the raid! Use **{ctx.prefix}list groups** to see all groups.")
+                await ctx.channel.send(embed=battling_embed)
                 try:
                     self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['battling'].remove(start_lobby)
                     self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['completed'].append(start_lobby)
@@ -5921,7 +5937,7 @@ class Raid(commands.Cog):
         team_names = ["mystic", "valor", "instinct", "unknown"]
         team = team if team and team.lower() in team_names else "all"
         trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
-        starting_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/236/black-right-pointing-triangle_25b6.png")
+        starting_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_play.png?cache=1")
         if checks.check_meetupchannel(ctx):
             starting_embed.add_field(name=f"**Not Supported**", value=f"Meowth! Meetup channels do not support **{ctx.prefix}starting**")
             return await ctx.channel.send(embed=starting_embed, delete_after=10)
@@ -6009,10 +6025,10 @@ class Raid(commands.Cog):
             if starttime:
                 starting_str += f"\n\nThe start time has also been cleared, new groups can set a new start time wtih **{ctx.prefix}starttime [HH:MM AM/PM]** (You can also omit AM/PM and use 24-hour time!)."
             starting_embed.add_field(name=f"**Starting**", value=f"{starting_str}")
-            await ctx.channel.send(f"Starting - Trainers {', '.join([x.mention for x in ctx_startinglist])}", embed=starting_embed)
-            await self.lobby_countdown(ctx)
+            await ctx.channel.send(f"Starting - Trainers {', '.join([x.mention for x in ctx_startinglist])}", embed=starting_embed, delete_after=500)
             raid_channel_name = await self.edit_channel_name(ctx.channel)
             await ctx.channel.edit(name=raid_channel_name)
+            await self.lobby_countdown(ctx)
             if starttime:
                 report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['report_channel'])
                 raidmsg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['raid_message'])

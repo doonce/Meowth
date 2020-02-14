@@ -521,6 +521,9 @@ class Huntr(commands.Cog):
                                                     channel = self.bot.get_channel(channel_id)
                                                     await raid_cog._edit_party(channel)
                             await raid_cog._eggtoraid(report_details.get('pokemon', None), channel, message.author, moveset=report_details.get('moves', None))
+                            await asyncio.sleep(10)
+                            if self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channelid].get('type') == "egg":
+                                await raid_cog._eggtoraid(report_details.get('pokemon', None), channel, message.author, moveset=report_details.get('moves', None))
                         raidexp = report_details.get('raidexp')
                         if raidexp and channel:
                             await raid_cog._timerset(channel, raidexp)
@@ -1158,7 +1161,7 @@ class Huntr(commands.Cog):
         if bot_account.bot:
             duplicate_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=bot_account.avatar_url)
             duplicate_embed.add_field(name=f"**Bot Reported Channel**", value=f"This raid was reported by a bot ({bot_account.mention}). If it is a duplicate of a channel already reported by a human, I can remove it with three **{ctx.prefix}duplicate** messages.")
-            duplicate_msg = await raid_channel.send(embed=duplicate_embed)
+            duplicate_msg = await raid_channel.send(embed=duplicate_embed, delete_after=1800)
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
         weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
         if weather:

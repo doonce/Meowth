@@ -1105,7 +1105,7 @@ class Tutorial(commands.Cog):
                 return False
         await utils.safe_delete(ctx.message)
         help_embed = discord.Embed(description="", title="", colour=ctx.guild.me.colour)
-        help_embed.set_author(name=f"Meowth Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
+        help_embed.set_author(name=f"Meowth Help", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_information.png?cache=1")
         if command:
             command = self.bot.get_command(command)
             if not await predicate(command) and command:
@@ -1155,7 +1155,7 @@ class Tutorial(commands.Cog):
                             break
                         elif len(help_categories[cat_msg.clean_content.lower()]) == 0:
                             return
-                        help_embed.set_author(name=f"{cat_msg.clean_content.lower()} Category Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
+                        help_embed.set_author(name=f"{cat_msg.clean_content.lower()} Category Help", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_information.png?cache=1")
                         help_embed.description = f"Reply with the name of a command to view command information.\n\n"
                         cmd_text = []
                         for cmd in help_categories[cat_msg.clean_content.lower()]:
@@ -1214,7 +1214,7 @@ class Tutorial(commands.Cog):
                     report_channels = [f"a {command.name.lower()} report channel."]
                 manage_msg = f"\n\nThis command will not run in {ctx.channel.mention}{' and will only run in ' if city_channels else ''}{(', ').join(report_channels) if city_channels else ''}"
             help_embed = discord.Embed(description="<> denote required arguments, [] denote optional arguments", title="", colour=ctx.guild.me.colour)
-            help_embed.set_author(name=f"{command.name.title()} Command Help", icon_url=f"https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/214/information-source_2139.png")
+            help_embed.set_author(name=f"{command.name.title()} Command Help", icon_url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_information.png?cache=1")
             help_embed.add_field(name="**Usage**", value=f"{ctx.prefix}{str(command.parent.name)+' ' if command.parent else ''}{command.name} {command.signature}{manage_msg}", inline=False)
             if command.aliases:
                 help_embed.add_field(name="**Aliases**", value=(', ').join(command.aliases), inline=False)
