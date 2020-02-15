@@ -6088,7 +6088,6 @@ class Raid(commands.Cog):
             if all_trainers:
                 starting_str = f"Starting - Trainers {(', ').join([x.mention for x in all_trainers])}"
                 starting_embed.add_field(name=f"**Starting**", value=f"Meowth! The group that was waiting is starting at the current train location! If you are with them you should start as well. If you are not with them wait for next train location to be announced if it has not already. If you are no longer following the train, reply with **{ctx.prefix}x** or react with {cancel_reaction} above to leave the train.")
-                starting_str = f" Meowth! The group that was waiting is starting at the current train location! "
             else:
                 starting_str = ""
                 starting_embed.add_field(name=f"**Starting Error**", value=f"Meowth! How can you start when there's no one waiting at this raid!?")
