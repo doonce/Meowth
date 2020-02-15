@@ -1883,12 +1883,14 @@ class Huntr(commands.Cog):
             bot_account = guild.get_member(event_dict['bot_account'])
             bot_channel = self.bot.get_channel(event_dict['bot_channel'])
             channels_made = False
-            if self.bot.guild_dict[guild.id]['raidhour_dict'][event_id].get('currently_active'):
-                channels_made = True
             while True:
                 now = datetime.datetime.utcnow()
                 wait_time = [600]
+                if event_id not in self.bot.guild_dict[guild.id]['raidhour_dict']:
+                    return
                 event_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['raidhour_dict'][event_id])
+                if self.bot.guild_dict[guild.id]['raidhour_dict'][event_id].get('currently_active'):
+                    channels_made = True
                 if event_dict['make_trains'] or event_dict.get('make_meetups') and not channels_made:
                     if now >= event_dict['channel_time']:
                         event_start = event_dict['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
