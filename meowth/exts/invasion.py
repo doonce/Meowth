@@ -154,6 +154,12 @@ class Invasion(commands.Cog):
             del self.bot.guild_dict[guild.id]['invasion_dict'][message.id]
         except KeyError:
             pass
+        try:
+            ctx = await self.bot.get_context(message)
+            if len (self.bot.guild_dict[guild.id]['invasion_dict'].keys()) == 0:
+                await ctx.invoke(self.bot.get_command('list invasions'))
+        except:
+            pass
 
     async def add_invasion_info(self, ctx, message, user):
         invasion_dict = self.bot.guild_dict[ctx.guild.id]['invasion_dict'].get(message.id, {})

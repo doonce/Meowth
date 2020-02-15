@@ -94,6 +94,12 @@ class Pvp(commands.Cog):
             del self.bot.guild_dict[guild.id]['pvp_dict'][message.id]
         except KeyError:
             pass
+        try:
+            ctx = await self.bot.get_context(message)
+            if len (self.bot.guild_dict[guild.id]['pvp_dict'].keys()) == 0:
+                await ctx.invoke(self.bot.get_command('list pvp'))
+        except:
+            pass
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):

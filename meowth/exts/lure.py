@@ -157,6 +157,12 @@ class Lure(commands.Cog):
             del self.bot.guild_dict[guild.id]['lure_dict'][message.id]
         except KeyError:
             pass
+        try:
+            ctx = await self.bot.get_context(message)
+            if len (self.bot.guild_dict[guild.id]['lure_dict'].keys()) == 0:
+                await ctx.invoke(self.bot.get_command('list lures'))
+        except:
+            pass
 
     async def edit_lure_info(self, ctx, message):
         lure_dict = self.bot.guild_dict[ctx.guild.id]['lure_dict'].get(message.id, {})

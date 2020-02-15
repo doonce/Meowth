@@ -166,6 +166,12 @@ class Wild(commands.Cog):
             del self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
         except KeyError:
             pass
+        try:
+            ctx = await self.bot.get_context(message)
+            if len (self.bot.guild_dict[guild.id]['wildreport_dict'].keys()) == 0:
+                await ctx.invoke(self.bot.get_command('list wilds'))
+        except:
+            pass
 
     async def make_wild_embed(self, ctx, details):
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))

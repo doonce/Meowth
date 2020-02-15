@@ -432,6 +432,7 @@ class Raid(commands.Cog):
             report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id][report_dict][channel.id]['report_channel'])
             try:
                 reportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][channel.id]['raid_report'])
+                ctx = await self.bot.get_context(reportmsg)
             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException, AttributeError):
                 reportmsg = None
             if dupecount >= 3:
@@ -633,6 +634,8 @@ class Raid(commands.Cog):
                                 del self.bot.guild_dict[guild.id]['list_dict']['raid'][channel.id]
                             except KeyError:
                                 pass
+                if reportmsg and len(self.bot.guild_dict[guild.id][report_dict].keys()) == 0:
+                    return await ctx.invoke(self.bot.get_command('list'))
             except KeyError:
                 pass
 

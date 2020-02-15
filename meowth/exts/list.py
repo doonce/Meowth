@@ -22,6 +22,42 @@ class Listing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        guild = getattr(channel, "guild", None)
+        if guild and guild.id not in list(self.bot.guild_dict.keys()):
+            return
+        try:
+            user = self.bot.get_user(payload.user_id)
+        except AttributeError:
+            return
+        if user == self.bot.user:
+            return
+        if guild:
+            user = guild.get_member(payload.user_id)
+        else:
+            return
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except (discord.errors.NotFound, AttributeError, discord.Forbidden):
+            return
+        can_manage = channel.permissions_for(user).manage_messages
+        list_dict = self.bot.guild_dict[guild.id].setdefault('list_dict', {})
+        for list_type in list_dict:
+            if channel.id not in list_dict[list_type]:
+                continue
+            for list_channel in list_dict[list_type]:
+                if message.id in list_dict[list_type][list_channel]:
+                    if list_type == "wild" and str(payload.emoji) == self.bot.custom_emoji.get('wild_report', u'\U0001F4E2'):
+                        ctx.author, ctx.message.author = user, user
+                        await utils.remove_reaction(message, payload.emoji, user)
+                        return await ctx.invoke(self.bot.get_command('wild'))
+                    elif list_type == "raid" and str(payload.emoji) == self.bot.custom_emoji.get('raid_report', u'\U0001F4E2'):
+                        ctx.author, ctx.message.author = user, user
+                        ctx.message.channel, ctx.channel = channel, channel
+                        return await ctx.invoke(self.bot.get_command('raid'))
+
     @commands.group(name="list", aliases=['lists', 'tag', 'l'], case_insensitive=True)
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def _list(self, ctx):

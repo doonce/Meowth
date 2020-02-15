@@ -160,6 +160,12 @@ class Research(commands.Cog):
             del self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
         except KeyError:
             pass
+        try:
+            ctx = await self.bot.get_context(message)
+            if len (self.bot.guild_dict[guild.id]['questreport_dict'].keys()) == 0:
+                await ctx.invoke(self.bot.get_command('list research'))
+        except:
+            pass
 
     async def add_research_info(self, ctx, message):
         research_dict = self.bot.guild_dict[ctx.guild.id]['questreport_dict'].get(message.id, {})

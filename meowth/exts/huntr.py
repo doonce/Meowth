@@ -1891,7 +1891,7 @@ class Huntr(commands.Cog):
                 event_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['raidhour_dict'][event_id])
                 if self.bot.guild_dict[guild.id]['raidhour_dict'][event_id].get('currently_active'):
                     channels_made = True
-                if event_dict['make_trains'] or event_dict.get('make_meetups') and not channels_made:
+                if (event_dict['make_trains'] or event_dict.get('make_meetups')) and not channels_made:
                     if now >= event_dict['channel_time']:
                         event_start = event_dict['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         event_end = event_dict['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
