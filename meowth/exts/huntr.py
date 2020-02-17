@@ -60,7 +60,8 @@ class Huntr(commands.Cog):
                                     user_report = alarm_dict.get(reportid, {}).get('report_message', None)
                                     if user_report:
                                         report_delete_dict[user_report] = {"action":"delete", "channel":report_channel}
-                                    if alarm_dict.get(reportid, {}).get('expedit') == "delete":
+                                    cleanup_setting = self.bot.guild_dict[guild.id].get('configure_dict', {}).get('scanners', {}).setdefault('cleanup_setting', "edit")
+                                    if cleanup_setting == "delete":
                                         report_delete_dict[reportid] = {"action":"delete", "channel":report_channel}
                                     else:
                                         report_edit_dict[reportid] = {"action":alarm_dict.get(reportid, {}).get('expedit', ''), "channel":report_channel}
@@ -754,7 +755,7 @@ class Huntr(commands.Cog):
         elif "fog" in weather:
             pokemon.weather = "foggy"
         report_details['weather'] = pokemon.weather
-        if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('scanners', {}).setdefault('wildfilter', []) or str(pokemon) in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('scanners', {}).setdefault('wildfilter', []):
+        if pokemon.id in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('scanners', {}).setdefault('filters', {}).setdefault('wild', []) or str(pokemon) in ctx.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('scanners', {}).setdefault('filters', {}).setdefault('wild', []):
             if not report_details.get("iv_percent", '') and not report_details.get("level", ''):
                 if weather:
                     ctx.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.message.id] = {
@@ -1420,7 +1421,6 @@ class Huntr(commands.Cog):
                     else:
                         filter_type = filter_type_msg.clean_content.lower()
                 if filter_type and filter_type == "wild":
-                    current_filter = self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners'].get('wildfilter', [])
                     temp_filter = self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners'].setdefault('filters', {}).setdefault('wild', [])
                     raid_embed.clear_fields()
                     raid_embed.add_field(name=_('**New Wild Filter**'), value=f"If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Reports with IV will still be posted. Please enter a list of wild pokemon to block automatic reports of or reply with **N** to disable the filter.\n\n**Current Filter**:\n\n{str(current_filter)}")
@@ -1442,7 +1442,6 @@ class Huntr(commands.Cog):
                             error = _("cancelled the report")
                             break
                         elif filter_type_msg.content.lower() == 'n':
-                            self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['wildfilter'] = []
                             self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['wild'] = []
                             raid_embed.clear_fields()
                             raid_embed.add_field(name=_('**New Wild Filter**'), value=f"Automatic wild filter disabled")
@@ -1464,7 +1463,6 @@ class Huntr(commands.Cog):
                                 raid_embed.clear_fields()
                                 raid_embed.add_field(name=_('**New Wild Filter**'), value=f"Automatic wild filter will block: {', '.join(wildfilter_names)}")
                                 await channel.send(embed=raid_embed, delete_after=60)
-                                self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['wildfilter'] = current_filter
                                 self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['wild'] = current_filter
                                 break
                             else:
@@ -1887,6 +1885,8 @@ class Huntr(commands.Cog):
                 now = datetime.datetime.utcnow()
                 wait_time = [600]
                 if event_id not in self.bot.guild_dict[guild.id]['raidhour_dict']:
+                    self.bot.active_raidhours.remove(event_id)
+                    del self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]
                     return
                 event_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['raidhour_dict'][event_id])
                 if self.bot.guild_dict[guild.id]['raidhour_dict'][event_id].get('currently_active'):
@@ -1916,8 +1916,8 @@ class Huntr(commands.Cog):
                         wait_time.append((event_dict['channel_time'] - now).total_seconds())
                 if event_dict.get('event_pokemon'):
                     for pokemon in event_dict['event_pokemon']:
-                        if pokemon not in self.bot.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter']:
-                            self.bot.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter'].append(pokemon)
+                        if pokemon not in self.bot.guild_dict[guild.id]['configure_dict']['scanners']['filters']['wild']:
+                            self.bot.guild_dict[guild.id]['configure_dict']['scanners']['filters']['wild'].append(pokemon)
                 if bot_account:
                     if now < event_dict['mute_time']:
                         wait_time.append((event_dict['mute_time'] - now).total_seconds())
@@ -1928,7 +1928,7 @@ class Huntr(commands.Cog):
                     except:
                         pass
                     try:
-                        self.bot.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter'].remove(event_dict['event_pokemon'])
+                        self.bot.guild_dict[guild.id]['configure_dict']['scanners']['filters']['wild'].remove(event_dict['event_pokemon'])
                     except:
                         pass
                     try:

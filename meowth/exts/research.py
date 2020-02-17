@@ -145,7 +145,15 @@ class Research(commands.Cog):
         channel = message.channel
         research_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['questreport_dict'])
         author = guild.get_member(research_dict.get(message.id, {}).get('report_author'))
-        await utils.safe_delete(message)
+        cleanup_setting = self.bot.guild_dict[guild.id].get('configure_dict', {}).get('research', {}).setdefault('cleanup_setting', "delete")
+        if cleanup_setting == "delete":
+            await utils.safe_delete(message)
+        else:
+            try:
+                await message.edit(content=message.content.splitlines()[0], embed=discord.Embed(colour=message.guild.me.colour, description=f"**This quest has expired!**"))
+                await message.clear_reactions()
+            except:
+                pass
         try:
             user_message = await channel.fetch_message(research_dict[message.id]['report_message'])
             await utils.safe_delete(user_message)

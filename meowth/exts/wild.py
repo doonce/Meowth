@@ -147,11 +147,15 @@ class Wild(commands.Cog):
         channel = message.channel
         wild_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['wildreport_dict'])
         author = guild.get_member(wild_dict.get(message.id, {}).get('report_author'))
-        try:
-            await message.edit(content=message.content.splitlines()[0], embed=discord.Embed(description=wild_dict[message.id]['expedit']['embedcontent'], colour=message.embeds[0].colour.value))
-            await message.clear_reactions()
-        except (discord.errors.NotFound, discord.errors.Forbidden, KeyError):
-            pass
+        cleanup_setting = self.bot.guild_dict[guild.id].get('configure_dict', {}).get('wild', {}).setdefault('cleanup_setting', "edit")
+        if cleanup_setting == "delete":
+            await utils.safe_delete(message)
+        else:
+            try:
+                await message.edit(content=message.content.splitlines()[0], embed=discord.Embed(description=wild_dict[message.id]['expedit']['embedcontent'], colour=message.embeds[0].colour.value))
+                await message.clear_reactions()
+            except (discord.errors.NotFound, discord.errors.Forbidden, KeyError):
+                pass
         try:
             user_message = await channel.fetch_message(wild_dict[message.id]['report_message'])
             await utils.safe_delete(user_message)

@@ -115,7 +115,15 @@ class Nest(commands.Cog):
         channel = message.channel
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
         author = guild.get_member(nest_dict.get(nest, {}).get('reports', {}).get(message.id, {}).get('report_author'))
-        await utils.safe_delete(message)
+        cleanup_setting = self.bot.guild_dict[guild.id].get('configure_dict', {}).get('nest', {}).setdefault('cleanup_setting', "delete")
+        if cleanup_setting == "delete":
+            await utils.safe_delete(message)
+        else:
+            try:
+                await message.edit(content=message.content.splitlines()[0], embed=discord.Embed(colour=message.guild.me.colour, description=f"**This nest has expired!**"))
+                await message.clear_reactions()
+            except:
+                pass
         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, nest_dict[nest]['reports'][message.id].get('dm_dict', {})))
         nest_bonus = nest_dict[nest]['reports'].get(message.id, {}).get('caught_by', [])
         if len(nest_bonus) >= 3 and author and not author.bot:

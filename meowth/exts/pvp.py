@@ -83,7 +83,15 @@ class Pvp(commands.Cog):
         channel = message.channel
         pvp_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['pvp_dict'])
         if not pvp_dict[message.id].get('tournament', {}).get('status', None) == "complete":
-            await utils.safe_delete(message)
+            cleanup_setting = self.bot.guild_dict[guild.id].get('configure_dict', {}).get('pvp', {}).setdefault('cleanup_setting', "delete")
+            if cleanup_setting == "delete":
+                await utils.safe_delete(message)
+            else:
+                try:
+                    await message.edit(content=message.content.splitlines()[0], embed=discord.Embed(colour=message.guild.me.colour, description=f"**This PVP has expired!**"))
+                    await message.clear_reactions()
+                except:
+                    pass
         try:
             user_message = await channel.fetch_message(pvp_dict[message.id]['report_message'])
             await utils.safe_delete(user_message)

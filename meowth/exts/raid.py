@@ -529,14 +529,22 @@ class Raid(commands.Cog):
                             expiremsg = _('**This level {level} raid egg has expired!**').format(level=egg_level)
                         else:
                             expiremsg = _('**This {pokemon}{raidtype} has expired!**').format(pokemon=self.bot.guild_dict[guild.id][report_dict][channel.id].get('pkmn_obj', ""), raidtype=raidtype)
+                        channel_type = report_dict.replace('channel_dict', '').replace('_dict', '')
                         if dupechannel:
                             await utils.safe_delete(reportmsg)
                         elif reportmsg:
-                            try:
-                                await reportmsg.edit(content=reportmsg.content.splitlines()[0], embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
-                                await reportmsg.clear_reactions()
-                            except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                                pass
+                            cleanup_setting = self.bot.guild_dict[guild.id].get('configure_dict').get(channel_type, {}).setdefault('cleanup_setting', "edit")
+                            if cleanup_setting == "edit":
+                                try:
+                                    await reportmsg.edit(content=report_message.content.splitlines()[0], embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
+                                    await reportmsg.clear_reactions()
+                                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                    pass
+                            else:
+                                try:
+                                    await reportmsg.delete()
+                                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                    pass
                         try:
                             user_message = await report_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][channel.id]['report_message'])
                             await utils.safe_delete(user_message)
@@ -696,8 +704,19 @@ class Raid(commands.Cog):
                                 expiremsg = f"**This level {channel_dict['egg_level']} raid egg has expired!**"
                             else:
                                 expiremsg = f"**This {channel_dict.get('pkmn_obj', '')}{raid_type} has expired!**"
-                            await report_message.edit(content=report_message.content.splitlines()[0], embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
-                            await report_message.clear_reactions()
+                            channel_type = report_dict.replace('channel_dict', '').replace('_dict', '')
+                            cleanup_setting = self.bot.guild_dict[guild.id].get('configure_dict').get(channel_type, {}).setdefault('cleanup_setting', "edit")
+                            if cleanup_setting == "edit":
+                                try:
+                                    await report_message.edit(content=report_message.content.splitlines()[0], embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
+                                    await report_message.clear_reactions()
+                                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                    pass
+                            else:
+                                try:
+                                    await report_message.delete()
+                                except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
+                                    pass
                             user_message = await report_channel.fetch_message(channel_dict['report_message'])
                             await utils.safe_delete(user_message)
                         except:
@@ -4423,18 +4442,18 @@ class Raid(commands.Cog):
             return
         else:
             report_dict = await utils.get_report_dict(self.bot, ctx.channel)
-            report_channel = self.bot.get_channel(self.bot.guild_dict[message.guild.id][report_dict][ctx.channel.id]['report_channel'])
-            report_type = self.bot.guild_dict[message.guild.id][report_dict][ctx.channel.id].get('type', None)
-            old_location = self.bot.guild_dict[message.guild.id][report_dict][ctx.channel.id].get('address', None)
-            report_level = self.bot.guild_dict[message.guild.id][report_dict][ctx.channel.id].get('egg_level', None)
-            report_meetup = self.bot.guild_dict[message.guild.id][report_dict][ctx.channel.id].get('meetup', None)
-            report_pokemon = self.bot.guild_dict[message.guild.id][report_dict][ctx.channel.id].get('pkmn_obj', None)
+            report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['report_channel'])
+            report_type = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('type', None)
+            old_location = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('address', None)
+            report_level = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('egg_level', None)
+            report_meetup = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('meetup', None)
+            report_pokemon = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('pkmn_obj', None)
             report_train = True if report_dict == "raidtrain_dict" else False
             raidtype = "meetup" if report_meetup else report_type
             raidtype = "train" if report_train else raidtype
             if not report_channel:
                 async for m in ctx.channel.history(limit=500, oldest_first=True):
-                    if m.author.id == guild.me.id:
+                    if m.author.id == ctx.guild.me.id:
                         c = _('Coordinate here')
                         if c in m.content:
                             report_channel = m.raw_channel_mentions[0]
@@ -4452,9 +4471,9 @@ class Raid(commands.Cog):
             if not raid_details:
                 await utils.safe_delete(ctx.message)
                 return
-            oldraidmsg = await ctx.channel.fetch_message(self.bot.guild_dict[message.guild.id][report_dict][ctx.channel.id]['raid_message'])
+            oldraidmsg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['raid_message'])
             try:
-                oldreportmsg = await report_channel.fetch_message(self.bot.guild_dict[message.guild.id][report_dict][ctx.channel.id]['raid_report'])
+                oldreportmsg = await report_channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['raid_report'])
             except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                 pass
             oldembed = oldraidmsg.embeds[0]
@@ -4478,7 +4497,7 @@ class Raid(commands.Cog):
             newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
             otw_list = []
             rsvp_list = []
-            trainer_dict = copy.deepcopy(self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['trainer_dict'])
+            trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
             for trainer in trainer_dict.keys():
                 if trainer_dict[trainer]['status']['coming']:
                     user = message.guild.get_member(trainer)

@@ -309,6 +309,31 @@ class Configure(commands.Cog):
                     continue
             config_dict_temp[type]['report_channels'] = citychannel_dict
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('{type} Reporting Locations are set').format(type=type.title())))
+            if type in ["raid", "exraid", "meetup", "train", "wild", "research", "invasion", "lure", "pvp", "nest"]:
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Do you want expired {type} messages to be deleted or edited to say expired? Reply with **delete** to delete my message entirely once the {type} has expired, or **edit** to have me edit the message, but keep the details in the channel for a log.").set_author(name=f"{type.title()} Cleanup Setting", icon_url=self.bot.user.avatar_url))
+                await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp[type].setdefault('cleanup_setting', 'edit'))).set_author(name=f"Current {type.title()} Cleanup Setting", icon_url=self.bot.user.avatar_url), delete_after=300)
+                while True:
+                    try:
+                        cleanup_set_msg = await self.wait_for_msg(ctx.configure_channel, ctx.author)
+                    except asyncio.TimeoutError:
+                        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG TIMEOUT!**\n\nNo changes have been made.')))
+                        await self.end_configure(ctx)
+                        return None
+                    if cleanup_set_msg.content.lower() == 'delete':
+                        config_dict_temp[type]['cleanup_setting'] = "delete"
+                        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Message cleanup enabled - I will delete messages.')))
+                        break
+                    elif cleanup_set_msg.content.lower() == 'edit':
+                        config_dict_temp[type]['cleanup_setting'] = "edit"
+                        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Mesage cleanup enabled - I will edit messages.')))
+                        break
+                    elif cleanup_set_msg.content.lower() == 'cancel':
+                        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                        await self.end_configure(ctx)
+                        return None
+                    else:
+                        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("I'm sorry I don't understand. Please reply with either **delete** or **edit**.")))
+                        continue
             if output == "dict":
                 return config_dict_temp
             if type == "raid":
@@ -2007,6 +2032,31 @@ class Configure(commands.Cog):
                     else:
                         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description="Please enter at least one number from 1 to 5 separated by comma. Ex: `1, 2, 3`. Enter '0' to have all raids restyled without any automatic channels, or **N** to turn off automatic eggs."))
                         continue
+        if len(config_dict_temp['scanners']['raidlvls']) < 5:
+            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Do you want expired scanners messages to be deleted or edited to say expired? Reply with **delete** to delete my message entirely once the report has expired, or **edit** to have me edit the message, but keep the details in the channel for a log.").set_author(name=_('Scanners Cleanup Setting'), icon_url=self.bot.user.avatar_url))
+            await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].setdefault('cleanup_setting', 'edit'))).set_author(name=_("Current Scanners Cleanup Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
+            while True:
+                try:
+                    cleanup_set_msg = await self.wait_for_msg(ctx.configure_channel, ctx.author)
+                except asyncio.TimeoutError:
+                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG TIMEOUT!**\n\nNo changes have been made.')))
+                    await self.end_configure(ctx)
+                    return None
+                if cleanup_set_msg.content.lower() == 'delete':
+                    config_dict_temp['scanners']['cleanup_setting'] = "delete"
+                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Message cleanup enabled - I will delete messages.')))
+                    break
+                elif cleanup_set_msg.content.lower() == 'edit':
+                    config_dict_temp['scanners']['cleanup_setting'] = "edit"
+                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Mesage cleanup enabled - I will edit messages.')))
+                    break
+                elif cleanup_set_msg.content.lower() == 'cancel':
+                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
+                    await self.end_configure(ctx)
+                    return None
+                else:
+                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("I'm sorry I don't understand. Please reply with either **delete** or **edit**.")))
+                    continue
         ctx.config_dict_temp = config_dict_temp
         return ctx
 
