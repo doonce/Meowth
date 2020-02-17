@@ -634,8 +634,11 @@ class Raid(commands.Cog):
                                 del self.bot.guild_dict[guild.id]['list_dict']['raid'][channel.id]
                             except KeyError:
                                 pass
-                if reportmsg and len(self.bot.guild_dict[guild.id][report_dict].keys()) == 0:
-                    return await ctx.invoke(self.bot.get_command('list'))
+                try:
+                    if reportmsg and len(self.bot.guild_dict[guild.id][report_dict].keys()) == 0:
+                        return await ctx.invoke(self.bot.get_command('list'))
+                except:
+                    pass
             except KeyError:
                 pass
 
@@ -1939,7 +1942,7 @@ class Raid(commands.Cog):
                     ctx.raid_channel = new_channel
                     return
                 else:
-                    raid_embed.add_field(name=_('**New Raid Report**'), value=_("Meowth! I'll help you report a raid!\n\nFirst, I'll need to know what **pokemon or level** the raid is. Reply with the name of a **pokemon**, an **egg level** number 1-5, or EX. You can reply with **cancel** to stop anytime."), inline=False)
+                    raid_embed.add_field(name=_('**New Raid Report**'), value=_("Meowth! I'll help you report a raid!\n\nFirst, I'll need to know what **pokemon or level** the raid is. Reply with the name of a **pokemon**, an **egg level** number 1-5, or EX. You can reply with **cancel** to stop anytime.\n\nIf you meant to report a **meetup** or **train** reply with **meetup** or **train**."), inline=False)
                     mon_or_lvl_wait = await channel.send(embed=raid_embed)
                     def check(reply):
                         if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
@@ -1961,6 +1964,10 @@ class Raid(commands.Cog):
                         break
                     elif mon_or_lvl_msg.clean_content.lower() == "ex":
                         return await ctx.invoke(self.bot.get_command("exraid"))
+                    elif mon_or_lvl_msg.clean_content.lower() == "meetup":
+                        return await ctx.invoke(self.bot.get_command("meetup"))
+                    elif mon_or_lvl_msg.clean_content.lower() == "train":
+                        return await ctx.invoke(self.bot.get_command("train"))
                     elif mon_or_lvl_msg.clean_content.isdigit() and (int(mon_or_lvl_msg.clean_content) == 0 or int(mon_or_lvl_msg.clean_content) > 5):
                         error = _("entered an invalid level")
                         break
@@ -3592,7 +3599,8 @@ class Raid(commands.Cog):
     async def train_next_parent(self, ctx, *, channel_or_gym=''):
         """Proceed to next train location"""
         can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
-        if not can_manage:
+        vote = getattr(ctx, "vote", False)
+        if not can_manage and not vote:
             return await ctx.invoke(self.bot.get_command("next vote"))
         await ctx.invoke(self.bot.get_command("train next"), channel_or_gym=channel_or_gym)
 
@@ -3625,13 +3633,15 @@ class Raid(commands.Cog):
                     vote_list_msg = None
                 await utils.safe_delete(vote_list_wait)
                 if not vote_list_msg:
-                    error = _("took too long to respond")
-                    break
+                    train_embed.clear_fields()
+                    train_embed.add_field(name=_('**Train Vote Cancelled**'), value=_("Meowth! Your vote has been cancelled because you entered took too long to respond! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=train_embed, delete_after=10)
                 else:
                     await utils.safe_delete(vote_list_msg)
                 if vote_list_msg.clean_content.lower() == "cancel":
-                    error = _("cancelled the report")
-                    break
+                    train_embed.clear_fields()
+                    train_embed.add_field(name=_('**Train Vote Cancelled**'), value=_("Meowth! Your vote has been cancelled because you cancelled the report! Retry when you're ready."), inline=False)
+                    return await ctx.send(embed=train_embed, delete_after=10)
                 else:
                     vote_list = vote_list_msg.content.lower().split(',')
                     vote_list = [x.strip() for x in vote_list]
@@ -3662,7 +3672,7 @@ class Raid(commands.Cog):
         for option, emoji in zip(vote_list, emoji_dict.keys()):
             await utils.add_reaction(vote_message, emoji_dict[emoji])
         await utils.add_reaction(vote_message, cancel_emoji)
-        await asyncio.sleep(60)
+        await asyncio.sleep(30)
         vote_message = await ctx.channel.fetch_message(vote_message.id)
         for index, reaction in enumerate(vote_message.reactions):
             if reaction.me and reaction.emoji != cancel_emoji:
@@ -3676,6 +3686,7 @@ class Raid(commands.Cog):
                         return await ctx.send("The vote has failed.")
         vote_winner = max(result_dict.keys(), key=(lambda key: result_dict[key]))
         vote_winner = options_list[vote_winner]
+        ctx.vote = True
         await utils.safe_delete(vote_message)
         await ctx.invoke(self.bot.get_command('train next'), channel_or_gym=vote_winner)
 
@@ -3686,8 +3697,9 @@ class Raid(commands.Cog):
         if channel_or_gym.lower() == "vote":
             return await ctx.invoke(self.bot.get_command('next vote'))
         can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
-        if not can_manage and ctx.invoked_with != "vote":
-            return await ctx.send(f"**{ctx.prefix}train {ctx.invoked_with}** can only be used by managers. Use **{ctx.prefix}train nominate [@mention]** to nominate yourself or @mention!", delete_after=60)
+        vote = getattr(ctx, "vote", False)
+        if not can_manage and not vote:
+            return await ctx.invoke(self.bot.get_command("next vote"))
         train_path = self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup'].setdefault('route', [])
         if train_path and not channel_or_gym:
             location, channel_or_gym = train_path[0], train_path[0]

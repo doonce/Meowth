@@ -42,6 +42,7 @@ class Listing(commands.Cog):
             message = await channel.fetch_message(payload.message_id)
         except (discord.errors.NotFound, AttributeError, discord.Forbidden):
             return
+        ctx = await self.bot.get_context(message)
         can_manage = channel.permissions_for(user).manage_messages
         list_dict = self.bot.guild_dict[guild.id].setdefault('list_dict', {})
         for list_type in list_dict:
@@ -49,14 +50,20 @@ class Listing(commands.Cog):
                 continue
             for list_channel in list_dict[list_type]:
                 if message.id in list_dict[list_type][list_channel]:
+                    ctx.author, ctx.message.author = user, user
+                    await utils.remove_reaction(message, payload.emoji, user)
                     if list_type == "wild" and str(payload.emoji) == self.bot.custom_emoji.get('wild_report', u'\U0001F4E2'):
-                        ctx.author, ctx.message.author = user, user
-                        await utils.remove_reaction(message, payload.emoji, user)
                         return await ctx.invoke(self.bot.get_command('wild'))
                     elif list_type == "raid" and str(payload.emoji) == self.bot.custom_emoji.get('raid_report', u'\U0001F4E2'):
-                        ctx.author, ctx.message.author = user, user
-                        ctx.message.channel, ctx.channel = channel, channel
                         return await ctx.invoke(self.bot.get_command('raid'))
+                    elif list_type == "pvp" and str(payload.emoji) == self.bot.custom_emoji.get('pvp_report', u'\U0001F4E2'):
+                        return await ctx.invoke(self.bot.get_command('pvp'))
+                    elif list_type == "lure" and str(payload.emoji) == self.bot.custom_emoji.get('lure_report', u'\U0001F4E2'):
+                        return await ctx.invoke(self.bot.get_command('lure'))
+                    elif list_type == "invasion" and str(payload.emoji) == self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2'):
+                        return await ctx.invoke(self.bot.get_command('invasion'))
+                    elif list_type == "research" and str(payload.emoji) == self.bot.custom_emoji.get('research_report', u'\U0001F4E2'):
+                        return await ctx.invoke(self.bot.get_command('research'))
 
     @commands.group(name="list", aliases=['lists', 'tag', 'l'], case_insensitive=True)
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -231,7 +238,11 @@ class Listing(commands.Cog):
                         if "all" not in ctx.message.content.lower():
                             ctx.message.content = "!list all"
                             return await ctx.invoke(self.bot.get_command("list"))
-                        list_message = await channel.send(f"Meowth! No active channels!", embed=discord.Embed(colour=ctx.guild.me.colour, description=_('Report a new one with **!raid <name> <location> [weather] [timer]**')))
+                        report_emoji = self.bot.custom_emoji.get('raid_report', u'\U0001F4E2')
+                        list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
+                        list_embed.add_field(name=f"**No Current Channel Reports**", value=f"Meowth! There are no active channels. Report a raid with **{ctx.prefix}raid <name> <location> [weather] [timer]** or react with {report_emoji} and I can walk you through it!")
+                        list_message = await ctx.channel.send(embed=list_embed)
+                        await utils.add_reaction(list_message, report_emoji)
                         list_messages.append(list_message.id)
                     else:
                         listmsg += f"**Here are the {'active' if 'all' not in ctx.message.content.lower() else 'current'} channels for {channel.mention}**{'. You can use **'+ctx.prefix+'list all** to see all channels!' if 'all' not in ctx.message.content.lower() else ''}\n\n"
@@ -616,7 +627,7 @@ class Listing(commands.Cog):
         raid_lobby = raid_dict.get("lobby", None)
         raid_active = raid_dict.get("battling", None)
         raid_complete = raid_dict.get("completed", None)
-        list_embed = discord.Embed(colour=ctx.guild.me.colour)
+        list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
         lobby_str = ""
         active_str = ""
         complete_str = ""
@@ -1353,11 +1364,13 @@ class Listing(commands.Cog):
                         listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                     list_messages.append(listmsg.id)
                     index += 1
-            elif listmsg:
-                listmsg = await ctx.channel.send(listmsg)
-                list_messages.append(listmsg.id)
             else:
-                return
+                report_emoji = self.bot.custom_emoji.get('research_report', u'\U0001F4E2')
+                list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
+                list_embed.add_field(name=f"**No Current Research Reports**", value=f"Meowth! There are no reported research reports. Report one with **{ctx.prefix}research <pokestop>, <quest>, <location>** or react with {report_emoji} and I can walk you through it!")
+                listmsg = await ctx.channel.send(embed=list_embed)
+                await utils.add_reaction(listmsg, report_emoji)
+                list_messages.append(listmsg.id)
             self.bot.guild_dict[ctx.guild.id]['list_dict']['research'][ctx.channel.id] = list_messages
             for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['research']):
                 if not ctx.guild.get_channel(channel):
@@ -1499,9 +1512,7 @@ class Listing(commands.Cog):
             for line in questmsg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
-        else:
-            listmsg = _("Meowth! There are no reported research reports. Report one with **!research**")
-        return listmsg, None
+        return None, None
 
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -1623,11 +1634,13 @@ class Listing(commands.Cog):
                         listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                     list_messages.append(listmsg.id)
                     index += 1
-            elif listmsg:
-                listmsg = await ctx.channel.send(listmsg)
-                list_messages.append(listmsg.id)
             else:
-                return
+                report_emoji = self.bot.custom_emoji.get('lure_report', u'\U0001F4E2')
+                list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
+                list_embed.add_field(name=f"**No Current Lure Reports**", value=f"Meowth! There are no reported lure reports. Report one with **{ctx.prefix}lure <type> <location>** or react with {report_emoji} and I can walk you through it!")
+                listmsg = await ctx.channel.send(embed=list_embed)
+                await utils.add_reaction(listmsg, report_emoji)
+                list_messages.append(listmsg.id)
             self.bot.guild_dict[ctx.guild.id]['list_dict']['lure'][ctx.channel.id] = list_messages
             for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['lure']):
                 if not ctx.guild.get_channel(channel):
@@ -1669,9 +1682,7 @@ class Listing(commands.Cog):
             for line in lure_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
-        else:
-            listmsg = _("Meowth! There are no reported lures. Report one with **!lure**")
-        return listmsg, None
+        return None, None
 
     @_list.command(hidden=True)
     @checks.allowraidreport()
@@ -1782,11 +1793,13 @@ class Listing(commands.Cog):
                         listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                     list_messages.append(listmsg.id)
                     index += 1
-            elif listmsg:
-                listmsg = await ctx.channel.send(listmsg)
-                list_messages.append(listmsg.id)
             else:
-                return
+                report_emoji = self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2')
+                list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
+                list_embed.add_field(name=f"**No Current Invasion Reports**", value=f"Meowth! There are no reported invasion reports. Report one with **{ctx.prefix}invasion [location], [reward or type]** or react with {report_emoji} and I can walk you through it!")
+                listmsg = await ctx.channel.send(embed=list_embed)
+                await utils.add_reaction(listmsg, report_emoji)
+                list_messages.append(listmsg.id)
             self.bot.guild_dict[ctx.guild.id]['list_dict']['invasion'][ctx.channel.id] = list_messages
             for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['invasion']):
                 if not ctx.guild.get_channel(channel):
@@ -1845,9 +1858,7 @@ class Listing(commands.Cog):
             for line in inv_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
-        else:
-            listmsg = _("Meowth! There are no reported invasions. Report one with **!invasion**")
-        return listmsg, None
+        return None, None
 
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -1879,11 +1890,13 @@ class Listing(commands.Cog):
                         listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                     list_messages.append(listmsg.id)
                     index += 1
-            elif listmsg:
-                listmsg = await ctx.channel.send(listmsg)
-                list_messages.append(listmsg.id)
             else:
-                return
+                report_emoji = self.bot.custom_emoji.get('pvp_report', u'\U0001F4E2')
+                list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
+                list_embed.add_field(name=f"**No Current PVP Reports**", value=f"Meowth! There are no reported pvp battles. Report one with **{ctx.prefix}pvp <league> <location>** or react with {report_emoji} and I can walk you through it!")
+                listmsg = await ctx.channel.send(embed=list_embed)
+                await utils.add_reaction(listmsg, report_emoji)
+                list_messages.append(listmsg.id)
             self.bot.guild_dict[ctx.guild.id]['list_dict']['pvp'][ctx.channel.id] = list_messages
             for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['pvp']):
                 if not ctx.guild.get_channel(channel):
@@ -1925,9 +1938,7 @@ class Listing(commands.Cog):
             for line in pvp_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
-        else:
-            listmsg = _("Meowth! There are no requested PVP battles. Report one with **!pvp**")
-        return listmsg, None
+        return None, None
 
     @_list.command(aliases=['wild'])
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -1959,11 +1970,13 @@ class Listing(commands.Cog):
                         listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                     list_messages.append(listmsg.id)
                     index += 1
-            elif listmsg:
-                listmsg = await ctx.channel.send(listmsg)
-                list_messages.append(listmsg.id)
             else:
-                return
+                report_emoji = self.bot.custom_emoji.get('wild_report', u'\U0001F4E2')
+                list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
+                list_embed.add_field(name=f"**No Current Wild Reports**", value=f"Meowth! There are no reported wild pokemon. Report one with **{ctx.prefix}wild <pokemon> <location>** or react with {report_emoji} and I can walk you through it!")
+                listmsg = await ctx.channel.send(embed=list_embed)
+                await utils.add_reaction(listmsg, report_emoji)
+                list_messages.append(listmsg.id)
             self.bot.guild_dict[ctx.guild.id]['list_dict']['wild'][ctx.channel.id] = list_messages
             for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['wild']):
                 if not ctx.guild.get_channel(channel):
@@ -2021,9 +2034,7 @@ class Listing(commands.Cog):
             for line in wild_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
-        else:
-            listmsg = _("Meowth! There are no reported wild pokemon. Report one with **!wild <pokemon> <location>**")
-        return listmsg, None
+        return None, None
 
     @_list.command(aliases=['nest'])
     @commands.cooldown(1, 5, commands.BucketType.channel)
