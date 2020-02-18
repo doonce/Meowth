@@ -13,6 +13,7 @@ import itertools
 import traceback
 import functools
 from dateutil.relativedelta import relativedelta
+from urllib import parse
 
 import discord
 from discord.ext import commands, tasks
@@ -1022,6 +1023,11 @@ class Raid(commands.Cog):
                 pokemon.weather = "foggy"
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1" if embed_type == "egg" else pokemon.img_url
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin_exclusive.png?cache=1" if egg_level == "EX" else raid_img_url
+        report_dict = await utils.get_report_dict(ctx.bot, ctx.channel)
+        if report_dict:
+            report_message = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['report_message']
+            raid_report = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['raid_report']
+            raid_img_url = f"{raid_img_url}&report_message={raid_message}&raid_report={raid_report}"
         if embed_type == "egg":
             raid_embed = discord.Embed(title=f"Meowth! Click here for directions to the coming level {egg_level} raid!", description=gym_info, url=raid_gmaps_link, colour=ctx.guild.me.colour)
             if len(egg_info['pokemon']) > 1:
@@ -1812,9 +1818,9 @@ class Raid(commands.Cog):
                 'coordinates':coordinates,
                 'egg_level':newraid
             }
-            raid_embed = await self.make_raid_embed(ctx, report_details, raidexp)
             raid_message = await channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][channel.id]['raid_message'])
             report_message = await report_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][channel.id]['raid_report'])
+            raid_embed = await self.make_raid_embed(ctx, report_details, raidexp)
             oldembed = raid_message.embeds[0]
             for field in oldembed.fields:
                 if _('list') in field.name.lower():
@@ -4598,6 +4604,12 @@ class Raid(commands.Cog):
                         report_author = message.raw_mentions[0]
                         raid_message = message
                         break
+            try:
+                report_message = parse.parse_qs(parse.urlparse(message.embeds[0].thumbnail.url).query).get('report_message', [None])[0]
+                raid_report = parse.parse_qs(parse.urlparse(message.embeds[0].thumbnail.url).query).get('raid_report', [None])[0]
+            except:
+                report_message = None
+                raid_report = None
             if egg:
                 raidtype = 'egg'
                 report_dict = 'raidchannel_dict'
@@ -4779,8 +4791,8 @@ class Raid(commands.Cog):
                 'manual_timer': manual_timer,
                 'active': True,
                 'raid_message':raid_message.id,
-                'raid_report':None,
-                'report_message':None,
+                'raid_report':raid_report,
+                'report_message':report_message,
                 'address': raid_details,
                 'type': raidtype,
                 'pokemon': pokemon,
