@@ -2681,14 +2681,12 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['type'] = hatchtype
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['trainer_dict'] = trainer_dict
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['active'] = True
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['raid_message'] = raid_message
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['raid_report'] = egg_report
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pokemon'] = pokemon.name.lower()
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['egg_level'] = '0'
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['moveset'] = 0
         raid_channel_name = await self.edit_channel_name(raid_channel)
-        await raid_channel.edit(name=raid_channel_name, topic=end.strftime(_('Ends on %B %d at %I:%M %p (%H:%M)')))   
+        await raid_channel.edit(name=raid_channel_name, topic=end.strftime(_('Ends on %B %d at %I:%M %p (%H:%M)')))
         try:
             await raid_message.edit(new_content=raidmsg, embed=raid_embed, content=raidmsg)
             raid_message = raid_message.id
@@ -2699,6 +2697,8 @@ class Raid(commands.Cog):
             egg_report = egg_report.id
         except (discord.errors.NotFound, AttributeError):
             egg_report = None
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['raid_message'] = raid_message
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['raid_report'] = egg_report            
         try:
             timerstr = await self.print_raid_timer(raid_channel)
             timerset_embed = discord.Embed(colour=raid_channel.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
