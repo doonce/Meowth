@@ -1027,7 +1027,7 @@ class Raid(commands.Cog):
         if report_dict:
             report_message = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['report_message']
             raid_report = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['raid_report']
-            raid_img_url = f"{raid_img_url}&report_message={raid_message}&raid_report={raid_report}"
+            raid_img_url = f"{raid_img_url}&report_message={report_message}&raid_report={raid_report}"
         if embed_type == "egg":
             raid_embed = discord.Embed(title=f"Meowth! Click here for directions to the coming level {egg_level} raid!", description=gym_info, url=raid_gmaps_link, colour=ctx.guild.me.colour)
             if len(egg_info['pokemon']) > 1:
