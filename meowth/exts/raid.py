@@ -2698,7 +2698,7 @@ class Raid(commands.Cog):
         except (discord.errors.NotFound, AttributeError):
             egg_report = None
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['raid_message'] = raid_message
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['raid_report'] = egg_report            
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['raid_report'] = egg_report
         try:
             timerstr = await self.print_raid_timer(raid_channel)
             timerset_embed = discord.Embed(colour=raid_channel.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
@@ -4578,10 +4578,10 @@ class Raid(commands.Cog):
             name = channel.name
             topic = channel.topic
             for word in list(name.split('-')):
-                if word in self.bot.raid_list or word == "level" or word == "meetup":
+                if word in self.bot.raid_list or word == "level" or word == "meetup" or word.isdigit():
                     break
                 name = name.replace(word, '').lstrip('-')
-            egg = re.match(_('[1-5]-egg'), name)
+            egg = re.match(r'[1-5]-egg', name)
             meetup = re.match(_('meetup'), name)
             train = re.match(_('train'), name)
             now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
