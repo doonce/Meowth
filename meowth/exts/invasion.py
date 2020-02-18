@@ -480,7 +480,7 @@ class Invasion(commands.Cog):
         while True:
             async with ctx.typing():
                 if details:
-                    invasion_split = details.rsplit(",", 2)
+                    invasion_split = details.split(",", 2)
                     if len(invasion_split) == 1:
                         invasion_split.append([])
                     location, reward = invasion_split

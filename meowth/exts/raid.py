@@ -536,7 +536,7 @@ class Raid(commands.Cog):
                             cleanup_setting = self.bot.guild_dict[guild.id].get('configure_dict').get(channel_type, {}).setdefault('cleanup_setting', "edit")
                             if cleanup_setting == "edit":
                                 try:
-                                    await reportmsg.edit(content=report_message.content.splitlines()[0], embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
+                                    await reportmsg.edit(content=reportmsg.content.splitlines()[0], embed=discord.Embed(description=expiremsg, colour=guild.me.colour))
                                     await reportmsg.clear_reactions()
                                 except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                                     pass
@@ -2677,6 +2677,18 @@ class Raid(commands.Cog):
         ctx = await self.bot.get_context(hatch_msg)
         ctx.raidreport = egg_report
         ctx.raid_channel = raid_channel
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['exp'] = raid_expire
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['type'] = hatchtype
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['trainer_dict'] = trainer_dict
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['active'] = True
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['raid_message'] = raid_message
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['raid_report'] = egg_report
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pokemon'] = pokemon.name.lower()
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['egg_level'] = '0'
+        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['moveset'] = 0
+        raid_channel_name = await self.edit_channel_name(raid_channel)
+        await raid_channel.edit(name=raid_channel_name, topic=end.strftime(_('Ends on %B %d at %I:%M %p (%H:%M)')))   
         try:
             await raid_message.edit(new_content=raidmsg, embed=raid_embed, content=raidmsg)
             raid_message = raid_message.id
@@ -2688,6 +2700,15 @@ class Raid(commands.Cog):
         except (discord.errors.NotFound, AttributeError):
             egg_report = None
         try:
+            timerstr = await self.print_raid_timer(raid_channel)
+            timerset_embed = discord.Embed(colour=raid_channel.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
+            timerset_embed.add_field(name=f"**Channel Timer**", value=f"{timerstr}")
+            if self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id].get('timerset_msg'):
+                timerset_msg = await raid_channel.fetch_message(self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['timerset_msg'])
+                await timerset_msg.edit(content=None, embed=timerset_embed)
+        except:
+            pass
+        try:
             hatch_message = await raid_channel.fetch_message(self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['hatch_message'])
             await utils.safe_delete(hatch_message)
             del self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['hatch_message']
@@ -2696,18 +2717,6 @@ class Raid(commands.Cog):
         ctrsmessage_id = eggdetails.get('ctrsmessage', None)
         ctrsmessage = self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id].get('ctrsmessage', None)
         ctrs_dict = self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id].get('ctrs_dict', {})
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['trainer_dict'] = trainer_dict
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['exp'] = raid_expire
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['active'] = True
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['raid_message'] = raid_message
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['raid_report'] = egg_report
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['type'] = hatchtype
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pokemon'] = pokemon.name.lower()
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['egg_level'] = '0'
-        self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['moveset'] = 0
-        raid_channel_name = await self.edit_channel_name(raid_channel)
-        await raid_channel.edit(name=raid_channel_name, topic=end.strftime(_('Ends on %B %d at %I:%M %p (%H:%M)')))
         ctrs_dict = await self._get_generic_counters(raid_channel, str(pokemon), weather)
         if str(egg_level) in self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('counters', {}).get('auto_levels', []) and str(pokemon) and not ctrsmessage:
             embed = ctrs_dict[0]['embed'] if ctrs_dict else None
