@@ -3262,7 +3262,7 @@ class Raid(commands.Cog):
             else:
                 index += 1
         newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
-        newembed.set_thumbnail(url=f"{oldembed.thumbnail.url}&report_message={report_message}&raid_report={oldreportmsg.id}")
+        newembed.set_thumbnail(url=f"{oldembed.thumbnail.url.split('&report_message=')[0]}&report_message={report_message}&raid_report={oldreportmsg.id}")
         newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
         try:
             await oldraidmsg.edit(embed=newembed, content=oldraidmsg.content)
@@ -4179,7 +4179,7 @@ class Raid(commands.Cog):
         try:
             raidmsg = await raid_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][raid_channel.id]['raid_message'])
             embed = raidmsg.embeds[0]
-            embed.set_thumbnail(url=f"{embed.thumbnail.url}&report_message={report_message}&raid_report={raid_report}")
+            embed.set_thumbnail(url=f"{embed.thumbnail.url.split('&report_message=')[0]}&report_message={report_message}&raid_report={raid_report}")
             index = 0
             for field in embed.fields:
                 if _("expires") in field.name.lower() or _("hatches") in field.name.lower() or _("ends:**") in field.name.lower():
@@ -4325,7 +4325,7 @@ class Raid(commands.Cog):
             reportmsg = await report_channel.fetch_message(rc_d['raid_report'])
             userreport = rc_d['report_message']
             embed = raidmsg.embeds[0]
-            embed.set_thumbnail(url=f"{embed.thumbnail.url}&report_message={userreport}&raid_report={reportmsg.id}")
+            embed.set_thumbnail(url=f"{embed.thumbnail.url.split('&report_message=')[0]}&report_message={userreport}&raid_report={reportmsg.id}")
             index = 0
             for field in embed.fields:
                 if _("**Next Group:**") in field.name or _("Starts:**") in field.name:
@@ -4517,7 +4517,7 @@ class Raid(commands.Cog):
                     else:
                         index += 1
             newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
-            newembed.set_thumbnail(url=f"{oldembed.thumbnail.url}&report_message={report_message}&raid_report={raid_report}")
+            newembed.set_thumbnail(url=f"{oldembed.thumbnail.url.split('&report_message=')[0]}&report_message={report_message}&raid_report={raid_report}")
             newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
             otw_list = []
             rsvp_list = []
