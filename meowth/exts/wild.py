@@ -179,6 +179,8 @@ class Wild(commands.Cog):
 
     async def make_wild_embed(self, ctx, details):
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
+        male_sign = ctx.bot.custom_emoji.get('male_sign', u'\U00002642\U0000fe0f')
+        female_sign = ctx.bot.custom_emoji.get('female_sign', u'\U00002640\U0000fe0f')
         gender = details.get('gender', None)
         gender = gender if gender else ''
         wild_iv = details.get('wild_iv', {})
@@ -224,10 +226,10 @@ class Wild(commands.Cog):
         if pokemon and "wild" in pokemon.shiny_available:
             shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         details_str = f"{shiny_str}{pokemon.name.title()}"
-        if gender and "female" in gender.lower():
-            details_str += f" ♀"
-        elif gender and "male" in gender.lower():
-            details_str += f" ♂"
+        if gender and "female" in gender.lower() and "nidoran" not in pokemon.name.lower():
+            details_str += f" {female_sign}"
+        elif gender and "male" in gender.lower() and "nidoran" not in pokemon.name.lower():
+            details_str += f" {male_sign}"
         details_str += f" {pokemon.emoji}"
         if pokemon.name.lower() == "ditto" and disguise:
             details_str += f"\nDisguise: {disguise.name.title()} {disguise.emoji}"
@@ -788,6 +790,7 @@ class Wild(commands.Cog):
 
         # get settings
         wild_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('wildreport_dict', {}))
+        reset_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_dash.png?cache=1')
         await utils.safe_delete(message)
 
         if not wild_dict:
@@ -800,7 +803,8 @@ class Wild(commands.Cog):
                 self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['wildreport_dict'][report_message].get('dm_dict', {})))
                 del self.bot.guild_dict[guild.id]['wild_dict'][report_message]
             return
-        rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all wild reports?'))
+        reset_embed.add_field(name=f"**Reset Wild Reports**", value=f"**Meowth!** Are you sure you\'d like to remove all wild reports?")
+        rusure = await channel.send(embed=reset_embed)
         try:
             timeout = False
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
@@ -808,8 +812,9 @@ class Wild(commands.Cog):
             timeout = True
         if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
-            confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
-            return
+            reset_embed.clear_fields()
+            reset_embed.add_field(name=f"Reset Cancelled", value=f"Your wild reset request has been canceled. No changes have been made.")
+            return await channel.send(embed=reset_embed, delete_after=10)
         elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             async with ctx.typing():
@@ -820,8 +825,9 @@ class Wild(commands.Cog):
                     except:
                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['wildreport_dict'][report].get('dm_dict', {})))
                         del self.bot.guild_dict[guild.id]['wildreport_dict'][report]
-                confirmation = await channel.send(_('Wilds reset.'), delete_after=10)
-                return
+                reset_embed.clear_fields()
+                reset_embed.add_field(name=f"Wilds Reset", value=f"Your reset request has been completed.")
+                return await channel.send(embed=reset_embed, delete_after=10)
         else:
             return
 

@@ -2762,6 +2762,7 @@ class Raid(commands.Cog):
         else:
             report_dict = 'raidchannel_dict'
         raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].setdefault(report_dict, {}))
+        reset_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_dash.png?cache=1')
         if channel and channel.id not in raid_dict:
             channel = None
         if not channel and ctx.channel.id in raid_dict:
@@ -2769,7 +2770,8 @@ class Raid(commands.Cog):
         if not channel:
             def check(m):
                 return m.author == ctx.author and m.channel == ctx.channel
-            raid_wait = await ctx.send(f"**Meowth!** {ctx.author.mention}, Reply with a channel mention of the raid you'd like to delete or **all** to reset all {type} channels{' or a **number** to reset all of that level' if type == 'raid' else ''}. If you want to stop, reply with **cancel**.")
+            reset_embed.add_field(name=f"**Reset {type.title()} Reports**", value=f"**Meowth!** {ctx.author.mention}, Reply with a channel mention of the {type} you'd like to delete or **all** to reset all {type} channels{' or a **number** to reset all of that level' if type == 'raid' else ''}. If you want to stop, reply with **cancel**.")
+            raid_wait = await ctx.send(embed=reset_embed)
             try:
                 raid_reply = await self.bot.wait_for('message', timeout=60, check=check)
                 await utils.safe_delete(raid_wait)
@@ -2777,8 +2779,9 @@ class Raid(commands.Cog):
                 return await utils.safe_delete(raid_wait)
             if raid_reply.content.lower() == "cancel":
                 await utils.safe_delete(raid_wait)
-                confirmation = await ctx.send(_('Reset cancelled.'), delete_after=10)
-                return
+                reset_embed.clear_fields()
+                reset_embed.add_field(name=f"Reset Cancelled", value=f"Your {type} reset request has been canceled. No changes have been made.")
+                return await ctx.send(embed=reset_embed, delete_after=10)
             elif raid_reply.content.lower() == "all" or (raid_reply.content.isdigit() and int(raid_reply.content) <= 5):
                 await utils.safe_delete(raid_reply)
                 async with ctx.typing():
@@ -2798,7 +2801,9 @@ class Raid(commands.Cog):
                 except:
                     pass
                 if not channel:
-                    return await ctx.send("Reset cancelled.", delete_after=10)
+                    reset_embed.clear_fields()
+                    reset_embed.add_field(name=f"Reset Cancelled", value=f"Your {type} reset request has been canceled. No changes have been made.")
+                    return await ctx.send(embed=reset_embed, delete_after=10)
                 self.bot.guild_dict[ctx.guild.id][report_dict][channel.id]['delete'] = True
                 self.bot.guild_dict[ctx.guild.id][report_dict][channel.id]['exp'] = time.time()
                 self.bot.loop.create_task(self.expire_channel(channel))
@@ -3229,25 +3234,22 @@ class Raid(commands.Cog):
     @meetup.command(name="title")
     @checks.meetupchannel()
     async def meetup_title(self, ctx, *, title):
-        if "train" in str(ctx.command):
-            meetup_type = "train"
-            meetup_dict = "raidtrain_dict"
-        else:
-            meetup_type = "meetup"
-            meetup_dict = "meetup_dict"
+        meetup_dict = await utils.get_report_dict(ctx.bot, ctx.channel)
+        meetup_type = "train" if meetup_dict == "raidtrain_dict" else "meetup"
         message = ctx.message
         channel = message.channel
         author = message.author
         guild = message.guild
-        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         can_manage = ctx.channel.permissions_for(ctx.author).manage_channels
         try:
             report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id][meetup_dict][channel.id]['report_channel'])
         except KeyError:
             return
-        oldraidmsg = await message.channel.fetch_message(self.bot.guild_dict[guild.id][meetup_dict][channel.id]['raid_message'])
+        oldraidmsg = await ctx.channel.fetch_message(self.bot.guild_dict[guild.id][meetup_dict][channel.id]['raid_message'])
         oldreportmsg = await report_channel.fetch_message(self.bot.guild_dict[guild.id][meetup_dict][channel.id]['raid_report'])
+        report_message = self.bot.guild_dict[guild.id][meetup_dict][channel.id]['report_message']
         oldembed = oldraidmsg.embeds[0]
         newembed = discord.Embed(title=oldembed.title, description=oldembed.description, url=oldembed.url, colour=oldembed.colour)
         for field in oldembed.fields:
@@ -3260,7 +3262,7 @@ class Raid(commands.Cog):
             else:
                 index += 1
         newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
-        newembed.set_thumbnail(url=oldembed.thumbnail.url)
+        newembed.set_thumbnail(url=f"{oldembed.thumbnail.url}&report_message={report_message}&raid_report={oldreportmsg.id}")
         newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
         try:
             await oldraidmsg.edit(embed=newembed, content=oldraidmsg.content)
@@ -3270,13 +3272,13 @@ class Raid(commands.Cog):
             await oldreportmsg.edit(embed=newembed, content=oldreportmsg.content)
         except:
             pass
-        self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['raid_message'] = oldraidmsg.id
-        self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['raid_report'] = oldreportmsg.id
-        self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['meetup']['title'] = title
-        channel_name = self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['meetup']['channel_name']
+        self.bot.guild_dict[ctx.guild.id][meetup_dict][ctx.channel.id]['raid_message'] = oldraidmsg.id
+        self.bot.guild_dict[ctx.guild.id][meetup_dict][ctx.channel.id]['raid_report'] = oldreportmsg.id
+        self.bot.guild_dict[ctx.guild.id][meetup_dict][ctx.channel.id]['meetup']['title'] = title
+        channel_name = self.bot.guild_dict[ctx.guild.id][meetup_dict][ctx.channel.id]['meetup']['channel_name']
         if can_manage or meetup_type == "train":
             if ctx.invoked_with != "title":
-                self.bot.guild_dict[message.guild.id][meetup_dict][message.channel.id]['meetup']['channel_name'] = utils.sanitize_channel_name(title).lower()
+                self.bot.guild_dict[message.guild.id][meetup_dict][ctx.channel.id]['meetup']['channel_name'] = utils.sanitize_channel_name(title).lower()
                 raid_channel_name = await self.edit_channel_name(channel)
                 return await ctx.channel.edit(name=raid_channel_name)
             question = await ctx.channel.send(f"Would you like to change the channel name to {ctx.channel.name.replace('train-', '').replace('meetup-', '').replace(channel_name, '')}{meetup_type.lower()}-{title.lower()}?")
@@ -4172,9 +4174,12 @@ class Raid(commands.Cog):
         raid_channel_name = await self.edit_channel_name(raid_channel)
         await raid_channel.edit(name=raid_channel_name, topic=topicstr)
         report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id][report_dict][raid_channel.id]['report_channel'])
+        raid_report = self.bot.guild_dict[guild.id][report_dict][raid_channel.id]['raid_report']
+        report_message = self.bot.guild_dict[guild.id][report_dict][raid_channel.id]['report_message']
         try:
             raidmsg = await raid_channel.fetch_message(self.bot.guild_dict[guild.id][report_dict][raid_channel.id]['raid_message'])
             embed = raidmsg.embeds[0]
+            embed.set_thumbnail(url=f"{embed.thumbnail.url}&report_message={report_message}&raid_report={raid_report}")
             index = 0
             for field in embed.fields:
                 if _("expires") in field.name.lower() or _("hatches") in field.name.lower() or _("ends:**") in field.name.lower():
@@ -4311,14 +4316,16 @@ class Raid(commands.Cog):
                 await channel.edit(topic=topicstr)
             timerstr = await self.print_raid_timer(ctx.channel)
             if meetup:
-                starttime_embed.add_field(name=f"**Channel Start Time**", value=f"{timerstr}").set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
+                starttime_embed.add_field(name=f"**Channel Timer - Start Time**", value=f"{timerstr}").set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_date.png?cache=1")
             else:
-                starttime_embed.add_field(name=f"**Channel Start Time**", value=f"Meowth! The current start time has been set to: **{nextgroup}**\n\n{timerstr}")
+                starttime_embed.add_field(name=f"**Channel Timer - Start Time**", value=f"Meowth! The current start time has been set to: **{nextgroup}**\n\n{timerstr}")
             await channel.send(embed=starttime_embed, delete_after=60)
             report_channel = self.bot.get_channel(rc_d['report_channel'])
             raidmsg = await channel.fetch_message(rc_d['raid_message'])
             reportmsg = await report_channel.fetch_message(rc_d['raid_report'])
+            userreport = rc_d['report_message']
             embed = raidmsg.embeds[0]
+            embed.set_thumbnail(url=f"{embed.thumbnail.url}&report_message={userreport}&raid_report={reportmsg.id}")
             index = 0
             for field in embed.fields:
                 if _("**Next Group:**") in field.name or _("Starts:**") in field.name:
@@ -4463,6 +4470,8 @@ class Raid(commands.Cog):
             report_level = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('egg_level', None)
             report_meetup = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('meetup', None)
             report_pokemon = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('pkmn_obj', None)
+            report_message = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('report_message', None)
+            raid_report = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('raid_report', None)
             report_train = True if report_dict == "raidtrain_dict" else False
             raidtype = "meetup" if report_meetup else report_type
             raidtype = "train" if report_train else raidtype
@@ -4508,7 +4517,7 @@ class Raid(commands.Cog):
                     else:
                         index += 1
             newembed.set_footer(text=oldembed.footer.text, icon_url=oldembed.footer.icon_url)
-            newembed.set_thumbnail(url=oldembed.thumbnail.url)
+            newembed.set_thumbnail(url=f"{oldembed.thumbnail.url}&report_message={report_message}&raid_report={raid_report}")
             newembed.set_author(name=oldembed.author.name, icon_url=oldembed.author.icon_url)
             otw_list = []
             rsvp_list = []
@@ -4584,29 +4593,41 @@ class Raid(commands.Cog):
             name = channel.name
             topic = channel.topic
             for word in list(name.split('-')):
-                if word in self.bot.raid_list or word == "level" or word == "meetup" or word.isdigit():
+                if word in self.bot.raid_list or word == "level" or word == "meetup" or word == "train" or word.isdigit():
                     break
                 name = name.replace(word, '').lstrip('-')
             egg = re.match(r'[1-5]-egg', name)
             meetup = re.match(_('meetup'), name)
             train = re.match(_('train'), name)
             now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+            timerset_msg = None
+            weather_msg = None
+            ctrs_message = None
             reportchannel = None
             raid_message = None
             report_author = None
             pkmn_obj = None
+            weather = None
             trainer_dict = {}
             async for message in channel.history(limit=500, oldest_first=True):
                 if message.author.id == guild.me.id or "Meowth" in message.author.display_name:
-                    c = _('Coordinate here')
-                    if c in message.content:
-                        reportchannel = message.raw_channel_mentions[0]
-                        report_author = message.raw_mentions[0]
-                        raid_message = message
-                        break
+                    if message.embeds:
+                        if f"Coordinate here" in message.content:
+                            reportchannel = message.raw_channel_mentions[0]
+                            report_author = message.raw_mentions[0]
+                            raid_message = message
+                        elif message.embeds[0].fields and "channel timer" in message.embeds[0].fields[0].name.lower():
+                            timerset_msg = message.id
+                        elif message.embeds[0].fields and "channel weather" in message.embeds[0].fields[0].name.lower():
+                            weather_msg = message.id
+                            weather_search = re.search(r'currently set to (.*)\. This', message.embeds[0].fields[0].value)
+                            if weather_search and weather_search.group(1) != "None":
+                                weather = weather_search.group(1).lower()
+                        elif "best counters" in message.content.lower():
+                            ctrs_message = message.id
             try:
-                report_message = parse.parse_qs(parse.urlparse(message.embeds[0].thumbnail.url).query).get('report_message', [None])[0]
-                raid_report = parse.parse_qs(parse.urlparse(message.embeds[0].thumbnail.url).query).get('raid_report', [None])[0]
+                report_message = int(parse.parse_qs(parse.urlparse(raid_message.embeds[0].thumbnail.url).query).get('report_message', [None])[0])
+                raid_report = int(parse.parse_qs(parse.urlparse(raid_message.embeds[0].thumbnail.url).query).get('raid_report', [None])[0])
             except:
                 report_message = None
                 raid_report = None
@@ -4792,21 +4813,32 @@ class Raid(commands.Cog):
                 'active': True,
                 'raid_message':raid_message.id,
                 'raid_report':raid_report,
+                'raid_embed': raid_message.embeds[0],
                 'report_message':report_message,
                 'address': raid_details,
                 'type': raidtype,
                 'pokemon': pokemon,
                 'egg_level':egg_level,
-                'pkmn_obj': pkmn_obj
+                'pkmn_obj': pkmn_obj,
+                'timerset_msg': timerset_msg,
+                'weather_msg':weather_msg,
+                'coordinates':'',
+                'weather':weather
             }
             raid_channel_name = await self.edit_channel_name(ctx.channel)
             await ctx.channel.edit(name=raid_channel_name)
+            recovermsg = _("Meowth! This channel has been recovered! However, there may be some inaccuracies in what I remembered! Here's what I have:")
+            if "channel" in report_dict and pkmn_obj:
+                self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['ctrsmessage'] = ctrs_message
+                ctrs_dict = await self._get_generic_counters(ctx.channel, pkmn_obj, weather.lower())
+                self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['ctrs_dict'] = ctrs_dict
+                self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['moveset'] = 0
             if train:
                 self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'] = [ctx.author.id]
                 for member in ctx.guild.members:
                     if ctx.channel.permissions_for(member).manage_channels:
                         self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['managers'].append(member.id)
-            recovermsg = _("Meowth! This channel has been recovered! However, there may be some inaccuracies in what I remembered! Here's what I have:")
+                recovermsg += _(" You will have to set the train managers again.")
             if meetup or train:
                 self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['meetup'] = {'start':False, 'end':False}
                 recovermsg += _(" You will have to set the event times again.")
@@ -4814,7 +4846,8 @@ class Raid(commands.Cog):
             bulletpoint = self.bot.custom_emoji.get('bullet', u'\U0001F539')
             list_cog = self.bot.get_cog('Listing')
             if not list_cog:
-                return
+                self.bot.loop.create_task(self.expiry_check(channel))
+                await channel.send(recovermsg)
             recovermsg += ('\n' + bulletpoint) + (await list_cog._interest(ctx))
             recovermsg += ('\n' + bulletpoint) + (await list_cog._otw(ctx))
             recovermsg += ('\n' + bulletpoint) + (await list_cog._waiting(ctx))

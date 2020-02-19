@@ -825,6 +825,7 @@ class Research(commands.Cog):
 
         # get settings
         research_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('questreport_dict', {}))
+        reset_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_dash.png?cache=1')
         await utils.safe_delete(message)
 
         if not research_dict:
@@ -838,7 +839,8 @@ class Research(commands.Cog):
                 return
             await self.expire_research(report_message)
             return
-        rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all research reports?'))
+        reset_embed.add_field(name=f"**Reset Research Reports**", value=f"**Meowth!** Are you sure you\'d like to remove all research reports?")
+        rusure = await channel.send(embed=reset_embed)
         try:
             timeout = False
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
@@ -846,8 +848,9 @@ class Research(commands.Cog):
             timeout = True
         if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
-            confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
-            return
+            reset_embed.clear_fields()
+            reset_embed.add_field(name=f"Reset Cancelled", value=f"Your research reset request has been canceled. No changes have been made.")
+            return await channel.send(embed=reset_embed, delete_after=10)
         elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             async with ctx.typing():
@@ -859,8 +862,9 @@ class Research(commands.Cog):
                         del self.bot.guild_dict[guild.id]['questreport_dict'][report]
                         return
                     self.bot.loop.create_task(self.expire_research(report_message))
-                confirmation = await channel.send(_('Research reset.'), delete_after=10)
-                return
+                reset_embed.clear_fields()
+                reset_embed.add_field(name=f"Research Reset", value=f"Your reset request has been completed.")
+                return await channel.send(embed=reset_embed, delete_after=10)
         else:
             return
 

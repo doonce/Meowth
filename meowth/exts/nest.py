@@ -796,6 +796,7 @@ class Nest(commands.Cog):
         channel = ctx.channel
         # get settings
         nest_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('nest_dict', {}).setdefault(channel.id, {}))
+        reset_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_dash.png?cache=1')
         await utils.safe_delete(message)
         if not nest_dict:
             return
@@ -815,6 +816,7 @@ class Nest(commands.Cog):
             return m.author == ctx.author and m.channel == ctx.channel
         list_messages = []
         nest_embed, nest_pages = await self.get_nest_reports(ctx)
+        nest_embed.set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_dash.png?cache=1')
         nest_list = await channel.send("**Meowth!** {mention}, here's a list of all of the current nests, reply with the number of the nest to reset or **all** to reset all nests.\n\nIf you want to stop your report, reply with **cancel**.".format(mention=author.mention))
         list_messages.append(nest_list)
         for p in nest_pages:
@@ -831,8 +833,9 @@ class Nest(commands.Cog):
             return
         if nest_name_reply.content.lower() == "cancel":
             await utils.safe_delete(nest_name_reply)
-            confirmation = await channel.send(_('Reset cancelled.'), delete_after=10)
-            return
+            reset_embed.clear_fields()
+            reset_embed.add_field(name=f"Reset Cancelled", value=f"Your nest reset request has been canceled. No changes have been made.")
+            return await channel.send(embed=reset_embed, delete_after=10)
         elif nest_name_reply.content.lower() == "all":
             await utils.safe_delete(nest_name_reply)
             async with ctx.typing():
@@ -846,8 +849,9 @@ class Nest(commands.Cog):
                         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                             self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report].get('dm_dict', {})))
                             del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][report]
-                confirmation = await channel.send(_('Nests reset. Use **!nest time** to set a new migration time.'), delete_after=10)
-                return
+                reset_embed.clear_fields()
+                reset_embed.add_field(name=f"All Nests Reset", value=f"Your nest reset request was successful. Use **{ctx.prefix}nest time** to set a new migration time.")
+                return await channel.send(embed=reset_embed, delete_after=10)
         else:
             await utils.safe_delete(nest_name_reply)
             try:
@@ -862,8 +866,9 @@ class Nest(commands.Cog):
                     except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name]['reports'][report].get('dm_dict', {})))
                         del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest_name]['reports'][report]
-                confirmation = await channel.send(f"{nest_name.title()} reset. Use **!nest time** to set a new migration time.", delete_after=10)
-            return
+                reset_embed.clear_fields()
+                reset_embed.add_field(name=f"{nest_name.title()} Nest Reset", value=f"Your nest reset request was successful. Use **{ctx.prefix}nest time** to set a new migration time.")
+                return await channel.send(embed=reset_embed, delete_after=10)
 
     @nest.command(name='time')
     @checks.allownestreport()

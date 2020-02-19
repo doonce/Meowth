@@ -304,10 +304,12 @@ class Invasion(commands.Cog):
         info_emoji = ctx.bot.custom_emoji.get('invasion_info', u'\U00002139\U0000fe0f')
         report_emoji = self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2')
         list_emoji = ctx.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
+        male_sign = ctx.bot.custom_emoji.get('male_sign', u'\U00002642\U0000fe0f')
+        female_sign = ctx.bot.custom_emoji.get('female_sign', u'\U00002640\U0000fe0f')
         author = ctx.guild.get_member(invasion_dict.get('report_author', None))
         if author:
             ctx.author = author
-        invasion_embed.set_author(name=f"Invasion Report {' (♀)' if gender == 'female' else ''}{' (♂)' if gender == 'male' else ''}", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_shadow.png?cache=2")
+        invasion_embed.set_author(name=f"Invasion Report {' ('+female_sign+')' if gender == 'female' else ''}{' ('+male_sign+')' if gender == 'male' else ''}", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_shadow.png?cache=2")
         if leader:
             invasion_embed.set_author(name=f"Team Rocket Leader Report ({leader.title()})", icon_url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_Leader_MapCompass.png?cache=2")
             invasion_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/invasion/teamrocket{'_'+leader.lower()}.png?cache=1")
@@ -672,6 +674,7 @@ class Invasion(commands.Cog):
 
         # get settings
         invasion_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('invasion_dict', {}))
+        reset_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_dash.png?cache=1')
         await utils.safe_delete(message)
 
         if not invasion_dict:
@@ -685,7 +688,8 @@ class Invasion(commands.Cog):
                 return
             await self.expire_invasion(report_message)
             return
-        rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all invasion reports?'))
+        reset_embed.add_field(name=f"**Reset Invasion Reports**", value=f"**Meowth!** Are you sure you\'d like to remove all invasion reports?")
+        rusure = await channel.send(embed=reset_embed)
         try:
             timeout = False
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
@@ -693,8 +697,9 @@ class Invasion(commands.Cog):
             timeout = True
         if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
-            confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
-            return
+            reset_embed.clear_fields()
+            reset_embed.add_field(name=f"Reset Cancelled", value=f"Your invasion reset request has been canceled. No changes have been made.")
+            return await channel.send(embed=reset_embed, delete_after=10)
         elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             async with ctx.typing():
@@ -706,8 +711,9 @@ class Invasion(commands.Cog):
                         del self.bot.guild_dict[guild.id]['invasion_dict'][report]
                         return
                     self.bot.loop.create_task(self.expire_invasion(report_message))
-                confirmation = await channel.send(_('Invasions reset.'), delete_after=10)
-                return
+                reset_embed.clear_fields()
+                reset_embed.add_field(name=f"Invasions Reset", value=f"Your reset request has been completed.")
+                return await channel.send(embed=reset_embed, delete_after=10)
         else:
             return
 

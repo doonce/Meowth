@@ -512,6 +512,7 @@ class Lure(commands.Cog):
 
         # get settings
         lure_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('lure_dict', {}))
+        reset_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_dash.png?cache=1')
         await utils.safe_delete(message)
 
         if not lure_dict:
@@ -524,7 +525,8 @@ class Lure(commands.Cog):
                 self.bot.loop.create_task(utils.expire_dm_reports(self.bot, lure_dict.get(report_message, {}).get('dm_dict', {})))
                 del self.bot.guild_dict[guild.id]['lure_dict'][report_message]
             return
-        rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all lures?'))
+        reset_embed.add_field(name=f"**Reset Lure Reports**", value=f"**Meowth!** Are you sure you\'d like to remove all lure reports?")
+        rusure = await channel.send(embed=reset_embed)
         try:
             timeout = False
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
@@ -532,8 +534,9 @@ class Lure(commands.Cog):
             timeout = True
         if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
-            confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
-            return
+            reset_embed.clear_fields()
+            reset_embed.add_field(name=f"Reset Cancelled", value=f"Your lure reset request has been canceled. No changes have been made.")
+            return await channel.send(embed=reset_embed, delete_after=10)
         elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             async with ctx.typing():
@@ -544,8 +547,9 @@ class Lure(commands.Cog):
                     except:
                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, lure_dict.get(report, {}).get('dm_dict', {})))
                         del self.bot.guild_dict[guild.id]['lure_dict'][report]
-                confirmation = await channel.send(_('Lures reset.'), delete_after=10)
-                return
+                reset_embed.clear_fields()
+                reset_embed.add_field(name=f"Lures Reset", value=f"Your reset request has been completed.")
+                return await channel.send(embed=reset_embed, delete_after=10)
         else:
             return
 

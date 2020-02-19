@@ -477,23 +477,26 @@ class Want(commands.Cog):
                 spellcheck_dict[entered_want] = match
         for entered_want in want_list:
             boss_str = ""
+            shiny_str = ""
+            if entered_want.shiny_available:
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
             if entered_want.id in self.bot.raid_list and (user_link or "boss" in ctx.invoked_with):
                 boss_str = f" (Level {entered_want.raid_level} Boss)"
             if (entered_want.size or entered_want.gender or entered_want.region or entered_want.form or entered_want.shiny or entered_want.shadow) and len(str(entered_want).split()) > 1:
                 if str(entered_want) in user_forms:
-                    already_want_list.append(str(entered_want))
+                    already_want_list.append(f"{shiny_str}{str(entered_want)} {entered_want.emoji}")
                     already_want_count += 1
                 else:
-                    user_forms.append(str(entered_want))
-                    added_list.append(f"{str(entered_want)}{boss_str}")
+                    user_forms.append(f"{str(entered_want)}")
+                    added_list.append(f"{shiny_str}{str(entered_want)} {entered_want.emoji}{boss_str}")
                     added_count += 1
             else:
                 if entered_want.id in user_wants:
-                    already_want_list.append(entered_want.name.title())
+                    already_want_list.append(f"{shiny_str}{entered_want.name.title()} {entered_want.emoji}")
                     already_want_count += 1
                 else:
                     user_wants.append(entered_want.id)
-                    added_list.append(f"{entered_want.name.title()}{boss_str}")
+                    added_list.append(f"{shiny_str}{entered_want.name.title()} {entered_want.emoji}{boss_str}")
                     added_count += 1
         want_count = added_count + already_want_count + len(spellcheck_dict)
         confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if want_count > 1 and 'boss' in ctx.invoked_with else ''}:\n\n"
@@ -1750,23 +1753,26 @@ class Want(commands.Cog):
                 spellcheck_dict[entered_unwant] = match
         for entered_unwant in unwant_list:
             boss_str = ""
+            shiny_str = ""
+            if entered_unwant.shiny_available:
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
             if entered_unwant.id in self.bot.raid_list and (user_link or "boss" in ctx.invoked_with):
                 boss_str = f" (Level {entered_unwant.raid_level} Boss)"
             if (entered_unwant.size or entered_unwant.gender or entered_unwant.form or entered_unwant.region or entered_unwant.shiny or entered_unwant.shadow) and len(str(entered_unwant).split()) > 1:
                 if str(entered_unwant) not in user_forms:
-                    not_wanted_list.append(str(entered_unwant))
+                    not_wanted_list.append(f"{shiny_str}{str(entered_unwant)} {entered_unwant.emoji}")
                     not_wanted_count += 1
                 else:
                     user_forms.remove(str(entered_unwant))
-                    removed_list.append(f"{str(entered_unwant)}{boss_str}")
+                    removed_list.append(f"{shiny_str}{str(entered_unwant)} {entered_unwant.emoji}{boss_str}")
                     removed_count += 1
             else:
                 if entered_unwant.id not in user_wants:
-                    not_wanted_list.append(entered_unwant.name.title())
+                    not_wanted_list.append(f"{shiny_str}{entered_unwant.name.title()} {entered_unwant.emoji}")
                     not_wanted_count += 1
                 else:
                     user_wants.remove(entered_unwant.id)
-                    removed_list.append(f"{entered_unwant.name.title()}{boss_str}")
+                    removed_list.append(f"{shiny_str}{entered_unwant.name.title()} {entered_unwant.emoji}{boss_str}")
                     removed_count += 1
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
         confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if unwant_count > 1 and 'boss' in ctx.invoked_with else ''}:\n\n"

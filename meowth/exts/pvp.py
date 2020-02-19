@@ -710,6 +710,7 @@ class Pvp(commands.Cog):
 
         # get settings
         pvp_dict = copy.deepcopy(self.bot.guild_dict[guild.id].setdefault('pvp_dict', {}))
+        reset_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_dash.png?cache=1')
         await utils.safe_delete(message)
 
         if not pvp_dict:
@@ -722,7 +723,8 @@ class Pvp(commands.Cog):
                 self.bot.loop.create_task(utils.expire_dm_reports(self.bot, pvp_dict.get(report_message, {}).get('dm_dict', {})))
                 del self.bot.guild_dict[guild.id]['pvp_dict'][report_message]
             return
-        rusure = await channel.send(_('**Meowth!** Are you sure you\'d like to remove all PVP requests?'))
+        reset_embed.add_field(name=f"**Reset PVP Requests**", value=f"**Meowth!** Are you sure you\'d like to remove all PVP requests?")
+        rusure = await channel.send(embed=reset_embed)
         try:
             timeout = False
             res, reactuser = await utils.ask(self.bot, rusure, author.id)
@@ -730,8 +732,9 @@ class Pvp(commands.Cog):
             timeout = True
         if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
             await utils.safe_delete(rusure)
-            confirmation = await channel.send(_('Manual reset cancelled.'), delete_after=10)
-            return
+            reset_embed.clear_fields()
+            reset_embed.add_field(name=f"Reset Cancelled", value=f"Your PVP reset request has been canceled. No changes have been made.")
+            return await channel.send(embed=reset_embed, delete_after=10)
         elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
             await utils.safe_delete(rusure)
             async with ctx.typing():
@@ -742,8 +745,9 @@ class Pvp(commands.Cog):
                     except:
                         self.bot.loop.create_task(utils.expire_dm_reports(self.bot, pvp_dict.get(report, {}).get('dm_dict', {})))
                         del self.bot.guild_dict[guild.id]['pvp_dict'][report]
-                confirmation = await channel.send(_('PVPs reset.'), delete_after=10)
-                return
+                reset_embed.clear_fields()
+                reset_embed.add_field(name=f"PVPs Reset", value=f"Your reset request has been completed.")
+                return await channel.send(embed=reset_embed, delete_after=10)
         else:
             return
 
