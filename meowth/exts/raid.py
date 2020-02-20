@@ -2207,7 +2207,7 @@ class Raid(commands.Cog):
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
         weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
         if weather:
-            weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+            weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour < 18 else 'Night'}.png?cache=1")
         weather_msg = await raid_channel.send(embed=weather_embed)
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['weather_msg'] = weather_msg.id
         ctrs_dict = await self._get_generic_counters(ctx.channel, str(pokemon), weather)
@@ -2387,7 +2387,7 @@ class Raid(commands.Cog):
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
         weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
         if weather:
-            weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+            weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour < 18 else 'Night'}.png?cache=1")
         weather_msg = await raid_channel.send(embed=weather_embed)
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['weather_msg'] = weather_msg.id
         self.bot.loop.create_task(self.expiry_check(raid_channel))
@@ -2498,7 +2498,7 @@ class Raid(commands.Cog):
             weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
             weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
             if weather:
-                weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+                weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour < 18 else 'Night'}.png?cache=1")
             try:
                 weather_msg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['weather_msg'])
                 await weather_msg.edit(embed=weather_embed)
@@ -2604,7 +2604,7 @@ class Raid(commands.Cog):
             weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
             weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
             if weather:
-                weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+                weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour < 18 else 'Night'}.png?cache=1")
             try:
                 weather_msg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['weather_msg'])
                 await weather_msg.edit(embed=weather_embed)
@@ -3630,7 +3630,7 @@ class Raid(commands.Cog):
             return await ctx.send(f"**{ctx.prefix}train {ctx.invoked_with}** can only be used by managers. Use **{ctx.prefix}train nominate [@mention]** to nominate yourself or @mention!", delete_after=60)
         await ctx.invoke(self.bot.get_command("timerset"), timer=timer)
 
-    @commands.group(name="next", hidden=True)
+    @commands.group(name="next", hidden=True, invoke_without_command=True)
     @checks.trainchannel()
     async def train_next_parent(self, ctx, *, channel_or_gym=''):
         """Proceed to next train location"""
@@ -3642,7 +3642,7 @@ class Raid(commands.Cog):
 
     @train_next_parent.command(name="vote")
     @checks.trainchannel()
-    async def train_vote(self, ctx):
+    async def next_vote(self, ctx, gyms=None):
         """Vote on next train location"""
         emoji_dict = {0: u'\U00000030\U0000fe0f\U000020e3', 1: u'\U00000031\U0000fe0f\U000020e3', 2: u'\U00000032\U0000fe0f\U000020e3', 3: u'\U00000033\U0000fe0f\U000020e3', 4: u'\U00000034\U0000fe0f\U000020e3', 5: u'\U00000035\U0000fe0f\U000020e3', 6: u'\U00000036\U0000fe0f\U000020e3', 7: u'\U00000037\U0000fe0f\U000020e3', 8: u'\U00000038\U0000fe0f\U000020e3', 9: u'\U00000039\U0000fe0f\U000020e3', 10: u'\U0001f51f'}
         cancel_emoji = self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f')
@@ -3659,34 +3659,39 @@ class Raid(commands.Cog):
                 return True
             else:
                 return False
-        while True:
-            async with ctx.typing():
-                train_embed.add_field(name=_('**New Raid Train Vote**'), value=f"Meowth! I'll help you vote on the next train location!\n\nReply with a comma separated of up to ten locations to vote on. You can reply with **cancel** to stop anytime.", inline=False)
-                vote_list_wait = await ctx.send(embed=train_embed)
-                try:
-                    vote_list_msg = await self.bot.wait_for('message', timeout=60, check=check)
-                except asyncio.TimeoutError:
-                    vote_list_msg = None
-                await utils.safe_delete(vote_list_wait)
-                if not vote_list_msg:
-                    train_embed.clear_fields()
-                    train_embed.add_field(name=_('**Train Vote Cancelled**'), value=_("Meowth! Your vote has been cancelled because you entered took too long to respond! Retry when you're ready."), inline=False)
-                    return await ctx.send(embed=train_embed, delete_after=10)
-                else:
-                    await utils.safe_delete(vote_list_msg)
-                if vote_list_msg.clean_content.lower() == "cancel":
-                    train_embed.clear_fields()
-                    train_embed.add_field(name=_('**Train Vote Cancelled**'), value=_("Meowth! Your vote has been cancelled because you cancelled the report! Retry when you're ready."), inline=False)
-                    return await ctx.send(embed=train_embed, delete_after=10)
-                else:
-                    vote_list = vote_list_msg.content.lower().split(',')
-                    vote_list = [x.strip() for x in vote_list]
-                    if len(vote_list) > 10:
+        if gyms:
+            options_list = gyms.split(',')
+            options_list = [x.strip() for x in options_list]
+            vote_list = options_list
+        else:
+            while True:
+                async with ctx.typing():
+                    train_embed.add_field(name=_('**New Raid Train Vote**'), value=f"Meowth! I'll help you vote on the next train location!\n\nReply with a comma separated list of up to ten locations to vote on. You can reply with **cancel** to stop anytime.", inline=False)
+                    vote_list_wait = await ctx.send(embed=train_embed)
+                    try:
+                        vote_list_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        vote_list_msg = None
+                    await utils.safe_delete(vote_list_wait)
+                    if not vote_list_msg:
                         train_embed.clear_fields()
-                        train_embed.add_field(name=_('**Train Vote Cancelled**'), value=_("Meowth! Your vote has been cancelled because you entered too many options! Retry when you're ready."), inline=False)
+                        train_embed.add_field(name=_('**Train Vote Cancelled**'), value=_("Meowth! Your vote has been cancelled because you entered took too long to respond! Retry when you're ready."), inline=False)
                         return await ctx.send(embed=train_embed, delete_after=10)
-                    options_list = vote_list
-                    break
+                    else:
+                        await utils.safe_delete(vote_list_msg)
+                    if vote_list_msg.clean_content.lower() == "cancel":
+                        train_embed.clear_fields()
+                        train_embed.add_field(name=_('**Train Vote Cancelled**'), value=_("Meowth! Your vote has been cancelled because you cancelled the report! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=train_embed, delete_after=10)
+                    else:
+                        vote_list = vote_list_msg.content.lower().split(',')
+                        vote_list = [x.strip() for x in vote_list]
+                        if len(vote_list) > 10:
+                            train_embed.clear_fields()
+                            train_embed.add_field(name=_('**Train Vote Cancelled**'), value=_("Meowth! Your vote has been cancelled because you entered too many options! Retry when you're ready."), inline=False)
+                            return await ctx.send(embed=train_embed, delete_after=10)
+                        options_list = vote_list
+                        break
         for trainer in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['trainer_dict']:
             user = ctx.guild.get_member(trainer)
             if not user:
@@ -3726,21 +3731,58 @@ class Raid(commands.Cog):
         await utils.safe_delete(vote_message)
         await ctx.invoke(self.bot.get_command('train next'), channel_or_gym=vote_winner)
 
+    @train.command(name="vote")
+    @checks.trainchannel()
+    async def train_vote(self, ctx, *, gyms=None):
+        """Vote on next train location"""
+        return await ctx.invoke(self.bot.get_command('next vote'), gyms=gyms)
+
     @train.command(name="next")
     @checks.trainchannel()
     async def train_next(self, ctx, *, channel_or_gym=''):
         """Proceed to next train location"""
+        timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
+        train_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/train.png?cache=1')
+        train_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
         if channel_or_gym.lower() == "vote":
-            return await ctx.invoke(self.bot.get_command('next vote'))
+            return await ctx.invoke(self.bot.get_command('next vote'), gyms=None)
         can_manage = ctx.channel.permissions_for(ctx.author).manage_channels or ctx.author.id in self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'].get(ctx.channel.id, {}).get('managers', [])
         vote = getattr(ctx, "vote", False)
         if not can_manage and not vote:
-            return await ctx.invoke(self.bot.get_command("next vote"))
+            return await ctx.invoke(self.bot.get_command("next vote"), gyms=None)
         train_path = self.bot.guild_dict[ctx.guild.id]['raidtrain_dict'][ctx.channel.id]['meetup'].setdefault('route', [])
         if train_path and not channel_or_gym:
             location, channel_or_gym = train_path[0], train_path[0]
             train_path.remove(location)
         else:
+            if not channel_or_gym:
+                def check(reply):
+                    if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:
+                        return True
+                    else:
+                        return False
+                while True:
+                    async with ctx.typing():
+                        train_embed.add_field(name=_('**New Raid Train Location**'), value=f"Meowth! I'll help you set the next train location!\n\nReply with the **location** you would like to move the train to. You can reply with **cancel** to stop anytime.", inline=False)
+                        vote_list_wait = await ctx.send(embed=train_embed)
+                        try:
+                            vote_list_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            vote_list_msg = None
+                        await utils.safe_delete(vote_list_wait)
+                        if not vote_list_msg:
+                            train_embed.clear_fields()
+                            train_embed.add_field(name=_('**Train Location Cancelled**'), value=_("Meowth! Your vote has been cancelled because you entered took too long to respond! Retry when you're ready."), inline=False)
+                            return await ctx.send(embed=train_embed, delete_after=10)
+                        else:
+                            await utils.safe_delete(vote_list_msg)
+                        if vote_list_msg.clean_content.lower() == "cancel":
+                            train_embed.clear_fields()
+                            train_embed.add_field(name=_('**Train Location Cancelled**'), value=_("Meowth! Your vote has been cancelled because you cancelled the report! Retry when you're ready."), inline=False)
+                            return await ctx.send(embed=train_embed, delete_after=10)
+                        else:
+                            channel_or_gym = vote_list_msg.clean_content
+                            break
             converter = commands.TextChannelConverter()
             try:
                 channel_or_gym = await converter.convert(ctx, channel_or_gym)
@@ -5378,7 +5420,7 @@ class Raid(commands.Cog):
             else:
                 weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. If this changes you can set the correct weather using **{ctx.prefix}weather**.")
             if weather:
-                weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
+                weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour < 18 else 'Night'}.png?cache=1")
             try:
                 weather_msg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['weather_msg'])
                 await weather_msg.edit(embed=weather_embed)

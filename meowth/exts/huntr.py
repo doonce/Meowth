@@ -474,10 +474,16 @@ class Huntr(commands.Cog):
                 if not raid_cog:
                     logger.error("Raid Cog not loaded")
                     return
+                alarm_pokemon = report_details.get('pokemon', None)
+                alarm_egglevel = report_details.get('level', None)
+                if alarm_pokemon:
+                    alarm_egglevel = utils.get_level(self.bot, alarm_pokemon)
+                alarm_egglevel = int(alarm_egglevel)
                 for event in self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {}):
                     if utcnow >= self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['mute_time'] and self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['event_end'] >= utcnow:
                         if ctx.author.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['bot_account'] and ctx.channel.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['bot_channel']:
-                            raidhour = True
+                            if self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event].get('egg_level', [0]) == [0] or alarm_egglevel in self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event].get('egg_level', [0]):
+                                raidhour = True
                 for channelid in self.bot.guild_dict[message.guild.id]['raidchannel_dict']:
                     channel_gps = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('coordinates', None)
                     channel_address = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('address', None)
@@ -1986,7 +1992,8 @@ class Huntr(commands.Cog):
             "event_locations": [],
             "event_pokemon": [],
             "event_pokemon_str": "",
-            "recur_weekly": None
+            "recur_weekly": None,
+            "egg_level": None
         }
         raid_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin.png?cache=1')
         raid_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
@@ -2061,6 +2068,31 @@ class Huntr(commands.Cog):
                             raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! I couldn't find that channel! Retry or reply with **cancel**.", inline=False)
                             bot_channel_wait = await channel.send(embed=raid_embed, delete_after=20)
                             continue
+                if event_dict.get('bot_account') and event_dict.get('bot_channel') and event_dict.get('egg_level') == None:
+                    raid_embed.clear_fields()
+                    raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Now, are there specific **raid levels** that you'd like to block {bot_account.mention} from posting in {bot_channel.mention}? Reply with **all** to block all raids or reply with a comma separated list of egg levels 1-5. Any blocked raids will be reported internally, but will not get a channel. You can reply with **cancel** to stop anytime.", inline=False)
+                    raid_level_wait = await channel.send(embed=raid_embed)
+                    try:
+                        raid_level_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        raid_level_msg = None
+                    await utils.safe_delete(raid_level_wait)
+                    if not raid_level_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(raid_level_msg)
+                    if raid_level_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    elif raid_level_msg.clean_content.lower() == "all":
+                        event_dict['egg_level'] = [0]
+                    else:
+                        level_list = raid_level_msg.clean_content.lower().split(',')
+                        level_list = [x.strip() for x in level_list]
+                        level_list = [int(x) for x in level_list if x.isdigit()]
+                        level_list = [x for x in level_list if x > 0 and x <= 5]
+                        event_dict['egg_level'] = list(set(level_list))
                 if not event_dict.get('event_start'):
                     raid_embed.clear_fields()
                     raid_embed.add_field(name=_('**New Raid Hour Report**'), value=f"Meowth! Next, I'll need to know what **date and time** the event starts. This should be the actual time that the raid hour starts{', I will mute ' + bot_account.mention + ' half an hour before this time' if bot_account else ''}. Reply with a date and time. You can reply with **cancel** to stop anytime.", inline=False)
@@ -2289,13 +2321,14 @@ class Huntr(commands.Cog):
             break
         raid_embed.clear_fields()
         if not error:
+            event_dict['egg_level'] = [0] if event_dict['egg_level'] == None else event_dict['egg_level']
             local_start = event_dict['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
             local_end = event_dict['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
             local_mute = event_dict['mute_time'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
             local_channel = event_dict['channel_time'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
             success_str = f"The event is scheduled to start on {local_start.strftime('%B %d at %I:%M %p')} and end on {local_end.strftime('%B %d at %I:%M %p')}.\n\n"
             if bot_account:
-                success_str += f"I will mute {bot_account.mention} in {bot_channel.mention} on {local_mute.strftime('%B %d at %I:%M %p')} and will unmute at the end of the event.\n\n"
+                success_str += f"I will mute {'all raids' if event_dict.get('egg_level', [0]) == [0] else ''}{'raid levels '+', '.join([str(x) for x in event_dict.get('egg_level')]) if event_dict.get('egg_level', [0]) != [0] else ''} from {bot_account.mention} in {bot_channel.mention} on {local_mute.strftime('%B %d at %I:%M %p')} and will unmute at the end of the event.\n\n"
             if event_dict['make_trains']:
                 success_str += f"I will make {len(event_dict['event_locations'])} channels in {train_channel.mention} on {local_channel.strftime('%B %d at %I:%M %p')} and remove them at the end of the event. These channels will be for: {(', ').join(event_dict['event_locations'])}. The title for the trains will be: {event_dict['event_title']}.\n\n"
             if event_dict['event_pokemon']:
