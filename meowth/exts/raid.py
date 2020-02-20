@@ -248,7 +248,7 @@ class Raid(commands.Cog):
                 if self.bot.guild_dict[message.guild.id]['configure_dict'].get('archive', {}).get('enabled', False) and self.bot.guild_dict[message.guild.id]['configure_dict'].get('archive', {}).get('list', []):
                     for phrase in self.bot.guild_dict[message.guild.id]['configure_dict']['archive']['list']:
                         if phrase in message.content:
-                            await self._archive(message.channel)
+                            self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['archive'] = True
                 if self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['active']:
                     trainer_dict = self.bot.guild_dict[message.guild.id][report_dict][message.channel.id]['trainer_dict']
                     ctx = await self.bot.get_context(message)
@@ -3642,7 +3642,7 @@ class Raid(commands.Cog):
 
     @train_next_parent.command(name="vote")
     @checks.trainchannel()
-    async def next_vote(self, ctx, gyms=None):
+    async def next_vote(self, ctx, *, gyms=None):
         """Vote on next train location"""
         emoji_dict = {0: u'\U00000030\U0000fe0f\U000020e3', 1: u'\U00000031\U0000fe0f\U000020e3', 2: u'\U00000032\U0000fe0f\U000020e3', 3: u'\U00000033\U0000fe0f\U000020e3', 4: u'\U00000034\U0000fe0f\U000020e3', 5: u'\U00000035\U0000fe0f\U000020e3', 6: u'\U00000036\U0000fe0f\U000020e3', 7: u'\U00000037\U0000fe0f\U000020e3', 8: u'\U00000038\U0000fe0f\U000020e3', 9: u'\U00000039\U0000fe0f\U000020e3', 10: u'\U0001f51f'}
         cancel_emoji = self.bot.custom_emoji.get('trade_stop', u'\U000023f9\U0000fe0f')
@@ -4883,6 +4883,7 @@ class Raid(commands.Cog):
                 recovermsg += _(" You will have to set the train managers again.")
             if meetup or train:
                 self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['meetup'] = {'start':False, 'end':False}
+                self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['meetup']['channel_name'] = name.replace('train-', '').replace('meetup-', '')
                 recovermsg += _(" You will have to set the event times again.")
             await self._edit_party(channel, message.author)
             bulletpoint = self.bot.custom_emoji.get('bullet', u'\U0001F539')
