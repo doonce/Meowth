@@ -79,7 +79,7 @@ class Nest(commands.Cog):
                             if nest_dict[channel][nest]['reports'][report].get('exp', 0) <= time.time():
                                 try:
                                     report_message = await report_channel.fetch_message(report)
-                                    if new_migration and nest_dict[channel][nest]['reports'][report]['report_time'] > migration_utc:
+                                    if new_migration and datetime.datetime.utcfromtimestamp(nest_dict[channel][nest]['reports'][report]['report_time']) > migration_utc:
                                         ctx = self.bot.get_context(report_message)
                                         self.bot.guild_dict[guild.id]['nest_dict'][channel][nest]['reports'][report]['exp'] = new_migration.replace(tzinfo=datetime.timezone.utc).timestamp()
                                         self.bot.loop.create_task(self.edit_nest_messages(ctx, nest, report_message))

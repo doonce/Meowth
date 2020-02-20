@@ -5411,6 +5411,7 @@ class Raid(commands.Cog):
                 weather = "foggy"
             elif "none" in weather.lower() or "extreme" in weather.lower():
                 weather = None
+            pokemon = None
             pkmn = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('pkmn_obj', None)
             if pkmn:
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pkmn)
