@@ -978,6 +978,12 @@ class Huntr(commands.Cog):
         await utils.add_reaction(ctx.raidreport, list_emoji)
         await raid_message.pin()
         level = utils.get_level(self.bot, str(pokemon))
+        if raidexp > ctx.bot.raid_info['raid_eggs'][level]['raidtime']:
+            with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
+                data = json.load(fd)
+            data['raid_eggs'][level]['raidtime'] = int(raidexp)
+            with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                json.dump(data, fd, indent=2, separators=(', ', ': '))
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
             'report_channel':message.channel.id,
             'report_guild':message.guild.id,
@@ -1140,6 +1146,12 @@ class Huntr(commands.Cog):
         await utils.add_reaction(ctx.raidreport, report_emoji)
         await utils.add_reaction(ctx.raidreport, list_emoji)
         await raid_message.pin()
+        if raidexp > ctx.bot.raid_info['raid_eggs'][egg_level]['hatchtime']:
+            with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
+                data = json.load(fd)
+            data['raid_eggs'][egg_level]['hatchtime'] = int(raidexp)
+            with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                json.dump(data, fd, indent=2, separators=(', ', ': '))
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id] = {
             'report_channel':message.channel.id,
             'report_guild':message.guild.id,
@@ -1782,14 +1794,14 @@ class Huntr(commands.Cog):
     @alarm.command()
     @commands.has_permissions(manage_guild=True)
     async def egg(self, ctx):
-        """Simulates an alarm raid egg"""
+        """Simulates an alarm egg"""
         author = ctx.author
         guild = ctx.guild
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
         embed = discord.Embed(title="Title", description="Embed Description")
-        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"5", "gym":"Marilla Park", "gps":"39.628941,-79.935063"}', embed=embed)
+        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"5", "gym":"Marilla Park", "gps":"39.628941,-79.935063", "raidexp":10}', embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
