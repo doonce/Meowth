@@ -1439,7 +1439,7 @@ class Huntr(commands.Cog):
                     else:
                         filter_type = filter_type_msg.clean_content.lower()
                 if filter_type and filter_type == "wild":
-                    temp_filter = self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners'].setdefault('filters', {}).setdefault('wild', [])
+                    current_filter = self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners'].setdefault('filters', {}).setdefault('wild', [])
                     raid_embed.clear_fields()
                     raid_embed.add_field(name=_('**New Wild Filter**'), value=f"If you don't have direct control over your reporting bot, you may want to blacklist some of its reports. Reports with IV will still be posted. Please enter a list of wild pokemon to block automatic reports of or reply with **N** to disable the filter.\n\n**Current Filter**:\n\n{str(current_filter)}")
                     filter_type_wait = await channel.send(embed=raid_embed)
