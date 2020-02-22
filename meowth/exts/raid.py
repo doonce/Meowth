@@ -5586,6 +5586,8 @@ class Raid(commands.Cog):
         report_dict = await utils.get_report_dict(self.bot, channel)
         egg_level = self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['egg_level']
         pokemon = self.bot.guild_dict[channel.guild.id][report_dict][channel.id].get('pkmn_obj')
+        report_message = self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['report_message']
+        raid_report = self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['raid_report']
         channel_dict, boss_dict = await self._get_party(channel, author)
         display_list = []
         if egg_level != "0":
@@ -5645,7 +5647,7 @@ class Raid(commands.Cog):
             newembed.add_field(name=_('**Status List:**'), value=_('Maybe: **{channelmaybe}** | Coming: **{channelcoming}** | Here: **{channelhere}**').format(channelmaybe=channel_dict["maybe"], channelcoming=channel_dict["coming"], channelhere=channel_dict["here"]), inline=True)
             newembed.add_field(name=_('**Team List:**'), value='{blue_emoji}: **{channelblue}** | {red_emoji}: **{channelred}** | {yellow_emoji}: **{channelyellow}** | {grey_emoji}: **{channelunknown}**'.format(blue_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['mystic']), channelblue=channel_dict["mystic"], red_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['valor']), channelred=channel_dict["valor"], yellow_emoji=utils.parse_emoji(channel.guild, self.bot.config.team_dict['instinct']), channelyellow=channel_dict["instinct"], grey_emoji=utils.parse_emoji(channel.guild, self.bot.config.unknown), channelunknown=channel_dict["unknown"]), inline=True)
         newembed.set_footer(text=reportembed.footer.text, icon_url=reportembed.footer.icon_url)
-        newembed.set_thumbnail(url=reportembed.thumbnail.url)
+        newembed.set_thumbnail(url=f"{reportembed.thumbnail.url.split('&report_message=')[0]}&report_message={report_message}&raid_report={raid_report}")
         newembed.set_author(name=reportembed.author.name, icon_url=reportembed.author.icon_url)
         try:
             await reportmsg.edit(embed=newembed)
