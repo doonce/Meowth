@@ -2463,6 +2463,7 @@ class Raid(commands.Cog):
         report_dict = await utils.get_report_dict(ctx.bot, raid_channel)
         if 'raidchannel' not in str(report_dict):
             return
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         eggdetails = self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]
         report_channel = self.bot.get_channel(eggdetails['report_channel'])
         egg_level = eggdetails['egg_level']
