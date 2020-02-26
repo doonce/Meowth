@@ -1,0 +1,36 @@
+pokemon_icon_ID_Gender/Form(_Shiny/Shadow)
+
+ID = Three digit Pokemon number with padding zeros
+
+Gender/Form:
+
+    ***Form does not include region (galarian, alolan)***
+        If region:
+            _31 for galarian
+            _61 for alolan
+    ***Form does not include region (galarian, alolan)***
+
+    If no gender and no form:
+        _00
+    If no gender but form:
+        _[form index]
+    If gender but no form:
+        _00 for male 
+        _01 for female
+    If gender and form:
+        _00_[form index] for male
+        _01_[form index] for female
+
+Shiny/Shadow:
+    If shiny:
+        _shiny
+    If shadow:
+        _shadow
+    If purified:
+        _purified
+    If shiny shadow:
+        _shiny_shadow
+    If shiny purified:
+        _shiny_purified
+    If None:
+        Blank

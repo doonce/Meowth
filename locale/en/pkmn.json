@@ -1403,24 +1403,6 @@
         "shiny": [
           "raid"
         ],
-        "gender": {
-          "male": {
-            "type": [
-              "Electric",
-              "Psychic"
-            ],
-            "pokedex": "It focuses psychic energy into its tail and rides it like it's surfing. Another name for this Pok\u00e9mon is 'hodad.'",
-            "evolution": "[ Pichu ] \u2192 [ Pikachu ] \u2192 [ Raichu ]"
-          },
-          "female": {
-            "type": [
-              "Electric",
-              "Psychic"
-            ],
-            "pokedex": "It focuses psychic energy into its tail and rides it like it's surfing. Another name for this Pok\u00e9mon is 'hodad.'",
-            "evolution": "[ Pichu ] \u2192 [ Pikachu ] \u2192 [ Raichu ]"
-          }
-        },
         "evolution": "[ Pichu ] \u2192 [ Pikachu ] \u2192 [ Raichu ]"
       }
     }
