@@ -358,6 +358,16 @@ class Pokemon():
         shadow_str = ""
         region_list = ["alolan", "galarian"]
         form_list = [x for x in list(self.bot.pkmn_info[self.name.lower()]['forms'].keys()) if x not in region_list]
+        if self.region:
+            if self.form:
+                pkmn_form = f"{self.region} {self.form}"
+            else:
+                pkmn_form = self.region
+        else:
+            if self.form:
+                pkmn_form = self.form
+            else:
+                pkmn_form = "none"
         if self.gender == "female":
             gender_str = "_01"
         elif self.gender == "male":
@@ -367,7 +377,7 @@ class Pokemon():
         elif self.region == "galarian":
             region_str = "_31"
         if self.form:
-            form_index = form_list.index(f"{self.region+' ' if self.region else ''}{str(self.form).lower()}")
+            form_index = form_list.index(pkmn_form)
             form_str = f"{region_str}_{str(form_index).zfill(2)}"
         elif self.region:
             form_str = region_str
@@ -377,7 +387,7 @@ class Pokemon():
             shadow_str = f"_{self.shadow}"
         if not self.gender and not self.form and not self.region:
             form_str = "_00"
-        if not self.gender and self.bot.pkmn_info[self.name.lower()]['forms'][f"{self.region+' ' if self.region else ''}{str(self.form).lower()}"].get('gender') and len(form_list) > 1:
+        if not self.gender and self.bot.pkmn_info[self.name.lower()]['forms'][pkmn_form].get('gender') and len(form_list) > 1:
             gender_str = "_00"
         return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{gender_str}{form_str}{shiny_str}.png?cache=2")
 
