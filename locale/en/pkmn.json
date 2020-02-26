@@ -31,6 +31,21 @@
         ],
         "shadow": true,
         "evolution": "[ Bulbasaur ] \u2192 [ Ivysaur ] \u2192 [ Venusaur ]"
+      },
+      "party": {
+        "type": [
+          "Grass",
+          "Poison"
+        ],
+        "pokedex": "Bulbasaur can be seen napping in bright sunlight. There is a seed on its back. By soaking up the sun's rays, the seed grows progressively larger.",
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
+        "shadow": true,
+        "evolution": "[ Bulbasaur ] \u2192 [ Ivysaur ] \u2192 [ Venusaur ]"
       }
     }
   },
@@ -84,6 +99,35 @@
         "shadow": true,
         "evolution": "[ Bulbasaur ] \u2192 [ Ivysaur ] \u2192 [ Venusaur ]",
         "size": false
+      },
+      "clone": {
+        "type": [
+          "Grass",
+          "Poison"
+        ],
+        "pokedex": "There is a large flower on Venusaur's back. The flower is said to take on vivid colors if it gets plenty of nutrition and sunlight. The flower's aroma soothes the emotions of people.",
+        "shiny": [],
+        "gender": {
+          "male": {
+            "type": [
+              "Grass",
+              "Poison"
+            ],
+            "pokedex": "There is a large flower on Venusaur's back. The flower is said to take on vivid colors if it gets plenty of nutrition and sunlight. The flower's aroma soothes the emotions of people.",
+            "evolution": "[ Bulbasaur ] \u2192 [ Ivysaur ] \u2192 [ Venusaur ]"
+          },
+          "female": {
+            "type": [
+              "Grass",
+              "Poison"
+            ],
+            "pokedex": "There is a large flower on Venusaur's back. The flower is said to take on vivid colors if it gets plenty of nutrition and sunlight. The flower's aroma soothes the emotions of people.",
+            "evolution": "[ Bulbasaur ] \u2192 [ Ivysaur ] \u2192 [ Venusaur ]"
+          }
+        },
+        "shadow": false,
+        "evolution": "[ Bulbasaur ] \u2192 [ Ivysaur ] \u2192 [ Venusaur ]",
+        "size": false
       }
     }
   },
@@ -106,6 +150,20 @@
         "size": false
       },
       "costume": {
+        "type": [
+          "Fire"
+        ],
+        "pokedex": "The flame that burns at the tip of its tail is an indication of its emotions. The flame wavers when Charmander is enjoying itself. If the Pokemon becomes enraged, the flame burns fiercely.",
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
+        "shadow": true,
+        "evolution": "[ Charmander ] \u2192 [ Charmeleon ] \u2192 [ Charizard ]"
+      },
+      "party": {
         "type": [
           "Fire"
         ],
@@ -151,6 +209,16 @@
         ],
         "shadow": true,
         "evolution": "[ Charmander ] \u2192 [ Charmeleon ] \u2192 [ Charizard ]"
+      },
+      "clone": {
+        "type": [
+          "Fire",
+          "Flying"
+        ],
+        "pokedex": "Charizard flies around the sky in search of powerful opponents. It breathes fire of such great heat that it melts anything. However, it never turns its fiery breath on any opponent weaker than itself.",
+        "shiny": [],
+        "shadow": true,
+        "evolution": "[ Charmander ] \u2192 [ Charmeleon ] \u2192 [ Charizard ]"
       }
     }
   },
@@ -185,6 +253,19 @@
         "evolution": "[ Squirtle ] \u2192 [ Wartortle ] \u2192 [ Blastoise ]"
       },
       "costume": {
+        "type": [
+          "Water"
+        ],
+        "pokedex": "Squirtle's shell is not merely used for protection. The shell's rounded shape and the grooves on its surface help minimize resistance in water, enabling this Pokemon to swim at high speeds.",
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
+        "evolution": "[ Squirtle ] \u2192 [ Wartortle ] \u2192 [ Blastoise ]"
+      },
+      "party": {
         "type": [
           "Water"
         ],
@@ -247,6 +328,14 @@
         "shiny": [
           "evolution"
         ],
+        "evolution": "[ Squirtle ] \u2192 [ Wartortle ] \u2192 [ Blastoise ]"
+      },
+      "clone": {
+        "type": [
+          "Water"
+        ],
+        "pokedex": "Blastoise has water spouts that protrude from its shell. The water spouts are very accurate. They can shoot bullets of water with enough accuracy to strike empty cans from a distance of over 160 feet.",
+        "shiny": [],
         "evolution": "[ Squirtle ] \u2192 [ Wartortle ] \u2192 [ Blastoise ]"
       }
     }
@@ -985,6 +1074,60 @@
           }
         },
         "evolution": "[ Pichu ] \u2192 [ Pikachu ] \u2192 [ Raichu ]"
+      },
+      "red party": {
+        "type": [
+          "Electric"
+        ],
+        "pokedex": "Whenever Pikachu comes across something new, it blasts it with a jolt of electricity. If you come across a blackened berry, it's evidence that this Pokemon mistook the intensity of its charge.",
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research",
+          "evolution"
+        ],
+        "gender": {
+          "male": {
+            "type": [
+              "Electric"
+            ],
+            "pokedex": "Whenever Pikachu comes across something new, it blasts it with a jolt of electricity. If you come across a blackened berry, it's evidence that this Pokemon mistook the intensity of its charge.",
+            "evolution": "[ Pichu ] \u2192 [ Pikachu ] \u2192 [ Raichu ]"
+          },
+          "female": {
+            "type": [
+              "Electric"
+            ],
+            "pokedex": "Whenever Pikachu comes across something new, it blasts it with a jolt of electricity. If you come across a blackened berry, it's evidence that this Pokemon mistook the intensity of its charge.",
+            "evolution": "[ Pichu ] \u2192 [ Pikachu ] \u2192 [ Raichu ]"
+          }
+        },
+        "evolution": "[ Pichu ] \u2192 [ Pikachu ] \u2192 [ Raichu ]"
+      },
+      "clone": {
+        "type": [
+          "Electric"
+        ],
+        "pokedex": "Whenever Pikachu comes across something new, it blasts it with a jolt of electricity. If you come across a blackened berry, it's evidence that this Pokemon mistook the intensity of its charge.",
+        "shiny": [],
+        "gender": {
+          "male": {
+            "type": [
+              "Electric"
+            ],
+            "pokedex": "Whenever Pikachu comes across something new, it blasts it with a jolt of electricity. If you come across a blackened berry, it's evidence that this Pokemon mistook the intensity of its charge.",
+            "evolution": "[ Pichu ] \u2192 [ Pikachu ] \u2192 [ Raichu ]"
+          },
+          "female": {
+            "type": [
+              "Electric"
+            ],
+            "pokedex": "Whenever Pikachu comes across something new, it blasts it with a jolt of electricity. If you come across a blackened berry, it's evidence that this Pokemon mistook the intensity of its charge.",
+            "evolution": "[ Pichu ] \u2192 [ Pikachu ] \u2192 [ Raichu ]"
+          }
+        },
+        "evolution": "[ Pichu ] \u2192 [ Pikachu ] \u2192 [ Raichu ]"
       }
     }
   },
@@ -1429,6 +1572,16 @@
           "evolution"
         ],
         "evolution": "[ Nidoran ] \u2192 [ Nidorino ] \u2192 [ Nidoking ]"
+      },
+      "party": {
+        "type": [
+          "Poison"
+        ],
+        "pokedex": "Nidorino has a horn that is harder than a diamond. If it senses a hostile presence, all the barbs on its back bristle up at once, and it challenges the foe with all its might.",
+        "shiny": [
+          "raid"
+        ],
+        "evolution": "[ Nidoran ] \u2192 [ Nidorino ] \u2192 [ Nidoking ]"
       }
     }
   },
@@ -1487,7 +1640,9 @@
         ],
         "pokedex": "At the time of its birth, Vulpix has one white tail. The tail separates into six if this Pokemon receives plenty of love from its trainer. The six tails become magnificently curled.",
         "shiny": [],
-        "evolution": "[ Vulpix ] \u2192 [ Ninetales ]"
+        "evolution": "[ Vulpix ] \u2192 [ Ninetales ]",
+        "size": false,
+        "shadow": true
       },
       "alolan": {
         "type": [
@@ -1513,7 +1668,9 @@
         ],
         "pokedex": "Ninetales casts a sinister light from its bright red eyes to gain total control over its foe's mind. This Pokemon is said to live for one thousand years.",
         "shiny": [],
-        "evolution": "[ Vulpix ] \u2192 [ Ninetales ]"
+        "evolution": "[ Vulpix ] \u2192 [ Ninetales ]",
+        "size": false,
+        "shadow": true
       },
       "alolan": {
         "type": [
@@ -2763,6 +2920,17 @@
           "evolution"
         ],
         "evolution": "[ Gastly ] \u2192 [ Haunter ] \u2192 [ Gengar ]"
+      },
+      "party": {
+        "type": [
+          "Ghost",
+          "Poison"
+        ],
+        "pokedex": "Sometimes, on a dark night, your shadow thrown by a streetlight will suddenly and startlingly overtake you. It is actually a Gengar running past you, pretending to be your shadow.",
+        "shiny": [
+          "raid"
+        ],
+        "evolution": "[ Gastly ] \u2192 [ Haunter ] \u2192 [ Gengar ]"
       }
     }
   },
@@ -2905,7 +3073,9 @@
         ],
         "pokedex": "This Pokemon consists of six eggs that form a closely knit cluster. The six eggs attract each other and spin around. When cracks increasingly appear on the eggs, Exeggcute is close to evolution.",
         "shiny": [],
-        "evolution": "[ Exeggcute ] \u2192 [ Exeggutor ]"
+        "evolution": "[ Exeggcute ] \u2192 [ Exeggutor ]",
+        "size": false,
+        "shadow": true
       }
     }
   },
@@ -2919,7 +3089,9 @@
         ],
         "pokedex": "Exeggutor originally came from the tropics. Its heads steadily grow larger from exposure to strong sunlight. It is said that when the heads fall off, they group together to form Exeggcute.",
         "shiny": [],
-        "evolution": "[ Exeggcute ] \u2192 [ Exeggutor ]"
+        "evolution": "[ Exeggcute ] \u2192 [ Exeggutor ]",
+        "size": false,
+        "shadow": true
       },
       "alolan": {
         "type": [
@@ -3017,8 +3189,12 @@
           "Normal"
         ],
         "pokedex": "Whenever Lickitung comes across something new, it will unfailingly give it a lick. It does so because it memorizes things by texture and by taste. It is somewhat put off by sour things.",
-        "shiny": [],
-        "evolution": "[ Lickitung ] \u2192 [ Lickilicky ]"
+        "shiny": [
+          "raid"
+        ],
+        "evolution": "[ Lickitung ] \u2192 [ Lickilicky ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -3076,7 +3252,12 @@
           "Rock"
         ],
         "pokedex": "Rhyhorn runs in a straight line, smashing everything in its path. It is not bothered even if it rushes headlong into a block of steel. This Pokemon may feel some pain from the collision the next day, however.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
         "gender": {
           "male": {
             "type": [
@@ -3095,7 +3276,9 @@
             "evolution": "[ Rhyhorn ] \u2192 [ Rhydon ] \u2192 [ Rhyperior ]"
           }
         },
-        "evolution": "[ Rhyhorn ] \u2192 [ Rhydon ] \u2192 [ Rhyperior ]"
+        "evolution": "[ Rhyhorn ] \u2192 [ Rhydon ] \u2192 [ Rhyperior ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -3108,7 +3291,9 @@
           "Rock"
         ],
         "pokedex": "Rhydon's horn can crush even uncut diamonds. One sweeping blow of its tail can topple a building. This Pokemon's hide is extremely tough. Even direct cannon hits don't leave a scratch.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": {
           "male": {
             "type": [
@@ -3143,8 +3328,15 @@
           "Normal"
         ],
         "pokedex": "Chansey lays nutritionally excellent eggs on an everyday basis. The eggs are so delicious, they are easily and eagerly devoured by even those people who have lost their appetite.",
-        "shiny": [],
-        "evolution": "[ Happiny ] \u2192 [ Chansey ] \u2192 [ Blissey ]"
+        "shiny": [
+          "raid",
+          "wild",
+          "research",
+          "evolution"
+        ],
+        "evolution": "[ Happiny ] \u2192 [ Chansey ] \u2192 [ Blissey ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -3412,7 +3604,8 @@
         ],
         "pokedex": "In battle, Magmar blows out intensely hot flames from all over its body to intimidate its opponent. This Pokemon's fiery bursts create heat waves that ignite grass and trees in its surroundings.",
         "shiny": [
-          "evolution"
+          "evolution",
+          "wild"
         ],
         "size": false,
         "shadow": true,
@@ -3434,7 +3627,9 @@
           "wild",
           "research"
         ],
-        "evolution": "[ Pinsir ]"
+        "evolution": "[ Pinsir ]",
+        "size": false,
+        "shadow": true
       }
     }
   },
@@ -3505,7 +3700,9 @@
         ],
         "pokedex": "When Magikarp evolves into Gyarados, its brain cells undergo a structural transformation. It is said that this transformation is to blame for this Pokemon's wildly violent nature.",
         "shiny": [
-          "evolution"
+          "evolution",
+          "wild",
+          "raid"
         ],
         "gender": {
           "male": {
@@ -3526,7 +3723,8 @@
           }
         },
         "shadow": true,
-        "evolution": "[ Magikarp ] \u2192 [ Gyarados ]"
+        "evolution": "[ Magikarp ] \u2192 [ Gyarados ]",
+        "size": false
       }
     }
   },
@@ -3581,6 +3779,19 @@
         "evolution": "[ Eevee ] \u2192 [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon, Sylveon ]"
       },
       "flower": {
+        "type": [
+          "Normal"
+        ],
+        "pokedex": "Eevee has an unstable genetic makeup that suddenly mutates due to the environment in which it lives. Radiation from various stones causes this Pokemon to evolve.",
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
+        "evolution": "[ Eevee ] \u2192 [ Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon, Sylveon ]"
+      },
+      "party": {
         "type": [
           "Normal"
         ],
@@ -3700,7 +3911,9 @@
           "wild",
           "research"
         ],
-        "evolution": "[ Omanyte ] \u2192 [ Omastar ]"
+        "evolution": "[ Omanyte ] \u2192 [ Omastar ]",
+        "size": false,
+        "shadow": true
       }
     }
   },
@@ -3716,7 +3929,9 @@
         "shiny": [
           "evolution"
         ],
-        "evolution": "[ Omanyte ] \u2192 [ Omastar ]"
+        "evolution": "[ Omanyte ] \u2192 [ Omastar ]",
+        "size": false,
+        "shadow": true
       }
     }
   },
@@ -4988,7 +5203,9 @@
           "wild",
           "research"
         ],
-        "evolution": "[ Misdreavus ] \u2192 [ Mismagius ]"
+        "evolution": "[ Misdreavus ] \u2192 [ Mismagius ]",
+        "size": false,
+        "shadow": true
       }
     }
   },
@@ -6111,8 +6328,12 @@
           "Normal"
         ],
         "pokedex": "Blissey senses sadness with its fluffy coat of fur. If it does so, this Pokemon will rush over to a sad person, no matter how far away, to share a Lucky Egg that brings a smile to any face.",
-        "shiny": [],
-        "evolution": "[ Happiny ] \u2192 [ Chansey ] \u2192 [ Blissey ]"
+        "shiny": [
+          "evolution"
+        ],
+        "evolution": "[ Happiny ] \u2192 [ Chansey ] \u2192 [ Blissey ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -6578,8 +6799,15 @@
           "Bug"
         ],
         "pokedex": "Wurmple is targeted by Swellow as prey. This Pokemon will try to resist by pointing the spikes on its rear at the attacking predator. It will weaken the foe by leaking poison from the spikes.",
-        "shiny": [],
-        "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]"
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
+        "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]",
+        "size": false,
+        "shadow": false
       },
       "party": {
         "type": [
@@ -6601,8 +6829,12 @@
           "Bug"
         ],
         "pokedex": "Silcoon was thought to endure hunger and not consume anything before its evolution. However, it is now thought that this Pokemon slakes its thirst by drinking rainwater that collects on its silk.",
-        "shiny": [],
-        "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]"
+        "shiny": [
+          "evolution"
+        ],
+        "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -6615,7 +6847,9 @@
           "Flying"
         ],
         "pokedex": "Beautifly has a long mouth like a coiled needle, which is very convenient for collecting pollen from flowers. This Pokemon rides the spring winds as it flits around gathering pollen.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": {
           "male": {
             "type": [
@@ -6634,7 +6868,9 @@
             "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]"
           }
         },
-        "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]"
+        "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -6646,8 +6882,12 @@
           "Bug"
         ],
         "pokedex": "If it is attacked, Cascoon remains motionless however badly it may be hurt. It does so because if it were to move, its body would be weak upon evolution. This Pokemon will also not forget the pain it endured.",
-        "shiny": [],
-        "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]"
+        "shiny": [
+          "evolution"
+        ],
+        "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -6660,7 +6900,9 @@
           "Poison"
         ],
         "pokedex": "When Dustox flaps its wings, a fine dust is scattered all over. This dust is actually a powerful poison that will even make a pro wrestler sick. This Pokemon searches for food using its antennae like radar.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": {
           "male": {
             "type": [
@@ -6679,7 +6921,9 @@
             "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]"
           }
         },
-        "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]"
+        "evolution": "[ Wurmple ] \u2192 [ Silcoon, Cascoon ] \u2192 [ Beautifly, Dustox ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -7312,7 +7556,9 @@
           "hatch",
           "raid"
         ],
-        "evolution": "[ Mawile ]"
+        "evolution": "[ Mawile ]",
+        "size": false,
+        "shadow": true
       }
     }
   },
@@ -7645,7 +7891,8 @@
           "research"
         ],
         "size": false,
-        "evolution": "[ Carvanha ] \u2192 [ Sharpedo ]"
+        "evolution": "[ Carvanha ] \u2192 [ Sharpedo ]",
+        "shadow": true
       }
     }
   },
@@ -7662,7 +7909,8 @@
           "evolution"
         ],
         "size": false,
-        "evolution": "[ Carvanha ] \u2192 [ Sharpedo ]"
+        "evolution": "[ Carvanha ] \u2192 [ Sharpedo ]",
+        "shadow": true
       }
     }
   },
@@ -8739,7 +8987,9 @@
           "wild",
           "research"
         ],
-        "evolution": "[ Beldum ] \u2192 [ Metang ] \u2192 [ Metagross ]"
+        "evolution": "[ Beldum ] \u2192 [ Metang ] \u2192 [ Metagross ]",
+        "size": false,
+        "shadow": true
       }
     }
   },
@@ -8755,7 +9005,9 @@
         "shiny": [
           "evolution"
         ],
-        "evolution": "[ Beldum ] \u2192 [ Metang ] \u2192 [ Metagross ]"
+        "evolution": "[ Beldum ] \u2192 [ Metang ] \u2192 [ Metagross ]",
+        "size": false,
+        "shadow": true
       }
     }
   },
@@ -8771,7 +9023,9 @@
         "shiny": [
           "evolution"
         ],
-        "evolution": "[ Beldum ] \u2192 [ Metang ] \u2192 [ Metagross ]"
+        "evolution": "[ Beldum ] \u2192 [ Metang ] \u2192 [ Metagross ]",
+        "size": false,
+        "shadow": true
       }
     }
   },
@@ -10107,7 +10361,9 @@
         "shiny": [
           "evolution"
         ],
-        "evolution": "[ Misdreavus ] \u2192 [ Mismagius ]"
+        "evolution": "[ Misdreavus ] \u2192 [ Mismagius ]",
+        "size": false,
+        "shadow": true
       }
     }
   },
@@ -10267,8 +10523,12 @@
           "Normal"
         ],
         "pokedex": "It carefully carries a round, white rock that it thinks is an egg. It's bothered by how curly its hair looks.",
-        "shiny": [],
-        "evolution": "[ Happiny ] \u2192 [ Chansey ] \u2192 [ Blissey ]"
+        "shiny": [
+          "hatch"
+        ],
+        "evolution": "[ Happiny ] \u2192 [ Chansey ] \u2192 [ Blissey ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -10438,8 +10698,12 @@
           "Fighting"
         ],
         "pokedex": "The aura that emanates from its body intensifies to alert others if it is afraid or sad.",
-        "shiny": [],
-        "evolution": "[ Riolu ] \u2192 [ Lucario ]"
+        "shiny": [
+          "hatch"
+        ],
+        "evolution": "[ Riolu ] \u2192 [ Lucario ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -10452,8 +10716,12 @@
           "Steel"
         ],
         "pokedex": "By reading the auras of all things, it can tell how others are feeling from over half a mile away.",
-        "shiny": [],
-        "evolution": "[ Riolu ] \u2192 [ Lucario ]"
+        "shiny": [
+          "evolution"
+        ],
+        "evolution": "[ Riolu ] \u2192 [ Lucario ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -10465,7 +10733,12 @@
           "Ground"
         ],
         "pokedex": "It enshrouds itself with sand to protect itself from germs. It does not enjoy getting wet.",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
         "gender": {
           "male": {
             "type": [
@@ -10482,7 +10755,9 @@
             "evolution": "[ Hippopotas ] \u2192 [ Hippowdon ]"
           }
         },
-        "evolution": "[ Hippopotas ] \u2192 [ Hippowdon ]"
+        "evolution": "[ Hippopotas ] \u2192 [ Hippowdon ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -10494,7 +10769,9 @@
           "Ground"
         ],
         "pokedex": "It blasts internally stored sand from ports on its body to create a towering twister for attack.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": {
           "male": {
             "type": [
@@ -10838,8 +11115,12 @@
           "Normal"
         ],
         "pokedex": "Their saliva contains lots of components that can dissolve anything. The numbness caused by their lick does not dissipate.",
-        "shiny": [],
-        "evolution": "[ Lickitung ] \u2192 [ Lickilicky ]"
+        "shiny": [
+          "evolution"
+        ],
+        "evolution": "[ Lickitung ] \u2192 [ Lickilicky ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -10852,7 +11133,9 @@
           "Rock"
         ],
         "pokedex": "It puts rocks in holes in its palms and uses its muscles to shoot them. Geodude are shot at rare times.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": {
           "male": {
             "type": [
@@ -10871,7 +11154,9 @@
             "evolution": "[ Rhyhorn ] \u2192 [ Rhydon ] \u2192 [ Rhyperior ]"
           }
         },
-        "evolution": "[ Rhyhorn ] \u2192 [ Rhydon ] \u2192 [ Rhyperior ]"
+        "evolution": "[ Rhyhorn ] \u2192 [ Rhydon ] \u2192 [ Rhyperior ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -12801,8 +13086,15 @@
           "Normal"
         ],
         "pokedex": "Cinccino's body is coated in a special oil that helps it deflect attacks, such as punches.",
-        "shiny": [],
-        "evolution": "[ Minccino ] \u2192 [ Cinccino ]"
+        "shiny": [
+          "hatch",
+          "raid",
+          "wild",
+          "research"
+        ],
+        "evolution": "[ Minccino ] \u2192 [ Cinccino ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -12814,8 +13106,12 @@
           "Normal"
         ],
         "pokedex": "They intently observe both Trainers and Pokemon. Apparently, they are looking at something that only Gothita can see.",
-        "shiny": [],
-        "evolution": "[ Minccino ] \u2192 [ Cinccino ]"
+        "shiny": [
+          "evolution"
+        ],
+        "evolution": "[ Minccino ] \u2192 [ Cinccino ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -18541,7 +18837,7 @@
           "Poison",
           "Dragon"
         ],
-        "pokedex": "Infinite amounts of energy pour from this Pokémon's enlarged core, warping the surrounding space-time.",
+        "pokedex": "Infinite amounts of energy pour from this Pok\u00e9mon's enlarged core, warping the surrounding space-time.",
         "shiny": [],
         "evolution": "[ Eternatus ]"
       }
