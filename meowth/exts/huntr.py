@@ -798,6 +798,17 @@ class Huntr(commands.Cog):
             iv_str = ""
         height = report_details.get("height", '')
         weight = report_details.get("weight", '')
+        height = re.sub('[^0-9 .]', '', height)
+        weight = re.sub('[^0-9 .]', '', weight)
+        size = None
+        if height and weight:
+            weight_ratio = float(weight) / float(pokemon.weight)
+            height_ratio = float(height) / float(pokemon.height)
+            if height_ratio + weight_ratio < 1.5:
+                size = "XS"
+            elif height_ratio + weight_ratio > 2.5:
+                size = "XL"
+        pokemon.size = size if pokemon.size_available else None
         moveset = report_details.get("moveset", '')
         expire = report_details.setdefault("expire", "45 min 00 sec")
         nearest_stop = str(wild_details)
@@ -1883,7 +1894,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Ditto", "gps":"39.637087,-79.954375", "expire":"5 min 0 sec","gender":"male", "height":"0.4", "weight":"6", "moveset":"Quick Attack / Wild Charge", "disguise":"Yanma", "weather":"snowy"}')
+        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"XL Rattata", "gps":"39.637087,-79.954375", "expire":"5 min 0 sec","gender":"male", "height":"0.33m", "weight":"4.6kg", "moveset":"Quick Attack / Wild Charge", "weather":"snowy"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
