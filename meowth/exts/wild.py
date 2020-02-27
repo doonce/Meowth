@@ -199,7 +199,11 @@ class Wild(commands.Cog):
         cp = details.get('cp', None)
         weather = details.get('weather', None)
         height = details.get('height', None)
+        if height:
+            height = re.sub('[^0-9 .]', '', height)
         weight = details.get('weight', None)
+        if weight:
+            weight = re.sub('[^0-9 .]', '', weight)
         moveset = details.get('moveset', None)
         if moveset:
             moves = moveset.split(' / ')
