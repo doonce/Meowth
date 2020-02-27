@@ -1925,6 +1925,7 @@ class Configure(commands.Cog):
         scanner_embed.add_field(name=f"**Lure**", value='**Supported Bots:** NovaBot, PokeAlarm, Pokebot, etc.\n**Syntax:** Content must include: `!alarm {"type":"lure", "pokestop":"<stop name>", "gps":"<longitude>,<latitude>", "lure_type":"<lure_type>"`', inline=False)
         scanner_embed.add_field(name=f"**All**", value='Reply with **all** to enable all.', inline=False)
         scanner_embed.add_field(name=f"**Filtering**", value=f"You can filter reports using {ctx.prefix}alarm filter.", inline=False)
+        scanner_embed.add_field(name=f"**Forwarding**", value=f"You can forward reports to other channels using {ctx.prefix}alarm forward.", inline=False)
         await ctx.configure_channel.send(embed=scanner_embed)
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp['scanners'].get('reports', {}))).set_author(name=_("Current Settings"), icon_url=self.bot.user.avatar_url), delete_after=300)
         report_types = ["raid", "egg", "wild", "research", "invasion", "lure"]

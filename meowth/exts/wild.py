@@ -201,6 +201,12 @@ class Wild(commands.Cog):
         height = details.get('height', None)
         weight = details.get('weight', None)
         moveset = details.get('moveset', None)
+        if moveset:
+            moves = moveset.split(' / ')
+            for index, m in enumerate(moves):
+                if m.lower() in self.bot.move_info.keys():
+                    moves[index] = f"{m} {utils.type_to_emoji(self.bot, self.bot.move_info[m.lower()]['type'])}"
+            moveset = (' / ').join(moves)
         expire = details.get('expire', "45 min 0 sec")
         pkmn_obj = details.get('pkmn_obj', None)
         disguise = details.get('disguise', None)
@@ -208,6 +214,15 @@ class Wild(commands.Cog):
             disguise = await pkmn_class.Pokemon.async_get_pokemon(self.bot, disguise)
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender.lower()} {pkmn_obj.lower()}")
         pokemon.weather = weather
+        size = None
+        if height and weight:
+            weight_ratio = float(weight) / float(pokemon.weight)
+            height_ratio = float(height) / float(pokemon.height)
+            if height_ratio + weight_ratio < 1.5:
+                size = "XS"
+            elif height_ratio + weight_ratio > 2.5:
+                size = "XL"
+        pokemon.size = size if pokemon.size_available else None
         location = details.get('location', None)
         wild_gmaps_link = utils.create_gmaps_query(self.bot, location, ctx.channel, type="wild")
         gym_matching_cog = self.bot.cogs.get('GymMatching')
@@ -240,7 +255,7 @@ class Wild(commands.Cog):
         if iv_long or iv_percent or level or cp or pokemon.is_boosted:
             wild_embed.add_field(name=f"**IV{' / Level' if level or cp or pokemon.is_boosted else ''}:**", value=f"{iv_long if iv_long else ''}{' (' if iv_long and iv_percent else ''}{str(iv_percent)+'%' if iv_percent else ''}{')' if iv_long and iv_percent else ''}\n{'Level '+str(level) if level else ''}{' ('+str(cp)+'CP)' if cp else ''} {pokemon.is_boosted if pokemon.is_boosted else ''}", inline=True)
         if height or weight or moveset:
-            wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height if height else ''} {'W: '+weight if weight else ''}\n{moveset if moveset else ''}", inline=True)
+            wild_embed.add_field(name=_('**Other Info:**'), value=f"{'H: '+height+'m' if height else ''} {'W: '+weight+'kg' if weight else ''} {'('+size+')' if size else ''}\n{moveset if moveset else ''}", inline=True)
         elif iv_long or iv_percent or level or cp or pokemon.is_boosted:
             wild_embed.add_field(name=_('**Other Info (Base):**'), value=f"H: {round(pokemon.height, 2) if pokemon.height else 'X'}m W: {round(pokemon.weight, 2) if pokemon.weight else 'X'}kg\n{ctx.prefix}dex stats {str(pokemon).lower()}", inline=True)
         wild_embed.add_field(name=f"{'**Est. Despawn:**' if int(expire.split()[0]) == 45 and int(expire.split()[2]) == 0 else '**Despawns in:**'}", value=_('{huntrexp} mins ({huntrexpstamp})').format(huntrexp=expire.split()[0], huntrexpstamp=huntrexpstamp), inline=True)

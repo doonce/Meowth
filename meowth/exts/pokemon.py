@@ -95,11 +95,11 @@ class Pokemon():
         self.pb_raid = None
         self.weather = attribs.get('weather', None)
         self.moveset = attribs.get('moveset', [])
-        self.size = attribs.get('size', None)
         self.form = attribs.get('form', '')
         self.region = attribs.get('region', None)
         if self.form not in bot.form_dict.get(self.id, {}):
             self.form = None
+        self.size = self.is_size(attribs)    
         self.gender = self.is_gender(attribs)
         self.shadow = self.is_shadow(attribs)
         self.shiny = self.is_shiny(attribs)
@@ -372,6 +372,8 @@ class Pokemon():
             gender_str = "_01"
         elif self.gender == "male":
             gender_str = "_00"
+        elif not self.gender and self.gender_available and len(form_list) > 1:
+            gender_str = "_00"
         if self.region == "alolan":
             region_str = "_61"
         elif self.region == "galarian":
@@ -381,14 +383,14 @@ class Pokemon():
             form_str = f"{region_str}_{str(form_index).zfill(2)}"
         elif self.region:
             form_str = region_str
+        elif not self.form and self.gender_available and len(form_list) > 1:
+            form_str = "_00"
         if self.shiny:
             shiny_str = "_shiny"
         if self.shadow:
             shadow_str = f"_{self.shadow}"
         if not self.gender and not self.form and not self.region:
             form_str = "_00"
-        if not self.gender and self.bot.pkmn_info[self.name.lower()]['forms'][pkmn_form].get('gender') and len(form_list) > 1:
-            gender_str = "_00"
         return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{gender_str}{form_str}{shiny_str}.png?cache=2")
 
     @property
