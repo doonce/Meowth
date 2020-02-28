@@ -1745,13 +1745,23 @@ class Huntr(commands.Cog):
                 return True
             else:
                 return False
+        await utils.safe_delete(ctx.message)
         current_overwrites = self.bot.guild_dict[ctx.guild.id].setdefault('configure_dict', {}).setdefault('scanners', {}).setdefault('forwarding', {})
+        raid_embed.add_field(name=f"**Current Forwarding Channels**", value=f"")
         overwrite_str = ""
         for overwrite in current_overwrites:
-            overwrite_str += f"{self.bot.get_channel(overwrite).mention} = {self.bot.get_channel(current_overwrites[overwrite]).mention}\n"
+            if len(overwrite_str) < 1000:
+                overwrite_str += f"{self.bot.get_channel(overwrite).mention} = {self.bot.get_channel(current_overwrites[overwrite]).mention}\n"
+                raid_embed.set_field_at(0, name=f"**Current Forwarding Channels**", value=overwrite_str)
+            else:
+                await ctx.send(embed=raid_embed, delete_after=60)
+                overwrite_str = f"{self.bot.get_channel(overwrite).mention} = {self.bot.get_channel(current_overwrites[overwrite]).mention}\n"
+        if current_overwrites:
+            await ctx.send(embed=raid_embed, delete_after=60)
         new_overwrites = {}
+        raid_embed.clear_fields()
         raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
-        raid_embed.add_field(name=_('**Edit Alarm Forwarding**'), value=f"Meowth! I will help you edit alarm channel forwarding! This is useful if want to send all **!alarm** messages sent by a bot in one channel and instead forward them to another channel. If a channel is not on this list, the **!alarm** message will be sent in the channel it is received.\n\nThe current list is: {overwrite_str if current_overwrites else 'None'}\nThe correct format for this is:\n\n`Receiving Channel = Forward Channel`.\n\nReply with any overwrites to add to my current list, **reset** to remove all overwrites, or **cancel** to stop anytime.", inline=False)
+        raid_embed.add_field(name=_('**Edit Alarm Forwarding**'), value=f"Meowth! I will help you edit alarm channel forwarding! This is useful if want to send all **!alarm** messages sent by a bot in one channel and instead forward them to another channel. If a channel is not on this list, the **!alarm** message will be sent in the channel it is received.\n\n{'The current list is listed above.' if current_overwrites else 'You have no current forwarding channels.'}\n\nThe correct format for this is:\n`Receiving Channel = Forward Channel`\n\nReply with any overwrites to add to my current list, **reset** to remove all overwrites, or **cancel** to stop anytime.", inline=False)
         forward_list_wait = await ctx.send(embed=raid_embed)
         try:
             forward_list_msg = await self.bot.wait_for('message', timeout=60, check=check)

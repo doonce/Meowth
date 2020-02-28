@@ -1515,12 +1515,22 @@ class Raid(commands.Cog):
             else:
                 level = boss_level_msg.clean_content.lower()
         current_overwrites = self.bot.raid_info['raid_eggs'][level].get('overwrites', {})
+        raid_embed.clear_fields()
+        raid_embed.add_field(name=f"**Current Boss Overwrites**", value=f"")
         overwrite_str = ""
         for overwrite in current_overwrites:
-            overwrite_str += f"{overwrite} = {current_overwrites[overwrite]['replace_with']}\n"
+            if len(overwrite_str) < 1000:
+                overwrite_str += f"{overwrite} = {current_overwrites[overwrite]['replace_with']}\n"
+                raid_embed.set_field_at(0, name=f"**Current Boss Overwrites**", value=overwrite_str)
+            else:
+                await ctx.send(embed=raid_embed, delete_after=60)
+                overwrite_str += f"{overwrite} = {current_overwrites[overwrite]['replace_with']}\n"
+        if current_overwrites:
+            await ctx.send(embed=raid_embed, delete_after=60)
         new_overwrites = {}
+        raid_embed.clear_fields()
         raid_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
-        raid_embed.add_field(name=_('**Edit Raid Overwrtes**'), value=f"Meowth! I will help you edit raid boss overwrites! This is useful if TSR doesn't include a form for a pokemon, or is sending upcoming pokemon, or something similar.\n\nYou are changing overwrites of level {level} raids. The current list is: {overwrite_str if current_overwrites else 'None'}\nThe correct format for this is:\n\n`Incorrect Pokemon = Correct Pokemon, Incorrect Pokemon=Correct Pokemon, Unwanted Pokemon=None`.\n\nReply with any overwrites to add to my current list, **none** to remove all overwrites for level {level} raids, or **cancel** to stop anytime.", inline=False)
+        raid_embed.add_field(name=_('**Edit Raid Overwrtes**'), value=f"Meowth! I will help you edit raid boss overwrites! This is useful if TSR doesn't include a form for a pokemon, or is sending upcoming pokemon, or something similar.\n\nYou are changing overwrites of level {level} raids. {'The current list is listed above.' if current_overwrites else 'You have no current boss overwrites.'}\n\nThe correct format for this is:\n`Incorrect Pokemon = Correct Pokemon, Incorrect Pokemon=Correct Pokemon, Unwanted Pokemon=None`\n\nReply with any overwrites to add to my current list, **none** to remove all overwrites for level {level} raids, or **cancel** to stop anytime.", inline=False)
         boss_list_wait = await ctx.send(embed=raid_embed)
         try:
             boss_list_msg = await self.bot.wait_for('message', timeout=60, check=check)
