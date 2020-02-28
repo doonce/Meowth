@@ -229,7 +229,7 @@ class Lure(commands.Cog):
                     break
         if success:
             await self.edit_lure_messages(ctx, message)
-        else:
+        elif not error:
             error = _("didn't change anything")
         if error:
             lure_embed.clear_fields()

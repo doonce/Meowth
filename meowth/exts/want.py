@@ -53,7 +53,7 @@ class Want(commands.Cog):
             want_embed.add_field(name=f"**{'Gym' if gyms else ''}{' / ' if gyms and stops else ''}{'Stop' if stops else ''}**", value=f"{'Reply with **gym** to want raids and eggs at specific gyms.' if gyms else ''} {'Reply with **stop** to want research and wild spawns at specific pokestops.' if stops else ''}", inline=False)
         if role_list:
             want_embed.add_field(name=_('**Role**'), value=f"Reply with **role** to subscribe to server roles.", inline=False)
-        want_embed.add_field(name=_('**IV** / **Level** / **Egg**'), value=f"Reply with **iv** or **level** to want wild spawns of a specific IV / level. Reply with **egg** to want raid eggs of a specific level", inline=False)
+        want_embed.add_field(name=_('**IV** / **Level** / **CP** / **Egg**'), value=f"Reply with **iv**, **level**, or **cp** to want wild spawns of a specific IV / level / CP. Reply with **egg** to want raid eggs of a specific level", inline=False)
         want_embed.add_field(name=_('**Type**'), value=f"Reply with **type** to want wild, research, and nest reports of a specific type.", inline=False)
         want_embed.add_field(name=_('**Item**'), value=f"Reply with **item** to want sspecific items from research.", inline=False)
         want_embed.add_field(name=_('**Settings**'), value=f"Reply with **settings** to access your want settings.", inline=False)
@@ -78,7 +78,7 @@ class Want(commands.Cog):
                         return await ctx.invoke(self.bot.get_command('want egg'), levels=pokemon)
                     elif pokemon.split(',')[0].lower().strip().isdigit() and int(pokemon.split(',')[0].lower().strip()) < 101:
                         want_embed.clear_fields()
-                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Meowth! You entered a number, which can be used for **IV**, **level**, **egg**, or **pokemon**. Which did you mean? Reply with your answer or with **cancel** to stop.", inline=False)
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Meowth! You entered a number, which can be used for **IV**, **level**, **CP**, **egg**, or **pokemon**. Which did you mean? Reply with your answer or with **cancel** to stop.", inline=False)
                         want_category_wait = await channel.send(embed=want_embed)
                         try:
                             want_category_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -97,6 +97,8 @@ class Want(commands.Cog):
                             return await ctx.invoke(self.bot.get_command('want iv'), ivs=pokemon)
                         elif want_category_msg.clean_content.lower() == "level":
                             return await ctx.invoke(self.bot.get_command('want level'), levels=pokemon)
+                        elif want_category_msg.clean_content.lower() == "cp":
+                            return await ctx.invoke(self.bot.get_command('want cp'), points=pokemon)
                         elif want_category_msg.clean_content.lower() == "pokemon":
                             return await self._want_pokemon(ctx, pokemon)
                         elif want_category_msg.clean_content.lower() == "egg":
@@ -284,6 +286,30 @@ class Want(commands.Cog):
                             want_command = ctx.command.all_commands.get('level')
                             if want_command:
                                 return await ctx.invoke(want_command, levels=ctx.message.content)
+                        break
+                    elif want_category_msg.clean_content.lower() == "cp":
+                        want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_tut_strength_adjust.png?cache=1")
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**New Alert Subscription**'), value=f"Now, reply with a comma separated list of the CPs you'd like to subscribe to. You can reply with **cancel** to stop anytime.", inline=False)
+                        want_wait = await channel.send(embed=want_embed)
+                        try:
+                            want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            want_sub_msg = None
+                        await utils.safe_delete(want_wait)
+                        if not want_sub_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(want_sub_msg)
+                        if want_sub_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled your request")
+                            break
+                        elif want_sub_msg:
+                            ctx.message.content = want_sub_msg.clean_content
+                            want_command = ctx.command.all_commands.get('cp')
+                            if want_command:
+                                return await ctx.invoke(want_command, points=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "egg":
                         want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
@@ -501,9 +527,9 @@ class Want(commands.Cog):
         want_count = added_count + already_want_count + len(spellcheck_dict)
         confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if want_count > 1 and 'boss' in ctx.invoked_with else ''}:\n\n"
         if added_count > 0:
-            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += f"**{added_count} Added:** \n\t{(', ').join(added_list)}\n"
         if already_want_count > 0:
-            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += f"**{already_want_count} Already Wanted:** \n\t{(', ').join(already_want_list)}\n"
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -581,9 +607,9 @@ class Want(commands.Cog):
         want_count = added_count + already_want_count + len(spellcheck_dict)
         confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** {'stop' if poi_type == 'stop' else 'gym'}{'s' if want_count > 1 else ''}:\n\n"
         if added_count > 0:
-            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += f"**{added_count} Added:** \n\t{(', ').join(added_list)}\n"
         if already_want_count > 0:
-            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += f"**{already_want_count} Already Wanted:** \n\t{(', ').join(already_want_list)}\n"
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -673,9 +699,9 @@ class Want(commands.Cog):
         want_count = added_count + already_want_count + len(spellcheck_dict)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:\n\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
         if added_count > 0:
-            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += f"**{added_count} Added:** \n\t{(', ').join(added_list)}\n"
         if already_want_count > 0:
-            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += f"**{already_want_count} Already Wanted:** \n\t{(', ').join(already_want_list)}\n"
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -731,9 +757,9 @@ class Want(commands.Cog):
         want_count = added_count + already_want_count + len(spellcheck_dict)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** type{s}:\n\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
         if added_count > 0:
-            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += f"**{added_count} Added:** \n\t{(', ').join(added_list)}\n"
         if already_want_count > 0:
-            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += f"**{already_want_count} Already Wanted:** \n\t{(', ').join(already_want_list)}\n"
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -799,14 +825,14 @@ class Want(commands.Cog):
         want_count = added_count + already_want_count + len(error_list)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** iv{s}:\n\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
         if added_count > 0:
-            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += f"**{added_count} Added:** \n\t{(', ').join(added_list)}\n"
         if already_want_count > 0:
-            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += f"**{already_want_count} Already Wanted:** \n\t{(', ').join(already_want_list)}\n"
         if error_list:
             error_msg = ''
             for word in error_list:
                 error_msg += _('\n\t{word}').format(word=word)
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+            confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
 
@@ -863,14 +889,75 @@ class Want(commands.Cog):
         want_count = added_count + already_want_count + len(error_list)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** level{s}:\n\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
         if added_count > 0:
-            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += f"**{added_count} Added:** \n\t{(', ').join(added_list)}\n"
         if already_want_count > 0:
-            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += f"**{already_want_count} Already Wanted:** \n\t{(', ').join(already_want_list)}\n"
         if error_list:
             error_msg = ''
             for word in error_list:
                 error_msg += _('\n\t{word}').format(word=word)
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+            confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
+        want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
+        want_confirmation = await channel.send(embed=want_embed)
+
+    @want.command(name='cp', aliases=['cps'])
+    @checks.allowwant()
+    async def want_cp(self, ctx, *, points):
+        """Add a CP to your want list. Currently used for wild reports.
+
+        Usage: !want cp <cp list>
+        Enter individual numbers or a range with CP-CP. You are limited to 100 CPs."""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        want_split = points.lower().split(',')
+        want_list = []
+        added_count = 0
+        already_want_count = 0
+        already_want_list = []
+        added_list = []
+        error_list = []
+        exceed_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_tut_strength_adjust.png?cache=1")
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('cps', [])
+        for entered_want in want_split:
+            if "-" in entered_want.lower():
+                range_split = entered_want.split("-")
+                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]) and int(range_split[1]) <= 5000:
+                    for point in range(int(range_split[0]), int(range_split[1])+1):
+                        want_list.append(str(point))
+                else:
+                    error_list.append(entered_want)
+            else:
+                if not entered_want.strip().isdigit() or int(entered_want.strip()) > 5000:
+                    error_list.append(entered_want)
+                    continue
+                if entered_want not in want_list:
+                    want_list.append(entered_want)
+        for entered_want in want_list:
+            if int(entered_want) in user_wants:
+                already_want_list.append(entered_want)
+                already_want_count += 1
+            else:
+                if len(user_wants) < 100:
+                    user_wants.append(int(entered_want))
+                    added_list.append(f"{entered_want}")
+                    added_count += 1
+                else:
+                    exceed_list.append(entered_want)
+        want_count = added_count + already_want_count + len(error_list) + len(exceed_list)
+        confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{want_count}** CP{'s' if want_count > 1 else ''}:\n\n"
+        if added_count > 0:
+            confirmation_msg += f"**{added_count} Added:** \n\t{(', ').join(added_list)}\n"
+        if already_want_count > 0:
+            confirmation_msg += f"**{already_want_count} Already Wanted:** \n\t{(', ').join(already_want_list)}\n"
+        if error_list:
+            error_msg = ''
+            for word in error_list:
+                error_msg += _('\n\t{word}').format(word=word)
+        if exceed_list:
+            confirmation_msg += f"\n**{len(exceed_list)} Over Limit:**\n\tYou reached maximum CP subscriptions. Unwant some and try again."
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
 
@@ -913,14 +1000,14 @@ class Want(commands.Cog):
         want_count = added_count + already_want_count + len(error_list)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** raid egg{s}:\n\n').format(member=ctx.author.display_name, count=want_count, s="s" if want_count > 1 else "")
         if added_count > 0:
-            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += f"**{added_count} Added:** \n\t{(', ').join(added_list)}\n"
         if already_want_count > 0:
-            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += f"**{already_want_count} Already Wanted:** \n\t{(', ').join(already_want_list)}\n"
         if error_list:
             error_msg = ''
             for word in error_list:
                 error_msg += _('\n\t{word}').format(word=word)
-            confirmation_msg += _('\n**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+            confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
 
@@ -972,9 +1059,9 @@ class Want(commands.Cog):
         want_count = added_count + already_want_count + len(spellcheck_dict)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** role{s}:\n\n').format(member=ctx.author.display_name, count=want_count, s="es" if want_count > 1 else "")
         if added_count > 0:
-            confirmation_msg += _('**{added_count} Added:** \n\t{added_list}\n').format(added_count=added_count, added_list=', '.join(added_list))
+            confirmation_msg += f"**{added_count} Added:** \n\t{(', ').join(added_list)}\n"
         if already_want_count > 0:
-            confirmation_msg += _('**{already_want_count} Already Wanted:** \n\t{already_want_list}\n').format(already_want_count=already_want_count, already_want_list=', '.join(already_want_list))
+            confirmation_msg += f"**{already_want_count} Already Wanted:** \n\t{(', ').join(already_want_list)}\n"
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -1265,6 +1352,9 @@ class Want(commands.Cog):
         user_levels = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
         user_levels = sorted(user_levels)
         user_levels = [str(x) for x in user_levels]
+        user_cps = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('cps', [])
+        user_cps = sorted(user_cps)
+        user_cps = [str(x) for x in user_cps]
         user_items = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
         user_items = [x.title() for x in user_items]
         user_types = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
@@ -1277,7 +1367,7 @@ class Want(commands.Cog):
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         want_msg = f"Meowth! I'll help you remove an alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to unsubscribe from. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=want_msg, inline=False)
-        if not any([user_wants, user_bosses, user_gyms, user_stops, user_ivs, user_levels, user_items, user_types, user_forms, user_roles, user_eggs]):
+        if not any([user_wants, user_bosses, user_gyms, user_stops, user_ivs, user_levels, user_cps, user_items, user_types, user_forms, user_roles, user_eggs]):
             want_embed.clear_fields()
             want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
             want_embed.add_field(name=_('**Alert Unsubscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you don't have any subscriptions! Add some with **!want**.").format(error=error), inline=False)
@@ -1300,8 +1390,10 @@ class Want(commands.Cog):
             want_embed.add_field(name=_('**IV**'), value=f"Reply with **iv** to unwant wild spawns of a specific IV.", inline=False)
         if user_levels:
             want_embed.add_field(name=_('**Level**'), value=f"Reply with **level** to unwant wild spawns of a specific level.", inline=False)
+        if user_cps:
+            want_embed.add_field(name=_('**CP**'), value=f"Reply with **cp** to unwant wild spawns of a specific cp.", inline=False)
         if user_eggs:
-            want_embed.add_field(name=_('**Egg**'), value=f"Reply with **level** to unwant raid eggs of a specific level.", inline=False)
+            want_embed.add_field(name=_('**Egg**'), value=f"Reply with **egg** to unwant raid eggs of a specific level.", inline=False)
         if user_types:
             want_embed.add_field(name=_('**Type**'), value=f"Reply with **type** to unwant wild, research, and nest reports of a specific type.", inline=False)
         if user_items:
@@ -1327,7 +1419,7 @@ class Want(commands.Cog):
                         return await ctx.invoke(self.bot.get_command('unwant egg'), levels=pokemon)
                     elif pokemon.split(',')[0].lower().strip().isdigit() and int(pokemon.split(',')[0].lower().strip()) < 101:
                         want_embed.clear_fields()
-                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Meowth! You entered a number, which can be used for **IV**, **level**, **egg**, or **pokemon**. Which did you mean? Reply with your answer or with **cancel** to stop.", inline=False)
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Meowth! You entered a number, which can be used for **IV**, **level**, **CP**, **egg**, or **pokemon**. Which did you mean? Reply with your answer or with **cancel** to stop.", inline=False)
                         want_category_wait = await channel.send(embed=want_embed)
                         try:
                             want_category_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1346,6 +1438,8 @@ class Want(commands.Cog):
                             return await ctx.invoke(self.bot.get_command('unwant iv'), ivs=pokemon)
                         elif want_category_msg.clean_content.lower() == "level":
                             return await ctx.invoke(self.bot.get_command('unwant level'), levels=pokemon)
+                        elif want_category_msg.clean_content.lower() == "cp":
+                            return await ctx.invoke(self.bot.get_command('unwant cp'), points=pokemon)
                         elif want_category_msg.clean_content.lower() == "egg":
                             return await ctx.invoke(self.bot.get_command('unwant egg'), levels=pokemon)
                         elif want_category_msg.clean_content.lower() == "pokemon":
@@ -1554,6 +1648,33 @@ class Want(commands.Cog):
                             want_command = ctx.command.all_commands.get('level')
                             if want_command:
                                 return await ctx.invoke(want_command, levels=ctx.message.content)
+                        break
+                    elif want_category_msg.clean_content.lower() == "cp":
+                        if not user_cps:
+                            error = _("don't have wants of that type")
+                            break
+                        want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_tut_strength_adjust.png?cache=1")
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"Now, reply with a comma separated list of the CPs you'd like to unsubscribe from.\n\nYour current want list is: {(', ').join(user_levels)}\n\nYou can reply with **cancel** to stop anytime.", inline=False)
+                        want_wait = await channel.send(embed=want_embed)
+                        try:
+                            want_sub_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            want_sub_msg = None
+                        await utils.safe_delete(want_wait)
+                        if not want_sub_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(want_sub_msg)
+                        if want_sub_msg.clean_content.lower() == "cancel":
+                            error = _("cancelled your request")
+                            break
+                        elif want_sub_msg:
+                            ctx.message.content = want_sub_msg.clean_content
+                            want_command = ctx.command.all_commands.get('cp')
+                            if want_command:
+                                return await ctx.invoke(want_command, points=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "egg":
                         if not user_eggs:
@@ -1777,9 +1898,9 @@ class Want(commands.Cog):
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
         confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'boss' if 'boss' in ctx.invoked_with else 'pokemon'}{'es' if unwant_count > 1 and 'boss' in ctx.invoked_with else ''}:\n\n"
         if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += f"**{removed_count} Removed:** \n\t{(', ').join(removed_list)}\n"
         if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += f"**{not_wanted_count} Not Wanted:** \n\t{(', ').join(not_wanted_list)}\n"
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -1860,9 +1981,9 @@ class Want(commands.Cog):
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
         confirmation_msg = f"Meowth! {ctx.author.display_name}, out of your total **{unwant_count}** {'stop' if poi_type == 'stop' else 'gym'}{'s' if unwant_count > 1 else ''}:\n\n"
         if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += f"**{removed_count} Removed:** \n\t{(', ').join(removed_list)}\n"
         if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += f"**{not_wanted_count} Not Wanted:** \n\t{(', ').join(not_wanted_list)}\n"
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -1956,7 +2077,7 @@ class Want(commands.Cog):
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** item{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
         if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += f"**{removed_count} Removed:** \n\t{(', ').join(removed_list)}\n"
         if not_wanted_count > 0:
             confirmation_msg += _('**{not_wanted_count} Not Wwanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
         if spellcheck_dict:
@@ -2018,9 +2139,9 @@ class Want(commands.Cog):
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** type{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
         if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += f"**{removed_count} Removed:** \n\t{(', ').join(removed_list)}\n"
         if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += f"**{not_wanted_count} Not Wanted:** \n\t{(', ').join(not_wanted_list)}\n"
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -2089,9 +2210,9 @@ class Want(commands.Cog):
         unwant_count = removed_count + not_wanted_count + len(error_list)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** iv{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
         if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += f"**{removed_count} Removed:** \n\t{(', ').join(removed_list)}\n"
         if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += f"**{not_wanted_count} Not Wanted:** \n\t{(', ').join(not_wanted_list)}\n"
         if error_list:
             error_msg = ''
             for word in error_list:
@@ -2156,9 +2277,70 @@ class Want(commands.Cog):
         unwant_count = removed_count + not_wanted_count + len(error_list)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** level{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
         if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += f"**{removed_count} Removed:** \n\t{(', ').join(removed_list)}\n"
         if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += f"**{not_wanted_count} Not Wanted:** \n\t{(', ').join(not_wanted_list)}\n"
+        if error_list:
+            error_msg = ''
+            for word in error_list:
+                error_msg += _('\n\t{word}').format(word=word)
+            confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
+        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
+        unwant_confirmation = await channel.send(embed=want_embed)
+
+    @unwant.command(name='cp', aliases=['cps'])
+    @checks.allowwant()
+    async def unwant_cp(self, ctx, *, points):
+        """Remove a CP from your wanted list.
+
+        Usage: !unwant cp <cp list>
+        You will no longer be notified of reports of this CP."""
+        await ctx.trigger_typing()
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        unwant_split = points.lower().split(',')
+        unwant_list = []
+        removed_count = 0
+        not_wanted_count = 0
+        not_wanted_list = []
+        removed_list = []
+        error_list = []
+        want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_tut_strength_adjust.png?cache=1")
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('cps', [])
+        for entered_unwant in unwant_split:
+            if "-" in entered_unwant.lower():
+                range_split = entered_unwant.split("-")
+                if range_split[0].isdigit() and range_split[1].isdigit() and int(range_split[1]) > int(range_split[0]):
+                    for point in range(int(range_split[0]), int(range_split[1])+1):
+                        unwant_list.append(str(point))
+                else:
+                    error_list.append(entered_unwant)
+            else:
+                if len(unwant_split) == 1 and "all" in entered_unwant:
+                    await utils.safe_delete(ctx.message)
+                    return await ctx.invoke(self.bot.get_command('unwant all'), category="cp")
+                elif not entered_unwant.strip().isdigit():
+                    error_list.append(entered_unwant)
+                    continue
+                if entered_unwant not in unwant_list:
+                    unwant_list.append(entered_unwant)
+        for entered_unwant in unwant_list:
+            if int(entered_unwant) not in user_wants:
+                not_wanted_list.append(entered_unwant)
+                not_wanted_count += 1
+            else:
+                user_wants.remove(int(entered_unwant))
+                removed_list.append(f"{entered_unwant}")
+                removed_count += 1
+        unwant_count = removed_count + not_wanted_count + len(error_list)
+        confirmation_msg = _('Meowth! {member}, out of your total **{count}** CP{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
+        if removed_count > 0:
+            confirmation_msg += f"**{removed_count} Removed:** \n\t{(', ').join(removed_list)}\n"
+        if not_wanted_count > 0:
+            if removed_count:
+                confirmation_msg += "\n"
+            confirmation_msg += f"**{not_wanted_count} Not Wanted:** \n\tYou listed CPs that you were not subscribed to.\n"
         if error_list:
             error_msg = ''
             for word in error_list:
@@ -2206,9 +2388,9 @@ class Want(commands.Cog):
         unwant_count = removed_count + not_wanted_count + len(error_list)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** raid egg{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="s" if unwant_count > 1 else "")
         if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += f"**{removed_count} Removed:** \n\t{(', ').join(removed_list)}\n"
         if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += f"**{not_wanted_count} Not Wanted:** \n\t{(', ').join(not_wanted_list)}\n"
         if error_list:
             error_msg = ''
             for word in error_list:
@@ -2269,9 +2451,9 @@ class Want(commands.Cog):
         unwant_count = removed_count + not_wanted_count + len(spellcheck_dict)
         confirmation_msg = _('Meowth! {member}, out of your total **{count}** role{s}:\n\n').format(member=ctx.author.display_name, count=unwant_count, s="es" if unwant_count > 1 else "")
         if removed_count > 0:
-            confirmation_msg += _('**{removed_count} Removed:** \n\t{removed_list}\n').format(removed_count=removed_count, removed_list=', '.join(removed_list))
+            confirmation_msg += f"**{removed_count} Removed:** \n\t{(', ').join(removed_list)}\n"
         if not_wanted_count > 0:
-            confirmation_msg += _('**{not_wanted_count} Not Wanted:** \n\t{not_wanted_list}\n').format(not_wanted_count=not_wanted_count, not_wanted_list=', '.join(not_wanted_list))
+            confirmation_msg += f"**{not_wanted_count} Not Wanted:** \n\t{(', ').join(not_wanted_list)}\n"
         if spellcheck_dict:
             spellcheckmsg = ''
             for word in spellcheck_dict:
@@ -2305,11 +2487,12 @@ class Want(commands.Cog):
         user_types = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
         user_ivs = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
         user_levels = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
+        user_cps = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('cps', [])
         user_eggs = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('raid_eggs', [])
         join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict'].get('want', {}).get('roles', [])]
         user_roles = [x for x in join_roles if x in author.roles]
         unwant_msg = ""
-        if not any([user_wants, user_bosses, user_gyms, user_stops, user_items, user_types, user_ivs, user_levels, user_forms, user_roles, user_bossforms, user_trades, user_eggs]):
+        if not any([user_wants, user_bosses, user_gyms, user_stops, user_items, user_types, user_ivs, user_levels, user_cps, user_forms, user_roles, user_bossforms, user_trades, user_eggs]):
             return await channel.send(content=_('{0}, you have nothing in your want list!').format(author.mention), delete_after=10)
         await channel.trigger_typing()
         completed_list = []
@@ -2349,6 +2532,9 @@ class Want(commands.Cog):
         if (category == "all" or category == "level") and len(user_levels) > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['levels'] = []
             completed_list.append(f"{len(user_levels)} level{'s' if len(user_levels) > 1 else ''}")
+        if (category == "all" or category == "cp") and len(user_cps) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['cps'] = []
+            completed_list.append(f"{len(user_cps)} CP{'s' if len(user_cps) > 1 else ''}")
         if (category == "all" or category == "egg") and len(user_eggs) > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['raid_eggs'] = []
             completed_list.append(f"{len(user_eggs)} raid egg{'s' if len(user_eggs) > 1 else ''}")

@@ -907,6 +907,9 @@ class Listing(commands.Cog):
         user_levels = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
         user_levels = sorted(user_levels)
         user_levels = [str(x) for x in user_levels]
+        user_cps = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('cps', [])
+        user_cps = sorted(user_cps)
+        user_cps = [str(x) for x in user_cps]
         categories = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}))
         pokemon_options = ["wild", "research", "invasion", "nest", "trade", "raid"]
         pokestop_options = ["research", "wild", "lure", "invasion"]
@@ -928,7 +931,7 @@ class Listing(commands.Cog):
             pokemon_settings['raid'] = False
             pokemon_settings['trade'] = False
         wantmsg = ""
-        if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels) or len(user_forms) > 0 or len(user_eggs) > 0:
+        if len(wantlist) > 0 or len(user_gyms) > 0 or len(user_stops) > 0 or len(user_items) > 0 or len(bosslist) > 0 or len(user_types) > 0 or len(user_ivs) > 0 or len(user_levels) or len(user_cps) > 0 or len(user_forms) > 0 or len(user_eggs) > 0:
             if wantlist:
                 wantmsg += f"**Pokemon:** ({(', ').join([x for x in pokemon_options if pokemon_settings.get(x)])})\n{', '.join(wantlist)}\n\n"
             if user_forms:
@@ -951,6 +954,8 @@ class Listing(commands.Cog):
                 wantmsg += f"**IVs:** (wilds)\n{', '.join(user_ivs)}\n\n"
             if user_levels:
                 wantmsg += f"**Levels:** (wilds)\n{', '.join(user_levels)}\n\n"
+            if user_cps:
+                wantmsg += f"**CPs:** (wilds)\n{', '.join(user_cps)}\n\n"
             if user_eggs:
                 wantmsg += f"**Raid Eggs:** (raids)\n{', '.join(user_eggs)}\n\n"
         if wantmsg:
@@ -1004,6 +1009,7 @@ class Listing(commands.Cog):
         type_list = []
         iv_list = []
         level_list = []
+        cp_list = []
         raidegg_list = []
         for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('wants', []):
@@ -1042,6 +1048,9 @@ class Listing(commands.Cog):
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('levels', []):
                 if want not in level_list:
                     level_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('cps', []):
+                if want not in cp_list:
+                    cp_list.append(want)
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('raid_eggs', []):
                 if want not in raidegg_list:
                     raidegg_list.append(want)
@@ -1057,10 +1066,12 @@ class Listing(commands.Cog):
         iv_list = [str(x) for x in iv_list]
         level_list = sorted(level_list)
         level_list = [str(x) for x in level_list]
+        cp_list = sorted(cp_list)
+        cp_list = [str(x) for x in cp_list]
         raidegg_list = sorted([int(x) for x in raidegg_list])
         raidegg_list = [str(x) for x in raidegg_list]
         wantmsg = ""
-        if len(want_list) > 0 or len(gym_list) > 0 or len(stop_list) > 0 or len(item_list) > 0 or len(boss_list) > 0 or len(type_list) > 0 or len(iv_list) > 0 or len(level_list):
+        if len(want_list) > 0 or len(gym_list) > 0 or len(stop_list) > 0 or len(item_list) > 0 or len(boss_list) > 0 or len(type_list) > 0 or len(iv_list) > 0 or len(level_list) > 0 or len(cp_list) > 0:
             if want_list:
                 wantmsg += f"**Pokemon:**\n{', '.join(want_list)}\n\n"
             if form_list:
@@ -1083,6 +1094,8 @@ class Listing(commands.Cog):
                 wantmsg += f"**IVs:**\n{', '.join(iv_list)}\n\n"
             if level_list:
                 wantmsg += f"**Levels:**\n{', '.join(level_list)}\n\n"
+            if cp_list:
+                wantmsg += f"**CPs:**\n{', '.join(cp_list)}\n\n"
             if raidegg_list:
                 wantmsg += f"**Raid Eggs:**\n{', '.join(raidegg_list)}\n\n"
         if wantmsg:

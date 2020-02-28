@@ -274,7 +274,7 @@ class Invasion(commands.Cog):
                     break
         if success:
             await self.edit_invasion_messages(ctx, message)
-        else:
+        elif not error:
             error = _("didn't change anything")
         if error:
             invasion_embed.clear_fields()

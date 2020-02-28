@@ -847,7 +847,7 @@ class Huntr(commands.Cog):
         reaction_list = [omw_emoji, catch_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         despawn = (int(expire.split(' ')[0]) * 60) + int(expire.split(' ')[2])
         ctx.wildreportmsg = await ctx.channel.send(f"Meowth! Wild {str(pokemon)} reported by {message.author.mention}!{stop_str}Coordinates: {wild_coordinates}{iv_str}\n\nUse {omw_emoji} if coming, {catch_emoji} if caught, {expire_emoji} if despawned, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all wilds!", embed=wild_embed)
-        dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), iv_percent, level, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
+        dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), iv_percent, level, cp, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
         for reaction in reaction_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(ctx.wildreportmsg, reaction)

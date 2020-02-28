@@ -325,7 +325,7 @@ class Wild(commands.Cog):
                             error = _("entered something invalid")
                             continue
                         if "cp" in value and "cp" not in success:
-                            if value_split[1] and value_split[1].isdigit() and int(value_split[1]) < 5000:
+                            if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 5000:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['cp'] = int(value_split[1])
                                 success.append("cp")
                             elif value_split[1] and value_split[1].lower() == "none":
@@ -437,7 +437,7 @@ class Wild(commands.Cog):
                     break
         if success:
             await self.edit_wild_messages(ctx, message)
-        else:
+        elif not error:
             error = _("didn't change anything")
         if error:
             wild_embed.clear_fields()
@@ -454,6 +454,7 @@ class Wild(commands.Cog):
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender.lower()} {size.lower()} {wild_dict['pkmn_obj'].lower()}")
         iv_percent = wild_dict.get('wild_iv', {}).get('percent', None)
         level = wild_dict.get('level', None)
+        cp = wild_dict.get('cp', None)
         old_embed = message.embeds[0]
         wild_gmaps_link = old_embed.url
         nearest_stop = wild_dict.get('location', None)
@@ -509,10 +510,10 @@ class Wild(commands.Cog):
                 pass
         wild_embed.description = new_description
         ctx.wildreportmsg = message
-        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, level, content, copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, level, cp, content, copy.deepcopy(wild_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['dm_dict'] = dm_dict
 
-    async def send_dm_messages(self, ctx, wild_pokemon, wild_details, wild_iv, wild_level, content, embed, dm_dict):
+    async def send_dm_messages(self, ctx, wild_pokemon, wild_details, wild_iv, wild_level, wild_cp, content, embed, dm_dict):
         if embed:
             if isinstance(embed.description, discord.embeds._EmptyEmbed):
                 embed.description = ""
@@ -538,7 +539,8 @@ class Wild(commands.Cog):
             type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('wild', True)
             user_ivs = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('ivs', [])
             user_levels = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('levels', [])
-            if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_types, type_setting, user_ivs, user_levels]):
+            user_cps = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('cps', [])
+            if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_types, type_setting, user_ivs, user_levels, user_cps]):
                 continue
             if not checks.dm_check(ctx, trainer, "wild") or trainer in dm_dict:
                 continue
@@ -559,6 +561,8 @@ class Wild(commands.Cog):
                 send_wild.append(f"IV: {wild_iv}")
             if wild_level in user_levels:
                 send_wild.append(f"Level: {wild_level}")
+            if wild_cp in user_cps:
+                send_wild.append(f"CP: {wild_cp}")
             if send_wild:
                 embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_wild)}"
                 try:
@@ -748,7 +752,7 @@ class Wild(commands.Cog):
         wild_embed = await self.make_wild_embed(ctx, details)
         ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\n\nUse {omw_emoji} if coming, {catch_emoji} if caught, {expire_emoji} if despawned, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all wilds!", embed=wild_embed)
         dm_dict = {}
-        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, None, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(ctx.wildreportmsg, reaction)

@@ -265,7 +265,7 @@ class Nest(commands.Cog):
             entered_pokemon = pokemon
         if success:
             await self.edit_nest_messages(ctx, location, message)
-        else:
+        elif not error:
             error = _("didn't change anything")
         if error:
             nest_embed.clear_fields()
