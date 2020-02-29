@@ -219,7 +219,7 @@ class Wild(commands.Cog):
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender.lower()} {pkmn_obj.lower()}")
         pokemon.weather = weather
         size = None
-        if height and weight:
+        if height and weight and pokemon.weight and pokemon.height:
             weight_ratio = float(weight) / float(pokemon.weight)
             height_ratio = float(height) / float(pokemon.height)
             if height_ratio + weight_ratio < 1.5:

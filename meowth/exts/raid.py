@@ -5727,6 +5727,28 @@ class Raid(commands.Cog):
         Party is also optional. Format is #m #v #i #u to tell your party's teams."""
         await self._rsvp(ctx, "lobby", party_info)
 
+    @commands.command(aliases=["sub"])
+    @checks.rsvpchannel()
+    async def subscribe(self, ctx):
+        """Subscribe to a channel and receive alerts for any RSVPs."""
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
+        alert_list = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].setdefault('alert_list', [])
+        alert_emoji = self.bot.custom_emoji.get('alert_emoji', u'\U0001f514')
+        if ctx.author.id not in alert_list:
+            self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['alert_list'].append(ctx.author.id)
+            return await ctx.send(f"{alert_emoji} - {ctx.author.mention} you are now subscribed to this channel and will receive DM alerts for any RSVPs.")
+
+    @commands.command(aliases=["unsub"])
+    @checks.rsvpchannel()
+    async def unsubscribe(self, ctx):
+        """unsubscribe from a channel and stop receiving alerts for any RSVPs."""
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
+        alert_list = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].setdefault('alert_list', [])
+        alert_emoji = self.bot.custom_emoji.get('alert_emoji', u'\U0001f515')
+        if ctx.author.id in alert_list:
+            self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['alert_list'].remove(ctx.author.id)
+            return await ctx.send(f"{alert_emoji} - {ctx.author.mention} you are no longer subscribed to this channel and will not receive DM alerts for any RSVPs.")
+
     @commands.command()
     @checks.rsvpchannel()
     async def rsvp(self, ctx):
@@ -6021,11 +6043,11 @@ class Raid(commands.Cog):
         if rsvp_emoji not in channel.name:
             raid_channel_name = await self.edit_channel_name(channel)
             await channel.edit(name=raid_channel_name)
-        # total_count = 0
-        # for trainer in list(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict']):
-        #     total_count += sum(self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict'][trainer]['status'].values())
-        # if total_count%3 == 0:
-        #     await ctx.invoke(self.bot.get_command("list"))
+        for trainer in self.bot.guild_dict[guild.id][report_dict][channel.id].get('alert_list', []):
+            member = guild.get_member(trainer)
+            alert_emoji = self.bot.custom_emoji.get('alert_emoji', u'\U0001f514')
+            await member.send(f"{alert_emoji} - {author.mention} has RSVP'd in {channel.mention}.", delete_after=3600)
+
 
     @commands.command(aliases=['x'])
     @checks.rsvpchannel()

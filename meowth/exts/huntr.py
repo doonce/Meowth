@@ -801,7 +801,7 @@ class Huntr(commands.Cog):
         height = re.sub('[^0-9 .]', '', height)
         weight = re.sub('[^0-9 .]', '', weight)
         size = None
-        if height and weight:
+        if height and weight and pokemon.weight and pokemon.height:
             weight_ratio = float(weight) / float(pokemon.weight)
             height_ratio = float(height) / float(pokemon.height)
             if height_ratio + weight_ratio < 1.5:

@@ -739,6 +739,9 @@ class Utilities(commands.Cog):
                             elif "welcome" in message.content.lower():
                                 if (datetime.datetime.now() - message.created_at).days >= 30:
                                     delete_list.append(message)
+                            elif "has rsvp" in message.content.lower():
+                                if (datetime.datetime.now() - message.created_at).days >= 7:
+                                    delete_list.append(message)
                             elif "backout" in message.content.lower():
                                 if (datetime.datetime.now() - message.created_at).days >= 1:
                                     delete_list.append(message)
@@ -988,7 +991,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v20.2.28.1 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v20.2.29.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
