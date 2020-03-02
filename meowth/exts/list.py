@@ -965,7 +965,20 @@ class Listing(commands.Cog):
                 listmsg = _('Meowth! {author}, you will receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
             paginator = commands.Paginator(prefix="", suffix="")
             for line in wantmsg.splitlines():
-                paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                if len(line) < 1900:
+                    paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                else:
+                    new_list = []
+                    line_split = line.split(',')
+                    line_split = [x.strip() for x in line_split]
+                    for item in line_split:
+                        if len(f"{(', ').join(new_list)}") < 1900:
+                            new_list.append(item)
+                        else:
+                            paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
+                            new_list = []
+                    if new_list:
+                        paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:
             listmsg = _("Meowth! {author}, you don\'t have any wants! use **!want** to add some.").format(author=ctx.author.display_name)
@@ -1102,7 +1115,20 @@ class Listing(commands.Cog):
             listmsg = _('**Meowth!** The server **!want** list is:')
             paginator = commands.Paginator(prefix="", suffix="")
             for line in wantmsg.splitlines():
-                paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                if len(line) < 1900:
+                    paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                else:
+                    new_list = []
+                    line_split = line.split(',')
+                    line_split = [x.strip() for x in line_split]
+                    for item in line_split:
+                        if len(f"{(', ').join(new_list)}") < 1900:
+                            new_list.append(item)
+                        else:
+                            paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
+                            new_list = []
+                    if new_list:
+                        paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:
             listmsg = _("**Meowth!** Nobody has any wants! use **!want** to add some.")
@@ -1346,8 +1372,21 @@ class Listing(commands.Cog):
             trademsg = f"**Pokemon:**\n\n{(', ').join([x.title() for x in all_wants.keys()])}"
         if trademsg:
             paginator = commands.Paginator(prefix="", suffix="")
-            for line in trademsg.splitlines():
-                paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+            for line in wantmsg.splitlines():
+                if len(line) < 1900:
+                    paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                else:
+                    new_list = []
+                    line_split = line.split(',')
+                    line_split = [x.strip() for x in line_split]
+                    for item in line_split:
+                        if len(f"{(', ').join(new_list)}") < 1900:
+                            new_list.append(item)
+                        else:
+                            paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
+                            new_list = []
+                    if new_list:
+                        paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:
             listmsg = f"Meowth! No active trades matched your search term **{search}**. List one with **!trade**"

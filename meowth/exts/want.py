@@ -540,8 +540,33 @@ class Want(commands.Cog):
         if len(added_list) == 1:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, added_list[0])
             want_embed.set_thumbnail(url=pokemon.img_url)
-        want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(embed=want_embed)
+        if len(confirmation_msg) < 1000:
+            want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
+            want_confirmation = await channel.send(embed=want_embed)
+        else:
+            paginator = commands.Paginator(prefix="", suffix="")
+            for line in confirmation_msg.splitlines():
+                if len(line) < 1900:
+                    paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                else:
+                    new_list = []
+                    line_split = line.split(',')
+                    line_split = [x.strip() for x in line_split]
+                    for item in line_split:
+                        if len(f"{(', ').join(new_list)}") < 1900:
+                            new_list.append(item)
+                        else:
+                            paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
+                            new_list = []
+                    if new_list:
+                        paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
+            index = 0
+            for p in paginator.pages:
+                if index == 0:
+                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"**New Alert Subscription**\n{p}"))
+                else:
+                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                index += 1
         if trade_warn:
             await ctx.send(f"Meowth! {ctx.author.mention}, just so you know, **{(', ').join(trade_warn)}** will only be alerted through new trade listings.", delete_after=30)
 
