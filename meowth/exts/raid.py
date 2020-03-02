@@ -5899,21 +5899,35 @@ class Raid(commands.Cog):
                 boss_list.append(str(pokemon).lower())
         pkmn_match = None
         if party_info:
-            party_info = party_info.lower()
-            pkmn_split = re.split(' |,', party_info)
-            for index, item in enumerate(pkmn_split):
-                if len(item) < 4:
-                    continue
-                pkmn_match = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item)
-                if pkmn_match:
-                    pkmn_split[index] = str(pkmn_match).lower()
-                    party_info = party_info.replace(item, '').strip()
-            if "all" in party_info:
+            pkmn_split = party_info.split(',')
+            pkmn_split = [x.strip() for x in pkmn_split]
+            party_list = []
+            first_split = pkmn_split[0].split()
+            for item in first_split:
+                party_search = re.search(r'\d+[vimrybgu]*', item)
+                if party_search:
+                    party_list.append(item)
+                    pkmn_split[0] = pkmn_split[0].replace(item, '').strip()
+            if "all" in party_info.lower():
                 pkmn_split = boss_list
-                party_info = party_info.replace('all', '')
                 pkmn_match = True
-            pkmn_split = [x for x in pkmn_split if len(x) >= 4 and x in boss_list]
-            party_info = party_info.replace(',', '').strip()
+            party_info = (' ').join(party_list)
+            if not pkmn_match:
+                for index, item in enumerate(pkmn_split):
+                    pkmn_match = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item)
+                    if pkmn_match:
+                        if str(pkmn_match).lower() in boss_list:
+                            pkmn_split[index] = str(pkmn_match).lower()
+                        elif pkmn_match.id in self.bot.raid_dict[str(egg_level)]:
+                            for boss in self.bot.raid_dict[str(egg_level)]:
+                                if isinstance(boss, pkmn_class.Pokemon) and boss.id == pkmn_match.id:
+                                    pkmn_split[index] = str(boss).lower()
+                                    break
+                        else:
+                            pkmn_split[index] = ""
+                    else:
+                        pkmn_split[index] = ""
+            pkmn_split = [x for x in pkmn_split if x]
             if pkmn_match and self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['type'] == 'egg':
                 entered_interest = []
                 for pkmn in pkmn_split:
