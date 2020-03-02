@@ -1106,8 +1106,7 @@ class Want(commands.Cog):
         await ctx.trigger_typing()
         user_mute = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', {"raid":False, "invasion":False, "lure":False, "wild":False, "research":False, "nest":False, "trade":False})
         mute_options = ["raid", "invasion", "lure", "wild", "research", "nest", "trade"]
-        start_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_start', None)
-        end_time = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_end', None)
+        time_setting = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('active_hours', {})
         user_link = self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings'].setdefault('link', True)
         if user_link:
             link_str = f"Reply with **unlink** to unlink your **!want** list from your boss notifications. You are currently linked meaning your **!want** list controls all pokemon alerts. If you unlink, your **!want** list will be used for wild, research, and nest reports only. **!want boss <pokemon>** will be used for raid boss @mentions and **!want trade <pokemon>** will be used for trade wants."
@@ -1119,7 +1118,7 @@ class Want(commands.Cog):
         settings_embed.add_field(name=f"**{'unlink' if user_link else 'link'}**", value=f"{link_str}", inline=False)
         settings_embed.add_field(name=f"**categories**", value=f"Reply with **categories** to set your alert categories. For example, if you want a certain pokestop but only want wild alerts but no lures or invasions, use this setting.", inline=False)
         settings_embed.add_field(name=f"**cancel**", value=f"Reply with **cancel** to stop changing settings.", inline=False)
-        settings_embed.add_field(name="**Current Settings**", value=f"DMs Muted: {(', ').join([x for x in user_mute.keys() if user_mute[x]])}{'None' if not any(user_mute.values()) else ''}\nStart Time: {start_time.strftime('%I:%M %p') if start_time else 'None'}\nEnd Time: {end_time.strftime('%I:%M %p') if start_time else 'None'}\nLink: {user_link}", inline=False)
+        settings_embed.add_field(name="**Current Settings**", value=f"DMs Muted: {(', ').join([x for x in user_mute.keys() if user_mute[x]])}{'None' if not any(user_mute.values()) else ''}\nStart Time: {'Times set' if time_setting else 'None'}\nEnd Time: {'Times set' if time_setting else 'None'}\nLink: {user_link}", inline=False)
         settings_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
         settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:", embed=settings_embed, delete_after=120)
         def check(reply):
@@ -1162,22 +1161,33 @@ class Want(commands.Cog):
             await ctx.send(f"{ctx.author.mention} - Your DM alert mute settings are set. DMs muted: {(', ').join([x for x in user_setting.keys() if user_setting[x]])}{'None' if not any(user_setting.values()) else ''}")
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['mute'] = user_setting
         elif reply.content.lower() == "time":
-            await ctx.send(f"Please enter the time you would like to **start receiving** DMs each day. *Ex: 8:00 AM*. You can reply with **none** to turn off active hours and receive all DMs regardless of time.", delete_after=120)
+            await ctx.send(f"Please enter the day you would like to set your times for. *Ex: Monday*. You can reply with **all** to set all days at once or **none** to turn off active hours and receive all DMs regardless of time.", delete_after=120)
+            try:
+                day_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
+            except asyncio.TimeoutError:
+                return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+            await utils.safe_delete(day_reply)
+            edit_days = []
+            if day_reply.clean_content.lower() == "none":
+                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_hours'] = {}
+                return await ctx.send(f"{ctx.author.mention} - You will now receive all DMs you are subscribed to, regardless of time.")
+            elif day_reply.clean_content.lower() == "all":
+                edit_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+            elif any([day_reply.clean_content.lower() == "monday", day_reply.clean_content.lower() == "tuesday", day_reply.clean_content.lower() == "wednesday", day_reply.clean_content.lower() == "thursday", day_reply.clean_content.lower() == "friday", day_reply.clean_content.lower() == "saturday", day_reply.clean_content.lower() == "sunday"]):
+                edit_days = [day_reply.clean_content.lower()]
+            else:
+                return await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
+            await ctx.send(f"Please enter the time you would like to **start receiving** DMs each {'day' if len(edit_days) > 1 else edit_days[0].title()}. *Ex: 8:00 AM*.", delete_after=120)
             try:
                 time_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
             except asyncio.TimeoutError:
                 return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
             await utils.safe_delete(time_reply)
-            if time_reply.content.lower() == "none":
-                await ctx.send(f"{ctx.author.mention} - You will now receive all DMs you are subscribed to, regardless of time.")
-                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_start'] = None
-                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_end'] = None
-                return
             try:
                 start_set = dateparser.parse(time_reply.content.lower())
             except ValueError:
                 return await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-            await ctx.send(f"Please enter the time you would like to **stop receiving** DMs each day. *Ex: 9:00 PM*", delete_after=120)
+            await ctx.send(f"Please enter the time you would like to **stop receiving** DMs each {'day' if len(edit_days) > 1 else edit_days[0].title()}. *Ex: 9:00 PM*", delete_after=120)
             try:
                 time_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
             except asyncio.TimeoutError:
@@ -1187,9 +1197,11 @@ class Want(commands.Cog):
                 end_set = dateparser.parse(time_reply.content.lower())
             except ValueError:
                 return await ctx.send(f"Meowth! I couldn't understand your reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-            await ctx.send(f"{ctx.author.mention} - Your DM alerts will start at {start_set.time().strftime('%I:%M %p')} and stop at {end_set.time().strftime('%I:%M %p')} each day.")
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_start'] = start_set.time()
-            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_end'] = end_set.time()
+            await ctx.send(f"{ctx.author.mention} - Your DM alerts will start at {start_set.time().strftime('%I:%M %p')} and stop at {end_set.time().strftime('%I:%M %p')} each {'day' if len(edit_days) > 1 else edit_days[0].title()}.")
+            for day in edit_days:
+                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_hours'][day] = {}
+                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_hours'][day]['active_start'] = start_set.time()
+                self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['active_hours'][day]['active_end'] = end_set.time()
         elif reply.content.lower() == "categories":
             return await ctx.invoke(self.bot.get_command("want categories"))
         elif reply.content.lower() == "link":
@@ -1936,8 +1948,33 @@ class Want(commands.Cog):
         if len(removed_list) == 1:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, removed_list[0])
             want_embed.set_thumbnail(url=pokemon.img_url)
-        want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(embed=want_embed)
+        if len(confirmation_msg) < 1000:
+            want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
+            unwant_confirmation = await channel.send(embed=want_embed)
+        else:
+            paginator = commands.Paginator(prefix="", suffix="")
+            for line in confirmation_msg.splitlines():
+                if len(line) < 1900:
+                    paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                else:
+                    new_list = []
+                    line_split = line.split(',')
+                    line_split = [x.strip() for x in line_split]
+                    for item in line_split:
+                        if len(f"{(', ').join(new_list)}") < 1900:
+                            new_list.append(item)
+                        else:
+                            paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
+                            new_list = []
+                    if new_list:
+                        paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
+            index = 0
+            for p in paginator.pages:
+                if index == 0:
+                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"**Remove Alert Subscription**\n{p}"))
+                else:
+                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                index += 1
 
     @unwant.command(name='boss', aliases=['bosses'])
     @checks.allowwant()

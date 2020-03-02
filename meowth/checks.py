@@ -400,10 +400,11 @@ def dm_check(ctx, trainer, report_type):
     if mute:
         return False
     report_time = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset']))
-    start_time = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('settings', {}).get('active_start', False)
-    end_time = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('settings', {}).get('active_end', False)
-    if not start_time or not end_time:
+    time_setting = ctx.bot.guild_dict[ctx.guild.id].get('trainers', {}).get(trainer, {}).get('alerts', {}).get('settings', {}).get('active_hours', {}).get(report_time.strftime("%A").lower(), False)
+    if not time_setting:
         return True
+    start_time = time_setting.get('active_start', False)
+    end_time = time_setting.get('active_end', False)
     start_time = datetime.datetime.combine(report_time.date(), start_time)
     end_time = datetime.datetime.combine(report_time.date(), end_time)
     if start_time.time() > end_time.time() and report_time.time() > start_time.time():
