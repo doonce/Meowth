@@ -443,6 +443,31 @@ def type_to_emoji(bot, type):
     except (IndexError, ValueError):
         return type
 
+def get_weather_boost(weather):
+    clear_boost = ["Grass", "Ground", "Fire"]
+    fog_boost = ["Dark", "Ghost"]
+    cloudy_boost = ["Fairy", "Fighting", "Poison"]
+    partlycloudy_boost = ["Normal", "Rock"]
+    rainy_boost = ["Water", "Electric", "Bug"]
+    snow_boost = ["Ice", "Steel"]
+    windy_boost = ["Dragon", "Flying", "Psychic"]
+    if weather == "clear":
+        return clear_boost
+    elif weather == "foggy":
+        return fog_boost
+    elif weather == "cloudy":
+        return cloudy_boost
+    elif weather == "partlycloudy":
+        return partlycloudy_boost
+    elif weather == "rainy":
+        return rainy_boost
+    elif weather == "snowy":
+        return snow_boost
+    elif weather == "windy":
+        return windy_boost
+    else:
+        return None
+
 def create_gmaps_query(bot, details, channel, type="raid"):
     if type == "raid" or type == "egg":
         report = "raid"
@@ -991,7 +1016,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v20.3.2.2 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v20.3.4.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

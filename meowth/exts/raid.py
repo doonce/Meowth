@@ -2215,7 +2215,7 @@ class Raid(commands.Cog):
             timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['timerset_msg'] = timerset_msg.id
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
-        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
+        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
         if weather:
             weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour < 18 else 'Night'}.png?cache=1")
         weather_msg = await raid_channel.send(embed=weather_embed)
@@ -2395,7 +2395,7 @@ class Raid(commands.Cog):
             timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['timerset_msg'] = timerset_msg.id
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
-        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
+        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}")
         if weather:
             weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour < 18 else 'Night'}.png?cache=1")
         weather_msg = await raid_channel.send(embed=weather_embed)
@@ -2507,13 +2507,13 @@ class Raid(commands.Cog):
         pokemon.weather = weather
         if weather != eggdetails.get('weather') or pokemon.is_boosted:
             weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
-            weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
+            weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
             if weather:
                 weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour < 18 else 'Night'}.png?cache=1")
             try:
-                weather_msg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['weather_msg'])
+                weather_msg = await raid_channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]['weather_msg'])
                 await weather_msg.edit(embed=weather_embed)
-            except:
+            except Exception as e:
                 pass
         self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]['pokemon'] = pokemon.name.lower()
         self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
@@ -2613,7 +2613,7 @@ class Raid(commands.Cog):
         pokemon.weather = weather
         if weather != eggdetails.get('weather') or pokemon.is_boosted:
             weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
-            weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
+            weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
             if weather:
                 weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour < 18 else 'Night'}.png?cache=1")
             try:
@@ -2974,7 +2974,7 @@ class Raid(commands.Cog):
         timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
         ctx.bot.guild_dict[message.guild.id]['exraidchannel_dict'][raid_channel.id]['timerset_msg'] = timerset_msg.id
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
-        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to None. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
+        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to None. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}")
         weather_msg = await raid_channel.send(embed=weather_embed)
         self.bot.guild_dict[ctx.guild.id]['exraidchannel_dict'][raid_channel.id]['weather_msg'] = weather_msg.id
         ex_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('ex', 0) + 1
@@ -5192,7 +5192,10 @@ class Raid(commands.Cog):
         for ctr in reversed(ctrs):
             ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh')
             if "form" in ctr_name.lower():
-                ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
+                try:
+                    ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
+                except:
+                    ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms']['none']['type']
             else:
                 ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms']['none']['type']
             for index, type in enumerate(ctr_type):
@@ -5291,7 +5294,7 @@ class Raid(commands.Cog):
                 try:
                     ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
                 except:
-                    print("sunny error", ctr_name)
+                    ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms']['none']['type']
             else:
                 ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms']['none']['type']
             for index, type in enumerate(ctr_type):
@@ -5326,7 +5329,10 @@ class Raid(commands.Cog):
             for ctr in reversed(ctrs):
                 ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh')
                 if "form" in ctr_name.lower():
-                    ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
+                    try:
+                        ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
+                    except:
+                        ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms']['none']['type']
                 else:
                     ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms']['none']['type']
                 for index, type in enumerate(ctr_type):
@@ -5429,9 +5435,9 @@ class Raid(commands.Cog):
                 pokemon.weather = weather
             weather_embed.clear_fields()
             if pkmn:
-                weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. If this changes you can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
+                weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. If this changes you can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
             else:
-                weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. If this changes you can set the correct weather using **{ctx.prefix}weather**.")
+                weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. If this changes you can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}")
             if weather:
                 weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour < 18 else 'Night'}.png?cache=1")
             try:

@@ -1034,7 +1034,7 @@ class Huntr(commands.Cog):
             duplicate_embed.add_field(name=f"**Bot Reported Channel**", value=f"This raid was reported by a bot ({bot_account.mention}). If it is a duplicate of a channel already reported by a human, I can remove it with three **{ctx.prefix}duplicate** messages.")
             duplicate_msg = await raid_channel.send(embed=duplicate_embed, delete_after=1800)
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
-        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
+        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
         if weather:
             weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
         weather_msg = await raid_channel.send(embed=weather_embed)
@@ -1199,7 +1199,7 @@ class Huntr(commands.Cog):
             duplicate_embed.add_field(name=f"**Bot Reported Channel**", value=f"This raid was reported by a bot ({bot_account.mention}). If it is a duplicate of a channel already reported by a human, I can remove it with three **{ctx.prefix}duplicate** messages.")
             duplicate_msg = await raid_channel.send(embed=duplicate_embed, delete_after=1800)
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
-        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather)}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.")
+        weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}")
         if weather:
             weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour <= 18 else 'Night'}.png?cache=1")
         weather_msg = await raid_channel.send(embed=weather_embed)
