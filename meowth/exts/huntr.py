@@ -847,10 +847,6 @@ class Huntr(commands.Cog):
         reaction_list = [omw_emoji, catch_emoji, expire_emoji, info_emoji, report_emoji, list_emoji]
         despawn = (int(expire.split(' ')[0]) * 60) + int(expire.split(' ')[2])
         ctx.wildreportmsg = await ctx.channel.send(f"Meowth! Wild {str(pokemon)} reported by {message.author.mention}!{stop_str}Coordinates: {wild_coordinates}{iv_str}\n\nUse {omw_emoji} if coming, {catch_emoji} if caught, {expire_emoji} if despawned, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all wilds!", embed=wild_embed)
-        dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), iv_percent, level, cp, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
-        for reaction in reaction_list:
-            await asyncio.sleep(0.25)
-            await utils.add_reaction(ctx.wildreportmsg, reaction)
         ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'report_time':time.time(),
             'exp':time.time() + despawn,
@@ -859,7 +855,7 @@ class Huntr(commands.Cog):
             'report_channel':ctx.channel.id,
             'report_author':ctx.author.id,
             'report_guild':ctx.guild.id,
-            'dm_dict':dm_dict,
+            'dm_dict':{},
             'location':wild_details,
             'coordinates':wild_coordinates,
             'url':wild_gmaps_link,
@@ -873,6 +869,22 @@ class Huntr(commands.Cog):
             'weather':pokemon.weather,
             'omw':[]
         }
+        for wildid in ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
+            report_time = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id].get('report_time', time.time())
+            dupe_time = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('report_time', time.time())
+            dupe_coord = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('coordinates', None)
+            dupe_pokemon = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('pkmn_obj', None)
+            dupe_iv = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('wild_iv', {})
+            dupe_level = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('level', 0)
+            dupe_cp = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('cp', 0)
+            if dupe_time < report_time and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and dupe_iv == wild_iv and dupe_level == level and dupe_cp == cp:
+                ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['expedit']['embedcontent'] = f"**This {str(pokemon)} was a duplicate!**"
+                return await wild_cog.expire_wild(ctx.wildreportmsg)
+        dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), iv_percent, level, cp, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
+        for reaction in reaction_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(ctx.wildreportmsg, reaction)
+        ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['dm_dict'] = dm_dict
 
     async def huntr_raid(self, ctx, report_details, reporter=None, report_user=None, dm_dict=None):
         if not dm_dict:
