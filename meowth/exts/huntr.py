@@ -871,13 +871,14 @@ class Huntr(commands.Cog):
         }
         for wildid in ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
             report_time = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id].get('report_time', time.time())
+            dupe_channel = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id].get('report_channel', ctx.channel.id)
             dupe_time = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('report_time', time.time())
             dupe_coord = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('coordinates', None)
             dupe_pokemon = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('pkmn_obj', None)
             dupe_iv = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('wild_iv', {})
             dupe_level = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('level', 0)
             dupe_cp = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('cp', 0)
-            if dupe_time < report_time and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and dupe_iv == wild_iv and dupe_level == level and dupe_cp == cp:
+            if dupe_time < report_time and dupe_channel == ctx.channel.id and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and dupe_iv == wild_iv and dupe_level == level and dupe_cp == cp:
                 ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['expedit']['embedcontent'] = f"**This {str(pokemon)} was a duplicate!**"
                 return await wild_cog.expire_wild(ctx.wildreportmsg)
         dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), iv_percent, level, cp, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
