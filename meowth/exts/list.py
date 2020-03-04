@@ -1466,7 +1466,6 @@ class Listing(commands.Cog):
             pokemon = None
             if research_dict[questid]['report_channel'] == ctx.message.channel.id:
                 try:
-                    # questreportmsg = await ctx.message.channel.fetch_message(questid)
                     questauthor = ctx.channel.guild.get_member(research_dict[questid]['report_author'])
                     reported_by = ""
                     if questauthor and not questauthor.bot:
@@ -1729,7 +1728,6 @@ class Listing(commands.Cog):
             luremsg = ""
             if lure_dict[lureid]['report_channel'] == ctx.message.channel.id:
                 try:
-                    # lurereportmsg = await ctx.message.channel.fetch_message(lureid)
                     lureauthor = ctx.channel.guild.get_member(lure_dict[lureid]['report_author'])
                     lure_expire = datetime.datetime.utcfromtimestamp(lure_dict[lureid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     lure_type = lure_dict[lureid]['type']
@@ -1893,7 +1891,6 @@ class Listing(commands.Cog):
                 try:
                     invasionmsg = ""
                     reward_list = []
-                    # invasionreportmsg = await ctx.message.channel.fetch_message(invasionid)
                     invasionauthor = ctx.channel.guild.get_member(invasion_dict[invasionid]['report_author'])
                     reward = invasion_dict[invasionid]['reward']
                     reward_type = invasion_dict[invasionid].get('reward_type', None)
@@ -1997,7 +1994,6 @@ class Listing(commands.Cog):
             if pvp_dict[pvpid]['report_channel'] == ctx.message.channel.id:
                 try:
                     pvpmsg = ""
-                    # pvpreportmsg = await ctx.message.channel.fetch_message(pvpid)
                     pvpauthor = ctx.channel.guild.get_member(pvp_dict[pvpid]['report_author'])
                     pvp_tournament = pvp_dict[pvpid].get('tournament', {})
                     pvp_expire = datetime.datetime.utcfromtimestamp(pvp_dict[pvpid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
@@ -2081,18 +2077,23 @@ class Listing(commands.Cog):
     async def _wildlist(self, ctx):
         wild_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('wildreport_dict', {}))
         listing_dict = {}
+        bullet_point = self.bot.custom_emoji.get('wild_bullet', u'\U0001F539')
+        hundred_bullet = self.bot.custom_emoji.get('wild_hundred', u'\U0001f538')
         for wildid in wild_dict:
-            if wild_dict[wildid].get('report_channel') == ctx.message.channel.id:
+            if wild_dict[wildid].get('report_channel') == ctx.channel.id:
                 try:
                     wildmsg = ""
                     wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['report_author'])
                     wild_despawn = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+                    timestamp = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['report_time']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+                    jump_url = f"https://discordapp.com/{ctx.guild.id}/{ctx.channel.id}/{wildid}"
                     reported_by = ""
                     if wildauthor and not wildauthor.bot:
                         reported_by = f" | **Reported By**: {wildauthor.display_name}"
                     shiny_str = ""
                     disguise_str = ""
                     iv_check = wild_dict[wildid].get('wild_iv', {}).get('percent', None)
+                    cp_check = wild_dict[wildid].get('cp', None)
                     level_check = wild_dict[wildid].get('level', None)
                     weather_check = wild_dict[wildid].get('weather', None)
                     disguise = wild_dict[wildid].get('disguise', None)
@@ -2104,14 +2105,17 @@ class Listing(commands.Cog):
                         disguise_str = f" | **Disguise**: {disguise.name.title()} {disguise.emoji}"
                     if pokemon and "wild" in pokemon.shiny_available:
                         shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                    wildmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('wild_bullet', u'\U0001F539')))
+                    if iv_check and iv_check == 100:
+                        wildmsg += f"\n{hundred_bullet} "
+                    else:
+                        wildmsg += f"\n{bullet_point} "
                     wildmsg += f"**Pokemon**: {shiny_str}{str(pokemon).title()} {pokemon.emoji}{disguise_str} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
                     if (disguise and disguise.is_boosted) or (pokemon and pokemon.is_boosted):
-                        wildreportmsg = await ctx.message.channel.fetch_message(wildid)
-                        timestamp = wildreportmsg.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         wildmsg += f" | {pokemon.is_boosted or disguise.is_boosted} *({timestamp.strftime('%I:%M %p')})*"
                     if level_check:
                         wildmsg += f" | **Level**: {level_check}"
+                    if cp_check:
+                        wildmsg += f" | **CP**: {cp_check}"
                     if iv_check:
                         wildmsg += f" | **IV**: {wild_dict[wildid]['wild_iv'].get('percent', iv_check)}"
                     listing_dict[wildid] = {

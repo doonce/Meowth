@@ -467,10 +467,10 @@ class Wild(commands.Cog):
         result = re.search('Wild (.*) reported by', content).group(1)
         content = content.replace(result, str(pokemon))
         if (iv_percent or iv_percent == 0) and "IV**" in content:
-            content = re.sub(r" - \*\*[0-9]{1,3}IV\*\*", f" - **{iv_percent}IV**", content, flags=re.IGNORECASE)
+            content = re.sub(r" \| \*\*[0-9]{1,3}IV\*\*", f" | **{iv_percent}IV**", content, flags=re.IGNORECASE)
         elif iv_percent or iv_percent == 0:
             content = content.splitlines()
-            content[0] = f"{content[0]} - **{iv_percent}IV**"
+            content[0] = f"{content[0]} | **{iv_percent}IV**"
             content = ('\n').join(content)
         try:
             await message.edit(content=content, embed=wild_embed)
@@ -500,10 +500,10 @@ class Wild(commands.Cog):
                 content = content.replace(result, str(pokemon))
                 wild_embed.description = dm_message.embeds[0].description
                 if (iv_percent or iv_percent == 0) and "IV**" in content:
-                    content = re.sub(r" - \*\*[0-9]{1,3}IV\*\*", f" - **{iv_percent}IV**", content, flags=re.IGNORECASE)
+                    content = re.sub(r" \| \*\*[0-9]{1,3}IV\*\*", f" | **{iv_percent}IV**", content, flags=re.IGNORECASE)
                 elif iv_percent or iv_percent == 0:
                     content = content.splitlines()
-                    content[0] = f"{content[0]} - **{iv_percent}IV**"
+                    content[0] = f"{content[0]} | **{iv_percent}IV**"
                     content = ('\n').join(content)
                 await dm_message.edit(content=content, embed=wild_embed)
             except:
@@ -721,7 +721,7 @@ class Wild(commands.Cog):
         poi_info = ""
         wild_coordinates = ""
         if gym_matching_cog:
-            poi_info, wild_details, poi_url = await gym_matching_cog.get_poi_info(ctx, wild_details.replace(f" - **{wild_iv}IV**", "").strip(), "wild")
+            poi_info, wild_details, poi_url = await gym_matching_cog.get_poi_info(ctx, wild_details.replace(f" | **{wild_iv}IV**", "").strip(), "wild")
             if poi_url:
                 wild_gmaps_link = poi_url
                 wild_coordinates = poi_url.split("query=")[1]
@@ -730,7 +730,7 @@ class Wild(commands.Cog):
             await utils.safe_delete(ctx.message)
             return
         if wild_iv or wild_iv == 0:
-            iv_str = f" - **{wild_iv}IV**"
+            iv_str = f" | **{wild_iv}IV**"
             iv_percent = copy.copy(wild_iv)
             wild_iv = {'percent':wild_iv, 'iv_atk':None, 'iv_def':None, 'iv_sta':None}
         else:
