@@ -178,6 +178,9 @@ class Wild(commands.Cog):
             pass
 
     async def make_wild_embed(self, ctx, details):
+        if not ctx.prefix:
+            prefix = self.bot._get_prefix(self.bot, ctx.message)
+            ctx.prefix = prefix[-1]
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))).strftime(_('%I:%M %p (%H:%M)'))
         male_sign = ctx.bot.custom_emoji.get('male_sign', u'\U00002642\U0000fe0f')
         female_sign = ctx.bot.custom_emoji.get('female_sign', u'\U00002640\U0000fe0f')

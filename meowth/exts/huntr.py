@@ -881,11 +881,24 @@ class Huntr(commands.Cog):
             if dupe_time < report_time and dupe_channel == ctx.channel.id and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and dupe_iv == wild_iv and dupe_level == level and dupe_cp == cp:
                 ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['expedit']['embedcontent'] = f"**This {str(pokemon)} was a duplicate!**"
                 return await wild_cog.expire_wild(ctx.wildreportmsg)
+            elif dupe_channel == ctx.channel.id and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and not wild_iv['percent'] and dupe_iv['percent']:
+                ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['expedit']['embedcontent'] = f"**This {str(pokemon)} was a duplicate!**"
+                return await wild_cog.expire_wild(ctx.wildreportmsg)
+            elif dupe_channel == ctx.channel.id and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and wild_iv['percent'] and not dupe_iv['percent']:
+                ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid]['wild_iv'] = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['wild_iv']
+                ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid]['level'] = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['level']
+                ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid]['cp'] = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['cp']
+                ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid]['gender'] = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['gender']
+                ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid]['size'] = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['size']
+                ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['expedit']['embedcontent'] = f"**This {str(pokemon)} was a duplicate!**"
+                await wild_cog.expire_wild(ctx.wildreportmsg)
+                dupe_message = await ctx.channel.fetch_message(wildid)
+                return await wild_cog.edit_wild_messages(ctx, dupe_message)
         dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), iv_percent, level, cp, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
+        ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['dm_dict'] = dm_dict
         for reaction in reaction_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(ctx.wildreportmsg, reaction)
-        ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['dm_dict'] = dm_dict
 
     async def huntr_raid(self, ctx, report_details, reporter=None, report_user=None, dm_dict=None):
         if not dm_dict:
@@ -1918,6 +1931,19 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"XL Rattata", "gps":"39.637087,-79.954375", "expire":"5 min 0 sec","gender":"male", "height":"0.33m", "weight":"4.6kg", "moveset":"Quick Attack / Wild Charge", "weather":"snowy"}')
+        ctx = await self.bot.get_context(huntrmessage)
+        await self.on_pokealarm(ctx)
+
+    @alarm.command()
+    @commands.has_permissions(manage_guild=True)
+    async def wildiv(self, ctx):
+        """Simulates an alarm wild"""
+        author = ctx.author
+        guild = ctx.guild
+        message = ctx.message
+        channel = ctx.channel
+        await utils.safe_delete(message)
+        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"XL Rattata", "gps":"39.637087,-79.954375", "expire":"5 min 0 sec","gender":"male", "height":"0.33m", "weight":"4.6kg", "moveset":"Quick Attack / Wild Charge", "weather":"snowy", "iv_percent":"100"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
