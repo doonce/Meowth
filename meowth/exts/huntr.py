@@ -793,7 +793,7 @@ class Huntr(commands.Cog):
         report_details['wild_iv'] = {'percent':iv_percent, 'iv_atk':iv_atk, 'iv_def':iv_def, 'iv_sta':iv_sta}
         wild_iv = {'percent':iv_percent, 'iv_atk':iv_atk, 'iv_def':iv_def, 'iv_sta':iv_sta}
         if iv_percent or iv_percent == 0:
-            iv_str = f" - **{iv_percent}IV**"
+            iv_str = f" | **{iv_percent}IV**"
         else:
             iv_str = ""
         height = report_details.get("height", '')
