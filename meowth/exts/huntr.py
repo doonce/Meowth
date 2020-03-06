@@ -502,7 +502,7 @@ class Huntr(commands.Cog):
                     channel_exp = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('exp', time.time())
                     if channel_level == "EX" or channel_meetup:
                         continue
-                    if channel_level == "0" and channel_exp <= time.time():
+                    if (channel_level == "0" and channel_exp <= time.time()) or (channel_level == "0" and report_details.get('type', None) == "egg"):
                         continue
                     if channel_gps == report_details.get('gps', None) or channel_address == report_details.get('gym', None):
                         channel = self.bot.get_channel(channelid)
