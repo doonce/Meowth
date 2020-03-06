@@ -485,8 +485,10 @@ class Huntr(commands.Cog):
                 alarm_egglevel = report_details.get('level', None)
                 if alarm_pokemon:
                     alarm_egglevel = utils.get_level(self.bot, alarm_pokemon)
-                alarm_egglevel = int(alarm_egglevel)
+                    alarm_egglevel = int(alarm_egglevel)
                 for event in self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {}):
+                    if not alarm_egglevel:
+                        break
                     if utcnow >= self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['mute_time'] and self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['event_end'] >= utcnow:
                         if ctx.author.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['bot_account'] and ctx.channel.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['bot_channel']:
                             if self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event].get('egg_level', [0]) == [0] or alarm_egglevel in self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event].get('egg_level', [0]):
@@ -497,7 +499,10 @@ class Huntr(commands.Cog):
                     channel_level = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('egg_level', None)
                     channel_type = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('type', None)
                     channel_meetup = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('meetup', {})
+                    channel_exp = self.bot.guild_dict[message.guild.id]['raidchannel_dict'][channelid].get('exp', time.time())
                     if channel_level == "EX" or channel_meetup:
+                        continue
+                    if channel_level == "0" and channel_exp <= time.time():
                         continue
                     if channel_gps == report_details.get('gps', None) or channel_address == report_details.get('gym', None):
                         channel = self.bot.get_channel(channelid)
@@ -881,10 +886,10 @@ class Huntr(commands.Cog):
             if dupe_time < report_time and dupe_channel == ctx.channel.id and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and dupe_iv == wild_iv and dupe_level == level and dupe_cp == cp:
                 ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['expedit']['embedcontent'] = f"**This {str(pokemon)} was a duplicate!**"
                 return await wild_cog.expire_wild(ctx.wildreportmsg)
-            elif dupe_channel == ctx.channel.id and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and not wild_iv['percent'] and dupe_iv['percent']:
+            elif dupe_channel == ctx.channel.id and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and not wild_iv.get('percent') and dupe_iv.get('percent'):
                 ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['expedit']['embedcontent'] = f"**This {str(pokemon)} was a duplicate!**"
                 return await wild_cog.expire_wild(ctx.wildreportmsg)
-            elif dupe_channel == ctx.channel.id and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and wild_iv['percent'] and not dupe_iv['percent']:
+            elif dupe_channel == ctx.channel.id and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and wild_iv.get('percent') and not dupe_iv.get('percent'):
                 ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid]['exp'] = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['exp']
                 ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid]['wild_iv'] = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['wild_iv']
                 ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid]['level'] = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['level']
@@ -1910,7 +1915,7 @@ class Huntr(commands.Cog):
 
     @alarm.command()
     @commands.has_permissions(manage_guild=True)
-    async def egg(self, ctx):
+    async def egg(self, ctx, level="5"):
         """Simulates an alarm egg"""
         author = ctx.author
         guild = ctx.guild
@@ -1918,7 +1923,9 @@ class Huntr(commands.Cog):
         channel = ctx.channel
         await utils.safe_delete(message)
         embed = discord.Embed(title="Title", description="Embed Description")
-        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"5", "gym":"Marilla Park", "gps":"39.628941,-79.935063", "raidexp":10}', embed=embed)
+        if not level.isdigit() or int(level) > 5:
+            level = 5
+        huntrmessage = await ctx.channel.send('!alarm {"type":"egg", "level":"' + level + '", "gym":"Marilla Park", "gps":"39.628941,-79.935063", "raidexp":10}', embed=embed)
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
