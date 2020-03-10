@@ -431,6 +431,26 @@ def get_move_type(bot, move_str):
     else:
         return "Normal"
 
+def move_effects(bot, move_type):
+    type_eff = {}
+    move_effects = {"se_attack":[], "nve_attack":[], "ne_attack":[], "ne_defend":[], "nve_defend":[], "se_defend":[]}
+    for def_type in bot.type_chart:
+        if bot.type_chart[def_type].get(move_type, None):
+            if bot.type_chart[def_type][move_type] == 1 and def_type not in move_effects["se_attack"]:
+                move_effects["se_attack"].append(def_type)
+            if bot.type_chart[def_type][move_type] == -1 and def_type not in move_effects["nve_attack"]:
+                move_effects["nve_attack"].append(def_type)
+            if bot.type_chart[def_type][move_type] == -2 and def_type not in move_effects["ne_attack"]:
+                move_effects["ne_attack"].append(def_type)
+    for def_type in bot.type_chart[move_type]:
+        if bot.type_chart[move_type][def_type] == -2 and def_type not in move_effects["ne_defend"]:
+            move_effects["ne_defend"].append(def_type)
+        if bot.type_chart[move_type][def_type] == -1 and def_type not in move_effects["nve_defend"]:
+            move_effects["nve_defend"].append(def_type)
+        if bot.type_chart[move_type][def_type] == 1 and def_type not in move_effects["se_defend"]:
+            move_effects["se_defend"].append(def_type)
+    return move_effects
+
 def type_to_emoji(bot, type):
     emoji = None
     try:
@@ -754,7 +774,7 @@ class Utilities(commands.Cog):
                         continue
                     async for message in user.dm_channel.history(limit=500):
                         if message.author.id == self.bot.user.id:
-                            if "reported by" in message.content or "hatched into" in message.content or "reported that" in message.content:
+                            if "reported by" in message.content or "reported at" in message.content or "hatched into" in message.content or "reported that" in message.content:
                                 if message.id not in dm_list:
                                     delete_list.append(message)
                             elif "trade" in message.content.lower() or "offer" in message.content.lower():
@@ -765,7 +785,7 @@ class Utilities(commands.Cog):
                                 if (datetime.datetime.now() - message.created_at).days >= 30:
                                     delete_list.append(message)
                             elif "has rsvp" in message.content.lower():
-                                if (datetime.datetime.now() - message.created_at).days >= 7:
+                                if (datetime.datetime.now() - message.created_at).days >= 1:
                                     delete_list.append(message)
                             elif "backout" in message.content.lower():
                                 if (datetime.datetime.now() - message.created_at).days >= 1:
@@ -1016,7 +1036,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v20.3.6.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v20.3.10.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

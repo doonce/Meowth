@@ -116,7 +116,7 @@ class Tutorial(commands.Cog):
                         try:
                             tutorial_message = await channel_exists.fetch_message(report_message)
                         except (discord.errors.NotFound, discord.errors.Forbidden, discord.errors.HTTPException):
-                            pass
+                            tutorial_message = False
                         if tutorial_message:
                             ctx = await self.bot.get_context(tutorial_message)
                         if ctx and newbie:
@@ -202,6 +202,7 @@ class Tutorial(commands.Cog):
                             break
                 if tutorial_error:
                     await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("I'm sorry I don't understand. Please reply with the choices above.")))
+                    tutorial_error = False
                     continue
                 else:
                     break
@@ -469,7 +470,8 @@ class Tutorial(commands.Cog):
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This concludes the Meowth tutorial! This channel will be deleted in 30 seconds."))
                 self.bot.guild_dict[ctx.guild.id]['configure_dict']['tutorial']['report_channels'][ctx.tutorial_channel.id]['completed'] = True
                 await asyncio.sleep(30)
-        except:
+        except Exception as e:
+            print(e)
             await self.delete_tutorial_channel(ctx)
         finally:
             await self.delete_tutorial_channel(ctx)
@@ -490,7 +492,6 @@ class Tutorial(commands.Cog):
                     await raid_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You either canceled or took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
                 await tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=f"You either canceled or took too long to complete the **{ctx.prefix}{cmd}** command! This channel will be deleted in ten seconds."))
                 await asyncio.sleep(10)
-                del report_channels[tutorial_channel.id]
                 if config['raid']['categories'] == "region":
                     del category_dict[tutorial_channel.id]
                 if raid_channel:
@@ -656,9 +657,8 @@ class Tutorial(commands.Cog):
         # remove tutorial raid channel
         await raid_channel.delete()
         raid_channel = None
-        del report_channels[tutorial_channel.id]
         if config['raid']['categories'] == "region":
-            del category_dict[tutorial_channel.id]
+            del category_dict[ctx.tutorial_channel.id]
 
         return True
 

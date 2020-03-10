@@ -516,6 +516,7 @@ class Raid(commands.Cog):
             # else got to it before us, so don't do anything.
             # Also, if the channel got reactivated, don't do anything either.
             try:
+                last_report = True if len (self.bot.guild_dict[guild.id][report_dict].keys()) == 1 else False
                 if self.bot.guild_dict[guild.id][report_dict].get(channel.id, {}).get('active', False):
                     return
                 elif (self.bot.guild_dict[guild.id][report_dict][channel.id]['active'] == False) and (not self.bot.is_closed()):
@@ -644,7 +645,7 @@ class Raid(commands.Cog):
                             except KeyError:
                                 pass
                 try:
-                    if reportmsg and len(self.bot.guild_dict[guild.id][report_dict].keys()) == 0:
+                    if last_report and reportmsg and len(self.bot.guild_dict[guild.id][report_dict].keys()) == 0:
                         return await ctx.invoke(self.bot.get_command('list'))
                 except:
                     pass
@@ -1977,38 +1978,41 @@ class Raid(commands.Cog):
                     ctx.raid_channel = new_channel
                     return
                 else:
-                    raid_embed.add_field(name=_('**New Raid Report**'), value=_("Meowth! I'll help you report a raid!\n\nFirst, I'll need to know what **pokemon or level** the raid is. Reply with the name of a **pokemon**, an **egg level** number 1-5, or EX. You can reply with **cancel** to stop anytime.\n\nIf you meant to report a **meetup** or **train** reply with **meetup** or **train**."), inline=False)
-                    mon_or_lvl_wait = await channel.send(embed=raid_embed)
                     def check(reply):
                         if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
                             return True
                         else:
                             return False
-                    try:
-                        mon_or_lvl_msg = await self.bot.wait_for('message', timeout=60, check=check)
-                    except asyncio.TimeoutError:
-                        mon_or_lvl_msg = None
-                    await utils.safe_delete(mon_or_lvl_wait)
-                    if not mon_or_lvl_msg:
-                        error = _("took too long to respond")
-                        break
+                    if pokemon_or_level and any([pokemon_or_level == "ex", pokemon_or_level == "meetup", pokemon_or_level == "train", pokemon_or_level.lower() in self.bot.pkmn_list, pokemon_or_level.isdigit()]):
+                        pass
                     else:
-                        await utils.safe_delete(mon_or_lvl_msg)
-                    if mon_or_lvl_msg.clean_content.lower() == "cancel":
+                        raid_embed.add_field(name=_('**New Raid Report**'), value=_("Meowth! I'll help you report a raid!\n\nFirst, I'll need to know what **pokemon or level** the raid is. Reply with the name of a **pokemon**, an **egg level** number 1-5, or EX. You can reply with **cancel** to stop anytime.\n\nIf you meant to report a **meetup** or **train** reply with **meetup** or **train**."), inline=False)
+                        mon_or_lvl_wait = await channel.send(embed=raid_embed)
+                        try:
+                            mon_or_lvl_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            mon_or_lvl_msg = None
+                        await utils.safe_delete(mon_or_lvl_wait)
+                        if not mon_or_lvl_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(mon_or_lvl_msg)
+                            pokemon_level = mon_or_lvl_msg.clean_content.lower()
+                    if pokemon_or_level == "cancel":
                         error = _("cancelled the report")
                         break
-                    elif mon_or_lvl_msg.clean_content.lower() == "ex":
+                    elif pokemon_or_level == "ex":
                         return await ctx.invoke(self.bot.get_command("exraid"))
-                    elif mon_or_lvl_msg.clean_content.lower() == "meetup":
+                    elif pokemon_or_level == "meetup":
                         return await ctx.invoke(self.bot.get_command("meetup"))
-                    elif mon_or_lvl_msg.clean_content.lower() == "train":
+                    elif pokemon_or_level == "train":
                         return await ctx.invoke(self.bot.get_command("train"))
-                    elif mon_or_lvl_msg.clean_content.isdigit() and (int(mon_or_lvl_msg.clean_content) == 0 or int(mon_or_lvl_msg.clean_content) > 5):
+                    elif pokemon_or_level.isdigit() and (int(pokemon_or_level) == 0 or int(pokemon_or_level) > 5):
                         error = _("entered an invalid level")
                         break
                     else:
                         pokemon = None
-                        pokemon_or_level = mon_or_lvl_msg.clean_content
                         if pokemon_or_level.isdigit():
                             raid_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{pokemon_or_level}.png?cache=1")
                         else:
@@ -2059,11 +2063,10 @@ class Raid(commands.Cog):
                         expire_msg = None
                     await utils.safe_delete(expire_wait)
                     if not expire_msg:
-                        error = _("took too long to respond")
-                        break
+                        raidexp = ""
                     else:
                         await utils.safe_delete(expire_msg)
-                    if expire_msg.clean_content.lower() == "cancel":
+                    if expire_msg and expire_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
                     elif expire_msg:
@@ -2164,7 +2167,7 @@ class Raid(commands.Cog):
                 raid_coordinates = gym_url.split('query=')[1]
         if not raid_details:
             return await utils.safe_delete(ctx.message)
-        raid_channel = await self.create_raid_channel(ctx, f"{boss.name.lower()}{'-'+boss.region.lower() if boss.region else ''}{'-'+boss.form.lower() if boss.form else ''}", raid_details, "raid")
+        raid_channel = await self.create_raid_channel(ctx, f"{pokemon.name.lower()}{'-'+pokemon.region.lower() if pokemon.region else ''}{'-'+pokemon.form.lower() if pokemon.form else ''}", raid_details, "raid")
         if not raid_channel:
             return
         if not weather and raid_coordinates:
@@ -2702,6 +2705,9 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['egg_level'] = '0'
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['moveset'] = 0
+        setting_category = self.bot.get_channel(self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['raid']['category_dict'][egg_level])
+        if setting_category and setting_category != raid_channel.category and len(setting_category.text_channels) < 50:
+            await raid_channel.edit(category=setting_category)
         raid_channel_name = await self.edit_channel_name(raid_channel)
         await raid_channel.edit(name=raid_channel_name, topic=end.strftime(_('Ends on %B %d at %I:%M %p (%H:%M)')))
         try:
@@ -5763,6 +5769,7 @@ class Raid(commands.Cog):
         report_dict = await utils.get_report_dict(self.bot, ctx.channel)
         rsvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_speechballoon.png?cache=1')
         rsvp_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=ctx.author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=ctx.author.avatar_url_as(format=None, static_format='jpg', size=32))
+        lobby = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('lobby', None)
         def check(reply):
             if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:
                 return True
@@ -5771,7 +5778,7 @@ class Raid(commands.Cog):
         while True:
             async with ctx.typing():
                 rsvp_embed.clear_fields()
-                rsvp_embed.add_field(name=_('**Set RSVP Status**'), value=f"Meowth! I'll help you set your status in this channel!\n\nReply with your status from the following:\n**interested** - You are interested in this but can't commit.\n**coming** - You are on your way.\n**here** - You are at the location and ready\n**cancel** - You are no longer interested\n**lobby** - You are joining the raid lobby (raids only).\n\nYou can reply with **exit** to stop anytime.", inline=False)
+                rsvp_embed.add_field(name=_('**Set RSVP Status**'), value=f"Meowth! I'll help you set your status in this channel!\n\nReply with your status from the following:\n**interested** - You are interested in this but can't commit.\n**coming** - You are on your way.\n**here** - You are at the location and ready\n**cancel** - You are no longer interested\n{'**lobby** - You are joining the raid lobby (raids only).' if lobby else ''}\n\nYou can reply with **exit** to stop anytime.", inline=False)
                 rsvp_wait = await ctx.send(embed=rsvp_embed)
                 try:
                     rsvp_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -5797,7 +5804,12 @@ class Raid(commands.Cog):
                 if rsvp_type == "cancel":
                     return await self._cancel(ctx)
                 elif rsvp_type == "lobby":
-                    return await self._rsvp(ctx, "lobby", "1")
+                    if lobby:
+                        return await self._rsvp(ctx, "lobby", "1")
+                    else:
+                        rsvp_embed.clear_fields()
+                        rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you entered an invalid option! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=rsvp_embed, delete_after=10)
                 rsvp_embed.clear_fields()
                 rsvp_embed.add_field(name=_('**Set RSVP Status**'), value=f"Meowth! Next, I'll need to know your **party count**. Reply with the amount of people in your party. If it is just you, reply with **1**. You can reply with **exit** to stop anytime.", inline=False)
                 rsvp_wait = await ctx.send(embed=rsvp_embed)
@@ -6065,9 +6077,10 @@ class Raid(commands.Cog):
             await channel.edit(name=raid_channel_name)
         for trainer in self.bot.guild_dict[guild.id][report_dict][channel.id].get('alert_list', []):
             member = guild.get_member(trainer)
+            if author == member:
+                continue
             alert_emoji = self.bot.custom_emoji.get('alert_emoji', u'\U0001f514')
-            await member.send(f"{alert_emoji} - {author.mention} has RSVP'd in {channel.mention}.", delete_after=3600)
-
+            await member.send(f"{alert_emoji} - {author.display_name} has RSVP'd as **{rsvp_type}** in {channel.mention}.", delete_after=3600)
 
     @commands.command(aliases=['x'])
     @checks.rsvpchannel()
@@ -6156,85 +6169,88 @@ class Raid(commands.Cog):
         await self.bot.wait_until_ready()
 
     async def lobby_countdown(self, ctx):
-        report_dict = await utils.get_report_dict(ctx.bot, ctx.channel)
-        if 'raidchannel' not in str(report_dict):
-            return
-        def check_battling():
-            for lobby in self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('battling', []):
-                if lobby and time.time() >= lobby['exp']:
+        try:
+            report_dict = await utils.get_report_dict(ctx.bot, ctx.channel)
+            if 'raidchannel' not in str(report_dict):
+                return
+            def check_battling():
+                for lobby in self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('battling', []):
+                    if lobby and time.time() >= lobby['exp']:
+                        try:
+                            self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['battling'].remove(lobby)
+                            self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['completed'].append(lobby)
+                        except:
+                            pass
+            while True:
+                check_battling()
+                start_lobby = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].setdefault('lobby', {})
+                battling = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].setdefault('battling', [])
+                report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('report_channel', None))
+                if not start_lobby and not battling:
+                    return
+                if report_channel and checks.check_tutorialchannel(ctx):
+                    return
+                completed = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].setdefault('completed', [])
+                egg_level = utils.get_level(self.bot, self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['pkmn_obj'])
+                start_exp = start_lobby.get('exp', False)
+                start_team = start_lobby.get('team', False)
+                team_names = ["mystic", "valor", "instinct", "unknown"]
+                trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
+                if time.time() < start_exp:
+                    sleep_time = start_exp - time.time()
+                    await asyncio.sleep(int(sleep_time))
+                    continue
+                elif time.time() >= start_exp:
+                    ctx_lobbycount = 0
+                    trainer_delete_list = []
+                    for trainer in trainer_dict:
+                        if trainer_dict[trainer]['status']['lobby']:
+                            ctx_lobbycount += trainer_dict[trainer]['status']['lobby']
+                            trainer_delete_list.append(trainer)
+                    for trainer in trainer_delete_list:
+                        if start_team in team_names:
+                            herecount = start_lobby['starting_dict'].get('herecount', 0)
+                            teamcount = start_lobby['starting_dict'].get('teamcount', 0)
+                            lobbycount = start_lobby['starting_dict'].get('lobbycount', 0)
+                            trainer_dict[trainer]['status'] = {'maybe':0, 'coming':0, 'here':herecount - teamcount, 'lobby': lobbycount}
+                            trainer_dict[trainer]['party'][start_team] = 0
+                            trainer_dict[trainer]['count'] = trainer_dict[trainer]['count'] - teamcount
+                        else:
+                            del trainer_dict[trainer]
+                    if egg_level == "EX" or egg_level == "5":
+                        battle_time = 300
+                    else:
+                        battle_time = 180
+                    start_lobby['exp'] = start_exp + battle_time
+                    if trainer_delete_list:
+                        if start_lobby not in battling:
+                            self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['battling'].append(start_lobby)
+                        if ctx_lobbycount > 0:
+                            battling_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_collision.png?cache=1")
+                            battling_embed.add_field(name=f"**Lobby Battling**", value=f"Meowth! The group of {str(ctx_lobbycount)} in the lobby has entered the raid! Wish them luck!")
+                            await ctx.channel.send(embed=battling_embed, delete_after=battle_time)
+                    del self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['lobby']
+                    self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'] = trainer_dict
+                    raid_channel_name = await self.edit_channel_name(ctx.channel)
+                    await ctx.channel.edit(name=raid_channel_name)
+                    await self._edit_party(ctx.channel, ctx.author)
+                    check_battling()
+                    await asyncio.sleep(battle_time)
+                    trainer_list = [ctx.guild.get_member(x) for x in trainer_delete_list]
+                    battling_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_whitecheck.png?cache=1")
+                    battling_embed.add_field(name=f"**Battle Completed**", value=f"Meowth! The group of {', '.join([x.mention for x in trainer_list])} has finished the raid! Use **{ctx.prefix}list groups** to see all groups.")
+                    await ctx.channel.send(embed=battling_embed)
                     try:
-                        self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['battling'].remove(lobby)
-                        self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['completed'].append(lobby)
+                        self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['battling'].remove(start_lobby)
+                        self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['completed'].append(start_lobby)
                     except:
                         pass
-        while True:
+                    raid_channel_name = await self.edit_channel_name(ctx.channel)
+                    await ctx.channel.edit(name=raid_channel_name)
+                    break
             check_battling()
-            start_lobby = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].setdefault('lobby', {})
-            battling = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].setdefault('battling', [])
-            report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('report_channel', None))
-            if not start_lobby and not battling:
-                return
-            if report_channel and checks.check_tutorialchannel(ctx):
-                return
-            completed = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].setdefault('completed', [])
-            egg_level = utils.get_level(self.bot, self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['pkmn_obj'])
-            start_exp = start_lobby.get('exp', False)
-            start_team = start_lobby.get('team', False)
-            team_names = ["mystic", "valor", "instinct", "unknown"]
-            trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
-            if time.time() < start_exp:
-                sleep_time = start_exp - time.time()
-                await asyncio.sleep(int(sleep_time))
-                continue
-            elif time.time() >= start_exp:
-                ctx_lobbycount = 0
-                trainer_delete_list = []
-                for trainer in trainer_dict:
-                    if trainer_dict[trainer]['status']['lobby']:
-                        ctx_lobbycount += trainer_dict[trainer]['status']['lobby']
-                        trainer_delete_list.append(trainer)
-                for trainer in trainer_delete_list:
-                    if start_team in team_names:
-                        herecount = start_lobby['starting_dict'].get('herecount', 0)
-                        teamcount = start_lobby['starting_dict'].get('teamcount', 0)
-                        lobbycount = start_lobby['starting_dict'].get('lobbycount', 0)
-                        trainer_dict[trainer]['status'] = {'maybe':0, 'coming':0, 'here':herecount - teamcount, 'lobby': lobbycount}
-                        trainer_dict[trainer]['party'][start_team] = 0
-                        trainer_dict[trainer]['count'] = trainer_dict[trainer]['count'] - teamcount
-                    else:
-                        del trainer_dict[trainer]
-                if egg_level == "EX" or egg_level == "5":
-                    battle_time = 300
-                else:
-                    battle_time = 180
-                start_lobby['exp'] = start_exp + battle_time
-                if trainer_delete_list:
-                    if start_lobby not in battling:
-                        self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['battling'].append(start_lobby)
-                    if ctx_lobbycount > 0:
-                        battling_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_collision.png?cache=1")
-                        battling_embed.add_field(name=f"**Lobby Battling**", value=f"Meowth! The group of {str(ctx_lobbycount)} in the lobby has entered the raid! Wish them luck!")
-                        await ctx.channel.send(embed=battling_embed, delete_after=battle_time)
-                del self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['lobby']
-                self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'] = trainer_dict
-                raid_channel_name = await self.edit_channel_name(ctx.channel)
-                await ctx.channel.edit(name=raid_channel_name)
-                await self._edit_party(ctx.channel, ctx.author)
-                check_battling()
-                await asyncio.sleep(battle_time)
-                trainer_list = [ctx.guild.get_member(x) for x in trainer_delete_list]
-                battling_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_whitecheck.png?cache=1")
-                battling_embed.add_field(name=f"**Battle Completed**", value=f"Meowth! The group of {', '.join([x.mention for x in trainer_list])} has finished the raid! Use **{ctx.prefix}list groups** to see all groups.")
-                await ctx.channel.send(embed=battling_embed)
-                try:
-                    self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['battling'].remove(start_lobby)
-                    self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['completed'].append(start_lobby)
-                except:
-                    pass
-                raid_channel_name = await self.edit_channel_name(ctx.channel)
-                await ctx.channel.edit(name=raid_channel_name)
-                break
-        check_battling()
+        except:
+            return
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -6282,7 +6298,8 @@ class Raid(commands.Cog):
         if self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('lobby', False):
             starting_embed.add_field(name=f"**Starting Error**", value=f"Meowth! Please wait for the group in the lobby to enter the raid.")
             await ctx.channel.send(embed=starting_embed, delete_after=10)
-            return await self.lobby_countdown(ctx)
+            self.bot.loop.create_task(self.lobby_countdown(ctx))
+            return
         for trainer in trainer_dict:
             ctx.count = trainer_dict[trainer].get('count', 1)
             user = ctx.guild.get_member(trainer)
@@ -6344,7 +6361,7 @@ class Raid(commands.Cog):
             await ctx.channel.send(f"Starting - Trainers {', '.join([x.mention for x in ctx_startinglist])}", embed=starting_embed, delete_after=500)
             raid_channel_name = await self.edit_channel_name(ctx.channel)
             await ctx.channel.edit(name=raid_channel_name)
-            await self.lobby_countdown(ctx)
+            self.bot.loop.create_task(self.lobby_countdown(ctx))
             if starttime:
                 report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['report_channel'])
                 raidmsg = await ctx.channel.fetch_message(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['raid_message'])

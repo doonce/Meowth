@@ -99,7 +99,7 @@ class Pokemon():
         self.region = attribs.get('region', None)
         if self.form not in bot.form_dict.get(self.id, {}):
             self.form = None
-        self.size = self.is_size(attribs)    
+        self.size = self.is_size(attribs)
         self.gender = self.is_gender(attribs)
         self.shadow = self.is_shadow(attribs)
         self.shiny = self.is_shiny(attribs)
@@ -1421,17 +1421,41 @@ class Pokedex(commands.Cog):
         """Pokedex information for a pokemon
 
         Usage: !pokedex <pokemon with form, gender, etc>"""
+        preview_embed = discord.Embed(colour=utils.colour(ctx.guild)).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Pokedex_GOLD_01.png?cache=1')
+        if pokemon and pokemon.lower() in self.bot.type_list:
+            type_emoji = utils.type_to_emoji(self.bot, pokemon.title())
+            type = pokemon.title()
+            preview_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/{type.lower()}.png?cache=1")
+            type_effects = utils.move_effects(self.bot, type.title())
+            if type_effects.get('se_attack', None) or type_effects.get('nve_attack', None) or type_effects.get('ne_attack', None):
+                attack_str = ""
+                if type_effects.get('se_attack'):
+                    attack_str += f"{type_emoji} is super-effective against: {''.join([utils.type_to_emoji(self.bot, x) for x in type_effects['se_attack']])}\n"
+                if type_effects.get('nve_attack'):
+                    attack_str += f"{type_emoji} is not very effective against: {''.join([utils.type_to_emoji(self.bot, x) for x in type_effects['nve_attack']])}\n"
+                if type_effects.get('ne_attack'):
+                    attack_str += f"{type_emoji} has no effect against: {''.join([utils.type_to_emoji(self.bot, x) for x in type_effects['ne_attack']])}\n"
+                preview_embed.add_field(name=f"**Attack Effectiveness**", value=attack_str, inline=False)
+            if type_effects.get('se_defend', None) or type_effects.get('nve_defend', None) or type_effects.get('ne_defend', None):
+                defend_str = ""
+                if type_effects.get('ne_defend'):
+                    defend_str += f"Types with no effect against {type_emoji} pokemon: {''.join([utils.type_to_emoji(self.bot, x) for x in type_effects['ne_defend']])}\n"
+                if type_effects.get('nve_defend'):
+                    defend_str += f"Types not very effective against {type_emoji} pokemon: {''.join([utils.type_to_emoji(self.bot, x) for x in type_effects['nve_defend']])}\n"
+                if type_effects.get('se_defend'):
+                    defend_str += f"Types super-effective against {type_emoji} pokemon: {''.join([utils.type_to_emoji(self.bot, x) for x in type_effects['se_defend']])}\n"
+                preview_embed.add_field(name=f"**Defense Effectiveness**", value=defend_str, inline=False)
+            return await ctx.send(embed=preview_embed)
         if not pokemon and checks.check_hatchedraid(ctx):
             report_dict = await utils.get_report_dict(ctx.bot, ctx.channel)
             pokemon = self.bot.guild_dict[ctx.guild.id].setdefault(report_dict, {}).get(ctx.channel.id, {}).get('pkmn_obj', None)
         pokemon = await Pokemon.async_get_pokemon(self.bot, pokemon, allow_digits=True)
-        preview_embed = discord.Embed(colour=utils.colour(ctx.guild)).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/Badge_Pokedex_GOLD_01.png?cache=1')
         error = False
         stats = False
         if not pokemon:
             while True:
                 async with ctx.typing():
-                    preview_embed.add_field(name=_('**Search Pokedex**'), value=_("Meowth! Welcome to my pokedex! I'll help you get information for pokemon!\n\nFirst, I'll need to know what **pokemon** you'd like information for. Reply with the name of a **pokemon** with any form, gender, etc. You can reply with **cancel** to stop anytime."), inline=False)
+                    preview_embed.add_field(name=_('**Search Pokedex**'), value=_("Meowth! Welcome to my pokedex! I'll help you get information for pokemon!\n\nFirst, I'll need to know what **pokemon** you'd like information for. Reply with the name of a **pokemon** with any form, gender, etc. Or, to see **type effectiveness**, reply with a **type**. You can reply with **cancel** to stop anytime."), inline=False)
                     mon_wait = await ctx.channel.send(embed=preview_embed)
                     def check(reply):
                         if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:
@@ -1452,6 +1476,8 @@ class Pokedex(commands.Cog):
                         error = _("cancelled the report")
                         break
                     else:
+                        if mon_msg.clean_content.lower().strip() in self.bot.type_list:
+                            return await ctx.invoke(ctx.command, pokemon=mon_msg.clean_content.lower().strip())
                         pokemon = None
                         pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, mon_msg.clean_content)
                         if not pokemon:

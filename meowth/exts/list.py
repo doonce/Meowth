@@ -320,6 +320,9 @@ class Listing(commands.Cog):
                     listmsg += ('\n' + bulletpoint) + (await raid_cog.print_raid_timer(channel))
                     if starttime and (starttime > now) and not meetup:
                         listmsg += _('\nThe next group will be starting at **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
+                    if checks.check_trainchannel(ctx):
+                        manager_list = [ctx.guild.get_member(x) for x in self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['managers']]
+                        listmsg += f"\n{bulletpoint} Managers: {(', ').join(['**'+x.display_name+'**' for x in manager_list]) if not tag else (', ').join([x.mention for x in manager_list])}"
                     if raid_message:
                         list_embed = discord.Embed(colour=ctx.guild.me.colour, description=listmsg, title=raid_message.embeds[0].title, url=raid_message.embeds[0].url)
                         if len(raid_message.embeds[0].fields) > 4:

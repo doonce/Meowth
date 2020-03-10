@@ -146,6 +146,7 @@ class Wild(commands.Cog):
         guild = message.channel.guild
         channel = message.channel
         wild_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['wildreport_dict'])
+        last_report = True if len (self.bot.guild_dict[guild.id]['wildreport_dict'].keys()) == 1 else False
         author = guild.get_member(wild_dict.get(message.id, {}).get('report_author'))
         cleanup_setting = self.bot.guild_dict[guild.id].get('configure_dict', {}).get('wild', {}).setdefault('cleanup_setting', "edit")
         if cleanup_setting == "delete":
@@ -172,7 +173,7 @@ class Wild(commands.Cog):
             pass
         try:
             ctx = await self.bot.get_context(message)
-            if len (self.bot.guild_dict[guild.id]['wildreport_dict'].keys()) == 0:
+            if last_report and len (self.bot.guild_dict[guild.id]['wildreport_dict'].keys()) == 0:
                 await ctx.invoke(self.bot.get_command('list wilds'))
         except:
             pass
@@ -603,35 +604,39 @@ class Wild(commands.Cog):
                     content = f"{pokemon} {location}"
                     return await self._wild(ctx, content)
                 else:
-                    wild_embed.add_field(name=_('**New Wild Report**'), value=_("Meowth! I'll help you report a wild!\n\nFirst, I'll need to know what **pokemon** you encountered. Reply with the name of a **pokemon**. Include any forms, size, gender if necessary. You can reply with **cancel** to stop anytime."), inline=False)
-                    mon_wait = await channel.send(embed=wild_embed)
                     def check(reply):
                         if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
                             return True
                         else:
                             return False
-                    try:
-                        mon_msg = await self.bot.wait_for('message', timeout=60, check=check)
-                    except asyncio.TimeoutError:
-                        mon_msg = None
-                    await utils.safe_delete(mon_wait)
-                    if not mon_msg:
-                        error = _("took too long to respond")
-                        break
+                    if pokemon and pokemon.lower() in self.bot.pkmn_list:
+                        pass
                     else:
-                        await utils.safe_delete(mon_msg)
-                    if mon_msg.clean_content.lower() == "cancel":
+                        wild_embed.add_field(name=_('**New Wild Report**'), value=_("Meowth! I'll help you report a wild!\n\nFirst, I'll need to know what **pokemon** you encountered. Reply with the name of a **pokemon**. Include any forms, size, gender if necessary. You can reply with **cancel** to stop anytime."), inline=False)
+                        mon_wait = await channel.send(embed=wild_embed)
+                        try:
+                            mon_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            mon_msg = None
+                        await utils.safe_delete(mon_wait)
+                        if not mon_msg:
+                            error = _("took too long to respond")
+                            break
+                        else:
+                            await utils.safe_delete(mon_msg)
+                            pokemon = mon_msg.clean_content.lower()
+                    if pokemon.lower() == "cancel":
                         error = _("cancelled the report")
                         break
                     else:
-                        pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, mon_msg.clean_content)
+                        pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon)
                         if not pokemon:
                             error = _("entered an invalid pokemon")
                             break
-                    await utils.safe_delete(mon_msg)
                     pokemon.shiny = False
                     pokemon.shadow = False
-                    wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Great! Now, reply with the **gym, pokestop, or other location** that the wild {str(pokemon)} is closest to. You can reply with **cancel** to stop anytime.", inline=False)
+                    wild_embed.clear_fields()
+                    wild_embed.add_field(name=f"**New Wild Report**", value=f"Great! Now, reply with the **gym, pokestop, or other location** that the wild {str(pokemon)} is closest to. You can reply with **cancel** to stop anytime.", inline=False)
                     wild_embed.set_thumbnail(url=pokemon.img_url)
                     location_wait = await channel.send(embed=wild_embed)
                     try:
@@ -649,7 +654,8 @@ class Wild(commands.Cog):
                         break
                     elif location_msg:
                         location = location_msg.clean_content
-                    wild_embed.set_field_at(0, name=wild_embed.fields[0].name, value=f"Fantastic! Now, did you check the **IV** for the {str(pokemon)} near {location}? Reply with the **IV** or **N** to report without IV. You can reply with **cancel** to stop anytime.", inline=False)
+                        wild_embed.clear_fields()
+                    wild_embed.add_field(name=f"**New Wild Report**", value=f"Fantastic! Now, did you check the **IV** for the {str(pokemon)} near {location}? Reply with the **IV** or **N** to report without IV. You can reply with **cancel** to stop anytime.", inline=False)
                     iv_wait = await channel.send(embed=wild_embed)
                     try:
                         iv_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -657,11 +663,10 @@ class Wild(commands.Cog):
                         iv_msg = None
                     await utils.safe_delete(iv_wait)
                     if not iv_msg:
-                        error = _("took too long to respond")
-                        break
+                        wild_iv = None
                     else:
                         await utils.safe_delete(iv_msg)
-                    if iv_msg.clean_content.lower() == "cancel":
+                    if iv_msg and iv_msg.clean_content.lower() == "cancel":
                         error = _("cancelled the report")
                         break
                     elif iv_msg:

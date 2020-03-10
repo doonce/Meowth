@@ -82,6 +82,7 @@ class Pvp(commands.Cog):
         guild = message.channel.guild
         channel = message.channel
         pvp_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['pvp_dict'])
+        last_report = True if len (self.bot.guild_dict[guild.id]['pvp_dict'].keys()) == 1 else False
         if not pvp_dict[message.id].get('tournament', {}).get('status', None) == "complete":
             cleanup_setting = self.bot.guild_dict[guild.id].get('configure_dict', {}).get('pvp', {}).setdefault('cleanup_setting', "delete")
             if cleanup_setting == "delete":
@@ -104,7 +105,7 @@ class Pvp(commands.Cog):
             pass
         try:
             ctx = await self.bot.get_context(message)
-            if len (self.bot.guild_dict[guild.id]['pvp_dict'].keys()) == 0:
+            if last_report and len (self.bot.guild_dict[guild.id]['pvp_dict'].keys()) == 0:
                 await ctx.invoke(self.bot.get_command('list pvp'))
         except:
             pass
