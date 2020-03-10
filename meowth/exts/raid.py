@@ -1998,7 +1998,7 @@ class Raid(commands.Cog):
                             break
                         else:
                             await utils.safe_delete(mon_or_lvl_msg)
-                            pokemon_level = mon_or_lvl_msg.clean_content.lower()
+                            pokemon_or_level = mon_or_lvl_msg.clean_content.lower()
                     if pokemon_or_level == "cancel":
                         error = _("cancelled the report")
                         break
