@@ -670,6 +670,10 @@ class Want(commands.Cog):
                     gym = gyms[gym].get('alias')
                 if gym not in ex_list:
                     ex_list.append(gym)
+        if not ex_list or not gyms:
+            want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/gym-arena.png?cache=1")
+            want_embed.add_field(name=_('**New Alert Subscription**'), value=f"There are no configured EX gyms on this server.", inline=False)
+            return await ctx.send(embed=want_embed)
         await self._want_poi(ctx, (', ').join(ex_list), poi_type="gym")
 
     @want.command(name='stop', aliases=['pokestop', 'pokestops', 'stops'])
@@ -1004,6 +1008,8 @@ class Want(commands.Cog):
         added_list = []
         error_list = []
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
+        if want_split[0].isdigit() and int(want_split[0]) > 0 and int(want_split[0]) <= 5:
+            want_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{want_split[0]}.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('raid_eggs', [])
         for entered_want in want_split:
             if entered_want.isdigit() and int(entered_want.strip()) > 5:
@@ -2082,6 +2088,10 @@ class Want(commands.Cog):
                     gym = gyms[gym].get('alias')
                 if gym not in ex_list:
                     ex_list.append(gym)
+        if not ex_list or not gyms:
+            want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/gym-arena.png?cache=1")
+            want_embed.add_field(name=_('**Remove Alert Subscription**'), value=f"There are no configured EX gyms on this server.", inline=False)
+            return await ctx.send(embed=want_embed)
         await self._unwant_poi(ctx, (', ').join(ex_list), poi_type="gym")
 
     @unwant.command(name='stop', aliases=['pokestop', 'pokestops', 'stops'])
@@ -2421,7 +2431,7 @@ class Want(commands.Cog):
         message = ctx.message
         guild = message.guild
         channel = message.channel
-        want_split = levels.lower().split(',')
+        want_split = levels.upper().split(',')
         want_list = []
         removed_count = 0
         not_wanted_count = 0
@@ -2429,6 +2439,8 @@ class Want(commands.Cog):
         removed_list = []
         error_list = []
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
+        if want_split[0].isdigit() and int(want_split[0]) > 0 and int(want_split[0]) <= 5:
+            want_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{want_split[0]}.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('raid_eggs', [])
         for entered_unwant in want_split:
             if entered_unwant.isdigit() and int(entered_unwant.strip()) > 5:

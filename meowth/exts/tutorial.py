@@ -1231,9 +1231,9 @@ class Tutorial(commands.Cog):
                         if (len(field_value) + len(item)) < 1000:
                             field_value += f"\n{item}"
                         else:
-                            help_embed.add_field(name=f"**Subommands**", value=field_value)
+                            help_embed.add_field(name=f"**Subommands**", value=field_value, inline=False)
                             field_value = item
-                    help_embed.add_field(name=f"**Subommands**", value=field_value)
+                    help_embed.add_field(name=f"**Subommands**", value=field_value, inline=False)
             tutorial_command = self.bot.get_command('tutorial')
             if command.name in [x.name for x in tutorial_command.commands]:
                 help_embed.add_field(name="**Tutorial**", value=f"Tutorial is available for {command.name} using **{ctx.prefix}tutorial {command.name}**", inline=False)

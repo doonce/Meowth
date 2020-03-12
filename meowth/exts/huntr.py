@@ -489,7 +489,7 @@ class Huntr(commands.Cog):
                 for event in self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {}):
                     if not alarm_egglevel:
                         break
-                    if utcnow >= self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['mute_time'] and self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['event_end'] >= utcnow:
+                    if time.time() >= self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['mute_time'] and self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['event_end'] >= time.time():
                         if ctx.author.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['bot_account'] and ctx.channel.id == self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event]['bot_channel']:
                             if self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event].get('egg_level', [0]) == [0] or alarm_egglevel in self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event].get('egg_level', [0]):
                                 raidhour = True
@@ -2047,9 +2047,9 @@ class Huntr(commands.Cog):
                 if self.bot.guild_dict[guild.id]['raidhour_dict'][event_id].get('currently_active'):
                     channels_made = True
                 if (event_dict['make_trains'] or event_dict.get('make_meetups')) and not channels_made:
-                    if now >= event_dict['channel_time']:
-                        event_start = event_dict['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
-                        event_end = event_dict['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+                    if time.time() >= event_dict['channel_time']:
+                        event_start = datetime.datetime.utcfromtimestamp(event_dict['event_start']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+                        event_end = datetime.datetime.utcfromtimestamp(event_dict['event_end']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         train_channel = self.bot.get_channel(event_dict['train_channel'])
                         for location in event_dict['event_locations']:
                             ctx.author, ctx.message.author = report_author, report_author
@@ -2068,15 +2068,15 @@ class Huntr(commands.Cog):
                         self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['currently_active'] = True
                         channels_made = True
                     else:
-                        wait_time.append((event_dict['channel_time'] - now).total_seconds())
+                        wait_time.append(event_dict['channel_time'] - time.time())
                 if event_dict.get('event_pokemon'):
                     for pokemon in event_dict['event_pokemon']:
                         if pokemon not in self.bot.guild_dict[guild.id]['configure_dict']['scanners']['filters']['wild']:
                             self.bot.guild_dict[guild.id]['configure_dict']['scanners']['filters']['wild'].append(pokemon)
                 if bot_account:
-                    if now < event_dict['mute_time']:
-                        wait_time.append((event_dict['mute_time'] - now).total_seconds())
-                if now >= event_dict['event_end']:
+                    if time.time() < event_dict['mute_time']:
+                        wait_time.append(event_dict['mute_time'] - time.time())
+                if time.time() >= event_dict['event_end']:
                     try:
                         user_message = await report_channel.fetch_message(event_dict['user_message'])
                         await utils.safe_delete(user_message)
@@ -2091,10 +2091,10 @@ class Huntr(commands.Cog):
                     except:
                         pass
                     if self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id].get('recur_weekly', False):
-                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['mute_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['mute_time'] + datetime.timedelta(days=7)
-                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_start'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_start'] + datetime.timedelta(days=7)
-                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_end'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_end'] + datetime.timedelta(days=7)
-                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['channel_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['channel_time'] + datetime.timedelta(days=7)
+                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['mute_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['mute_time'] + 7*24*60*60
+                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_start'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_start'] + 7*24*60*60
+                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_end'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['event_end'] + 7*24*60*60
+                        self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['channel_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][event_id]['channel_time'] + 7*24*60*60
                         self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['currently_active'] = False
                     else:
                         try:
@@ -2103,7 +2103,7 @@ class Huntr(commands.Cog):
                             pass
                     return
                 else:
-                    wait_time.append((event_dict['event_end'] - now).total_seconds())
+                    wait_time.append(event_dict['event_end'] - time.time())
                 wait_time = [x for x in wait_time if x > 0]
                 if not wait_time:
                     wait_time = [600]
@@ -2488,6 +2488,10 @@ class Huntr(commands.Cog):
             raid_embed.add_field(name=_('**Raid Hour Report**'), value=f"Meowth! A raid hour has been successfully scheduled. To cancel an event use **{ctx.prefix}raidhour cancel**\n\n{success_str}", inline=False)
             raid_hour_var = self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {})
             confirmation = await channel.send(embed=raid_embed)
+            event_dict['event_start'] = event_dict['event_start'].replace(tzinfo=datetime.timezone.utc).timestamp()
+            event_dict['event_end'] = event_dict['event_end'].replace(tzinfo=datetime.timezone.utc).timestamp()
+            event_dict['mute_time'] = event_dict['mute_time'].replace(tzinfo=datetime.timezone.utc).timestamp()
+            event_dict['channel_time'] = event_dict['channel_time'].replace(tzinfo=datetime.timezone.utc).timestamp()
             self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][confirmation.id] = copy.deepcopy(event_dict)
         else:
             raid_embed.add_field(name=_('**Raid Hour Report Cancelled**'), value=_("Meowth! Your raid hour has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
@@ -2499,10 +2503,11 @@ class Huntr(commands.Cog):
         cancel_str = ""
         if not list(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict').keys()):
             return await ctx.send("There are no scheduled raid hours.", delete_after=15)
+        index = 1
         for event in list(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict').keys()):
-            cancel_str += f"ID: **{str(event)}**\n"
-            local_start = self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_start'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
-            local_end = self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_end'] + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+            cancel_str += f"{index}. ID: {str(event)}\n"
+            local_start = datetime.datetime.utcfromtimestamp(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_start']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+            local_end = datetime.datetime.utcfromtimestamp(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['event_end']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
             bot_account = ctx.guild.get_member(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['bot_account'])
             bot_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['bot_channel'])
             report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict')[event]['train_channel'])
@@ -2524,6 +2529,7 @@ class Huntr(commands.Cog):
             if event_recurs:
                 cancel_str += f"-- Recurring Event: {local_start.strftime('%As at %I:%M %p')}\n"
             cancel_str += "\n"
+            index += 1
         paginator = commands.Paginator(prefix=None, suffix=None)
         for line in cancel_str.split('\n'):
             paginator.add_line(line.rstrip())
@@ -2531,7 +2537,7 @@ class Huntr(commands.Cog):
             await ctx.send(p)
         if ctx.invoked_with == "list":
             return
-        event_list_wait = await ctx.send(f"{ctx.author.mention} please send the event ID of the event you would like to cancel.", delete_after=60)
+        event_list_wait = await ctx.send(f"{ctx.author.mention} please send the event number or ID of the event you would like to cancel.", delete_after=60)
         def check(reply):
             if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:
                 return True
@@ -2548,7 +2554,10 @@ class Huntr(commands.Cog):
             await utils.safe_delete(event_list_msg)
         event_reply = event_list_msg.clean_content.lower().strip()
         if event_reply not in [str(x) for x in list(self.bot.guild_dict[ctx.guild.id].get('raidhour_dict').keys())]:
-            return await ctx.send("You entered an invalid ID", delete_after=15)
+            if event_reply.isdigit() and int(event_reply) < 1000:
+                event_reply = list(self.bot.guild_dict[ctx.guild.id]['raidhour_dict'].keys())[int(event_reply)-1]
+            else:
+                return await ctx.send("You entered an invalid ID or number", delete_after=15)
         remove_event = True
         if self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)].get('recur_weekly', False):
             event_list_wait = await ctx.send(f"This is a recurring event. Would you like to cancel **this** event or **all** future events? Reply with **this** or **all**.", delete_after=60)
@@ -2563,10 +2572,10 @@ class Huntr(commands.Cog):
                 await utils.safe_delete(event_list_msg)
             if event_list_msg.clean_content.lower() == "this":
                 remove_event = False
-                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['mute_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['mute_time'] + datetime.timedelta(days=7)
-                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_start'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_start'] + datetime.timedelta(days=7)
-                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_end'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_end'] + datetime.timedelta(days=7)
-                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['channel_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['channel_time'] + datetime.timedelta(days=7)
+                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['mute_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['mute_time'] + 7*24*60*60
+                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_start'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_start'] + 7*24*60*60
+                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_end'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['event_end'] + 7*24*60*60
+                self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['channel_time'] = self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]['channel_time'] + 7*24*60*60
             elif event_list_msg.clean_content.lower() == "all":
                 remove_event = True
         try:
@@ -2578,7 +2587,7 @@ class Huntr(commands.Cog):
                 del self.bot.guild_dict[ctx.guild.id]['raidhour_dict'][int(event_reply)]
             except:
                 pass
-        await ctx.send(f"Raid hour canceled.", delete_after=15)
+        await ctx.send(f"Raid hour **{event_reply}** canceled.", delete_after=15)
 
 def setup(bot):
     bot.add_cog(Huntr(bot))

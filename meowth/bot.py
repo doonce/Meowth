@@ -228,6 +228,15 @@ class MeowthBot(commands.AutoShardedBot):
                 continue
             users += guild.member_count
             # RUN ONCE
+            for raidhour in self.guild_dict[guild.id]['raidhour_dict']:
+                print(raidhour)
+                try:
+                    self.guild_dict[guild.id]['raidhour_dict'][raidhour]['event_start'] = self.guild_dict[guild.id]['raidhour_dict'][raidhour]['event_start'].replace(tzinfo=datetime.timezone.utc).timestamp()
+                    self.guild_dict[guild.id]['raidhour_dict'][raidhour]['event_end'] = self.guild_dict[guild.id]['raidhour_dict'][raidhour]['event_end'].replace(tzinfo=datetime.timezone.utc).timestamp()
+                    self.guild_dict[guild.id]['raidhour_dict'][raidhour]['mute_time'] = self.guild_dict[guild.id]['raidhour_dict'][raidhour]['mute_time'].replace(tzinfo=datetime.timezone.utc).timestamp()
+                    self.guild_dict[guild.id]['raidhour_dict'][raidhour]['channel_time'] = self.guild_dict[guild.id]['raidhour_dict'][raidhour]['channel_time'].replace(tzinfo=datetime.timezone.utc).timestamp()
+                except:
+                    pass
             try:
                 set_var = self.guild_dict[guild.id]['configure_dict']['scanners'].setdefault('filters', {})
                 self.guild_dict[guild.id]['configure_dict']['scanners']['filters']['wild'] = self.guild_dict[guild.id]['configure_dict']['scanners']['wildfilter']
@@ -274,6 +283,22 @@ class MeowthBot(commands.AutoShardedBot):
                     await role.delete()
             type_list = ["raid", "egg", "ex", "wild", "research", "nest", "lure", "invasion", "trade", "pvp"]
             for trainer in self.guild_dict[guild.id].setdefault('trainers', {}):
+                try:
+                    active_start = self.guild_dict[guild.id]['trainers'][trainer].get('alerts', {}).get('settings', {}).get('active_start')
+                    active_end = self.guild_dict[guild.id]['trainers'][trainer].get('alerts', {}).get('settings', {}).get('active_end')
+                    if active_start and active_end:
+                        self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['active_hours'] = {}
+                        self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['active_hours']['monday'] = {"active_start":active_start, "active_end": active_end}
+                        self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['active_hours']['tuesday'] = {"active_start":active_start, "active_end": active_end}
+                        self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['active_hours']['wednesday'] = {"active_start":active_start, "active_end": active_end}
+                        self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['active_hours']['thursday'] = {"active_start":active_start, "active_end": active_end}
+                        self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['active_hours']['friday'] = {"active_start":active_start, "active_end": active_end}
+                        self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['active_hours']['saturday'] = {"active_start":active_start, "active_end": active_end}
+                        self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['active_hours']['sunday'] = {"active_start":active_start, "active_end": active_end}
+                        del self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['active_start']
+                        del self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['active_end']
+                except:
+                    pass
                 if isinstance(self.guild_dict[guild.id]['trainers'][trainer].get('alerts', {}).get('settings', {}).get('mute', True), (int, float)):
                     if self.guild_dict[guild.id]['trainers'][trainer].get('alerts', {}).get('settings', {}).get('mute'):
                         self.guild_dict[guild.id]['trainers'][trainer]['alerts']['settings']['mute'] = {"raid":True, "invasion":True, "lure":True, "wild":True, "research":True, "nest":True, "trade":True}
