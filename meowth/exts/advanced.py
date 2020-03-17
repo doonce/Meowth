@@ -69,19 +69,14 @@ class Advanced(commands.Cog):
             message = await channel.fetch_message(payload.message_id)
         except (discord.errors.NotFound, AttributeError, discord.Forbidden):
             return
+        ctx = await self.bot.get_context(message)
         if payload.emoji.name =='\U00002705' and message.id == 644615360968130603:
             categories = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(user.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}).setdefault('pokemon', {})
             self.bot.guild_dict[guild.id]['trainers'][user.id]['alerts']['settings']['categories']['pokemon']['trade'] = True
-        if message.id == 687748212030832709:
-            if payload.emoji.name == "mystic":
-                role = discord.utils.get(guild.roles, name="mystic")
-                await user.add_roles(role)
-            elif payload.emoji.name == "valor":
-                role = discord.utils.get(guild.roles, name="valor")
-                await user.add_roles(role)
-            elif payload.emoji.name == "instinct":
-                role = discord.utils.get(guild.roles, name="instinct")
-                await user.add_roles(role)
+        if (payload.emoji.name == "mystic" or payload.emoji.name == "valor" or payload.emoji.name == "instinct") and (message.id == 687748212030832709 or message.id == 688387121576280065):
+            ctx.channel = guild.get_channel(345926163538903040)
+            ctx.author = user
+            await ctx.invoke(self.bot.get_command('team'), team=payload.emoji.name)
 
 def setup(bot):
     bot.add_cog(Advanced(bot))

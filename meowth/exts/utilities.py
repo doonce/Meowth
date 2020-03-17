@@ -6,10 +6,12 @@ import os
 import functools
 import textwrap
 import datetime
+import pytz
 import copy
 import logging
 import aiohttp
 import traceback
+import time
 
 from dateutil.relativedelta import relativedelta
 
@@ -21,6 +23,7 @@ from discord.ext import commands, tasks
 
 from meowth import checks
 from meowth.exts import pokemon as pkmn_class
+from meowth.i18n import country_info
 
 logger = logging.getLogger("meowth")
 
@@ -714,9 +717,11 @@ class Utilities(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.dm_cleanup.start()
+        self.auto_timezone.start()
 
     def cog_unload(self):
         self.dm_cleanup.cancel()
+        self.auto_timezone.cancel()
 
     @tasks.loop(seconds=0)
     async def dm_cleanup(self, loop=True):
@@ -810,6 +815,32 @@ class Utilities(commands.Cog):
 
     @dm_cleanup.before_loop
     async def before_cleanup(self):
+        await self.bot.wait_until_ready()
+
+    @tasks.loop(seconds=0)
+    async def auto_timezone(self):
+        wait_times = []
+        for guild in self.bot.guilds:
+            if guild.id not in list(self.bot.guild_dict.keys()):
+                continue
+            entered_timezone = self.bot.guild_dict[guild.id].get('configure_dict', {}).get('settings', {}).get('timezone', None)
+            if not entered_timezone:
+                continue
+            local_timezone = pytz.timezone(entered_timezone)
+            local_now = datetime.datetime.now(local_timezone)
+            self.bot.guild_dict[guild.id]['configure_dict']['offset'] = local_now.utcoffset().total_seconds()/60/60
+            for transition in local_timezone._utc_transition_times:
+                if transition > datetime.datetime.utcnow():
+                    wait_times.append((transition-datetime.datetime.utcnow()).total_seconds())
+                    break
+        if not wait_times:
+            wait_times = [3600]
+        if min(wait_times) >= 3456000:
+            wait_times = [3455000]
+        self.auto_timezone.change_interval(seconds=min(wait_times))
+
+    @auto_timezone.before_loop
+    async def before_auto_timezone(self):
         await self.bot.wait_until_ready()
 
     @commands.command()
@@ -1096,25 +1127,124 @@ class Utilities(commands.Cog):
             await ctx.message.channel.send(_("Meowth! That Pokemon doesn't appear in raids!"), delete_after=10)
             return
 
-    @_set.command()
-    async def timezone(self, ctx, *, timezone: str = ''):
+    @_set.command(aliases=["offset"])
+    async def timezone(self, ctx, *, offset: str = ''):
         """Changes server timezone."""
         if not ctx.author.guild_permissions.manage_guild:
             if not checks.is_manager_check(ctx):
                 return
-        offset_config = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('offset', None)
-        try:
-            timezone = float(timezone)
-        except ValueError:
-            await ctx.channel.send(_("I couldn't convert your answer to an appropriate timezone! Please double check what you sent me and resend a number from **-12** to **12**."), delete_after=10)
-            return
-        if (not ((- 12) <= timezone <= 14)):
-            await ctx.channel.send(_("I couldn't convert your answer to an appropriate timezone! Please double check what you sent me and resend a number from **-12** to **12**."), delete_after=10)
-            return
-        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'] = timezone
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
-        await ctx.channel.send(_("Timezone has been set to: `UTC{offset}`\nThe current time is **{now}**").format(offset=timezone, now=now.strftime("%H:%M")), delete_after=10)
-        await add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
+        def check(reply):
+            if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:
+                return True
+            else:
+                return False
+        timezone_embed = discord.Embed(colour=ctx.guild.me.colour)
+        if ctx.invoked_with == "offset":
+            if not timezone:
+                while True:
+                    async with ctx.typing():
+                        timezone_embed.add_field(name=_('**Set Server Offset**'), value=f"Meowth! I'll help you set your server offset!\n\nThe current 24-hr time UTC is {time.strftime('%H:%M', time.gmtime())}. How many hours off from that are you? Respond with: A number from **-12** to **12**: You can reply with **cancel** to stop anytime.\n\nI can also schedule DST if you **cancel** and use **{ctx.prefix}set timezone**.", inline=False)
+                        timezone_wait = await ctx.channel.send(embed=timezone_embed)
+                        try:
+                            timezone_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            timezone_msg = None
+                        await safe_delete(timezone_wait)
+                        if not timezone_msg:
+                            timezone_embed.clear_fields()
+                            timezone_embed.add_field(name=_('**Set Offset Cancelled**'), value=_("Meowth! Your setting has been cancelled because you took too long to respond! Retry when you're ready."), inline=False)
+                            return await ctx.send(embed=timezone_embed, delete_after=10)
+                        elif timezone_msg.clean_content.lower() == "cancel":
+                            timezone_embed.clear_fields()
+                            timezone_embed.add_field(name=_('**Set Offset Cancelled**'), value=_("Meowth! Your setting has been cancelled because you cancelled the report! Retry when you're ready."), inline=False)
+                            return await ctx.send(embed=timezone_embed, delete_after=10)
+                        else:
+                            await safe_delete(timezone_msg)
+                            offset = timezone_msg.clean_content.lower()
+                            break
+            offset_config = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('settings', {}).setdefault('offset', None)
+            try:
+                offset = float(offset)
+            except ValueError:
+                await ctx.channel.send(_("I couldn't convert your answer to an appropriate offset! Please double check what you sent me and resend a number from **-12** to **12**."), delete_after=10)
+                return
+            if (not ((- 12) <= offset <= 14)):
+                await ctx.channel.send(_("I couldn't convert your answer to an appropriate offset! Please double check what you sent me and resend a number from **-12** to **12**."), delete_after=10)
+                return
+            self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'] = offset
+            now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+            await ctx.channel.send(_("Offset has been set to: `UTC{offset}`\nThe current time is **{now}**").format(offset=offset, now=now.strftime("%H:%M")), delete_after=10)
+            await add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
+        else:
+            while True:
+                async with ctx.typing():
+                    country_list = [x['name'] for x in country_info.countries]
+                    timezone_embed.add_field(name=_('**Set Timezone**'), value=f"Meowth! I'll help you set your server timezone. If you meant to set your *offset* (-12 through +12) use **!set offset**!\n\nFirst, I'll need to know what **country** your server is in. Reply with the name of a **country** as it appears in the following list or **none** to remove your timezone. You can reply with **cancel** to stop anytime.", inline=False)
+                    country_msg = str(country_list[0])
+                    for country in country_list:
+                        if len(country_msg) + len(country) < 1000:
+                            country_msg += f", {country}"
+                        else:
+                            timezone_embed.add_field(name=f"Country List", value=country_msg, inline=False)
+                            country_msg = str(country)
+                    timezone_wait = await ctx.channel.send(embed=timezone_embed)
+                    try:
+                        timezone_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        timezone_msg = None
+                    await safe_delete(timezone_wait)
+                    if not timezone_msg:
+                        timezone_embed.clear_fields()
+                        timezone_embed.add_field(name=_('**Set Timezone Cancelled**'), value=_("Meowth! Your setting has been cancelled because you took too long to respond! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=timezone_embed, delete_after=10)
+                    else:
+                        await safe_delete(timezone_msg)
+                    if timezone_msg.clean_content.lower() == "cancel":
+                        timezone_embed.clear_fields()
+                        timezone_embed.add_field(name=_('**Set Timezone Cancelled**'), value=_("Meowth! Your setting has been cancelled because you cancelled the report! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=timezone_embed, delete_after=10)
+                    elif timezone_msg.clean_content.lower() == "none":
+                        self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['timezone'] = entered_timezone
+                        timezone_embed.clear_fields()
+                        timezone_embed.add_field(name=_('**Set Timezone Removed**'), value=f"Meowth! Your timezone has been set to None. I will not handle your Daylight Savings Time changes. Please make sure your offset is correct within **{ctx.prefix}set offset**", inline=False)
+                        return await ctx.send(embed=timezone_embed, delete_after=10)
+                    elif timezone_msg.clean_content.strip() not in country_list:
+                        timezone_embed.clear_fields()
+                        timezone_embed.add_field(name=_('**Set Timezone Cancelled**'), value=_("Meowth! Your setting has been cancelled because you entered an invalid country! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=timezone_embed, delete_after=10)
+                    entered_country = timezone_msg.clean_content.strip()
+                    timezone_options = []
+                    for country in country_info.countries:
+                        if country['name'] == entered_country:
+                            timezone_options = country['timezones']
+                    timezone_embed.clear_fields()
+                    timezone_embed.add_field(name=_('**Set Timezone**'), value=f"Next, please choose a **{entered_country}** timezone as it appears on the following list.\n\n{(', ').join(timezone_options)}", inline=False)
+                    timezone_wait = await ctx.channel.send(embed=timezone_embed)
+                    try:
+                        timezone_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        timezone_msg = None
+                    await safe_delete(timezone_wait)
+                    if not timezone_msg:
+                        timezone_embed.clear_fields()
+                        timezone_embed.add_field(name=_('**Set Timezone Cancelled**'), value=_("Meowth! Your setting has been cancelled because you took too long to respond! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=timezone_embed, delete_after=10)
+                    else:
+                        await safe_delete(timezone_msg)
+                    if timezone_msg.clean_content.lower() == "cancel":
+                        timezone_embed.clear_fields()
+                        timezone_embed.add_field(name=_('**Set Timezone Cancelled**'), value=_("Meowth! Your setting has been cancelled because you cancelled the report! Retry when you're ready."), inline=False)
+                    elif timezone_msg.clean_content.strip() not in timezone_options:
+                        timezone_embed.clear_fields()
+                        timezone_embed.add_field(name=_('**Set Timezone Cancelled**'), value=_("Meowth! Your setting has been cancelled because you entered an invalid timezone! Retry when you're ready."), inline=False)
+                        return await ctx.send(embed=timezone_embed, delete_after=10)
+                    entered_timezone = timezone_msg.clean_content.strip()
+                    break
+            local_timezone = pytz.timezone(entered_timezone)
+            local_now = datetime.datetime.now(local_timezone)
+            await ctx.send(f"Your timezone has been set to **{entered_timezone}** where local time is {local_now.strftime(_('%I:%M %p (%H:%M)'))}. I will handle any Daylight Savings Time changes from now on.", delete_after=30)
+            self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['offset'] = local_now.utcoffset().total_seconds()/60/60
+            self.bot.guild_dict[ctx.guild.id]['configure_dict']['settings']['timezone'] = entered_timezone
 
     @_set.command()
     @checks.is_owner()
