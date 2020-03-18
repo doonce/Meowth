@@ -123,17 +123,17 @@ class Listing(commands.Cog):
                         report_channel = self.bot.get_channel(rc_d[r]['report_channel'])
                         if not report_channel:
                             continue
-                        if (report_channel.name == cty) and rc_d[r]['active'] and discord.utils.get(guild.text_channels, id=r):
+                        if (report_channel.name == cty) and discord.utils.get(guild.text_channels, id=r):
                             exp = rc_d[r]['exp']
                             type = rc_d[r]['type']
                             level = rc_d[r]['egg_level']
                             if (type == 'egg') and level.isdigit():
                                 egg_dict[r] = exp
-                            elif rc_d[r].get('meetup', {}):
+                            elif rc_d[r].get('meetup', {}) and rc_d[r]['active'] :
                                 event_list.append(r)
-                            elif ((type == 'exraid') or (level == 'EX')):
+                            elif ((type == 'exraid') or (level == 'EX')) and rc_d[r]['active'] :
                                 exraid_list.append(r)
-                            else:
+                            elif rc_d[r]['active'] :
                                 raid_dict[r] = exp
 
                     async def list_output(r):
