@@ -837,7 +837,7 @@ class Utilities(commands.Cog):
             wait_times = [3600]
         if min(wait_times) >= 3456000:
             wait_times = [3455000]
-        self.auto_timezone.change_interval(seconds=min(wait_times))
+        self.auto_timezone.change_interval(seconds=min(wait_times)+30)
 
     @auto_timezone.before_loop
     async def before_auto_timezone(self):
@@ -1067,7 +1067,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v20.3.10.0 | Built with discord.py")
+        embed.set_footer(text="Running Meowth v20.3.18.0 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

@@ -1262,7 +1262,7 @@ class Pokedex(commands.Cog):
                         break
                     elif attr_type_msg.clean_content.lower() == "shiny":
                         pkmn_embed.clear_fields()
-                        pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"Shiny **{str(pokemon)}** is {'not currently available' if not pkmn_shiny else 'currently available in the following: '+str(pkmn_shiny)}.\n\nTo change availability, reply with a comma separated list of all possible occurrences that shiny {str(pokemon)} can appear in-game. You can reply with **cancel** to stop anytime.\n\nSelect from the following options:\n**hatch, raid, wild, research, evolution, shadow, none**", inline=False)
+                        pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"Shiny **{str(pokemon)}** is {'not currently available' if not pkmn_shiny else 'currently available in the following: '+str(pkmn_shiny)}.\n\nTo change availability, reply with a comma separated list of all possible occurrences that shiny {str(pokemon)} can appear in-game. You can reply with **cancel** to stop anytime.\n\nSelect from the following options:\n**hatch, raid, wild, research, league, evolution, shadow**. Include **all** in your list to quickly add hatch, raid, wild, research for new releases. Reply with **none** to clear all.", inline=False)
                         pokemon.shiny = True
                         pkmn_embed.set_thumbnail(url=pokemon.img_url)
                         pokemon.shiny = False
@@ -1280,13 +1280,15 @@ class Pokedex(commands.Cog):
                         if shiny_type_msg.clean_content.lower() == "cancel":
                             error = _("cancelled the report")
                             break
+                        elif shiny_type_msg.clean_content.lower() == "none":
+                            pkmn_shiny = []
                         else:
-                            shiny_options = ["hatch", "raid", "wild", "research", "invasion", "evolution", "shadow"]
-                            shiny_split = shiny_type_msg.clean_content.lower().split(',')
+                            shiny_options = ["hatch", "raid", "wild", "research", "league", "evolution", "shadow"]
+                            shiny_split = shiny_type_msg.clean_content.lower().replace('all', 'hatch, raid, wild, research').split(',')
                             shiny_split = [x.strip() for x in shiny_split]
                             shiny_split = [x for x in shiny_split if x in shiny_options]
-                            pkmn_shiny = shiny_split
-                            break
+                            pkmn_shiny = list(set(shiny_split))
+                        break
                         first = False
                     elif attr_type_msg.clean_content.lower() == "type":
                         pkmn_embed.clear_fields()
@@ -1546,7 +1548,9 @@ class Pokedex(commands.Cog):
             shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
         preview_embed.add_field(name=f"{shiny_str}{str(pokemon)} {pokemon.emoji} - #{pokemon.id} - {('').join(pokemon.boost_weather)}{' - *Legendary*' if pokemon.legendary else ''}{' - *Mythical*' if pokemon.mythical else ''}", value=f"{pokemon.pokedex}", inline=False)
         if len(forms) > 1 or key_list:
-            preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=", ".join(form_list), inline=False)
+            preview_embed.add_field(name=f"{pokemon.name.title()} Forms:", value=f"{', '.join(form_list)}", inline=False)
+        if pokemon.shiny:
+            preview_embed.add_field(name=f"{pokemon.name.title()} Shiny Available:", value=", ".join([x.title() for x in pokemon.shiny_available]))
         if len(pokemon.evolution.split("→")) > 1:
             preview_embed.add_field(name=f"{pokemon.name.title()} Evolution:", value=pokemon.evolution.replace(pokemon.name.title(), f"**{pokemon.name.title()}**"), inline=False)
         if all([pokemon.base_stamina, pokemon.base_attack, pokemon.base_defense]):
