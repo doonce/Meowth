@@ -568,7 +568,10 @@ class Want(commands.Cog):
                     listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                 index += 1
         if trade_warn:
-            await ctx.send(f"Meowth! {ctx.author.mention}, just so you know, **{(', ').join(trade_warn)}** will only be alerted through new trade listings.", delete_after=30)
+            categories = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}).setdefault('pokemon', {})            
+            trade_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pogo_trading_icon.png?cache=1')
+            trade_embed.add_field(name=f"**Trade Alerts**", value=f"Just so you know, **{(', ').join(trade_warn)}** will only be alerted through new trade listings.\n\n{'Trade alerts are off by default and you have not opted-in. To enable trade alerts, use **'+ctx.prefix+'want categories** → **pokemon** and then make sure trade is in your list.' if not categories.get('trade') else ''}")
+            await ctx.send(f"Meowth! {ctx.author.mention}", embed=trade_embed, delete_after=60)
 
     @want.command(name='boss', aliases=['bosses'])
     @checks.allowwant()
