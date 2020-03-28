@@ -719,7 +719,7 @@ class Wild(commands.Cog):
         else:
             return await ctx.invoke(self.bot.get_command('wild'))
         for word in match_list:
-            content = re.sub(word, "", content)
+            content = re.sub(word, "", content, flags=re.IGNORECASE)
         wild_details = content.strip()
         if not wild_details:
             return await ctx.invoke(self.bot.get_command('wild'))

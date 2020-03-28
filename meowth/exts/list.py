@@ -1398,12 +1398,22 @@ class Listing(commands.Cog):
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @checks.allowresearchreport()
-    async def research(self, ctx):
+    async def research(self, ctx, *, search_term="all"):
         """List the quests for the channel
 
         Usage: !list research"""
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'research']:
             await utils.safe_delete(ctx.message)
+        search_term = search_term.lower()
+        if search_term != "all":
+            search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
+            search_item = await utils.get_item(search_term)
+            if search_pokemon:
+                search_term = str(search_pokemon)
+            elif search_item:
+                search_term = search_item[1]
+            else:
+                search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('research', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -1418,7 +1428,7 @@ class Listing(commands.Cog):
                 prefix = self.bot._get_prefix(self.bot, ctx.message)
                 ctx.prefix = prefix[-1]
             report_emoji = self.bot.custom_emoji.get('research_report', u'\U0001F4E2')
-            listmsg, res_pages = await self._researchlist(ctx)
+            listmsg, res_pages = await self._researchlist(ctx, search_term)
             list_messages = []
             list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
             if res_pages:
@@ -1434,7 +1444,7 @@ class Listing(commands.Cog):
                 await utils.add_reaction(listmsg, report_emoji)
             else:
                 report_emoji = self.bot.custom_emoji.get('research_report', u'\U0001F4E2')
-                list_embed.add_field(name=f"**No Current Research Reports**", value=f"Meowth! There are no reported research reports. Report one with **{ctx.prefix}research <pokestop>, <quest>, <location>** or react with {report_emoji} and I can walk you through it!")
+                list_embed.add_field(name=f"**No Current Research Reports**", value=f"Meowth! There are no reported research reports. Report one with **{ctx.prefix}research <pokestop>, <quest>, <reward>** or react with {report_emoji} and I can walk you through it!")
                 listmsg = await ctx.channel.send(embed=list_embed)
                 await utils.add_reaction(listmsg, report_emoji)
                 list_messages.append(listmsg.id)
@@ -1443,7 +1453,7 @@ class Listing(commands.Cog):
                 if not ctx.guild.get_channel(channel):
                     del self.bot.guild_dict[ctx.guild.id]['list_dict']['research'][channel]
 
-    async def _researchlist(self, ctx):
+    async def _researchlist(self, ctx, search_term="all"):
         research_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('questreport_dict', {}))
         quest_dict = {'encounters':{}, 'candy':{}, 'dust':{}, 'berry':{}, 'potion':{}, 'revive':{}, 'ball':{}, 'other':{}}
         reward_dict = {'encounters':[], 'candy':[], 'dust':[], 'berry':[], 'potion':[], 'revive':[], 'ball':[], 'other':[]}
@@ -1479,6 +1489,9 @@ class Listing(commands.Cog):
                     url = research_dict[questid].get('url', None)
                     pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
                     other_reward = any(x in reward for x in reward_list)
+                    if search_term != "all":
+                        if str(pokemon) != search_term and reward.lower() != search_term:
+                            continue
                     if pokemon and not other_reward:
                         shiny_str = ""
                         if pokemon and "research" in pokemon.shiny_available:
@@ -1573,7 +1586,7 @@ class Listing(commands.Cog):
         if dust_quests:
             questmsg += "\n\n**Stardust**\n{dustlist}".format(dustlist="\n".join(dust_quests))
         if questmsg:
-            listmsg = _('**Meowth! Here\'s the current research reports for {channel}**').format(channel=ctx.message.channel.mention)
+            listmsg = f"**Meowth! Here's the current {search_term+' ' if search_term != 'all' else ''}research reports for {ctx.channel.mention}**"
             report_emoji = self.bot.custom_emoji.get('research_report', u'\U0001F4E2')
             questmsg += f"\n\n**New Report:**\nReact with {report_emoji} to start a new research report!"
             paginator = commands.Paginator(prefix="", suffix="")
@@ -1675,12 +1688,15 @@ class Listing(commands.Cog):
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @checks.allowlurereport()
-    async def lures(self, ctx):
+    async def lures(self, ctx, *, search_term="all"):
         """List the lures for the channel
 
         Usage: !list lures"""
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'lures']:
             await utils.safe_delete(ctx.message)
+        search_term = search_term.lower()
+        if search_term != "all" and search_term not in ["normal", "mossy", "glacial", "magnetic"]:
+            search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('lure', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -1695,7 +1711,7 @@ class Listing(commands.Cog):
                 prefix = self.bot._get_prefix(self.bot, ctx.message)
                 ctx.prefix = prefix[-1]
             report_emoji = self.bot.custom_emoji.get('lure_report', u'\U0001F4E2')
-            listmsg, lure_pages = await self._lurelist(ctx)
+            listmsg, lure_pages = await self._lurelist(ctx, search_term)
             list_messages = []
             list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
             if lure_pages:
@@ -1720,7 +1736,7 @@ class Listing(commands.Cog):
                 if not ctx.guild.get_channel(channel):
                     del self.bot.guild_dict[ctx.guild.id]['list_dict']['lure'][channel]
 
-    async def _lurelist(self, ctx):
+    async def _lurelist(self, ctx, search_term="all"):
         lure_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('lure_dict', {}))
         listing_dict = {}
         normal_emoji = self.bot.custom_emoji.get('normal_lure', self.bot.config.type_id_dict['normal'])
@@ -1734,6 +1750,8 @@ class Listing(commands.Cog):
                     lureauthor = ctx.channel.guild.get_member(lure_dict[lureid]['report_author'])
                     lure_expire = datetime.datetime.utcfromtimestamp(lure_dict[lureid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     lure_type = lure_dict[lureid]['type']
+                    if search_term != "all" and lure_type != search_term:
+                        continue
                     reported_by = ""
                     if lureauthor and not lureauthor.bot:
                         reported_by = f" | **Reported By**: {lureauthor.display_name}"
@@ -1752,7 +1770,7 @@ class Listing(commands.Cog):
                 lure_list_msg += listing_dict[k]['message']
             report_emoji = self.bot.custom_emoji.get('lure_report', u'\U0001F4E2')
             lure_list_msg += f"\n\n**New Report:**\nReact with {report_emoji} to start a new lure report!"
-            listmsg = _('**Meowth! Here\'s the current lure reports for {channel}**').format(channel=ctx.message.channel.mention)
+            listmsg = f"**Meowth! Here's the current {search_term+' ' if search_term != 'all' else ''}lure reports for {ctx.channel.mention}**"
             paginator = commands.Paginator(prefix="", suffix="")
             for line in lure_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
@@ -1841,12 +1859,20 @@ class Listing(commands.Cog):
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @checks.allowinvasionreport()
-    async def invasions(self, ctx):
+    async def invasions(self, ctx, search_term="all"):
         """List the invasions for the channel
 
         Usage: !list invasions"""
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'invasions']:
             await utils.safe_delete(ctx.message)
+        search_term = search_term.lower()
+        if search_term != "all":
+            search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
+            if search_pokemon and search_term not in self.bot.type_list:
+                search_pokemon.shadow = "shadow"
+                search_term = str(search_pokemon)
+            elif search_term not in self.bot.type_list:
+                search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('invasion', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -1861,7 +1887,7 @@ class Listing(commands.Cog):
                 prefix = self.bot._get_prefix(self.bot, ctx.message)
                 ctx.prefix = prefix[-1]
             report_emoji = self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2')
-            listmsg, invasion_pages = await self._invasionlist(ctx)
+            listmsg, invasion_pages = await self._invasionlist(ctx, search_term)
             list_messages = []
             list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
             if invasion_pages:
@@ -1886,7 +1912,7 @@ class Listing(commands.Cog):
                 if not ctx.guild.get_channel(channel):
                     del self.bot.guild_dict[ctx.guild.id]['list_dict']['invasion'][channel]
 
-    async def _invasionlist(self, ctx):
+    async def _invasionlist(self, ctx, search_term="all"):
         invasion_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('invasion_dict', {}))
         listing_dict = {}
         for invasionid in invasion_dict:
@@ -1894,6 +1920,7 @@ class Listing(commands.Cog):
                 try:
                     invasionmsg = ""
                     reward_list = []
+                    pokemon_list = []
                     invasionauthor = ctx.channel.guild.get_member(invasion_dict[invasionid]['report_author'])
                     reward = invasion_dict[invasionid]['reward']
                     reward_type = invasion_dict[invasionid].get('reward_type', None)
@@ -1908,8 +1935,11 @@ class Listing(commands.Cog):
                             if pokemon and "shadow" in pokemon.shiny_available:
                                 shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                             reward_list.append(f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}")
+                            pokemon_list.append(str(pokemon))
                     elif reward_type:
                         reward_list = [f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"]
+                    if search_term != "all" and search_term not in pokemon_list and search_term != reward_type:
+                        continue
                     if not reward_list:
                         reward_list = ["Unknown Pokemon"]
                     invasion_expire = datetime.datetime.utcfromtimestamp(invasion_dict[invasionid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
@@ -1935,7 +1965,7 @@ class Listing(commands.Cog):
                 inv_list_msg += listing_dict[k]['message']
             report_emoji = self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2')
             inv_list_msg += f"\n\n**New Report:**\nReact with {report_emoji} to start a new invasion report!"
-            listmsg = _('**Meowth! Here\'s the current invasion reports for {channel}**').format(channel=ctx.message.channel.mention)
+            listmsg = f"**Meowth! Here's the current {search_term+' ' if search_term != 'all' else ''}invasion reports for {ctx.channel.mention}**"
             paginator = commands.Paginator(prefix="", suffix="")
             for line in inv_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
@@ -1945,12 +1975,15 @@ class Listing(commands.Cog):
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @checks.allowpvpreport()
-    async def pvp(self, ctx):
+    async def pvp(self, ctx, search_term="all"):
         """List the pvps for the channel
 
         Usage: !list pvps"""
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'pvp']:
             await utils.safe_delete(ctx.message)
+        search_term = search_term.lower()
+        if search_term != "all" and search_term not in ["great", "ultra", "master"]:
+            search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('pvp', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -1965,7 +1998,7 @@ class Listing(commands.Cog):
                 prefix = self.bot._get_prefix(self.bot, ctx.message)
                 ctx.prefix = prefix[-1]
             report_emoji = self.bot.custom_emoji.get('pvp_report', u'\U0001F4E2')
-            listmsg, pvp_pages = await self._pvplist(ctx)
+            listmsg, pvp_pages = await self._pvplist(ctx, search_term)
             list_messages = []
             list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
             if pvp_pages:
@@ -1990,7 +2023,7 @@ class Listing(commands.Cog):
                 if not ctx.guild.get_channel(channel):
                     del self.bot.guild_dict[ctx.guild.id]['list_dict']['pvp'][channel]
 
-    async def _pvplist(self, ctx):
+    async def _pvplist(self, ctx, search_term="all"):
         pvp_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('pvp_dict', {}))
         listing_dict = {}
         for pvpid in pvp_dict:
@@ -1999,13 +2032,16 @@ class Listing(commands.Cog):
                     pvpmsg = ""
                     pvpauthor = ctx.channel.guild.get_member(pvp_dict[pvpid]['report_author'])
                     pvp_tournament = pvp_dict[pvpid].get('tournament', {})
+                    pvp_type = pvp_dict[pvpid]['type']
+                    if search_term != "all" and pvp_type != search_term:
+                        continue
                     pvp_expire = datetime.datetime.utcfromtimestamp(pvp_dict[pvpid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     reported_by = ""
                     if pvpauthor and not pvpauthor.bot:
                         reported_by = f" | **Requested By**: {pvpauthor.display_name}"
                     pvpmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('pvp_bullet', u'\U0001F539')))
                     if pvp_tournament:
-                        pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} Tournament | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Tournament Size**: {pvp_tournament['size']} | **Round**: {pvp_tournament['round']}{reported_by}"
+                        pvpmsg += f"**PVP Type**: {pvp_type.title()} Tournament | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Tournament Size**: {pvp_tournament['size']} | **Round**: {pvp_tournament['round']}{reported_by}"
                         pass
                     else:
                         pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Available Until**: {pvp_expire.strftime(_('%I:%M %p'))}{reported_by}"
@@ -2022,7 +2058,7 @@ class Listing(commands.Cog):
                 pvp_list_msg += listing_dict[k]['message']
             report_emoji = self.bot.custom_emoji.get('pvp_report', u'\U0001F4E2')
             pvp_list_msg += f"\n\n**New Report:**\nReact with {report_emoji} to start a new PVP request!"
-            listmsg = _('**Meowth! Here\'s the current PVP Requests for {channel}**').format(channel=ctx.message.channel.mention)
+            listmsg = f"**Meowth! Here's the current {search_term+' ' if search_term != 'all' else ''}PVP Requests for {ctx.channel.mention}**"
             paginator = commands.Paginator(prefix="", suffix="")
             for line in pvp_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
@@ -2032,12 +2068,19 @@ class Listing(commands.Cog):
     @_list.command(aliases=['wild'])
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @checks.allowwildreport()
-    async def wilds(self, ctx):
+    async def wilds(self, ctx, search_term="all"):
         """List the wilds for the channel
 
         Usage: !list wilds"""
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'wilds', 'wild']:
             await utils.safe_delete(ctx.message)
+        search_term = search_term.lower()
+        if search_term != "all":
+            search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
+            if search_pokemon:
+                search_term = str(search_pokemon)
+            else:
+                search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('wild', {}).setdefault(ctx.channel.id, [])
         delete_list = []
         async with ctx.typing():
@@ -2052,7 +2095,7 @@ class Listing(commands.Cog):
                 prefix = self.bot._get_prefix(self.bot, ctx.message)
                 ctx.prefix = prefix[-1]
             report_emoji = self.bot.custom_emoji.get('wild_report', u'\U0001F4E2')
-            listmsg, wild_pages = await self._wildlist(ctx)
+            listmsg, wild_pages = await self._wildlist(ctx, search_term)
             list_messages = []
             list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
             if wild_pages:
@@ -2077,7 +2120,7 @@ class Listing(commands.Cog):
                 if not ctx.guild.get_channel(channel):
                     del self.bot.guild_dict[ctx.guild.id]['list_dict']['wild'][channel]
 
-    async def _wildlist(self, ctx):
+    async def _wildlist(self, ctx, search_term="all"):
         wild_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('wildreport_dict', {}))
         listing_dict = {}
         bullet_point = self.bot.custom_emoji.get('wild_bullet', u'\U0001F539')
@@ -2101,6 +2144,8 @@ class Listing(commands.Cog):
                     weather_check = wild_dict[wildid].get('weather', None)
                     disguise = wild_dict[wildid].get('disguise', None)
                     pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
+                    if search_term != "all" and str(pokemon) != search_term:
+                        continue
                     pokemon.weather = weather_check
                     if pokemon.name.lower() == "ditto" and disguise:
                         disguise = await pkmn_class.Pokemon.async_get_pokemon(self.bot, disguise)
@@ -2132,7 +2177,7 @@ class Listing(commands.Cog):
             wild_list_msg = ""
             for (k, v) in sorted(listing_dict.items(), key=lambda item: item[1]['expire']):
                 wild_list_msg += listing_dict[k]['message']
-            listmsg = _('**Meowth! Here\'s the current wild reports for {channel}**').format(channel=ctx.message.channel.mention)
+            listmsg = f"**Meowth! Here's the current {search_term+' ' if search_term != 'all' else ''}wild reports for {ctx.channel.mention}**"
             report_emoji = self.bot.custom_emoji.get('wild_report', u'\U0001F4E2')
             wild_list_msg += f"\n\n**New Report:**\nReact with {report_emoji} to start a new wild report!"
             paginator = commands.Paginator(prefix="", suffix="")
@@ -2175,7 +2220,7 @@ class Listing(commands.Cog):
             for p in nest_pages:
                 nest_embed.description = p
                 if index == 0:
-                    listmsg = await ctx.channel.send(f"**Meowth!** Here\'s the current nests for {ctx.channel.mention}. You can see more information about a nest using **{ctx.prefix}nest info**".format(channel=ctx.channel.mention), embed=nest_embed)
+                    listmsg = await ctx.channel.send(f"**Meowth!** Here's the current nests for {ctx.channel.mention}. You can see more information about a nest using **{ctx.prefix}nest info**".format(channel=ctx.channel.mention), embed=nest_embed)
                 else:
                     listmsg = await ctx.channel.send(embed=nest_embed)
                 list_messages.append(listmsg.id)

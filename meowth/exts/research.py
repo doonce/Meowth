@@ -724,6 +724,8 @@ class Research(commands.Cog):
             pokemon.gender = False
             pokemon.size = False
             pokemon.shadow = False
+        elif other_reward:
+            pokemon = None
         research_embed = await self.make_research_embed(ctx, pokemon, stop_info, location, loc_url, quest, reward)
         if pokemon:
             reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
@@ -744,7 +746,7 @@ class Research(commands.Cog):
             'location':location,
             'url':loc_url,
             'quest':quest,
-            'reward':reward,
+            'reward':item if item else reward,
             'completed_by':[]
         }
         dm_dict = await self.send_dm_messages(ctx, pokemon, location, item, copy.deepcopy(research_embed), dm_dict)

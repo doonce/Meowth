@@ -13,6 +13,7 @@ import discord
 import datetime
 import sys
 import os
+import shutil
 import pkg_resources
 import platform
 import logging
@@ -179,6 +180,8 @@ class MeowthBot(commands.AutoShardedBot):
 
     @property
     async def save(self):
+        now = datetime.datetime.utcnow()
+        backup_day = int(now.strftime('%w'))%2
         #human-readable format, used for backup only for now
         with tempfile.NamedTemporaryFile('w', dir=os.path.join('data'), delete=False, encoding="utf-8") as tf:
             tf.write(str(self.guild_dict))
@@ -192,6 +195,15 @@ class MeowthBot(commands.AutoShardedBot):
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
+        if backup_day == 0:
+            try:
+                os.remove(os.path.join('data', 'guilddict_backup_2.txt'))
+            except OSError as e:
+                pass
+            try:
+                shutil.copy(os.path.join('data', 'guilddict_backup.txt'), os.path.join('data', 'guilddict_backup_2.txt'))
+            except:
+                pass
         os.rename(jstempname, os.path.join('data', 'guilddict.txt'))
         #pickle, used for bot
         with tempfile.NamedTemporaryFile('wb', dir=os.path.dirname(os.path.join('data', 'serverdict')), delete=False) as tf:
@@ -206,6 +218,15 @@ class MeowthBot(commands.AutoShardedBot):
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
+        if backup_day == 0:
+            try:
+                os.remove(os.path.join('data', 'guilddict_backup_2'))
+            except OSError as e:
+                pass
+            try:
+                shutil.copy(os.path.join('data', 'guilddict_backup'), os.path.join('data', 'guilddict_backup_2'))
+            except:
+                pass
         os.rename(tempname, os.path.join('data', 'serverdict'))
 
     async def on_connect(self):
@@ -228,8 +249,7 @@ class MeowthBot(commands.AutoShardedBot):
                 continue
             users += guild.member_count
             # RUN ONCE
-            for raidhour in self.guild_dict[guild.id]['raidhour_dict']:
-                print(raidhour)
+            for raidhour in self.guild_dict[guild.id].get('raidhour_dict', {}):
                 try:
                     self.guild_dict[guild.id]['raidhour_dict'][raidhour]['event_start'] = self.guild_dict[guild.id]['raidhour_dict'][raidhour]['event_start'].replace(tzinfo=datetime.timezone.utc).timestamp()
                     self.guild_dict[guild.id]['raidhour_dict'][raidhour]['event_end'] = self.guild_dict[guild.id]['raidhour_dict'][raidhour]['event_end'].replace(tzinfo=datetime.timezone.utc).timestamp()
