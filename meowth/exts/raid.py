@@ -4435,7 +4435,7 @@ class Raid(commands.Cog):
         if not ctrs_dict:
             ctrs_dict = await self._get_generic_counters(ctx.channel, entered_raid, weather)
             self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['ctrs_dict'] = ctrs_dict
-        if not moves or not ctrs_dict:
+        if not moves or not ctrs_dict or not pokemon.quick_moves or not pokemon.charge_moves:
             return
         moves = re.split('\\||/|,', moves)
         moves = [x.strip().title() for x in moves]
