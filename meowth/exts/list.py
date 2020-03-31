@@ -67,7 +67,7 @@ class Listing(commands.Cog):
                     elif list_type == "nest" and str(payload.emoji) == self.bot.custom_emoji.get('nest_report', u'\U0001F4E2'):
                         return await ctx.invoke(self.bot.get_command('nest'))
 
-    @commands.group(name="list", aliases=['lists', 'tag', 'l'], case_insensitive=True)
+    @commands.group(name="list", aliases=['lists', 'tag', 'l'], invoke_without_command=True, case_insensitive=True)
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def _list(self, ctx, *, search_term="all"):
         """Lists all info for the current channel depending on channel type.
