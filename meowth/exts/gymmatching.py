@@ -493,10 +493,20 @@ class GymMatching(commands.Cog):
             for channel in self.bot.guild_dict[ctx.guild.id].setdefault('raidchannel_dict', {}):
                 if self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('address', "") == location:
                     raid_channel = self.bot.get_channel(channel)
-                    active_raids.append(f"{index}. {raid_channel.mention}")
+                    raid_type = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('reporttype')
+                    raid_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('egg_level')
+                    raid_pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('pkmn_obj')
+                    if raid_pokemon:
+                        raid_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, raid_pokemon)
+                        if raid_pokemon and "raid" in raid_pokemon.shiny_available:
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                        active_raids.append(f"{index}. {shiny_str}{raid_channel.mention} {raid_pokemon.emoji}")
+                    else:
+                        active_raids.append(f"{index}. {raid_channel.mention}")
                     index += 1
             if active_raids:
                 poi_embed.add_field(name="Current Raids", value=('\n').join(active_raids), inline=False)
+
             active_raids = []
             index = 1
             for alarm_raid in self.bot.guild_dict[ctx.guild.id].setdefault('pokealarm_dict', {}):
@@ -504,68 +514,141 @@ class GymMatching(commands.Cog):
                     raid_type = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('reporttype')
                     raid_level = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('egg_level')
                     raid_pokemon = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('pkmn_obj')
-                    raid_output = f"{'Level ' + raid_level if raid_type == 'egg' else ''}{raid_pokemon if raid_type == 'raid' else ''} Raid"
-                    active_raids.append(f"{index}. {raid_output}")
+                    report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid]['report_channel'])
+                    jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{report_channel.id}/{alarm_raid}"
+                    if raid_pokemon:
+                        raid_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, raid_pokemon)
+                        if raid_pokemon and "raid" in raid_pokemon.shiny_available:
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                        active_raids.append(f"{index}. {shiny_str}[{str(raid_pokemon)}]({jump_url}) {raid_pokemon.emoji}")
+                    else:
+                        active_raids.append(f"{index}. [Level {raid_level} Egg]({jump_url})")
                     index += 1
             if active_raids:
                 poi_embed.add_field(name="Unreported Raids", value=('\n').join(active_raids), inline=False)
+
             active_raids = []
             index = 1
             for channel in self.bot.guild_dict[ctx.guild.id].setdefault('exraidchannel_dict', {}):
                 if self.bot.guild_dict[ctx.guild.id]['exraidchannel_dict'][channel].get('address', "") == location:
                     raid_channel = self.bot.get_channel(channel)
-                    active_raids.append(f"{index}. {raid_channel.mention}")
+                    raid_pokemon = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('pkmn_obj')
+                    if raid_pokemon:
+                        raid_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, raid_pokemon)
+                        shiny_str = ""
+                        if raid_pokemon and "raid" in raid_pokemon.shiny_available:
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                        active_raids.append(f"{index}. {shiny_str}{raid_channel.mention} {raid_pokemon.emoji}")
+                    else:
+                        active_raids.append(f"{index}. {raid_channel.mention}")
                     index += 1
             if active_raids:
                 poi_embed.add_field(name="Current EX Raids", value=('\n').join(active_raids), inline=False)
+
         elif match_type == "stop":
             active_quests = []
             index = 1
+            candy_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_candy', u'\U0001F36C'))
+            dust_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_dust', u'\U00002b50'))
+            berry_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_berry', u'\U0001F353'))
+            potion_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_potion', u'\U0001F48A'))
+            revive_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_revive', u'\U00002764\U0000fe0f'))
+            ball_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_ball', u'\U000026be'))
+            other_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_other', u'\U0001F539'))
             for report in self.bot.guild_dict[ctx.guild.id].setdefault('questreport_dict', {}):
                 if self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('location', "") == location:
                     report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'])
-                    report_message = await report_channel.fetch_message(report)
+                    jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{report_channel.id}/{report}"
                     reward = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['reward']
-                    active_quests.append(f"{index}. [{reward.title()}]({report_message.jump_url})")
+                    reward_item = await utils.get_item(reward)
+                    reward_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
+                    if reward_item[1]:
+                        if "cand" in reward_item[1]:
+                            active_quests.append(f"{index}. [{reward.title()}]({jump_url}) {candy_emoji}")
+                        elif "dust" in reward_item[1]:
+                            active_quests.append(f"{index}. [{reward.title()}]({jump_url}) {dust_emoji}")
+                        elif "berr" in reward_item[1]:
+                            active_quests.append(f"{index}. [{reward.title()}]({jump_url}) {berry_emoji}")
+                        elif "potion" in reward_item[1]:
+                            active_quests.append(f"{index}. [{reward.title()}]({jump_url}) {potion_emoji}")
+                        elif "revive" in reward_item[1]:
+                            active_quests.append(f"{index}. [{reward.title()}]({jump_url}) {revive_emoji}")
+                        elif "ball" in reward_item[1]:
+                            active_quests.append(f"{index}. [{reward.title()}]({jump_url}) {ball_emoji}")
+                        else:
+                            active_quests.append(f"{index}. [{reward.title()}]({jump_url}) {other_emoji}")
+                    elif reward_pokemon:
+                        shiny_str = ""
+                        if reward_pokemon and "research" in reward_pokemon.shiny_available:
+                            shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                        active_quests.append(f"{index}. {shiny_str}[{reward.title()}]({jump_url}) {reward_pokemon.emoji}")
+                    else:
+                        active_quests.append(f"{index}. [{reward.title()}]({jump_url}) {other_emoji}")
                     index += 1
             if active_quests:
                 poi_embed.add_field(name="Current Research", value=('\n').join(active_quests), inline=False)
+
             active_lures = []
             index = 1
+            normal_emoji = self.bot.custom_emoji.get('normal_lure', self.bot.config.type_id_dict['normal'])
+            glacial_emoji = self.bot.custom_emoji.get('glacial_lure', self.bot.config.type_id_dict['ice'])
+            mossy_emoji = self.bot.custom_emoji.get('mossy_lure', self.bot.config.type_id_dict['grass'])
+            magnetic_emoji = self.bot.custom_emoji.get('normal_lure', self.bot.config.type_id_dict['steel'])
             for report in self.bot.guild_dict[ctx.guild.id].setdefault('lure_dict', {}):
                 if self.bot.guild_dict[ctx.guild.id]['lure_dict'][report].get('location', "") == location:
                     report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['report_channel'])
-                    report_message = await report_channel.fetch_message(report)
+                    jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{report_channel.id}/{report}"
                     type = self.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['type']
-                    active_lures.append(f"{index}. [{type.title()}]({report_message.jump_url})")
+                    active_lures.append(f"{index}. [{type.title()}]({jump_url}) {normal_emoji if type == 'normal' else ''}{glacial_emoji if type == 'glacial' else ''}{mossy_emoji if type == 'mossy' else ''}{magnetic_emoji if type == 'magnetic' else ''}")
                     index += 1
             if active_lures:
                 poi_embed.add_field(name="Current Lures", value=('\n').join(active_lures), inline=False)
+
             active_invasions = []
             index = 1
+            encounter_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_encounter', u'\U00002753'))
             for report in self.bot.guild_dict[ctx.guild.id].setdefault('invasion_dict', {}):
                 if self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report].get('location', "") == location:
+                    reward_list = []
                     report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['report_channel'])
-                    report_message = await report_channel.fetch_message(report)
+                    jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{report_channel.id}/{report}"
                     reward = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['reward']
-                    reward_str = (', ').join(reward)
-                    if not reward_str or str(reward).lower() == "unknown":
-                        reward_str = "Unknown Pokemon"
-                    active_invasions.append(f"{index}. [{reward_str}]({report_message.jump_url})")
+                    reward_type = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['reward_type']
+                    if reward:
+                        for reward_pokemon in reward:
+                            reward_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward_pokemon)
+                            if not reward_pokemon:
+                                continue
+                            shiny_str = ""
+                            if reward_pokemon and "shadow" in reward_pokemon.shiny_available:
+                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                            reward_list.append(f"{shiny_str}{reward_pokemon.name.title()} {reward_pokemon.emoji}")
+                    elif reward_type:
+                        reward_list.append(f"{reward_type.title()} {self.bot.config.type_id_dict[reward_type.lower()]}")
+                    else:
+                        reward_list.append(f"Unknown Pokemon {encounter_emoji}")
+                    active_invasions.append(f"{index}. [{(', ').join(reward_list)}]({jump_url})")
                     index += 1
             if active_invasions:
                 poi_embed.add_field(name="Current Invasions", value=('\n').join(active_invasions), inline=False)
-            active_wilds = []
-            index = 1
-            for report in self.bot.guild_dict[ctx.guild.id].setdefault('wildreport_dict', {}):
-                if self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('location', "") == location:
-                    report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'])
-                    report_message = await report_channel.fetch_message(report)
-                    pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['pkmn_obj']
-                    active_wilds.append(f"{index}. [{pokemon.title()}]({report_message.jump_url})")
-                    index += 1
-            if active_wilds:
-                poi_embed.add_field(name="Current Wilds", value=('\n').join(active_wilds), inline=False)
+
+        active_wilds = []
+        index = 1
+        for report in self.bot.guild_dict[ctx.guild.id].setdefault('wildreport_dict', {}):
+            if self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('location', "") == location:
+                report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'])
+                jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{report_channel.id}/{report}"
+                pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['pkmn_obj']
+                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                if pokemon and "wild" in pokemon.shiny_available:
+                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                pokemon_iv = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('wild_iv', {}).get('percent', None)
+                pokemon_level = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('level', None)
+                pokemon_cp = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('cp', None)
+                active_wilds.append(f"{index}. {shiny_str}[{str(pokemon).title()}]({jump_url}) {pokemon.emoji}{' | **'+str(pokemon_iv)+'IV**' if pokemon_iv else ''}{' | **Level '+str(pokemon_level)+'**' if pokemon_level else ''}{' | **'+str(pokemon_cp)+'CP**' if pokemon_cp else ''}")
+                index += 1
+        if active_wilds:
+            poi_embed.add_field(name="Current Wilds", value=('\n').join(active_wilds), inline=False)
         await ctx.send(embed=poi_embed)
 
     async def poi_match_prompt(self, ctx, poi_name, gyms=None, stops=None, autocorrect=True):
@@ -667,7 +750,7 @@ class GymMatching(commands.Cog):
                     return "", False, False
                 if not dupe_check:
                     return poi_info, details, poi_gmaps_link
-                rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_raids)))
+                rusure = await message.channel.send(_('Meowth! It looks like that raid might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe="\n".join(duplicate_raids)))
         elif type == "research":
             poi_info = poi_note
             counter = 1
@@ -688,7 +771,7 @@ class GymMatching(commands.Cog):
                     return "", False, False
                 if not dupe_check:
                     return poi_info, details, poi_gmaps_link
-                rusure = await message.channel.send(_('Meowth! It looks like that quest might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_research)))
+                rusure = await message.channel.send(_('Meowth! It looks like that quest might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe="\n".join(duplicate_research)))
         elif type == "invasion":
             poi_info = f"**{match_type.title()}:** {details}{poi_note}"
             counter = 1
@@ -697,6 +780,8 @@ class GymMatching(commands.Cog):
                 invasion_location = inv_details['location']
                 invasion_channel = inv_details['report_channel']
                 invasion_reward = (', ').join(inv_details['reward'])
+                if not invasion_reward:
+                    invasion_reward = inv_details['reward_type']
                 if (details == invasion_location) and ctx.channel.id == invasion_channel:
                     if message.author.bot:
                         return "", False, False
@@ -708,7 +793,7 @@ class GymMatching(commands.Cog):
                     return "", False, False
                 if not dupe_check:
                     return poi_info, details, poi_gmaps_link
-                rusure = await message.channel.send(_('Meowth! It looks like that invasion might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_invasions)))
+                rusure = await message.channel.send(_('Meowth! It looks like that invasion might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe="\n".join(duplicate_invasions)))
         elif type == "lure":
             poi_info = f"**{match_type.title()}:** {details}{poi_note}"
             counter = 1
@@ -728,7 +813,7 @@ class GymMatching(commands.Cog):
                     return "", False, False
                 if not dupe_check:
                     return poi_info, details, poi_gmaps_link
-                rusure = await message.channel.send(_('Meowth! It looks like that lure might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe=", ".join(duplicate_lures)))
+                rusure = await message.channel.send(_('Meowth! It looks like that lure might already be reported.\n\n**Potential Duplicate:** {dupe}\n\nReport anyway?').format(dupe="\n".join(duplicate_lures)))
         elif type == "wild" or type == "pvp" or type == "whereis":
             poi_info = f"**{match_type.title()}:** {details}{poi_note}"
         if duplicate_raids or duplicate_research or duplicate_invasions or duplicate_lures:

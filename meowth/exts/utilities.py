@@ -828,7 +828,7 @@ class Utilities(commands.Cog):
                 continue
             local_timezone = pytz.timezone(entered_timezone)
             local_now = datetime.datetime.now(local_timezone)
-            self.bot.guild_dict[guild.id]['configure_dict']['offset'] = local_now.utcoffset().total_seconds()/60/60
+            self.bot.guild_dict[guild.id]['configure_dict']['settings']['offset'] = local_now.utcoffset().total_seconds()/60/60
             for transition in local_timezone._utc_transition_times:
                 if transition > datetime.datetime.utcnow():
                     wait_times.append((transition-datetime.datetime.utcnow()).total_seconds())
@@ -1067,7 +1067,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v20.3.28.0 | Stay inside, wash your hands | Built with discord.py")
+        embed.set_footer(text="Running Meowth v20.3.31.0 | 😷 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:

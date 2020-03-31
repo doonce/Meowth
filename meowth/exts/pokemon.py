@@ -108,20 +108,20 @@ class Pokemon():
         self.types = self._get_type()
         self.emoji = self._get_emoji()
         self.weather = None
-        self.base_stamina = self.game_template.get('pokemonSettings', {}).get('stats', {}).get('baseStamina', None)
-        self.base_attack = self.game_template.get('pokemonSettings', {}).get('stats', {}).get('baseAttack', None)
-        self.base_defense = self.game_template.get('pokemonSettings', {}).get('stats', {}).get('baseDefense', None)
-        self.charge_moves = self.game_template.get('pokemonSettings', {}).get('cinematicMoves', None)
+        self.base_stamina = self.game_template.get('pokemon', {}).get('stats', {}).get('baseStamina', None)
+        self.base_attack = self.game_template.get('pokemon', {}).get('stats', {}).get('baseAttack', None)
+        self.base_defense = self.game_template.get('pokemon', {}).get('stats', {}).get('baseDefense', None)
+        self.charge_moves = self.game_template.get('pokemon', {}).get('cinematicMoves', None)
         if self.charge_moves:
             self.charge_moves = [x.replace('_FAST', '').replace('_', ' ').lower() for x in self.charge_moves]
-        self.quick_moves = self.game_template.get('pokemonSettings', {}).get('quickMoves', None)
+        self.quick_moves = self.game_template.get('pokemon', {}).get('quickMoves', None)
         if self.quick_moves:
             self.quick_moves = [x.replace('_FAST', '').replace('_', ' ').lower() for x in self.quick_moves]
-        self.height = self.game_template.get('pokemonSettings', {}).get('pokedexHeightM', None)
-        self.weight = self.game_template.get('pokemonSettings', {}).get('pokedexWeightKg', None)
-        self.evolves = self.game_template.get('pokemonSettings', {}).get('evolutionIds', False) or self.game_template.get('pokemonSettings', {}).get('evolutionBranch', False)
-        self.evolve_candy = self.game_template.get('pokemonSettings', {}).get('evolutionBranch', [{}])[0].get('candyCost', False) or self.game_template.get('pokemonSettings', {}).get('candyToEvolve', False)
-        self.buddy_distance = self.game_template.get('pokemonSettings', {}).get('kmBuddyDistance', None)
+        self.height = self.game_template.get('pokemon', {}).get('pokedexHeightM', None)
+        self.weight = self.game_template.get('pokemon', {}).get('pokedexWeightKg', None)
+        self.evolves = self.game_template.get('pokemon', {}).get('evolutionIds', False) or self.game_template.get('pokemon', {}).get('evolutionBranch', False)
+        self.evolve_candy = self.game_template.get('pokemon', {}).get('evolutionBranch', [{}])[0].get('candyCost', False) or self.game_template.get('pokemon', {}).get('candyToEvolve', False)
+        self.buddy_distance = self.game_template.get('pokemon', {}).get('kmBuddyDistance', None)
         self.research_cp = f"{self._get_cp(15, 10, 10, 10)}-{self._get_cp(15, 15, 15, 15)}"
         self.raid_cp = f"{self._get_cp(20, 10, 10, 10)}-{self._get_cp(20, 15, 15, 15)}"
         self.boost_raid_cp = f"{self._get_cp(25, 10, 10, 10)}-{self._get_cp(25, 15, 15, 15)}"
@@ -420,7 +420,7 @@ class Pokemon():
     def game_template(self):
         template = {}
         search_term = f"V{str(self.id).zfill(4)}_pokemon_{self.game_name}".lower()
-        for template in self.bot.gamemaster.get('itemTemplates', {}):
+        for template in self.bot.gamemaster.get('itemTemplate', {}):
             if search_term in template['templateId'].lower() and "forms_" not in template['templateId'].lower() and "spawn_" not in template['templateId'].lower() and "pokemon" in template['templateId'].lower():
                 break
         return template
@@ -975,11 +975,12 @@ class Pokedex(commands.Cog):
     @checks.is_manager()
     async def move_json(self, ctx):
         move_info = {}
-        for template in self.bot.gamemaster['itemTemplates']:
+        for template in self.bot.gamemaster['itemTemplate']:
             if "MOVE" in template['templateId'] and "COMBAT_" not in template['templateId'] and "ITEM_" not in template['templateId'] and "SETTINGS" not in template['templateId']:
+                print(template)
                 move_name = template['templateId'].split('MOVE_')[1].title()
-                move_type = template['moveSettings']['pokemonType'].replace("POKEMON_TYPE_", "").title()
-                move_power = template['moveSettings'].get('power', 0)
+                move_type = template['move']['pokemonType'].replace("POKEMON_TYPE_", "").title()
+                move_power = template['move'].get('power', 0)
                 move_info[move_name.lower().replace('_fast', '').replace('_', ' ')] = {"type":move_type, "power":move_power}
         for type in self.bot.type_list:
             move_info[f"hidden power {type.lower()}"] = {"type":type.title(), "power":15}

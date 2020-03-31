@@ -1406,11 +1406,17 @@ class Listing(commands.Cog):
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
         if search_term != "all":
+            pois = []
+            gym_matching_cog = self.bot.cogs.get('GymMatching')
+            if gym_matching_cog:
+                pois = [*gym_matching_cog.get_stops(ctx.guild.id), *gym_matching_cog.get_gyms(ctx.guild.id)]
             search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
             search_item = await utils.get_item(search_term)
-            if search_pokemon:
-                search_term = str(search_pokemon)
-            elif search_item:
+            if search_term in self.bot.type_list or search_term in [x.lower() for x in pois]:
+                search_term = search_term
+            elif search_pokemon:
+                search_term = search_pokemon.name.lower()
+            elif search_item[1]:
                 search_term = search_item[1]
             else:
                 search_term = "all"
@@ -1489,9 +1495,13 @@ class Listing(commands.Cog):
                     url = research_dict[questid].get('url', None)
                     pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
                     other_reward = any(x in reward for x in reward_list)
+                    type_list = []
+                    if pokemon and not other_reward:
+                        type_list.extend(pokemon.types)
                     if search_term != "all":
-                        if str(pokemon) != search_term and reward.lower() != search_term:
+                        if str(getattr(pokemon, 'name', None)).lower() != search_term and reward.lower() != search_term and search_term.title() not in type_list and search_term.lower() != location.lower():
                             continue
+                    type_list = []
                     if pokemon and not other_reward:
                         shiny_str = ""
                         if pokemon and "research" in pokemon.shiny_available:
@@ -1695,7 +1705,11 @@ class Listing(commands.Cog):
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'lures']:
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
-        if search_term != "all" and search_term not in ["normal", "mossy", "glacial", "magnetic"]:
+        pois = []
+        gym_matching_cog = self.bot.cogs.get('GymMatching')
+        if gym_matching_cog:
+            pois = [*gym_matching_cog.get_stops(ctx.guild.id), *gym_matching_cog.get_gyms(ctx.guild.id)]
+        if search_term != "all" and search_term not in ["normal", "mossy", "glacial", "magnetic"] and search_term.lower() not in [x.lower() for x in pois]:
             search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('lure', {}).setdefault(ctx.channel.id, [])
         delete_list = []
@@ -1750,13 +1764,14 @@ class Listing(commands.Cog):
                     lureauthor = ctx.channel.guild.get_member(lure_dict[lureid]['report_author'])
                     lure_expire = datetime.datetime.utcfromtimestamp(lure_dict[lureid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     lure_type = lure_dict[lureid]['type']
-                    if search_term != "all" and lure_type != search_term:
+                    location = lure_dict[lureid]['location']
+                    if search_term != "all" and lure_type != search_term and search_term.lower() != location.lower():
                         continue
                     reported_by = ""
                     if lureauthor and not lureauthor.bot:
                         reported_by = f" | **Reported By**: {lureauthor.display_name}"
                     luremsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('lure_bullet', u'\U0001F539')))
-                    luremsg += f"**Lure Type**: {lure_type.title()} {normal_emoji if lure_type == 'normal' else ''}{glacial_emoji if lure_type == 'glacial' else ''}{mossy_emoji if lure_type == 'mossy' else ''}{magnetic_emoji if lure_type == 'magnetic' else ''} | **Location**: [{lure_dict[lureid]['location'].title()}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    luremsg += f"**Lure Type**: {lure_type.title()} {normal_emoji if lure_type == 'normal' else ''}{glacial_emoji if lure_type == 'glacial' else ''}{mossy_emoji if lure_type == 'mossy' else ''}{magnetic_emoji if lure_type == 'magnetic' else ''} | **Location**: [{location.title()}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
                     listing_dict[lureid] = {
                         "message":luremsg,
                         "expire":lure_expire
@@ -1859,7 +1874,7 @@ class Listing(commands.Cog):
     @_list.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @checks.allowinvasionreport()
-    async def invasions(self, ctx, search_term="all"):
+    async def invasions(self, ctx, *, search_term="all"):
         """List the invasions for the channel
 
         Usage: !list invasions"""
@@ -1867,11 +1882,14 @@ class Listing(commands.Cog):
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
         if search_term != "all":
+            pois = []
+            gym_matching_cog = self.bot.cogs.get('GymMatching')
+            if gym_matching_cog:
+                pois = [*gym_matching_cog.get_stops(ctx.guild.id), *gym_matching_cog.get_gyms(ctx.guild.id)]
             search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
-            if search_pokemon and search_term not in self.bot.type_list:
-                search_pokemon.shadow = "shadow"
-                search_term = str(search_pokemon)
-            elif search_term not in self.bot.type_list:
+            if search_pokemon and search_term not in self.bot.type_list and search_term.lower() not in [x.lower() for x in pois]:
+                search_term = search_pokemon.name.lower()
+            elif search_term not in self.bot.type_list and search_term.lower() not in [x.lower() for x in pois]:
                 search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('invasion', {}).setdefault(ctx.channel.id, [])
         delete_list = []
@@ -1921,11 +1939,13 @@ class Listing(commands.Cog):
                     invasionmsg = ""
                     reward_list = []
                     pokemon_list = []
+                    type_list = []
                     invasionauthor = ctx.channel.guild.get_member(invasion_dict[invasionid]['report_author'])
                     reward = invasion_dict[invasionid]['reward']
                     reward_type = invasion_dict[invasionid].get('reward_type', None)
                     grunt_gender = invasion_dict[invasionid].get('gender', None)
                     leader = invasion_dict[invasionid].get('leader', None)
+                    location = invasion_dict[invasionid]['location']
                     if reward:
                         for pokemon in reward:
                             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
@@ -1935,10 +1955,11 @@ class Listing(commands.Cog):
                             if pokemon and "shadow" in pokemon.shiny_available:
                                 shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                             reward_list.append(f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}")
-                            pokemon_list.append(str(pokemon))
+                            pokemon_list.append(pokemon.name.lower())
+                            type_list.extend(pokemon.types)
                     elif reward_type:
                         reward_list = [f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"]
-                    if search_term != "all" and search_term not in pokemon_list and search_term != reward_type:
+                    if search_term != "all" and search_term not in pokemon_list and search_term != reward_type and search_term.title() not in type_list and search_term.lower() != location.lower():
                         continue
                     if not reward_list:
                         reward_list = ["Unknown Pokemon"]
@@ -1952,7 +1973,7 @@ class Listing(commands.Cog):
                     if grunt_gender:
                         gender_str = f" | **Gender**: {grunt_gender.title()}"
                     invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', u'\U0001F539')))
-                    invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{invasion_dict[invasionid]['location'].title()}]({invasion_dict[invasionid].get('url', None)}){gender_str} | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{location.title()}]({invasion_dict[invasionid].get('url', None)}){gender_str} | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
                     listing_dict[invasionid] = {
                         "message":invasionmsg,
                         "expire":invasion_expire
@@ -1982,7 +2003,7 @@ class Listing(commands.Cog):
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'pvp']:
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
-        if search_term != "all" and search_term not in ["great", "ultra", "master"]:
+        if search_term != "all" and search_term not in ["great", "ultra", "master", "tournament"]:
             search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('pvp', {}).setdefault(ctx.channel.id, [])
         delete_list = []
@@ -2033,7 +2054,9 @@ class Listing(commands.Cog):
                     pvpauthor = ctx.channel.guild.get_member(pvp_dict[pvpid]['report_author'])
                     pvp_tournament = pvp_dict[pvpid].get('tournament', {})
                     pvp_type = pvp_dict[pvpid]['type']
-                    if search_term != "all" and pvp_type != search_term:
+                    if search_term != "all" and pvp_type != search_term and search_term != "tournament":
+                        continue
+                    elif search_term == "tournament" and not pvp_tournament:
                         continue
                     pvp_expire = datetime.datetime.utcfromtimestamp(pvp_dict[pvpid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     reported_by = ""
@@ -2068,7 +2091,7 @@ class Listing(commands.Cog):
     @_list.command(aliases=['wild'])
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @checks.allowwildreport()
-    async def wilds(self, ctx, search_term="all"):
+    async def wilds(self, ctx, *, search_term="all"):
         """List the wilds for the channel
 
         Usage: !list wilds"""
@@ -2076,9 +2099,15 @@ class Listing(commands.Cog):
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
         if search_term != "all":
+            pois = []
             search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
-            if search_pokemon:
-                search_term = str(search_pokemon)
+            gym_matching_cog = self.bot.cogs.get('GymMatching')
+            if gym_matching_cog:
+                pois = [*gym_matching_cog.get_stops(ctx.guild.id), *gym_matching_cog.get_gyms(ctx.guild.id)]
+            if search_term in self.bot.type_list or search_term.isdigit() or search_term.lower() in [x.lower() for x in pois]:
+                search_term = search_term
+            elif search_pokemon:
+                search_term = search_pokemon.name.lower()
             else:
                 search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('wild', {}).setdefault(ctx.channel.id, [])
@@ -2132,7 +2161,7 @@ class Listing(commands.Cog):
                     wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['report_author'])
                     wild_despawn = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     timestamp = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['report_time']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
-                    jump_url = f"https://discordapp.com/{ctx.guild.id}/{ctx.channel.id}/{wildid}"
+                    jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{ctx.channel.id}/{wildid}"
                     reported_by = ""
                     if wildauthor and not wildauthor.bot:
                         reported_by = f" | **Reported By**: {wildauthor.display_name}"
@@ -2143,8 +2172,11 @@ class Listing(commands.Cog):
                     level_check = wild_dict[wildid].get('level', None)
                     weather_check = wild_dict[wildid].get('weather', None)
                     disguise = wild_dict[wildid].get('disguise', None)
+                    location = wild_dict[wildid]['location']
                     pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
-                    if search_term != "all" and str(pokemon) != search_term:
+                    if search_term != "all" and str(getattr(pokemon, 'name', None)).lower() != search_term and search_term.title() not in pokemon.types and not search_term.isdigit() and search_term.lower() != location.lower():
+                        continue
+                    elif (search_term.isdigit() and not iv_check) or (search_term.isdigit() and iv_check < int(search_term)):
                         continue
                     pokemon.weather = weather_check
                     if pokemon.name.lower() == "ditto" and disguise:
@@ -2157,7 +2189,7 @@ class Listing(commands.Cog):
                         wildmsg += f"\n{hundred_bullet} "
                     else:
                         wildmsg += f"\n{bullet_point} "
-                    wildmsg += f"**Pokemon**: {shiny_str}{str(pokemon).title()} {pokemon.emoji}{disguise_str} | **Location**: [{wild_dict[wildid]['location'].title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
+                    wildmsg += f"**Pokemon**: {shiny_str}{str(pokemon).title()} {pokemon.emoji}{disguise_str} | **Location**: [{location.title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
                     if (disguise and disguise.is_boosted) or (pokemon and pokemon.is_boosted):
                         wildmsg += f" | {pokemon.is_boosted or disguise.is_boosted} *({timestamp.strftime('%I:%M %p')})*"
                     if level_check:

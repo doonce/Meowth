@@ -249,6 +249,10 @@ class MeowthBot(commands.AutoShardedBot):
                 continue
             users += guild.member_count
             # RUN ONCE
+            try:
+                del self.guild_dict[guild.id]['configure_dict']['offset']
+            except:
+                pass
             for raidhour in self.guild_dict[guild.id].get('raidhour_dict', {}):
                 try:
                     self.guild_dict[guild.id]['raidhour_dict'][raidhour]['event_start'] = self.guild_dict[guild.id]['raidhour_dict'][raidhour]['event_start'].replace(tzinfo=datetime.timezone.utc).timestamp()
