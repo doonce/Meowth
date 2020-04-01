@@ -498,6 +498,7 @@ class GymMatching(commands.Cog):
                     raid_pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('pkmn_obj')
                     if raid_pokemon:
                         raid_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, raid_pokemon)
+                        shiny_str = ""
                         if raid_pokemon and "raid" in raid_pokemon.shiny_available:
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                         active_raids.append(f"{index}. {shiny_str}{raid_channel.mention} {raid_pokemon.emoji}")
