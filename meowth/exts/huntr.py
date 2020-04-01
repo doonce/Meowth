@@ -751,7 +751,13 @@ class Huntr(commands.Cog):
         level = str(report_details.get("level", ''))
         cp = str(report_details.get("cp", ''))
         weather = report_details.get("weather", '')
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, f"{gender if gender else ''} {report_details['pokemon']}")
+        if "ditto" in report_details['pokemon'].lower():
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, f"{gender if gender else ''} Ditto")
+            disguise = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, f"{gender if gender else ''} {report_details['pokemon'].lower().replace('ditto', '')}")
+            report_details['disguise'] = str(disguise)
+        else:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, f"{gender if gender else ''} {report_details['pokemon']}")
+            disguise = None
         if pokemon:
             entered_wild = pokemon.name.lower()
             pokemon.shiny = False
@@ -878,6 +884,8 @@ class Huntr(commands.Cog):
             'omw':[]
         }
         self.bot.active_wilds[ctx.wildreportmsg.id] = pokemon
+        if disguise:
+            ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['disguise'] = str(disguise)
         for wildid in ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
             report_time = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id].get('report_time', time.time())
             dupe_channel = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id].get('report_channel', ctx.channel.id)
@@ -1942,7 +1950,7 @@ class Huntr(commands.Cog):
         message = ctx.message
         channel = ctx.channel
         await utils.safe_delete(message)
-        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"XL Rattata", "gps":"39.637087,-79.954375", "expire":"5 min 0 sec","gender":"male", "height":"0.33m", "weight":"4.6kg", "moveset":"Quick Attack / Wild Charge", "weather":"snowy"}')
+        huntrmessage = await ctx.channel.send('!alarm {"type":"wild", "pokemon":"Ditto (Weedle)", "gps":"39.637087,-79.954375", "expire":"5 min 0 sec","gender":"male", "height":"0.33m", "weight":"4.6kg", "moveset":"Quick Attack / Wild Charge", "weather":"snowy"}')
         ctx = await self.bot.get_context(huntrmessage)
         await self.on_pokealarm(ctx)
 
