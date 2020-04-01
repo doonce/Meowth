@@ -519,6 +519,7 @@ class GymMatching(commands.Cog):
                     jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{report_channel.id}/{alarm_raid}"
                     if raid_pokemon:
                         raid_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, raid_pokemon)
+                        shiny_str = ""
                         if raid_pokemon and "raid" in raid_pokemon.shiny_available:
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                         active_raids.append(f"{index}. {shiny_str}[{str(raid_pokemon)}]({jump_url}) {raid_pokemon.emoji}")
@@ -641,6 +642,7 @@ class GymMatching(commands.Cog):
                 jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{report_channel.id}/{report}"
                 pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['pkmn_obj']
                 pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                shiny_str = ""
                 if pokemon and "wild" in pokemon.shiny_available:
                     shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                 pokemon_iv = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('wild_iv', {}).get('percent', None)
