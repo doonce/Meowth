@@ -1409,7 +1409,7 @@ class Listing(commands.Cog):
                 await utils.add_reaction(listmsg, report_emoji)
             else:
                 report_emoji = self.bot.custom_emoji.get('research_report', u'\U0001F4E2')
-                list_embed.add_field(name=f"**No Current Research Reports**", value=f"Meowth! There are no reported research reports. Report one with **{ctx.prefix}research <pokestop>, <quest>, <reward>** or react with {report_emoji} and I can walk you through it!")
+                list_embed.add_field(name=f"**No Current {search_term.title()+' ' if search_term != 'all' else ''}Research Reports**", value=f"Meowth! There are no reported {search_term.title()+' ' if search_term != 'all' else ''}research reports. Report one with **{ctx.prefix}research <pokestop>, <quest>, <reward>** or react with {report_emoji} and I can walk you through it!")
                 listmsg = await ctx.channel.send(embed=list_embed)
                 await utils.add_reaction(listmsg, report_emoji)
                 list_messages.append(listmsg.id)
@@ -1700,7 +1700,7 @@ class Listing(commands.Cog):
                 await utils.add_reaction(listmsg, report_emoji)
             else:
                 report_emoji = self.bot.custom_emoji.get('lure_report', u'\U0001F4E2')
-                list_embed.add_field(name=f"**No Current Lure Reports**", value=f"Meowth! There are no reported lure reports. Report one with **{ctx.prefix}lure <type> <location>** or react with {report_emoji} and I can walk you through it!")
+                list_embed.add_field(name=f"**No Current {search_term.title()+' ' if search_term != 'all' else ''}Lure Reports**", value=f"Meowth! There are no reported {search_term.title()+' ' if search_term != 'all' else ''}lure reports. Report one with **{ctx.prefix}lure <type> <location>** or react with {report_emoji} and I can walk you through it!")
                 listmsg = await ctx.channel.send(embed=list_embed)
                 await utils.add_reaction(listmsg, report_emoji)
                 list_messages.append(listmsg.id)
@@ -1880,7 +1880,7 @@ class Listing(commands.Cog):
                 await utils.add_reaction(listmsg, report_emoji)
             else:
                 report_emoji = self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2')
-                list_embed.add_field(name=f"**No Current Invasion Reports**", value=f"Meowth! There are no reported invasion reports. Report one with **{ctx.prefix}invasion [location], [reward or type]** or react with {report_emoji} and I can walk you through it!")
+                list_embed.add_field(name=f"**No Current {search_term.title()+' ' if search_term != 'all' else ''}Invasion Reports**", value=f"Meowth! There are no reported {search_term.title()+' ' if search_term != 'all' else ''}invasion reports. Report one with **{ctx.prefix}invasion [location], [reward or type]** or react with {report_emoji} and I can walk you through it!")
                 listmsg = await ctx.channel.send(embed=list_embed)
                 await utils.add_reaction(listmsg, report_emoji)
                 list_messages.append(listmsg.id)
@@ -1994,7 +1994,7 @@ class Listing(commands.Cog):
                 await utils.add_reaction(listmsg, report_emoji)
             else:
                 report_emoji = self.bot.custom_emoji.get('pvp_report', u'\U0001F4E2')
-                list_embed.add_field(name=f"**No Current PVP Reports**", value=f"Meowth! There are no reported pvp battles. Report one with **{ctx.prefix}pvp <league> <location>** or react with {report_emoji} and I can walk you through it!")
+                list_embed.add_field(name=f"**No Current PVP {search_term.title()+' ' if search_term != 'all' else ''}Reports**", value=f"Meowth! There are no reported {search_term.title()+' ' if search_term != 'all' else 'pvp'} battles. Report one with **{ctx.prefix}pvp <league> <location>** or react with {report_emoji} and I can walk you through it!")
                 listmsg = await ctx.channel.send(embed=list_embed)
                 await utils.add_reaction(listmsg, report_emoji)
                 list_messages.append(listmsg.id)
@@ -2099,7 +2099,7 @@ class Listing(commands.Cog):
                 await utils.add_reaction(listmsg, report_emoji)
             else:
                 report_emoji = self.bot.custom_emoji.get('wild_report', u'\U0001F4E2')
-                list_embed.add_field(name=f"**No Current Wild Reports**", value=f"Meowth! There are no reported wild pokemon. Report one with **{ctx.prefix}wild <pokemon> <location>** or react with {report_emoji} and I can walk you through it!")
+                list_embed.add_field(name=f"**No Current Wild {search_term.title()+' ' if search_term != 'all' else ''}Reports**", value=f"Meowth! There are no reported wild {search_term.title()+' ' if search_term != 'all' else ''}pokemon. Report one with **{ctx.prefix}wild <pokemon> <location>** or react with {report_emoji} and I can walk you through it!")
                 listmsg = await ctx.channel.send(embed=list_embed)
                 await utils.add_reaction(listmsg, report_emoji)
                 list_messages.append(listmsg.id)
@@ -2126,18 +2126,26 @@ class Listing(commands.Cog):
                         reported_by = f" | **Reported By**: {wildauthor.display_name}"
                     shiny_str = ""
                     disguise_str = ""
+                    wild_iv = wild_dict[wildid].get('wild_iv', {})
                     iv_check = wild_dict[wildid].get('wild_iv', {}).get('percent', None)
                     cp_check = wild_dict[wildid].get('cp', None)
                     level_check = wild_dict[wildid].get('level', None)
                     weather_check = wild_dict[wildid].get('weather', None)
                     disguise = wild_dict[wildid].get('disguise', None)
                     location = wild_dict[wildid]['location']
-                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
+                    if wildid in self.bot.active_wilds:
+                        pokemon = self.bot.active_wilds[wildid]
+                    else:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict[wildid]['pkmn_obj'])
+                        pokemon.iv = wild_iv
+                        pokemon.cp = cp_check
+                        pokemon.level = level_check
+                        pokemon.weather = weather_check
+                        self.bot.active_wilds[wildid] = pokemon
                     if search_term != "all" and str(getattr(pokemon, 'name', None)).lower() != search_term and search_term.title() not in pokemon.types and not search_term.isdigit() and search_term.lower() != location.lower():
                         continue
                     elif (search_term.isdigit() and not iv_check) or (search_term.isdigit() and iv_check < int(search_term)):
                         continue
-                    pokemon.weather = weather_check
                     if pokemon.name.lower() == "ditto" and disguise:
                         disguise = await pkmn_class.Pokemon.async_get_pokemon(self.bot, disguise)
                         disguise.weather = weather_check
@@ -2168,7 +2176,7 @@ class Listing(commands.Cog):
             wild_list_msg = ""
             for (k, v) in sorted(listing_dict.items(), key=lambda item: item[1]['expire']):
                 wild_list_msg += listing_dict[k]['message']
-            listmsg = f"**Meowth! Here's the current {search_term+' ' if search_term != 'all' else ''}wild reports for {ctx.channel.mention}**"
+            listmsg = f"**Meowth! Here's the current {search_term.title()+' ' if search_term != 'all' else ''}wild reports for {ctx.channel.mention}**"
             report_emoji = self.bot.custom_emoji.get('wild_report', u'\U0001F4E2')
             wild_list_msg += f"\n\n**New Report:**\nReact with {report_emoji} to start a new wild report!"
             paginator = commands.Paginator(prefix="", suffix="")

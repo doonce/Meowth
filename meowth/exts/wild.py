@@ -21,6 +21,7 @@ class Wild(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.wild_cleanup.start()
+        self.bot.active_wilds = {}
 
     def cog_unload(self):
         self.wild_cleanup.cancel()
@@ -116,6 +117,7 @@ class Wild(commands.Cog):
                         try:
                             self.bot.loop.create_task(utils.expire_dm_reports(self.bot, wild_dict.get(reportid, {}).get('dm_dict', {})))
                             del self.bot.guild_dict[guild.id]['wildreport_dict'][reportid]
+                            del self.bot.active_wilds[reportid]
                             count += 1
                             continue
                         except KeyError:
@@ -170,6 +172,10 @@ class Wild(commands.Cog):
         try:
             del self.bot.guild_dict[guild.id]['wildreport_dict'][message.id]
         except KeyError:
+            pass
+        try:
+            del self.bot.active_wilds[message.id]
+        except:
             pass
         try:
             ctx = await self.bot.get_context(message)
@@ -456,9 +462,15 @@ class Wild(commands.Cog):
         gender = wild_dict.get('gender') if wild_dict.get('gender') else ''
         size = wild_dict.get('size') if wild_dict.get('size') else ''
         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender.lower()} {size.lower()} {wild_dict['pkmn_obj'].lower()}")
+        wild_iv = wild_dict.get('wild_iv', {})
+        pokemon.iv = wild_iv
         iv_percent = wild_dict.get('wild_iv', {}).get('percent', None)
         level = wild_dict.get('level', None)
+        pokemon.level = level
         cp = wild_dict.get('cp', None)
+        pokemon.cp = cp
+        weather = wild_dict.get('weather', None)
+        pokemon.weather = weather
         old_embed = message.embeds[0]
         wild_gmaps_link = old_embed.url
         nearest_stop = wild_dict.get('location', None)
@@ -480,6 +492,7 @@ class Wild(commands.Cog):
             await message.edit(content=content, embed=wild_embed)
         except:
             pass
+        self.bot.active_wilds[message.id] = pokemon
         if isinstance(wild_embed.description, discord.embeds._EmptyEmbed):
             wild_embed.description = ""
         if "Jump to Message" not in wild_embed.description:
@@ -745,6 +758,7 @@ class Wild(commands.Cog):
             iv_str = ""
             iv_percent = None
             wild_iv = {}
+        pokemon.iv = wild_iv
         if nearest_stop and nearest_stop != wild_details:
             stop_str = f" | Nearest Pokestop: {nearest_stop}{iv_str}"
         else:
@@ -778,7 +792,7 @@ class Wild(commands.Cog):
             'url':wild_gmaps_link,
             'pokemon':pokemon.name.lower(),
             'pkmn_obj':str(pokemon),
-            'wild_iv':wild_iv,
+            'wild_iv':pokemon.iv,
             'level':None,
             'cp':None,
             'size':pokemon.size,
@@ -786,6 +800,7 @@ class Wild(commands.Cog):
             'omw':[],
             'caught_by':[]
         }
+        self.bot.active_wilds[ctx.wildreportmsg.id] = pokemon
         if not ctx.author.bot:
             wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('wild', 0) + 1
             self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['wild'] = wild_reports

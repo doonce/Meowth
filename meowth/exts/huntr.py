@@ -755,6 +755,8 @@ class Huntr(commands.Cog):
         if pokemon:
             entered_wild = pokemon.name.lower()
             pokemon.shiny = False
+            pokemon.level = level
+            pokemon.cp = cp
         else:
             return
         if "rain" in weather:
@@ -797,6 +799,7 @@ class Huntr(commands.Cog):
                 iv_percent = None
         report_details['wild_iv'] = {'percent':iv_percent, 'iv_atk':iv_atk, 'iv_def':iv_def, 'iv_sta':iv_sta}
         wild_iv = {'percent':iv_percent, 'iv_atk':iv_atk, 'iv_def':iv_def, 'iv_sta':iv_sta}
+        pokemon.iv = wild_iv
         if iv_percent or iv_percent == 0:
             iv_str = f" | **{iv_percent}IV**"
         else:
@@ -874,6 +877,7 @@ class Huntr(commands.Cog):
             'weather':pokemon.weather,
             'omw':[]
         }
+        self.bot.active_wilds[ctx.wildreportmsg.id] = pokemon
         for wildid in ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
             report_time = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id].get('report_time', time.time())
             dupe_channel = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id].get('report_channel', ctx.channel.id)

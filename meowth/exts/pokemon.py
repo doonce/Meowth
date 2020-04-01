@@ -80,7 +80,7 @@ class Pokemon():
                  'base_attack', 'base_defense', 'charge_moves', 'quick_moves',
                  'height', 'weight', 'evolves', 'evolve_candy', 'buddy_distance',
                  'research_cp', 'raid_cp', 'boost_raid_cp', 'max_cp', 'weather',
-                 'shadow')
+                 'shadow', 'iv', 'cp', 'level')
 
     def __init__(self, bot, pkmn, guild=None, **attribs):
         self.bot = bot
@@ -93,6 +93,9 @@ class Pokemon():
             raise PokemonNotFound(pkmn)
         self.id = utils.get_number(bot, pkmn)
         self.pb_raid = None
+        self.iv = {}
+        self.cp = None
+        self.level = None
         self.weather = attribs.get('weather', None)
         self.moveset = attribs.get('moveset', [])
         self.form = attribs.get('form', '')
@@ -951,11 +954,11 @@ class Pokedex(commands.Cog):
                         data = await resp.json(content_type=None)
                         self.bot.gamemaster = data
                 move_info = {}
-                for template in self.bot.gamemaster['itemTemplates']:
+                for template in self.bot.gamemaster['itemTemplate']:
                     if "MOVE" in template['templateId'] and "COMBAT_" not in template['templateId'] and "ITEM_" not in template['templateId'] and "SETTINGS" not in template['templateId']:
                         move_name = template['templateId'].split('MOVE_')[1].title()
-                        move_type = template['moveSettings']['pokemonType'].replace("POKEMON_TYPE_", "").title()
-                        move_power = template['moveSettings'].get('power', 0)
+                        move_type = template['move']['pokemonType'].replace("POKEMON_TYPE_", "").title()
+                        move_power = template['move'].get('power', 0)
                         move_info[move_name.lower().replace('_fast', '').replace('_', ' ')] = {"type":move_type, "power":move_power}
                 for type in self.bot.type_list:
                     move_info[f"hidden power {type.lower()}"] = {"type":type.title(), "power":15}
@@ -977,7 +980,6 @@ class Pokedex(commands.Cog):
         move_info = {}
         for template in self.bot.gamemaster['itemTemplate']:
             if "MOVE" in template['templateId'] and "COMBAT_" not in template['templateId'] and "ITEM_" not in template['templateId'] and "SETTINGS" not in template['templateId']:
-                print(template)
                 move_name = template['templateId'].split('MOVE_')[1].title()
                 move_type = template['move']['pokemonType'].replace("POKEMON_TYPE_", "").title()
                 move_power = template['move'].get('power', 0)
@@ -1151,6 +1153,7 @@ class Pokedex(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         error = False
         first = True
+        update_shiny = False
         action = "edit"
         owner = self.bot.get_user(self.bot.owner)
         pkmn_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pokemonstorageupgrade.1.png?cache=1')
@@ -1263,7 +1266,7 @@ class Pokedex(commands.Cog):
                         break
                     elif attr_type_msg.clean_content.lower() == "shiny":
                         pkmn_embed.clear_fields()
-                        pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"Shiny **{str(pokemon)}** is {'not currently available' if not pkmn_shiny else 'currently available in the following: '+str(pkmn_shiny)}.\n\nTo change availability, reply with a comma separated list of all possible occurrences that shiny {str(pokemon)} can appear in-game. You can reply with **cancel** to stop anytime.\n\nSelect from the following options:\n**hatch, raid, wild, research, league, evolution, shadow**. Include **all** in your list to quickly add hatch, raid, wild, research for new releases. Reply with **none** to clear all.", inline=False)
+                        pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"Shiny **{str(pokemon)}** is {'not currently available' if not pkmn_shiny else 'currently available in the following: '+str(pkmn_shiny)}.\n\nTo change availability, reply with a comma separated list of all possible occurrences that shiny {str(pokemon)} can appear in-game. You can reply with **cancel** to stop anytime.\n\nSelect from the following options:\n**hatch, raid, wild, research, league, evolution, shadow**. Include **all** in your list to quickly add hatch, raid, wild, research, league for new releases. Reply with **none** to clear all. If you are editing the first pokemon in an evolution chain, all evolutions will automatically get **evolution**.", inline=False)
                         pokemon.shiny = True
                         pkmn_embed.set_thumbnail(url=pokemon.img_url)
                         pokemon.shiny = False
@@ -1285,10 +1288,11 @@ class Pokedex(commands.Cog):
                             pkmn_shiny = []
                         else:
                             shiny_options = ["hatch", "raid", "wild", "research", "league", "evolution", "shadow"]
-                            shiny_split = shiny_type_msg.clean_content.lower().replace('all', 'hatch, raid, wild, research').split(',')
+                            shiny_split = shiny_type_msg.clean_content.lower().replace('all', 'hatch, raid, wild, research, league').split(',')
                             shiny_split = [x.strip() for x in shiny_split]
                             shiny_split = [x for x in shiny_split if x in shiny_options]
                             pkmn_shiny = list(set(shiny_split))
+                            update_shiny = True
                         break
                         first = False
                     elif attr_type_msg.clean_content.lower() == "type":
@@ -1388,6 +1392,15 @@ class Pokedex(commands.Cog):
                 except:
                     pass
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['shiny'] = pkmn_shiny
+            if update_shiny:
+                evolution_chain = pokemon.evolution.replace('[', '').replace(']', '').split('\u2192')
+                evolution_chain = [x.strip() for x in evolution_chain]
+                if pokemon.name.title() == evolution_chain[0] and len(evolution_chain) > 1:
+                    for evo in evolution_chain:
+                        if evo.lower() == pokemon.name.lower():
+                            continue
+                        if "evolution" not in pkmn_info[evo.lower()]['forms'][pkmn_form]['shiny']:
+                            pkmn_info[evo.lower()]['forms'][pkmn_form]['shiny'].append('evolution')
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['size'] = pkmn_size
             pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['shadow'] = pkmn_shadow
             if pokemon.gender:
