@@ -624,12 +624,12 @@ class GymMatching(commands.Cog):
                             shiny_str = ""
                             if reward_pokemon and "shadow" in reward_pokemon.shiny_available:
                                 shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                            reward_list.append(f"{shiny_str}{reward_pokemon.name.title()} {reward_pokemon.emoji}")
+                            reward_list.append(f"{shiny_str}[{reward_pokemon.name.title()}]({jump_url}) {reward_pokemon.emoji}")
                     elif reward_type:
-                        reward_list.append(f"{reward_type.title()} {self.bot.config.type_id_dict[reward_type.lower()]}")
+                        reward_list.append(f"[{reward_type.title()}]({jump_url}) {self.bot.config.type_id_dict[reward_type.lower()]}")
                     else:
                         reward_list.append(f"Unknown Pokemon {encounter_emoji}")
-                    active_invasions.append(f"{index}. [{(', ').join(reward_list)}]({jump_url})")
+                    active_invasions.append(f"{index}. {(', ').join(reward_list)}")
                     index += 1
             if active_invasions:
                 poi_embed.add_field(name="Current Invasions", value=('\n').join(active_invasions), inline=False)
