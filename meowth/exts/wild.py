@@ -302,6 +302,8 @@ class Wild(commands.Cog):
         reply_msg += f"**weather <game weather>** - Current: {wild_dict.get('weather', 'X')}"
         if pokemon.name.lower() == "ditto":
             reply_msg += f"\n**disguise <ditto disguise>** - Current: {wild_dict.get('disguise', 'X')}"
+        elif pokemon.id in self.bot.ditto_list:
+            reply_msg += f"\n**ditto** - Reply with **ditto** if this {pokemon.name.title()} is a Ditto"
         wild_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_tut_strength_adjust.png?cache=1')
         wild_embed.set_footer(text=_('Reported by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         while True:
@@ -331,10 +333,17 @@ class Wild(commands.Cog):
                     entered_values = [x.strip() for x in entered_values]
                     for value in entered_values:
                         value_split = value.split()
-                        if len(value_split) != 2:
+                        if value_msg.clean_content.lower() == "ditto":
+                            self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['pokemon'] = "ditto"
+                            self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['pkmn_obj'] = "Ditto"
+                            self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['disguise'] = str(pokemon)
+                            self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['expedit']['content'] = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['expedit']['content'].replace(str(pokemon), 'Ditto')
+                            self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['expedit']['embedcontent'] = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['expedit']['embedcontent'].replace(str(pokemon), 'Ditto')
+                            success.append("ditto")
+                        elif len(value_split) != 2:
                             error = _("entered something invalid")
                             continue
-                        if "cp" in value and "cp" not in success:
+                        elif "cp" in value and "cp" not in success:
                             if value_split[1] and value_split[1].isdigit() and int(value_split[1]) <= 5000:
                                 self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['cp'] = int(value_split[1])
                                 success.append("cp")

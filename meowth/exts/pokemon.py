@@ -912,6 +912,7 @@ class Pokedex(commands.Cog):
         form_dict = {}
         form_list = []
         two_words = []
+        ditto_list = []
         for k, v in bot.pkmn_info.items():
             for form in v['forms']:
                 if form == "list":
@@ -922,6 +923,8 @@ class Pokedex(commands.Cog):
                     if v['number'] not in form_dict:
                         form_dict[v['number']] = {}
                     form_dict[v['number']][form] = True
+                if v['forms'][form].get('ditto'):
+                    ditto_list.append(v['number'])
             if len(k.split()) > 1:
                 for word in k.split():
                     two_words.append(word)
@@ -931,6 +934,7 @@ class Pokedex(commands.Cog):
         form_dict['two_words'] = two_words
         bot.form_dict = form_dict
         bot.gamemaster = {}
+        bot.ditto_list = list(set(ditto_list))
         async with aiohttp.ClientSession() as sess:
             async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/GAME_MASTER.json") as resp:
                 data = await resp.json(content_type=None)
@@ -1224,8 +1228,9 @@ class Pokedex(commands.Cog):
                         pkmn_evo = self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['gender'][pokemon.gender]['evolution']
                     else:
                         pkmn_evo = self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['evolution']
+                    pkmn_ditto = self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form].get('ditto', False)
                     pkmn_embed.clear_fields()
-                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist in my records. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **shiny** to set shiny availability, **gender** to toggle gender differences, or **size** to toggle size relevance, **shadow** to toggle shadow. Others include **type**, **pokedex**, and **evolution**. You can reply with **cancel** to stop anytime.\n\n**Current {str(pokemon)} Settings**\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}", inline=False)
+                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist in my records. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **shiny** to set shiny availability, **gender** to toggle gender differences, or **size** to toggle size relevance, **shadow** to toggle shadow, **ditto** to toggle Ditto disguise. Others include **type**, **pokedex**, and **evolution**. You can reply with **cancel** to stop anytime.\n\n**Current {str(pokemon)} Settings**\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}\nDitto Disguise: {pkmn_ditto}", inline=False)
                     pkmn_embed.set_thumbnail(url=pokemon.img_url)
                     attr_type_wait = await channel.send(embed=pkmn_embed)
                     try:
@@ -1263,6 +1268,9 @@ class Pokedex(commands.Cog):
                         break
                     elif attr_type_msg.clean_content.lower() == "shadow":
                         pkmn_shadow = not pkmn_shadow
+                        break
+                    elif attr_type_msg.clean_content.lower() == "ditto":
+                        pkmn_ditto = not pkmn_ditto
                         break
                     elif attr_type_msg.clean_content.lower() == "shiny":
                         pkmn_embed.clear_fields()
@@ -1411,11 +1419,18 @@ class Pokedex(commands.Cog):
                 pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['type'] = pkmn_type
                 pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['pokedex'] = pkmn_dex
                 pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['evolution'] = pkmn_evo
+            if pkmn_ditto:
+                pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['ditto'] = pkmn_ditto
+            else:
+                try:
+                    del pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['ditto']
+                except:
+                    pass
             with open(self.bot.pkmn_info_path, 'w', encoding="utf8") as fd:
                 json.dump(pkmn_info, fd, indent=2, separators=(', ', ': '))
             await self.generate_lists(self.bot)
             pkmn_embed.clear_fields()
-            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}", inline=False)
+            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}\nDitto Disguise: {pkmn_ditto}", inline=False)
             confirmation = await channel.send(embed=pkmn_embed)
             await utils.safe_delete(message)
 
