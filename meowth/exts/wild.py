@@ -333,7 +333,7 @@ class Wild(commands.Cog):
                     entered_values = [x.strip() for x in entered_values]
                     for value in entered_values:
                         value_split = value.split()
-                        if value_msg.clean_content.lower() == "ditto":
+                        if value_msg.clean_content.lower() == "ditto" and pokemon.id in self.bot.ditto_list:
                             self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['pokemon'] = "ditto"
                             self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['pkmn_obj'] = "Ditto"
                             self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['disguise'] = str(pokemon)
