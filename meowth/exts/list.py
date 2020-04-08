@@ -1365,14 +1365,18 @@ class Listing(commands.Cog):
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
         if search_term != "all":
-            pois = []
+            pois = {}
             gym_matching_cog = self.bot.cogs.get('GymMatching')
             if gym_matching_cog:
-                pois = [*gym_matching_cog.get_stops(ctx.guild.id), *gym_matching_cog.get_gyms(ctx.guild.id)]
+                pois = {**gym_matching_cog.get_stops(ctx.guild.id), **gym_matching_cog.get_gyms(ctx.guild.id)}
+                pois = {k.lower(): v for k, v in pois.items()}
             search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
             search_item = await utils.get_item(search_term)
-            if search_term in self.bot.type_list or search_term in [x.lower() for x in pois]:
+            if search_term in self.bot.type_list:
                 search_term = search_term
+            elif search_term in [x.lower() for x in pois.keys()]:
+                if pois[search_term].get('alias'):
+                    search_term = pois[search_term].get('alias')
             elif search_pokemon:
                 search_term = search_pokemon.name.lower()
             elif search_item[1]:
@@ -1664,11 +1668,17 @@ class Listing(commands.Cog):
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'lures']:
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
-        pois = []
+        pois = {}
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if gym_matching_cog:
-            pois = [*gym_matching_cog.get_stops(ctx.guild.id), *gym_matching_cog.get_gyms(ctx.guild.id)]
-        if search_term != "all" and search_term not in ["normal", "mossy", "glacial", "magnetic"] and search_term.lower() not in [x.lower() for x in pois]:
+            pois = {**gym_matching_cog.get_stops(ctx.guild.id), **gym_matching_cog.get_gyms(ctx.guild.id)}
+            pois = {k.lower(): v for k, v in pois.items()}
+        if search_term in ["normal", "mossy", "glacial", "magnetic"]:
+            search_term = search_term
+        elif search_term in [x.lower() for x in pois]:
+            if pois[search_term].get('alias'):
+                search_term = pois[search_term].get('alias')
+        else:
             search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('lure', {}).setdefault(ctx.channel.id, [])
         delete_list = []
@@ -1841,14 +1851,18 @@ class Listing(commands.Cog):
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
         if search_term != "all":
-            pois = []
+            pois = {}
             gym_matching_cog = self.bot.cogs.get('GymMatching')
             if gym_matching_cog:
-                pois = [*gym_matching_cog.get_stops(ctx.guild.id), *gym_matching_cog.get_gyms(ctx.guild.id)]
+                pois = {**gym_matching_cog.get_stops(ctx.guild.id), **gym_matching_cog.get_gyms(ctx.guild.id)}
+                pois = {k.lower(): v for k, v in pois.items()}
             search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
-            if search_pokemon and search_term not in self.bot.type_list and search_term.lower() not in [x.lower() for x in pois]:
+            if search_pokemon and search_term not in self.bot.type_list and search_term not in [x.lower() for x in pois.keys()]:
                 search_term = search_pokemon.name.lower()
-            elif search_term not in self.bot.type_list and search_term.lower() not in [x.lower() for x in pois]:
+            elif search_term in [x.lower() for x in pois.keys()]:
+                if pois[search_term].get('alias'):
+                    search_term = pois[search_term].get('alias')
+            elif search_term not in self.bot.type_list:
                 search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('invasion', {}).setdefault(ctx.channel.id, [])
         delete_list = []
@@ -2058,12 +2072,17 @@ class Listing(commands.Cog):
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
         if search_term != "all":
-            pois = []
+            pois = {}
             search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
             gym_matching_cog = self.bot.cogs.get('GymMatching')
             if gym_matching_cog:
-                pois = [*gym_matching_cog.get_stops(ctx.guild.id), *gym_matching_cog.get_gyms(ctx.guild.id)]
-            if search_term in self.bot.type_list or search_term.isdigit() or search_term.lower() in [x.lower() for x in pois]:
+                pois = {**gym_matching_cog.get_stops(ctx.guild.id), **gym_matching_cog.get_gyms(ctx.guild.id)}
+                pois = {k.lower(): v for k, v in pois.items()}
+            if "level" in search_term or "cp" in search_term or "iv" in search_term or search_term.isdigit() or search_term in self.bot.type_list:
+                search_term = search_term
+            elif search_term.lower() in [x.lower() for x in pois.keys()]:
+                if pois[search_term].get('alias'):
+                    search_term = pois[search_term].get('alias')
                 search_term = search_term
             elif search_pokemon:
                 search_term = search_pokemon.name.lower()
@@ -2142,10 +2161,18 @@ class Listing(commands.Cog):
                         pokemon.level = level_check
                         pokemon.weather = weather_check
                         self.bot.active_wilds[wildid] = pokemon
-                    if search_term != "all" and str(getattr(pokemon, 'name', None)).lower() != search_term and search_term.title() not in pokemon.types and not search_term.isdigit() and search_term.lower() != location.lower():
-                        continue
-                    elif (search_term.isdigit() and not iv_check) or (search_term.isdigit() and iv_check < int(search_term)):
-                        continue
+                    if search_term != "all":
+                        if "level" in search_term and search_term.replace('level', '').strip().isdigit():
+                            if not level_check or level_check < int(search_term.replace('level', '').strip()):
+                                continue
+                        elif "cp" in search_term and search_term.replace('cp', '').strip().isdigit():
+                            if not cp_check or cp_check < int(search_term.replace('cp', '').strip()):
+                                continue
+                        elif ("iv" in search_term or search_term.isdigit()) and search_term.replace('iv', '').strip().isdigit():
+                            if not iv_check or iv_check < int(search_term.replace('iv', '').strip()):
+                                continue
+                        elif str(getattr(pokemon, 'name', None)).lower() != search_term and search_term.title() not in pokemon.types and not search_term.isdigit() and search_term.lower() != location.lower():
+                            continue
                     if pokemon.name.lower() == "ditto" and disguise:
                         disguise = await pkmn_class.Pokemon.async_get_pokemon(self.bot, disguise)
                         disguise.weather = weather_check
