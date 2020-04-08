@@ -485,7 +485,7 @@ class Huntr(commands.Cog):
                 alarm_egglevel = report_details.get('level', None)
                 if alarm_pokemon:
                     alarm_egglevel = utils.get_level(self.bot, alarm_pokemon)
-                    alarm_egglevel = int(alarm_egglevel)
+                    alarm_egglevel = int(alarm_egglevel) if alarm_egglevel else None
                 for event in self.bot.guild_dict[ctx.guild.id].setdefault('raidhour_dict', {}):
                     if not alarm_egglevel:
                         break
