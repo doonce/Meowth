@@ -2163,13 +2163,13 @@ class Listing(commands.Cog):
                         self.bot.active_wilds[wildid] = pokemon
                     if search_term != "all":
                         if "level" in search_term and search_term.replace('level', '').strip().isdigit():
-                            if not level_check or level_check < int(search_term.replace('level', '').strip()):
+                            if not level_check or int(level_check) < int(search_term.replace('level', '').strip()):
                                 continue
                         elif "cp" in search_term and search_term.replace('cp', '').strip().isdigit():
-                            if not cp_check or cp_check < int(search_term.replace('cp', '').strip()):
+                            if not cp_check or int(cp_check) < int(search_term.replace('cp', '').strip()):
                                 continue
                         elif ("iv" in search_term or search_term.isdigit()) and search_term.replace('iv', '').strip().isdigit():
-                            if not iv_check or iv_check < int(search_term.replace('iv', '').strip()):
+                            if not iv_check or int(iv_check) < int(search_term.replace('iv', '').strip()):
                                 continue
                         elif str(getattr(pokemon, 'name', None)).lower() != search_term and search_term.title() not in pokemon.types and not search_term.isdigit() and search_term.lower() != location.lower():
                             continue
