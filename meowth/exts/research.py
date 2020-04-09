@@ -253,7 +253,7 @@ class Research(commands.Cog):
                                 __, item = await utils.get_item(value.replace("reward", "").strip())
                                 if not item:
                                     item = value.replace("reward", "").strip()
-                                self.bot.guild_dict[ctx.guild.id]['questreport_dict'][message.id]['reward'] = item
+                                self.bot.guild_dict[ctx.guild.id]['questreport_dict'][message.id]['reward'] = f"{''.join([x for x in value if x.isdigit()])} {item}".strip()
                                 success.append("reward")
                         else:
                             error = _("entered something invalid")
@@ -746,7 +746,7 @@ class Research(commands.Cog):
             'location':location,
             'url':loc_url,
             'quest':quest,
-            'reward':item if item else reward,
+            'reward':reward,
             'completed_by':[]
         }
         dm_dict = await self.send_dm_messages(ctx, pokemon, location, item, copy.deepcopy(research_embed), dm_dict)
