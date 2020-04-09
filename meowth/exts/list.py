@@ -2188,6 +2188,7 @@ class Listing(commands.Cog):
         listing_dict = {}
         bullet_point = self.bot.custom_emoji.get('wild_bullet', u'\U0001F539')
         hundred_bullet = self.bot.custom_emoji.get('wild_hundred', u'\U0001f538')
+        search_label = "reports"
         for wildid in wild_dict:
             if wild_dict[wildid].get('report_channel') == ctx.channel.id:
                 try:
