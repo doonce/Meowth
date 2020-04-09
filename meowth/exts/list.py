@@ -1922,7 +1922,7 @@ class Listing(commands.Cog):
                 await utils.add_reaction(listmsg, report_emoji)
             else:
                 report_emoji = self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2')
-                list_embed.add_field(name=f"**No Current {search_label}**", value=f"Meowth! There are no reported {search_label}. Report one with **{ctx.prefix}invasion [location], [reward or type]** or react with {report_emoji} and I can walk you through it!")
+                list_embed.add_field(name=f"**No Current {search_label.title()}**", value=f"Meowth! There are no reported {search_label}. Report one with **{ctx.prefix}invasion [location], [reward or type]** or react with {report_emoji} and I can walk you through it!")
                 listmsg = await ctx.channel.send(embed=list_embed)
                 await utils.add_reaction(listmsg, report_emoji)
                 list_messages.append(listmsg.id)
@@ -1962,7 +1962,7 @@ class Listing(commands.Cog):
                     elif reward_type:
                         reward_list = [f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"]
                     if search_term != "all":
-                        if search_term in pkmn_list:
+                        if search_term in pokemon_list:
                             search_label = f"{search_term.title()} invasion reports"
                         elif search_term == reward_type:
                             search_label = f"{search_term.title()} invasion reports"
