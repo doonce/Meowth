@@ -1686,13 +1686,13 @@ class Listing(commands.Cog):
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'lures']:
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
+        search_label = "lure reports"
         if search_term != "all":
             pois = {}
             gym_matching_cog = self.bot.cogs.get('GymMatching')
             if gym_matching_cog:
                 pois = {**gym_matching_cog.get_stops(ctx.guild.id), **gym_matching_cog.get_gyms(ctx.guild.id)}
                 pois = {k.lower(): v for k, v in pois.items()}
-            search_label = "lure reports"
             if search_term in ["normal", "mossy", "glacial", "magnetic"]:
                 search_label = f"{search_term.title()} lure reports"
             elif search_term in [x.lower() for x in pois]:
