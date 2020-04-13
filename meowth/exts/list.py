@@ -1462,7 +1462,11 @@ class Listing(commands.Cog):
                     reward = research_dict[questid]['reward']
                     location = research_dict[questid]['location']
                     url = research_dict[questid].get('url', None)
-                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
+                    if questid in self.bot.active_research:
+                        pokemon = self.bot.active_research[questid]
+                    else:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
+                        self.bot.active_research[questid] = pokemon or reward
                     other_reward = any(x in reward for x in reward_list)
                     type_list = []
                     if pokemon and not other_reward:
@@ -1948,7 +1952,15 @@ class Listing(commands.Cog):
                     grunt_gender = invasion_dict[invasionid].get('gender', None)
                     leader = invasion_dict[invasionid].get('leader', None)
                     location = invasion_dict[invasionid]['location']
-                    if reward:
+                    if invasionid in self.bot.active_invasions and len(self.bot.active_invasions[invasionid]) > 0:
+                        for pokemon in self.bot.active_invasions[invasionid]:
+                            shiny_str = ""
+                            if pokemon and "shadow" in pokemon.shiny_available:
+                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                            reward_list.append(f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}")
+                            type_list.extend(pokemon.types)
+                        pokemon_list = self.bot.active_invasions[invasionid]
+                    elif reward:
                         for pokemon in reward:
                             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                             if not pokemon:
@@ -1957,12 +1969,13 @@ class Listing(commands.Cog):
                             if pokemon and "shadow" in pokemon.shiny_available:
                                 shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                             reward_list.append(f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}")
-                            pokemon_list.append(pokemon.name.lower())
+                            pokemon_list.append(pokemon)
                             type_list.extend(pokemon.types)
+                        self.bot.active_invasions[invasionid] = pokemon_list
                     elif reward_type:
                         reward_list = [f"{reward_type.title()} Invasion {self.bot.config.type_id_dict[reward_type.lower()]}"]
                     if search_term != "all":
-                        if search_term in pokemon_list:
+                        if pokemon_list and search_term in [x.name for x in pokemon_list]:
                             search_label = f"{search_term.title()} invasion reports"
                         elif search_term == reward_type:
                             search_label = f"{search_term.title()} invasion reports"

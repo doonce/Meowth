@@ -26,6 +26,7 @@ class Research(commands.Cog):
         self.bot = bot
         self.research_cleanup.start()
         self.auto_res_json.start()
+        self.bot.active_research = {}
 
     def cog_unload(self):
         self.research_cleanup.cancel()
@@ -59,6 +60,7 @@ class Research(commands.Cog):
                         try:
                             self.bot.loop.create_task(utils.expire_dm_reports(self.bot, research_dict.get(reportid, {}).get('dm_dict', {})))
                             del self.bot.guild_dict[guild.id]['questreport_dict'][reportid]
+                            del self.bot.active_research[reportid]
                             count += 1
                             continue
                         except KeyError:
@@ -168,6 +170,10 @@ class Research(commands.Cog):
         try:
             del self.bot.guild_dict[guild.id]['questreport_dict'][message.id]
         except KeyError:
+            pass
+        try:
+            del self.bot.active_research[message.id]
+        except:
             pass
         try:
             ctx = await self.bot.get_context(message)
@@ -313,6 +319,7 @@ class Research(commands.Cog):
             await message.edit(content=content, embed=research_embed)
         except:
             pass
+        self.bot.active_research[message.id] = pokemon or reward
         if isinstance(research_embed.description, discord.embeds._EmptyEmbed):
             research_embed.description = ""
         if "Jump to Message" not in research_embed.description:
@@ -749,6 +756,7 @@ class Research(commands.Cog):
             'reward':reward,
             'completed_by':[]
         }
+        self.bot.active_research[ctx.resreportmsg.id] = pokemon or reward
         dm_dict = await self.send_dm_messages(ctx, pokemon, location, item, copy.deepcopy(research_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][ctx.resreportmsg.id]['dm_dict'] = dm_dict
         if not ctx.author.bot:

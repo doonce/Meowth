@@ -22,6 +22,7 @@ class Invasion(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.invasion_cleanup.start()
+        self.bot.active_invasions = {}
 
     def cog_unload(self):
         self.invasion_cleanup.cancel()
@@ -50,6 +51,7 @@ class Invasion(commands.Cog):
                         try:
                             self.bot.loop.create_task(utils.expire_dm_reports(self.bot, invasion_dict.get(reportid, {}).get('dm_dict', {})))
                             del self.bot.guild_dict[guild.id]['invasion_dict'][reportid]
+                            del self.bot.active_invasions[reportid]
                             count += 1
                             continue
                         except KeyError:
@@ -162,6 +164,10 @@ class Invasion(commands.Cog):
         try:
             del self.bot.guild_dict[guild.id]['invasion_dict'][message.id]
         except KeyError:
+            pass
+        try:
+            del self.bot.active_invasions[message.id]
+        except:
             pass
         try:
             ctx = await self.bot.get_context(message)
@@ -320,6 +326,7 @@ class Invasion(commands.Cog):
         shiny_str = ""
         reward_str = ""
         reward_list = []
+        pokemon_list = []
         if not reward and not reward_type:
             invasion_embed.add_field(name=_("**Possible Rewards:**"), value="Unknown Pokemon", inline=True)
         elif not reward and reward_type:
@@ -334,6 +341,7 @@ class Invasion(commands.Cog):
                 pokemon.size = None
                 pokemon.gender = None
                 pokemon.shadow = "shadow"
+                pokemon_list.append(pokemon)
                 if pokemon and "shadow" in pokemon.shiny_available:
                     shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                 reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
@@ -357,6 +365,7 @@ class Invasion(commands.Cog):
             await message.edit(content=invasion_msg, embed=invasion_embed)
         except:
             pass
+        self.bot.active_invasions[message.id] = pokemon_list
         if isinstance(invasion_embed.description, discord.embeds._EmptyEmbed):
             invasion_embed.description = ""
         if "Jump to Message" not in invasion_embed.description:
@@ -582,6 +591,7 @@ class Invasion(commands.Cog):
         pokemon = None
         shiny_str = ""
         reward_str = ""
+        pokemon_list = []
         reward_list = []
         reward_type = None
         if not reward:
@@ -598,6 +608,7 @@ class Invasion(commands.Cog):
                 if pokemon:
                     pokemon.shiny = False
                     pokemon.shadow = "shadow"
+                    pokemon_list.append(pokemon)
                     if pokemon and "shadow" in pokemon.shiny_available:
                         shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                     reward_str += f"{shiny_str}{pokemon.name.title()} {pokemon.emoji}\n"
@@ -655,6 +666,7 @@ class Invasion(commands.Cog):
             'reward_type':reward_type,
             'leader':leader
         }
+        self.bot.active_invasions[ctx.invreportmsg.id] = pokemon_list
         dm_dict = await self.send_dm_messages(ctx, reward, location, copy.deepcopy(invasion_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['invasion_dict'][ctx.invreportmsg.id]['dm_dict'] = dm_dict
         if str(reward).lower() in self.bot.type_list:
