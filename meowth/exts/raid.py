@@ -2540,7 +2540,7 @@ class Raid(commands.Cog):
         self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]['pokemon'] = pokemon.name.lower()
         self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
         if raid_channel.id in self.bot.active_channels.keys():
-            self.bot.active_channels[channel.id]['pokemon'] = pokemon
+            self.bot.active_channels[raid_channel.id]['pokemon'] = pokemon
         oldembed = raid_message.embeds[0]
         raid_gmaps_link = oldembed.url
         shiny_str = ""
@@ -2725,7 +2725,7 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pokemon'] = pokemon.name.lower()
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
         if raid_channel.id in self.bot.active_channels.keys():
-            self.bot.active_channels[channel.id]['pokemon'] = pokemon
+            self.bot.active_channels[raid_channel.id]['pokemon'] = pokemon
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['egg_level'] = '0'
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['moveset'] = 0
         setting_category = self.bot.get_channel(self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['raid']['category_dict'][egg_level])
