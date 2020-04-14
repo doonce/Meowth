@@ -75,7 +75,7 @@ class Listing(commands.Cog):
         Usage: !list
         Works only in raid or reporting channels. In raid channels this calls the interested, waiting, and here list and prints
         the raid timer. In reporting channels, this lists all active reports."""
-        if str(ctx.invoked_with).lower() in ['list', *ctx.command.aliases]:
+        if str(ctx.invoked_with).lower() in ['list', 'lists', 'tag', 'l']:
             await utils.safe_delete(ctx.message)
         if ctx.invoked_subcommand == None:
             if not ctx.prefix:
@@ -99,6 +99,28 @@ class Listing(commands.Cog):
                         await utils.safe_delete(ctx.message)
                         await utils.safe_delete(tag_error)
                         return
+                    search_label = "channels"
+                    if "all" in ctx.message.content.lower():
+                        search_term = "all"
+                    elif search_term != "all":
+                        search_term = search_term.lower()
+                        pois = {}
+                        search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
+                        gym_matching_cog = self.bot.cogs.get('GymMatching')
+                        if gym_matching_cog:
+                            pois = {**gym_matching_cog.get_gyms(ctx.guild.id)}
+                            pois = {k.lower(): v for k, v in pois.items()}
+                        if search_term in self.bot.type_list:
+                            search_label = f"{search_term.title()} type channels"
+                        elif search_term.lower() in [x.lower() for x in pois.keys()]:
+                            if pois[search_term].get('alias'):
+                                search_term = pois[search_term].get('alias')
+                            search_label = f"channels at {search_term.title()}"    
+                        elif search_pokemon:
+                            search_term = search_pokemon.name.lower()
+                            search_label = f"{search_term.title()} channels"
+                    else:
+                        search_term = None
                     cty = channel.name
                     rc_d = {**self.bot.guild_dict[guild.id]['raidchannel_dict'], **self.bot.guild_dict[guild.id]['exraidchannel_dict'], **self.bot.guild_dict[guild.id]['meetup_dict'], **self.bot.guild_dict[guild.id]['raidtrain_dict']}
                     raid_dict = {}
@@ -138,12 +160,13 @@ class Listing(commands.Cog):
 
                     async def list_output(r):
                         trainer_dict = rc_d[r]['trainer_dict']
+                        location = rc_d[r]['address']
                         rchan = self.bot.get_channel(r)
                         end = datetime.datetime.utcfromtimestamp(rc_d[r]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         output = ''
                         start_str = ''
                         channel_dict, boss_dict = await raid_cog._get_party(rchan)
-                        if not channel_dict['total'] and "all" not in ctx.message.content.lower():
+                        if not channel_dict['total'] and "all" not in ctx.message.content.lower() and not search_term:
                             return None
                         if rc_d[r]['manual_timer'] == False:
                             assumed_str = _(' (assumed)')
@@ -161,8 +184,16 @@ class Listing(commands.Cog):
                             starttime = False
                         if rc_d[r]['egg_level'].isdigit() and (int(rc_d[r]['egg_level']) > 0):
                             expirytext = _(' - {train_str}Hatches: {expiry}{is_assumed}').format(train_str=train_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                            if self.bot.active_channels.get(r, {}).get('pokemon'):
+                                pokemon = self.bot.active_channels[r]['pokemon']
+                            else:
+                                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
                         elif ((rc_d[r]['egg_level'] == 'EX') or (rc_d[r]['type'] == 'exraid')) and not meetup:
                             expirytext = _(' - {train_str}Hatches: {expiry}{is_assumed}').format(train_str=train_str, expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                            if self.bot.active_channels.get(r, {}).get('pokemon'):
+                                pokemon = self.bot.active_channels[r]['pokemon']
+                            else:
+                                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
                         elif meetup:
                             meetupstart = meetup['start']
                             meetupend = meetup['end']
@@ -175,10 +206,24 @@ class Listing(commands.Cog):
                                 expirytext = _(' - Starts: {expiry}{is_assumed}').format(expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
                         else:
                             type_str = ""
-                            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
+                            if self.bot.active_channels.get(r, {}).get('pokemon'):
+                                pokemon = self.bot.active_channels[r]['pokemon']
+                            else:
+                                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
                             if pokemon:
                                 type_str = pokemon.emoji
                             expirytext = _('{type_str} - {train_str}Expires: {expiry}{is_assumed}').format(type_str=type_str, train_str=train_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
+
+                        if search_term and search_term != "all":
+                            if str(getattr(pokemon, 'name', None)).lower() == search_term:
+                                pass
+                            elif search_term.title() in pokemon.types:
+                                pass
+                            elif search_term.lower() == location.lower():
+                                pass
+                            else:
+                                return None
+
                         output += f"{rchan.mention}{expirytext}"
                         if channel_dict['total']:
                             output += f"\n**Total: {channel_dict['total']}**"
@@ -242,12 +287,12 @@ class Listing(commands.Cog):
                         if "all" not in ctx.message.content.lower():
                             ctx.message.content = "!list all"
                             return await ctx.invoke(self.bot.get_command("list"))
-                        list_embed.add_field(name=f"**No Current Channel Reports**", value=f"Meowth! There are no active channels. Report a raid with **{ctx.prefix}raid <name> <location> [weather] [timer]** or react with {report_emoji} and I can walk you through it!")
+                        list_embed.add_field(name=f"**No Current Channel Reports**", value=f"Meowth! There are no active {search_label}. Report a raid with **{ctx.prefix}raid <name> <location> [weather] [timer]** or react with {report_emoji} and I can walk you through it!")
                         list_message = await ctx.channel.send(embed=list_embed)
                         await utils.add_reaction(list_message, report_emoji)
                         list_messages.append(list_message.id)
                     else:
-                        listmsg += f"**Here are the {'active' if 'all' not in ctx.message.content.lower() else 'current'} channels for {channel.mention}**.{' You can use **'+ctx.prefix+'list all** to see all channels!' if 'all' not in ctx.message.content.lower() else ''}\n\n"
+                        listmsg += f"**Here are the {'active' if 'all' not in ctx.message.content.lower() else 'current'} {search_label} for {channel.mention}**.{' You can use **'+ctx.prefix+'list all** to see all channels!' if 'all' not in ctx.message.content.lower() else ''}\n\n"
                         raid_list += f"**New Report:**\nReact with {report_emoji} to start a new raid, train, or meetup report!"
                         paginator = commands.Paginator(prefix="", suffix="")
                         index = 0

@@ -30,7 +30,7 @@ class Raid(commands.Cog):
         self.channel_cleanup.start()
         self.lobby_cleanup.start()
         self.auto_raid_json.start()
-        self.bot.active_channels = []
+        self.bot.active_channels = {}
 
     def cog_unload(self):
         for task in asyncio.Task.all_tasks():
@@ -312,8 +312,8 @@ class Raid(commands.Cog):
     async def expiry_check(self, channel):
         guild = channel.guild
         channel = self.bot.get_channel(channel.id)
-        if channel not in self.bot.active_channels:
-            self.bot.active_channels.append(channel)
+        if channel.id not in self.bot.active_channels.keys():
+            self.bot.active_channels[channel.id] = {}
             logger.info('Channel Added To Watchlist - ' + channel.name)
             await asyncio.sleep(0.5)
             while True:
@@ -339,35 +339,41 @@ class Raid(commands.Cog):
                         if end and end < now:
                             self.bot.loop.create_task(self.expire_channel(channel))
                             try:
-                                self.bot.active_channels.remove(channel)
-                            except ValueError:
+                                del self.bot.active_channels[channel.id]
+                            except KeyError:
                                 logger.info('Channel Removal From Active Raid Failed - Not in List - ' + channel.name)
                             logger.info('Channel Expired And Removed From Watchlist - ' + channel.name)
                             break
                         if end and now and (end-now).total_seconds() > 0 and (end-now).total_seconds() < 20:
                             wait_time = (end-now).total_seconds()
                     else:
+                        channel_type = self.bot.guild_dict[guild.id][report_dict][channel.id]['type']
+                        channel_pokemon = self.bot.guild_dict[guild.id][report_dict][channel.id].get('pkmn_obj')
+                        if channel_pokemon and not self.bot.active_channels[channel.id].get('pokemon'):
+                            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, channel_pokemon)
+                            self.bot.active_channels[channel.id]['pokemon'] = pokemon
+                        elif not channel_pokemon:
+                            self.bot.active_channels[channel.id]['pokemon'] = None
                         if self.bot.guild_dict[guild.id][report_dict][channel.id]['active']:
                             if self.bot.guild_dict[guild.id][report_dict][channel.id]['exp'] <= time.time():
-                                if self.bot.guild_dict[guild.id][report_dict][channel.id]['type'] == 'egg':
-                                    pokemon = self.bot.guild_dict[guild.id][report_dict][channel.id].get('pkmn_obj')
+                                if channel_type == 'egg':
                                     egg_level = self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level']
-                                    if not pokemon and len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
-                                        pokemon = self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0]
-                                    elif not pokemon and egg_level == "5" and self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('regional', None) in self.bot.raid_list:
-                                        pokemon = self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('regional', None)
-                                    if pokemon:
+                                    if not channel_pokemon and len(self.bot.raid_info['raid_eggs'][egg_level]['pokemon']) == 1:
+                                        channel_pokemon = self.bot.raid_info['raid_eggs'][egg_level]['pokemon'][0]
+                                    elif not channel_pokemon and egg_level == "5" and self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('regional', None) in self.bot.raid_list:
+                                        channel_pokemon = self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('regional', None)
+                                    if channel_pokemon:
                                         logger.info('Egg Auto Hatched - ' + channel.name)
                                         try:
-                                            self.bot.active_channels.remove(channel)
-                                        except ValueError:
+                                            del self.bot.active_channels[channel.id]
+                                        except KeyError:
                                             pass
-                                        await self._eggtoraid(str(pokemon).lower(), channel, author=None)
+                                        await self._eggtoraid(str(channel_pokemon).lower(), channel, author=None)
                                         break
                                 self.bot.loop.create_task(self.expire_channel(channel))
                                 try:
-                                    self.bot.active_channels.remove(channel)
-                                except ValueError:
+                                    del self.bot.active_channels[channel.id]
+                                except KeyError:
                                     pass
                                 logger.info('Channel Expired And Removed From Watchlist - ' + channel.name)
                                 break
@@ -376,8 +382,8 @@ class Raid(commands.Cog):
                         else:
                             self.bot.loop.create_task(self.expire_channel(channel))
                             try:
-                                self.bot.active_channels.remove(channel)
-                            except ValueError:
+                                del self.bot.active_channels[channel.id]
+                            except KeyError:
                                 pass
                             logger.info('Channel Expired And Removed From Watchlist - ' + channel.name)
                             break
@@ -401,8 +407,8 @@ class Raid(commands.Cog):
         channel = channel_exists
         report_author = guild.get_member(channel_dict.get('report_author'))
         try:
-            self.bot.active_channels.remove(channel)
-        except ValueError:
+            del self.bot.active_channels[channel.id]
+        except KeyError:
             pass
         if (not channel_exists) and (not self.bot.is_closed()):
             try:
@@ -657,12 +663,12 @@ class Raid(commands.Cog):
         logger.info('------ BEGIN ------')
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         # clean up active_channels
-        for channel in self.bot.active_channels:
-            channelmatch = self.bot.get_channel(channel.id)
-            if not channelmatch:
+        for channel_id in self.bot.active_channels.keys():
+            channel = self.bot.get_channel(channel_id)
+            if not channel:
                 try:
-                    self.bot.active_channels.remove(channel)
-                except ValueError:
+                    del self.bot.active_channels[channel_id]
+                except KeyError:
                     pass
         # for every server in save data
         for guild in list(self.bot.guilds):
@@ -741,7 +747,7 @@ class Raid(commands.Cog):
                         # if the channel save data shows it as an active raid still
                         elif channel_dict['active'] == True:
                             # if channel is still active, make sure it's expiry is being monitored
-                            if channel not in self.bot.active_channels:
+                            if channel.id not in self.bot.active_channels.keys():
                                 logger.info(f"Server: {guild.name} : Channel: {channelid} ({channel.name}) - MISSING FROM EXPIRY CHECK -> Expiry_Check")
                         self.bot.loop.create_task(self.expiry_check(channel))
                 # for every channel listed to have save data deleted
@@ -1151,17 +1157,20 @@ class Raid(commands.Cog):
                     for guild in list(self.bot.guilds):
                         for report_dict in self.bot.channel_report_dicts:
                             for channel_id in list(self.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys()):
+                                channel = self.bot.get_channel(channel_id)
                                 for raid_level in new_raid_dict:
-                                    if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(raid_level):
-                                        for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
-                                            interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id].get('interest', []))
+                                    if self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level'] == str(raid_level):
+                                        for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'].keys()):
+                                            interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'][trainer_id].get('interest', []))
                                             new_bosses = list(set(new_raid_dict[raid_level]) - set(old_raid_dict[raid_level]))
                                             new_bosses = [x.lower() for x in new_bosses]
-                                            self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
-                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['pkmn_obj'] = ''
-                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
-                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
-                                        channel = self.bot.get_channel(channel_id)
+                                            self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
+                                        self.bot.guild_dict[guild.id][report_dict][channel.id]['pkmn_obj'] = ''
+                                        if self.bot.active_channels.get(channel.id, {}).get('pokemon'):
+                                            self.bot.active_channels[channel.id]['pokemon'] = None
+                                        self.bot.guild_dict[guild.id][report_dict][channel.id]['ctrs_dict'] = {}
+                                        self.bot.guild_dict[guild.id][report_dict][channel.id]['ctrsmessage'] = None
+                                        channel = self.bot.get_channel(channel.id)
                                         await self._edit_party(channel)
             except Exception as e:
                 print(traceback.format_exc())
@@ -1328,17 +1337,20 @@ class Raid(commands.Cog):
             for guild in list(self.bot.guilds):
                 for report_dict in self.bot.channel_report_dicts:
                     for channel_id in list(self.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys()):
+                        channel = self.bot.get_channel(channel_id)
                         for raid_level in new_raid_dict:
-                            if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(raid_level):
-                                for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
-                                    interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id].get('interest', []))
+                            if self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level'] == str(raid_level):
+                                for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'].keys()):
+                                    interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'][trainer_id].get('interest', []))
                                     new_bosses = list(set(new_raid_dict[raid_level]) - set(old_raid_dict[raid_level]))
                                     new_bosses = [x.lower() for x in new_bosses]
-                                    self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
-                                self.bot.guild_dict[guild.id][report_dict][channel_id]['pkmn_obj'] = ''
-                                self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
-                                self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
-                                channel = self.bot.get_channel(channel_id)
+                                    self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
+                                self.bot.guild_dict[guild.id][report_dict][channel.id]['pkmn_obj'] = ''
+                                if self.bot.active_channels.get(channel.id, {}).get('pokemon'):
+                                    self.bot.active_channels[channel.id]['pokemon'] = None
+                                self.bot.guild_dict[guild.id][report_dict][channel.id]['ctrs_dict'] = {}
+                                self.bot.guild_dict[guild.id][report_dict][channel.id]['ctrsmessage'] = None
+                                channel = self.bot.get_channel(channel.id)
                                 await self._edit_party(channel)
             await utils.safe_delete(message)
 
@@ -1450,17 +1462,20 @@ class Raid(commands.Cog):
                     for guild in list(self.bot.guilds):
                         for report_dict in self.bot.channel_report_dicts:
                             for channel_id in list(self.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys()):
+                                channel = self.bot.get_channel(channel_id)
                                 for raid_level in tsr_boss_dict:
-                                    if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(raid_level):
-                                        for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
-                                            interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id].get('interest', []))
+                                    if self.bot.guild_dict[guild.id][report_dict][channel.id]['egg_level'] == str(raid_level):
+                                        for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'].keys()):
+                                            interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'][trainer_id].get('interest', []))
                                             new_bosses = list(set(tsr_boss_dict[raid_level]) - set(old_raid_dict[raid_level]))
                                             new_bosses = [x.lower() for x in new_bosses]
-                                            self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
-                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['pkmn_obj'] = ''
-                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
-                                        self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
-                                        channel = self.bot.get_channel(channel_id)
+                                            self.bot.guild_dict[guild.id][report_dict][channel.id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
+                                        self.bot.guild_dict[guild.id][report_dict][channel.id]['pkmn_obj'] = ''
+                                        if self.bot.active_channels.get(channel.id, {}).get('pokemon'):
+                                            self.bot.active_channels[channel.id]['pokemon'] = None
+                                        self.bot.guild_dict[guild.id][report_dict][channel.id]['ctrs_dict'] = {}
+                                        self.bot.guild_dict[guild.id][report_dict][channel.id]['ctrsmessage'] = None
+                                        channel = self.bot.get_channel(channel.id)
                                         await self._edit_party(channel)
                     raid_embed.clear_fields()
                     raid_embed.add_field(name=_('**Boss Edit Successful**'), value=_("Meowth! Your edit was successful!."), inline=False)
@@ -1785,6 +1800,8 @@ class Raid(commands.Cog):
         for trainer in self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict']:
             self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'][trainer]['interest'] = boss_list
         self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['pkmn_obj'] = ''
+        if self.bot.active_channels.get(channel.id, {}).get('pokemon'):
+            self.bot.active_channels[channel.id]['pokemon'] = None
         self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['pokemon'] = ''
         self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['ctrs_dict'] = {}
         self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['ctrsmessage'] = None
@@ -1823,6 +1840,8 @@ class Raid(commands.Cog):
             report_channel = self.bot.get_channel(self.bot.guild_dict[guild.id][report_dict][channel.id]['report_channel'])
             report_author = ctx.guild.get_member(self.bot.guild_dict[guild.id][report_dict][channel.id]['report_author'])
             self.bot.guild_dict[guild.id][report_dict][channel.id]['pkmn_obj'] = ''
+            if self.bot.active_channels.get(channel.id, {}).get('pokemon'):
+                self.bot.active_channels[channel.id]['pokemon'] = None
             self.bot.guild_dict[guild.id][report_dict][channel.id]['type'] = 'egg'
             report_details = {
                 'address':address,
@@ -2217,6 +2236,7 @@ class Raid(commands.Cog):
             timerset_embed.add_field(name=f"**Channel Timer**", value=f"If you can, set the time left on the raid using **{ctx.prefix}timerset <minutes>** so others can check it with **{ctx.prefix}timer**.\n\nThe current timer is ***unknown***.")
             timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['timerset_msg'] = timerset_msg.id
+        self.bot.loop.create_task(self.expiry_check(raid_channel))
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
         weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}\n\n{str(pokemon)+' is ***boosted*** in '+str(weather)+' weather.' if pokemon.is_boosted else ''}")
         if weather:
@@ -2240,7 +2260,6 @@ class Raid(commands.Cog):
             ctrsmessage_id = None
         self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['ctrsmessage'] = ctrsmessage_id
         self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['ctrs_dict'] = ctrs_dict
-        self.bot.loop.create_task(self.expiry_check(raid_channel))
         if not ctx.author.bot:
             raid_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('raid', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['raid'] = raid_reports
@@ -2397,13 +2416,13 @@ class Raid(commands.Cog):
             timerset_embed.add_field(name=f"**Channel Timer**", value=f"If you can, set the time left on the raid using **{ctx.prefix}timerset <minutes>** so others can check it with **{ctx.prefix}timer**.\n\nThe current timer is ***unknown***.")
             timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
             ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['timerset_msg'] = timerset_msg.id
+        self.bot.loop.create_task(self.expiry_check(raid_channel))
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
         weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to {str(weather).replace('partlycloudy', 'partly cloudy')}. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}")
         if weather:
             weather_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_{str(weather).lower()}{'Day' if now.hour >= 6 and now.hour < 18 else 'Night'}.png?cache=1")
         weather_msg = await raid_channel.send(embed=weather_embed)
         ctx.bot.guild_dict[message.guild.id]['raidchannel_dict'][raid_channel.id]['weather_msg'] = weather_msg.id
-        self.bot.loop.create_task(self.expiry_check(raid_channel))
         if not ctx.author.bot:
             egg_reports = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('reports', {}).setdefault('egg', 0) + 1
             self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['reports']['egg'] = egg_reports
@@ -2520,6 +2539,8 @@ class Raid(commands.Cog):
                 pass
         self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]['pokemon'] = pokemon.name.lower()
         self.bot.guild_dict[ctx.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
+        if raid_channel.id in self.bot.active_channels.keys():
+            self.bot.active_channels[channel.id]['pokemon'] = pokemon
         oldembed = raid_message.embeds[0]
         raid_gmaps_link = oldembed.url
         shiny_str = ""
@@ -2703,6 +2724,8 @@ class Raid(commands.Cog):
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['active'] = True
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pokemon'] = pokemon.name.lower()
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['pkmn_obj'] = str(pokemon)
+        if raid_channel.id in self.bot.active_channels.keys():
+            self.bot.active_channels[channel.id]['pokemon'] = pokemon
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['egg_level'] = '0'
         self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['moveset'] = 0
         setting_category = self.bot.get_channel(self.bot.guild_dict[raid_channel.guild.id]['configure_dict']['raid']['category_dict'][egg_level])
@@ -2731,6 +2754,7 @@ class Raid(commands.Cog):
                 await timerset_msg.edit(content=None, embed=timerset_embed)
         except:
             pass
+        self.bot.loop.create_task(self.expiry_check(raid_channel))
         try:
             hatch_message = await raid_channel.fetch_message(self.bot.guild_dict[raid_channel.guild.id][report_dict][raid_channel.id]['hatch_message'])
             await utils.safe_delete(hatch_message)
@@ -2758,7 +2782,6 @@ class Raid(commands.Cog):
             await self._edit_party(raid_channel, author)
         if ctx.raidreport:
             self.bot.loop.create_task(self.edit_dm_messages(ctx, raidreportcontent, copy.deepcopy(raid_embed), eggdetails.get('dm_dict', {})))
-        self.bot.loop.create_task(self.expiry_check(raid_channel))
 
     @raid.command(aliases=['expire', 'delete'], name='reset')
     @checks.allowraidreport()
@@ -2979,13 +3002,13 @@ class Raid(commands.Cog):
         timerset_embed.add_field(name=f"**Channel Timer**", value=f"If you can, set the time left on the raid using **{ctx.prefix}timerset <date and time>** so others can check it with **{ctx.prefix}timer**. **<date and time>** can be written exactly how it appears on your EX Raid Pass.\n\nThe current timer is ***unknown***.")
         timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
         ctx.bot.guild_dict[message.guild.id]['exraidchannel_dict'][raid_channel.id]['timerset_msg'] = timerset_msg.id
+        self.bot.loop.create_task(self.expiry_check(raid_channel))
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
         weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to None. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}")
         weather_msg = await raid_channel.send(embed=weather_embed)
         self.bot.guild_dict[ctx.guild.id]['exraidchannel_dict'][raid_channel.id]['weather_msg'] = weather_msg.id
         ex_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('ex', 0) + 1
         self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['ex'] = ex_reports
-        self.bot.loop.create_task(self.expiry_check(raid_channel))
         await utils.add_reaction(raid_message, help_reaction)
         for reaction in react_list:
             await asyncio.sleep(0.25)
@@ -4643,8 +4666,8 @@ class Raid(commands.Cog):
         meetup_cog = self.bot.get_cog('Meetup')
         if checks.check_wantchannel(ctx) or checks.check_citychannel(ctx) or checks.check_raidchannel(ctx) or checks.check_eggchannel(ctx) or checks.check_exraidchannel(ctx) or checks.check_trainchannel(ctx) or checks.check_meetupchannel(ctx):
             await ctx.channel.send(_("Meowth! I can't recover this channel because I know about it already!"), delete_after=10)
-            if ctx.channel in self.bot.active_channels:
-                self.bot.active_channels.remove(ctx.channel)
+            if ctx.channel.id in self.bot.active_channels.keys():
+                del self.bot.active_channels[ctx.channel.id]
                 self.bot.loop.create_task(self.expiry_check(ctx.channel))
         else:
             channel = ctx.channel
@@ -4907,7 +4930,7 @@ class Raid(commands.Cog):
             list_cog = self.bot.get_cog('Listing')
             if not list_cog:
                 self.bot.loop.create_task(self.expiry_check(channel))
-                await channel.send(recovermsg)
+                return await channel.send(recovermsg)
             recovermsg += ('\n' + bulletpoint) + (await list_cog._interest(ctx))
             recovermsg += ('\n' + bulletpoint) + (await list_cog._otw(ctx))
             recovermsg += ('\n' + bulletpoint) + (await list_cog._waiting(ctx))
