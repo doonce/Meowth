@@ -319,7 +319,7 @@ class Research(commands.Cog):
             await message.edit(content=content, embed=research_embed)
         except:
             pass
-        self.bot.active_research[message.id] = pokemon or reward
+        self.bot.active_research[message.id] = pokemon
         if isinstance(research_embed.description, discord.embeds._EmptyEmbed):
             research_embed.description = ""
         if "Jump to Message" not in research_embed.description:
@@ -756,7 +756,7 @@ class Research(commands.Cog):
             'reward':reward,
             'completed_by':[]
         }
-        self.bot.active_research[ctx.resreportmsg.id] = pokemon or reward
+        self.bot.active_research[ctx.resreportmsg.id] = pokemon
         dm_dict = await self.send_dm_messages(ctx, pokemon, location, item, copy.deepcopy(research_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['questreport_dict'][ctx.resreportmsg.id]['dm_dict'] = dm_dict
         if not ctx.author.bot:

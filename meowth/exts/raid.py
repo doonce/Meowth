@@ -3003,6 +3003,7 @@ class Raid(commands.Cog):
         timerset_msg = await raid_channel.send(f"Meowth! Hey {ctx.author.mention}!", embed=timerset_embed)
         ctx.bot.guild_dict[message.guild.id]['exraidchannel_dict'][raid_channel.id]['timerset_msg'] = timerset_msg.id
         self.bot.loop.create_task(self.expiry_check(raid_channel))
+        weather = None
         weather_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/weatherIcon_large_extreme.png?cache=1")
         weather_embed.add_field(name=f"**Channel Weather**", value=f"The weather is currently set to None. This may be innaccurate. You can set the correct weather using **{ctx.prefix}weather**.\n\n{'**Boosted**: ' + ('').join([utils.type_to_emoji(self.bot, x) for x in utils.get_weather_boost(str(weather))]) if weather else ''}")
         weather_msg = await raid_channel.send(embed=weather_embed)

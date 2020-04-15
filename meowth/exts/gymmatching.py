@@ -497,7 +497,10 @@ class GymMatching(commands.Cog):
                     raid_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('egg_level')
                     raid_pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('pkmn_obj')
                     if raid_pokemon:
-                        raid_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, raid_pokemon)
+                        if channel in self.bot.active_channels:
+                            raid_pokemon = self.bot.active_channels[channel]['pokemon']
+                        else:
+                            raid_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, raid_pokemon)
                         shiny_str = ""
                         if raid_pokemon and "raid" in raid_pokemon.shiny_available:
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
@@ -536,7 +539,10 @@ class GymMatching(commands.Cog):
                     raid_channel = self.bot.get_channel(channel)
                     raid_pokemon = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('pkmn_obj')
                     if raid_pokemon:
-                        raid_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, raid_pokemon)
+                        if channel in self.bot.active_channels:
+                            raid_pokemon = self.bot.active_channels[channel]['pokemon']
+                        else:
+                            raid_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, raid_pokemon)
                         shiny_str = ""
                         if raid_pokemon and "raid" in raid_pokemon.shiny_available:
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
@@ -563,7 +569,10 @@ class GymMatching(commands.Cog):
                     jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{report_channel.id}/{report}"
                     reward = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['reward']
                     reward_item = await utils.get_item(reward)
-                    reward_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
+                    if report in self.bot.active_research:
+                        reward_pokemon = self.bot.active_research[report]
+                    else:
+                        reward_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
                     if reward_item[1]:
                         if "cand" in reward_item[1]:
                             active_quests.append(f"{index}. [{reward.title()}]({jump_url}) {candy_emoji}")
@@ -617,14 +626,21 @@ class GymMatching(commands.Cog):
                     reward = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['reward']
                     reward_type = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['reward_type']
                     if reward:
-                        for reward_pokemon in reward:
-                            reward_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward_pokemon)
-                            if not reward_pokemon:
-                                continue
-                            shiny_str = ""
-                            if reward_pokemon and "shadow" in reward_pokemon.shiny_available:
-                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                            reward_list.append(f"{shiny_str}[{reward_pokemon.name.title()}]({jump_url}) {reward_pokemon.emoji}")
+                        if report in self.bot.active_invasions:
+                            for reward_pokemon in self.bot.active_invasions[report]:
+                                shiny_str = ""
+                                if reward_pokemon and "shadow" in reward_pokemon.shiny_available:
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                                reward_list.append(f"{shiny_str}[{reward_pokemon.name.title()}]({jump_url}) {reward_pokemon.emoji}")
+                        else:
+                            for reward_pokemon in reward:
+                                reward_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward_pokemon)
+                                if not reward_pokemon:
+                                    continue
+                                    shiny_str = ""
+                                if reward_pokemon and "shadow" in reward_pokemon.shiny_available:
+                                    shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                                reward_list.append(f"{shiny_str}[{reward_pokemon.name.title()}]({jump_url}) {reward_pokemon.emoji}")
                     elif reward_type:
                         reward_list.append(f"[{reward_type.title()}]({jump_url}) {self.bot.config.type_id_dict[reward_type.lower()]}")
                     else:
@@ -641,7 +657,10 @@ class GymMatching(commands.Cog):
                 report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'])
                 jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{report_channel.id}/{report}"
                 pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['pkmn_obj']
-                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                if report in self.bot.active_wilds:
+                    pokemon = self.bot.active_wilds[report]
+                else:
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 shiny_str = ""
                 if pokemon and "wild" in pokemon.shiny_available:
                     shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "

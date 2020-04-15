@@ -115,7 +115,7 @@ class Listing(commands.Cog):
                         elif search_term.lower() in [x.lower() for x in pois.keys()]:
                             if pois[search_term].get('alias'):
                                 search_term = pois[search_term].get('alias')
-                            search_label = f"channels at {search_term.title()}"    
+                            search_label = f"channels at {search_term.title()}"
                         elif search_pokemon:
                             search_term = search_pokemon.name.lower()
                             search_label = f"{search_term.title()} channels"
@@ -1511,7 +1511,7 @@ class Listing(commands.Cog):
                         pokemon = self.bot.active_research[questid]
                     else:
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
-                        self.bot.active_research[questid] = pokemon or reward
+                        self.bot.active_research[questid] = pokemon
                     other_reward = any(x in reward for x in reward_list)
                     type_list = []
                     if pokemon and not other_reward:
@@ -2262,6 +2262,9 @@ class Listing(commands.Cog):
                     disguise_str = ""
                     wild_iv = wild_dict[wildid].get('wild_iv', {})
                     iv_check = wild_dict[wildid].get('wild_iv', {}).get('percent', None)
+                    atk_check = wild_dict[wildid].get('wild_iv', {}).get('iv_atk', None)
+                    def_check = wild_dict[wildid].get('wild_iv', {}).get('iv_def', None)
+                    sta_check = wild_dict[wildid].get('wild_iv', {}).get('iv_sta', None)
                     cp_check = wild_dict[wildid].get('cp', None)
                     level_check = wild_dict[wildid].get('level', None)
                     weather_check = wild_dict[wildid].get('weather', None)
@@ -2315,7 +2318,11 @@ class Listing(commands.Cog):
                     if cp_check:
                         wildmsg += f" | **CP**: {cp_check}"
                     if iv_check:
-                        wildmsg += f" | **IV**: {wild_dict[wildid]['wild_iv'].get('percent', iv_check)}"
+                        wildmsg += f" | **IV**: "
+                        if atk_check or def_check or sta_check:
+                            wildmsg += f"{atk_check if atk_check else 'X'} / {def_check if def_check else 'X'} / {sta_check if sta_check else 'X'} ({wild_dict[wildid]['wild_iv'].get('percent', iv_check)}%)"
+                        else:
+                            wildmsg += f"{wild_dict[wildid]['wild_iv'].get('percent', iv_check)}%"
                     listing_dict[wildid] = {
                         "message":wildmsg,
                         "expire":wild_despawn
