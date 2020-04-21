@@ -1812,7 +1812,7 @@ class Listing(commands.Cog):
                     if lureauthor and not lureauthor.bot:
                         reported_by = f" | **Reported By**: {lureauthor.display_name}"
                     luremsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('lure_bullet', u'\U0001F539')))
-                    luremsg += f"**Lure Type**: {lure_type.title()} {normal_emoji if lure_type == 'normal' else ''}{glacial_emoji if lure_type == 'glacial' else ''}{mossy_emoji if lure_type == 'mossy' else ''}{magnetic_emoji if lure_type == 'magnetic' else ''} | **Location**: [{location.title()}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    luremsg += f"**Lure Type**: {lure_type.title()} {normal_emoji if lure_type == 'normal' else ''}{glacial_emoji if lure_type == 'glacial' else ''}{mossy_emoji if lure_type == 'mossy' else ''}{magnetic_emoji if lure_type == 'magnetic' else ''} | **Location**: [{string.capwords(location, ' ')}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
                     listing_dict[lureid] = {
                         "message":luremsg,
                         "expire":lure_expire
@@ -1887,11 +1887,12 @@ class Listing(commands.Cog):
                     jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{ctx.channel.id}/{pokealarmid}"
                     pokealarm_expire = datetime.datetime.utcfromtimestamp(pokealarm_dict[pokealarmid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     pokealarmmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('pokealarm_bullet', u'\U0001F539')))
+                    location = pokealarm_dict[pokealarmid]['gym']
                     if pokealarm_dict[pokealarmid]['reporttype'] == "raid":
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokealarm_dict[pokealarmid]['pokemon'])
-                        pokealarmmsg += f"**Boss**: {str(pokemon)} {pokemon.emoji} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Expires**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({jump_url})"
+                        pokealarmmsg += f"**Boss**: {str(pokemon)} {pokemon.emoji} | **Location**: [{string.capwords(location, ' ')}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Expires**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({jump_url})"
                     elif pokealarm_dict[pokealarmid]['reporttype'] == "egg":
-                        pokealarmmsg += f"**Level**: {pokealarm_dict[pokealarmid]['level']} | **Location**: [{pokealarm_dict[pokealarmid]['gym'].title()}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Hatches**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({jump_url})"
+                        pokealarmmsg += f"**Level**: {pokealarm_dict[pokealarmid]['level']} | **Location**: [{string.capwords(location, ' ')}](https://www.google.com/maps/search/?api=1&query={pokealarm_dict[pokealarmid]['gps']}) | **Hatches**: {pokealarm_expire.strftime(_('%I:%M %p'))} | [Jump to Message]({jump_url})"
                     listing_dict[pokealarmid] = {
                         "message":pokealarmmsg,
                         "expire":pokealarm_expire
@@ -2042,7 +2043,7 @@ class Listing(commands.Cog):
                     if grunt_gender:
                         gender_str = f" | **Gender**: {grunt_gender.title()}"
                     invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', u'\U0001F539')))
-                    invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{location.title()}]({invasion_dict[invasionid].get('url', None)}){gender_str} | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{string.capwords(location, ' ')}]({invasion_dict[invasionid].get('url', None)}){gender_str} | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
                     listing_dict[invasionid] = {
                         "message":invasionmsg,
                         "expire":invasion_expire
@@ -2130,6 +2131,7 @@ class Listing(commands.Cog):
                     pvpauthor = ctx.channel.guild.get_member(pvp_dict[pvpid]['report_author'])
                     pvp_tournament = pvp_dict[pvpid].get('tournament', {})
                     pvp_type = pvp_dict[pvpid]['type']
+                    location = pvp_dict[pvpid]['location']
                     if search_term != "all":
                         if search_term in ['great', 'ultra', 'master']:
                             search_label = f"{search_term} league requsts"
@@ -2143,10 +2145,10 @@ class Listing(commands.Cog):
                         reported_by = f" | **Requested By**: {pvpauthor.display_name}"
                     pvpmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('pvp_bullet', u'\U0001F539')))
                     if pvp_tournament:
-                        pvpmsg += f"**PVP Type**: {pvp_type.title()} Tournament | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Tournament Size**: {pvp_tournament['size']} | **Round**: {pvp_tournament['round']}{reported_by}"
+                        pvpmsg += f"**PVP Type**: {pvp_type.title()} Tournament | **Location**: [{string.capwords(location, ' ')}]({pvp_dict[pvpid].get('url', None)}) | **Tournament Size**: {pvp_tournament['size']} | **Round**: {pvp_tournament['round']}{reported_by}"
                         pass
                     else:
-                        pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} | **Location**: [{pvp_dict[pvpid]['location'].title()}]({pvp_dict[pvpid].get('url', None)}) | **Available Until**: {pvp_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                        pvpmsg += f"**PVP Type**: {pvp_dict[pvpid]['type'].title()} | **Location**: [{string.capwords(location, ' ')}]({pvp_dict[pvpid].get('url', None)}) | **Available Until**: {pvp_expire.strftime(_('%I:%M %p'))}{reported_by}"
                     listing_dict[pvpid] = {
                         "message":pvpmsg,
                         "expire":pvp_expire
@@ -2310,7 +2312,7 @@ class Listing(commands.Cog):
                         wildmsg += f"\n{hundred_bullet} "
                     else:
                         wildmsg += f"\n{bullet_point} "
-                    wildmsg += f"**Pokemon**: {shiny_str}{str(pokemon).title()} {pokemon.emoji}{disguise_str} | **Location**: [{location.title()}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
+                    wildmsg += f"**Pokemon**: {shiny_str}{str(pokemon).title()} {pokemon.emoji}{disguise_str} | **Location**: [{string.capwords(location, ' ')}]({wild_dict[wildid].get('url', None)}) | **Despawns**: {wild_despawn.strftime(_('%I:%M %p'))}{reported_by}"
                     if (disguise and disguise.is_boosted) or (pokemon and pokemon.is_boosted):
                         wildmsg += f" | {pokemon.is_boosted or disguise.is_boosted} *({timestamp.strftime('%I:%M %p')})*"
                     if level_check:

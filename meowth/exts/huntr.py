@@ -895,6 +895,9 @@ class Huntr(commands.Cog):
             dupe_iv = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('wild_iv', {})
             dupe_level = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('level', 0)
             dupe_cp = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('cp', 0)
+            report_filter = ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][wildid].get('filtered', False)
+            if report_filter:
+                continue
             if dupe_time < report_time and dupe_channel == ctx.channel.id and dupe_coord == wild_coordinates and dupe_pokemon == str(pokemon) and dupe_iv == wild_iv and dupe_level == level and dupe_cp == cp:
                 ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['expedit']['embedcontent'] = f"**This {str(pokemon)} was a duplicate!**"
                 return await wild_cog.expire_wild(ctx.wildreportmsg)
