@@ -798,7 +798,10 @@ class Raid(commands.Cog):
                 index += 1
         if pokemon_or_level.isdigit() or pokemon_or_level.upper() == "EX":
             egg_level = pokemon_or_level.upper()
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon_or_level)
+        if self.bot.active_channels.get(ctx.raidreport.channel.id, {}).get('pokemon', None):
+            pokemon = self.bot.active_channels[ctx.raid_report.channel.id]['pokemon']
+        else:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon_or_level)
         raid_types = ['None']
         if pokemon:
             raid_types = pokemon.types.copy()
@@ -816,7 +819,8 @@ class Raid(commands.Cog):
             type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('raid', True)
             user_gyms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('gyms', [])
             user_eggs = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('raid_eggs', [])
-            if not any([user_wants, user_forms, pokemon_setting, user_types, type_setting, user_gyms]):
+            user_custom = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('custom', {})
+            if not any([user_wants, user_forms, pokemon_setting, user_types, type_setting, user_gyms, user_custom]):
                 continue
             if not checks.dm_check(ctx, trainer, "raid") or trainer in dm_dict:
                 continue
@@ -825,6 +829,16 @@ class Raid(commands.Cog):
                 send_raid.append(f"{'Pokemon' if user_link else 'Boss'}: {pokemon.name.title()}")
             if pokemon_setting and pokemon and str(pokemon) in user_forms:
                 send_raid.append(f"{'Pokemon' if user_link else 'Boss'} Form: {str(pokemon)}")
+            if user_custom:
+                for custom in user_custom:
+                    if "Custom" in send_raid:
+                        break
+                    name_check = str(pokemon).replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", "")
+                    if name_check != user_custom[custom].get('pokemon', ''):
+                        continue
+                    if "raid" not in user_custom[custom].get('report_types'):
+                        continue
+                    send_raid.append("Custom")
             if type_setting and raid_types[0].lower() in user_types:
                 type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[raid_types[0].lower()])
                 send_raid.append(f"Type: {type_emoji}")
@@ -902,7 +916,10 @@ class Raid(commands.Cog):
         channel_lobby = channel_dict.get('lobby', None)
         channel_battle = channel_dict.get('battling', None)
         channel_complete = channel_dict.get('completed', None)
-        channel_boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, channel_dict.get('pkmn_obj', None))
+        if self.bot.active_channels.get(channel.id, {}).get('pokemon', None):
+            channel_boss = self.bot.active_channels[channel.id]['pokemon']
+        else:
+            channel_boss = await pkmn_class.Pokemon.async_get_pokemon(self.bot, channel_dict.get('pkmn_obj', None))
         channel_level = channel_dict['egg_level']
         if type != 'egg' and time.time() > channel_expire:
             channel_emoji += f"{expire_emoji}-"

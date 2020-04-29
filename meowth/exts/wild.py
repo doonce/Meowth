@@ -285,7 +285,10 @@ class Wild(commands.Cog):
         guild = message.guild
         author = guild.get_member(wild_dict.get('report_author', None))
         location = wild_dict.get('location', '')
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict.get('pkmn_obj', None))
+        if message.id in self.bot.active_wilds:
+            pokemon = self.bot.active_wilds[message.id]
+        else:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_dict.get('pkmn_obj', None))
         if not author:
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
@@ -470,7 +473,10 @@ class Wild(commands.Cog):
         dm_dict = wild_dict.get('dm_dict', {})
         gender = wild_dict.get('gender') if wild_dict.get('gender') else ''
         size = wild_dict.get('size') if wild_dict.get('size') else ''
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender.lower()} {size.lower()} {wild_dict['pkmn_obj'].lower()}")
+        if message.id in self.bot.active_wilds:
+            pokemon = self.bot.active_wilds[message.id]
+        else:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, f"{gender.lower()} {size.lower()} {wild_dict['pkmn_obj'].lower()}")
         wild_iv = wild_dict.get('wild_iv', {})
         pokemon.iv = wild_iv
         iv_percent = wild_dict.get('wild_iv', {}).get('percent', None)
@@ -536,7 +542,7 @@ class Wild(commands.Cog):
                 pass
         wild_embed.description = new_description
         ctx.wildreportmsg = message
-        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, level, cp, content, copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, wild_iv, level, cp, content, copy.deepcopy(wild_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][message.id]['dm_dict'] = dm_dict
 
     async def send_dm_messages(self, ctx, wild_pokemon, wild_details, wild_iv, wild_level, wild_cp, content, embed, dm_dict):
@@ -551,10 +557,17 @@ class Wild(commands.Cog):
                     embed.remove_field(index)
                 else:
                     index += 1
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_pokemon)
+        if ctx.wildreportmsg.id in self.bot.active_wilds:
+            pokemon = self.bot.active_wilds[ctx.wildreportmsg.id]
+        else:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, wild_pokemon)
         content = content.splitlines()[0]
         wild_types = pokemon.types.copy()
         wild_types.append('None')
+        iv_percent = wild_iv.get('percent')
+        iv_attack = wild_iv.get('iv_atk')
+        iv_defense = wild_iv.get('iv_def')
+        iv_stamina = wild_iv.get('iv_sta')
         for trainer in copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('trainers', {})):
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
             user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
@@ -566,7 +579,8 @@ class Wild(commands.Cog):
             user_ivs = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('ivs', [])
             user_levels = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('levels', [])
             user_cps = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('cps', [])
-            if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_types, type_setting, user_ivs, user_levels, user_cps]):
+            user_custom = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('custom', {})
+            if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_types, type_setting, user_ivs, user_levels, user_cps, user_custom]):
                 continue
             if not checks.dm_check(ctx, trainer, "wild") or trainer in dm_dict:
                 continue
@@ -575,6 +589,58 @@ class Wild(commands.Cog):
                 send_wild.append(f"Pokemon: {pokemon.name.title()}")
             if pokemon_setting and pokemon and str(pokemon) in user_forms:
                 send_wild.append(f"Pokemon Form: {str(pokemon)}")
+            if user_custom:
+                for custom in user_custom:
+                    if "Custom" in send_wild:
+                        break
+                    name_check = str(pokemon).replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", "")
+                    if name_check != user_custom[custom].get('pokemon', ''):
+                        continue
+                    if "wild" not in user_custom[custom].get('report_types'):
+                        continue
+                    if user_custom[custom].get('min_iv'):
+                        iv_check = int(iv_percent) if iv_percent else None
+                        if not iv_check:
+                            continue
+                        iv_range = range(user_custom[custom].get('min_iv'), user_custom[custom].get('max_iv')+1)
+                        if iv_check not in iv_range:
+                            continue
+                    if user_custom[custom].get('min_atk'):
+                        iv_check = int(iv_attack) if iv_attack else None
+                        if not iv_check:
+                            continue
+                        iv_range = range(user_custom[custom].get('min_atk'), user_custom[custom].get('max_atk')+1)
+                        if iv_check not in iv_range:
+                            continue
+                    if user_custom[custom].get('min_def'):
+                        iv_check = int(iv_defense) if iv_defense else None
+                        if not iv_check:
+                            continue
+                        iv_range = range(user_custom[custom].get('min_def'), user_custom[custom].get('max_def')+1)
+                        if iv_check not in iv_range:
+                            continue
+                    if user_custom[custom].get('min_sta'):
+                        iv_check = int(iv_stamina) if iv_stamina else None
+                        if not iv_check:
+                            continue
+                        iv_range = range(user_custom[custom].get('min_sta'), user_custom[custom].get('max_sta')+1)
+                        if iv_check not in iv_range:
+                            continue
+                    if user_custom[custom].get('min_cp'):
+                        cp_check = int(wild_cp) if wild_cp else None
+                        if not cp_check:
+                            continue
+                        cp_range = range(user_custom[custom].get('min_cp'), user_custom[custom].get('max_cp')+1)
+                        if cp_check not in cp_range:
+                            continue
+                    if user_custom[custom].get('min_level'):
+                        level_check = int(wild_level) if wild_level else None
+                        if not level_check:
+                            continue
+                        level_range = range(user_custom[custom].get('min_level'), user_custom[custom].get('max_level')+1)
+                        if level_check not in level_range:
+                            continue
+                    send_wild.append("Custom")
             if stop_setting and str(wild_details).lower() in user_stops:
                 send_wild.append(f"Pokestop: {wild_details.title()}")
             if type_setting and wild_types[0].lower() in user_types:
@@ -583,8 +649,8 @@ class Wild(commands.Cog):
             if type_setting and wild_types[1].lower() in user_types:
                 type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[wild_types[1].lower()])
                 send_wild.append(f"Type: {type_emoji}")
-            if wild_iv in user_ivs:
-                send_wild.append(f"IV: {wild_iv}")
+            if iv_percent in user_ivs:
+                send_wild.append(f"IV: {iv_percent}")
             if wild_level in user_levels:
                 send_wild.append(f"Level: {wild_level}")
             if wild_cp in user_cps:
@@ -783,7 +849,7 @@ class Wild(commands.Cog):
         wild_embed = await self.make_wild_embed(ctx, details)
         ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\n\nUse {omw_emoji} if coming, {catch_emoji} if caught, {expire_emoji} if despawned, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all wilds!", embed=wild_embed)
         dm_dict = {}
-        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, iv_percent, None, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
+        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, wild_iv, None, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(ctx.wildreportmsg, reaction)

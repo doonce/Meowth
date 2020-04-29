@@ -191,7 +191,10 @@ class Research(commands.Cog):
         location = research_dict.get('location', '')
         quest = research_dict.get('quest', '')
         reward = research_dict.get('reward', '')
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
+        if message.id in self.bot.active_research:
+            pokemon = self.bot.active_research[message.id]
+        else:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
         if not author:
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
@@ -281,7 +284,10 @@ class Research(commands.Cog):
         location = research_dict.get('location', '')
         quest = research_dict.get('quest', '')
         reward = research_dict.get('reward', '')
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
+        if message.id in self.bot.active_research:
+            pokemon = self.bot.active_research[message.id]
+        else:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, reward)
         old_embed = message.embeds[0]
         loc_url = old_embed.url
         author = ctx.guild.get_member(research_dict.get('report_author', None))
@@ -775,7 +781,10 @@ class Research(commands.Cog):
                     embed.remove_field(index)
                 else:
                     index += 1
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, res_pokemon)
+        if ctx.resreportmsg.id in self.bot.active_research:
+            pokemon = self.bot.active_research
+        else:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, res_pokemon)
         if pokemon:
             pkmn_types = pokemon.types.copy()
         else:
@@ -791,7 +800,8 @@ class Research(commands.Cog):
             item_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('item', {}).get('research', True)
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
             type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('research', True)
-            if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_items, item_setting, user_types, type_setting]):
+            user_custom = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('custom', {})
+            if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_items, item_setting, user_types, type_setting, user_custom]):
                 continue
             if not checks.dm_check(ctx, trainer, "research") or trainer in dm_dict:
                 continue
@@ -800,6 +810,16 @@ class Research(commands.Cog):
                 send_research.append(f"Pokemon: {pokemon.name.title()}")
             if pokemon_setting and pokemon and str(pokemon) in user_forms:
                 send_research.append(f"Pokemon Form: {str(pokemon)}")
+            if user_custom:
+                for custom in user_custom:
+                    if "Custom" in send_research:
+                        break
+                    name_check = str(pokemon).replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", "")
+                    if name_check != user_custom[custom].get('pokemon', ''):
+                        continue
+                    if "research" not in user_custom[custom].get('report_types'):
+                        continue
+                    send_research.append("Custom")
             if stop_setting and location.lower() in user_stops:
                 send_research.append(f"Pokestop: {location.title()}")
             if item_setting and item in user_items:

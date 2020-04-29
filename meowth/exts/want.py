@@ -568,7 +568,7 @@ class Want(commands.Cog):
                     listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                 index += 1
         if trade_warn:
-            categories = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}).setdefault('pokemon', {})            
+            categories = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}).setdefault('pokemon', {})
             trade_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pogo_trading_icon.png?cache=1')
             trade_embed.add_field(name=f"**Trade Alerts**", value=f"Just so you know, **{(', ').join(trade_warn)}** will only be alerted through new trade listings.\n\n{'Trade alerts are off by default and you have not opted-in. To enable trade alerts, use **'+ctx.prefix+'want categories** → **pokemon** and then make sure trade is in your list.' if not categories.get('trade') else ''}")
             await ctx.send(f"Meowth! {ctx.author.mention}", embed=trade_embed, delete_after=60)
@@ -1105,6 +1105,411 @@ class Want(commands.Cog):
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
+
+    @want.command(name='custom')
+    @checks.allowwant()
+    async def want_custom(self, ctx):
+        """Allows custom alerts for a pokemon that include IV, level, cp, etc.
+
+        Usage: !want custom"""
+        message = ctx.message
+        author = message.author
+        guild = message.guild
+        channel = message.channel
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
+        user_custom = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('custom', {})
+        error = False
+        want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+        want_embed.add_field(name=_('**New Custom Alert Subscription**'), value=f"Meowth! I'll help you add a new custom alert subscription! This will allow subscriptions to alerts that match desired stats including IV, level, cp, and report type.\n\nThese alerts will only send if **ALL** supplied conditions match.\n\nReply with the name of the **pokemon** including all desired forms to get started. You can reply with **cancel** to stop anytime.", inline=False)
+        subscription_dict = {
+            'pokemon':None,
+            'min_iv':None,
+            'max_iv':None,
+            'min_atk':None,
+            'max_atk':None,
+            'min_def':None,
+            'max_def':None,
+            'min_sta':None,
+            'max_sta':None,
+            'min_cp':None,
+            'max_cp':None,
+            'min_level':None,
+            'max_level':None,
+            'report_types': ['wild', 'research', 'nest', 'invasion', 'trade', 'raid']
+        }
+        while True:
+            async with ctx.typing():
+                def check(reply):
+                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                        return True
+                    else:
+                        return False
+                if not subscription_dict['pokemon']:
+                    custom_wait = await channel.send(embed=want_embed)
+                    try:
+                        custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        custom_msg = None
+                    await utils.safe_delete(custom_wait)
+                    if not custom_msg:
+                        error = f"took too long to respond"
+                        break
+                    else:
+                        await utils.safe_delete(custom_msg)
+                    if custom_msg.clean_content.lower() == "cancel":
+                        error = f"cancelled the report"
+                        break
+                    else:
+                        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, custom_msg.clean_content.lower())
+                        if not pokemon:
+                            error = f"entered an invalid pokemon"
+                            break
+                        subscription_dict['pokemon'] = str(pokemon).replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", "")
+                if subscription_dict['pokemon']:
+                    want_embed.clear_fields()
+                    want_embed.add_field(name=_('**New Custom Alert Subscription**'), value=f"Meowth! Next, I'll need to know what desired stat you'd like to add to your subscription. Reply with one of the following or reply with **cancel** to stop anytime.", inline=False)
+                    want_embed.add_field(name=_('**IV / Attack / Defense / Stamina**'), value=f"Reply with **iv / attack / defense / stamina** to add an IV percentage / IV attack / IV defense / IV stamina condition to your subscription. This will NOTE: This will only be applied for wild reports. {subscription_dict['min_iv']}-{subscription_dict['max_iv']}", inline=False)
+                    want_embed.add_field(name=_('**CP / Level**'), value=f"Reply with **cp / level** to add a CP / Level condition to your subscription. NOTE: This will only be applied for wild reports.\nCurrent: {subscription_dict['min_cp']}-{subscription_dict['max_cp']}", inline=False)
+                    want_embed.add_field(name=_('**Report**'), value=f"Reply with **report** to set the report type(s) that this alert will be used for.\nCurrent: {subscription_dict['report_types']}", inline=False)
+                    want_embed.add_field(name=_('**Done**'), value=f"Reply with **done** to stop adding conditions to your subscription, save, and exit.", inline=False)
+                    custom_wait = await channel.send(embed=want_embed)
+                    try:
+                        custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        custom_msg = None
+                    await utils.safe_delete(custom_wait)
+                    if not custom_msg:
+                        error = f"took too long to respond"
+                        break
+                    else:
+                        await utils.safe_delete(custom_msg)
+                    if custom_msg.clean_content.lower() == "cancel":
+                        error = f"cancelled the report"
+                        break
+                    elif custom_msg.clean_content.lower() == "iv":
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **minimum** IV percent for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took too long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['min_iv'] = int(custom_msg.clean_content.lower())
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV percent for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took to long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['max_iv'] = int(custom_msg.clean_content.lower())
+                            continue
+                    elif custom_msg.clean_content.lower() == "attack":
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **minimum** IV attack for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took too long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['min_atk'] = int(custom_msg.clean_content.lower())
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV attack for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took to long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['max_atk'] = int(custom_msg.clean_content.lower())
+                            continue
+                    elif custom_msg.clean_content.lower() == "defense":
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **minimum** IV defense for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took too long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['min_def'] = int(custom_msg.clean_content.lower())
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV defense for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took to long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['max_def'] = int(custom_msg.clean_content.lower())
+                            continue
+                    elif custom_msg.clean_content.lower() == "stamina":
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **minimum** IV stamina for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took too long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['min_sta'] = int(custom_msg.clean_content.lower())
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV stamina for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took to long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['max_sta'] = int(custom_msg.clean_content.lower())
+                            continue
+                    elif custom_msg.clean_content.lower() == "cp":
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **minimum** CP for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took too long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['min_cp'] = int(custom_msg.clean_content.lower())
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** CP for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took to long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['max_cp'] = int(custom_msg.clean_content.lower())
+                            continue
+                    elif custom_msg.clean_content.lower() == "level":
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **minimum** level for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took too long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['min_level'] = int(custom_msg.clean_content.lower())
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** level for your subscription.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took to long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        elif not custom_msg.clean_content.lower().isdigit():
+                            error = f"entered an invalid option"
+                            break
+                        else:
+                            subscription_dict['max_level'] = int(custom_msg.clean_content.lower())
+                            continue
+                    elif custom_msg.clean_content.lower() == "report":
+                        want_embed.clear_fields()
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **report type** for your subscription. Choose from **wild, research, raid, nest, trade, invasion**. NOTE: If you have given any IV, level, or CP stat filters, these will only be applied to wild reports.")
+                        custom_wait = await channel.send(embed=want_embed)
+                        try:
+                            custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                        except asyncio.TimeoutError:
+                            custom_msg = None
+                        await utils.safe_delete(custom_wait)
+                        if not custom_msg:
+                            error = f"took to long to respond"
+                            break
+                        else:
+                            await utils.safe_delete(custom_msg)
+                        if custom_msg.clean_content.lower() == "cancel":
+                            error = f"cancelled the report"
+                            break
+                        else:
+                            report_options = ['wild', 'research', 'nest', 'invasion', 'trade', 'raid']
+                            reply_list = custom_msg.content.lower().split(',')
+                            reply_list = [x.strip() for x in reply_list]
+                            reply_list = [x for x in reply_list if x in report_options]
+                            disable_list = set(report_options) - set(reply_list)
+                            enable_list = set(report_options) - set(disable_list)
+                            subscription_dict['report_types'] = list(enable_list)
+                            continue
+                    elif custom_msg.clean_content.lower() == "done":
+                        filtered_dict = {k: v for k, v in subscription_dict.items() if v is not None}
+                        subscription_dict = filtered_dict
+                        self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['custom'][ctx.message.id] = subscription_dict
+                        break
+        if error:
+            want_embed.clear_fields()
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+            want_embed.add_field(name=_('**New Custom Subscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=want_embed, delete_after=10)
+            await utils.safe_delete(message)
+        else:
+            want_embed.clear_fields()
+            want_embed.set_thumbnail(url=pokemon.img_url)
+            shiny_str = ""
+            if pokemon.shiny_available:
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+            alert_text = f"**Pokemon**: {shiny_str}{subscription_dict['pokemon']} {pokemon.emoji}"
+            if subscription_dict.get('min_iv'):
+                alert_text += f" | **IV Percent**: {subscription_dict['min_iv']}-{subscription_dict['max_iv']}"
+            if subscription_dict.get('min_atk'):
+                alert_text += f" | **IV Attack**: {subscription_dict['min_atk']}-{subscription_dict['max_atk']}"
+            if subscription_dict.get('min_def'):
+                alert_text += f" | **IV Defense**: {subscription_dict['min_def']}-{subscription_dict['max_def']}"
+            if subscription_dict.get('min_sta'):
+                alert_text += f" | **IV Stamina**: {subscription_dict['min_sta']}-{subscription_dict['max_sta']}"
+            if subscription_dict.get('min_cp'):
+                alert_text += f" | **CP**: {subscription_dict['min_cp']}-{subscription_dict['max_cp']}"
+            if subscription_dict.get('min_level'):
+                alert_text += f" | **Level**: {subscription_dict['min_level']}-{subscription_dict['max_level']}"
+            alert_text += f" | **Report Types**: {(', ').join(subscription_dict['report_types'])}"
+            want_embed.add_field(name=_('**New Custom Subscription**'), value=f"Meowth! {ctx.author.display_name}, out of your total 1 pokemon:\n\n**1 Added:**\n{alert_text}".format(error=error), inline=False)
+            confirmation = await channel.send(embed=want_embed)
+            await utils.safe_delete(message)
 
     @want.command()
     @checks.allowwant()
@@ -2541,6 +2946,136 @@ class Want(commands.Cog):
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
         unwant_confirmation = await channel.send(embed=want_embed)
 
+    @unwant.command(name='custom')
+    @checks.allowwant()
+    async def unwant_custom(self, ctx):
+        """Remove a custom subscription.
+
+        Usage: !unwant custom"""
+        message = ctx.message
+        guild = message.guild
+        channel = message.channel
+        author = message.author
+        user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('custom', {})
+        message_list = []
+        error = False
+        want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+        subscription_dict = {}
+        index = 1
+        alert_text = ""
+        if not user_wants:
+            want_embed.add_field(name=f"**No Custom Alert Subscriptions**", value=f"You do not have any custom alert subscriptions. You can add one using {ctx.prefix}want custom.")
+            return await ctx.send(embed=want_embed, delete_after=30)
+        for custom in user_wants:
+            subscription_dict[index] = custom
+            alert_text += f"{index}. **Pokemon**: {user_wants[custom]['pokemon']}"
+            if user_wants[custom].get('min_iv'):
+                alert_text += f" | **IV Percent**: {user_wants[custom]['min_iv']}-{user_wants[custom]['max_iv']}"
+            if user_wants[custom].get('min_atk'):
+                alert_text += f" | **IV Attack**: {user_wants[custom]['min_atk']}-{user_wants[custom]['max_atk']}"
+            if user_wants[custom].get('min_def'):
+                alert_text += f" | **IV Defense**: {user_wants[custom]['min_def']}-{user_wants[custom]['max_def']}"
+            if user_wants[custom].get('min_sta'):
+                alert_text += f" | **IV Stamina**: {user_wants[custom]['min_sta']}-{user_wants[custom]['max_sta']}"
+            if user_wants[custom].get('min_cp'):
+                alert_text += f" | **CP**: {user_wants[custom]['min_cp']}-{user_wants[custom]['max_cp']}"
+            if user_wants[custom].get('min_level'):
+                alert_text += f" | **Level**: {user_wants[custom]['min_level']}-{user_wants[custom]['max_level']}"
+            alert_text += f" | **Report Types**: {(', ').join(user_wants[custom]['report_types'])}\n"
+            index += 1
+        if len(alert_text) < 1000:
+            want_embed.add_field(name=_('**Remove Custom Alert Subscription**'), value=alert_text, inline=False)
+        else:
+            paginator = commands.Paginator(prefix="", suffix="")
+            for line in alert_text.splitlines():
+                if len(line) < 1900:
+                    paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+                else:
+                    new_list = []
+                    line_split = line.split(',')
+                    line_split = [x.strip() for x in line_split]
+                    for item in line_split:
+                        if len(f"{(', ').join(new_list)}") < 1900:
+                            new_list.append(item)
+                        else:
+                            paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
+                            new_list = []
+                    if new_list:
+                        paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
+            index = 0
+            for p in paginator.pages:
+                if index == 0:
+                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"**Remove Custom Alert Subscription**\n{p}"))
+                else:
+                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                message_list.append(listmsg)
+                index += 1
+        while True:
+            async with ctx.typing():
+                def check(reply):
+                    if reply.author is not guild.me and reply.channel.id == channel.id and reply.author == message.author:
+                        return True
+                    else:
+                        return False
+                want_embed.insert_field_at(0, name=_('**Remove Custom Alert Subscription**'), value=f"Meowth! I'll help you remove a custom alert subscription!\n\nReply with the subscription number that you'd like to remove or reply with **cancel** to stop anytime.", inline=False)
+                custom_wait = await channel.send(embed=want_embed)
+                try:
+                    custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    custom_msg = None
+                await utils.safe_delete(custom_wait)
+                if not custom_msg:
+                    error = f"took too long to respond"
+                    break
+                else:
+                    await utils.safe_delete(custom_msg)
+                if custom_msg.clean_content.lower() == "cancel":
+                    error = f"cancelled the report"
+                    break
+                elif not custom_msg.clean_content.lower().isdigit():
+                    error = f"entered an invalid option"
+                    break
+                elif int(custom_msg.clean_content.lower()) not in subscription_dict.keys():
+                    error = f"entered an invalid option"
+                    break
+                else:
+                    index = int(custom_msg.clean_content.lower())
+                    alert_info = copy.deepcopy(user_wants[subscription_dict[index]])
+                    del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['custom'][subscription_dict[index]]
+                    break
+        await utils.safe_bulk_delete(ctx.channel, message_list)
+        if error:
+            want_embed.clear_fields()
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+            want_embed.add_field(name=_('**Custom Subscription Removal Cancelled**'), value=_("Meowth! Your request has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
+            confirmation = await channel.send(embed=want_embed, delete_after=10)
+            await utils.safe_delete(message)
+        else:
+            want_embed.clear_fields()
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, alert_info['pokemon'])
+            want_embed.set_thumbnail(url=pokemon.img_url)
+            shiny_str = ""
+            if pokemon.shiny_available:
+                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+            alert_text = f"**Pokemon**: {shiny_str}{alert_info['pokemon']} {pokemon.emoji}"
+            if alert_info.get('min_iv'):
+                alert_text += f" | **IV Percent**: {alert_info['min_iv']}-{alert_info['max_iv']}"
+            if alert_info.get('min_atk'):
+                alert_text += f" | **IV Attack**: {alert_info['min_atk']}-{alert_info['max_atk']}"
+            if alert_info.get('min_def'):
+                alert_text += f" | **IV Defense**: {alert_info['min_def']}-{alert_info['max_def']}"
+            if alert_info.get('min_sta'):
+                alert_text += f" | **IV Stamina**: {alert_info['min_sta']}-{alert_info['max_sta']}"
+            if alert_info.get('min_cp'):
+                alert_text += f" | **CP**: {alert_info['min_cp']}-{alert_info['max_cp']}"
+            if alert_info.get('min_level'):
+                alert_text += f" | **Level**: {alert_info['min_level']}-{alert_info['max_level']}"
+            alert_text += f" | **Report Types**: {(', ').join(alert_info['report_types'])}"
+            want_embed.add_field(name=_('**Remove Custom Subscription**'), value=f"Meowth! {ctx.author.display_name}, out of your total **1** pokemon:\n\n**1 Removed:**\n{alert_text}".format(error=error), inline=False)
+            confirmation = await channel.send(embed=want_embed)
+            await utils.safe_delete(message)
+
+
     @unwant.command(name='all')
     @checks.allowwant()
     async def unwant_all(self, ctx, category="all"):
@@ -2566,10 +3101,11 @@ class Want(commands.Cog):
         user_levels = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
         user_cps = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('cps', [])
         user_eggs = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('raid_eggs', [])
+        user_custom = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('custom', {})
         join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict'].get('want', {}).get('roles', [])]
         user_roles = [x for x in join_roles if x in author.roles]
         unwant_msg = ""
-        if not any([user_wants, user_bosses, user_gyms, user_stops, user_items, user_types, user_ivs, user_levels, user_cps, user_forms, user_roles, user_bossforms, user_trades, user_eggs]):
+        if not any([user_wants, user_bosses, user_gyms, user_stops, user_items, user_types, user_ivs, user_levels, user_cps, user_forms, user_roles, user_bossforms, user_trades, user_eggs, user_custom]):
             return await channel.send(content=_('{0}, you have nothing in your want list!').format(author.mention), delete_after=10)
         await channel.trigger_typing()
         completed_list = []
@@ -2615,6 +3151,9 @@ class Want(commands.Cog):
         if (category == "all" or category == "egg") and len(user_eggs) > 0:
             self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['raid_eggs'] = []
             completed_list.append(f"{len(user_eggs)} raid egg{'s' if len(user_eggs) > 1 else ''}")
+        if (category == "all" or category == "custom") and len(user_custom) > 0:
+            self.bot.guild_dict[guild.id]['trainers'][message.author.id]['alerts']['custom'] = {}
+            completed_list.append(f"{len(user_eggs)} custom subscription{'s' if len(user_custom) > 1 else ''}")
         if (category == "all" or category == "role") and len(user_roles) > 0:
             remove_roles = []
             for role in author.roles:

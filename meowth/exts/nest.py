@@ -536,7 +536,8 @@ class Nest(commands.Cog):
             pokemon_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokemon', {}).get('nest', True)
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('types', [])
             type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('nest', True)
-            if not any([user_wants, user_forms, pokemon_setting, user_types, type_setting]):
+            user_custom = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('custom', {})
+            if not any([user_wants, user_forms, pokemon_setting, user_types, type_setting, user_custom]):
                 continue
             if not checks.dm_check(ctx, trainer, "nest") or trainer in dm_dict:
                 continue
@@ -545,6 +546,16 @@ class Nest(commands.Cog):
                 send_nest.append(f"Pokemon: {pokemon.name.title()}")
             if pokemon_setting and pokemon and str(pokemon) in user_forms:
                 send_nest.append(f"Pokemon Form: {str(pokemon)}")
+            if user_custom:
+                for custom in user_custom:
+                    if "Custom" in send_nest:
+                        break
+                    name_check = str(pokemon).replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", "")
+                    if name_check != user_custom[custom].get('pokemon', ''):
+                        continue
+                    if "nest" not in user_custom[custom].get('report_types'):
+                        continue
+                    send_nest.append("Custom")
             if type_setting and nest_types[0].lower() in user_types:
                 type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[nest_types[0].lower()])
                 send_nest.append(f"Type: {type_emoji}")

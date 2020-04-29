@@ -293,6 +293,8 @@ class Invasion(commands.Cog):
     async def edit_invasion_messages(self, ctx, message):
         invasion_dict = self.bot.guild_dict[ctx.guild.id]['invasion_dict'].get(message.id, {})
         reward = invasion_dict.get('reward', [])
+        if self.bot.active_invasions.get(message.id):
+            reward = self.bot.active_invasions[message.id]
         reward_type = invasion_dict.get('reward_type', '')
         gender = invasion_dict.get('gender', '')
         leader = invasion_dict.get('leader', '')
@@ -334,13 +336,14 @@ class Invasion(commands.Cog):
             invasion_embed.add_field(name=_("**Weaknesses:**"), value=f"{utils.weakness_to_emoji(self.bot, utils.get_weaknesses(self.bot, [reward_type.title()]))}\u200b", inline=True)
         else:
             for pokemon in reward:
-                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
-                if not pokemon:
-                    continue
-                pokemon.shiny = False
-                pokemon.size = None
-                pokemon.gender = None
-                pokemon.shadow = "shadow"
+                if not isinstance(pokemon, pkmn_class.Pokemon):
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                    if not pokemon:
+                        continue
+                    pokemon.shiny = False
+                    pokemon.size = None
+                    pokemon.gender = None
+                    pokemon.shadow = "shadow"
                 pokemon_list.append(pokemon)
                 if pokemon and "shadow" in pokemon.shiny_available:
                     shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
@@ -411,11 +414,14 @@ class Invasion(commands.Cog):
         invasion_type = None
         pokemon = None
         pkmn_list = []
+        if self.bot.active_invasions.get(ctx.invreportmsg.id):
+            inv_pokemon = self.bot.active_invasions[ctx.invreportmsg.id]
         if inv_pokemon in self.bot.type_list:
             invasion_type = inv_pokemon
         elif inv_pokemon:
             for pokemon in inv_pokemon:
-                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                if not isinstance(pokemon, pkmn_class.Pokemon):
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
                 if pokemon:
                     pkmn_list.append(pokemon)
         for trainer in self.bot.guild_dict[ctx.guild.id].get('trainers', {}):
@@ -426,7 +432,8 @@ class Invasion(commands.Cog):
             stop_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('pokestop', {}).get('invasion', True)
             user_types = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('types', [])
             type_setting = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].get('alerts', {}).get('settings', {}).get('categories', {}).get('type', {}).get('invasion', True)
-            if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_types, type_setting]):
+            user_custom = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('custom', {})
+            if not any([user_wants, user_forms, pokemon_setting, user_stops, stop_setting, user_types, type_setting, user_custom]):
                 continue
             if not checks.dm_check(ctx, trainer, "invasion") or trainer in dm_dict:
                 continue
@@ -439,6 +446,16 @@ class Invasion(commands.Cog):
                         send_invasion.append(f"Pokemon: {pokemon.name.title()}")
                     if pokemon_setting and str(pokemon) in user_forms:
                         send_invasion.append(f"Pokemon Form: {str(pokemon)}")
+                    if user_custom:
+                        for custom in user_custom:
+                            if "Custom" in send_invasion:
+                                break
+                            name_check = str(pokemon).replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", "")
+                            if name_check != user_custom[custom].get('pokemon', ''):
+                                continue
+                            if "invasion" not in user_custom[custom].get('report_types'):
+                                continue
+                            send_invasion.append("Custom")
                     if type_setting and pkmn_types[0].lower() in user_types:
                         type_emoji = utils.parse_emoji(ctx.guild, self.bot.config.type_id_dict[pkmn_types[0].lower()])
                         send_invasion.append(f"Type: {type_emoji}")

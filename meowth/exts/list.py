@@ -917,6 +917,23 @@ class Listing(commands.Cog):
         user_cps = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('cps', [])
         user_cps = sorted(user_cps)
         user_cps = [str(x) for x in user_cps]
+        user_custom = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('custom', {})
+        for custom in user_custom:
+            alert_text = f"**Pokemon**: {user_custom[custom]['pokemon']}"
+            if user_custom[custom].get('min_iv'):
+                alert_text += f" | **IV Percent**: {user_custom[custom]['min_iv']}-{user_custom[custom]['max_iv']}"
+            if user_custom[custom].get('min_atk'):
+                alert_text += f" | **IV Attack**: {user_custom[custom]['min_atk']}-{user_custom[custom]['max_atk']}"
+            if user_custom[custom].get('min_def'):
+                alert_text += f" | **IV Defense**: {user_custom[custom]['min_def']}-{user_custom[custom]['max_def']}"
+            if user_custom[custom].get('min_sta'):
+                alert_text += f" | **IV Stamina**: {user_custom[custom]['min_sta']}-{user_custom[custom]['max_sta']}"
+            if user_custom[custom].get('min_cp'):
+                alert_text += f" | **CP**: {user_custom[custom]['min_cp']}-{user_custom[custom]['max_cp']}"
+            if user_custom[custom].get('min_level'):
+                alert_text += f" | **Level**: {user_custom[custom]['min_level']}-{user_custom[custom]['max_level']}"
+            alert_text += f" | **Report Types**: {(', ').join(user_custom[custom]['report_types'])}\n"
+        custom_list = alert_text.splitlines()
         categories = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}))
         pokemon_options = ["wild", "research", "invasion", "nest", "trade", "raid"]
         pokestop_options = ["research", "wild", "lure", "invasion"]
@@ -949,6 +966,8 @@ class Listing(commands.Cog):
                 wantmsg += f"**Boss Forms:** (raids)\n{', '.join(user_bossforms)}\n\n"
             if (user_trades or user_tradeforms) and not user_link:
                 wantmsg += f"**Trades:** (trades)\n{', '.join(tradelist+user_tradeforms)}\n\n"
+            if custom_list:
+                wantmsg += f"**Custom:**\n"+('\n').join(custom_list)+"\n\n"
             if user_gyms:
                 wantmsg += f"**Gyms:** (raid)\n{', '.join(user_gyms)}\n\n"
             if user_stops:
@@ -1031,6 +1050,7 @@ class Listing(commands.Cog):
         level_list = []
         cp_list = []
         raidegg_list = []
+        custom_list = []
         for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('wants', []):
                 if want not in want_list:
@@ -1038,6 +1058,10 @@ class Listing(commands.Cog):
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('forms', []):
                 if want not in form_list:
                     form_list.append(want)
+            for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('custom', {}):
+                pokemon = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer]['alerts']['custom'][want]['pokemon']
+                if pokemon not in custom_list:
+                    custom_list.append(pokemon)
             for want in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].setdefault('alerts', {}).setdefault('stops', []):
                 if want not in stop_list:
                     stop_list.append(want)
@@ -1091,7 +1115,7 @@ class Listing(commands.Cog):
         raidegg_list = sorted([int(x) for x in raidegg_list])
         raidegg_list = [str(x) for x in raidegg_list]
         wantmsg = ""
-        if len(want_list) > 0 or len(gym_list) > 0 or len(stop_list) > 0 or len(item_list) > 0 or len(boss_list) > 0 or len(type_list) > 0 or len(iv_list) > 0 or len(level_list) > 0 or len(cp_list) > 0:
+        if want_list or gym_list or stop_list or item_list or boss_list or type_list or iv_list or level_list or cp_list or custom_list:
             if want_list:
                 wantmsg += f"**Pokemon:**\n{', '.join(want_list)}\n\n"
             if form_list:
@@ -1102,6 +1126,8 @@ class Listing(commands.Cog):
                 wantmsg += f"**Boss Forms:**\n{', '.join(bossform_list)}\n\n"
             if trade_list:
                 wantmsg += f"**Trades:**\n{', '.join(trade_list)}\n\n"
+            if custom_list:
+                wantmsg += f"**Custom:**\n{', '.join(custom_list)}\n\n"
             if gym_list:
                 wantmsg += f"**Gyms:**\n{', '.join(gym_list)}\n\n"
             if stop_list:
@@ -2187,11 +2213,11 @@ class Listing(commands.Cog):
             if gym_matching_cog:
                 pois = {**gym_matching_cog.get_stops(ctx.guild.id), **gym_matching_cog.get_gyms(ctx.guild.id)}
                 pois = {k.lower(): v for k, v in pois.items()}
-            if "level" in search_term:
+            if "level" in search_term and [x for x in search_term if x.isdigit()]:
                 search_label = f"Level {search_term.replace('level', '').strip()} reports"
-            elif "cp" in search_term:
+            elif "cp" in search_term and [x for x in search_term if x.isdigit()]:
                 search_label = f"{search_term.replace('cp', '').strip()}CP reports"
-            elif "iv" in search_term or search_term.isdigit():
+            elif ("iv" in search_term or search_term.isdigit()) and [x for x in search_term if x.isdigit()]:
                 search_label = f"{search_term.replace('iv', '').strip()}IV reports"
             elif search_term in self.bot.type_list:
                 search_label = f"{search_term.title()} type reports"

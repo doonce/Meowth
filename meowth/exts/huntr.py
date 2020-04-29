@@ -915,7 +915,7 @@ class Huntr(commands.Cog):
                 await wild_cog.expire_wild(ctx.wildreportmsg)
                 dupe_message = await ctx.channel.fetch_message(wildid)
                 return await wild_cog.edit_wild_messages(ctx, dupe_message)
-        dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), iv_percent, level, cp, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
+        dm_dict = await wild_cog.send_dm_messages(ctx, str(pokemon), str(nearest_stop), wild_iv, level, cp, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), wild_embed.copy(), dm_dict)
         ctx.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['dm_dict'] = dm_dict
         for reaction in reaction_list:
             await asyncio.sleep(0.25)
