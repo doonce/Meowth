@@ -1108,7 +1108,7 @@ class Want(commands.Cog):
 
     @want.command(name='custom')
     @checks.allowwant()
-    async def want_custom(self, ctx):
+    async def want_custom(self, ctx, *, pokemon=None):
         """Allows custom alerts for a pokemon that include IV, level, cp, etc.
 
         Usage: !want custom"""
@@ -1120,7 +1120,7 @@ class Want(commands.Cog):
         user_custom = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('custom', {})
         error = False
         want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
-        want_embed.add_field(name=_('**New Custom Alert Subscription**'), value=f"Meowth! I'll help you add a new custom alert subscription! This will allow subscriptions to alerts that match desired stats including IV, level, cp, and report type.\n\nThese alerts will only send if **ALL** supplied conditions match.\n\nReply with the name of the **pokemon** including all desired forms to get started. You can reply with **cancel** to stop anytime.", inline=False)
+        want_embed.add_field(name=_('**New Custom Alert Subscription**'), value=f"Meowth! I'll help you add a new custom alert subscription! This will allow subscriptions to alerts that match desired stats including IV, level, cp, and report type.\n\nThese alerts will only send if **ALL** supplied conditions match.\n\nReply with the name of the **pokemon** including all desired forms, gender, and size to get started. You can reply with **cancel** to stop anytime.", inline=False)
         subscription_dict = {
             'pokemon':None,
             'min_iv':None,
@@ -1135,6 +1135,8 @@ class Want(commands.Cog):
             'max_cp':None,
             'min_level':None,
             'max_level':None,
+            'gender':None,
+            'size':None,
             'report_types': ['wild', 'research', 'nest', 'invasion', 'trade', 'raid']
         }
         while True:
@@ -1144,6 +1146,11 @@ class Want(commands.Cog):
                         return True
                     else:
                         return False
+                if pokemon:
+                    pokemon_str = str(pokemon).lower()
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, pokemon)
+                    if pokemon:
+                        subscription_dict['pokemon'] = str(pokemon).replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", "")
                 if not subscription_dict['pokemon']:
                     custom_wait = await channel.send(embed=want_embed)
                     try:
@@ -1161,15 +1168,32 @@ class Want(commands.Cog):
                         break
                     else:
                         pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, custom_msg.clean_content.lower())
+                        pokemon_str = str(custom_msg.clean_content.lower())
                         if not pokemon:
                             error = f"entered an invalid pokemon"
                             break
                         subscription_dict['pokemon'] = str(pokemon).replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", "")
+                want_embed.set_thumbnail(url=pokemon.img_url)
+                gender_size = []
+                if "female" in pokemon_str:
+                    subscription_dict['gender'] = "female"
+                    gender_size.append("gender")
+                elif "male" in pokemon_str:
+                    subscription_dict['gender'] = "male"
+                    gender_size.append("gender")
+                if "xs" in  pokemon_str or "small" in pokemon_str or "tiny" in pokemon_str:
+                    subscription_dict['size'] = "xs"
+                    gender_size.append("size")
+                elif "xl" in pokemon_str or "large" in pokemon_str or "big" in pokemon_str:
+                    subscription_dict['size'] = "xl"
+                    gender_size.append("size")
                 if subscription_dict['pokemon']:
                     want_embed.clear_fields()
-                    want_embed.add_field(name=_('**New Custom Alert Subscription**'), value=f"Meowth! Next, I'll need to know what desired stat you'd like to add to your subscription. Reply with one of the following or reply with **cancel** to stop anytime.", inline=False)
-                    want_embed.add_field(name=_('**IV / Attack / Defense / Stamina**'), value=f"Reply with **iv / attack / defense / stamina** to add an IV percentage / IV attack / IV defense / IV stamina condition to your subscription. This will NOTE: This will only be applied for wild reports. {subscription_dict['min_iv']}-{subscription_dict['max_iv']}", inline=False)
-                    want_embed.add_field(name=_('**CP / Level**'), value=f"Reply with **cp / level** to add a CP / Level condition to your subscription. NOTE: This will only be applied for wild reports.\nCurrent: {subscription_dict['min_cp']}-{subscription_dict['max_cp']}", inline=False)
+                    want_embed.add_field(name=f"**New Custom {pokemon.name.title()} Subscription**", value=f"Meowth! Next, I'll need to know what desired stat you'd like to add to your {pokemon.name.title()} subscription. Reply with one of the following or reply with **cancel** to stop anytime. Keep in mind that ***ALL** supplied coonditions must match in order for you to receive an alert.", inline=False)
+                    want_embed.add_field(name=_('**IV / Attack / Defense / Stamina**'), value=f"Reply with **iv, attack, defense, or stamina** to add an IV percentage, IV attack, IV defense, or IV stamina condition to your subscription. NOTE: This will only be applied for wild reports.\nCurrent IV Percent: {subscription_dict['min_iv']}-{subscription_dict['max_iv']}\nCurrent IV Attack: {subscription_dict['min_atk']}-{subscription_dict['max_atk']}\nCurrent IV Defense: {subscription_dict['min_def']}-{subscription_dict['max_def']}\nCurrent IV Stamina: {subscription_dict['min_sta']}-{subscription_dict['max_sta']}", inline=False)
+                    want_embed.add_field(name=_('**CP / Level**'), value=f"Reply with **cp or level** to add a CP or Level condition to your subscription. NOTE: This will only be applied for wild reports.\nCurrent CP: {subscription_dict['min_cp']}-{subscription_dict['max_cp']}\nCurrent level: {subscription_dict['min_level']}-{subscription_dict['max_level']}", inline=False)
+                    if gender_size:
+                        want_embed.add_field(name=f"{(' / ').join([x.title() for x in gender_size])}", value=f"\U000026a0\U0000fe0f You have added a {(' and ').join(gender_size)}. Th{'ese' if len(gender_size)>1 else 'is'} can be a rare condition and may limit your *wild* alerts. Reply with **{(' or ').join(gender_size)}** to remove {(' or ').join(gender_size)} if this was unintentional.")
                     want_embed.add_field(name=_('**Report**'), value=f"Reply with **report** to set the report type(s) that this alert will be used for.\nCurrent: {subscription_dict['report_types']}", inline=False)
                     want_embed.add_field(name=_('**Done**'), value=f"Reply with **done** to stop adding conditions to your subscription, save, and exit.", inline=False)
                     custom_wait = await channel.send(embed=want_embed)
@@ -1186,6 +1210,14 @@ class Want(commands.Cog):
                     if custom_msg.clean_content.lower() == "cancel":
                         error = f"cancelled the report"
                         break
+                    elif custom_msg.clean_content.lower() == "gender":
+                        subscription_dict['gender'] = None
+                        gender_size = [x for x in gender_size if x != "gender"]
+                        continue
+                    elif custom_msg.clean_content.lower() == "size":
+                        subscription_dict['size'] = None
+                        gender_size = [x for x in gender_size if x != "size"]
+                        continue
                     elif custom_msg.clean_content.lower() == "iv":
                         want_embed.clear_fields()
                         want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **minimum** IV percent for your subscription.")
@@ -1209,7 +1241,7 @@ class Want(commands.Cog):
                         else:
                             subscription_dict['min_iv'] = int(custom_msg.clean_content.lower())
                         want_embed.clear_fields()
-                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV percent for your subscription.")
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV percent for your subscription.\n\nEntered minimum: {subscription_dict['min_iv']}")
                         custom_wait = await channel.send(embed=want_embed)
                         try:
                             custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1226,6 +1258,9 @@ class Want(commands.Cog):
                             break
                         elif not custom_msg.clean_content.lower().isdigit():
                             error = f"entered an invalid option"
+                            break
+                        elif int(custom_msg.clean_content.lower()) < subscription_dict['min_iv']:
+                            error = f"entered an invalid maximum"
                             break
                         else:
                             subscription_dict['max_iv'] = int(custom_msg.clean_content.lower())
@@ -1253,7 +1288,7 @@ class Want(commands.Cog):
                         else:
                             subscription_dict['min_atk'] = int(custom_msg.clean_content.lower())
                         want_embed.clear_fields()
-                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV attack for your subscription.")
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV attack for your subscription.\n\nEntered minimum: {subscription_dict['min_atk']}")
                         custom_wait = await channel.send(embed=want_embed)
                         try:
                             custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1270,6 +1305,9 @@ class Want(commands.Cog):
                             break
                         elif not custom_msg.clean_content.lower().isdigit():
                             error = f"entered an invalid option"
+                            break
+                        elif int(custom_msg.clean_content.lower()) < subscription_dict['min_atk']:
+                            error = f"entered an invalid maximum"
                             break
                         else:
                             subscription_dict['max_atk'] = int(custom_msg.clean_content.lower())
@@ -1297,7 +1335,7 @@ class Want(commands.Cog):
                         else:
                             subscription_dict['min_def'] = int(custom_msg.clean_content.lower())
                         want_embed.clear_fields()
-                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV defense for your subscription.")
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV defense for your subscription.\n\nEntered minimum: {subscription_dict['min_def']}")
                         custom_wait = await channel.send(embed=want_embed)
                         try:
                             custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1314,6 +1352,9 @@ class Want(commands.Cog):
                             break
                         elif not custom_msg.clean_content.lower().isdigit():
                             error = f"entered an invalid option"
+                            break
+                        elif int(custom_msg.clean_content.lower()) < subscription_dict['min_def']:
+                            error = f"entered an invalid maximum"
                             break
                         else:
                             subscription_dict['max_def'] = int(custom_msg.clean_content.lower())
@@ -1341,7 +1382,7 @@ class Want(commands.Cog):
                         else:
                             subscription_dict['min_sta'] = int(custom_msg.clean_content.lower())
                         want_embed.clear_fields()
-                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV stamina for your subscription.")
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** IV stamina for your subscription.\n\nEntered minimum: {subscription_dict['min_sta']}")
                         custom_wait = await channel.send(embed=want_embed)
                         try:
                             custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1358,6 +1399,9 @@ class Want(commands.Cog):
                             break
                         elif not custom_msg.clean_content.lower().isdigit():
                             error = f"entered an invalid option"
+                            break
+                        elif int(custom_msg.clean_content.lower()) < subscription_dict['min_sta']:
+                            error = f"entered an invalid maximum"
                             break
                         else:
                             subscription_dict['max_sta'] = int(custom_msg.clean_content.lower())
@@ -1385,7 +1429,7 @@ class Want(commands.Cog):
                         else:
                             subscription_dict['min_cp'] = int(custom_msg.clean_content.lower())
                         want_embed.clear_fields()
-                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** CP for your subscription.")
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** CP for your subscription.\n\nEntered minimum: {subscription_dict['min_cp']}")
                         custom_wait = await channel.send(embed=want_embed)
                         try:
                             custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1402,6 +1446,9 @@ class Want(commands.Cog):
                             break
                         elif not custom_msg.clean_content.lower().isdigit():
                             error = f"entered an invalid option"
+                            break
+                        elif int(custom_msg.clean_content.lower()) < subscription_dict['min_cp']:
+                            error = f"entered an invalid maximum"
                             break
                         else:
                             subscription_dict['max_cp'] = int(custom_msg.clean_content.lower())
@@ -1429,7 +1476,7 @@ class Want(commands.Cog):
                         else:
                             subscription_dict['min_level'] = int(custom_msg.clean_content.lower())
                         want_embed.clear_fields()
-                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** level for your subscription.")
+                        want_embed.add_field(name=f"**New Custom Alert Subscription**", value=f"Reply with the **maximum** level for your subscription.\n\nEntered minimum: {subscription_dict['min_level']}")
                         custom_wait = await channel.send(embed=want_embed)
                         try:
                             custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -1489,7 +1536,6 @@ class Want(commands.Cog):
             await utils.safe_delete(message)
         else:
             want_embed.clear_fields()
-            want_embed.set_thumbnail(url=pokemon.img_url)
             shiny_str = ""
             if pokemon.shiny_available:
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
@@ -1506,6 +1552,10 @@ class Want(commands.Cog):
                 alert_text += f" | **CP**: {subscription_dict['min_cp']}-{subscription_dict['max_cp']}"
             if subscription_dict.get('min_level'):
                 alert_text += f" | **Level**: {subscription_dict['min_level']}-{subscription_dict['max_level']}"
+            if subscription_dict.get('gender'):
+                alert_text += f" | **Gender**: {subscription_dict['gender']}"
+            if subscription_dict.get('size'):
+                alert_text += f" | **Size**: {subscription_dict['size']}"
             alert_text += f" | **Report Types**: {(', ').join(subscription_dict['report_types'])}"
             want_embed.add_field(name=_('**New Custom Subscription**'), value=f"Meowth! {ctx.author.display_name}, out of your total 1 pokemon:\n\n**1 Added:**\n{alert_text}".format(error=error), inline=False)
             confirmation = await channel.send(embed=want_embed)
@@ -2363,7 +2413,7 @@ class Want(commands.Cog):
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(ctx.bot, removed_list[0])
             want_embed.set_thumbnail(url=pokemon.img_url)
         if len(confirmation_msg) < 1000:
-            want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
+            want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
             unwant_confirmation = await channel.send(embed=want_embed)
         else:
             paginator = commands.Paginator(prefix="", suffix="")
@@ -2981,6 +3031,10 @@ class Want(commands.Cog):
                 alert_text += f" | **CP**: {user_wants[custom]['min_cp']}-{user_wants[custom]['max_cp']}"
             if user_wants[custom].get('min_level'):
                 alert_text += f" | **Level**: {user_wants[custom]['min_level']}-{user_wants[custom]['max_level']}"
+            if user_wants[custom].get('gender'):
+                alert_text += f" | **Gender**: {user_wants[custom]['gender']}"
+            if user_wants[custom].get('size'):
+                alert_text += f" | **Size**: {user_wants[custom]['size']}"
             alert_text += f" | **Report Types**: {(', ').join(user_wants[custom]['report_types'])}\n"
             index += 1
         if len(alert_text) < 1000:
@@ -3070,6 +3124,10 @@ class Want(commands.Cog):
                 alert_text += f" | **CP**: {alert_info['min_cp']}-{alert_info['max_cp']}"
             if alert_info.get('min_level'):
                 alert_text += f" | **Level**: {alert_info['min_level']}-{alert_info['max_level']}"
+            if alert_info.get('gender'):
+                alert_text += f" | **Gender**: {alert_info['gender']}"
+            if alert_info.get('size'):
+                alert_text += f" | **Size**: {alert_info['size']}"       
             alert_text += f" | **Report Types**: {(', ').join(alert_info['report_types'])}"
             want_embed.add_field(name=_('**Remove Custom Subscription**'), value=f"Meowth! {ctx.author.display_name}, out of your total **1** pokemon:\n\n**1 Removed:**\n{alert_text}".format(error=error), inline=False)
             confirmation = await channel.send(embed=want_embed)

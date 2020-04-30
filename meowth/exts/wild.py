@@ -486,6 +486,8 @@ class Wild(commands.Cog):
         pokemon.cp = cp
         weather = wild_dict.get('weather', None)
         pokemon.weather = weather
+        pokemon.size = size if pokemon.size_available else None
+        pokemon.gender = gender if pokemon.gender_available else None
         old_embed = message.embeds[0]
         wild_gmaps_link = old_embed.url
         nearest_stop = wild_dict.get('location', None)
@@ -568,6 +570,8 @@ class Wild(commands.Cog):
         iv_attack = wild_iv.get('iv_atk')
         iv_defense = wild_iv.get('iv_def')
         iv_stamina = wild_iv.get('iv_sta')
+        gender = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id].get('gender')
+        size = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][ctx.wildreportmsg.id].get('size')
         for trainer in copy.deepcopy(self.bot.guild_dict[ctx.guild.id].get('trainers', {})):
             user_wants = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('wants', [])
             user_forms = self.bot.guild_dict[ctx.guild.id].get('trainers', {})[trainer].setdefault('alerts', {}).setdefault('forms', [])
@@ -597,6 +601,10 @@ class Wild(commands.Cog):
                     if name_check != user_custom[custom].get('pokemon', ''):
                         continue
                     if "wild" not in user_custom[custom].get('report_types'):
+                        continue
+                    if user_custom[custom].get('gender') and user_custom[custom]['gender'] != gender.lower():
+                        continue
+                    if user_custom[custom].get('size') and user_custom[custom]['size'] != size.lower():
                         continue
                     if user_custom[custom].get('min_iv'):
                         iv_check = int(iv_percent) if iv_percent else None
@@ -849,10 +857,6 @@ class Wild(commands.Cog):
         wild_embed = await self.make_wild_embed(ctx, details)
         ctx.wildreportmsg = await message.channel.send(f"Meowth! Wild {str(pokemon).title()} reported by {message.author.mention}! Details: {wild_details}{stop_str}\n\nUse {omw_emoji} if coming, {catch_emoji} if caught, {expire_emoji} if despawned, {info_emoji} to edit details, {report_emoji} to report new, or {list_emoji} to list all wilds!", embed=wild_embed)
         dm_dict = {}
-        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, wild_iv, None, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
-        for reaction in react_list:
-            await asyncio.sleep(0.25)
-            await utils.add_reaction(ctx.wildreportmsg, reaction)
         self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id] = {
             'report_time':time.time(),
             'exp':time.time() + despawn,
@@ -876,6 +880,11 @@ class Wild(commands.Cog):
             'caught_by':[]
         }
         self.bot.active_wilds[ctx.wildreportmsg.id] = pokemon
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(ctx.wildreportmsg, reaction)
+        dm_dict = await self.send_dm_messages(ctx, str(pokemon), nearest_stop, wild_iv, None, None, ctx.wildreportmsg.content.replace(ctx.author.mention, f"{ctx.author.display_name} in {ctx.channel.mention}"), copy.deepcopy(wild_embed), dm_dict)
+        self.bot.guild_dict[message.guild.id]['wildreport_dict'][ctx.wildreportmsg.id]['dm_dict'] = dm_dict
         if not ctx.author.bot:
             wild_reports = self.bot.guild_dict[message.guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('reports', {}).setdefault('wild', 0) + 1
             self.bot.guild_dict[message.guild.id]['trainers'][message.author.id]['reports']['wild'] = wild_reports

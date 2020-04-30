@@ -918,8 +918,9 @@ class Listing(commands.Cog):
         user_cps = sorted(user_cps)
         user_cps = [str(x) for x in user_cps]
         user_custom = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('custom', {})
+        alert_text = ""
         for custom in user_custom:
-            alert_text = f"**Pokemon**: {user_custom[custom]['pokemon']}"
+            alert_text += f"**Pokemon**: {user_custom[custom]['pokemon']}"
             if user_custom[custom].get('min_iv'):
                 alert_text += f" | **IV Percent**: {user_custom[custom]['min_iv']}-{user_custom[custom]['max_iv']}"
             if user_custom[custom].get('min_atk'):
@@ -932,6 +933,10 @@ class Listing(commands.Cog):
                 alert_text += f" | **CP**: {user_custom[custom]['min_cp']}-{user_custom[custom]['max_cp']}"
             if user_custom[custom].get('min_level'):
                 alert_text += f" | **Level**: {user_custom[custom]['min_level']}-{user_custom[custom]['max_level']}"
+            if user_custom[custom].get('gender'):
+                alert_text += f" | **Gender**: {user_custom[custom]['gender']}"
+            if user_custom[custom].get('size'):
+                alert_text += f" | **Size**: {user_custom[custom]['size']}"
             alert_text += f" | **Report Types**: {(', ').join(user_custom[custom]['report_types'])}\n"
         custom_list = alert_text.splitlines()
         categories = copy.deepcopy(self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}))
@@ -2296,6 +2301,8 @@ class Listing(commands.Cog):
                     cp_check = wild_dict[wildid].get('cp', None)
                     level_check = wild_dict[wildid].get('level', None)
                     weather_check = wild_dict[wildid].get('weather', None)
+                    size_check = wild_dict[wildid].get('size', None)
+                    gender_Check = wild_dict[wildid].get('gender', None)
                     disguise = wild_dict[wildid].get('disguise', None)
                     location = wild_dict[wildid]['location']
                     if wildid in self.bot.active_wilds:
@@ -2306,6 +2313,8 @@ class Listing(commands.Cog):
                         pokemon.cp = cp_check
                         pokemon.level = level_check
                         pokemon.weather = weather_check
+                        pokemon.size = size_check if pokemon.size_available else None
+                        pokemon.gender = gender_Check if pokemon.gender_available else None
                         self.bot.active_wilds[wildid] = pokemon
                     if search_term != "all":
                         if "level" in search_term and search_term.replace('level', '').strip().isdigit():
