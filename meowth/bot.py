@@ -117,16 +117,19 @@ class MeowthBot(commands.AutoShardedBot):
             with open(self.raid_json_path, 'r') as fd:
                 return json.load(fd)
         except:
-            return {
+            raid_info = {
                 "raid_eggs": {
-                    "1": {},
-                    "2": {},
-                    "3": {},
-                    "4": {},
-                    "5": {},
-                    "EX": {},
+                    "1": {"egg":"normal", "egg_img":"1.png", "pokemon":[], "hatchtime":60, "raidtime":45},
+                    "2": {"egg":"normal", "egg_img":"2.png", "pokemon":[], "hatchtime":60, "raidtime":45},
+                    "3": {"egg":"rare", "egg_img":"3.png", "pokemon":[], "hatchtime":60, "raidtime":45},
+                    "4": {"egg":"rare", "egg_img":"4.png", "pokemon":[], "hatchtime":60, "raidtime":45},
+                    "5": {"egg":"legendary", "egg_img":"5.png", "pokemon":[], "hatchtime":60, "raidtime":45},
+                    "EX": {"egg":"EX", "egg_img":"EX.png", "pokemon":[], "hatchtime":14, "raidtime":45},
                 }
             }
+            with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                json.dump(raid_info, fd, indent=2, separators=(', ', ': '))
+            return raid_info
 
     @property
     def quest_info(self):

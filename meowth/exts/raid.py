@@ -523,6 +523,7 @@ class Raid(commands.Cog):
             # Also, if the channel got reactivated, don't do anything either.
             try:
                 last_report = True if len (self.bot.guild_dict[guild.id][report_dict].keys()) == 1 else False
+                channel_type = report_dict.replace('channel_dict', '').replace('_dict', '')
                 if self.bot.guild_dict[guild.id][report_dict].get(channel.id, {}).get('active', False):
                     return
                 elif (self.bot.guild_dict[guild.id][report_dict][channel.id]['active'] == False) and (not self.bot.is_closed()):
@@ -537,7 +538,6 @@ class Raid(commands.Cog):
                             expiremsg = _('**This level {level} raid egg has expired!**').format(level=egg_level)
                         else:
                             expiremsg = _('**This {pokemon}{raidtype} has expired!**').format(pokemon=self.bot.guild_dict[guild.id][report_dict][channel.id].get('pkmn_obj', ""), raidtype=raidtype)
-                        channel_type = report_dict.replace('channel_dict', '').replace('_dict', '')
                         if dupechannel:
                             await utils.safe_delete(reportmsg)
                         elif reportmsg:
@@ -654,6 +654,13 @@ class Raid(commands.Cog):
                     if last_report and reportmsg and len(self.bot.guild_dict[guild.id][report_dict].keys()) == 0:
                         return await ctx.invoke(self.bot.get_command('list'))
                 except:
+                    pass
+                try:
+                    if channel.category and channel.category.id in self.bot.guild_dict[guild.id]['configure_dict'][channel_type].get('overflow_list', []):
+                        if len(channel.category.channels) == 0:
+                            await channel.category.delete()
+                            self.bot.guild_dict[guild.id]['configure_dict'][channel_type]['overflow_list'] = [x for x in self.bot.guild_dict[guild.id]['configure_dict'][channel_type]['overflow_list'] if guild.get_channel(x)]
+                except Exception as e:
                     pass
             except KeyError:
                 pass
@@ -916,6 +923,7 @@ class Raid(commands.Cog):
         channel_lobby = channel_dict.get('lobby', None)
         channel_battle = channel_dict.get('battling', None)
         channel_complete = channel_dict.get('completed', None)
+        channel_delete = channel_dict.get('delete', False)
         if self.bot.active_channels.get(channel.id, {}).get('pokemon', None):
             channel_boss = self.bot.active_channels[channel.id]['pokemon']
         else:
@@ -933,6 +941,8 @@ class Raid(commands.Cog):
             channel_emoji += f"{battling_emoji}-"
         elif channel_complete:
             channel_emoji += f"{completed_emoji}-"
+        if channel_delete:
+            channel_emoji = f"{expire_emoji}-"
         if type == "train" or type == "meetup":
             channel_title = channel_dict.get('meetup', {}).get('channel_name', channel.name.split(f"{type}-")[1])
             channel_name = f"{channel_emoji}{type}-{channel_title}"
@@ -952,24 +962,38 @@ class Raid(commands.Cog):
         channel = ctx.channel
         raid_channel_overwrites = ctx.channel.overwrites
         raid_channel_overwrites[self.bot.user] = discord.PermissionOverwrite(send_messages=True, read_messages=True, manage_roles=True)
+        category_choices = [ctx.channel.category, None]
         if type == "raid":
             raid_channel_name = (entered_raid + '-')
             raid_channel_category = utils.get_category(self.bot, ctx.channel, utils.get_level(self.bot, entered_raid), category_type="raid")
+            overflow_list = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('raid', {}).setdefault('overflow_list', [])
         elif type == "egg":
             raid_channel_name = _('{egg_level}-egg-').format(egg_level=entered_raid)
             raid_channel_category = utils.get_category(self.bot, ctx.channel, entered_raid, category_type="raid")
+            overflow_list = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('raid', {}).setdefault('overflow_list', [])
         elif type == "exraid":
             raid_channel_name = _('ex-egg-')
             raid_channel_category = utils.get_category(self.bot, ctx.channel, "EX", category_type="exraid")
+            overflow_list = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('exraid', {}).setdefault('overflow_list', [])
             if self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('exraid', {}).setdefault('permissions', 'everyone') == "everyone":
                 raid_channel_overwrites[ctx.guild.default_role] = discord.PermissionOverwrite(read_messages=True)
         elif type == "meetup":
             raid_channel_name = _('meetup-')
             raid_channel_category = utils.get_category(self.bot, ctx.channel, None, category_type="meetup")
+            overflow_list = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('meetup', {}).setdefault('overflow_list', [])
         elif type == "train":
             raid_channel_name = _('train-')
-            raid_channel_category = utils.get_category(self.bot, ctx.channel, None, category_type="meetup")
+            raid_channel_category = utils.get_category(self.bot, ctx.channel, None, category_type="train")
+            overflow_list = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('train', {}).setdefault('overflow_list', [])
         raid_channel_name += utils.sanitize_channel_name(raid_details)
+        if raid_channel_category:
+            if overflow_list:
+                for cat in overflow_list:
+                    cat = discord.utils.get(ctx.guild.categories, id=cat)
+                    category_choices.insert(0, cat)
+            category_choices.insert(0, raid_channel_category)
+        else:
+            category_choices = [None]
         if type != "exraid":
             ow = ctx.channel.overwrites_for(ctx.guild.default_role)
             ow.send_messages = True
@@ -982,13 +1006,19 @@ class Raid(commands.Cog):
                 ow.manage_roles = True
                 ow.send_messages = True
                 raid_channel_overwrites[role] = ow
-        category_choices = [raid_channel_category, ctx.channel.category, None]
         for category in category_choices:
             try:
                 raid_channel = await ctx.guild.create_text_channel(raid_channel_name, overwrites=raid_channel_overwrites, category=category)
                 break
             except discord.errors.HTTPException:
-                raid_channel = None
+                if raid_channel_category:
+                    overflow_category = await ctx.guild.create_category(raid_channel_category.name, overwrites=raid_channel_overwrites)
+                    await overflow_category.edit(position=raid_channel_category.position)
+                    overflow_list.append(overflow_category.id)
+                    raid_channel = await ctx.guild.create_text_channel(raid_channel_name, overwrites=raid_channel_overwrites, category=overflow_category)
+                    break
+                else:
+                    raid_channel = None
         if not raid_channel:
             return None
         return raid_channel
@@ -5433,8 +5463,12 @@ class Raid(commands.Cog):
                     else:
                         return False
                 while True:
+                    raid_coordinates = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('coordinates', None)
+                    auto_weather = None
+                    if raid_coordinates:
+                        auto_weather = await self.auto_weather(ctx, raid_coordinates)
                     weather_embed.clear_fields()
-                    weather_embed.add_field(name=_('**Edit Channel Weather**'), value=f"Meowth! I will help you edit the channel weather! Reply with the current weather from the following list: **{', '.join(weather_list)}**. You can reply with **cancel** to stop anytime.\n\nAlternatively, reply with **tsr** to attempt to pull data from TSR's raid boss list.", inline=False)
+                    weather_embed.add_field(name=_('**Edit Channel Weather**'), value=f"Meowth! I will help you edit the channel weather! Reply with the current weather from the following list: **{', '.join(weather_list)}**. You can reply with **cancel** to stop anytime.\n\n{'I think the current weather is: **'+auto_weather+'**' if auto_weather else ''}", inline=False)
                     weather_wait = await ctx.send(embed=weather_embed)
                     try:
                         weather_msg = await self.bot.wait_for('message', timeout=60, check=check)

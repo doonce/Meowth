@@ -70,11 +70,13 @@ class Listing(commands.Cog):
     @commands.group(name="list", aliases=['lists', 'tag', 'l'], invoke_without_command=True, case_insensitive=True)
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def _list(self, ctx, *, search_term="all"):
-        """Lists all info for the current channel depending on channel type.
+        """Lists all info for the current reports depending on channel type.
 
         Usage: !list
         Works only in raid or reporting channels. In raid channels this calls the interested, waiting, and here list and prints
-        the raid timer. In reporting channels, this lists all active reports."""
+        the raid timer. In reporting channels, this lists all active reports.
+
+        Raid Reporting Channel Listing Options: pokemon, location, type"""
         if str(ctx.invoked_with).lower() in ['list', 'lists', 'tag', 'l']:
             await utils.safe_delete(ctx.message)
         if ctx.invoked_subcommand == None:
@@ -1436,7 +1438,9 @@ class Listing(commands.Cog):
     async def research(self, ctx, *, search_term="all"):
         """List the quests for the channel
 
-        Usage: !list research"""
+        Usage: !list research
+
+        Research Reporting Channel Listing Options: pokemon, location, type, item"""
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'research']:
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
@@ -1758,7 +1762,9 @@ class Listing(commands.Cog):
     async def lures(self, ctx, *, search_term="all"):
         """List the lures for the channel
 
-        Usage: !list lures"""
+        Usage: !list lures
+
+        Lure Reporting Channel Listing Options: lure type, location"""
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'lures']:
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
@@ -1950,7 +1956,9 @@ class Listing(commands.Cog):
     async def invasions(self, ctx, *, search_term="all"):
         """List the invasions for the channel
 
-        Usage: !list invasions"""
+        Usage: !list invasions
+
+        Invasion Reporting Channel Listing Options: pokemon, location, type"""
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'invasions']:
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
@@ -2100,7 +2108,9 @@ class Listing(commands.Cog):
     async def pvp(self, ctx, search_term="all"):
         """List the pvps for the channel
 
-        Usage: !list pvps"""
+        Usage: !list pvps
+
+        PVP Reporting Channel Listing Options: league, tournament"""
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'pvp']:
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
@@ -2206,7 +2216,10 @@ class Listing(commands.Cog):
     async def wilds(self, ctx, *, search_term="all"):
         """List the wilds for the channel
 
-        Usage: !list wilds"""
+        Usage: !list wilds
+
+        Wild Reporting Channel Listing Options: pokemon, location, type, level (level 30), CP (cp 1000), IV (90iv or 90)
+        Add 'max' to IV, CP, level (10 iv max) to show all reports below your value, defaults to above"""
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'wilds', 'wild']:
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
@@ -2215,15 +2228,22 @@ class Listing(commands.Cog):
             pois = {}
             search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
             gym_matching_cog = self.bot.cogs.get('GymMatching')
+            min_or_max = "min"
+            if "max" in search_term:
+                min_or_max = "max"
+                search_term = search_term.replace('max', '').strip()
             if gym_matching_cog:
                 pois = {**gym_matching_cog.get_stops(ctx.guild.id), **gym_matching_cog.get_gyms(ctx.guild.id)}
                 pois = {k.lower(): v for k, v in pois.items()}
             if "level" in search_term and [x for x in search_term if x.isdigit()]:
-                search_label = f"Level {search_term.replace('level', '').strip()} reports"
+                search_label = f"reports {'above' if min_or_max == 'min' else 'below'} Level {search_term.replace('level', '').strip()}"
+                search_term = f"{search_term} {min_or_max.upper()}"
             elif "cp" in search_term and [x for x in search_term if x.isdigit()]:
-                search_label = f"{search_term.replace('cp', '').strip()}CP reports"
+                search_label = f"reports {'above' if min_or_max == 'min' else 'below'} {search_term.replace('cp', '').strip()}CP"
+                search_term = f"{search_term} {min_or_max.upper()}"
             elif ("iv" in search_term or search_term.isdigit()) and [x for x in search_term if x.isdigit()]:
-                search_label = f"{search_term.replace('iv', '').strip()}IV reports"
+                search_label = f"reports {'above' if min_or_max == 'min' else 'below'} {search_term.replace('iv', '').strip()}IV"
+                search_term = f"{search_term} {min_or_max.upper()}"
             elif search_term in self.bot.type_list:
                 search_label = f"{search_term.title()} type reports"
             elif search_term.lower() in [x.lower() for x in pois.keys()]:
@@ -2280,6 +2300,9 @@ class Listing(commands.Cog):
         bullet_point = self.bot.custom_emoji.get('wild_bullet', u'\U0001F539')
         hundred_bullet = self.bot.custom_emoji.get('wild_hundred', u'\U0001f538')
         search_label = "reports"
+        min_or_max = "min"
+        if "MAX" in search_term:
+            min_or_max = "max"
         for wildid in wild_dict:
             if wild_dict[wildid].get('report_channel') == ctx.channel.id:
                 try:
@@ -2316,18 +2339,31 @@ class Listing(commands.Cog):
                         pokemon.size = size_check if pokemon.size_available else None
                         pokemon.gender = gender_Check if pokemon.gender_available else None
                         self.bot.active_wilds[wildid] = pokemon
+                    search_term = search_term.replace('MAX', '').replace('MIN', '').strip()
                     if search_term != "all":
                         if "level" in search_term and search_term.replace('level', '').strip().isdigit():
-                            search_label = f"Level {search_term.replace('level', '').strip()} wild reports"
-                            if not level_check or int(level_check) < int(search_term.replace('level', '').strip()):
+                            search_label = f"wild reports {'above ' if min_or_max == 'min' else 'below '}Level {search_term.replace('level', '').strip()}"
+                            if not level_check:
+                                continue
+                            elif min_or_max == "min" and int(level_check) < int(search_term.replace('level', '').strip()):
+                                continue
+                            elif min_or_max == "max" and int(level_check) > int(search_term.replace('level', '').strip()):
                                 continue
                         elif "cp" in search_term and search_term.replace('cp', '').strip().isdigit():
-                            search_label = f"{search_term.replace('cp', '').strip()}CP wild reports"
-                            if not cp_check or int(cp_check) < int(search_term.replace('cp', '').strip()):
+                            search_label = f"wild reports {'above ' if min_or_max == 'min' else 'below '}{search_term.replace('cp', '').strip()}CP"
+                            if not cp_check:
+                                continue
+                            elif min_or_max == "min" and int(cp_check) < int(search_term.replace('cp', '').strip()):
+                                continue
+                            elif min_or_max == "max" and int(cp_check) > int(search_term.replace('cp', '').strip()):
                                 continue
                         elif ("iv" in search_term or search_term.isdigit()) and search_term.replace('iv', '').strip().isdigit():
-                            search_label = f"{search_term.replace('iv', '').strip()}IV wild reports"
-                            if not iv_check or int(iv_check) < int(search_term.replace('iv', '').strip()):
+                            search_label = f"wild reports {'above ' if min_or_max == 'min' else 'below '}{search_term.replace('iv', '').strip()}IV"
+                            if not iv_check and iv_check != 0:
+                                continue
+                            elif min_or_max == "min" and int(iv_check) < int(search_term.replace('iv', '').strip()):
+                                continue
+                            elif min_or_max == "max" and int(iv_check) > int(search_term.replace('iv', '').strip()):
                                 continue
                         elif str(getattr(pokemon, 'name', None)).lower() == search_term:
                             search_label = f"wild {search_term.title()} reports"
@@ -2354,9 +2390,9 @@ class Listing(commands.Cog):
                         wildmsg += f" | **Level**: {level_check}"
                     if cp_check:
                         wildmsg += f" | **CP**: {cp_check}"
-                    if iv_check:
+                    if iv_check or iv_check == 0:
                         wildmsg += f" | **IV**: "
-                        if atk_check or def_check or sta_check:
+                        if any([atk_check, atk_check == 0, def_check, def_check == 0, sta_check, sta_check == 0]):
                             wildmsg += f"{atk_check if atk_check else 'X'} / {def_check if def_check else 'X'} / {sta_check if sta_check else 'X'} ({wild_dict[wildid]['wild_iv'].get('percent', iv_check)}%)"
                         else:
                             wildmsg += f"{wild_dict[wildid]['wild_iv'].get('percent', iv_check)}%"
