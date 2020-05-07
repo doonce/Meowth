@@ -782,7 +782,7 @@ class Research(commands.Cog):
                 else:
                     index += 1
         if ctx.resreportmsg.id in self.bot.active_research:
-            pokemon = self.bot.active_research
+            pokemon = self.bot.active_research[ctx.resreportmsg.id]
         else:
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, res_pokemon)
         if pokemon:
