@@ -77,6 +77,9 @@ class Listing(commands.Cog):
         the raid timer. In reporting channels, this lists all active reports.
 
         Raid Reporting Channel Listing Options: pokemon, location, type"""
+        if not ctx.guild:
+            ctx.invoked_with = "dm"
+            return await ctx.invoke(self.bot.get_command('list dm'))
         if str(ctx.invoked_with).lower() in ['list', 'lists', 'tag', 'l']:
             await utils.safe_delete(ctx.message)
         if ctx.invoked_subcommand == None:
@@ -92,6 +95,7 @@ class Listing(commands.Cog):
                 now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                 list_messages = []
                 raid_cog = self.bot.cogs.get('Raid')
+                report_emoji = self.bot.custom_emoji.get('raid_report', u'\U0001F4E2')
                 if (checks.check_raidreport(ctx) or checks.check_exraidreport(ctx) or checks.check_meetupreport(ctx)):
                     if not raid_cog:
                         return
@@ -101,189 +105,7 @@ class Listing(commands.Cog):
                         await utils.safe_delete(ctx.message)
                         await utils.safe_delete(tag_error)
                         return
-                    search_label = "channels"
-                    if "all" in ctx.message.content.lower():
-                        search_term = "all"
-                    elif search_term != "all":
-                        search_term = search_term.lower()
-                        pois = {}
-                        search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
-                        gym_matching_cog = self.bot.cogs.get('GymMatching')
-                        if gym_matching_cog:
-                            pois = {**gym_matching_cog.get_gyms(ctx.guild.id)}
-                            pois = {k.lower(): v for k, v in pois.items()}
-                        if search_term in self.bot.type_list:
-                            search_label = f"{search_term.title()} type channels"
-                        elif search_term.lower() in [x.lower() for x in pois.keys()]:
-                            if pois[search_term].get('alias'):
-                                search_term = pois[search_term].get('alias')
-                            search_label = f"channels at {search_term.title()}"
-                        elif search_pokemon:
-                            search_term = search_pokemon.name.lower()
-                            search_label = f"{search_term.title()} channels"
-                    else:
-                        search_term = None
-                    cty = channel.name
-                    rc_d = {**self.bot.guild_dict[guild.id]['raidchannel_dict'], **self.bot.guild_dict[guild.id]['exraidchannel_dict'], **self.bot.guild_dict[guild.id]['meetup_dict'], **self.bot.guild_dict[guild.id]['raidtrain_dict']}
-                    raid_dict = {}
-                    egg_dict = {}
-                    exraid_list = []
-                    event_list = []
-                    list_dict = self.bot.guild_dict[guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
-                    delete_list = []
-                    for msg in list_dict:
-                        try:
-                            msg = await ctx.channel.fetch_message(msg)
-                            delete_list.append(msg)
-                        except:
-                            pass
-                    await utils.safe_bulk_delete(ctx.channel, delete_list)
-                    mystic_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['mystic'])
-                    valor_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['valor'])
-                    instinct_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['instinct'])
-                    unknown_emoji = utils.parse_emoji(ctx.guild, self.bot.config.unknown)
-                    report_emoji = self.bot.custom_emoji.get('raid_report', u'\U0001F4E2')
-                    for r in rc_d:
-                        report_channel = self.bot.get_channel(rc_d[r]['report_channel'])
-                        if not report_channel:
-                            continue
-                        if (report_channel.name == cty) and discord.utils.get(guild.text_channels, id=r):
-                            exp = rc_d[r]['exp']
-                            type = rc_d[r]['type']
-                            level = rc_d[r]['egg_level']
-                            if (type == 'egg') and level.isdigit():
-                                egg_dict[r] = exp
-                            elif rc_d[r].get('meetup', {}) and rc_d[r]['active'] :
-                                event_list.append(r)
-                            elif ((type == 'exraid') or (level == 'EX')) and rc_d[r]['active'] :
-                                exraid_list.append(r)
-                            elif rc_d[r]['active'] :
-                                raid_dict[r] = exp
-
-                    async def list_output(r):
-                        trainer_dict = rc_d[r]['trainer_dict']
-                        location = rc_d[r]['address']
-                        rchan = self.bot.get_channel(r)
-                        end = datetime.datetime.utcfromtimestamp(rc_d[r]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
-                        output = ''
-                        start_str = ''
-                        channel_dict, boss_dict = await raid_cog._get_party(rchan)
-                        if not channel_dict['total'] and "all" not in ctx.message.content.lower() and not search_term:
-                            return None
-                        if rc_d[r]['manual_timer'] == False:
-                            assumed_str = _(' (assumed)')
-                        else:
-                            assumed_str = ''
-                        if channel_dict.get('train', False):
-                            train_str = "{train_emoji} - ".format(train_emoji=self.bot.custom_emoji.get('train_emoji', u'\U0001F682'))
-                        else:
-                            train_str = ''
-                        starttime = rc_d[r].get('starttime', None)
-                        meetup = rc_d[r].get('meetup', {})
-                        if starttime and starttime > now and not meetup:
-                            start_str = _('\nNext group: **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
-                        else:
-                            starttime = False
-                        if rc_d[r]['egg_level'].isdigit() and (int(rc_d[r]['egg_level']) > 0):
-                            expirytext = _(' - {train_str}Hatches: {expiry}{is_assumed}').format(train_str=train_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                            if self.bot.active_channels.get(r, {}).get('pokemon'):
-                                pokemon = self.bot.active_channels[r]['pokemon']
-                            else:
-                                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
-                        elif ((rc_d[r]['egg_level'] == 'EX') or (rc_d[r]['type'] == 'exraid')) and not meetup:
-                            expirytext = _(' - {train_str}Hatches: {expiry}{is_assumed}').format(train_str=train_str, expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                            if self.bot.active_channels.get(r, {}).get('pokemon'):
-                                pokemon = self.bot.active_channels[r]['pokemon']
-                            else:
-                                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
-                        elif meetup:
-                            meetupstart = meetup['start']
-                            meetupend = meetup['end']
-                            expirytext = ""
-                            if meetupstart:
-                                expirytext += _(' - Starts: {expiry}{is_assumed}').format(expiry=meetupstart.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                            if meetupend:
-                                expirytext += _(" - Ends: {expiry}{is_assumed}").format(expiry=meetupend.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                            if not meetupstart and not meetupend:
-                                expirytext = _(' - Starts: {expiry}{is_assumed}').format(expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
-                        else:
-                            type_str = ""
-                            if self.bot.active_channels.get(r, {}).get('pokemon'):
-                                pokemon = self.bot.active_channels[r]['pokemon']
-                            else:
-                                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
-                            if pokemon:
-                                type_str = pokemon.emoji
-                            expirytext = _('{type_str} - {train_str}Expires: {expiry}{is_assumed}').format(type_str=type_str, train_str=train_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
-
-                        if search_term and search_term != "all":
-                            if str(getattr(pokemon, 'name', None)).lower() == search_term:
-                                pass
-                            elif search_term.title() in pokemon.types:
-                                pass
-                            elif search_term.lower() == location.lower():
-                                pass
-                            else:
-                                return None
-
-                        output += f"{rchan.mention}{expirytext}"
-                        if channel_dict['total']:
-                            output += f"\n**Total: {channel_dict['total']}**"
-                        if channel_dict['maybe']:
-                            output += f" | Maybe: **{channel_dict['maybe']}**"
-                        if channel_dict['coming']:
-                            output += f" | Coming: **{channel_dict['coming']}**"
-                        if channel_dict['here']:
-                            output += f" | Here: **{channel_dict['here']}**"
-                        if channel_dict['lobby']:
-                            output += f" | Lobby: **{channel_dict['lobby']}**"
-                        if channel_dict['mystic']:
-                            output += f" | {mystic_emoji}: **{channel_dict['mystic']}**"
-                        if channel_dict['valor']:
-                            output += f" | {valor_emoji}: **{channel_dict['valor']}**"
-                        if channel_dict['instinct']:
-                            output += f" | {instinct_emoji}: **{channel_dict['instinct']}**"
-                        if channel_dict['unknown']:
-                            output += f" | {unknown_emoji}: **{channel_dict['unknown']}**"
-                        if start_str:
-                            output += f"{start_str}\n"
-                        else:
-                            output += f"\n"
-                        return output
-
-                    if raid_dict:
-                        for (r, e) in sorted(raid_dict.items(), key=itemgetter(1)):
-                            output = await list_output(r)
-                            if output:
-                                temp_list += output
-                        if temp_list:
-                            raid_list += f"**Raids:**\n{temp_list}\n"
-                            temp_list = ""
-                    if egg_dict:
-                        for (r, e) in sorted(egg_dict.items(), key=itemgetter(1)):
-                            output = await list_output(r)
-                            if output:
-                                temp_list += output
-                        if temp_list:
-                            raid_list += f"**Raid Eggs:**\n{temp_list}\n"
-                            temp_list = ""
-                    if exraid_list:
-                        for r in exraid_list:
-                            output = await list_output(r)
-                            if output:
-                                temp_list += output
-                        if temp_list:
-                            raid_list += f"**EX Raids:**\n{temp_list}\n"
-                            temp_list = ""
-                    if event_list:
-                        for r in event_list:
-                            output = await list_output(r)
-                            if output:
-                                temp_list += output
-                        if temp_list:
-                            raid_list += f"**Meetups:**\n{temp_list}\n"
-                            temp_list = ""
-
+                    raid_list, search_label = await self._raidlist(ctx, search_term)
                     list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
                     if not raid_list:
                         if "all" not in ctx.message.content.lower():
@@ -415,6 +237,199 @@ class Listing(commands.Cog):
                     else:
                         raise checks.errors.CityRaidChannelCheckFail()
 
+    async def _raidlist(self, ctx, search_term="all"):
+        raid_cog = self.bot.cogs.get('Raid')
+        listmsg = _('**Meowth!** ')
+        temp_list = ""
+        raid_list = ""
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+        list_messages = []
+        search_label = "channels"
+        if "all" in ctx.message.content.lower():
+            search_term = "all"
+        elif search_term != "all":
+            search_term = search_term.lower()
+            pois = {}
+            search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
+            gym_matching_cog = self.bot.cogs.get('GymMatching')
+            if gym_matching_cog:
+                pois = {**gym_matching_cog.get_gyms(ctx.guild.id)}
+                pois = {k.lower(): v for k, v in pois.items()}
+            if search_term in self.bot.type_list:
+                search_label = f"{search_term.title()} type channels"
+            elif search_term.lower() in [x.lower() for x in pois.keys()]:
+                if pois[search_term].get('alias'):
+                    search_term = pois[search_term].get('alias')
+                search_label = f"channels at {search_term.title()}"
+            elif search_pokemon:
+                search_term = search_pokemon.name.lower()
+                search_label = f"{search_term.title()} channels"
+        else:
+            search_term = None
+        rc_d = {**self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'], **self.bot.guild_dict[ctx.guild.id]['exraidchannel_dict'], **self.bot.guild_dict[ctx.guild.id]['meetup_dict'], **self.bot.guild_dict[ctx.guild.id]['raidtrain_dict']}
+        raid_dict = {}
+        egg_dict = {}
+        exraid_list = []
+        event_list = []
+        list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('raid', {}).setdefault(ctx.channel.id, [])
+        delete_list = []
+        for msg in list_dict:
+            try:
+                msg = await ctx.channel.fetch_message(msg)
+                delete_list.append(msg)
+            except:
+                pass
+        await utils.safe_bulk_delete(ctx.channel, delete_list)
+        mystic_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['mystic'])
+        valor_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['valor'])
+        instinct_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict['instinct'])
+        unknown_emoji = utils.parse_emoji(ctx.guild, self.bot.config.unknown)
+        for r in rc_d:
+            report_channel = self.bot.get_channel(rc_d[r]['report_channel'])
+            if not report_channel:
+                continue
+            condition_check = report_channel.id == ctx.channel.id
+            if "dm" in str(ctx.invoked_with):
+                ctx.message.content = "all"
+                condition_check = ctx.author.id in rc_d[r].get('dm_dict', {})
+            if condition_check:
+                exp = rc_d[r]['exp']
+                type = rc_d[r]['type']
+                level = rc_d[r]['egg_level']
+                if (type == 'egg') and level.isdigit():
+                    egg_dict[r] = exp
+                elif rc_d[r].get('meetup', {}) and rc_d[r]['active']:
+                    event_list.append(r)
+                elif ((type == 'exraid') or (level == 'EX')) and rc_d[r]['active'] :
+                    exraid_list.append(r)
+                elif rc_d[r]['active'] :
+                    raid_dict[r] = exp
+
+        async def list_output(r):
+            trainer_dict = rc_d[r]['trainer_dict']
+            location = rc_d[r]['address']
+            rchan = self.bot.get_channel(r)
+            end = datetime.datetime.utcfromtimestamp(rc_d[r]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+            output = ''
+            start_str = ''
+            channel_dict, boss_dict = await raid_cog._get_party(rchan)
+            if not channel_dict['total'] and "all" not in ctx.message.content.lower() and not search_term:
+                return None
+            if rc_d[r]['manual_timer'] == False:
+                assumed_str = _(' (assumed)')
+            else:
+                assumed_str = ''
+            if channel_dict.get('train', False):
+                train_str = "{train_emoji} - ".format(train_emoji=self.bot.custom_emoji.get('train_emoji', u'\U0001F682'))
+            else:
+                train_str = ''
+            starttime = rc_d[r].get('starttime', None)
+            meetup = rc_d[r].get('meetup', {})
+            if starttime and starttime > now and not meetup:
+                start_str = _('\nNext group: **{}**').format(starttime.strftime(_('%I:%M %p (%H:%M)')))
+            else:
+                starttime = False
+            if rc_d[r]['egg_level'].isdigit() and (int(rc_d[r]['egg_level']) > 0):
+                expirytext = _(' - {train_str}Hatches: {expiry}{is_assumed}').format(train_str=train_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                if self.bot.active_channels.get(r, {}).get('pokemon'):
+                    pokemon = self.bot.active_channels[r]['pokemon']
+                else:
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
+            elif ((rc_d[r]['egg_level'] == 'EX') or (rc_d[r]['type'] == 'exraid')) and not meetup:
+                expirytext = _(' - {train_str}Hatches: {expiry}{is_assumed}').format(train_str=train_str, expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                if self.bot.active_channels.get(r, {}).get('pokemon'):
+                    pokemon = self.bot.active_channels[r]['pokemon']
+                else:
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
+            elif meetup:
+                meetupstart = meetup['start']
+                meetupend = meetup['end']
+                expirytext = ""
+                if meetupstart:
+                    expirytext += _(' - Starts: {expiry}{is_assumed}').format(expiry=meetupstart.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                if meetupend:
+                    expirytext += _(" - Ends: {expiry}{is_assumed}").format(expiry=meetupend.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
+                if not meetupstart and not meetupend:
+                    expirytext = _(' - Starts: {expiry}{is_assumed}').format(expiry=end.strftime(_('%B %d at %I:%M %p (%H:%M)')), is_assumed=assumed_str)
+            else:
+                type_str = ""
+                if self.bot.active_channels.get(r, {}).get('pokemon'):
+                    pokemon = self.bot.active_channels[r]['pokemon']
+                else:
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, rc_d[r].get('pkmn_obj', ""))
+                if pokemon:
+                    type_str = pokemon.emoji
+                expirytext = _('{type_str} - {train_str}Expires: {expiry}{is_assumed}').format(type_str=type_str, train_str=train_str, expiry=end.strftime(_('%I:%M %p (%H:%M)')), is_assumed=assumed_str)
+
+            if search_term and search_term != "all":
+                if str(getattr(pokemon, 'name', None)).lower() == search_term:
+                    pass
+                elif search_term.title() in pokemon.types:
+                    pass
+                elif search_term.lower() == location.lower():
+                    pass
+                else:
+                    return None
+
+            output += f"{rchan.mention}{expirytext}"
+            if channel_dict['total']:
+                output += f"\n**Total: {channel_dict['total']}**"
+            if channel_dict['maybe']:
+                output += f" | Maybe: **{channel_dict['maybe']}**"
+            if channel_dict['coming']:
+                output += f" | Coming: **{channel_dict['coming']}**"
+            if channel_dict['here']:
+                output += f" | Here: **{channel_dict['here']}**"
+            if channel_dict['lobby']:
+                output += f" | Lobby: **{channel_dict['lobby']}**"
+            if channel_dict['mystic']:
+                output += f" | {mystic_emoji}: **{channel_dict['mystic']}**"
+            if channel_dict['valor']:
+                output += f" | {valor_emoji}: **{channel_dict['valor']}**"
+            if channel_dict['instinct']:
+                output += f" | {instinct_emoji}: **{channel_dict['instinct']}**"
+            if channel_dict['unknown']:
+                output += f" | {unknown_emoji}: **{channel_dict['unknown']}**"
+            if start_str:
+                output += f"{start_str}\n"
+            else:
+                output += f"\n"
+            return output
+
+        if raid_dict:
+            for (r, e) in sorted(raid_dict.items(), key=itemgetter(1)):
+                output = await list_output(r)
+                if output:
+                    temp_list += output
+            if temp_list:
+                raid_list += f"**Raids:**\n{temp_list}\n"
+                temp_list = ""
+        if egg_dict:
+            for (r, e) in sorted(egg_dict.items(), key=itemgetter(1)):
+                output = await list_output(r)
+                if output:
+                    temp_list += output
+            if temp_list:
+                raid_list += f"**Raid Eggs:**\n{temp_list}\n"
+                temp_list = ""
+        if exraid_list:
+            for r in exraid_list:
+                output = await list_output(r)
+                if output:
+                    temp_list += output
+            if temp_list:
+                raid_list += f"**EX Raids:**\n{temp_list}\n"
+                temp_list = ""
+        if event_list:
+            for r in event_list:
+                output = await list_output(r)
+                if output:
+                    temp_list += output
+            if temp_list:
+                raid_list += f"**Meetups:**\n{temp_list}\n"
+                temp_list = ""
+        return raid_list, search_label
+
     @_list.command()
     @checks.rsvpchannel()
     async def interested(self, ctx, tags: str = ''):
@@ -434,7 +449,7 @@ class Listing(commands.Cog):
 
     async def _interest(self, ctx, tag=False, team=False):
         ctx_maybecount = 0
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         report_dict = await utils.get_report_dict(self.bot, ctx.channel)
         trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
         maybe_exstr = ''
@@ -1274,7 +1289,7 @@ class Listing(commands.Cog):
                 try:
                     offer_channel = self.bot.get_channel(
                         target_trades[offer_id]['report_channel_id'])
-                    offer_url = f"https://discordapp.com/channels/{ctx.guild.id}/{ctx.channel.id}/{offer_id}"
+                    offer_url = f"https://discord.com/channels/{ctx.guild.id}/{ctx.channel.id}/{offer_id}"
                 except:
                     continue
                 lister = ctx.guild.get_member(target_trades[offer_id]['lister_id'])
@@ -1532,9 +1547,12 @@ class Listing(commands.Cog):
         other_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_other', u'\U0001F539'))
         for questid in research_dict:
             pokemon = None
-            if research_dict[questid]['report_channel'] == ctx.message.channel.id:
+            condition_check = research_dict[questid]['report_channel'] == ctx.channel.id
+            if "dm" in str(ctx.invoked_with):
+                condition_check = ctx.author.id in research_dict[questid].get('dm_dict')
+            if condition_check:
                 try:
-                    questauthor = ctx.channel.guild.get_member(research_dict[questid]['report_author'])
+                    questauthor = ctx.guild.get_member(research_dict[questid]['report_author'])
                     reported_by = ""
                     if questauthor and not questauthor.bot:
                         reported_by = f" | **Reported By**: {questauthor.display_name}"
@@ -1542,6 +1560,7 @@ class Listing(commands.Cog):
                     reward = research_dict[questid]['reward']
                     location = research_dict[questid]['location']
                     url = research_dict[questid].get('url', None)
+                    jump_url = f"https://discord.com/channels/{ctx.guild.id}/{research_dict[questid]['report_channel']}/{questid}"
                     if questid in self.bot.active_research:
                         pokemon = self.bot.active_research[questid]
                     else:
@@ -1567,35 +1586,35 @@ class Listing(commands.Cog):
                         shiny_str = ""
                         if pokemon and "research" in pokemon.shiny_available:
                             shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                        quest_dict['encounters'][questid] = {"reward":f"{shiny_str}{reward} {pokemon.emoji}", "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "pokemon":pokemon.name}
+                        quest_dict['encounters'][questid] = {"reward":f"{shiny_str}{reward} {pokemon.emoji}", "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "pokemon":pokemon.name, "jump_url":jump_url}
                         if pokemon.name not in reward_dict['encounters']:
                             reward_dict['encounters'].append(pokemon.name)
                     elif "candy" in reward.lower() or "candies" in reward.lower():
-                        quest_dict['candy'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        quest_dict['candy'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "jump_url":jump_url}
                         if reward not in reward_dict['candy']:
                             reward_dict['candy'].append(reward)
                     elif "dust" in reward.lower():
-                        quest_dict['dust'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        quest_dict['dust'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "jump_url":jump_url}
                         if reward not in reward_dict['dust']:
                             reward_dict['dust'].append(reward)
                     elif "berry" in reward.lower() or "berries" in reward.lower() or "razz" in reward.lower() or "pinap" in reward.lower() or "nanab" in reward.lower():
-                        quest_dict['berry'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        quest_dict['berry'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "jump_url":jump_url}
                         if reward not in reward_dict['berry']:
                             reward_dict['berry'].append(reward)
                     elif "potion" in reward.lower():
-                        quest_dict['potion'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        quest_dict['potion'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "jump_url":jump_url}
                         if reward not in reward_dict['potion']:
                             reward_dict['potion'].append(reward)
                     elif "revive" in reward.lower():
-                        quest_dict['revive'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        quest_dict['revive'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "jump_url":jump_url}
                         if reward not in reward_dict['revive']:
                             reward_dict['revive'].append(reward)
                     elif "ball" in reward.lower():
-                        quest_dict['ball'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        quest_dict['ball'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "jump_url":jump_url}
                         if reward not in reward_dict['ball']:
                             reward_dict['ball'].append(reward)
                     else:
-                        quest_dict['other'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url}
+                        quest_dict['other'][questid] = {"reward":reward, "location":f"[{string.capwords(location, ' ')}]({url})", "quest":f"{string.capwords(quest, ' ')}", "reporter":reported_by, "url":url, "jump_url":jump_url}
                         if reward not in reward_dict['other']:
                             reward_dict['other'].append(reward)
                 except:
@@ -1603,61 +1622,61 @@ class Listing(commands.Cog):
         for pkmn in sorted(reward_dict['encounters']):
             for quest in quest_dict['encounters']:
                 if quest_dict['encounters'][quest]['pokemon'] == pkmn and not quest_dict['encounters'][quest].get('listed', False):
-                    encounter_quests.append(f"{encounter_emoji} **Reward**: {quest_dict['encounters'][quest]['reward']} | **Pokestop**: {quest_dict['encounters'][quest]['location']} | **Quest**: {quest_dict['encounters'][quest]['quest']}{quest_dict['encounters'][quest]['reporter']}")
+                    encounter_quests.append(f"{encounter_emoji} **Reward**: {quest_dict['encounters'][quest]['reward']} | **Pokestop**: {quest_dict['encounters'][quest]['location']} | **Quest**: {quest_dict['encounters'][quest]['quest']}{quest_dict['encounters'][quest]['reporter']} | [Jump to Report]({quest_dict['encounters'][quest]['jump_url']})")
                     quest_dict['encounters'][quest]['listed'] = True
         if encounter_quests:
             questmsg += "\n\n**Pokemon Encounters**\n{encounterlist}".format(encounterlist="\n".join(encounter_quests))
         for candy in sorted(reward_dict['candy']):
             for quest in quest_dict['candy']:
                 if quest_dict['candy'][quest]['reward'] == candy and not quest_dict['candy'][quest].get('listed', False):
-                    candy_quests.append(f"{candy_emoji} **Reward**: {quest_dict['candy'][quest]['reward'].title()} | **Pokestop**: {quest_dict['candy'][quest]['location']} | **Quest**: {quest_dict['candy'][quest]['quest']}{quest_dict['candy'][quest]['reporter']}")
+                    candy_quests.append(f"{candy_emoji} **Reward**: {quest_dict['candy'][quest]['reward'].title()} | **Pokestop**: {quest_dict['candy'][quest]['location']} | **Quest**: {quest_dict['candy'][quest]['quest']}{quest_dict['candy'][quest]['reporter']} | [Jump to Report]({quest_dict['candy'][quest]['jump_url']})")
                     quest_dict['candy'][quest]['listed'] = True
         if candy_quests:
             questmsg += "\n\n**Rare Candy**\n{candylist}".format(candylist="\n".join(candy_quests))
         for berry in sorted(reward_dict['berry']):
             for quest in quest_dict['berry']:
                 if quest_dict['berry'][quest]['reward'] == berry and not quest_dict['berry'][quest].get('listed', False):
-                    berry_quests.append(f"{berry_emoji} **Reward**: {quest_dict['berry'][quest]['reward'].title()} | **Pokestop**: {quest_dict['berry'][quest]['location']} | **Quest**: {quest_dict['berry'][quest]['quest']}{quest_dict['berry'][quest]['reporter']}")
+                    berry_quests.append(f"{berry_emoji} **Reward**: {quest_dict['berry'][quest]['reward'].title()} | **Pokestop**: {quest_dict['berry'][quest]['location']} | **Quest**: {quest_dict['berry'][quest]['quest']}{quest_dict['berry'][quest]['reporter']} | [Jump to Report]({quest_dict['berry'][quest]['jump_url']})")
                     quest_dict['berry'][quest]['listed'] = True
         if berry_quests:
             questmsg += "\n\n**Berries**\n{itemlist}".format(itemlist="\n".join(berry_quests))
         for potion in sorted(reward_dict['potion']):
             for quest in quest_dict['potion']:
                 if quest_dict['potion'][quest]['reward'] == potion and not quest_dict['potion'][quest].get('listed', False):
-                    potion_quests.append(f"{potion_emoji} **Reward**: {quest_dict['potion'][quest]['reward'].title()} | **Pokestop**: {quest_dict['potion'][quest]['location']} | **Quest**: {quest_dict['potion'][quest]['quest']}{quest_dict['potion'][quest]['reporter']}")
+                    potion_quests.append(f"{potion_emoji} **Reward**: {quest_dict['potion'][quest]['reward'].title()} | **Pokestop**: {quest_dict['potion'][quest]['location']} | **Quest**: {quest_dict['potion'][quest]['quest']}{quest_dict['potion'][quest]['reporter']} | [Jump to Report]({quest_dict['potion'][quest]['jump_url']})")
                     quest_dict['potion'][quest]['listed'] = True
         if potion_quests:
             questmsg += "\n\n**Potions**\n{itemlist}".format(itemlist="\n".join(potion_quests))
         for revive in sorted(reward_dict['revive']):
             for quest in quest_dict['revive']:
                 if quest_dict['revive'][quest]['reward'] == revive and not quest_dict['revive'][quest].get('listed', False):
-                    revive_quests.append(f"{revive_emoji} **Reward**: {quest_dict['revive'][quest]['reward'].title()} | **Pokestop**: {quest_dict['revive'][quest]['location']} | **Quest**: {quest_dict['revive'][quest]['quest']}{quest_dict['revive'][quest]['reporter']}")
+                    revive_quests.append(f"{revive_emoji} **Reward**: {quest_dict['revive'][quest]['reward'].title()} | **Pokestop**: {quest_dict['revive'][quest]['location']} | **Quest**: {quest_dict['revive'][quest]['quest']}{quest_dict['revive'][quest]['reporter']} | [Jump to Report]({quest_dict['revive'][quest]['jump_url']})")
                     quest_dict['revive'][quest]['listed'] = True
         if revive_quests:
             questmsg += "\n\n**Revives**\n{itemlist}".format(itemlist="\n".join(revive_quests))
         for ball in sorted(reward_dict['ball']):
             for quest in quest_dict['ball']:
                 if quest_dict['ball'][quest]['reward'] == ball and not quest_dict['ball'][quest].get('listed', False):
-                    ball_quests.append(f"{ball_emoji} **Reward**: {quest_dict['ball'][quest]['reward'].title()} | **Pokestop**: {quest_dict['ball'][quest]['location']} | **Quest**: {quest_dict['ball'][quest]['quest']}{quest_dict['ball'][quest]['reporter']}")
+                    ball_quests.append(f"{ball_emoji} **Reward**: {quest_dict['ball'][quest]['reward'].title()} | **Pokestop**: {quest_dict['ball'][quest]['location']} | **Quest**: {quest_dict['ball'][quest]['quest']}{quest_dict['ball'][quest]['reporter']} | [Jump to Report]({quest_dict['ball'][quest]['jump_url']})")
                     quest_dict['ball'][quest]['listed'] = True
         if ball_quests:
             questmsg += "\n\n**Poke Balls**\n{itemlist}".format(itemlist="\n".join(ball_quests))
         for item in sorted(reward_dict['other']):
             for quest in quest_dict['other']:
                 if quest_dict['other'][quest]['reward'] == item and not quest_dict['other'][quest].get('listed', False):
-                    item_quests.append(f"{other_emoji} **Reward**: {quest_dict['other'][quest]['reward'].title()} | **Pokestop**: {quest_dict['other'][quest]['location']} | **Quest**: {quest_dict['other'][quest]['quest']}{quest_dict['other'][quest]['reporter']}")
+                    item_quests.append(f"{other_emoji} **Reward**: {quest_dict['other'][quest]['reward'].title()} | **Pokestop**: {quest_dict['other'][quest]['location']} | **Quest**: {quest_dict['other'][quest]['quest']}{quest_dict['other'][quest]['reporter']} | [Jump to Report]({quest_dict['other'][quest]['jump_url']})")
                     quest_dict['other'][quest]['listed'] = True
         if item_quests:
             questmsg += "\n\n**Other Rewards**\n{itemlist}".format(itemlist="\n".join(item_quests))
         for dust in sorted(reward_dict['dust']):
             for quest in quest_dict['dust']:
                 if quest_dict['dust'][quest]['reward'] == dust and not quest_dict['dust'][quest].get('listed', False):
-                    dust_quests.append(f"{dust_emoji} **Reward**: {quest_dict['dust'][quest]['reward'].title()} | **Pokestop**: {quest_dict['dust'][quest]['location']} | **Quest**: {quest_dict['dust'][quest]['quest']}{quest_dict['dust'][quest]['reporter']}")
+                    dust_quests.append(f"{dust_emoji} **Reward**: {quest_dict['dust'][quest]['reward'].title()} | **Pokestop**: {quest_dict['dust'][quest]['location']} | **Quest**: {quest_dict['dust'][quest]['quest']}{quest_dict['dust'][quest]['reporter']} | [Jump to Report]({quest_dict['dust'][quest]['jump_url']})")
                     quest_dict['dust'][quest]['listed'] = True
         if dust_quests:
             questmsg += "\n\n**Stardust**\n{dustlist}".format(dustlist="\n".join(dust_quests))
         if questmsg:
-            listmsg = f"**Meowth! Here's the current {search_label} for {ctx.channel.mention}**"
+            listmsg = f"**Meowth! Here's the current {search_label} for {getattr(ctx.channel, 'mention', 'this channel')}**"
             report_emoji = self.bot.custom_emoji.get('research_report', u'\U0001F4E2')
             questmsg += f"\n\n**New Report:**\nReact with {report_emoji} to start a new research report!"
             paginator = commands.Paginator(prefix="", suffix="")
@@ -1832,12 +1851,16 @@ class Listing(commands.Cog):
         search_label = ""
         for lureid in lure_dict:
             luremsg = ""
-            if lure_dict[lureid]['report_channel'] == ctx.message.channel.id:
+            condition_check = lure_dict[lureid]['report_channel'] == ctx.channel.id
+            if "dm" in str(ctx.invoked_with):
+                condition_check = ctx.author.id in lure_dict[lureid].get('dm_dict', {})
+            if condition_check:
                 try:
-                    lureauthor = ctx.channel.guild.get_member(lure_dict[lureid]['report_author'])
+                    lureauthor = ctx.guild.get_member(lure_dict[lureid]['report_author'])
                     lure_expire = datetime.datetime.utcfromtimestamp(lure_dict[lureid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     lure_type = lure_dict[lureid]['type']
                     location = lure_dict[lureid]['location']
+                    jump_url = f"https://discord.com/channels/{ctx.guild.id}/{lure_dict[lureid]['report_channel']}/{lureid}"
                     if search_term != "all":
                         if lure_type == search_term:
                             search_label = f"{search_term.title()} lure reports"
@@ -1849,7 +1872,7 @@ class Listing(commands.Cog):
                     if lureauthor and not lureauthor.bot:
                         reported_by = f" | **Reported By**: {lureauthor.display_name}"
                     luremsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('lure_bullet', u'\U0001F539')))
-                    luremsg += f"**Lure Type**: {lure_type.title()} {normal_emoji if lure_type == 'normal' else ''}{glacial_emoji if lure_type == 'glacial' else ''}{mossy_emoji if lure_type == 'mossy' else ''}{magnetic_emoji if lure_type == 'magnetic' else ''} | **Location**: [{string.capwords(location, ' ')}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    luremsg += f"**Lure Type**: {lure_type.title()} {normal_emoji if lure_type == 'normal' else ''}{glacial_emoji if lure_type == 'glacial' else ''}{mossy_emoji if lure_type == 'mossy' else ''}{magnetic_emoji if lure_type == 'magnetic' else ''} | **Location**: [{string.capwords(location, ' ')}]({lure_dict[lureid].get('url', None)}) | **Expires**: {lure_expire.strftime(_('%I:%M %p'))}{reported_by} | [Jump to Report]({jump_url})"
                     listing_dict[lureid] = {
                         "message":luremsg,
                         "expire":lure_expire
@@ -1863,7 +1886,7 @@ class Listing(commands.Cog):
                 lure_list_msg += listing_dict[k]['message']
             report_emoji = self.bot.custom_emoji.get('lure_report', u'\U0001F4E2')
             lure_list_msg += f"\n\n**New Report:**\nReact with {report_emoji} to start a new lure report!"
-            listmsg = f"**Meowth! Here's the current {search_label} for {ctx.channel.mention}**"
+            listmsg = f"**Meowth! Here's the current {search_label} for {getattr(ctx.channel, 'mention', 'this channel')}**"
             paginator = commands.Paginator(prefix="", suffix="")
             for line in lure_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
@@ -1921,7 +1944,7 @@ class Listing(commands.Cog):
             pokealarmmsg = ""
             if pokealarm_dict[pokealarmid]['report_channel'] == ctx.message.channel.id:
                 try:
-                    jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{ctx.channel.id}/{pokealarmid}"
+                    jump_url = f"https://discord.com/channels/{ctx.guild.id}/{ctx.channel.id}/{pokealarmid}"
                     pokealarm_expire = datetime.datetime.utcfromtimestamp(pokealarm_dict[pokealarmid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     pokealarmmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('pokealarm_bullet', u'\U0001F539')))
                     location = pokealarm_dict[pokealarmid]['gym']
@@ -2025,18 +2048,22 @@ class Listing(commands.Cog):
         listing_dict = {}
         search_label = "invasion reports"
         for invasionid in invasion_dict:
-            if invasion_dict[invasionid]['report_channel'] == ctx.message.channel.id:
+            condition_check = invasion_dict[invasionid]['report_channel'] == ctx.message.channel.id
+            if "dm" in str(ctx.invoked_with):
+                condition_check = ctx.author.id in invasion_dict[invasionid].get('dm_dict', {})
+            if condition_check:
                 try:
                     invasionmsg = ""
                     reward_list = []
                     pokemon_list = []
                     type_list = []
-                    invasionauthor = ctx.channel.guild.get_member(invasion_dict[invasionid]['report_author'])
+                    invasionauthor = ctx.guild.get_member(invasion_dict[invasionid]['report_author'])
                     reward = invasion_dict[invasionid]['reward']
                     reward_type = invasion_dict[invasionid].get('reward_type', None)
                     grunt_gender = invasion_dict[invasionid].get('gender', None)
                     leader = invasion_dict[invasionid].get('leader', None)
                     location = invasion_dict[invasionid]['location']
+                    jump_url = f"https://discord.com/channels/{ctx.guild.id}/{invasion_dict[invasionid]['report_channel']}/{invasionid}"
                     if invasionid in self.bot.active_invasions and len(self.bot.active_invasions[invasionid]) > 0:
                         for pokemon in self.bot.active_invasions[invasionid]:
                             shiny_str = ""
@@ -2082,7 +2109,7 @@ class Listing(commands.Cog):
                     if grunt_gender:
                         gender_str = f" | **Gender**: {grunt_gender.title()}"
                     invasionmsg += ('\n{emoji}').format(emoji=utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('invasion_bullet', u'\U0001F539')))
-                    invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{string.capwords(location, ' ')}]({invasion_dict[invasionid].get('url', None)}){gender_str} | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by}"
+                    invasionmsg += f"**Possible Rewards**: {(', ').join(reward_list)} | **Location**: [{string.capwords(location, ' ')}]({invasion_dict[invasionid].get('url', None)}){gender_str} | **Expires**: {invasion_expire.strftime(_('%I:%M %p'))}{reported_by} | [Jump to Report]({jump_url})"
                     listing_dict[invasionid] = {
                         "message":invasionmsg,
                         "expire":invasion_expire
@@ -2095,7 +2122,7 @@ class Listing(commands.Cog):
                 inv_list_msg += listing_dict[k]['message']
             report_emoji = self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2')
             inv_list_msg += f"\n\n**New Report:**\nReact with {report_emoji} to start a new invasion report!"
-            listmsg = f"**Meowth! Here's the current {search_label} for {ctx.channel.mention}**"
+            listmsg = f"**Meowth! Here's the current {search_label} for {getattr(ctx.channel, 'mention', 'this channel')}**"
             paginator = commands.Paginator(prefix="", suffix="")
             for line in inv_list_msg.splitlines():
                 paginator.add_line(line.rstrip().replace('`', '\u200b`'))
@@ -2304,13 +2331,16 @@ class Listing(commands.Cog):
         if "MAX" in search_term:
             min_or_max = "max"
         for wildid in wild_dict:
-            if wild_dict[wildid].get('report_channel') == ctx.channel.id:
+            condition_check = wild_dict[wildid].get('report_channel') == ctx.channel.id
+            if "dm" in str(ctx.invoked_with):
+                condition_check = ctx.author.id in wild_dict[wildid].get('dm_dict')
+            if condition_check:
                 try:
                     wildmsg = ""
-                    wildauthor = ctx.channel.guild.get_member(wild_dict[wildid]['report_author'])
+                    wildauthor = ctx.guild.get_member(wild_dict[wildid]['report_author'])
                     wild_despawn = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     timestamp = datetime.datetime.utcfromtimestamp(wild_dict[wildid]['report_time']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
-                    jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{ctx.channel.id}/{wildid}"
+                    jump_url = f"https://discord.com/channels/{ctx.guild.id}/{wild_dict[wildid].get('report_channel')}/{wildid}"
                     reported_by = ""
                     if wildauthor and not wildauthor.bot:
                         reported_by = f" | **Reported By**: {wildauthor.display_name}"
@@ -2396,6 +2426,7 @@ class Listing(commands.Cog):
                             wildmsg += f"{atk_check if atk_check else 'X'} / {def_check if def_check else 'X'} / {sta_check if sta_check else 'X'} ({wild_dict[wildid]['wild_iv'].get('percent', iv_check)}%)"
                         else:
                             wildmsg += f"{wild_dict[wildid]['wild_iv'].get('percent', iv_check)}%"
+                    wildmsg += f" | [Jump to Report]({jump_url})"
                     listing_dict[wildid] = {
                         "message":wildmsg,
                         "expire":wild_despawn
@@ -2407,7 +2438,7 @@ class Listing(commands.Cog):
             wild_list_msg = ""
             for (k, v) in sorted(listing_dict.items(), key=lambda item: item[1]['expire']):
                 wild_list_msg += listing_dict[k]['message']
-            listmsg = f"**Meowth! Here's the current {search_label} for {ctx.channel.mention}**"
+            listmsg = f"**Meowth! Here's the current {search_label} for {getattr(ctx.channel, 'mention', 'this channel')}**"
             report_emoji = self.bot.custom_emoji.get('wild_report', u'\U0001F4E2')
             wild_list_msg += f"\n\n**New Report:**\nReact with {report_emoji} to start a new wild report!"
             paginator = commands.Paginator(prefix="", suffix="")
@@ -2460,6 +2491,65 @@ class Listing(commands.Cog):
             for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['nest']):
                 if not ctx.guild.get_channel(channel):
                     del self.bot.guild_dict[ctx.guild.id]['list_dict']['nest'][channel]
+
+    @_list.command(aliases=['dm'])
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    async def dms(self, ctx):
+        listing_dict = {}
+        list_msg = ""
+        for guild in self.bot.guilds:
+            ctx.guild = guild
+            listing_dict[guild.name] = {}
+            for report_dict in self.bot.report_dicts + self.bot.channel_report_dicts:
+                report_type = report_dict.replace('channel_dict', '').replace('_dict', '').replace('report', '')
+                if report_type == "quest":
+                    report_emoji = self.bot.custom_emoji.get('research_report', u'\U0001F4E2')
+                    listmsg, listpages = await self._researchlist(ctx)
+                    if listpages:
+                        listing_dict[guild.name]['research'] = ('\n\n'+('\n').join(listpages)).replace('**Pokemon Encounters**', '').replace('**Stardust**', '').replace('**Rare Candy**', '').replace('**Berries**', '').replace('**Potions**', '').replace('**Revives**', '').replace('**Poke Balls**', '').replace('**Other Rewards**', '').replace('\n\n', '').replace(f"**New Report:**\nReact with {report_emoji} to start a new research report!", "")+'\n'
+                elif report_type == "wild":
+                    report_emoji = self.bot.custom_emoji.get('wild_report', u'\U0001F4E2')
+                    listmsg, listpages = await self._wildlist(ctx)
+                    if listpages:
+                        listing_dict[guild.name][report_type] = ('\n\n'+('\n').join(listpages)).replace('\n\n', '').replace(f"**New Report:**\nReact with {report_emoji} to start a new wild report!", "")+'\n'
+                elif report_type == "lure":
+                    report_emoji = self.bot.custom_emoji.get('lure_report', u'\U0001F4E2')
+                    listmsg, listpages = await self._lurelist(ctx)
+                    if listpages:
+                        listing_dict[guild.name][report_type] = ('\n\n'+('\n').join(listpages)).replace('\n\n', '').replace(f"**New Report:**\nReact with {report_emoji} to start a new lure report!", "")+'\n'
+                elif report_type == "invasion":
+                    report_emoji = self.bot.custom_emoji.get('invasion_report', u'\U0001F4E2')
+                    listmsg, listpages = await self._invasionlist(ctx)
+                    if listpages:
+                        listing_dict[guild.name][report_type] = ('\n\n'+('\n').join(listpages)).replace('\n\n', '').replace(f"**New Report:**\nReact with {report_emoji} to start a new invasion report!", "")+'\n'
+                elif report_type == "raid":
+                    report_emoji = self.bot.custom_emoji.get('raid_report', u'\U0001F4E2')
+                    listmsg, __ = await self._raidlist(ctx)
+                    if listmsg:
+                        listing_dict[guild.name][report_type] = listmsg.replace(f"\n\n**New Report:**\nReact with {report_emoji} to start a new raid report!", "").replace("**Raid Eggs:**\n", "").replace("**Raids:**\n", "").replace("**EX Raids:**\n", "")
+        for guild in self.bot.guilds:
+            if not listing_dict[guild.name]:
+                continue
+            list_msg += f"**{guild.name}**\n\n"
+            for report_type in listing_dict[guild.name]:
+                list_msg += f"__{report_type.title()}__\n"
+                list_msg += listing_dict[guild.name][report_type]
+        paginator = commands.Paginator(prefix="", suffix="")
+        for line in list_msg.splitlines():
+            paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+        list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
+        if paginator.pages:
+            index = 0
+            for p in paginator.pages:
+                list_embed.description = p
+                if index == 0:
+                    listmsg = await ctx.channel.send(f"Meowth! Here are your active alerts.", embed=list_embed)
+                else:
+                    listmsg = await ctx.channel.send(embed=list_embed)
+                index += 1
+        else:
+            list_embed.add_field(name=f"**No Current Wild {search_label}**", value=f"Meowth! You have no active alerts.")
+            listmsg = await ctx.channel.send(embed=list_embed, delete_after=30)
 
 def setup(bot):
     bot.add_cog(Listing(bot))

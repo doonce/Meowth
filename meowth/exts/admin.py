@@ -89,7 +89,7 @@ class Admin(commands.Cog):
         except Exception as err:
             print(_('Error occured while trying to save!'))
             print(err)
-        await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Restarting..."))
+        await ctx.channel.send(embed=discord.Embed(colour=self.bot.user.colour, description=f"Restarting..."))
         self.bot._shutdown_mode = 26
         await self.bot.logout()
 
@@ -112,7 +112,7 @@ class Admin(commands.Cog):
                 await ctx.send(f'{error_title} {ext}:**\n'
                                f'{type(e).__name__}: {e}')
                 continue
-        await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Reloaded the following extensions:\n\n{(', ').join(reload_str)}"))
+        await ctx.send(embed=discord.Embed(colour=self.bot.user.colour, description=f"Reloaded the following extensions:\n\n{(', ').join(reload_str)}"))
 
     @commands.command(name="shutdown", aliases=["exit"])
     @checks.is_owner()
@@ -126,7 +126,7 @@ class Admin(commands.Cog):
         except Exception as err:
             print(_('Error occured while trying to save!'))
             print(err)
-        await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Shutting Down..."))
+        await ctx.send(embed=discord.Embed(colour=self.bot.user.colour, description=f"Shutting Down..."))
         self.bot._shutdown_mode = 0
         await self.bot.logout()
 

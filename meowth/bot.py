@@ -223,11 +223,11 @@ class MeowthBot(commands.AutoShardedBot):
                 raise
         if backup_day == 0:
             try:
-                os.remove(os.path.join('data', 'guilddict_backup_2'))
+                os.remove(os.path.join('data', 'serverdict_backup_2'))
             except OSError as e:
                 pass
             try:
-                shutil.copy(os.path.join('data', 'guilddict_backup'), os.path.join('data', 'guilddict_backup_2'))
+                shutil.copy(os.path.join('data', 'serverdict_backup'), os.path.join('data', 'serverdict_backup_2'))
             except:
                 pass
         os.rename(tempname, os.path.join('data', 'serverdict'))
@@ -513,6 +513,8 @@ class MeowthBot(commands.AutoShardedBot):
         if ctx.guild and ctx.guild.id in ctx.bot.guild_dict.keys():
             await self.invoke(ctx)
         elif ctx.command.cog_name == "Admin" and checks.is_owner_check(ctx):
+            await self.invoke(ctx)
+        elif ctx.command.cog_name == "Listing":
             await self.invoke(ctx)
         elif not ctx.guild:
             await ctx.bot.on_command_error(ctx, errors.GuildCheckFail())
