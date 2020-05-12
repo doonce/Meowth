@@ -478,6 +478,10 @@ class MeowthBot(commands.AutoShardedBot):
                 if message.id in self.guild_dict[guild.id].get(report_dict, {}):
                     in_reports = True
                     break
+            for nest in self.guild_dict[guild.id].get('nest_dict', {}):
+                if message.id in self.guild_dict[guild.id][nest].get('reports', {}):
+                    in_reports = True
+                    break
             if not in_reports:
                 await utils.safe_delete(message)
 

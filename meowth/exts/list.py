@@ -2603,7 +2603,7 @@ class Listing(commands.Cog):
                         except Exception as e:
                             print("nestlist", e)
                             continue
-        if listing_dict or empty_nests:
+        if listing_dict or (empty_nests and "dm" not in str(ctx.invoked_with)):
             nest_list_msg = ""
             for (k, v) in sorted(listing_dict.items(), key=lambda item: item[1]['expire']):
                 nest_list_msg += listing_dict[k]['message']
@@ -2628,7 +2628,6 @@ class Listing(commands.Cog):
             listing_dict[guild.name] = {}
             for report_dict in self.bot.report_dicts + self.bot.channel_report_dicts:
                 report_type = report_dict.replace('channel_dict', '').replace('_dict', '').replace('report', '')
-                print(report_dict, report_type)
                 if report_type == "quest":
                     report_emoji = self.bot.custom_emoji.get('research_report', u'\U0001F4E2')
                     listmsg, listpages = await self._researchlist(ctx)
