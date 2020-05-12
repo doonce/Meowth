@@ -2495,7 +2495,7 @@ class Listing(commands.Cog):
     @_list.command(aliases=['nest'])
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @checks.allownestreport()
-    async def nest2(self, ctx, search_term="all"):
+    async def nests(self, ctx, search_term="all"):
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'nests', 'nest']:
             await utils.safe_delete(ctx.message)
         search_term = search_term.lower()
