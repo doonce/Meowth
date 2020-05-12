@@ -20,6 +20,7 @@ class Nest(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.nest_cleanup.start()
+        self.bot.active_nests = {}
 
     def cog_unload(self):
         self.nest_cleanup.cancel()
@@ -97,6 +98,11 @@ class Nest(commands.Cog):
                                     continue
                                 except KeyError:
                                     print(traceback.format_exc())
+                                try:
+                                    del self.bot.active_nests[report]
+                                except:
+                                    pass
+
             if not migration_list:
                 migration_list = [600]
             logger.info(f"------ END - {count} Nests Cleaned - Waiting {min(migration_list)} seconds. ------")
@@ -132,6 +138,10 @@ class Nest(commands.Cog):
         try:
             del self.bot.guild_dict[guild.id]['nest_dict'][channel.id][nest]['reports'][message.id]
         except KeyError:
+            pass
+        try:
+            del self.bot.active_nests[message.id]
+        except:
             pass
 
     @commands.Cog.listener()
@@ -211,7 +221,10 @@ class Nest(commands.Cog):
         channel = message.channel
         guild = message.guild
         author = guild.get_member(nest_dict.get('report_author', None))
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, nest_dict.get('pokemon'))
+        if message.id in self.bot.active_nests:
+            pokemon = self.bot.active_nests[message.id]
+        else:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, nest_dict.get('pokemon'))
         if not author or not location:
             return
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
@@ -263,6 +276,7 @@ class Nest(commands.Cog):
                     break
         if not entered_pokemon:
             entered_pokemon = pokemon
+            self.bot.active_nests[ctx.nestreportmsg.id] = entered_pokemon
         if success:
             await self.edit_nest_messages(ctx, location, message)
         elif not error:
@@ -277,7 +291,10 @@ class Nest(commands.Cog):
     async def edit_nest_messages(self, ctx, location, message):
         nest_dict = self.bot.guild_dict[ctx.guild.id]['nest_dict'].get(ctx.channel.id, {}).get(location, {}).get('reports', {}).get(message.id, {})
         dm_dict = nest_dict.get('dm_dict', {})
-        pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, nest_dict.get('pokemon'))
+        if message.id in self.bot.active_nests:
+            pokemon = self.bot.active_nests[message.id]
+        else:
+            pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, nest_dict.get('pokemon'))
         nest_embed = message.embeds[0]
         author = ctx.guild.get_member(nest_dict.get('report_author', None))
         if author:
@@ -509,6 +526,7 @@ class Nest(commands.Cog):
             'location':nest_name,
             'pokemon':str(pokemon)
         }
+        self.bot.active_nests[ctx.nestreportmsg.id] = pokemon
         self.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.channel.id] = nest_dict
         dm_dict = await self.send_dm_messages(ctx, nest_name, pokemon, copy.deepcopy(nest_embed), dm_dict)
         self.bot.guild_dict[ctx.guild.id]['nest_dict'][ctx.channel.id][nest_name]['reports'][ctx.nestreportmsg.id]['dm_dict'] = dm_dict

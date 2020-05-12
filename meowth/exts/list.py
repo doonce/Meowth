@@ -2447,19 +2447,69 @@ class Listing(commands.Cog):
             return listmsg, paginator.pages
         return None, None
 
+    # @_list.command(aliases=['nest'])
+    # @commands.cooldown(1, 5, commands.BucketType.channel)
+    # @checks.allownestreport()
+    # async def nests(self, ctx):
+    #     """List the nests for the channel
+    #
+    #     Usage: !list nests"""
+    #     if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'nests', 'nest']:
+    #         await utils.safe_delete(ctx.message)
+    #     list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('nest', {}).setdefault(ctx.channel.id, [])
+    #     if not ctx.prefix:
+    #         prefix = self.bot._get_prefix(self.bot, ctx.message)
+    #         ctx.prefix = prefix[-1]
+    #     delete_list = []
+    #     async with ctx.typing():
+    #         for msg in list_dict:
+    #             try:
+    #                 msg = await ctx.channel.fetch_message(msg)
+    #                 delete_list.append(msg)
+    #             except:
+    #                 pass
+    #         await utils.safe_bulk_delete(ctx.channel, delete_list)
+    #         nest_cog = self.bot.cogs.get('Nest')
+    #         if not nest_cog:
+    #             return
+    #         list_messages = []
+    #         nest_embed, nest_pages = await nest_cog.get_nest_reports(ctx)
+    #         report_emoji = self.bot.custom_emoji.get('nest_report', u'\U0001F4E2')
+    #         nest_pages[-1] = f"{nest_pages[-1]}\n**New Report**:\nReact with {report_emoji} to start a new nest report!"
+    #         nest_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
+    #         index = 0
+    #         for p in nest_pages:
+    #             nest_embed.description = p
+    #             if index == 0:
+    #                 listmsg = await ctx.channel.send(f"**Meowth!** Here's the current nests for {ctx.channel.mention}. You can see more information about a nest using **{ctx.prefix}nest info**".format(channel=ctx.channel.mention), embed=nest_embed)
+    #             else:
+    #                 listmsg = await ctx.channel.send(embed=nest_embed)
+    #             list_messages.append(listmsg.id)
+    #             index += 1
+    #         await utils.add_reaction(listmsg, report_emoji)
+    #         self.bot.guild_dict[ctx.guild.id]['list_dict']['nest'][ctx.channel.id] = list_messages
+    #         for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['nest']):
+    #             if not ctx.guild.get_channel(channel):
+    #                 del self.bot.guild_dict[ctx.guild.id]['list_dict']['nest'][channel]
+
     @_list.command(aliases=['nest'])
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @checks.allownestreport()
-    async def nests(self, ctx):
-        """List the nests for the channel
-
-        Usage: !list nests"""
+    async def nest2(self, ctx, search_term="all"):
         if str(ctx.invoked_with).lower() in ['list', 'l', 'lists', 'nests', 'nest']:
             await utils.safe_delete(ctx.message)
+        search_term = search_term.lower()
+        search_label = "reports"
+        if search_term != "all":
+            search_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, search_term)
+            if search_term in self.bot.type_list:
+                search_label = f"{search_term.title()} type reports"
+            elif search_pokemon:
+                search_term = search_pokemon.name.lower()
+                search_label = f"{search_term.title()} reports"
+            else:
+                search_term = "all"
         list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('nest', {}).setdefault(ctx.channel.id, [])
-        if not ctx.prefix:
-            prefix = self.bot._get_prefix(self.bot, ctx.message)
-            ctx.prefix = prefix[-1]
         delete_list = []
         async with ctx.typing():
             for msg in list_dict:
@@ -2469,28 +2519,104 @@ class Listing(commands.Cog):
                 except:
                     pass
             await utils.safe_bulk_delete(ctx.channel, delete_list)
-            nest_cog = self.bot.cogs.get('Nest')
-            if not nest_cog:
-                return
-            list_messages = []
-            nest_embed, nest_pages = await nest_cog.get_nest_reports(ctx)
+            if not ctx.prefix:
+                prefix = self.bot._get_prefix(self.bot, ctx.message)
+                ctx.prefix = prefix[-1]
             report_emoji = self.bot.custom_emoji.get('nest_report', u'\U0001F4E2')
-            nest_pages[-1] = f"{nest_pages[-1]}\n**New Report**:\nReact with {report_emoji} to start a new nest report!"
-            nest_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
-            index = 0
-            for p in nest_pages:
-                nest_embed.description = p
-                if index == 0:
-                    listmsg = await ctx.channel.send(f"**Meowth!** Here's the current nests for {ctx.channel.mention}. You can see more information about a nest using **{ctx.prefix}nest info**".format(channel=ctx.channel.mention), embed=nest_embed)
-                else:
-                    listmsg = await ctx.channel.send(embed=nest_embed)
+            listmsg, nest_pages = await self._nestlist(ctx, search_term)
+            list_messages = []
+            list_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
+            if nest_pages:
+                index = 0
+                for p in nest_pages:
+                    list_embed.description = p
+                    if index == 0:
+                        list_embed.title = "Click here to open the Silph Road Nest Atlas!"
+                        list_embed.url = "https://thesilphroad.com/atlas"
+                        listmsg = await ctx.channel.send(listmsg, embed=list_embed)
+                        list_embed.title, list_embed.url = None, None
+                    else:
+                        listmsg = await ctx.channel.send(embed=list_embed)
+                    list_messages.append(listmsg.id)
+                    index += 1
+                await utils.add_reaction(listmsg, report_emoji)
+            else:
+                report_emoji = self.bot.custom_emoji.get('nest_report', u'\U0001F4E2')
+                list_embed.add_field(name=f"**No Current Nest {search_label}**", value=f"Meowth! There are no reported {search_label.replace('reports', 'pokemon')} nests. Report one with **{ctx.prefix}nest <pokemon>** or react with {report_emoji} and I can walk you through it!")
+                listmsg = await ctx.channel.send(embed=list_embed)
+                await utils.add_reaction(listmsg, report_emoji)
                 list_messages.append(listmsg.id)
-                index += 1
-            await utils.add_reaction(listmsg, report_emoji)
             self.bot.guild_dict[ctx.guild.id]['list_dict']['nest'][ctx.channel.id] = list_messages
             for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['nest']):
                 if not ctx.guild.get_channel(channel):
                     del self.bot.guild_dict[ctx.guild.id]['list_dict']['nest'][channel]
+
+    async def _nestlist(self, ctx, search_term="all"):
+        nest_dict = copy.deepcopy(ctx.bot.guild_dict[ctx.guild.id].setdefault('nest_dict', {}))
+        listing_dict = {}
+        bullet_point = self.bot.custom_emoji.get('nest_bullet', u'\U0001F539')
+        search_label = "reports"
+        empty_nests = []
+        for channel_id in nest_dict:
+            nest_list = nest_dict[channel_id].get('list', [])
+            channel = self.bot.get_channel(channel_id)
+            for nest in nest_list:
+                if not nest_dict[channel.id][nest].get('reports'):
+                    empty_nests.append(nest.title())
+                for report in nest_dict[channel.id][nest]['reports']:
+                    condition_check = channel.id == ctx.channel.id
+                    if "dm" in str(ctx.invoked_with):
+                        condition_check = ctx.author.id in nest_dict[channel.id][nest]['reports'][report].get('dm_dict', {})
+                    if condition_check:
+                        try:
+                            nest_msg = ""
+                            nest_coordinates = nest_dict[channel.id][nest]['location']
+                            nest_name = str(nest)
+                            nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_coordinates)}"
+                            nest_author = ctx.guild.get_member(nest_dict[channel.id][nest]['reports'][report]['report_author'])
+                            nest_despawn = datetime.datetime.utcfromtimestamp(nest_dict[channel.id][nest]['reports'][report]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+                            jump_url = f"https://discord.com/channels/{ctx.guild.id}/{nest_dict[channel.id][nest]['reports'][report].get('report_channel')}/{report}"
+                            reported_by = ""
+                            if nest_author and not nest_author.bot:
+                                reported_by = f" | **Reported By**: {nest_author.display_name}"
+                            if report in self.bot.active_nests:
+                                pokemon = self.bot.active_nests[report]
+                            else:
+                                pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, nest_dict[channel.id][nest]['reports'][report]['pokemon'])
+                                self.bot.active_nests[report] = pokemon
+                            if search_term != "all":
+                                if str(getattr(pokemon, 'name', None)).lower() == search_term:
+                                    search_label = f"{search_term.title()} nest reports"
+                                elif search_term.title() in pokemon.types:
+                                    search_label = f"{search_term.title()} type nest reports"
+                                else:
+                                    continue
+                            shiny_str = ""
+                            if pokemon and "wild" in pokemon.shiny_available:
+                                shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
+                            nest_msg += f"\n{bullet_point} **Pokemon**: {shiny_str}{str(pokemon).title()} {pokemon.emoji} | **Nest**: [{string.capwords(nest_name, ' ')}]({nest_url}) | **Migration**: {nest_despawn.strftime(_('%B %d at %I:%M %p (%H:%M)'))}{reported_by}"
+                            nest_msg += f" | [Jump to Report]({jump_url})"
+                            listing_dict[report] = {
+                                "message":nest_msg,
+                                "expire":nest_despawn
+                            }
+                        except Exception as e:
+                            print("nestlist", e)
+                            continue
+        if listing_dict or empty_nests:
+            nest_list_msg = ""
+            for (k, v) in sorted(listing_dict.items(), key=lambda item: item[1]['expire']):
+                nest_list_msg += listing_dict[k]['message']
+            listmsg = f"**Meowth!** Here's the current {search_label} for {getattr(ctx.channel, 'mention', 'this channel')}. You can see more information about a nest using **{ctx.prefix}nest info**"
+            report_emoji = self.bot.custom_emoji.get('nest_report', u'\U0001F4E2')
+            if empty_nests and "dm" not in str(ctx.invoked_with):
+                nest_list_msg += f"\n\n**Empty Nests**:\n{(', ').join(empty_nests)}"
+            nest_list_msg += f"\n\n**New Report:**\nReact with {report_emoji} to start a new nest report!"
+            paginator = commands.Paginator(prefix="", suffix="")
+            for line in nest_list_msg.splitlines():
+                paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+            return listmsg, paginator.pages
+        return None, None
 
     @_list.command(aliases=['dm'])
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -2502,6 +2628,7 @@ class Listing(commands.Cog):
             listing_dict[guild.name] = {}
             for report_dict in self.bot.report_dicts + self.bot.channel_report_dicts:
                 report_type = report_dict.replace('channel_dict', '').replace('_dict', '').replace('report', '')
+                print(report_dict, report_type)
                 if report_type == "quest":
                     report_emoji = self.bot.custom_emoji.get('research_report', u'\U0001F4E2')
                     listmsg, listpages = await self._researchlist(ctx)
@@ -2527,6 +2654,11 @@ class Listing(commands.Cog):
                     listmsg, __ = await self._raidlist(ctx)
                     if listmsg:
                         listing_dict[guild.name][report_type] = listmsg.replace(f"\n\n**New Report:**\nReact with {report_emoji} to start a new raid report!", "").replace("**Raid Eggs:**\n", "").replace("**Raids:**\n", "").replace("**EX Raids:**\n", "")
+                elif report_type == "nest":
+                    report_emoji = self.bot.custom_emoji.get('nest_report', u'\U0001F4E2')
+                    listmsg, listpages = await self._nestlist(ctx)
+                    if listmsg:
+                        listing_dict[guild.name][report_type] = ('\n\n'+('\n').join(listpages)).replace('\n\n', '').replace(f"**New Report:**\nReact with {report_emoji} to start a new nest report!", "")+'\n'
         for guild in self.bot.guilds:
             if not listing_dict[guild.name]:
                 continue
@@ -2548,7 +2680,7 @@ class Listing(commands.Cog):
                     listmsg = await ctx.channel.send(embed=list_embed)
                 index += 1
         else:
-            list_embed.add_field(name=f"**No Current Wild {search_label}**", value=f"Meowth! You have no active alerts.")
+            list_embed.add_field(name=f"**No Active Alerts**", value=f"Meowth! You have no active alerts.")
             listmsg = await ctx.channel.send(embed=list_embed, delete_after=30)
 
 def setup(bot):
