@@ -2557,6 +2557,8 @@ class Listing(commands.Cog):
         bullet_point = self.bot.custom_emoji.get('nest_bullet', u'\U0001F539')
         search_label = "reports"
         empty_nests = []
+        migration_utc = self.bot.guild_dict[ctx.guild.id]['configure_dict'].setdefault('nest', {}).setdefault('migration', datetime.datetime.utcnow() + datetime.timedelta(days=14))
+        migration_local = migration_utc + datetime.timedelta(hours=ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         for channel_id in nest_dict:
             nest_list = nest_dict[channel_id].get('list', [])
             channel = self.bot.get_channel(channel_id)
@@ -2574,7 +2576,6 @@ class Listing(commands.Cog):
                             nest_name = str(nest)
                             nest_url = f"https://www.google.com/maps/search/?api=1&query={('+').join(nest_coordinates)}"
                             nest_author = ctx.guild.get_member(nest_dict[channel.id][nest]['reports'][report]['report_author'])
-                            nest_despawn = datetime.datetime.utcfromtimestamp(nest_dict[channel.id][nest]['reports'][report]['exp']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                             jump_url = f"https://discord.com/channels/{ctx.guild.id}/{nest_dict[channel.id][nest]['reports'][report].get('report_channel')}/{report}"
                             reported_by = ""
                             if nest_author and not nest_author.bot:
@@ -2594,11 +2595,11 @@ class Listing(commands.Cog):
                             shiny_str = ""
                             if pokemon and "wild" in pokemon.shiny_available:
                                 shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
-                            nest_msg += f"\n{bullet_point} **Pokemon**: {shiny_str}{str(pokemon).title()} {pokemon.emoji} | **Nest**: [{string.capwords(nest_name, ' ')}]({nest_url}) | **Migration**: {nest_despawn.strftime(_('%B %d at %I:%M %p (%H:%M)'))}{reported_by}"
+                            nest_msg += f"\n{bullet_point} **Pokemon**: {shiny_str}{str(pokemon).title()} {pokemon.emoji} | **Nest**: [{string.capwords(nest_name, ' ')}]({nest_url}){reported_by}"
                             nest_msg += f" | [Jump to Report]({jump_url})"
                             listing_dict[report] = {
                                 "message":nest_msg,
-                                "expire":nest_despawn
+                                "expire":migration_local
                             }
                         except Exception as e:
                             print("nestlist", e)
@@ -2607,6 +2608,9 @@ class Listing(commands.Cog):
             nest_list_msg = ""
             for (k, v) in sorted(listing_dict.items(), key=lambda item: item[1]['expire']):
                 nest_list_msg += listing_dict[k]['message']
+            if listing_dict:
+                migrate_emoji = self.bot.custom_emoji.get('nest_migrate', u'\U0001f5d3\U0000fe0f')
+                nest_list_msg += f"\n{migrate_emoji} **Migration**: {migration_local.strftime(_('%B %d at %I:%M %p (%H:%M)'))}"
             listmsg = f"**Meowth!** Here's the current {search_label} for {getattr(ctx.channel, 'mention', 'this channel')}. You can see more information about a nest using **{ctx.prefix}nest info**"
             report_emoji = self.bot.custom_emoji.get('nest_report', u'\U0001F4E2')
             if empty_nests and "dm" not in str(ctx.invoked_with):
