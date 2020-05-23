@@ -1540,17 +1540,17 @@ class Want(commands.Cog):
             if pokemon.shiny_available:
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
             alert_text = f"**Pokemon**: {shiny_str}{subscription_dict['pokemon']} {pokemon.emoji}"
-            if subscription_dict.get('min_iv'):
+            if subscription_dict.get('min_iv') or subscription_dict.get('min_iv') == 0:
                 alert_text += f" | **IV Percent**: {subscription_dict['min_iv']}-{subscription_dict['max_iv']}"
-            if subscription_dict.get('min_atk'):
+            if subscription_dict.get('min_atk') or subscription_dict.get('min_atk') == 0:
                 alert_text += f" | **IV Attack**: {subscription_dict['min_atk']}-{subscription_dict['max_atk']}"
-            if subscription_dict.get('min_def'):
+            if subscription_dict.get('min_def') or subscription_dict.get('min_def') == 0:
                 alert_text += f" | **IV Defense**: {subscription_dict['min_def']}-{subscription_dict['max_def']}"
-            if subscription_dict.get('min_sta'):
+            if subscription_dict.get('min_sta') or subscription_dict.get('min_sta') == 0:
                 alert_text += f" | **IV Stamina**: {subscription_dict['min_sta']}-{subscription_dict['max_sta']}"
-            if subscription_dict.get('min_cp'):
+            if subscription_dict.get('min_cp') or subscription_dict.get('min_cp') == 0:
                 alert_text += f" | **CP**: {subscription_dict['min_cp']}-{subscription_dict['max_cp']}"
-            if subscription_dict.get('min_level'):
+            if subscription_dict.get('min_level') or subscription_dict.get('min_level') == 0:
                 alert_text += f" | **Level**: {subscription_dict['min_level']}-{subscription_dict['max_level']}"
             if subscription_dict.get('gender'):
                 alert_text += f" | **Gender**: {subscription_dict['gender']}"
@@ -3019,17 +3019,17 @@ class Want(commands.Cog):
         for custom in user_wants:
             subscription_dict[index] = custom
             alert_text += f"{index}. **Pokemon**: {user_wants[custom]['pokemon']}"
-            if user_wants[custom].get('min_iv'):
+            if user_wants[custom].get('min_iv') or user_wants[custom].get('min_iv') == 0:
                 alert_text += f" | **IV Percent**: {user_wants[custom]['min_iv']}-{user_wants[custom]['max_iv']}"
-            if user_wants[custom].get('min_atk'):
+            if user_wants[custom].get('min_atk') or user_wants[custom].get('min_atk') == 0:
                 alert_text += f" | **IV Attack**: {user_wants[custom]['min_atk']}-{user_wants[custom]['max_atk']}"
-            if user_wants[custom].get('min_def'):
+            if user_wants[custom].get('min_def') or user_wants[custom].get('min_def') == 0:
                 alert_text += f" | **IV Defense**: {user_wants[custom]['min_def']}-{user_wants[custom]['max_def']}"
-            if user_wants[custom].get('min_sta'):
+            if user_wants[custom].get('min_sta') or user_wants[custom].get('min_sta') == 0:
                 alert_text += f" | **IV Stamina**: {user_wants[custom]['min_sta']}-{user_wants[custom]['max_sta']}"
-            if user_wants[custom].get('min_cp'):
+            if user_wants[custom].get('min_cp') or user_wants[custom].get('min_cp') == 0:
                 alert_text += f" | **CP**: {user_wants[custom]['min_cp']}-{user_wants[custom]['max_cp']}"
-            if user_wants[custom].get('min_level'):
+            if user_wants[custom].get('min_level') or user_wants[custom].get('min_level') == 0:
                 alert_text += f" | **Level**: {user_wants[custom]['min_level']}-{user_wants[custom]['max_level']}"
             if user_wants[custom].get('gender'):
                 alert_text += f" | **Gender**: {user_wants[custom]['gender']}"
@@ -3112,22 +3112,22 @@ class Want(commands.Cog):
             if pokemon.shiny_available:
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
             alert_text = f"**Pokemon**: {shiny_str}{alert_info['pokemon']} {pokemon.emoji}"
-            if alert_info.get('min_iv'):
+            if alert_info.get('min_iv') or alert_info.get('min_iv') == 0:
                 alert_text += f" | **IV Percent**: {alert_info['min_iv']}-{alert_info['max_iv']}"
-            if alert_info.get('min_atk'):
+            if alert_info.get('min_atk') or alert_info.get('min_atk') == 0:
                 alert_text += f" | **IV Attack**: {alert_info['min_atk']}-{alert_info['max_atk']}"
-            if alert_info.get('min_def'):
+            if alert_info.get('min_def') or alert_info.get('min_def') == 0:
                 alert_text += f" | **IV Defense**: {alert_info['min_def']}-{alert_info['max_def']}"
-            if alert_info.get('min_sta'):
+            if alert_info.get('min_sta') or alert_info.get('min_sta') == 0:
                 alert_text += f" | **IV Stamina**: {alert_info['min_sta']}-{alert_info['max_sta']}"
-            if alert_info.get('min_cp'):
+            if alert_info.get('min_cp') or alert_info.get('min_cp') == 0:
                 alert_text += f" | **CP**: {alert_info['min_cp']}-{alert_info['max_cp']}"
-            if alert_info.get('min_level'):
+            if alert_info.get('min_level') or alert_info.get('min_level') == 0:
                 alert_text += f" | **Level**: {alert_info['min_level']}-{alert_info['max_level']}"
             if alert_info.get('gender'):
                 alert_text += f" | **Gender**: {alert_info['gender']}"
             if alert_info.get('size'):
-                alert_text += f" | **Size**: {alert_info['size']}"       
+                alert_text += f" | **Size**: {alert_info['size']}"
             alert_text += f" | **Report Types**: {(', ').join(alert_info['report_types'])}"
             want_embed.add_field(name=_('**Remove Custom Subscription**'), value=f"Meowth! {ctx.author.display_name}, out of your total **1** pokemon:\n\n**1 Removed:**\n{alert_text}".format(error=error), inline=False)
             confirmation = await channel.send(embed=want_embed)
