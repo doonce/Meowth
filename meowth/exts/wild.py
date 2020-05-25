@@ -196,12 +196,12 @@ class Wild(commands.Cog):
         wild_iv = details.get('wild_iv', {})
         iv_percent = wild_iv.get('percent', None)
         iv_percent = "0" if iv_percent == 0 else iv_percent
-        iv_atk = wild_iv.get('iv_atk')
-        iv_atk = "X" if not iv_atk else iv_atk
-        iv_def = wild_iv.get('iv_def')
-        iv_def = "X" if not iv_def else iv_def
-        iv_sta = wild_iv.get('iv_sta')
-        iv_sta = "X" if not iv_sta else iv_sta
+        iv_atk = wild_iv.get('iv_atk', None)
+        iv_atk = "X" if iv_atk == None else iv_atk
+        iv_def = wild_iv.get('iv_def', None)
+        iv_def = "X" if iv_def == None else iv_def
+        iv_sta = wild_iv.get('iv_sta', None)
+        iv_sta = "X" if iv_sta == None else iv_sta
         iv_long = None
         if iv_atk != "X" or iv_def != "X" or iv_sta != "X":
             iv_long = f"{iv_atk} / {iv_def} / {iv_sta}"
@@ -606,44 +606,44 @@ class Wild(commands.Cog):
                         continue
                     if user_custom[custom].get('size') and user_custom[custom]['size'] != size.lower():
                         continue
-                    if user_custom[custom].get('min_iv'):
-                        iv_check = int(iv_percent) if iv_percent else None
-                        if not iv_check:
+                    if user_custom[custom].get('min_iv', None) != None:
+                        iv_check = int(iv_percent) if iv_percent != None else None
+                        if iv_check == None:
                             continue
                         iv_range = range(user_custom[custom].get('min_iv'), user_custom[custom].get('max_iv')+1)
                         if iv_check not in iv_range:
                             continue
-                    if user_custom[custom].get('min_atk'):
-                        iv_check = int(iv_attack) if iv_attack else None
-                        if not iv_check:
+                    if user_custom[custom].get('min_atk', None) != None:
+                        iv_check = int(iv_attack) if iv_attack != None else None
+                        if iv_check == None:
                             continue
                         iv_range = range(user_custom[custom].get('min_atk'), user_custom[custom].get('max_atk')+1)
                         if iv_check not in iv_range:
                             continue
-                    if user_custom[custom].get('min_def'):
-                        iv_check = int(iv_defense) if iv_defense else None
-                        if not iv_check:
+                    if user_custom[custom].get('min_def', None) != None:
+                        iv_check = int(iv_defense) if iv_defense != None else None
+                        if iv_check == None:
                             continue
                         iv_range = range(user_custom[custom].get('min_def'), user_custom[custom].get('max_def')+1)
                         if iv_check not in iv_range:
                             continue
-                    if user_custom[custom].get('min_sta'):
-                        iv_check = int(iv_stamina) if iv_stamina else None
-                        if not iv_check:
+                    if user_custom[custom].get('min_sta', None) != None:
+                        iv_check = int(iv_stamina) if iv_stamina != None else None
+                        if iv_check == None:
                             continue
                         iv_range = range(user_custom[custom].get('min_sta'), user_custom[custom].get('max_sta')+1)
                         if iv_check not in iv_range:
                             continue
-                    if user_custom[custom].get('min_cp'):
-                        cp_check = int(wild_cp) if wild_cp else None
-                        if not cp_check:
+                    if user_custom[custom].get('min_cp', None) != None:
+                        cp_check = int(wild_cp) if wild_cp != None else None
+                        if cp_check == None:
                             continue
                         cp_range = range(user_custom[custom].get('min_cp'), user_custom[custom].get('max_cp')+1)
                         if cp_check not in cp_range:
                             continue
-                    if user_custom[custom].get('min_level'):
-                        level_check = int(wild_level) if wild_level else None
-                        if not level_check:
+                    if user_custom[custom].get('min_level', None) != None:
+                        level_check = int(wild_level) if wild_level != None else None
+                        if level_check == None:
                             continue
                         level_range = range(user_custom[custom].get('min_level'), user_custom[custom].get('max_level')+1)
                         if level_check not in level_range:
