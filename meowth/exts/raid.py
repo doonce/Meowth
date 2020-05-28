@@ -962,7 +962,7 @@ class Raid(commands.Cog):
         channel = ctx.channel
         raid_channel_overwrites = ctx.channel.overwrites
         raid_channel_overwrites[self.bot.user] = discord.PermissionOverwrite(send_messages=True, read_messages=True, manage_roles=True)
-        category_choices = [ctx.channel.category, None]
+        category_choices = []
         if type == "raid":
             raid_channel_name = (entered_raid + '-')
             raid_channel_category = utils.get_category(self.bot, ctx.channel, utils.get_level(self.bot, entered_raid), category_type="raid")
@@ -1007,17 +1007,28 @@ class Raid(commands.Cog):
                 ow.send_messages = True
                 raid_channel_overwrites[role] = ow
         for category in category_choices:
+            if not category:
+                continue
             try:
                 raid_channel = await ctx.guild.create_text_channel(raid_channel_name, overwrites=raid_channel_overwrites, category=category)
                 break
-            except discord.errors.HTTPException:
-                if raid_channel_category:
-                    overflow_category = await ctx.guild.create_category(raid_channel_category.name, overwrites=raid_channel_overwrites)
-                    await overflow_category.edit(position=raid_channel_category.position)
-                    overflow_list.append(overflow_category.id)
-                    raid_channel = await ctx.guild.create_text_channel(raid_channel_name, overwrites=raid_channel_overwrites, category=overflow_category)
+            except:
+                raid_channel = None
+        if not raid_channel and raid_channel_category:
+            overflow_category = await ctx.guild.create_category(raid_channel_category.name, overwrites=raid_channel_overwrites)
+            try:
+                await overflow_category.edit(position=raid_channel_category.position)
+            except:
+                pass
+            overflow_list.append(overflow_category.id)
+            raid_channel = await ctx.guild.create_text_channel(raid_channel_name, overwrites=raid_channel_overwrites, category=overflow_category)
+        if not raid_channel:
+            category_choices = [ctx.channel.category, None]
+            for category in category_choices:
+                try:
+                    raid_channel = await ctx.guild.create_text_channel(raid_channel_name, overwrites=raid_channel_overwrites, category=category)
                     break
-                else:
+                except:
                     raid_channel = None
         if not raid_channel:
             return None

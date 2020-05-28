@@ -938,17 +938,17 @@ class Listing(commands.Cog):
         alert_text = ""
         for custom in user_custom:
             alert_text += f"**Pokemon**: {user_custom[custom]['pokemon']}"
-            if user_custom[custom].get('min_iv') or user_custom[custom].get('min_iv') == 0:
+            if user_custom[custom].get('min_iv') != None:
                 alert_text += f" | **IV Percent**: {user_custom[custom]['min_iv']}-{user_custom[custom]['max_iv']}"
-            if user_custom[custom].get('min_atk') or user_custom[custom].get('min_atk') == 0:
+            if user_custom[custom].get('min_atk') != None:
                 alert_text += f" | **IV Attack**: {user_custom[custom]['min_atk']}-{user_custom[custom]['max_atk']}"
-            if user_custom[custom].get('min_def') or user_custom[custom].get('min_def') == 0:
+            if user_custom[custom].get('min_def') != None:
                 alert_text += f" | **IV Defense**: {user_custom[custom]['min_def']}-{user_custom[custom]['max_def']}"
-            if user_custom[custom].get('min_sta') or user_custom[custom].get('min_sta') == 0:
+            if user_custom[custom].get('min_sta') != None:
                 alert_text += f" | **IV Stamina**: {user_custom[custom]['min_sta']}-{user_custom[custom]['max_sta']}"
-            if user_custom[custom].get('min_cp') or user_custom[custom].get('min_cp') == 0:
+            if user_custom[custom].get('min_cp') != None:
                 alert_text += f" | **CP**: {user_custom[custom]['min_cp']}-{user_custom[custom]['max_cp']}"
-            if user_custom[custom].get('min_level') or user_custom[custom].get('min_level') == 0:
+            if user_custom[custom].get('min_level') != None:
                 alert_text += f" | **Level**: {user_custom[custom]['min_level']}-{user_custom[custom]['max_level']}"
             if user_custom[custom].get('gender'):
                 alert_text += f" | **Gender**: {user_custom[custom]['gender']}"

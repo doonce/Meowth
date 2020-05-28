@@ -572,6 +572,83 @@ class Want(commands.Cog):
             trade_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/pogo_trading_icon.png?cache=1')
             trade_embed.add_field(name=f"**Trade Alerts**", value=f"Just so you know, **{(', ').join(trade_warn)}** will only be alerted through new trade listings.\n\n{'Trade alerts are off by default and you have not opted-in. To enable trade alerts, use **'+ctx.prefix+'want categories** → **pokemon** and then make sure trade is in your list.' if not categories.get('trade') else ''}")
             await ctx.send(f"Meowth! {ctx.author.mention}", embed=trade_embed, delete_after=60)
+        wild_cog = self.bot.cogs.get('Wild')
+        research_cog = self.bot.cogs.get('Research')
+        invasion_cog = self.bot.cogs.get('Invasion')
+        nest_cog = self.bot.cogs.get('Nest')
+        trade_cog = self.bot.cogs.get('Trading')
+        raid_cog = self.bot.cogs.get('Raid')
+        if wild_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
+                report_pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['pkmn_obj']
+                if report_pokemon in [str(x) for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'])
+                    ctx.wildreportmsg = await report_channel.fetch_message(report)
+                    wild_details = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['location']
+                    wild_iv = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('wild_iv')
+                    wild_level = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('level')
+                    wild_cp = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('cp')
+                    wild_gender = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('gender')
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('dm_dict', {})
+                    dm_dict = await wild_cog.send_dm_messages(ctx, str(report_pokemon), wild_details, wild_iv, wild_level, wild_cp, ctx.wildreportmsg.content, copy.deepcopy(ctx.wildreportmsg.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['dm_dict'] = dm_dict
+        if research_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['questreport_dict']:
+                report_pokemon = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['reward']
+                if report_pokemon in [str(x) for x in want_list]:
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, report_pokemon)
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'])
+                    ctx.resreportmsg = await report_channel.fetch_message(report)
+                    location = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['location']
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {})
+                    dm_dict = await research_cog.send_dm_messages(ctx, pokemon, location, None, copy.deepcopy(copy.deepcopy(ctx.resreportmsg.embeds[0])), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['dm_dict'] = dm_dict
+        if invasion_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['invasion_dict']:
+                for reward in self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['reward']:
+                    if reward in [str(x) for x in want_list] or reward.replace('Shadow ', '') in [str(x) for x in want_list]:
+                        report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['report_channel'])
+                        ctx.invreportmsg = await report_channel.fetch_message(report)
+                        reward_list = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['reward']
+                        location = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['location']
+                        dm_dict = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report].get('dm_dict', {})
+                        dm_dict = await invasion_cog.send_dm_messages(ctx, reward_list, location, copy.deepcopy(ctx.invreportmsg.embeds[0]), dm_dict)
+                        self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['dm_dict'] = dm_dict
+                        break
+        if nest_cog:
+            for channel in self.bot.guild_dict[ctx.guild.id]['nest_dict']:
+                for nest in self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel]:
+                    if nest == "list":
+                        continue
+                    for report in self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel][nest]['reports']:
+                        nest_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel][nest]['reports'][report]['pokemon'])
+                        if str(nest_pokemon) in [str(x) for x in want_list]:
+                            report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel][nest]['reports'][report]['report_channel'])
+                            ctx.nestreportmsg = await report_channel.fetch_message(report)
+                            location = self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel][nest]['reports'][report]['location']
+                            dm_dict = self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel][nest]['reports'][report].get('dm_dict', {})
+                            dm_dict = await nest_cog.send_dm_messages(ctx, location, pokemon, copy.deepcopy(ctx.nestreportmsg.embeds[0]), dm_dict)
+                            self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel][nest]['reports'][report]['dm_dict'] = dm_dict
+        if trade_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['trade_dict']:
+                report_pokemon = self.bot.guild_dict[ctx.guild.id]['trade_dict'][report]['offered_pokemon']
+                if report_pokemon in [str(x) for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['trade_dict'][report]['report_channel'])
+                    ctx.tradereportmsg = await report_channel.fetch_message(report)
+                    dm_dict = await trade_cog.send_dm_messages(ctx, str(report_pokemon), copy.deepcopy(ctx.tradereportmsg.embeds[0]))
+                    self.bot.guild_dict[ctx.guild.id]['trade_dict'][report]['dm_dict'] = dm_dict
+        if raid_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
+                report_pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('pkmn_obj')
+                if report_pokemon in [str(x) for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['report_channel'])
+                    ctx.raidreport = await report_channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['raid_report'])
+                    location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['address']
+                    report_author = ctx.guild.get_member(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['report_author'])
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('dm_dict')
+                    dm_dict = await raid_cog.send_dm_messages(ctx, str(report_pokemon), location, ctx.raidreport.content.splitlines()[0].replace(report_author.mention, f"{report_author.display_name} in {report_channel.mention}"), copy.deepcopy(ctx.raidreport.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id]['dm_dict'] = dm_dict
+
 
     @want.command(name='boss', aliases=['bosses'])
     @checks.allowwant()
@@ -647,6 +724,56 @@ class Want(commands.Cog):
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
+        wild_cog = self.bot.cogs.get('Wild')
+        research_cog = self.bot.cogs.get('Research')
+        invasion_cog = self.bot.cogs.get('Invasion')
+        nest_cog = self.bot.cogs.get('Nest')
+        trade_cog = self.bot.cogs.get('Trading')
+        raid_cog = self.bot.cogs.get('Raid')
+        if wild_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
+                wild_details = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['location'].lower()
+                if wild_details in [str(x).lower() for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'])
+                    ctx.wildreportmsg = await report_channel.fetch_message(report)
+                    wild_iv = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('wild_iv')
+                    wild_level = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('level')
+                    wild_cp = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('cp')
+                    wild_gender = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('gender')
+                    report_pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('pkmn_obj')
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('dm_dict', {})
+                    dm_dict = await wild_cog.send_dm_messages(ctx, str(report_pokemon), wild_details, wild_iv, wild_level, wild_cp, ctx.wildreportmsg.content, copy.deepcopy(ctx.wildreportmsg.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['dm_dict'] = dm_dict
+        if research_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['questreport_dict']:
+                location = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['location'].lower()
+                if location in [str(x).lower() for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'])
+                    ctx.resreportmsg = await report_channel.fetch_message(report)
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {})
+                    dm_dict = await research_cog.send_dm_messages(ctx, None, location, None, copy.deepcopy(copy.deepcopy(ctx.resreportmsg.embeds[0])), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['dm_dict'] = dm_dict
+        if invasion_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['invasion_dict']:
+                location = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['location'].lower()
+                if location in [str(x).lower() for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['report_channel'])
+                    ctx.invreportmsg = await report_channel.fetch_message(report)
+                    reward_list = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['reward']
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report].get('dm_dict', {})
+                    dm_dict = await invasion_cog.send_dm_messages(ctx, reward_list, location, copy.deepcopy(ctx.invreportmsg.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['dm_dict'] = dm_dict
+        if raid_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
+                location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['address'].lower()
+                if location in [str(x).lower() for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['report_channel'])
+                    ctx.raidreport = await report_channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['raid_report'])
+                    report_author = ctx.guild.get_member(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['report_author'])
+                    report_pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('pkmn_obj')
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('dm_dict')
+                    dm_dict = await raid_cog.send_dm_messages(ctx, str(report_pokemon), location, ctx.raidreport.content.splitlines()[0].replace(report_author.mention, f"{report_author.display_name} in {report_channel.mention}"), copy.deepcopy(ctx.raidreport.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id]['dm_dict'] = dm_dict
 
     @want.command(name='gym', aliases=['gyms'])
     @checks.allowwant()
@@ -746,6 +873,29 @@ class Want(commands.Cog):
             want_embed.set_thumbnail(url=thumbnail_url)
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
+        research_cog = self.bot.cogs.get('Research')
+        lure_cog = self.bot.cogs.get('Lure')
+        if research_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['questreport_dict']:
+                report_reward = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['reward']
+                if report_reward in [str(x) for x in want_list]:
+                    pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, report_reward)
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'])
+                    ctx.resreportmsg = await report_channel.fetch_message(report)
+                    location = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['location']
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {})
+                    dm_dict = await research_cog.send_dm_messages(ctx, None, location, report_reward, copy.deepcopy(copy.deepcopy(ctx.resreportmsg.embeds[0])), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['dm_dict'] = dm_dict
+        if lure_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['lure_dict']:
+                lure_type = self.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['type']
+                if lure_type in [str(x).replace(' lure module', '') for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['report_channel'])
+                    ctx.lurereportmsg = await report_channel.fetch_message(report)
+                    location = self.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['location']
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['lure_dict'][report].get('dm_dict', {})
+                    dm_dict = await lure_cog.send_dm_messages(ctx, location, f"{lure_type} lure module", ctx.lurereportmsg.content, copy.deepcopy(copy.deepcopy(ctx.lurereportmsg.embeds[0])), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['dm_dict'] = dm_dict
 
     @want.command(name='type', aliases=['types'])
     @checks.allowwant()
@@ -803,6 +953,81 @@ class Want(commands.Cog):
             want_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/{added_list[0].lower()}.png")
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
+        wild_cog = self.bot.cogs.get('Wild')
+        research_cog = self.bot.cogs.get('Research')
+        invasion_cog = self.bot.cogs.get('Invasion')
+        nest_cog = self.bot.cogs.get('Nest')
+        raid_cog = self.bot.cogs.get('Raid')
+        if wild_cog:
+            for report in self.bot.active_wilds:
+                pokemon = self.bot.active_wilds[report]
+                type_match = [str(x) for x in pokemon.types if x.lower() in want_list]
+                if type_match:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'])
+                    ctx.wildreportmsg = await report_channel.fetch_message(report)
+                    wild_details = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['location']
+                    wild_iv = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('wild_iv')
+                    wild_level = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('level')
+                    wild_cp = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('cp')
+                    wild_gender = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('gender')
+                    report_pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['pkmn_obj']
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('dm_dict', {})
+                    dm_dict = await wild_cog.send_dm_messages(ctx, str(report_pokemon), wild_details, wild_iv, wild_level, wild_cp, ctx.wildreportmsg.content, copy.deepcopy(ctx.wildreportmsg.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['dm_dict'] = dm_dict
+        if research_cog:
+            for report in self.bot.active_research:
+                pokemon = self.bot.active_research[report]
+                type_match = [str(x) for x in pokemon.types if x.lower() in want_list]
+                if type_match:
+                    report_pokemon = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['reward']
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['report_channel'])
+                    ctx.resreportmsg = await report_channel.fetch_message(report)
+                    location = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['location']
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report].get('dm_dict', {})
+                    dm_dict = await research_cog.send_dm_messages(ctx, pokemon, location, None, copy.deepcopy(copy.deepcopy(ctx.resreportmsg.embeds[0])), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['questreport_dict'][report]['dm_dict'] = dm_dict
+        if invasion_cog:
+            for report in self.bot.active_invasions:
+                type_list = [x.types for x in self.bot.active_invasions[report]]
+                type_match = [str(x) for x in pokemon.types if x.lower() in want_list]
+                if type_match:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['report_channel'])
+                    ctx.invreportmsg = await report_channel.fetch_message(report)
+                    reward_list = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['reward']
+                    location = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['location']
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report].get('dm_dict', {})
+                    dm_dict = await invasion_cog.send_dm_messages(ctx, reward_list, location, copy.deepcopy(ctx.invreportmsg.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['invasion_dict'][report]['dm_dict'] = dm_dict
+        if nest_cog:
+            for report in self.bot.active_nests:
+                pokemon = self.bot.active_nests[report]
+                type_match = [str(x) for x in pokemon.types if x.lower() in want_list]
+                if type_match:
+                    for channel in self.bot.guild_dict[ctx.guild.id]['nest_dict']:
+                        for nest in self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel]:
+                            if nest == "list":
+                                continue
+                            for nest_report in self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel][nest]['reports']:
+                                if nest_report == report:
+                                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel][nest]['reports'][report]['report_channel'])
+                                    ctx.nestreportmsg = await report_channel.fetch_message(report)
+                                    location = self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel][nest]['reports'][report]['location']
+                                    dm_dict = self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel][nest]['reports'][report].get('dm_dict', {})
+                                    dm_dict = await nest_cog.send_dm_messages(ctx, location, pokemon, copy.deepcopy(ctx.nestreportmsg.embeds[0]), dm_dict)
+                                    self.bot.guild_dict[ctx.guild.id]['nest_dict'][channel][nest]['reports'][report]['dm_dict'] = dm_dict
+        if raid_cog:
+            for report in self.bot.active_channels:
+                pokemon = self.bot.active_channels.get('pokemon')
+                type_match = [str(x) for x in pokemon.types if x.lower() in want_list]
+                if type_match:
+                    report_pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('pkmn_obj')
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['report_channel'])
+                    ctx.raidreport = await report_channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['raid_report'])
+                    location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['address']
+                    report_author = ctx.guild.get_member(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['report_author'])
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('dm_dict')
+                    dm_dict = await raid_cog.send_dm_messages(ctx, str(report_pokemon), location, ctx.raidreport.content.splitlines()[0].replace(report_author.mention, f"{report_author.display_name} in {report_channel.mention}"), copy.deepcopy(ctx.raidreport.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id]['dm_dict'] = dm_dict
 
     @want.command(name='iv', aliases=['ivs'])
     @checks.allowwant()
@@ -867,6 +1092,22 @@ class Want(commands.Cog):
             confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
+        wild_cog = self.bot.cogs.get('Wild')
+        if wild_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
+                iv_percent = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('wild_iv', {}).get('percent')
+                if iv_percent in [int(x) for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'])
+                    ctx.wildreportmsg = await report_channel.fetch_message(report)
+                    wild_details = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['location']
+                    wild_iv = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('wild_iv')
+                    wild_level = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('level')
+                    wild_cp = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('cp')
+                    wild_gender = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('gender')
+                    report_pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['pkmn_obj']
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('dm_dict', {})
+                    dm_dict = await wild_cog.send_dm_messages(ctx, str(report_pokemon), wild_details, wild_iv, wild_level, wild_cp, ctx.wildreportmsg.content, copy.deepcopy(ctx.wildreportmsg.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['dm_dict'] = dm_dict
 
     @want.command(name='level', aliases=['levels'])
     @checks.allowwant()
@@ -931,6 +1172,21 @@ class Want(commands.Cog):
             confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
+        wild_cog = self.bot.cogs.get('Wild')
+        if wild_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
+                wild_level = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('level')
+                if wild_level in [int(x) for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'])
+                    ctx.wildreportmsg = await report_channel.fetch_message(report)
+                    wild_details = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['location']
+                    wild_iv = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('wild_iv')
+                    wild_cp = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('cp')
+                    wild_gender = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('gender')
+                    report_pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['pkmn_obj']
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('dm_dict', {})
+                    dm_dict = await wild_cog.send_dm_messages(ctx, str(report_pokemon), wild_details, wild_iv, wild_level, wild_cp, ctx.wildreportmsg.content, copy.deepcopy(ctx.wildreportmsg.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['dm_dict'] = dm_dict
 
     @want.command(name='cp', aliases=['cps'])
     @checks.allowwant()
@@ -992,6 +1248,21 @@ class Want(commands.Cog):
             confirmation_msg += f"\n**{len(exceed_list)} Over Limit:**\n\tYou reached maximum CP subscriptions. Unwant some and try again."
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
+        wild_cog = self.bot.cogs.get('Wild')
+        if wild_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
+                wild_cp = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('cp')
+                if wild_cp in [int(x) for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['report_channel'])
+                    ctx.wildreportmsg = await report_channel.fetch_message(report)
+                    wild_details = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['location']
+                    wild_iv = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('wild_iv')
+                    wild_level = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('level')
+                    wild_gender = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('gender')
+                    report_pokemon = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['pkmn_obj']
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('dm_dict', {})
+                    dm_dict = await wild_cog.send_dm_messages(ctx, str(report_pokemon), wild_details, wild_iv, wild_level, wild_cp, ctx.wildreportmsg.content, copy.deepcopy(ctx.wildreportmsg.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['dm_dict'] = dm_dict
 
     @want.command(name='egg', aliases=["eggs", "raidegg", "raideggs"])
     @checks.allowwant()
@@ -1044,6 +1315,19 @@ class Want(commands.Cog):
             confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
         want_confirmation = await channel.send(embed=want_embed)
+        raid_cog = self.bot.cogs.get('Raid')
+        if raid_cog:
+            for report in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
+                report_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['egg_level']
+                if report_level in [str(x) for x in want_list]:
+                    report_channel = ctx.guild.get_channel(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['report_channel'])
+                    ctx.raidreport = await report_channel.fetch_message(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['raid_report'])
+                    location = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['address']
+                    report_author = ctx.guild.get_member(self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['report_author'])
+                    report_pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('pkmn_obj')
+                    dm_dict = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('dm_dict')
+                    dm_dict = await raid_cog.send_dm_messages(ctx, str(report_level), location, ctx.raidreport.content.splitlines()[0].replace(report_author.mention, f"{report_author.display_name} in {report_channel.mention}"), copy.deepcopy(ctx.raidreport.embeds[0]), dm_dict)
+                    self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['dm_dict'] = dm_dict
 
     @want.command(name='role', aliases=['roles'])
     @checks.allowwant()
@@ -1540,17 +1824,17 @@ class Want(commands.Cog):
             if pokemon.shiny_available:
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
             alert_text = f"**Pokemon**: {shiny_str}{subscription_dict['pokemon']} {pokemon.emoji}"
-            if subscription_dict.get('min_iv') or subscription_dict.get('min_iv') == 0:
+            if subscription_dict.get('min_iv') != None:
                 alert_text += f" | **IV Percent**: {subscription_dict['min_iv']}-{subscription_dict['max_iv']}"
-            if subscription_dict.get('min_atk') or subscription_dict.get('min_atk') == 0:
+            if subscription_dict.get('min_atk') != None:
                 alert_text += f" | **IV Attack**: {subscription_dict['min_atk']}-{subscription_dict['max_atk']}"
-            if subscription_dict.get('min_def') or subscription_dict.get('min_def') == 0:
+            if subscription_dict.get('min_def') != None:
                 alert_text += f" | **IV Defense**: {subscription_dict['min_def']}-{subscription_dict['max_def']}"
-            if subscription_dict.get('min_sta') or subscription_dict.get('min_sta') == 0:
+            if subscription_dict.get('min_sta') != None:
                 alert_text += f" | **IV Stamina**: {subscription_dict['min_sta']}-{subscription_dict['max_sta']}"
-            if subscription_dict.get('min_cp') or subscription_dict.get('min_cp') == 0:
+            if subscription_dict.get('min_cp') != None:
                 alert_text += f" | **CP**: {subscription_dict['min_cp']}-{subscription_dict['max_cp']}"
-            if subscription_dict.get('min_level') or subscription_dict.get('min_level') == 0:
+            if subscription_dict.get('min_level') != None:
                 alert_text += f" | **Level**: {subscription_dict['min_level']}-{subscription_dict['max_level']}"
             if subscription_dict.get('gender'):
                 alert_text += f" | **Gender**: {subscription_dict['gender']}"
@@ -3019,17 +3303,17 @@ class Want(commands.Cog):
         for custom in user_wants:
             subscription_dict[index] = custom
             alert_text += f"{index}. **Pokemon**: {user_wants[custom]['pokemon']}"
-            if user_wants[custom].get('min_iv') or user_wants[custom].get('min_iv') == 0:
+            if user_wants[custom].get('min_iv') != None:
                 alert_text += f" | **IV Percent**: {user_wants[custom]['min_iv']}-{user_wants[custom]['max_iv']}"
-            if user_wants[custom].get('min_atk') or user_wants[custom].get('min_atk') == 0:
+            if user_wants[custom].get('min_atk') != None:
                 alert_text += f" | **IV Attack**: {user_wants[custom]['min_atk']}-{user_wants[custom]['max_atk']}"
-            if user_wants[custom].get('min_def') or user_wants[custom].get('min_def') == 0:
+            if user_wants[custom].get('min_def') != None:
                 alert_text += f" | **IV Defense**: {user_wants[custom]['min_def']}-{user_wants[custom]['max_def']}"
-            if user_wants[custom].get('min_sta') or user_wants[custom].get('min_sta') == 0:
+            if user_wants[custom].get('min_sta') != None:
                 alert_text += f" | **IV Stamina**: {user_wants[custom]['min_sta']}-{user_wants[custom]['max_sta']}"
-            if user_wants[custom].get('min_cp') or user_wants[custom].get('min_cp') == 0:
+            if user_wants[custom].get('min_cp') != None:
                 alert_text += f" | **CP**: {user_wants[custom]['min_cp']}-{user_wants[custom]['max_cp']}"
-            if user_wants[custom].get('min_level') or user_wants[custom].get('min_level') == 0:
+            if user_wants[custom].get('min_level') != None:
                 alert_text += f" | **Level**: {user_wants[custom]['min_level']}-{user_wants[custom]['max_level']}"
             if user_wants[custom].get('gender'):
                 alert_text += f" | **Gender**: {user_wants[custom]['gender']}"
@@ -3112,17 +3396,17 @@ class Want(commands.Cog):
             if pokemon.shiny_available:
                 shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
             alert_text = f"**Pokemon**: {shiny_str}{alert_info['pokemon']} {pokemon.emoji}"
-            if alert_info.get('min_iv') or alert_info.get('min_iv') == 0:
+            if alert_info.get('min_iv') != None:
                 alert_text += f" | **IV Percent**: {alert_info['min_iv']}-{alert_info['max_iv']}"
-            if alert_info.get('min_atk') or alert_info.get('min_atk') == 0:
+            if alert_info.get('min_atk') != None:
                 alert_text += f" | **IV Attack**: {alert_info['min_atk']}-{alert_info['max_atk']}"
-            if alert_info.get('min_def') or alert_info.get('min_def') == 0:
+            if alert_info.get('min_def') != None:
                 alert_text += f" | **IV Defense**: {alert_info['min_def']}-{alert_info['max_def']}"
-            if alert_info.get('min_sta') or alert_info.get('min_sta') == 0:
+            if alert_info.get('min_sta') != None:
                 alert_text += f" | **IV Stamina**: {alert_info['min_sta']}-{alert_info['max_sta']}"
-            if alert_info.get('min_cp') or alert_info.get('min_cp') == 0:
+            if alert_info.get('min_cp') != None:
                 alert_text += f" | **CP**: {alert_info['min_cp']}-{alert_info['max_cp']}"
-            if alert_info.get('min_level') or alert_info.get('min_level') == 0:
+            if alert_info.get('min_level') != None:
                 alert_text += f" | **Level**: {alert_info['min_level']}-{alert_info['max_level']}"
             if alert_info.get('gender'):
                 alert_text += f" | **Gender**: {alert_info['gender']}"

@@ -831,8 +831,7 @@ class Wild(commands.Cog):
                 wild_coordinates = poi_url.split("query=")[1]
                 nearest_stop = await gym_matching_cog.find_nearest_stop(wild_coordinates, ctx.guild.id)
         if not wild_details:
-            await utils.safe_delete(ctx.message)
-            return
+            return await utils.safe_delete(ctx.message)
         if wild_iv or wild_iv == 0:
             iv_str = f" | **{wild_iv}IV**"
             iv_percent = copy.copy(wild_iv)

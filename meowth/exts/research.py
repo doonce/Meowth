@@ -379,31 +379,40 @@ class Research(commands.Cog):
                     async with sess.get("https://thesilphroad.com/research-tasks") as resp:
                         html = await resp.text()
                 parse_list = re.split('<div|<span|<p', str(html))
-                for line in parse_list:
+                for index, line in enumerate(parse_list):
                     if "Tasks</h3>" in line or "class=\"taskText\">" in line or "class=\"task-reward" in line:
+                        try:
+                            item_number = parse_list[index+1].replace('</span>', '').replace('</div>', '').replace('>', '').strip() + " "
+                        except:
+                            item_number = ""
                         for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "group7", "group8", "group9", "<h3>", "</p>", ">", "unconfirmed", "pokemon", "shinyAvailable",]:
                             line = line.replace(replacement, "").replace("_", " ").strip()
-                        tsr_quests.append(line.strip())
+                        tsr_quests.append((line.strip(), item_number))
                 for index, item in enumerate(tsr_quests):
+                    item_number = item[1]
+                    item = item[0]
                     if len(item.split()) > 2:
                         continue
                     __, item_name = await utils.get_item(item)
                     if item_name:
-                        tsr_quests[index] = item_name
+                        tsr_quests[index] = (f"{item_number}{item_name}", item_number)
                 for item in tsr_quests:
+                    item = item[0]
                     if "Tasks" in item:
                         all_quests[item] = {}
                         added_categories.append(item)
                 for item in tsr_quests:
+                    item = item[0]
                     if len(item.split('-')) > 1 and (item.split('-')[0].lower() in self.bot.pkmn_list or item.split('-')[1].lower() in self.bot.pkmn_list):
                         continue
-                    if item in added_categories or item.isdigit() or item.lower() in self.bot.item_list:
+                    if item in added_categories or item.isdigit() or "".join([x.lower() for x in item if x.isalpha() or x == " "]).strip() in self.bot.item_list:
                         continue
                     for category in all_quests.keys():
                         all_quests[category][item] = []
                         if item not in added_quests:
                             added_quests.append(item)
                 for item in tsr_quests:
+                    item = item[0]
                     if item in added_categories:
                         current_category = item
                         all_quests[item] = {}
@@ -464,31 +473,40 @@ class Research(commands.Cog):
                 async with sess.get("https://thesilphroad.com/research-tasks") as resp:
                     html = await resp.text()
             parse_list = re.split('<div|<span|<p', str(html))
-            for line in parse_list:
+            for index, line in enumerate(parse_list):
                 if "Tasks</h3>" in line or "class=\"taskText\">" in line or "class=\"task-reward" in line:
+                    try:
+                        item_number = parse_list[index+1].replace('</span>', '').replace('</div>', '').replace('>', '').strip() + " "
+                    except:
+                        item_number = ""
                     for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "group7", "group8", "group9", "<h3>", "</p>", ">", "unconfirmed", "pokemon", "shinyAvailable",]:
                         line = line.replace(replacement, "").replace("_", " ").strip()
-                    tsr_quests.append(line.strip())
+                    tsr_quests.append((line.strip(), item_number))
             for index, item in enumerate(tsr_quests):
+                item_number = item[1]
+                item = item[0]
                 if len(item.split()) > 2:
                     continue
                 __, item_name = await utils.get_item(item)
                 if item_name:
-                    tsr_quests[index] = item_name
+                    tsr_quests[index] = (f"{item_number}{item_name}", item_number)
             for item in tsr_quests:
+                item = item[0]
                 if "Tasks" in item:
                     all_quests[item] = {}
                     added_categories.append(item)
             for item in tsr_quests:
+                item = item[0]
                 if len(item.split('-')) > 1 and (item.split('-')[0].lower() in self.bot.pkmn_list or item.split('-')[1].lower() in self.bot.pkmn_list):
                     continue
-                if item in added_categories or item.isdigit() or item.lower() in self.bot.item_list:
+                if item in added_categories or item.isdigit() or "".join([x.lower() for x in item if x.isalpha() or x == " "]).strip() in self.bot.item_list:
                     continue
                 for category in all_quests.keys():
                     all_quests[category][item] = []
                     if item not in added_quests:
                         added_quests.append(item)
             for item in tsr_quests:
+                item = item[0]
                 if item in added_categories:
                     current_category = item
                     all_quests[item] = {}
@@ -741,7 +759,7 @@ class Research(commands.Cog):
             pokemon = None
         research_embed = await self.make_research_embed(ctx, pokemon, stop_info, location, loc_url, quest, reward)
         if pokemon:
-            reward = reward.replace(pokemon.emoji, "").replace(shiny_str, "").strip()
+            reward = str(pokemon)
         else:
             __, item = await utils.get_item(reward)
         ctx.resreportmsg = await ctx.channel.send(research_msg, embed=research_embed)

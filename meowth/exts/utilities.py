@@ -718,6 +718,7 @@ class Utilities(commands.Cog):
         self.bot = bot
         self.dm_cleanup.start()
         self.auto_timezone.start()
+        self.version = "v20.5.28.0"
 
     def cog_unload(self):
         self.dm_cleanup.cancel()
@@ -1041,6 +1042,12 @@ class Utilities(commands.Cog):
             await ctx.send("Uptime: {}".format(uptime_str))
 
     @commands.command()
+    async def version(self, ctx):
+        embed_colour = ctx.guild.me.colour or discord.Colour.lighter_grey()
+        embed = discord.Embed(colour=embed_colour, description=self.version)
+        await ctx.send(embed=embed)
+
+    @commands.command()
     async def about(self, ctx):
         'Shows info about Meowth'
         huntr_repo = 'https://github.com/doonce/Meowth'
@@ -1067,7 +1074,7 @@ class Utilities(commands.Cog):
         embed.add_field(name='Your Server', value=yourguild)
         embed.add_field(name='Your Members', value=yourmembers)
         embed.add_field(name='Uptime', value=uptime_str)
-        embed.set_footer(text="Running Meowth v20.5.25.0 | 😷 | Built with discord.py")
+        embed.set_footer(text=f"Running Meowth {self.version} | 😷 | Built with discord.py")
         try:
             await channel.send(embed=embed)
         except discord.HTTPException:
