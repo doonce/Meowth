@@ -248,6 +248,7 @@ class Configure(commands.Cog):
                 citychannel_errors = []
                 for item in citychannel_list:
                     channel = None
+                    guild = self.bot.get_guild(guild.id)
                     if item.isdigit():
                         channel = discord.utils.get(guild.text_channels, id=int(item))
                     if not channel:
@@ -346,10 +347,6 @@ class Configure(commands.Cog):
                 await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("How would you like me to categorize the train channels I create? Your options are:\n\n**none** - If you don't want them categorized\n**same** - If you want them in the same category as the reporting channel\n**other** - If you want them categorized in a provided category name or ID")).set_author(name=_('Train Reporting Categories'), icon_url=self.bot.user.avatar_url))
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=str(config_dict_temp[type]['categories'])).set_author(name=_("Current Category Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
             while True:
-                guild = self.bot.get_guild(guild.id)
-                guild_catlist = []
-                for cat in guild.categories:
-                    guild_catlist.append(cat.id)
                 category_dict = {}
                 try:
                     categories = await self.wait_for_msg(ctx.configure_channel, ctx.author)
@@ -369,10 +366,6 @@ class Configure(commands.Cog):
                     break
                 elif categories.content.lower() == 'region' and categories.content.lower() in reply_options:
                     while True:
-                        guild = self.bot.get_guild(guild.id)
-                        guild_catlist = []
-                        for cat in guild.categories:
-                            guild_catlist.append(cat.id)
                         config_dict_temp[type]['categories'] = 'region'
                         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as raid reporting channels.")).set_author(name=_('{type} Reporting Categories').format(type=type.title()), icon_url=self.bot.user.avatar_url))
                         channels = ""
@@ -390,6 +383,10 @@ class Configure(commands.Cog):
                             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                             await self.end_configure(ctx)
                             return None
+                        guild = self.bot.get_guild(guild.id)
+                        guild_catlist = []
+                        for cat in guild.categories:
+                            guild_catlist.append(cat.id)
                         regioncat_list = regioncats.content.split(',')
                         regioncat_list = [x.strip() for x in regioncat_list]
                         regioncat_ids = []
@@ -431,15 +428,11 @@ class Configure(commands.Cog):
                 elif categories.content.lower() == 'level' and categories.content.lower() in reply_options:
                     config_dict_temp[type]['categories'] = 'level'
                     while True:
-                        guild = self.bot.get_guild(guild.id)
-                        guild_catlist = []
-                        for cat in guild.categories:
-                            guild_catlist.append(cat.id)
                         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Pokemon Go currently has five levels of raids. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5 \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `level 1-3, level 1-3, level 1-3, level 4, 1231231241561337813`")).set_author(name=_('{type} Reporting Categories').format(type=type.title()), icon_url=self.bot.user.avatar_url))
                         channels = ""
                         if config_dict_temp[type]['category_dict']:
                             channels = {k:ctx.bot.get_channel(v) for k,v in config_dict_temp[type]['category_dict'].items()}
-                            channels = {k:v.name for k,v in channels.items() if k}
+                            channels = {k:v.name for k,v in channels.items() if k and v}
                             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"{channels}").set_author(name=_("Current Report Categories"), icon_url=self.bot.user.avatar_url), delete_after=300)
                         try:
                             levelcats = await self.wait_for_msg(ctx.configure_channel, ctx.author)
@@ -451,6 +444,10 @@ class Configure(commands.Cog):
                             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                             await self.end_configure(ctx)
                             return None
+                        guild = self.bot.get_guild(guild.id)
+                        guild_catlist = []
+                        for cat in guild.categories:
+                            guild_catlist.append(cat.id)
                         levelcat_list = levelcats.content.split(',')
                         levelcat_list = [x.strip() for x in levelcat_list]
                         levelcat_ids = []
@@ -491,10 +488,6 @@ class Configure(commands.Cog):
                             continue
                 elif categories.content.lower() == 'other' and categories.content.lower() in reply_options:
                     while True:
-                        guild = self.bot.get_guild(guild.id)
-                        guild_catlist = []
-                        for cat in guild.categories:
-                            guild_catlist.append(cat.id)
                         config_dict_temp[type]['categories'] = 'region'
                         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("In the same order as they appear below, please give the names of the categories you would like raids reported in each channel to appear in. You do not need to use different categories for each channel, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `kansas city, hull, 1231231241561337813`\n\nYou have configured the following channels as reporting channels.")).set_author(name=_('{type} Reporting Categories').format(type=type.title()), icon_url=self.bot.user.avatar_url))
                         channels = ""
@@ -512,6 +505,10 @@ class Configure(commands.Cog):
                             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.red(), description=_('**CONFIG CANCELLED!**\n\nNo changes have been made.')))
                             await self.end_configure(ctx)
                             return None
+                        guild = self.bot.get_guild(guild.id)
+                        guild_catlist = []
+                        for cat in guild.categories:
+                            guild_catlist.append(cat.id)
                         regioncat_list = regioncats.content.split(',')
                         regioncat_list = [x.strip() for x in regioncat_list]
                         regioncat_ids = []
@@ -1001,6 +998,7 @@ class Configure(commands.Cog):
                     else:
                         item = welcomechannelreply.content
                         channel = None
+                        guild = self.bot.get_guild(guild.id)
                         if item.isdigit():
                             channel = discord.utils.get(guild.text_channels, id=int(item))
                         if not channel:

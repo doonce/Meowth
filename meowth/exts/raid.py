@@ -960,6 +960,7 @@ class Raid(commands.Cog):
     async def create_raid_channel(self, ctx, entered_raid, raid_details, type):
         message = ctx.message
         channel = ctx.channel
+        raid_channel = None
         raid_channel_overwrites = ctx.channel.overwrites
         raid_channel_overwrites[self.bot.user] = discord.PermissionOverwrite(send_messages=True, read_messages=True, manage_roles=True)
         category_choices = []
@@ -1015,10 +1016,10 @@ class Raid(commands.Cog):
             except:
                 raid_channel = None
         if not raid_channel and raid_channel_category:
-            overflow_category = await ctx.guild.create_category(raid_channel_category.name, overwrites=raid_channel_overwrites)
+            overflow_category = await ctx.guild.create_category(f"{raid_channel_category.name} (temp)", overwrites=raid_channel_overwrites)
             try:
                 await overflow_category.edit(position=raid_channel_category.position)
-            except:
+            except Exception as e:
                 pass
             overflow_list.append(overflow_category.id)
             raid_channel = await ctx.guild.create_text_channel(raid_channel_name, overwrites=raid_channel_overwrites, category=overflow_category)
@@ -4750,28 +4751,31 @@ class Raid(commands.Cog):
             pkmn_obj = None
             weather = None
             trainer_dict = {}
-            async for message in channel.history(limit=500, oldest_first=True):
-                if message.author.id == guild.me.id or "Meowth" in message.author.display_name:
-                    if message.embeds:
-                        if f"Coordinate here" in message.content:
-                            reportchannel = message.raw_channel_mentions[0]
-                            report_author = message.raw_mentions[0]
-                            raid_message = message
-                        elif message.embeds[0].fields and "channel timer" in message.embeds[0].fields[0].name.lower():
-                            timerset_msg = message.id
-                        elif message.embeds[0].fields and "channel weather" in message.embeds[0].fields[0].name.lower():
-                            weather_msg = message.id
-                            weather_search = re.search(r'currently set to (.*)\. This', message.embeds[0].fields[0].value)
-                            if weather_search and weather_search.group(1) != "None":
-                                weather = weather_search.group(1).lower()
-                        elif "best counters" in message.content.lower():
-                            ctrs_message = message.id
-            try:
-                report_message = int(parse.parse_qs(parse.urlparse(raid_message.embeds[0].thumbnail.url).query).get('report_message', [None])[0])
-                raid_report = int(parse.parse_qs(parse.urlparse(raid_message.embeds[0].thumbnail.url).query).get('raid_report', [None])[0])
-            except:
-                report_message = None
-                raid_report = None
+            if egg or name.split('-')[0] in self.bot.raid_list or name.split('-')[0] == 'ex' or train or meetup:
+                async for message in channel.history(limit=500, oldest_first=True):
+                    if message.author.id == guild.me.id or "Meowth" in message.author.display_name:
+                        if message.embeds:
+                            if f"Coordinate here" in message.content:
+                                reportchannel = message.raw_channel_mentions[0]
+                                report_author = message.raw_mentions[0]
+                                raid_message = message
+                            elif message.embeds[0].fields and "channel timer" in message.embeds[0].fields[0].name.lower():
+                                timerset_msg = message.id
+                            elif message.embeds[0].fields and "channel weather" in message.embeds[0].fields[0].name.lower():
+                                weather_msg = message.id
+                                weather_search = re.search(r'currently set to (.*)\. This', message.embeds[0].fields[0].value)
+                                if weather_search and weather_search.group(1) != "None":
+                                    weather = weather_search.group(1).lower()
+                            elif "best counters" in message.content.lower():
+                                ctrs_message = message.id
+                try:
+                    report_message = int(parse.parse_qs(parse.urlparse(raid_message.embeds[0].thumbnail.url).query).get('report_message', [None])[0])
+                    raid_report = int(parse.parse_qs(parse.urlparse(raid_message.embeds[0].thumbnail.url).query).get('raid_report', [None])[0])
+                except:
+                    report_message = None
+                    raid_report = None
+            else:
+                return await channel.send(_("Meowth! I couldn't recognize this as a recoverable channel!"), delete_after=10)
             if egg:
                 raidtype = 'egg'
                 report_dict = 'raidchannel_dict'
@@ -4861,9 +4865,6 @@ class Raid(commands.Cog):
                 exp = raid_message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp() + (((60 * 60) * 24) * 14)
                 manual_timer = False
                 pokemon = ''
-            else:
-                await channel.send(_("Meowth! I couldn't recognize this as a raid channel!"), delete_after=10)
-                return
             async for message in channel.history(limit=500):
                 if message.author.id == guild.me.id or "Meowth" in message.author.display_name:
                     if (_('is interested') in message.content) or (_('on the way') in message.content) or (_('at the raid') in message.content) or (_('at the event') in message.content) or (_('no longer') in message.content) or (_('left the raid') in message.content):
@@ -4971,7 +4972,7 @@ class Raid(commands.Cog):
             recovermsg = _("Meowth! This channel has been recovered! However, there may be some inaccuracies in what I remembered! Here's what I have:")
             if "channel" in report_dict and pkmn_obj:
                 self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['ctrsmessage'] = ctrs_message
-                ctrs_dict = await self._get_generic_counters(ctx.channel, pkmn_obj, weather.lower())
+                ctrs_dict = await self._get_generic_counters(ctx.channel, pkmn_obj, str(weather).lower())
                 self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['ctrs_dict'] = ctrs_dict
                 self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['moveset'] = 0
             if train:
