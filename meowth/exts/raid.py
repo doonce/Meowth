@@ -5279,7 +5279,7 @@ class Raid(commands.Cog):
         ctrs_embed.set_footer(text=_('Results courtesy of Pokebattler'), icon_url=pbtlr_icon)
         ctrindex = 1
         for ctr in reversed(ctrs):
-            ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh')
+            ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh').replace('fetchd', "fetch'd")
             if "form" in ctr_name.lower():
                 try:
                     ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
@@ -5378,7 +5378,7 @@ class Raid(commands.Cog):
         ctrs_embed.set_footer(text=_('Results courtesy of Pokebattler'), icon_url=pbtlr_icon)
         ctrindex = 1
         for ctr in reversed(ctrs):
-            ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh')
+            ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh').replace('fetchd', "fetch'd")
             if "form" in ctr_name.lower():
                 try:
                     ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']
@@ -5416,7 +5416,7 @@ class Raid(commands.Cog):
             ctrs_embed.set_footer(text=_('Results courtesy of Pokebattler'), icon_url=pbtlr_icon)
             ctrindex = 1
             for ctr in reversed(ctrs):
-                ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh')
+                ctr_name = clean(ctr['pokemonId']).replace('Ho Oh', 'ho-oh').replace('fetchd', "fetch'd")
                 if "form" in ctr_name.lower():
                     try:
                         ctr_type = self.bot.pkmn_info[ctr_name.split()[0].lower()]['forms'][ctr_name.split()[1].lower().replace('alola', 'alolan')]['type']

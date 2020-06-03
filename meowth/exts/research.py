@@ -146,7 +146,7 @@ class Research(commands.Cog):
         guild = message.channel.guild
         channel = message.channel
         research_dict = copy.deepcopy(self.bot.guild_dict[guild.id]['questreport_dict'])
-        last_report = True if len (self.bot.guild_dict[guild.id]['questreport_dict'].keys()) == 1 else False
+        last_report = True if len(self.bot.guild_dict[guild.id]['questreport_dict'].keys()) == 1 else False
         author = guild.get_member(research_dict.get(message.id, {}).get('report_author'))
         cleanup_setting = self.bot.guild_dict[guild.id].get('configure_dict', {}).get('research', {}).setdefault('cleanup_setting', "delete")
         if cleanup_setting == "delete":
@@ -177,7 +177,7 @@ class Research(commands.Cog):
             pass
         try:
             ctx = await self.bot.get_context(message)
-            if last_report and len (self.bot.guild_dict[guild.id]['questreport_dict'].keys()) == 0:
+            if last_report and len(self.bot.guild_dict[guild.id]['questreport_dict'].keys()) == 0:
                 await ctx.invoke(self.bot.get_command('list research'))
         except:
             pass

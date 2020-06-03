@@ -718,7 +718,7 @@ class Utilities(commands.Cog):
         self.bot = bot
         self.dm_cleanup.start()
         self.auto_timezone.start()
-        self.version = "v20.5.29.0"
+        self.version = "v20.6.3.0"
 
     def cog_unload(self):
         self.dm_cleanup.cancel()
@@ -729,8 +729,9 @@ class Utilities(commands.Cog):
         await self.dm_cleanup_func(loop)
 
     async def dm_cleanup_func(self, loop=True):
+        to_midnight = 24*60*60 - ((datetime.datetime.utcnow()-datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).seconds)
         if loop:
-            await asyncio.sleep(302400)
+            await asyncio.sleep(to_midnight)
         logger.info('------ BEGIN ------')
         count = 0
         def build_dm_list(guildid):
