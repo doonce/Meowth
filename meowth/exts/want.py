@@ -20,6 +20,55 @@ class Want(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        guild = getattr(channel, "guild", None)
+        if guild and guild.id not in list(self.bot.guild_dict.keys()):
+            return
+        try:
+            user = self.bot.get_user(payload.user_id)
+        except AttributeError:
+            return
+        if user == self.bot.user:
+            return
+        if guild:
+            user = guild.get_member(payload.user_id)
+        else:
+            return
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except (discord.errors.NotFound, AttributeError, discord.Forbidden):
+            return
+        can_manage = channel.permissions_for(user).manage_messages
+        want_channels = list(self.bot.guild_dict[guild.id]['configure_dict']['want']['report_channels'])
+        if channel.id in want_channels:
+            if str(payload.emoji) == self.bot.custom_emoji.get('want_emoji', u'\U0001f514'):
+                ctx = await self.bot.get_context(message)
+                ctx.author, ctx.message.author = user, user
+                await utils.remove_reaction(message, payload.emoji, user)
+                return await ctx.invoke(self.bot.get_command('want'))
+            elif str(payload.emoji) == self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515'):
+                ctx = await self.bot.get_context(message)
+                ctx.author, ctx.message.author = user, user
+                await utils.remove_reaction(message, payload.emoji, user)
+                return await ctx.invoke(self.bot.get_command('unwant'))
+            elif str(payload.emoji) == self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f'):
+                ctx = await self.bot.get_context(message)
+                ctx.author, ctx.message.author = user, user
+                await utils.remove_reaction(message, payload.emoji, user)
+                return await ctx.invoke(self.bot.get_command('want settings'))
+            elif str(payload.emoji) == self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f'):
+                ctx = await self.bot.get_context(message)
+                ctx.author, ctx.message.author = user, user
+                await asyncio.sleep(0.25)
+                await utils.remove_reaction(message, payload.emoji, self.bot.user)
+                await asyncio.sleep(0.25)
+                await utils.remove_reaction(message, payload.emoji, user)
+                await ctx.invoke(self.bot.get_command("list wants"))
+                await asyncio.sleep(5)
+                await utils.add_reaction(message, payload.emoji)
+
     @commands.group(case_insensitive=True, invoke_without_command=True)
     @checks.allowwant()
     async def want(self, ctx, *, pokemon=None):
@@ -38,7 +87,7 @@ class Want(commands.Cog):
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         gym_matching_cog = self.bot.cogs.get("GymMatching")
         error = False
-        want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+        want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_bell.png?cache=1")
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         want_msg = f"Meowth! I'll help you add a new alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to subscribe to. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**New Alert Subscription**'), value=want_msg, inline=False)
@@ -54,6 +103,7 @@ class Want(commands.Cog):
         if role_list:
             want_embed.add_field(name=_('**Role**'), value=f"Reply with **role** to subscribe to server roles.", inline=False)
         want_embed.add_field(name=_('**IV** / **Level** / **CP** / **Egg**'), value=f"Reply with **iv**, **level**, or **cp** to want wild spawns of a specific IV / level / CP. Reply with **egg** to want raid eggs of a specific level", inline=False)
+        want_embed.add_field(name=_('**Custom**'), value=f"Reply with **custom** to start a custom subscription. You can customize report type, A/S/D range, level range, etc.", inline=False)
         want_embed.add_field(name=_('**Type**'), value=f"Reply with **type** to want wild, research, and nest reports of a specific type.", inline=False)
         want_embed.add_field(name=_('**Item**'), value=f"Reply with **item** to want sspecific items from research.", inline=False)
         want_embed.add_field(name=_('**Settings**'), value=f"Reply with **settings** to access your want settings.", inline=False)
@@ -163,7 +213,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('boss')
+                            want_command = self.bot.get_command('want boss')
                             if want_command:
                                 return await ctx.invoke(want_command, bosses=ctx.message.content)
                         break
@@ -187,7 +237,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('trade')
+                            want_command = self.bot.get_command('want trade')
                             if want_command:
                                 return await ctx.invoke(want_command, trades=ctx.message.content)
                         break
@@ -211,7 +261,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('gym')
+                            want_command = self.bot.get_command('want gym')
                             if want_command:
                                 return await ctx.invoke(want_command, gyms=ctx.message.content)
                         break
@@ -235,7 +285,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('stop')
+                            want_command = self.bot.get_command('want stop')
                             if want_command:
                                 return await ctx.invoke(want_command, stops=ctx.message.content)
                         break
@@ -259,7 +309,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('iv')
+                            want_command = self.bot.get_command('iv')
                             if want_command:
                                 return await ctx.invoke(want_command, ivs=ctx.message.content)
                         break
@@ -283,7 +333,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('level')
+                            want_command = self.bot.get_command('want level')
                             if want_command:
                                 return await ctx.invoke(want_command, levels=ctx.message.content)
                         break
@@ -307,7 +357,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('cp')
+                            want_command = self.bot.get_command('want cp')
                             if want_command:
                                 return await ctx.invoke(want_command, points=ctx.message.content)
                         break
@@ -331,7 +381,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('egg')
+                            want_command = self.bot.get_command('want egg')
                             if want_command:
                                 return await ctx.invoke(want_command, levels=ctx.message.content)
                         break
@@ -355,7 +405,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('item')
+                            want_command = self.bot.get_command('want item')
                             if want_command:
                                 return await ctx.invoke(want_command, items=ctx.message.content)
                         break
@@ -379,7 +429,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('type')
+                            want_command = self.bot.get_command('want type')
                             if want_command:
                                 return await ctx.invoke(want_command, types=ctx.message.content)
                         break
@@ -405,28 +455,33 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('role')
+                            want_command = self.bot.get_command('want role')
                             if want_command:
                                 return await ctx.invoke(want_command, roles=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "settings":
-                        want_command = ctx.command.all_commands.get('settings')
+                        want_command = self.bot.get_command('settings')
+                        if want_command:
+                            return await want_command.invoke(ctx)
+                    elif want_category_msg.clean_content.lower() == "custom":
+                        want_command = self.bot.get_command('custom')
                         if want_command:
                             return await want_command.invoke(ctx)
                     elif want_category_msg.clean_content.lower() == "list":
-                        await utils.safe_delete(ctx.message)
-                        list_command = self.bot.get_command("list")
-                        want_command = list_command.all_commands.get('wants')
-                        return await want_command.invoke(ctx)
+                        if ctx.invoked_with:
+                            await utils.safe_delete(ctx.message)
+                        want_command = self.bot.get_command('list wants')
+                        return await ctx.invoke(want_command)
                     else:
                         error = _("entered something invalid")
                         break
         if error:
             want_embed.clear_fields()
-            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_bell.png?cache=1")
             want_embed.add_field(name=_('**New Subscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=want_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if ctx.invoked_with:
+                await utils.safe_delete(message)
             return
 
     @want.command(name="pokemon", hidden=True)
@@ -450,6 +505,11 @@ class Want(commands.Cog):
         already_want_list = []
         added_list = []
         trade_warn = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour)
         if "boss" in ctx.invoked_with:
             user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('bosses', [])
@@ -495,7 +555,8 @@ class Want(commands.Cog):
                         trade_warn.append(str(pokemon))
                 want_list.append(pokemon)
             elif len(want_split) == 1 and "list" in entered_want:
-                await utils.safe_delete(ctx.message)
+                if ctx.invoked_with:
+                    await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('list wants'))
             else:
                 spellcheck_list.append(entered_want)
@@ -542,7 +603,7 @@ class Want(commands.Cog):
             want_embed.set_thumbnail(url=pokemon.img_url)
         if len(confirmation_msg) < 1000:
             want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-            want_confirmation = await channel.send(embed=want_embed)
+            want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
         else:
             paginator = commands.Paginator(prefix="", suffix="")
             for line in confirmation_msg.splitlines():
@@ -563,9 +624,9 @@ class Want(commands.Cog):
             index = 0
             for p in paginator.pages:
                 if index == 0:
-                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"**New Alert Subscription**\n{p}"))
+                    want_confirmation = await ctx.channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=discord.Embed(colour=ctx.guild.me.colour, description=f"**New Alert Subscription**\n{p}"))
                 else:
-                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    want_confirmation = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                 index += 1
         if trade_warn:
             categories = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {}).setdefault('pokemon', {})
@@ -648,7 +709,9 @@ class Want(commands.Cog):
                     dm_dict = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('dm_dict')
                     dm_dict = await raid_cog.send_dm_messages(ctx, str(report_pokemon), location, ctx.raidreport.content.splitlines()[0].replace(report_author.mention, f"{report_author.display_name} in {report_channel.mention}"), copy.deepcopy(ctx.raidreport.embeds[0]), dm_dict)
                     self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id]['dm_dict'] = dm_dict
-
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(want_confirmation, reaction)
 
     @want.command(name='boss', aliases=['bosses'])
     @checks.allowwant()
@@ -685,6 +748,11 @@ class Want(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if not gym_matching_cog:
             return
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         if poi_type == "stop":
             pois = gym_matching_cog.get_stops(ctx.guild.id)
             user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
@@ -723,7 +791,7 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
         wild_cog = self.bot.cogs.get('Wild')
         research_cog = self.bot.cogs.get('Research')
         invasion_cog = self.bot.cogs.get('Invasion')
@@ -774,6 +842,9 @@ class Want(commands.Cog):
                     dm_dict = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('dm_dict')
                     dm_dict = await raid_cog.send_dm_messages(ctx, str(report_pokemon), location, ctx.raidreport.content.splitlines()[0].replace(report_author.mention, f"{report_author.display_name} in {report_channel.mention}"), copy.deepcopy(ctx.raidreport.embeds[0]), dm_dict)
                     self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id]['dm_dict'] = dm_dict
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(want_confirmation, reaction)
 
     @want.command(name='gym', aliases=['gyms'])
     @checks.allowwant()
@@ -834,6 +905,11 @@ class Want(commands.Cog):
         already_want_count = 0
         already_want_list = []
         added_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/MysteryItem.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
         for entered_want in want_split:
@@ -872,7 +948,7 @@ class Want(commands.Cog):
             thumbnail_url, item = await utils.get_item(added_list[0])
             want_embed.set_thumbnail(url=thumbnail_url)
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
         research_cog = self.bot.cogs.get('Research')
         lure_cog = self.bot.cogs.get('Lure')
         if research_cog:
@@ -896,6 +972,9 @@ class Want(commands.Cog):
                     dm_dict = self.bot.guild_dict[ctx.guild.id]['lure_dict'][report].get('dm_dict', {})
                     dm_dict = await lure_cog.send_dm_messages(ctx, location, f"{lure_type} lure module", ctx.lurereportmsg.content, copy.deepcopy(copy.deepcopy(ctx.lurereportmsg.embeds[0])), dm_dict)
                     self.bot.guild_dict[ctx.guild.id]['lure_dict'][report]['dm_dict'] = dm_dict
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(want_confirmation, reaction)
 
     @want.command(name='type', aliases=['types'])
     @checks.allowwant()
@@ -915,6 +994,11 @@ class Want(commands.Cog):
         already_want_count = 0
         already_want_list = []
         added_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/types.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
         for entered_want in want_split:
@@ -952,7 +1036,7 @@ class Want(commands.Cog):
         if len(added_list) == 1:
             want_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/{added_list[0].lower()}.png")
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
         wild_cog = self.bot.cogs.get('Wild')
         research_cog = self.bot.cogs.get('Research')
         invasion_cog = self.bot.cogs.get('Invasion')
@@ -1028,6 +1112,9 @@ class Want(commands.Cog):
                     dm_dict = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('dm_dict')
                     dm_dict = await raid_cog.send_dm_messages(ctx, str(report_pokemon), location, ctx.raidreport.content.splitlines()[0].replace(report_author.mention, f"{report_author.display_name} in {report_channel.mention}"), copy.deepcopy(ctx.raidreport.embeds[0]), dm_dict)
                     self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id]['dm_dict'] = dm_dict
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(want_confirmation, reaction)
 
     @want.command(name='iv', aliases=['ivs'])
     @checks.allowwant()
@@ -1047,6 +1134,11 @@ class Want(commands.Cog):
         already_want_list = []
         added_list = []
         error_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_tut_strength_adjust.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
         for entered_want in want_split:
@@ -1091,7 +1183,7 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
         wild_cog = self.bot.cogs.get('Wild')
         if wild_cog:
             for report in self.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
@@ -1108,6 +1200,9 @@ class Want(commands.Cog):
                     dm_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('dm_dict', {})
                     dm_dict = await wild_cog.send_dm_messages(ctx, str(report_pokemon), wild_details, wild_iv, wild_level, wild_cp, ctx.wildreportmsg.content, copy.deepcopy(ctx.wildreportmsg.embeds[0]), dm_dict)
                     self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['dm_dict'] = dm_dict
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(want_confirmation, reaction)
 
     @want.command(name='level', aliases=['levels'])
     @checks.allowwant()
@@ -1127,6 +1222,11 @@ class Want(commands.Cog):
         already_want_list = []
         added_list = []
         error_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_tut_strength_adjust.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
         for entered_want in want_split:
@@ -1171,7 +1271,7 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
         wild_cog = self.bot.cogs.get('Wild')
         if wild_cog:
             for report in self.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
@@ -1187,6 +1287,9 @@ class Want(commands.Cog):
                     dm_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('dm_dict', {})
                     dm_dict = await wild_cog.send_dm_messages(ctx, str(report_pokemon), wild_details, wild_iv, wild_level, wild_cp, ctx.wildreportmsg.content, copy.deepcopy(ctx.wildreportmsg.embeds[0]), dm_dict)
                     self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['dm_dict'] = dm_dict
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(want_confirmation, reaction)
 
     @want.command(name='cp', aliases=['cps'])
     @checks.allowwant()
@@ -1207,6 +1310,11 @@ class Want(commands.Cog):
         added_list = []
         error_list = []
         exceed_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_tut_strength_adjust.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('cps', [])
         for entered_want in want_split:
@@ -1247,7 +1355,7 @@ class Want(commands.Cog):
         if exceed_list:
             confirmation_msg += f"\n**{len(exceed_list)} Over Limit:**\n\tYou reached maximum CP subscriptions. Unwant some and try again."
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
         wild_cog = self.bot.cogs.get('Wild')
         if wild_cog:
             for report in self.bot.guild_dict[ctx.guild.id]['wildreport_dict']:
@@ -1263,6 +1371,9 @@ class Want(commands.Cog):
                     dm_dict = self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report].get('dm_dict', {})
                     dm_dict = await wild_cog.send_dm_messages(ctx, str(report_pokemon), wild_details, wild_iv, wild_level, wild_cp, ctx.wildreportmsg.content, copy.deepcopy(ctx.wildreportmsg.embeds[0]), dm_dict)
                     self.bot.guild_dict[ctx.guild.id]['wildreport_dict'][report]['dm_dict'] = dm_dict
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(want_confirmation, reaction)
 
     @want.command(name='egg', aliases=["eggs", "raidegg", "raideggs"])
     @checks.allowwant()
@@ -1281,6 +1392,11 @@ class Want(commands.Cog):
         already_want_list = []
         added_list = []
         error_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
         if want_split[0].isdigit() and int(want_split[0]) > 0 and int(want_split[0]) <= 5:
             want_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{want_split[0]}.png?cache=1")
@@ -1314,7 +1430,7 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
         raid_cog = self.bot.cogs.get('Raid')
         if raid_cog:
             for report in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
@@ -1328,6 +1444,9 @@ class Want(commands.Cog):
                     dm_dict = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('dm_dict')
                     dm_dict = await raid_cog.send_dm_messages(ctx, str(report_level), location, ctx.raidreport.content.splitlines()[0].replace(report_author.mention, f"{report_author.display_name} in {report_channel.mention}"), copy.deepcopy(ctx.raidreport.embeds[0]), dm_dict)
                     self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report]['dm_dict'] = dm_dict
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(want_confirmation, reaction)
 
     @want.command(name='role', aliases=['roles'])
     @checks.allowwant()
@@ -1347,6 +1466,11 @@ class Want(commands.Cog):
         already_want_list = []
         added_list = []
         role_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/discord.png?cache=1")
         converter = commands.RoleConverter()
         join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict'].get('want', {}).get('roles', [])]
@@ -1388,7 +1512,10 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(want_confirmation, reaction)
 
     @want.command(name='custom')
     @checks.allowwant()
@@ -1400,10 +1527,15 @@ class Want(commands.Cog):
         author = message.author
         guild = message.guild
         channel = message.channel
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
         user_custom = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('custom', {})
         error = False
-        want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+        want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_bell.png?cache=1")
         want_embed.add_field(name=_('**New Custom Alert Subscription**'), value=f"Meowth! I'll help you add a new custom alert subscription! This will allow subscriptions to alerts that match desired stats including IV, level, cp, and report type.\n\nThese alerts will only send if **ALL** supplied conditions match.\n\nReply with the name of the **pokemon** including all desired forms, gender, and size to get started. You can reply with **cancel** to stop anytime.", inline=False)
         subscription_dict = {
             'pokemon':None,
@@ -1814,10 +1946,11 @@ class Want(commands.Cog):
                         break
         if error:
             want_embed.clear_fields()
-            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_bell.png?cache=1")
             want_embed.add_field(name=_('**New Custom Subscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=want_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if ctx.invoked_with:
+                await utils.safe_delete(message)
         else:
             want_embed.clear_fields()
             shiny_str = ""
@@ -1842,8 +1975,12 @@ class Want(commands.Cog):
                 alert_text += f" | **Size**: {subscription_dict['size']}"
             alert_text += f" | **Report Types**: {(', ').join(subscription_dict['report_types'])}"
             want_embed.add_field(name=_('**New Custom Subscription**'), value=f"Meowth! {ctx.author.display_name}, out of your total 1 pokemon:\n\n**1 Added:**\n{alert_text}".format(error=error), inline=False)
-            confirmation = await channel.send(embed=want_embed)
-            await utils.safe_delete(message)
+            want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+            if ctx.invoked_with:
+                await utils.safe_delete(message)
+            for reaction in react_list:
+                await asyncio.sleep(0.25)
+                await utils.add_reaction(want_confirmation, reaction)
 
     @want.command()
     @checks.allowwant()
@@ -1867,7 +2004,7 @@ class Want(commands.Cog):
         settings_embed.add_field(name=f"**categories**", value=f"Reply with **categories** to set your alert categories. For example, if you want a certain pokestop but only want wild alerts but no lures or invasions, use this setting.", inline=False)
         settings_embed.add_field(name=f"**cancel**", value=f"Reply with **cancel** to stop changing settings.", inline=False)
         settings_embed.add_field(name="**Current Settings**", value=f"DMs Muted: {(', ').join([x for x in user_mute.keys() if user_mute[x]])}{'None' if not any(user_mute.values()) else ''}\nStart Time: {'Times set' if time_setting else 'None'}\nEnd Time: {'Times set' if time_setting else 'None'}\nLink: {user_link}", inline=False)
-        settings_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+        settings_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_gear.png?cache=1")
         settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:", embed=settings_embed, delete_after=120)
         def check(reply):
             if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.message.author:
@@ -1996,13 +2133,13 @@ class Want(commands.Cog):
         settings_embed.add_field(name=f"**type**", value=f"Reply with **type** to set which alert types will use your wanted type list. Currently: {(', ').join([x for x in type_options if type_settings.get(x)])}", inline=False)
         settings_embed.add_field(name=f"**reset**", value=f"Reply with **reset** to reset all alerts to default.", inline=False)
         settings_embed.add_field(name=f"**cancel**", value=f"Reply with **cancel** to stop changing settings.", inline=False)
-        settings_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+        settings_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_gear.png?cache=1")
         settings_msg = await ctx.send(f"{ctx.author.mention} reply with one of the following options:", embed=settings_embed, delete_after=120)
         try:
             cat_reply = await ctx.bot.wait_for('message', timeout=120, check=(lambda message: (message.author == ctx.author and message.channel == ctx.channel)))
         except asyncio.TimeoutError:
             return await ctx.send(f"Meowth! You took to long to reply! Try the **{ctx.prefix}want settings** command again!", delete_after=30)
-        await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message])
+        await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message if ctx.invoked_with else None])
         if cat_reply.content.lower() in category_list:
             if cat_reply.content.lower() == "pokemon":
                 settings_msg = await ctx.send(f"{ctx.author.mention} reply with the alert types you would like to receive **pokemon** alerts for. Any not listed will be disabled. List from the following options: **{(', ').join(pokemon_options)}** or reply with **all** to enable all.", delete_after=120)
@@ -2024,7 +2161,7 @@ class Want(commands.Cog):
                 for item in enable_list:
                     user_setting[item] = True
                 self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['categories']['pokemon'] = user_setting
-                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message])
+                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message if ctx.invoked_with else None])
                 await ctx.send(f"{ctx.author.mention} - Your DM settings for **pokemon** have been set to **{(', ').join(enable_list)}**.", delete_after=30)
             elif cat_reply.content.lower() == "pokestop":
                 settings_msg = await ctx.send(f"{ctx.author.mention} reply with the alert types you would like to receive **pokestop** alerts for. Any not listed will be disabled. List from the following options: **{(', ').join(pokestop_options)}** or reply with **all** to enable all.", delete_after=120)
@@ -2046,7 +2183,7 @@ class Want(commands.Cog):
                 for item in enable_list:
                     user_setting[item] = True
                 self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['categories']['pokestop'] = user_setting
-                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message])
+                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message if ctx.invoked_with else None])
                 await ctx.send(f"{ctx.author.mention} - Your DM settings for **pokestop** have been set to **{(', ').join(enable_list)}**.", delete_after=30)
             elif cat_reply.content.lower() == "item":
                 settings_msg = await ctx.send(f"{ctx.author.mention} reply with the alert types you would like to receive **item** alerts for. Any not listed will be disabled. List from the following options: **{(', ').join(item_options)}** or reply with **all** to enable all.", delete_after=120)
@@ -2068,7 +2205,7 @@ class Want(commands.Cog):
                 for item in enable_list:
                     user_setting[item] = True
                 self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['categories']['item'] = user_setting
-                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message])
+                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message if ctx.invoked_with else None])
                 await ctx.send(f"{ctx.author.mention} - Your DM settings for **item** have been set to **{(', ').join(enable_list)}**.", delete_after=30)
             elif cat_reply.content.lower() == "type":
                 settings_msg = await ctx.send(f"{ctx.author.mention} reply with the alert types you would like to receive **type** alerts for. Any not listed will be disabled. List from the following options: **{(', ').join(type_options)}** or reply with **all** to enable all.", delete_after=120)
@@ -2090,7 +2227,7 @@ class Want(commands.Cog):
                 for item in enable_list:
                     user_setting[item] = True
                 self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['alerts']['settings']['categories']['type'] = user_setting
-                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message])
+                await utils.safe_bulk_delete(ctx.channel, [cat_reply, settings_msg, ctx.message if ctx.invoked_with else None])
                 await ctx.send(f"{ctx.author.mention} - Your DM settings for **type** have been set to **{(', ').join(enable_list)}**.", delete_after=30)
             else:
                 await ctx.send(f"{ctx.author.mention} - Your DM settings have not changed.", delete_after=30)
@@ -2148,16 +2285,18 @@ class Want(commands.Cog):
         user_eggs = [x.title() for x in user_eggs]
         join_roles = [guild.get_role(x) for x in self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('want', {}).get('roles', [])]
         user_roles = [x for x in ctx.author.roles if x in join_roles]
-        want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+        user_custom = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('custom', {})
+        want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_nobell.png?cache=1")
         want_embed.set_footer(text=_('Sent by @{author} - {timestamp}').format(author=author.display_name, timestamp=timestamp.strftime(_('%I:%M %p (%H:%M)'))), icon_url=author.avatar_url_as(format=None, static_format='jpg', size=32))
         want_msg = f"Meowth! I'll help you remove an alert subscription!\n\nFirst, I'll need to know what **type** of alert you'd like to unsubscribe from. Reply with one of the following or reply with **cancel** to stop anytime."
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=want_msg, inline=False)
         if not any([user_wants, user_bosses, user_gyms, user_stops, user_ivs, user_levels, user_cps, user_items, user_types, user_forms, user_roles, user_eggs]):
             want_embed.clear_fields()
-            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_nobell.png?cache=1")
             want_embed.add_field(name=_('**Alert Unsubscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you don't have any subscriptions! Add some with **!want**.").format(error=error), inline=False)
             confirmation = await channel.send(embed=want_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if ctx.invoked_with:
+                await utils.safe_delete(message)
             return
         if user_wants:
             want_embed.add_field(name=_('**Pokemon**'), value=f"Reply with **pokemon** to unwant specific pokemon for research, wild, {'nest, trade, and raid reports.' if user_link else 'and nest reports.'}", inline=False)
@@ -2179,6 +2318,8 @@ class Want(commands.Cog):
             want_embed.add_field(name=_('**CP**'), value=f"Reply with **cp** to unwant wild spawns of a specific cp.", inline=False)
         if user_eggs:
             want_embed.add_field(name=_('**Egg**'), value=f"Reply with **egg** to unwant raid eggs of a specific level.", inline=False)
+        if user_custom:
+            want_embed.add_field(name=_('**Custom**'), value=f"Reply with **custom** to remove a custom subscription.", inline=False)
         if user_types:
             want_embed.add_field(name=_('**Type**'), value=f"Reply with **type** to unwant wild, research, and nest reports of a specific type.", inline=False)
         if user_items:
@@ -2295,7 +2436,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('boss')
+                            want_command = self.bot.get_command('unwant boss')
                             if want_command:
                                 return await ctx.invoke(want_command, bosses=ctx.message.content)
                         break
@@ -2322,9 +2463,9 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('boss')
+                            want_command = self.bot.get_command('unwant trade')
                             if want_command:
-                                return await ctx.invoke(want_command, bosses=ctx.message.content)
+                                return await ctx.invoke(want_command, trades=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "gym" and gym_matching_cog:
                         if not user_gyms:
@@ -2349,7 +2490,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('gym')
+                            want_command = self.bot.get_command('unwant gym')
                             if want_command:
                                 return await ctx.invoke(want_command, gyms=ctx.message.content)
                         break
@@ -2376,7 +2517,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('stop')
+                            want_command = self.bot.get_command('unwant stop')
                             if want_command:
                                 return await ctx.invoke(want_command, stops=ctx.message.content)
                         break
@@ -2403,7 +2544,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('iv')
+                            want_command = self.bot.get_command('unwant iv')
                             if want_command:
                                 return await ctx.invoke(want_command, ivs=ctx.message.content)
                         break
@@ -2430,7 +2571,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('level')
+                            want_command = self.bot.get_command('unwant level')
                             if want_command:
                                 return await ctx.invoke(want_command, levels=ctx.message.content)
                         break
@@ -2457,7 +2598,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('cp')
+                            want_command = self.bot.get_command('unwant cp')
                             if want_command:
                                 return await ctx.invoke(want_command, points=ctx.message.content)
                         break
@@ -2484,7 +2625,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('egg')
+                            want_command = self.bot.get_command('unwant egg')
                             if want_command:
                                 return await ctx.invoke(want_command, levels=ctx.message.content)
                         break
@@ -2511,7 +2652,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('item')
+                            want_command = self.bot.get_command('unwant item')
                             if want_command:
                                 return await ctx.invoke(want_command, items=ctx.message.content)
                         break
@@ -2538,7 +2679,7 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('type')
+                            want_command = self.bot.get_command('unwant type')
                             if want_command:
                                 return await ctx.invoke(want_command, types=ctx.message.content)
                         break
@@ -2566,12 +2707,16 @@ class Want(commands.Cog):
                             break
                         elif want_sub_msg:
                             ctx.message.content = want_sub_msg.clean_content
-                            want_command = ctx.command.all_commands.get('role')
+                            want_command = self.bot.get_command('unwant role')
                             if want_command:
                                 return await ctx.invoke(want_command, roles=ctx.message.content)
                         break
+                    elif want_category_msg.clean_content.lower() == "custom":
+                        want_command = self.bot.get_command('unwant custom')
+                        if want_command:
+                            return await want_command.invoke(ctx)
                     elif want_category_msg.clean_content.lower() == "all":
-                        want_command = ctx.command.all_commands.get('all')
+                        want_command = self.bot.get_command('unwant all')
                         if want_command:
                             return await want_command.invoke(ctx)
                     else:
@@ -2579,10 +2724,11 @@ class Want(commands.Cog):
                         break
         if error:
             want_embed.clear_fields()
-            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_nobell.png?cache=1")
             want_embed.add_field(name=_('**Alert Unsubscription Cancelled**'), value=_("Meowth! Your request has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=want_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if ctx.invoked_with:
+                await utils.safe_delete(message)
             return
 
     @unwant.command(name="pokemon", hidden=True)
@@ -2605,6 +2751,11 @@ class Want(commands.Cog):
         not_wanted_count = 0
         not_wanted_list = []
         removed_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         category = "pokemon"
         want_embed = discord.Embed(colour=ctx.me.colour)
         if "boss" in ctx.invoked_with:
@@ -2648,10 +2799,12 @@ class Want(commands.Cog):
             if pokemon:
                 unwant_list.append(pokemon)
             elif len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
+                if ctx.invoked_with:
+                    await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('unwant all'), category=category)
             elif len(unwant_split) == 1 and "list" in entered_unwant:
-                await utils.safe_delete(ctx.message)
+                if ctx.invoked_with:
+                    await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('list wants'))
             else:
                 spellcheck_list.append(entered_unwant)
@@ -2698,7 +2851,7 @@ class Want(commands.Cog):
             want_embed.set_thumbnail(url=pokemon.img_url)
         if len(confirmation_msg) < 1000:
             want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-            unwant_confirmation = await channel.send(embed=want_embed)
+            unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
         else:
             paginator = commands.Paginator(prefix="", suffix="")
             for line in confirmation_msg.splitlines():
@@ -2719,10 +2872,13 @@ class Want(commands.Cog):
             index = 0
             for p in paginator.pages:
                 if index == 0:
-                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"**Remove Alert Subscription**\n{p}"))
+                    unwant_confirmation = await ctx.channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=discord.Embed(colour=ctx.guild.me.colour, description=f"**Remove Alert Subscription**\n{p}"))
                 else:
-                    listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                    unwant_confirmation = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                 index += 1
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(unwant_confirmation, reaction)
 
     @unwant.command(name='boss', aliases=['bosses'])
     @checks.allowwant()
@@ -2761,6 +2917,11 @@ class Want(commands.Cog):
         gym_matching_cog = self.bot.cogs.get('GymMatching')
         if not gym_matching_cog:
             return
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         if poi_type == "stop":
             pois = gym_matching_cog.get_stops(ctx.guild.id)
             user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('stops', [])
@@ -2774,7 +2935,8 @@ class Want(commands.Cog):
             if gym:
                 unwant_list.append(gym.lower())
             elif len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
+                if ctx.invoked_with:
+                    await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('unwant all'), category="gym")
             else:
                 spellcheck_list.append(entered_unwant)
@@ -2802,7 +2964,10 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(unwant_confirmation, reaction)
 
     @unwant.command(name='gym', aliases=['gyms'])
     @checks.allowwant()
@@ -2864,13 +3029,19 @@ class Want(commands.Cog):
         not_wanted_count = 0
         not_wanted_list = []
         removed_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/MysteryItem.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('items', [])
         for entered_unwant in unwant_split:
             if entered_unwant.strip().lower() in self.bot.item_list:
                 unwant_list.append(entered_unwant.strip().lower())
             elif len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
+                if ctx.invoked_with:
+                    await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('unwant all'), category="item")
             else:
                 match = await utils.autocorrect(self.bot, entered_unwant, self.bot.item_list, ctx.channel, ctx.author)
@@ -2905,7 +3076,10 @@ class Want(commands.Cog):
             thumbnail_url, item = await utils.get_item(removed_list[0])
             want_embed.set_thumbnail(url=thumbnail_url)
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(unwant_confirmation, reaction)
 
     @unwant.command(name='type', aliases=['types'])
     @checks.allowwant()
@@ -2926,13 +3100,19 @@ class Want(commands.Cog):
         not_wanted_count = 0
         not_wanted_list = []
         removed_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/types.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('types', [])
         for entered_unwant in unwant_split:
             if entered_unwant.strip().lower() in self.bot.type_list:
                 unwant_list.append(entered_unwant.strip().lower())
             elif len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
+                if ctx.invoked_with:
+                    await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('unwant all'), category="type")
             else:
                 match = await utils.autocorrect(self.bot, entered_unwant, self.bot.type_list, ctx.channel, ctx.author)
@@ -2966,7 +3146,10 @@ class Want(commands.Cog):
         if len(removed_list) == 1:
             want_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/{removed_list[0].lower()}.png")
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(unwant_confirmation, reaction)
 
     @unwant.command(name='iv', aliases=['ivs'])
     @checks.allowwant()
@@ -2986,6 +3169,11 @@ class Want(commands.Cog):
         not_wanted_list = []
         removed_list = []
         error_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_tut_strength_adjust.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('ivs', [])
         for entered_unwant in unwant_split:
@@ -3006,7 +3194,8 @@ class Want(commands.Cog):
                     error_list.append(entered_unwant)
             else:
                 if len(unwant_split) == 1 and "all" in entered_unwant:
-                    await utils.safe_delete(ctx.message)
+                    if ctx.invoked_with:
+                        await utils.safe_delete(ctx.message)
                     return await ctx.invoke(self.bot.get_command('unwant all'), category="iv")
                 elif not entered_unwant.strip().isdigit():
                     error_list.append(entered_unwant)
@@ -3033,7 +3222,10 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(unwant_confirmation, reaction)
 
     @unwant.command(name='level', aliases=['levels'])
     @checks.allowwant()
@@ -3053,6 +3245,11 @@ class Want(commands.Cog):
         not_wanted_list = []
         removed_list = []
         error_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_tut_strength_adjust.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('levels', [])
         for entered_unwant in unwant_split:
@@ -3073,7 +3270,8 @@ class Want(commands.Cog):
                     error_list.append(entered_unwant)
             else:
                 if len(unwant_split) == 1 and "all" in entered_unwant:
-                    await utils.safe_delete(ctx.message)
+                    if ctx.invoked_with:
+                        await utils.safe_delete(ctx.message)
                     return await ctx.invoke(self.bot.get_command('unwant all'), category="level")
                 elif not entered_unwant.strip().isdigit():
                     error_list.append(entered_unwant)
@@ -3100,7 +3298,10 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(unwant_confirmation, reaction)
 
     @unwant.command(name='cp', aliases=['cps'])
     @checks.allowwant()
@@ -3120,6 +3321,11 @@ class Want(commands.Cog):
         not_wanted_list = []
         removed_list = []
         error_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/trade_tut_strength_adjust.png?cache=1")
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('cps', [])
         for entered_unwant in unwant_split:
@@ -3132,7 +3338,8 @@ class Want(commands.Cog):
                     error_list.append(entered_unwant)
             else:
                 if len(unwant_split) == 1 and "all" in entered_unwant:
-                    await utils.safe_delete(ctx.message)
+                    if ctx.invoked_with:
+                        await utils.safe_delete(ctx.message)
                     return await ctx.invoke(self.bot.get_command('unwant all'), category="cp")
                 elif not entered_unwant.strip().isdigit():
                     error_list.append(entered_unwant)
@@ -3161,7 +3368,10 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(unwant_confirmation, reaction)
 
     @unwant.command(name='egg', aliases=["eggs", "raidegg", "raideggs"])
     @checks.allowwant()
@@ -3180,6 +3390,11 @@ class Want(commands.Cog):
         not_wanted_list = []
         removed_list = []
         error_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/5.png?cache=1")
         if want_split[0].isdigit() and int(want_split[0]) > 0 and int(want_split[0]) <= 5:
             want_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{want_split[0]}.png?cache=1")
@@ -3213,7 +3428,10 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(unwant_confirmation, reaction)
 
     @unwant.command(name='role', aliases=['roles'])
     @checks.allowwant()
@@ -3234,12 +3452,18 @@ class Want(commands.Cog):
         not_wanted_list = []
         removed_list = []
         role_list = []
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         want_embed = discord.Embed(colour=ctx.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/discord.png?cache=1")
         converter = commands.RoleConverter()
         join_roles = [guild.get_role(x) for x in self.bot.guild_dict[guild.id]['configure_dict'].get('want', {}).get('roles', [])]
         for entered_unwant in unwant_split:
             if len(unwant_split) == 1 and "all" in entered_unwant:
-                await utils.safe_delete(ctx.message)
+                if ctx.invoked_with:
+                    await utils.safe_delete(ctx.message)
                 return await ctx.invoke(self.bot.get_command('unwant all'), category="role")
             try:
                 role = await converter.convert(ctx, entered_unwant)
@@ -3278,7 +3502,10 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        for reaction in react_list:
+            await asyncio.sleep(0.25)
+            await utils.add_reaction(unwant_confirmation, reaction)
 
     @unwant.command(name='custom')
     @checks.allowwant()
@@ -3290,10 +3517,15 @@ class Want(commands.Cog):
         guild = message.guild
         channel = message.channel
         author = message.author
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('custom', {})
         message_list = []
         error = False
-        want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+        want_embed = discord.Embed(colour=message.guild.me.colour).set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_nobell.png?cache=1")
         subscription_dict = {}
         index = 1
         alert_text = ""
@@ -3384,10 +3616,11 @@ class Want(commands.Cog):
         await utils.safe_bulk_delete(ctx.channel, message_list)
         if error:
             want_embed.clear_fields()
-            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/ic_softbank.png?cache=1")
+            want_embed.set_thumbnail(url="https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_nobell.png?cache=1")
             want_embed.add_field(name=_('**Custom Subscription Removal Cancelled**'), value=_("Meowth! Your request has been cancelled because you {error}! Retry when you're ready.").format(error=error), inline=False)
             confirmation = await channel.send(embed=want_embed, delete_after=10)
-            await utils.safe_delete(message)
+            if ctx.invoked_with:
+                await utils.safe_delete(message)
         else:
             want_embed.clear_fields()
             pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, alert_info['pokemon'])
@@ -3414,8 +3647,12 @@ class Want(commands.Cog):
                 alert_text += f" | **Size**: {alert_info['size']}"
             alert_text += f" | **Report Types**: {(', ').join(alert_info['report_types'])}"
             want_embed.add_field(name=_('**Remove Custom Subscription**'), value=f"Meowth! {ctx.author.display_name}, out of your total **1** pokemon:\n\n**1 Removed:**\n{alert_text}".format(error=error), inline=False)
-            confirmation = await channel.send(embed=want_embed)
-            await utils.safe_delete(message)
+            unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+            if ctx.invoked_with:
+                await utils.safe_delete(message)
+            for reaction in react_list:
+                await asyncio.sleep(0.25)
+                await utils.add_reaction(unwant_confirmation, reaction)
 
 
     @unwant.command(name='all')
