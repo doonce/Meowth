@@ -82,6 +82,9 @@ class Want(commands.Cog):
         author = message.author
         guild = message.guild
         channel = message.channel
+        if not ctx.prefix:
+            prefix = self.bot._get_prefix(self.bot, ctx.message)
+            ctx.prefix = prefix[-1]
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
         user_link = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
         timestamp = (message.created_at + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
@@ -491,6 +494,9 @@ class Want(commands.Cog):
 
     async def _want_pokemon(self, ctx, pokemon):
         await ctx.trigger_typing()
+        if not ctx.prefix:
+            prefix = self.bot._get_prefix(self.bot, ctx.message)
+            ctx.prefix = prefix[-1]
         message = ctx.message
         author = message.author
         guild = message.guild
@@ -1988,6 +1994,9 @@ class Want(commands.Cog):
         """Changes alert settings such as muting and active hours.
 
         Usage: !want settings"""
+        if not ctx.prefix:
+            prefix = self.bot._get_prefix(self.bot, ctx.message)
+            ctx.prefix = prefix[-1]
         await ctx.trigger_typing()
         user_mute = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', {"raid":False, "invasion":False, "lure":False, "wild":False, "research":False, "nest":False, "trade":False})
         mute_options = ["raid", "invasion", "lure", "wild", "research", "nest", "trade"]
@@ -2105,6 +2114,9 @@ class Want(commands.Cog):
         """Changes your want category (pokemon, type, item, etc.) preferences per report type (research, wild, invasion, etc.).
 
         Usage: !want categories"""
+        if not ctx.prefix:
+            prefix = self.bot._get_prefix(self.bot, ctx.message)
+            ctx.prefix = prefix[-1]
         categories = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('categories', {})
         category_list = ["pokemon", "pokestop", "item", "type"]
         pokemon_options = ["wild", "research", "invasion", "nest", "trade", "raid"]
@@ -3517,6 +3529,9 @@ class Want(commands.Cog):
         guild = message.guild
         channel = message.channel
         author = message.author
+        if not ctx.prefix:
+            prefix = self.bot._get_prefix(self.bot, ctx.message)
+            ctx.prefix = prefix[-1]
         want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
         unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
         settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')

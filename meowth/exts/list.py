@@ -886,6 +886,11 @@ class Listing(commands.Cog):
         async with ctx.typing():
             listmsg, res_pages = await self._wantlist(ctx)
             list_messages = []
+            want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+            unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+            settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+            list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+            react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
             if res_pages:
                 index = 0
                 for p in res_pages:
@@ -901,8 +906,15 @@ class Listing(commands.Cog):
                 list_messages.append(listmsg.id)
             else:
                 return
+            for reaction in react_list:
+                await asyncio.sleep(0.25)
+                await utils.add_reaction(listmsg, reaction)
 
     async def _wantlist(self, ctx):
+        want_emoji = self.bot.custom_emoji.get('want_emoji', u'\U0001f514')
+        unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
+        settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
+        list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
         user_link = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('link', True)
         user_mute = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('settings', {}).setdefault('mute', {"raid":False, "invasion":False, "lure":False, "wild":False, "research":False, "nest":False, "trade":False})
         user_wants = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(ctx.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
@@ -1008,9 +1020,9 @@ class Listing(commands.Cog):
                 wantmsg += f"**Raid Eggs:** (raids)\n{', '.join(user_eggs)}\n\n"
         if wantmsg:
             if any(list(user_mute.values())):
-                listmsg = f"Meowth! {ctx.author.display_name}, your **{(', ').join([x for x in user_mute if user_mute[x]])}** notifications are muted, so you will not receive those notifications from your current **!want** list:"
+                listmsg = f"Meowth! {ctx.author.display_name}, your **{(', ').join([x for x in user_mute if user_mute[x]])}** notifications are muted, so you will not receive those notifications from your current **!want** list below.\n\nUse {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!"
             else:
-                listmsg = _('Meowth! {author}, you will receive notifications for your current **!want** list:').format(author=ctx.author.display_name)
+                listmsg = f"Meowth! {ctx.author.display_name}, you will receive notifications for your current **!want** list below.\n\nUse {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants"
             paginator = commands.Paginator(prefix="", suffix="")
             for line in wantmsg.splitlines():
                 if len(line) < 1900:
@@ -1029,7 +1041,7 @@ class Listing(commands.Cog):
                         paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:
-            listmsg = _("Meowth! {author}, you don\'t have any wants! use **!want** to add some.").format(author=ctx.author.display_name)
+            listmsg = f"Meowth! {ctx.author.display_name}, you don\'t have any wants! use **!want** to add some.\n\nUse {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants"
         return listmsg, None
 
     @_list.command()
