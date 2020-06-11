@@ -895,10 +895,10 @@ class Listing(commands.Cog):
                 index = 0
                 for p in res_pages:
                     if index == 0:
-                        listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                        listmsg = await ctx.channel.send(listmsg, embed=discord.Embed(colour=ctx.guild.me.colour, description=p).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1"))
                         self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['want_list'] = {ctx.channel.id: listmsg.id}
                     else:
-                        listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
+                        listmsg = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p).set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1"))
                     list_messages.append(listmsg.id)
                     index += 1
             elif listmsg:
@@ -1022,7 +1022,7 @@ class Listing(commands.Cog):
             if any(list(user_mute.values())):
                 listmsg = f"Meowth! {ctx.author.display_name}, your **{(', ').join([x for x in user_mute if user_mute[x]])}** notifications are muted, so you will not receive those notifications from your current **!want** list below.\n\nUse {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!"
             else:
-                listmsg = f"Meowth! {ctx.author.display_name}, you will receive notifications for your current **!want** list below.\n\nUse {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants"
+                listmsg = f"Meowth! {ctx.author.display_name}, you will receive notifications for your current **!want** list below.\n\nUse {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!"
             paginator = commands.Paginator(prefix="", suffix="")
             for line in wantmsg.splitlines():
                 if len(line) < 1900:
@@ -1041,7 +1041,7 @@ class Listing(commands.Cog):
                         paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:
-            listmsg = f"Meowth! {ctx.author.display_name}, you don\'t have any wants! use **!want** to add some.\n\nUse {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants"
+            listmsg = f"Meowth! {ctx.author.display_name}, you don\'t have any wants! use **!want** to add some.\n\nUse {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!"
         return listmsg, None
 
     @_list.command()

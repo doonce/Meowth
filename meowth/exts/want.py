@@ -463,11 +463,11 @@ class Want(commands.Cog):
                                 return await ctx.invoke(want_command, roles=ctx.message.content)
                         break
                     elif want_category_msg.clean_content.lower() == "settings":
-                        want_command = self.bot.get_command('settings')
+                        want_command = self.bot.get_command('want settings')
                         if want_command:
                             return await want_command.invoke(ctx)
                     elif want_category_msg.clean_content.lower() == "custom":
-                        want_command = self.bot.get_command('custom')
+                        want_command = self.bot.get_command('want custom')
                         if want_command:
                             return await want_command.invoke(ctx)
                     elif want_category_msg.clean_content.lower() == "list":
