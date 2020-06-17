@@ -1538,7 +1538,7 @@ class Raid(commands.Cog):
                                         await self._edit_party(channel)
                     raid_embed.clear_fields()
                     raid_embed.add_field(name=_('**Boss Edit Successful**'), value=_("Meowth! Your edit was successful!."), inline=False)
-                    return await ctx.send(embed=raid_embed, delete_after=10)
+                    return await ctx.send(embed=raid_embed)
                 else:
                     raid_embed.clear_fields()
                     raid_embed.add_field(name=_('**Boss Edit Cancelled**'), value=_("Meowth! Your edit has been cancelled because you did something invalid! Retry when you're ready."), inline=False)
@@ -6381,10 +6381,10 @@ class Raid(commands.Cog):
             return await ctx.channel.send(starting_str, embed=starting_embed)
         if self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('type', None) == 'egg' and not checks.check_meetupchannel(ctx):
             starting_embed.add_field(name=f"**Starting Error**", value=f"Meowth! How can you start when the egg hasn't hatched!?")
-            return await ctx.channel.send(embed=starting_embed, delete_after=10)
+            return await ctx.channel.send(embed=starting_embed, delete_after=30)
         if self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('lobby', False):
             starting_embed.add_field(name=f"**Starting Error**", value=f"Meowth! Please wait for the group in the lobby to enter the raid.")
-            await ctx.channel.send(embed=starting_embed, delete_after=10)
+            await ctx.channel.send(embed=starting_embed, delete_after=30)
             self.bot.loop.create_task(self.lobby_countdown(ctx))
             return
         for trainer in trainer_dict:
@@ -6411,8 +6411,8 @@ class Raid(commands.Cog):
             if trainer_dict[trainer]['status']['lobby']:
                 starting_dict[trainer] = {"count":trainer_dict[trainer]['count'], "status":trainer_dict[trainer]['status'], "party":trainer_dict[trainer]['party'], "herecount":herecount, "teamcount":teamcount, "lobbycount":lobbycount}
         if len(ctx_startinglist) == 0:
-            starting_embed.add_field(name=f"", value=f"Meowth! How can you start when there's no one waiting at this raid!?")
-            return await ctx.channel.send(embed=starting_embed, delete_after=10)
+            starting_embed.add_field(name=f"**Starting Error**", value=f"Meowth! How can you start when there's no one waiting at this raid!?")
+            return await ctx.channel.send(embed=starting_embed, delete_after=30)
         if team in team_names:
             starting_embed.add_field(name=f"**Confirm Starting**", value=f"Are you sure you would like to start this raid? React to this message to confirm or cancel the start of the raid.")
             question = await ctx.channel.send(f"Confirm Starting - Trainers {', '.join([x.mention for x in ctx_startinglist])}", embed=starting_embed)

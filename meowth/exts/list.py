@@ -2280,7 +2280,7 @@ class Listing(commands.Cog):
             elif "cp" in search_term and [x for x in search_term if x.isdigit()]:
                 search_label = f"reports {'above' if min_or_max == 'min' else 'below'} {search_term.replace('cp', '').strip()}CP"
                 search_term = f"{search_term} {min_or_max.upper()}"
-            elif ("iv" in search_term or search_term.isdigit()) and [x for x in search_term if x.isdigit()]:
+            elif ("iv" in search_term or search_term.isdigit()) and [x for x in search_term if x.isdigit()] and int(''.join([x for x in search_term if x.isdigit()])) <= 100:
                 search_label = f"reports {'above' if min_or_max == 'min' else 'below'} {search_term.replace('iv', '').strip()}IV"
                 search_term = f"{search_term} {min_or_max.upper()}"
             elif search_term in self.bot.type_list:
@@ -2660,7 +2660,7 @@ class Listing(commands.Cog):
                 elif "cp" in search_term and [x for x in search_term if x.isdigit()]:
                     search_label = f"alerts {'above' if min_or_max == 'min' else 'below'} {search_term.replace('cp', '').strip()}CP"
                     search_term = f"{search_term} {min_or_max.upper()}"
-                elif ("iv" in search_term or search_term.isdigit()) and [x for x in search_term if x.isdigit()]:
+                elif ("iv" in search_term or search_term.isdigit()) and [x for x in search_term if x.isdigit()] and int(''.join([x for x in search_term if x.isdigit()])) <= 100:
                     search_label = f"alerts {'above' if min_or_max == 'min' else 'below'} {search_term.replace('iv', '').strip()}IV"
                     search_term = f"{search_term} {min_or_max.upper()}"
                 elif search_term in self.bot.type_list:

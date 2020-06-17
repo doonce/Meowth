@@ -614,7 +614,7 @@ class Want(commands.Cog):
             want_embed.set_thumbnail(url=pokemon.img_url)
         if len(confirmation_msg) < 1000:
             want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-            want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+            want_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         else:
             paginator = commands.Paginator(prefix="", suffix="")
             for line in confirmation_msg.splitlines():
@@ -635,7 +635,7 @@ class Want(commands.Cog):
             index = 0
             for p in paginator.pages:
                 if index == 0:
-                    want_confirmation = await ctx.channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=discord.Embed(colour=ctx.guild.me.colour, description=f"**New Alert Subscription**\n{p}"))
+                    want_confirmation = await ctx.channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=discord.Embed(colour=ctx.guild.me.colour, description=f"**New Alert Subscription**\n{p}"))
                 else:
                     want_confirmation = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                 index += 1
@@ -808,7 +808,7 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         wild_cog = self.bot.cogs.get('Wild')
         research_cog = self.bot.cogs.get('Research')
         invasion_cog = self.bot.cogs.get('Invasion')
@@ -974,7 +974,7 @@ class Want(commands.Cog):
             thumbnail_url, item = await utils.get_item(already_want_list[0])
             want_embed.set_thumbnail(url=thumbnail_url)
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         research_cog = self.bot.cogs.get('Research')
         lure_cog = self.bot.cogs.get('Lure')
         if want_list:
@@ -1070,7 +1070,7 @@ class Want(commands.Cog):
         elif len(already_want_list) == 1 and len(added_list) == 0:
             want_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/{already_want_list[0].lower()}.png")
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         wild_cog = self.bot.cogs.get('Wild')
         research_cog = self.bot.cogs.get('Research')
         invasion_cog = self.bot.cogs.get('Invasion')
@@ -1223,7 +1223,7 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         wild_cog = self.bot.cogs.get('Wild')
         if want_list:
             if wild_cog:
@@ -1317,7 +1317,7 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         wild_cog = self.bot.cogs.get('Wild')
         if want_list:
             if wild_cog:
@@ -1407,7 +1407,7 @@ class Want(commands.Cog):
         if exceed_list:
             confirmation_msg += f"\n**{len(exceed_list)} Over Limit:**\n\tYou reached maximum CP subscriptions. Unwant some and try again."
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         wild_cog = self.bot.cogs.get('Wild')
         if wild_cog:
             for report in list(self.bot.guild_dict[ctx.guild.id]['wildreport_dict'].keys()):
@@ -1482,7 +1482,7 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += f"\n**{len(error_list)} Not Valid:**{error_msg}"
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         raid_cog = self.bot.cogs.get('Raid')
         if want_list:
             if raid_cog:
@@ -1570,7 +1570,7 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_embed.add_field(name=_('**New Alert Subscription**'), value=confirmation_msg, inline=False)
-        want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        want_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(want_confirmation, reaction)
@@ -2038,7 +2038,7 @@ class Want(commands.Cog):
                 alert_text += f" | **Size**: {subscription_dict['size']}"
             alert_text += f" | **Report Types**: {(', ').join(subscription_dict['report_types'])}"
             want_embed.add_field(name=_('**New Custom Subscription**'), value=f"Meowth! {ctx.author.display_name}, out of your total 1 pokemon:\n\n**1 Added:**\n{alert_text}".format(error=error), inline=False)
-            want_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+            want_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
             if ctx.invoked_with:
                 await utils.safe_delete(message)
             for reaction in react_list:
@@ -2925,7 +2925,7 @@ class Want(commands.Cog):
             want_embed.set_thumbnail(url=pokemon.img_url)
         if len(confirmation_msg) < 1000:
             want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-            unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+            unwant_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         else:
             paginator = commands.Paginator(prefix="", suffix="")
             for line in confirmation_msg.splitlines():
@@ -2946,7 +2946,7 @@ class Want(commands.Cog):
             index = 0
             for p in paginator.pages:
                 if index == 0:
-                    unwant_confirmation = await ctx.channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=discord.Embed(colour=ctx.guild.me.colour, description=f"**Remove Alert Subscription**\n{p}"))
+                    unwant_confirmation = await ctx.channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=discord.Embed(colour=ctx.guild.me.colour, description=f"**Remove Alert Subscription**\n{p}"))
                 else:
                     unwant_confirmation = await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=p))
                 index += 1
@@ -3043,7 +3043,7 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(unwant_confirmation, reaction)
@@ -3163,7 +3163,7 @@ class Want(commands.Cog):
             thumbnail_url, item = await utils.get_item(not_wanted_list[0])
             want_embed.set_thumbnail(url=thumbnail_url)
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(unwant_confirmation, reaction)
@@ -3240,7 +3240,7 @@ class Want(commands.Cog):
         elif len(not_wanted_list) == 1 and len(removed_list) == 0:
             want_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/{not_wanted_list[0].lower()}.png")
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(unwant_confirmation, reaction)
@@ -3321,7 +3321,7 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(unwant_confirmation, reaction)
@@ -3402,7 +3402,7 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(unwant_confirmation, reaction)
@@ -3477,7 +3477,7 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(unwant_confirmation, reaction)
@@ -3542,7 +3542,7 @@ class Want(commands.Cog):
                 error_msg += _('\n\t{word}').format(word=word)
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(error_list)) + error_msg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(unwant_confirmation, reaction)
@@ -3621,7 +3621,7 @@ class Want(commands.Cog):
                     spellcheckmsg += _(': *({correction}?)*').format(correction=spellcheck_dict[word])
             confirmation_msg += _('**{count} Not Valid:**').format(count=len(spellcheck_dict)) + spellcheckmsg
         want_embed.add_field(name=_('**Remove Alert Subscription**'), value=confirmation_msg, inline=False)
-        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+        unwant_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(unwant_confirmation, reaction)
@@ -3774,7 +3774,7 @@ class Want(commands.Cog):
                 alert_text += f" | **Size**: {alert_info['size']}"
             alert_text += f" | **Report Types**: {(', ').join(alert_info['report_types'])}"
             want_embed.add_field(name=_('**Remove Custom Subscription**'), value=f"Meowth! {ctx.author.display_name}, out of your total **1** pokemon:\n\n**1 Removed:**\n{alert_text}".format(error=error), inline=False)
-            unwant_confirmation = await channel.send(f"Use {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!", embed=want_embed)
+            unwant_confirmation = await channel.send(f"Use {want_emoji} to add new alert, {unwant_emoji} to remove alert, {settings_emoji} to edit alert settings, {list_emoji} to list wants!", embed=want_embed)
             if ctx.invoked_with:
                 await utils.safe_delete(message)
             for reaction in react_list:

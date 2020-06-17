@@ -877,12 +877,14 @@ class Pokemon():
         if first_match == top_match:
             pokemon = first_match
             match_list.append(first_match)
+            match_list.append(possible_matches[first_match]['word'])
         else:
             match = await utils.autocorrect(ctx.bot, possible_matches[first_match]['word'], ctx.bot.pkmn_list, ctx.channel, ctx.author)
             if not match:
                 return None, None
             pokemon = match
             match_list.append(match)
+            match_list.append(possible_matches[first_match]['word'])
         if pokemon and "nidoran" in pokemon.lower():
             if query['gender'] == "female":
                 pokemon = utils.get_name(ctx.bot, 29)

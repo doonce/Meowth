@@ -1542,7 +1542,7 @@ class Huntr(commands.Cog):
                             if len(wildfilter_names) > 0:
                                 raid_embed.clear_fields()
                                 raid_embed.add_field(name=_('**New Wild Filter**'), value=f"Automatic wild filter will block: {', '.join(wildfilter_names)}")
-                                await channel.send(embed=raid_embed, delete_after=60)
+                                await channel.send(embed=raid_embed)
                                 self.bot.guild_dict[ctx.guild.id]['configure_dict']['scanners']['filters']['wild'] = current_filter
                                 break
                             else:
