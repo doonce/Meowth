@@ -12,7 +12,7 @@ import traceback
 import discord
 import datetime
 import sys
-import os
+import os, errno
 import shutil
 import pkg_resources
 import platform
@@ -196,8 +196,7 @@ class MeowthBot(commands.AutoShardedBot):
         try:
             os.rename(os.path.join('data', 'guilddict.txt'), os.path.join('data', 'guilddict_backup.txt'))
         except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
+            pass
         if backup_day == 0:
             try:
                 os.remove(os.path.join('data', 'guilddict_backup_2.txt'))
