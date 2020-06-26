@@ -2049,6 +2049,20 @@ class Huntr(commands.Cog):
             bot_account = guild.get_member(event_dict['bot_account'])
             bot_channel = self.bot.get_channel(event_dict['bot_channel'])
             channels_made = False
+            async def make_raidhour_channel():
+                ctx.author, ctx.message.author = report_author, report_author
+                ctx.channel, ctx.message.channel = train_channel, train_channel
+                ctx.raidhour = True
+                if event_dict['make_trains']:
+                    ctx.command = self.bot.get_command("train")
+                    channel = await raid_cog._train_channel(ctx, location)
+                elif event_dict.get('make_meetups'):
+                    ctx.command = self.bot.get_command("meetup")
+                    channel = await raid_cog._meetup(ctx, location)
+                ctx.channel, ctx.message.channel = channel, channel
+                await ctx.invoke(self.bot.get_command("meetup title"), title=f"{location} - {event_dict['event_title']}")
+                await ctx.invoke(self.bot.get_command("starttime"), start_time=event_start.strftime('%B %d %I:%M %p'))
+                await ctx.invoke(self.bot.get_command("timerset"), timer=event_end.strftime('%B %d %I:%M %p'))
             while True:
                 now = datetime.datetime.utcnow()
                 wait_time = [600]
@@ -2065,19 +2079,8 @@ class Huntr(commands.Cog):
                         event_end = datetime.datetime.utcfromtimestamp(event_dict['event_end']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         train_channel = self.bot.get_channel(event_dict['train_channel'])
                         for location in event_dict['event_locations']:
-                            ctx.author, ctx.message.author = report_author, report_author
-                            ctx.channel, ctx.message.channel = train_channel, train_channel
-                            ctx.raidhour = True
-                            if event_dict['make_trains']:
-                                ctx.command = self.bot.get_command("train")
-                                channel = await raid_cog._train_channel(ctx, location)
-                            elif event_dict.get('make_meetups'):
-                                ctx.command = self.bot.get_command("meetup")
-                                channel = await raid_cog._meetup(ctx, location)
-                            ctx.channel, ctx.message.channel = channel, channel
-                            await ctx.invoke(self.bot.get_command("meetup title"), title=f"{location} - {event_dict['event_title']}")
-                            await ctx.invoke(self.bot.get_command("starttime"), start_time=event_start.strftime('%B %d %I:%M %p'))
-                            await ctx.invoke(self.bot.get_command("timerset"), timer=event_end.strftime('%B %d %I:%M %p'))
+                            self.bot.loop.create_task(make_raidhour_channel())
+                            await asyncio.sleep(5)
                         self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['currently_active'] = True
                         channels_made = True
                     else:
