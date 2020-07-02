@@ -413,6 +413,7 @@ class Research(commands.Cog):
                             added_quests.append(item)
                 for item in tsr_quests:
                     item = item[0]
+                    item_name = ''.join([x for x in item if x.isalpha() or x == ' ']).strip()
                     if item in added_categories:
                         current_category = item
                         all_quests[item] = {}
@@ -422,7 +423,7 @@ class Research(commands.Cog):
                         all_quests[current_category][item] = []
                         continue
                     else:
-                        if not item in self.bot.item_list and not item in added_quests and not item in added_categories:
+                        if not item_name in self.bot.item_list and not item_name in added_quests and not item_name in added_categories:
                             shiny_str = ""
                             if item.isdigit():
                                 pokemon = utils.get_name(self.bot, item)
@@ -441,6 +442,27 @@ class Research(commands.Cog):
                             setup_var = pokemon_quests.setdefault(current_category, {}).setdefault(current_quest, [])
                             pokemon_quests[current_category][current_quest].append(item)
                         else:
+                            candy_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_candy', u'\U0001F36C'))
+                            dust_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_dust', u'\U00002b50'))
+                            berry_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_berry', u'\U0001F353'))
+                            potion_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_potion', u'\U0001F48A'))
+                            revive_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_revive', u'\U00002764\U0000fe0f'))
+                            ball_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_ball', u'\U000026be'))
+                            other_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_other', u'\U0001F539'))
+                            if "berry" in item_name:
+                                item = f"{item} {berry_emoji}"
+                            elif "dust" in item_name:
+                                item = f"{item} {dust_emoji}"
+                            elif "candy" in item_name:
+                                item = f"{item} {candy_emoji}"
+                            elif "potion" in item_name:
+                                item = f"{item} {potion_emoji}"
+                            elif "revive" in item_name:
+                                item = f"{item} {revive_emoji}"
+                            elif "ball" in item_name:
+                                item = f"{item} {ball_emoji}"
+                            else:
+                                item = f"{item} {other_emoji}"
                             setup_var = item_quests.setdefault(current_category, {}).setdefault(current_quest, [])
                             item_quests[current_category][current_quest].append(item)
                         all_quests[current_category][current_quest].append(item)
@@ -507,6 +529,7 @@ class Research(commands.Cog):
                         added_quests.append(item)
             for item in tsr_quests:
                 item = item[0]
+                item_name = ''.join([x for x in item if x.isalpha() or x == ' ']).strip()
                 if item in added_categories:
                     current_category = item
                     all_quests[item] = {}
@@ -516,7 +539,7 @@ class Research(commands.Cog):
                     all_quests[current_category][item] = []
                     continue
                 else:
-                    if not item in self.bot.item_list and not item in added_quests and not item in added_categories:
+                    if not item_name in self.bot.item_list and not item_name in added_quests and not item_name in added_categories:
                         shiny_str = ""
                         if item.isdigit():
                             pokemon = utils.get_name(self.bot, item)
@@ -535,6 +558,27 @@ class Research(commands.Cog):
                         setup_var = pokemon_quests.setdefault(current_category, {}).setdefault(current_quest, [])
                         pokemon_quests[current_category][current_quest].append(item)
                     else:
+                        candy_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_candy', u'\U0001F36C'))
+                        dust_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_dust', u'\U00002b50'))
+                        berry_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_berry', u'\U0001F353'))
+                        potion_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_potion', u'\U0001F48A'))
+                        revive_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_revive', u'\U00002764\U0000fe0f'))
+                        ball_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_ball', u'\U000026be'))
+                        other_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_other', u'\U0001F539'))
+                        if "berry" in item_name:
+                            item = f"{item} {berry_emoji}"
+                        elif "dust" in item_name:
+                            item = f"{item} {dust_emoji}"
+                        elif "candy" in item_name:
+                            item = f"{item} {candy_emoji}"
+                        elif "potion" in item_name:
+                            item = f"{item} {potion_emoji}"
+                        elif "revive" in item_name:
+                            item = f"{item} {revive_emoji}"
+                        elif "ball" in item_name:
+                            item = f"{item} {ball_emoji}"
+                        else:
+                            item = f"{item} {other_emoji}"
                         setup_var = item_quests.setdefault(current_category, {}).setdefault(current_quest, [])
                         item_quests[current_category][current_quest].append(item)
                     all_quests[current_category][current_quest].append(item)
