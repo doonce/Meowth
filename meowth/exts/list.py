@@ -560,23 +560,24 @@ class Listing(commands.Cog):
         here_exstr = ''
         here_list = []
         name_list = []
+        remote_emoji = self.bot.custom_emoji.get('remote_raid', u'\U0001f4e1')
         for trainer in trainer_dict.keys():
             user = ctx.guild.get_member(trainer)
             if (trainer_dict[trainer]['status']['here']) and user and team == False:
                 ctx_herecount += trainer_dict[trainer]['status']['here']
                 if trainer_dict[trainer]['status']['here'] == 1:
-                    name_list.append(_('**{name}**').format(name=user.display_name))
-                    here_list.append(user.mention)
+                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+')' if trainer_dict[trainer].get('remote') else ''}**")
+                    here_list.append(f"{user.mention}{' ('+remote_emoji+')' if trainer_dict[trainer].get('remote') else ''}")
                 else:
-                    name_list.append(_('**{name} ({count})**').format(name=user.display_name, count=trainer_dict[trainer]['status']['here']))
-                    here_list.append(_('{name} **({count})**').format(name=user.mention, count=trainer_dict[trainer]['status']['here']))
+                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['status']['here']}{' '+remote_emoji if trainer_dict[trainer].get('remote') else ''})**")
+                    here_list.append(f"{user.mention} **({trainer_dict[trainer]['status']['here']}{' '+remote_emoji if trainer_dict[trainer].get('remote') else ''})**")
             elif (trainer_dict[trainer]['status']['here']) and user and team and trainer_dict[trainer]['party'][team]:
                 if trainer_dict[trainer]['status']['here'] == 1:
-                    name_list.append(_('**{name}**').format(name=user.display_name))
-                    here_list.append(user.mention)
+                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+')' if trainer_dict[trainer].get('remote') else ''}**")
+                    here_list.append(f"{user.mention}{' ('+remote_emoji+')' if trainer_dict[trainer].get('remote') else ''}")
                 else:
-                    name_list.append(_('**{name} ({count})**').format(name=user.display_name, count=trainer_dict[trainer]['party'][team]))
-                    here_list.append(_('{name} **({count})**').format(name=user.mention, count=trainer_dict[trainer]['party'][team]))
+                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['party'][team]}{' '+remote_emoji if trainer_dict[trainer].get('remote') else ''})**")
+                    here_list.append(f"{user.mention} **({trainer_dict[trainer]['party'][team]}{' '+remote_emoji if trainer_dict[trainer].get('remote') else ''})**")
                 ctx_herecount += trainer_dict[trainer]['party'][team]
                 if raid_dict.get('lobby', {"team":"all"})['team'] == team or raid_dict.get('lobby', {"team":"all"})['team'] == "all":
                     ctx_herecount -= trainer_dict[trainer]['status']['lobby']

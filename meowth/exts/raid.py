@@ -4867,7 +4867,7 @@ class Raid(commands.Cog):
                 pokemon = ''
             async for message in channel.history(limit=500):
                 if message.author.id == guild.me.id or "Meowth" in message.author.display_name:
-                    if (_('is interested') in message.content) or (_('on the way') in message.content) or (_('at the raid') in message.content) or (_('at the event') in message.content) or (_('no longer') in message.content) or (_('left the raid') in message.content):
+                    if (_('is interested') in message.content) or (_('on the way') in message.content) or (_('at the raid') in message.content) or (_('remoting in') in message.content) or (_('at the event') in message.content) or (_('no longer') in message.content) or (_('left the raid') in message.content):
                         if message.raw_mentions:
                             if message.raw_mentions[0] not in trainer_dict:
                                 trainerid = message.raw_mentions[0]
@@ -4876,12 +4876,16 @@ class Raid(commands.Cog):
                                     continue
                                 status = {'maybe':0, 'coming':0, 'here':0, 'lobby':0}
                                 trainerstatus = None
+                                remote_raid = False
                                 if _('is interested') in message.content:
                                     trainerstatus = 'maybe'
                                 elif _('on the way') in message.content:
                                     trainerstatus = 'coming'
                                 elif _('at the') in message.content:
                                     trainerstatus = 'here'
+                                elif _('remoting in') in message.content:
+                                    trainerstatus = 'here'
+                                    remote_raid = True
                                 elif (_('no longer') in message.content) or (_('left the raid') in message.content):
                                     trainerstatus = None
                                 if _('trainers') in message.content:
@@ -4922,6 +4926,8 @@ class Raid(commands.Cog):
                                     'count': count,
                                     'party': party
                                 }
+                                if remote_raid:
+                                    trainer_dict[trainerid]['remote'] = True
                             else:
                                 continue
                         else:
@@ -5812,6 +5818,21 @@ class Raid(commands.Cog):
         await self._rsvp(ctx, "here", party_info)
 
     @commands.command()
+    @checks.rsvpchannel()
+    async def remote(self, ctx, *, party_info: str=None):
+        """Indicate you are remoting and ready.
+
+        Usage: !remote [count] [party]
+        Works only in raid channels. If message is omitted, and
+        you have previously issued !coming, then preserves the count
+        from that command. Otherwise, assumes you are a group of 1.
+        Otherwise, this command expects at least one word in your message to be a number,
+        and will assume you are a group with that many people.
+
+        Party is also optional. Format is #m #v #i #u to tell your party's teams."""
+        await self._rsvp(ctx, "remote", party_info)
+
+    @commands.command()
     @checks.activeraidchannel()
     async def lobby(self, ctx, *, party_info: str=None):
         """Indicate you are entering the raid lobby.
@@ -5851,7 +5872,7 @@ class Raid(commands.Cog):
     @commands.command()
     @checks.rsvpchannel()
     async def rsvp(self, ctx):
-        """RSVP (interested, coming, here, lobby) for the current channel."""
+        """RSVP (interested, coming, here, remote, lobby) for the current channel."""
         timestamp = (ctx.message.created_at + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0)))
         report_dict = await utils.get_report_dict(self.bot, ctx.channel)
         rsvp_embed = discord.Embed(colour=ctx.guild.me.colour).set_thumbnail(url='https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_speechballoon.png?cache=1')
@@ -5865,7 +5886,7 @@ class Raid(commands.Cog):
         while True:
             async with ctx.typing():
                 rsvp_embed.clear_fields()
-                rsvp_embed.add_field(name=_('**Set RSVP Status**'), value=f"Meowth! I'll help you set your status in this channel!\n\nReply with your status from the following:\n**interested** - You are interested in this but can't commit.\n**coming** - You are on your way.\n**here** - You are at the location and ready\n**cancel** - You are no longer interested\n{'**lobby** - You are joining the raid lobby (raids only).' if lobby else ''}\n\nYou can reply with **exit** to stop anytime.", inline=False)
+                rsvp_embed.add_field(name=_('**Set RSVP Status**'), value=f"Meowth! I'll help you set your status in this channel!\n\nReply with your status from the following:\n**interested** - You are interested in this but can't commit.\n**coming** - You are on your way.\n**here** - You are at the location and ready\n**remote** - You are remoting to the location and ready\n**cancel** - You are no longer interested\n{'**lobby** - You are joining the raid lobby (raids only).' if lobby else ''}\n\nYou can reply with **exit** to stop anytime.", inline=False)
                 rsvp_wait = await ctx.send(embed=rsvp_embed)
                 try:
                     rsvp_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -5884,7 +5905,7 @@ class Raid(commands.Cog):
                     return await ctx.send(embed=rsvp_embed, delete_after=10)
                 else:
                     rsvp_type = rsvp_msg.clean_content.lower()
-                    if not any([rsvp_type == "interested", rsvp_type == "coming", rsvp_type == "here", rsvp_type == "cancel", rsvp_type == "lobby"]):
+                    if not any([rsvp_type == "interested", rsvp_type == "coming", rsvp_type == "here", rsvp_type == "cancel", rsvp_type == "lobby", rsvp_type == "remote"]):
                         rsvp_embed.clear_fields()
                         rsvp_embed.add_field(name=_('**RSVP Cancelled**'), value=_("Meowth! Your RSVP has been cancelled because you entered an invalid option! Retry when you're ready."), inline=False)
                         return await ctx.send(embed=rsvp_embed, delete_after=10)
@@ -5994,6 +6015,10 @@ class Raid(commands.Cog):
         list_emoji = self.bot.custom_emoji.get('list_emoji', u'\U0001f5d2\U0000fe0f')
         raidtype = _("event") if self.bot.guild_dict[channel.guild.id][report_dict][channel.id].get('meetup', False) else _("raid")
         boss_list = []
+        remote_raid = False
+        if rsvp_type == "remote":
+            remote_raid = True
+            rsvp_type = "here"
         if not meetup:
             if not pokemon:
                 for boss in self.bot.raid_dict[str(egg_level)]:
@@ -6105,13 +6130,13 @@ class Raid(commands.Cog):
             else:
                 team_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict[team_emoji])
             if rsvp_type == "maybe":
-                rsvp_message = await channel.send(_('Meowth! {member} is interested{interest_str}! {emoji}: 1').format(member=author.mention, interest_str=interest_str, emoji=team_emoji))
+                rsvp_message = await channel.send(f"Meowth! {author.mention} is interested{interest_str}! {team_emoji}: 1")
             elif rsvp_type == "coming":
-                rsvp_message = await channel.send(_('Meowth! {member} is on the way{interest_str}! {emoji}: 1').format(member=author.mention, interest_str=interest_str, emoji=team_emoji))
+                rsvp_message = await channel.send(f"Meowth! {author.mention} is on the way{interest_str}! {team_emoji}: 1")
             elif rsvp_type == "here":
-                rsvp_message = await channel.send(_('Meowth! {member} is at the {raidtype}{interest_str}! {emoji}: 1').format(member=author.mention, emoji=team_emoji, interest_str=interest_str, raidtype=raidtype))
+                rsvp_message = await channel.send(f"Meowth! {author.mention} is {'remoting in to' if remote_raid else 'at'} the {raidtype}{interest_str}! {team_emoji}: 1")
             elif rsvp_type == "lobby":
-                rsvp_message = await channel.send(_('Meowth! {member} is entering the lobby! {emoji}: 1').format(member=author.mention, emoji=team_emoji))
+                rsvp_message = await channel.send(f"Meowth! {author.mention} is entering the lobby! {team_emoji}: 1")
         else:
             blue_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['mystic'])
             red_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['valor'])
@@ -6122,7 +6147,7 @@ class Raid(commands.Cog):
             elif rsvp_type == "coming":
                 msg = f"Meowth! {author.mention} is on the way with a total of **{count}** trainers{interest_str}! "
             elif rsvp_type == "here":
-                msg = f"Meowth! {author.mention} is at the {raidtype} with a total of **{count}** trainers{interest_str}! "
+                msg = f"Meowth! {author.mention} is {'remoting in to' if remote_raid else 'at'} the {raidtype} with a total of **{count}** trainers{interest_str}! "
             elif rsvp_type == "lobby":
                 msg = f"Meowth! {author.mention} is entering the lobby with a total of {count} trainers! "
             if party['mystic']:
@@ -6156,6 +6181,9 @@ class Raid(commands.Cog):
             trainer_dict['interest'] = entered_interest
         trainer_dict['count'] = count
         trainer_dict['party'] = party
+        trainer_dict['remote'] = False
+        if remote_raid:
+            trainer_dict['remote'] = True
         self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict'][author.id] = trainer_dict
         await self._edit_party(channel, author)
         rsvp_emoji = self.bot.custom_emoji.get('rsvp_emoji', u"\U0001f4ac")

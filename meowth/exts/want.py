@@ -1594,6 +1594,9 @@ class Want(commands.Cog):
         unwant_emoji = self.bot.custom_emoji.get('unwant_emoji', u'\U0001f515')
         settings_emoji = self.bot.custom_emoji.get('want_settings', u'\U00002699\U0000fe0f')
         list_emoji = self.bot.custom_emoji.get('want_list', u'\U0001f5d2\U0000fe0f')
+        male_sign = ctx.bot.custom_emoji.get('male_sign', u'\U00002642\U0000fe0f')
+        female_sign = ctx.bot.custom_emoji.get('female_sign', u'\U00002640\U0000fe0f')
+        bullet_point = self.bot.custom_emoji.get('bullet', u'\U0001F539')
         react_list = [want_emoji, unwant_emoji, settings_emoji, list_emoji]
         user_wants = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('wants', [])
         user_custom = self.bot.guild_dict[guild.id].setdefault('trainers', {}).setdefault(message.author.id, {}).setdefault('alerts', {}).setdefault('custom', {})
@@ -1652,6 +1655,7 @@ class Want(commands.Cog):
                             error = f"entered an invalid pokemon"
                             break
                         subscription_dict['pokemon'] = str(pokemon).replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", "")
+                pokemon.shiny = False        
                 want_embed.set_thumbnail(url=pokemon.img_url)
                 gender_size = []
                 if "female" in pokemon_str:
@@ -1667,14 +1671,22 @@ class Want(commands.Cog):
                     subscription_dict['size'] = "xl"
                     gender_size.append("size")
                 if subscription_dict['pokemon']:
+                    shiny_str = ""
+                    if pokemon.shiny_available:
+                        shiny_str = self.bot.custom_emoji.get('shiny_chance', u'\U00002728') + " "
                     want_embed.clear_fields()
-                    want_embed.add_field(name=f"**New Custom {pokemon.name.title()} Subscription**", value=f"Meowth! Next, I'll need to know what desired stat you'd like to add to your {pokemon.name.title()} subscription. Reply with one of the following or reply with **cancel** to stop anytime. Keep in mind that ***ALL** supplied coonditions must match in order for you to receive an alert.", inline=False)
-                    want_embed.add_field(name=_('**IV / Attack / Defense / Stamina**'), value=f"Reply with **iv, attack, defense, or stamina** to add an IV percentage, IV attack, IV defense, or IV stamina condition to your subscription. NOTE: This will only be applied for wild reports.\nCurrent IV Percent: {subscription_dict['min_iv']}-{subscription_dict['max_iv']}\nCurrent IV Attack: {subscription_dict['min_atk']}-{subscription_dict['max_atk']}\nCurrent IV Defense: {subscription_dict['min_def']}-{subscription_dict['max_def']}\nCurrent IV Stamina: {subscription_dict['min_sta']}-{subscription_dict['max_sta']}", inline=False)
-                    want_embed.add_field(name=_('**CP / Level**'), value=f"Reply with **cp or level** to add a CP or Level condition to your subscription. NOTE: This will only be applied for wild reports.\nCurrent CP: {subscription_dict['min_cp']}-{subscription_dict['max_cp']}\nCurrent level: {subscription_dict['min_level']}-{subscription_dict['max_level']}", inline=False)
+                    want_embed.add_field(name=f"**New Custom {shiny_str}{pokemon.name.title()} {pokemon.emoji} Subscription**", value=f"Meowth! Next, I'll need to know what desired stat you'd like to add to your {pokemon.name.title()} subscription. Reply with one of the following or reply with **cancel** to stop anytime. Keep in mind that ***ALL*** supplied conditions must match in order for you to receive an alert.", inline=False)
+                    want_embed.add_field(name=_('**IV / Attack / Defense / Stamina**'), value=f"Reply with **iv, attack, defense, or stamina** to add an IV percentage, IV attack, IV defense, or IV stamina condition to your subscription.\nNOTE: This will only be applied for wild reports.\n{bullet_point}Current IV Percent: {subscription_dict['min_iv']}-{subscription_dict['max_iv']}\n{bullet_point}Current IV Attack: {subscription_dict['min_atk']}-{subscription_dict['max_atk']}\n{bullet_point}Current IV Defense: {subscription_dict['min_def']}-{subscription_dict['max_def']}\n{bullet_point}Current IV Stamina: {subscription_dict['min_sta']}-{subscription_dict['max_sta']}", inline=False)
+                    want_embed.add_field(name=_('**CP / Level**'), value=f"Reply with **cp or level** to add a CP or Level condition to your subscription.\nNOTE: This will only be applied for wild reports.\n{bullet_point}Current CP: {subscription_dict['min_cp']}-{subscription_dict['max_cp']}\n{bullet_point}Current level: {subscription_dict['min_level']}-{subscription_dict['max_level']}", inline=False)
                     if gender_size:
-                        want_embed.add_field(name=f"{(' / ').join([x.title() for x in gender_size])}", value=f"\U000026a0\U0000fe0f You have added a {(' and ').join(gender_size)}. Th{'ese' if len(gender_size)>1 else 'is'} can be a rare condition and may limit your *wild* alerts. Reply with **{(' or ').join(gender_size)}** to remove {(' or ').join(gender_size)} if this was unintentional.")
-                    want_embed.add_field(name=_('**Report**'), value=f"Reply with **report** to set the report type(s) that this alert will be used for.\nCurrent: {subscription_dict['report_types']}", inline=False)
-                    want_embed.add_field(name=_('**Done**'), value=f"Reply with **done** to stop adding conditions to your subscription, save, and exit.", inline=False)
+                        gender_size_field = f"\U000026a0\U0000fe0f You have added a {(' and ').join(gender_size)}. Th{'ese' if len(gender_size)>1 else 'is'} can be a rare condition and may limit your *wild* alerts. Reply with **{(' or ').join(gender_size)}** to remove {(' or ').join(gender_size)} if this was unintentional."
+                        if subscription_dict['gender']:
+                            gender_size_field += f"\n{bullet_point}Current Gender: {subscription_dict['gender'].title()} {male_sign if subscription_dict['gender'] == 'male' else female_sign}"
+                        if subscription_dict['size']:
+                            gender_size_field += f"\n{bullet_point}Current Size: {subscription_dict['size'].upper()}"
+                        want_embed.add_field(name=f"{(' / ').join([x.title() for x in gender_size])}", value=gender_size_field)
+                    want_embed.add_field(name=_('**Report**'), value=f"Reply with **report** to set the report type(s) that this alert will be used for.\n{bullet_point}Current: {subscription_dict['report_types']}", inline=False)
+                    want_embed.add_field(name=_('**Done** /  **Cancel**'), value=f"Reply with **done** to stop adding conditions to your subscription, save, and exit. Reply with **cancel** to exit without saving.", inline=False)
                     custom_wait = await channel.send(embed=want_embed)
                     try:
                         custom_msg = await self.bot.wait_for('message', timeout=60, check=check)
