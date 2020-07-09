@@ -442,13 +442,13 @@ class Research(commands.Cog):
                             setup_var = pokemon_quests.setdefault(current_category, {}).setdefault(current_quest, [])
                             pokemon_quests[current_category][current_quest].append(item)
                         else:
-                            candy_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_candy', u'\U0001F36C'))
-                            dust_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_dust', u'\U00002b50'))
-                            berry_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_berry', u'\U0001F353'))
-                            potion_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_potion', u'\U0001F48A'))
-                            revive_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_revive', u'\U00002764\U0000fe0f'))
-                            ball_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_ball', u'\U000026be'))
-                            other_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_other', u'\U0001F539'))
+                            candy_emoji = self.bot.custom_emoji.get('res_candy', u'\U0001F36C')
+                            dust_emoji = self.bot.custom_emoji.get('res_dust', u'\U00002b50')
+                            berry_emoji = self.bot.custom_emoji.get('res_berry', u'\U0001F353')
+                            potion_emoji = self.bot.custom_emoji.get('res_potion', u'\U0001F48A')
+                            revive_emoji = self.bot.custom_emoji.get('res_revive', u'\U00002764\U0000fe0f')
+                            ball_emoji = self.bot.custom_emoji.get('res_ball', u'\U000026be')
+                            other_emoji = self.bot.custom_emoji.get('res_other', u'\U0001F539')
                             if "berry" in item_name:
                                 item = f"{item} {berry_emoji}"
                             elif "dust" in item_name:
@@ -558,13 +558,13 @@ class Research(commands.Cog):
                         setup_var = pokemon_quests.setdefault(current_category, {}).setdefault(current_quest, [])
                         pokemon_quests[current_category][current_quest].append(item)
                     else:
-                        candy_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_candy', u'\U0001F36C'))
-                        dust_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_dust', u'\U00002b50'))
-                        berry_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_berry', u'\U0001F353'))
-                        potion_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_potion', u'\U0001F48A'))
-                        revive_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_revive', u'\U00002764\U0000fe0f'))
-                        ball_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_ball', u'\U000026be'))
-                        other_emoji = utils.parse_emoji(ctx.guild, self.bot.custom_emoji.get('res_other', u'\U0001F539'))
+                        candy_emoji = self.bot.custom_emoji.get('res_candy', u'\U0001F36C')
+                        dust_emoji = self.bot.custom_emoji.get('res_dust', u'\U00002b50')
+                        berry_emoji = self.bot.custom_emoji.get('res_berry', u'\U0001F353')
+                        potion_emoji = self.bot.custom_emoji.get('res_potion', u'\U0001F48A')
+                        revive_emoji = self.bot.custom_emoji.get('res_revive', u'\U00002764\U0000fe0f')
+                        ball_emoji = self.bot.custom_emoji.get('res_ball', u'\U000026be')
+                        other_emoji = self.bot.custom_emoji.get('res_other', u'\U0001F539')
                         if "berry" in item_name:
                             item = f"{item} {berry_emoji}"
                         elif "dust" in item_name:
