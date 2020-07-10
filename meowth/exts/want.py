@@ -859,7 +859,7 @@ class Want(commands.Cog):
                         report_pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('pkmn_obj')
                         dm_dict = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][report].get('dm_dict')
                         dm_dict = await raid_cog.send_dm_messages(ctx, str(report_pokemon), location, ctx.raidreport.content.splitlines()[0].replace(report_author.mention, f"{report_author.display_name} in {report_channel.mention}"), copy.deepcopy(ctx.raidreport.embeds[0]), dm_dict)
-                        self.bot.guild_dict[ctx.guild.id][report_dict][ctx.raid_channel.id]['dm_dict'] = dm_dict
+                        self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][ctx.raid_channel.id]['dm_dict'] = dm_dict
         for reaction in react_list:
             await asyncio.sleep(0.25)
             await utils.add_reaction(want_confirmation, reaction)
@@ -1655,7 +1655,7 @@ class Want(commands.Cog):
                             error = f"entered an invalid pokemon"
                             break
                         subscription_dict['pokemon'] = str(pokemon).replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", "")
-                pokemon.shiny = False        
+                pokemon.shiny = False
                 want_embed.set_thumbnail(url=pokemon.img_url)
                 gender_size = []
                 if "female" in pokemon_str:
