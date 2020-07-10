@@ -1906,7 +1906,7 @@ class Listing(commands.Cog):
             return listmsg, paginator.pages
         return None, None
 
-    @_list.command(hidden=True)
+    @_list.command(hidden=True, aliases=['pokealarm'])
     @checks.allowraidreport()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def pokealarms(self, ctx, type="pokealarm"):

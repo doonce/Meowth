@@ -496,7 +496,7 @@ class GymMatching(commands.Cog):
                     raid_type = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('reporttype')
                     raid_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('egg_level')
                     raid_pokemon = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][channel].get('pkmn_obj')
-                    if raid_pokemon:
+                    if raid_pokemon and raid_channel:
                         if channel in self.bot.active_channels:
                             raid_pokemon = self.bot.active_channels[channel]['pokemon']
                         else:
@@ -520,7 +520,7 @@ class GymMatching(commands.Cog):
                     raid_pokemon = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('pkmn_obj')
                     report_channel = self.bot.get_channel(self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid]['report_channel'])
                     jump_url = f"https://discordapp.com/channels/{ctx.guild.id}/{report_channel.id}/{alarm_raid}"
-                    if raid_pokemon:
+                    if raid_pokemon and raid_channel:
                         raid_pokemon = await pkmn_class.Pokemon.async_get_pokemon(self.bot, raid_pokemon)
                         shiny_str = ""
                         if raid_pokemon and "raid" in raid_pokemon.shiny_available:
@@ -538,7 +538,7 @@ class GymMatching(commands.Cog):
                 if self.bot.guild_dict[ctx.guild.id]['exraidchannel_dict'][channel].get('address', "") == location:
                     raid_channel = self.bot.get_channel(channel)
                     raid_pokemon = self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][alarm_raid].get('pkmn_obj')
-                    if raid_pokemon:
+                    if raid_pokemon and raid_channel:
                         if channel in self.bot.active_channels:
                             raid_pokemon = self.bot.active_channels[channel]['pokemon']
                         else:

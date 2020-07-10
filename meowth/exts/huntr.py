@@ -520,6 +520,7 @@ class Huntr(commands.Cog):
                                     with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
                                         data = json.load(fd)
                                     data['raid_eggs'][channel_level]['pokemon'].append(str(pokemon))
+                                    new_raid_dict = copy.deepcopy(data['raid_eggs'])
                                     with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
                                         json.dump(data, fd, indent=2, separators=(', ', ': '))
                                     await pkmn_class.Pokedex.generate_lists(self.bot)
@@ -558,7 +559,38 @@ class Huntr(commands.Cog):
                     if str(pkmn_obj) in ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('scanners', {}).get('filters', {}).get('raid', []) or pkmn_obj.id in ctx.bot.guild_dict[ctx.guild.id]['configure_dict'].get('scanners', {}).get('filters', {}).get('raid', []):
                         return
                     if not utils.get_level(self.bot, pokemon):
-                        return logger.error(f"{pokemon} not in raid_json")
+                        old_raid_dict = {}
+                        for bot_report in self.bot.guild_dict[message.guild.id]['pokealarm_dict']:
+                            if self.bot.guild_dict[message.guild.id]['pokealarm_dict'][bot_report]['gps'] == report_details.get('gps'):
+                                egg_level = self.bot.guild_dict[message.guild.id]['pokealarm_dict'][bot_report]['egg_level']
+
+                                for raid_level in self.bot.raid_info['raid_eggs']:
+                                    old_raid_dict[raid_level] = self.bot.raid_info['raid_eggs'][raid_level]['pokemon']
+                                with open(os.path.join('data', 'raid_info.json'), 'r') as fd:
+                                    data = json.load(fd)
+                                data['raid_eggs'][egg_level]['pokemon'].append(str(pokemon))
+                                new_raid_dict = copy.deepcopy(data['raid_eggs'])
+                                with open(os.path.join('data', 'raid_info.json'), 'w') as fd:
+                                    json.dump(data, fd, indent=2, separators=(', ', ': '))
+                                await pkmn_class.Pokedex.generate_lists(self.bot)
+                                self.bot.raid_dict = await utils.get_raid_dict(self.bot)
+                                self.bot.raid_list = list(itertools.chain.from_iterable(self.bot.raid_dict.values()))
+                                for guild in list(self.bot.guilds):
+                                    for report_dict in self.bot.channel_report_dicts:
+                                        for channel_id in list(self.bot.guild_dict[guild.id].setdefault(report_dict, {}).keys()):
+                                            if self.bot.guild_dict[guild.id][report_dict][channel_id]['egg_level'] == str(egg_level):
+                                                for trainer_id in list(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'].keys()):
+                                                    interest = copy.copy(self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id].get('interest', []))
+                                                    new_bosses = list(set(new_raid_dict[egg_level]) - set(old_raid_dict[egg_level]))
+                                                    new_bosses = [x.lower() for x in new_bosses]
+                                                    self.bot.guild_dict[guild.id][report_dict][channel_id]['trainer_dict'][trainer_id]['interest'] = [*interest, *new_bosses]
+                                                self.bot.guild_dict[guild.id][report_dict][channel_id]['pokemon'] = ''
+                                                self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrs_dict'] = {}
+                                                self.bot.guild_dict[guild.id][report_dict][channel_id]['ctrsmessage'] = None
+                                                channel = self.bot.get_channel(channel_id)
+                                                await raid_cog._edit_party(channel)
+                        if not old_raid_dict:
+                            return logger.error(f"{pokemon} not in raid_json")
                     coordinates = report_details.setdefault('gps', None)
                     raid_coordinates = report_details.setdefault('coordinates', coordinates)
                     raid_details = report_details.setdefault('gym', None)
@@ -567,7 +599,10 @@ class Huntr(commands.Cog):
                     egg_level = "0"
                     timeout = int(report_details.get('raidexp', 45))*60
                     expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=pokemon.title())
-                    egg_level = utils.get_level(self.bot, pokemon)
+                    egg_level = egg_level if egg_level else utils.get_level(self.bot, pokemon)
+                    if not egg_level:
+                        print("ERROR")
+                        return logger.error(f"{pokemon} not in raid_json")
                     if egg_level.isdigit() and int(egg_level) in self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('scanners', {}).get('raidlvls', []):
                         auto_report = True
                     elif egg_level == "EX" and "EX" in self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('scanners', {}).get('raidlvls', []):
