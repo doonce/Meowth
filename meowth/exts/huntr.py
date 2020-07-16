@@ -2084,7 +2084,8 @@ class Huntr(commands.Cog):
             bot_account = guild.get_member(event_dict['bot_account'])
             bot_channel = self.bot.get_channel(event_dict['bot_channel'])
             channels_made = False
-            async def make_raidhour_channel(location):
+            async def make_raidhour_channel(location, train_channel):
+                ctx.channel, ctx.message.channel = train_channel, train_channel
                 if event_dict['make_trains']:
                     ctx.command = self.bot.get_command("train")
                     channel = await raid_cog._train_channel(ctx, location)
@@ -2110,13 +2111,13 @@ class Huntr(commands.Cog):
                         event_start = datetime.datetime.utcfromtimestamp(event_dict['event_start']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         event_end = datetime.datetime.utcfromtimestamp(event_dict['event_end']) + datetime.timedelta(hours=self.bot.guild_dict[guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                         train_channel = self.bot.get_channel(event_dict['train_channel'])
+                        ctx.author, ctx.message.author = report_author, report_author
+                        ctx.channel, ctx.message.channel = train_channel, train_channel
+                        ctx.raidhour = True
                         for location in event_dict['event_locations']:
-                            ctx.author, ctx.message.author = report_author, report_author
-                            ctx.channel, ctx.message.channel = train_channel, train_channel
-                            self.bot.loop.create_task(make_raidhour_channel(location))
+                            self.bot.loop.create_task(make_raidhour_channel(location, train_channel))
                             await asyncio.sleep(15)
                         self.bot.guild_dict[guild.id]['raidhour_dict'][event_id]['currently_active'] = True
-                        ctx.raidhour = True
                         channels_made = True
                     else:
                         wait_time.append(event_dict['channel_time'] - time.time())
