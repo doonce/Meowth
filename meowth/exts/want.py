@@ -2974,6 +2974,7 @@ class Want(commands.Cog):
                             if str(entered_unwant) == user_custom[custom_want]['pokemon'].replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", ""):
                                 custom_list.append(f"{shiny_str}{entered_unwant.name.title()} {entered_unwant.emoji}")
                                 not_wanted_count -= 1
+                                break
                 else:
                     user_forms.remove(str(entered_unwant))
                     removed_list.append(f"{shiny_str}{str(entered_unwant)} {entered_unwant.emoji}{boss_str}")
@@ -2987,6 +2988,7 @@ class Want(commands.Cog):
                             if str(entered_unwant) == user_custom[custom_want]['pokemon'].replace("Male", "").replace("Female", "").replace("XS", "").replace("XL", ""):
                                 custom_list.append(f"{shiny_str}{entered_unwant.name.title()} {entered_unwant.emoji}")
                                 not_wanted_count -= 1
+                                break
                 else:
                     user_wants.remove(entered_unwant.id)
                     removed_list.append(f"{shiny_str}{entered_unwant.name.title()} {entered_unwant.emoji}{boss_str}")
