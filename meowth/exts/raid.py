@@ -795,14 +795,14 @@ class Raid(commands.Cog):
                 embed.description = ""
             if "Jump to Message" not in embed.description:
                 embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
+            index = 0    
+            for field in embed.fields:
+                if "list" in field.name.lower():
+                    embed.remove_field(index)
+                else:
+                    index += 1
         content = content.splitlines()[0]
         egg_level = None
-        index = 0
-        for field in embed.fields:
-            if "list" in field.name.lower():
-                embed.remove_field(index)
-            else:
-                index += 1
         if pokemon_or_level.isdigit() or pokemon_or_level.upper() == "EX":
             egg_level = pokemon_or_level.upper()
         if self.bot.active_channels.get(ctx.raidreport.channel.id, {}).get('pokemon', None):
@@ -857,14 +857,16 @@ class Raid(commands.Cog):
             if raid_details.lower() in user_gyms:
                 send_raid.append(f"Gym: {raid_details.title()}")
             if send_raid:
-                embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_raid)}"
+                if embed:
+                    embed.description = embed.description + f"\n**Subscription:** {(', ').join(send_raid)}"
                 try:
                     user = ctx.guild.get_member(trainer)
                     raiddmmsg = await user.send(content=content, embed=embed)
                     dm_dict[user.id] = raiddmmsg.id
                 except discord.errors.Forbidden:
                     pass
-                embed.description = embed.description.replace(f"\n**Subscription:** {(', ').join(send_raid)}", "")
+                if embed:
+                    embed.description = embed.description.replace(f"\n**Subscription:** {(', ').join(send_raid)}", "")
         return dm_dict
 
     async def edit_dm_messages(self, ctx, content, embed, dm_dict):

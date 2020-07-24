@@ -50,7 +50,7 @@ class Nest(commands.Cog):
     @tasks.loop(seconds=0)
     async def nest_cleanup(self, loop=True):
         logger.info('------ BEGIN ------')
-        migration_list = []
+        migration_list = [86400]
         count = 0
         try:
             for guild in list(self.bot.guilds):

@@ -599,16 +599,19 @@ class Huntr(commands.Cog):
                     egg_level = "0"
                     timeout = int(report_details.get('raidexp', 45))*60
                     expiremsg = _('**This {pokemon} raid has expired!**').format(pokemon=pokemon.title())
-                    egg_level = egg_level if egg_level else utils.get_level(self.bot, pokemon)
+                    egg_level = egg_level if egg_level and egg_level != "0" else utils.get_level(self.bot, pokemon)
                     if not egg_level:
                         print("ERROR")
                         return logger.error(f"{pokemon} not in raid_json")
-                    if egg_level.isdigit() and int(egg_level) in self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('scanners', {}).get('raidlvls', []):
+                    if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('scanners', {}).get('raidlvls', []) == [0]:
+                        auto_report = False
+                    elif egg_level.isdigit() and int(egg_level) in self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('scanners', {}).get('raidlvls', []):
                         auto_report = True
                     elif egg_level == "EX" and "EX" in self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('scanners', {}).get('raidlvls', []):
                         auto_report = True
                     else:
                         auto_report = False
+                    raidmsg = ""
                     if not raidhour:
                         if auto_report:
                             raid_channel = await self.huntr_raid(ctx, report_details)
@@ -622,7 +625,6 @@ class Huntr(commands.Cog):
                             ctx.raidreport = await ctx.channel.send(raidmsg, embed=embed)
                             dm_dict = await raid_cog.send_dm_messages(ctx, str(pokemon), raid_details, f"Meowth! {str(pokemon)} raid reported by {ctx.author.display_name} in {ctx.channel.mention}! Details: {raid_details}. React in {ctx.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                     else:
-                        raidmsg = ""
                         ctx.raidreport = ctx.message
                 elif report_details.get('type', None) == "egg":
                     if not self.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('reports', {}).get('egg'):
@@ -641,6 +643,7 @@ class Huntr(commands.Cog):
                     egg_level = str(egg_level)
                     timeout = int(report_details.get('raidexp', 45))*60
                     expiremsg = ('This level {level} raid egg has hatched!').format(level=egg_level)
+                    raidmsg = ""
                     if not raidhour:
                         if int(egg_level) in self.bot.guild_dict[message.guild.id]['configure_dict'].get('scanners', {}).get('egglvls', False):
                             raid_channel = await self.huntr_raidegg(ctx, report_details)
@@ -651,13 +654,13 @@ class Huntr(commands.Cog):
                             ctx.raidreport = await ctx.channel.send(raidmsg, embed=embed)
                             dm_dict = await raid_cog.send_dm_messages(ctx, str(egg_level), raid_details, f"Meowth! Level {egg_level} raid egg reported by {ctx.author.display_name} in {ctx.channel.mention}! Details: {raid_details}. React in {ctx.channel.mention} to report this raid!", copy.deepcopy(embed), dm_dict)
                     else:
-                        raidmsg = ""
                         ctx.raidreport = ctx.message
                 self.bot.guild_dict[ctx.guild.id]['pokealarm_dict'][ctx.raidreport.id] = {
                     "exp":time.time() + timeout,
                     'expedit': {"content":raidmsg.split("React")[0], "embedcontent":expiremsg},
                     "reporttype":reporttype,
                     "report_channel":ctx.channel.id,
+                    "report_author":message.author.id,
                     "level":egg_level,
                     "egg_level":egg_level,
                     "pokemon":str(pokemon) if pokemon else None,
@@ -759,6 +762,8 @@ class Huntr(commands.Cog):
             reporttime = report_details['reporttime']
             reporttype = report_details['reporttype']
             huntrtime = report_details['raidexp']
+            report_bot = ctx.guild.get_member(report_details['report_author'])
+            ctx.author = report_bot
             dm_dict = copy.deepcopy(report_details['dm_dict'])
             reacttime = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[message.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
             timediff = relativedelta(reacttime, reporttime)
