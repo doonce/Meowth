@@ -581,7 +581,7 @@ def custom_error_handling(bot, logger):
             await delete_error(ctx.message, error)
         elif isinstance(error, EXInviteFail):
             guild = ctx.guild
-            msg = _('Meowth! {member}, you have not gained access to this raid! Use **{prefix}invite** in ').format(member=ctx.author.mention, cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
+            msg = _('Meowth! {member}, you have not gained access to this raid! Use **{prefix}exinvite** in ').format(member=ctx.author.mention, cmd_name=ctx.invoked_subcommand or ctx.invoked_with, prefix=prefix)
             city_channels = bot.guild_dict[guild.id].get('configure_dict', {}).get('exraid', {}).get('report_channels', [])
             if len(city_channels) > 10:
                 msg += _('a report channel to gain access.')

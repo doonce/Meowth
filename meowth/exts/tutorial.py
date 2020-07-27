@@ -236,7 +236,7 @@ class Tutorial(commands.Cog):
                 if 'invite' in tutorial_reply_list:
                     invitestr = (
                         "The text channels that are created with this command "
-                        f"are read-only until members use the **{ctx.prefix}invite** "
+                        f"are read-only until members use the **{ctx.prefix}exinvite** "
                         "command.")
 
                 await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}exraid** command to report EX raids! When you use it, I will send a message summarizing the report and create a text channel for coordination. {invitestr}\n\nDue to the longer-term nature of EX raid channels, we won't try this command out right now.").set_author(name="EX Raid Tutorial", icon_url=self.bot.user.avatar_url))

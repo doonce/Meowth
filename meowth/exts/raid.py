@@ -795,7 +795,7 @@ class Raid(commands.Cog):
                 embed.description = ""
             if "Jump to Message" not in embed.description:
                 embed.description = embed.description + f"\n**Report:** [Jump to Message]({ctx.raidreport.jump_url})"
-            index = 0    
+            index = 0
             for field in embed.fields:
                 if "list" in field.name.lower():
                     embed.remove_field(index)
@@ -2746,8 +2746,8 @@ class Raid(commands.Cog):
         elif egg_level == 'EX':
             hatchtype = 'exraid'
             if self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('invite', {}).get('enabled', False):
-                invitemsgstr = _("Use the **!invite** in {report_channel} command to gain access and coordinate").format(report_channel=report_channel.mention)
-                invitemsgstr2 = _(" after using **!invite** in {report_channel} to gain access").format(report_channel=report_channel.mention)
+                invitemsgstr = _("Use the **!exinvite** in {report_channel} command to gain access and coordinate").format(report_channel=report_channel.mention)
+                invitemsgstr2 = _(" after using **!exinvite** in {report_channel} to gain access").format(report_channel=report_channel.mention)
             else:
                 invitemsgstr = _("Coordinate")
                 invitemsgstr2 = ""
@@ -3022,8 +3022,8 @@ class Raid(commands.Cog):
             return
         raid_img_url = "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin_exclusive.png?cache=1"
         if self.bot.guild_dict[channel.guild.id]['configure_dict'].get('invite', {}).get('enabled', False):
-            invitemsgstr = _("Use the **!invite** command to gain access and coordinate")
-            invitemsgstr2 = _(" after using **!invite** to gain access")
+            invitemsgstr = _("Use the **!exinvite** command to gain access and coordinate")
+            invitemsgstr2 = _(" after using **!exinvite** to gain access")
         else:
             invitemsgstr = _("Coordinate")
             invitemsgstr2 = ""
@@ -3104,10 +3104,10 @@ class Raid(commands.Cog):
 
     @commands.command()
     @checks.allowinvite()
-    async def invite(self, ctx, *, exraid_choice: int=None):
+    async def exinvite(self, ctx, *, exraid_choice: int=None):
         """Join an EX Raid.
 
-        Usage: !invite"""
+        Usage: !exinvite"""
         message = ctx.message
         channel = message.channel
         author = message.author
@@ -5835,6 +5835,19 @@ class Raid(commands.Cog):
         await self._rsvp(ctx, "remote", party_info)
 
     @commands.command()
+    @checks.rsvpchannel()
+    async def invite(self, ctx, *, trainercode=None):
+        """Indicate you are requiring an invite.
+
+        Usage: !invite [trainercode]
+        Works only in raid channels. Included trainercode or saved trainercode in profile required."""
+        if not trainercode:
+            trainercode = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[ctx.author.id].get('trainercode', "").replace(" ", "").lower()
+        if not trainercode:
+            return await ctx.send(f"{ctx.author.mention}, I need a trainercode! You can include it in your RSVP or set it using {ctx.prefix}trainercode", delete_after=10)
+        await self._rsvp(ctx, "invite", trainercode)
+
+    @commands.command()
     @checks.activeraidchannel()
     async def lobby(self, ctx, *, party_info: str=None):
         """Indicate you are entering the raid lobby.
@@ -6018,9 +6031,15 @@ class Raid(commands.Cog):
         raidtype = _("event") if self.bot.guild_dict[channel.guild.id][report_dict][channel.id].get('meetup', False) else _("raid")
         boss_list = []
         remote_raid = False
+        trainercode = ''
         if rsvp_type == "remote":
             remote_raid = True
             rsvp_type = "here"
+        elif rsvp_type == "invite":
+            remote_raid = True
+            rsvp_type = "maybe"
+            trainercode = party_info
+            party_info = "1"
         if not meetup:
             if not pokemon:
                 for boss in self.bot.raid_dict[str(egg_level)]:
@@ -6132,7 +6151,7 @@ class Raid(commands.Cog):
             else:
                 team_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict[team_emoji])
             if rsvp_type == "maybe":
-                rsvp_message = await channel.send(f"Meowth! {author.mention} is interested{interest_str}! {team_emoji}: 1")
+                rsvp_message = await channel.send(f"Meowth! {author.mention} is interested{' and needs invited ('+trainercode+')'if remote_raid else ''}{interest_str}! {team_emoji}: 1")
             elif rsvp_type == "coming":
                 rsvp_message = await channel.send(f"Meowth! {author.mention} is on the way{interest_str}! {team_emoji}: 1")
             elif rsvp_type == "here":
@@ -6145,7 +6164,7 @@ class Raid(commands.Cog):
             yellow_emoji = utils.parse_emoji(channel.guild, self.bot.config.team_dict['instinct'])
             grey_emoji = utils.parse_emoji(channel.guild, self.bot.config.unknown)
             if rsvp_type == "maybe":
-                msg = f"Meowth! {author.mention} is interested{interest_str} with a total of **{count}** trainers! "
+                msg = f"Meowth! {author.mention} is interested{' and needs invited ('+trainercode+')'if remote_raid else ''}{interest_str} with a total of **{count}** trainers! "
             elif rsvp_type == "coming":
                 msg = f"Meowth! {author.mention} is on the way with a total of **{count}** trainers{interest_str}! "
             elif rsvp_type == "here":
@@ -6186,6 +6205,8 @@ class Raid(commands.Cog):
         trainer_dict['remote'] = False
         if remote_raid:
             trainer_dict['remote'] = True
+        if trainercode:
+            trainer_dict['trainercode'] = trainercode
         self.bot.guild_dict[channel.guild.id][report_dict][channel.id]['trainer_dict'][author.id] = trainer_dict
         await self._edit_party(channel, author)
         rsvp_emoji = self.bot.custom_emoji.get('rsvp_emoji', u"\U0001f4ac")

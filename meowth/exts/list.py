@@ -176,12 +176,16 @@ class Listing(commands.Cog):
                         bulletpoint = utils.parse_emoji(ctx.guild, self.bot.config.unknown)
                     else:
                         bulletpoint = self.bot.custom_emoji.get('bullet', u'\U0001F539')
+                    if " 0 need invites!" not in await self._invite(ctx, tag, team):
+                        listmsg += ('\n' + bulletpoint) + (await self._invite(ctx, tag, team))
                     if " 0 interested!" not in await self._interest(ctx, tag, team):
                         listmsg += ('\n' + bulletpoint) + (await self._interest(ctx, tag, team))
                     if " 0 on the way!" not in await self._otw(ctx, tag, team):
                         listmsg += ('\n' + bulletpoint) + (await self._otw(ctx, tag, team))
                     if " 0 waiting at the" not in await self._waiting(ctx, tag, team):
                         listmsg += ('\n' + bulletpoint) + (await self._waiting(ctx, tag, team))
+                    if " 0 remoting in" not in await self._remote(ctx, tag, team):
+                        listmsg += ('\n' + bulletpoint) + (await self._remote(ctx, tag, team))    
                     if " 0 in the lobby!" not in await self._lobbylist(ctx, tag, team):
                         listmsg += ('\n' + bulletpoint) + (await self._lobbylist(ctx, tag, team))
                     if (len(listmsg.splitlines()) <= 1):
@@ -456,6 +460,8 @@ class Listing(commands.Cog):
         maybe_list = []
         name_list = []
         for trainer in trainer_dict.keys():
+            if trainer_dict[trainer].get('remote'):
+                continue
             user = ctx.guild.get_member(trainer)
             if (trainer_dict[trainer]['status']['maybe']) and user and team == False:
                 ctx_maybecount += trainer_dict[trainer]['status']['maybe']
@@ -480,6 +486,65 @@ class Listing(commands.Cog):
             else:
                 maybe_exstr = _(' including {trainer_list} and the people with them! Let them know if there is a group forming').format(trainer_list=', '.join(name_list))
         listmsg = _(' {trainer_count} interested{including_string}!').format(trainer_count=str(ctx_maybecount), including_string=maybe_exstr)
+        return listmsg
+
+    @_list.command()
+    @checks.rsvpchannel()
+    async def invite(self, ctx, tags: str = ''):
+        """List the number and users who are remoting and need invites.
+
+        Usage: !list invite
+        Works only in raid channels."""
+        listmsg = _('**Meowth!**\n')
+        if tags and tags.lower() == "tags" or tags.lower() == "tag":
+            tags = True
+        async with ctx.typing():
+            listmsg += await self._invite(ctx, tags)
+            if tags:
+                await ctx.channel.send(listmsg)
+            else:
+                await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+
+    async def _invite(self, ctx, tag=False, team=False):
+        ctx_maybecount = 0
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+        raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id])
+        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
+        maybe_exstr = ''
+        maybe_list = []
+        name_list = []
+        remote_emoji = self.bot.custom_emoji.get('remote_raid', u'\U0001f4e1')
+        for trainer in trainer_dict.keys():
+            user = ctx.guild.get_member(trainer)
+            if not trainer_dict[trainer].get('remote'):
+                continue
+            trainercode = trainer_dict[trainer]['trainercode']
+            if (trainer_dict[trainer]['status']['maybe']) and user and team == False:
+                ctx_maybecount += trainer_dict[trainer]['status']['maybe']
+                if trainer_dict[trainer]['status']['maybe'] == 1:
+                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+'** code: **'+trainercode+')'}**")
+                    maybe_list.append(f"{user.mention}{' ('+remote_emoji+'** code: **'+trainercode+')'}")
+                else:
+                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['status']['maybe']}{'** code: **'+remote_emoji+' '+trainercode})**")
+                    maybe_list.append(f"{user.mention} **({trainer_dict[trainer]['status']['maybe']}{'** code: **'+remote_emoji+' '+trainercode})**")
+            elif (trainer_dict[trainer]['status']['maybe']) and user and team and trainer_dict[trainer]['party'][team]:
+                if trainer_dict[trainer]['status']['maybe'] == 1:
+                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+'** code: **'+trainercode+')'}**")
+                    maybe_list.append(f"{user.mention}{' ('+remote_emoji+'** code: **'+trainercode+')'}")
+                else:
+                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['party'][team]}{' '+remote_emoji+'** code: **'+trainercode})**")
+                    maybe_list.append(f"{user.mention} **({trainer_dict[trainer]['party'][team]}{' '+remote_emoji+'** code: **'+trainercode})**")
+                ctx_maybecount += trainer_dict[trainer]['party'][team]
+                if raid_dict.get('lobby', {"team":"all"})['team'] == team or raid_dict.get('lobby', {"team":"all"})['team'] == "all":
+                    ctx_maybecount -= trainer_dict[trainer]['status']['lobby']
+        raidtype = _("event") if self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('meetup', False) else _("raid")
+        if ctx_maybecount > 0:
+            if (now.time() >= datetime.time(5, 0)) and (now.time() <= datetime.time(21, 0)) and (tag == True):
+                maybe_exstr = _(' including {trainer_list} and the people with them! Let them know if there is a group forming').format(trainer_list=', '.join(maybe_list))
+            else:
+                maybe_exstr = _(' including {trainer_list} and the people with them! Let them know if there is a group forming').format(trainer_list=', '.join(name_list))
+        listmsg = _(' {trainer_count} need invites{including_string}!').format(trainer_count=str(ctx_maybecount), including_string=maybe_exstr)
         return listmsg
 
     @_list.command()
@@ -560,24 +625,25 @@ class Listing(commands.Cog):
         here_exstr = ''
         here_list = []
         name_list = []
-        remote_emoji = self.bot.custom_emoji.get('remote_raid', u'\U0001f4e1')
         for trainer in trainer_dict.keys():
             user = ctx.guild.get_member(trainer)
+            if trainer_dict[trainer].get('remote'):
+                continue
             if (trainer_dict[trainer]['status']['here']) and user and team == False:
                 ctx_herecount += trainer_dict[trainer]['status']['here']
                 if trainer_dict[trainer]['status']['here'] == 1:
-                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+')' if trainer_dict[trainer].get('remote') else ''}**")
-                    here_list.append(f"{user.mention}{' ('+remote_emoji+')' if trainer_dict[trainer].get('remote') else ''}")
+                    name_list.append(f"**{user.display_name}**")
+                    here_list.append(f"{user.mention}")
                 else:
-                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['status']['here']}{' '+remote_emoji if trainer_dict[trainer].get('remote') else ''})**")
-                    here_list.append(f"{user.mention} **({trainer_dict[trainer]['status']['here']}{' '+remote_emoji if trainer_dict[trainer].get('remote') else ''})**")
+                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['status']['here']})**")
+                    here_list.append(f"{user.mention} **({trainer_dict[trainer]['status']['here']})**")
             elif (trainer_dict[trainer]['status']['here']) and user and team and trainer_dict[trainer]['party'][team]:
                 if trainer_dict[trainer]['status']['here'] == 1:
-                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+')' if trainer_dict[trainer].get('remote') else ''}**")
-                    here_list.append(f"{user.mention}{' ('+remote_emoji+')' if trainer_dict[trainer].get('remote') else ''}")
+                    name_list.append(f"**{user.display_name}**")
+                    here_list.append(f"{user.mention}")
                 else:
-                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['party'][team]}{' '+remote_emoji if trainer_dict[trainer].get('remote') else ''})**")
-                    here_list.append(f"{user.mention} **({trainer_dict[trainer]['party'][team]}{' '+remote_emoji if trainer_dict[trainer].get('remote') else ''})**")
+                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['party'][team]})**")
+                    here_list.append(f"{user.mention} **({trainer_dict[trainer]['party'][team]})**")
                 ctx_herecount += trainer_dict[trainer]['party'][team]
                 if raid_dict.get('lobby', {"team":"all"})['team'] == team or raid_dict.get('lobby', {"team":"all"})['team'] == "all":
                     ctx_herecount -= trainer_dict[trainer]['status']['lobby']
@@ -588,6 +654,64 @@ class Listing(commands.Cog):
             else:
                 here_exstr = _(" including {trainer_list} and the people with them! Be considerate and let them know if and when you'll be there").format(trainer_list=', '.join(name_list))
         listmsg = _(' {trainer_count} waiting at the {raidtype}{including_string}!').format(trainer_count=str(ctx_herecount), raidtype=raidtype, including_string=here_exstr)
+        return listmsg
+
+    @_list.command()
+    @checks.rsvpchannel()
+    async def remote(self, ctx, tags: str = ''):
+        """List the number and users who are remoting and ready at a raid.
+
+        Usage: !list remote
+        Works only in raid channels."""
+        listmsg = _('**Meowth!**\n')
+        if tags and tags.lower() == "tags" or tags.lower() == "tag":
+            tags = True
+        async with ctx.typing():
+            listmsg += await self._remote(ctx, tags)
+            if tags:
+                await ctx.channel.send(listmsg)
+            else:
+                await ctx.channel.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=listmsg))
+
+    async def _remote(self, ctx, tag=False, team=False):
+        ctx_herecount = 0
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+        raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id])
+        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
+        here_exstr = ''
+        here_list = []
+        name_list = []
+        remote_emoji = self.bot.custom_emoji.get('remote_raid', u'\U0001f4e1')
+        for trainer in trainer_dict.keys():
+            user = ctx.guild.get_member(trainer)
+            if not trainer_dict[trainer].get('remote'):
+                continue
+            if (trainer_dict[trainer]['status']['here']) and user and team == False:
+                ctx_herecount += trainer_dict[trainer]['status']['here']
+                if trainer_dict[trainer]['status']['here'] == 1:
+                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+')'}**")
+                    here_list.append(f"{user.mention}{' ('+remote_emoji+')'}")
+                else:
+                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['status']['here']}{' '+remote_emoji})**")
+                    here_list.append(f"{user.mention} **({trainer_dict[trainer]['status']['here']}{' '+remote_emoji})**")
+            elif (trainer_dict[trainer]['status']['here']) and user and team and trainer_dict[trainer]['party'][team]:
+                if trainer_dict[trainer]['status']['here'] == 1:
+                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+')'}**")
+                    here_list.append(f"{user.mention}{' ('+remote_emoji+')'}")
+                else:
+                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['party'][team]}{' '+remote_emoji})**")
+                    here_list.append(f"{user.mention} **({trainer_dict[trainer]['party'][team]}{' '+remote_emoji})**")
+                ctx_herecount += trainer_dict[trainer]['party'][team]
+                if raid_dict.get('lobby', {"team":"all"})['team'] == team or raid_dict.get('lobby', {"team":"all"})['team'] == "all":
+                    ctx_herecount -= trainer_dict[trainer]['status']['lobby']
+        raidtype = _("event") if self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id].get('meetup', False) else _("raid")
+        if ctx_herecount > 0:
+            if (now.time() >= datetime.time(5, 0)) and (now.time() <= datetime.time(21, 0)) and (tag == True):
+                here_exstr = _(" including {trainer_list} and the people with them! Be considerate and let them know if and when you'll be there").format(trainer_list=', '.join(here_list))
+            else:
+                here_exstr = _(" including {trainer_list} and the people with them! Be considerate and let them know if and when you'll be there").format(trainer_list=', '.join(name_list))
+        listmsg = _(' {trainer_count} remoting in to the {raidtype}{including_string}!').format(trainer_count=str(ctx_herecount), raidtype=raidtype, including_string=here_exstr)
         return listmsg
 
     @_list.command()
