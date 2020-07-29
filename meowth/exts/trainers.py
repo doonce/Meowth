@@ -740,6 +740,7 @@ class Trainers(commands.Cog):
                             search_dict[account.lower()] = {"name":account, "code":user_code, "member":user.name}
                     if trainercode.lower() in search_dict:
                         return await ctx.channel.send(f"{search_dict[trainercode.lower()]['name']}{' (@'+search_dict[trainercode.lower()]['member']+')' if search_dict[trainercode.lower()]['member'] != search_dict[trainercode.lower()]['name'] else ''}'s trainer code is:", embed=discord.Embed(description=f"{search_dict[trainercode.lower()]['code']}"))
+                return await ctx.send(f"I couldn't find that account", delete_after=15)
         elif author.get('trainercode'):
             return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is:", embed=discord.Embed(description=f"{author.get('trainercode')}"))
         elif not trainercode:
