@@ -66,7 +66,7 @@ class Trainers(commands.Cog):
                             return True
                         else:
                             return False
-                    team_embed.add_field(name=_('**Team Assignment**'), value=_("Meowth! I'll help you assign your team!\n\nReply with **mystic, valor, instinct, or harmony**. You can reply with **cancel** to stop anytime."), inline=False)
+                    team_embed.add_field(name=_('**Team Assignment**'), value=_("Meowth! I'll help you assign your team!\n\nReply with **mystic, valor, instinct, or harmony**. You can Reply with **cancel** to stop anytime."), inline=False)
                     team_wait = await ctx.send(embed=team_embed)
                     try:
                         team_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -141,7 +141,7 @@ class Trainers(commands.Cog):
                         return True
                     else:
                         return False
-                team_embed.add_field(name=_('**Team Assignment**'), value=f"Meowth! I'll help you change {member.mention}'s team!\n\nReply with **mystic, valor, instinct, or harmony**. You can reply with **cancel** to stop anytime.", inline=False)
+                team_embed.add_field(name=_('**Team Assignment**'), value=f"Meowth! I'll help you change {member.mention}'s team!\n\nReply with **mystic, valor, instinct, or harmony**. You can Reply with **cancel** to stop anytime.", inline=False)
                 team_wait = await ctx.send(embed=team_embed)
                 try:
                     team_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -181,7 +181,7 @@ class Trainers(commands.Cog):
         await member.add_roles(team_roles[team])
         return await ctx.send(f"I changed **{member.display_name}** from **{'No ' if not old_team else ''}Team {old_team}** to **Team {new_team}**!")
 
-    @commands.command(aliases=['whois'])
+    @commands.group(aliases=['whois'], case_insensitive=True, invoke_without_command=True)
     async def profile(self, ctx, *, member=""):
         """Displays a member's social and reporting profile.
 
@@ -205,6 +205,9 @@ class Trainers(commands.Cog):
                     pbid = str(self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(trainer, {}).get('pokebattlerid', "")).lower()
                     if pbid:
                         search_list.append(pbid)
+                    silphid = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('silphid', "").lower()
+                    if silphid:
+                        search_list.append(silphid)
                     trainercode = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('trainercode', "").replace(" ", "").lower()
                     if trainercode:
                         search_list.append(trainercode)
@@ -213,9 +216,9 @@ class Trainers(commands.Cog):
                         ign = ign.split(',')
                         ign = [x.strip().lower() for x in ign]
                         search_list = search_list + ign
-                    silphid = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('silphid', "").lower()
-                    if silphid:
-                        search_list.append(silphid)
+                    for account in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {}):
+                        search_list.append(self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('ign').lower())
+                        search_list.append(self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('trainercode'))
                     if member.lower() in search_list:
                         member = trainer
                         member_found = True
@@ -228,17 +231,6 @@ class Trainers(commands.Cog):
         if not member:
             member = ctx.message.author
         trainers = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})
-        silph = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('silphid', None)
-        if silph:
-            silph = f"[Traveler Card](https://sil.ph/{silph.lower()})"
-        else:
-            silph = f"Set with {ctx.prefix}silph"
-        trainercode = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('trainercode', None)
-        if not trainercode:
-            trainercode = f"Set with {ctx.prefix}trainercode"
-        pokebattler = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('pokebattlerid', None)
-        if not pokebattler:
-            pokebattler = f"Set with {ctx.prefix}pokebattler"
         trade_list = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('trade_list', None)
         trade_message = None
         if trade_list:
@@ -259,8 +251,53 @@ class Trainers(commands.Cog):
                     want_message = want_message.jump_url
                 except:
                     want_message = None
+        bulletpoint = self.bot.custom_emoji.get('bullet', u'\U0001F539')
+        embed = discord.Embed(title=f"{member.display_name}'s Trainer Profile", colour=member.colour)
+        embed.set_thumbnail(url=member.avatar_url)
+        silph = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('silphid', None)
+        trainercode = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('trainercode', None)
+        pokebattler = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('pokebattlerid', None)
         ign = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('ign', None)
-        pvp_info = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('pvp', {})
+        team_emoji_dict = {"mystic": utils.parse_emoji(ctx.guild, self.bot.config.team_dict['mystic']), "valor": utils.parse_emoji(ctx.guild, self.bot.config.team_dict['valor']), "instinct": utils.parse_emoji(ctx.guild, self.bot.config.team_dict['instinct']), "harmony": utils.parse_emoji(ctx.guild, self.bot.config.team_dict['harmony'])}
+        user_team = ""
+        for team_role in self.bot.guild_dict[ctx.guild.id]['configure_dict']['team']['team_roles']:
+            for role in member.roles:
+                if role.id == self.bot.guild_dict[ctx.guild.id]['configure_dict']['team']['team_roles'][team_role]:
+                    user_team = team_role
+                    break
+        field_value = []
+        if ign:
+            field_value.append(f"**Name**: {ign}")
+        elif member == ctx.author:
+            field_value.append(f"**Name**: Set with {ctx.prefix}ign")
+        if trainercode:
+            field_value.append(f"**Trainercode**: {trainercode}")
+        elif member == ctx.author:
+            field_value.append(f"**Trainercode**: Set with {ctx.prefix}trainercode")
+        if silph:
+            field_value.append(f"**Silph**: [Traveler Card](https://sil.ph/{silph.lower()})")
+        elif member == ctx.author:
+            field_value.append(f"**Silph**: Set with {ctx.prefix}silph")
+        if pokebattler:
+            field_value.append(f"**PokeBattler**: [Profile](https://pokebattler.com/profiles/{pokebattler})")
+        elif member == ctx.author:
+            field_value.append(f"**PokeBattler**: Set with {ctx.prefix}pokebattler")
+        if user_team:
+            field_value.append(f"**Team**: {team_emoji_dict[user_team]}")
+        elif member == ctx.author:
+            field_value.append(f"**Team**: Set with {ctx.prefix}team")
+        if field_value:
+            embed.add_field(name=f"Game Account", value=f"{bulletpoint}{(' | ').join(field_value)}")
+        user_accounts = self.bot.guild_dict[ctx.guild.id]['trainers'][member.id].get('accounts')
+        if user_accounts:
+            field_value = ""
+            for account in user_accounts:
+                account_name = self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['accounts'][account].get('ign')
+                account_code = self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['accounts'][account].get('trainercode')
+                account_team = self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['accounts'][account].get('team')
+                field_value += f"{bulletpoint} **Name**: {account_name} | **Trainercode**: {account_code} | **Team**: {team_emoji_dict[account_team]}\n"
+            embed.add_field(name=f"Other Game Accounts", value=field_value, inline=False)
+        field_value = ""
         raids = trainers.get(member.id, {}).get('reports', {}).get('raid', 0)
         eggs = trainers.get(member.id, {}).get('reports', {}).get('egg', 0)
         exraids = trainers.get(member.id, {}).get('reports', {}).get('ex', 0)
@@ -268,27 +305,6 @@ class Trainers(commands.Cog):
         research = trainers.get(member.id, {}).get('reports', {}).get('research', 0)
         nests = trainers.get(member.id, {}).get('reports', {}).get('nest', 0)
         lures = trainers.get(member.id, {}).get('reports', {}).get('lure', 0)
-        roles = [x.mention for x in sorted(member.roles, reverse=True) if ctx.guild.id != x.id]
-        embed = discord.Embed(title=_("{member}\'s Trainer Profile").format(member=member.display_name), colour=member.colour)
-        embed.set_thumbnail(url=member.avatar_url)
-        status_emoji = ""
-        if str(member.web_status) == "online":
-            status_emoji = "\U0001F310"
-        if (member.desktop_status) == "online":
-            status_emoji = "\U0001F4BB"
-        if member.is_on_mobile():
-            status_emoji = "\U0001F4F1"
-        embed.set_footer(text=f"User Registered: {member.created_at.strftime(_('%b %d, %Y %I:%M %p'))} | Status: {str(member.status).title()} {status_emoji}")
-        if "set with" not in str(silph).lower() or member == ctx.author:
-            embed.add_field(name=_("Silph Road"), value=silph, inline=True)
-        if "set with" not in str(pokebattler).lower() or member == ctx.author:
-            embed.add_field(name=_("Pokebattler"), value=pokebattler, inline=True)
-        if "set with" not in str(trainercode).lower() or member == ctx.author:
-            embed.add_field(name=_("Trainer Code"), value=trainercode, inline=True)
-        embed.add_field(name=_("Member Since"), value=f"{member.joined_at.strftime(_('%b %d, %Y %I:%M %p'))}", inline=True)
-        if ign:
-            embed.add_field(name="In-Game Name(s)", value=ign)
-        field_value = ""
         if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('raid', {}).get('enabled', False) and raids:
             field_value += _("Raid: **{raids}** | ").format(raids=raids)
         if self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('raid', {}).get('enabled', False) and eggs:
@@ -309,6 +325,7 @@ class Trainers(commands.Cog):
             embed.add_field(name=_("Want List"), value=f"[Click here]({want_message}) to view most recent want list in {want_channel.mention}.")
         if trade_message and (trade_channel.overwrites_for(ctx.guild.default_role).read_messages or trade_channel.overwrites_for(ctx.guild.default_role).read_messages == None):
             embed.add_field(name="Active Trades", value=f"[Click here]({trade_message}) to view active trades in {trade_channel.mention}.")
+        pvp_info = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(member.id, {}).get('pvp', {})
         if any([pvp_info.get('champion'), pvp_info.get('elite'), pvp_info.get('leader'), pvp_info.get('badges'), pvp_info.get('record')]):
             champ_emoji = self.bot.config.custom_emoji.get('pvp_champ', u'\U0001F451')
             elite_emoji = self.bot.config.custom_emoji.get('pvp_elite', u'\U0001F3C6')
@@ -325,10 +342,177 @@ class Trainers(commands.Cog):
                 pvp_value.append(f"Record: {pvp_info['record'].get('win', 0)}W - {pvp_info['record'].get('loss', 0)}L")
             if pvp_value:
                 embed.add_field(name=_("PVP League Info"), value=(' | ').join(pvp_value), inline=False)
+        roles = [x.mention for x in sorted(member.roles, reverse=True) if ctx.guild.id != x.id]
         if roles:
             embed.add_field(name=_("Roles"), value=f"{(' ').join(roles)[:2000]}", inline=False)
-
+        status_emoji = ""
+        if str(member.web_status) == "online":
+            status_emoji = "\U0001F310"
+        if (member.desktop_status) == "online":
+            status_emoji = "\U0001F4BB"
+        if member.is_on_mobile():
+            status_emoji = "\U0001F4F1"
+        embed.set_footer(text=f"Registered: {member.created_at.strftime(_('%b %d, %Y %I:%M %p'))} | Joined: {member.joined_at.strftime(_('%b %d, %Y %I:%M %p'))} | Status: {str(member.status).title()} {status_emoji}")
         await ctx.send(msg, embed=embed)
+
+    @profile.command(name="add")
+    async def profile_add(self, ctx):
+        embed = discord.Embed(colour=ctx.author.colour)
+        embed.set_thumbnail(url=ctx.author.avatar_url)
+        new_account = {
+            "ign":None,
+            "trainercode":None,
+            "team":None
+        }
+        error = ""
+        user_accounts = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).get('accounts', {})
+        if len(user_accounts) == 5:
+            embed.add_field(name=f"**Add Account Error**", value=f"Meowth! You are only allowed five alternate accounts. To add another account, remove one first with **{ctx.prefix}profile remove**")
+            return await ctx.send(embed=embed)
+        while True:
+            async with ctx.typing():
+                embed.add_field(name=f"**Add Alternate Account**", value=f"Meowth! I'll help you add an alternate account to your profile. First, what is the **account name**? Reply with **cancel** to stop anytime.", inline=False)
+                value_wait = await ctx.send(embed=embed)
+                def check(reply):
+                    if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.author:
+                        return True
+                    else:
+                        return False
+                try:
+                    value_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    value_msg = None
+                await utils.safe_delete(value_wait)
+                if not value_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(value_msg)
+                if value_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                else:
+                    new_account['ign'] = value_msg.clean_content
+                    embed.clear_fields()
+                    embed.add_field(name=f"**Add Alternate Account**", value=f"Great! Next, what is the **trainercode** for {new_account['ign']}? Reply with **cancel** to stop anytime.")
+                    value_wait = await ctx.send(embed=embed)
+                try:
+                    value_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    value_msg = None
+                await utils.safe_delete(value_wait)
+                if not value_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(value_msg)
+                if value_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                elif not [x for x in value_msg.clean_content.lower() if x.isdigit()] or len(value_msg.clean_content.lower().replace(" ", '')) != 12:
+                    error = f"entered an invalid trainer code"
+                    break
+                else:
+                    new_account['trainercode'] = value_msg.clean_content.replace(' ', '')
+                    embed.clear_fields()
+                    embed.add_field(name=f"**Add Alternate Account**", value=f"Great! Next, what **team** is {new_account['ign']} (code: {new_account['trainercode']}) on? Choose from mystic, valor, instinct, harmony. Reply with **cancel** to stop anytime.")
+                    value_wait = await ctx.send(embed=embed)
+                try:
+                    value_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    value_msg = None
+                await utils.safe_delete(value_wait)
+                if not value_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(value_msg)
+                if value_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                elif value_msg.clean_content.lower() not in ["mystic", "valor", "instinct", "harmony"]:
+                    error = f"entered an invalid team"
+                    break
+                else:
+                    new_account['team'] = value_msg.clean_content.lower()
+                    break
+        if not error:
+            bulletpoint = self.bot.custom_emoji.get('bullet', u'\U0001F539')
+            team_emoji = utils.parse_emoji(ctx.guild, self.bot.config.team_dict[new_account['team']])
+            add_account = {new_account['ign']: {"ign":new_account['ign'], "trainercode":new_account['trainercode'], "team":new_account['team']}}
+            self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['accounts'] = {**user_accounts, **add_account}
+            embed.clear_fields()
+            embed.add_field(name=f"**Successfully Added Account**", value=f"{bulletpoint} **Name**: {new_account['ign']} | **Trainercode**: {new_account['trainercode']} | **Team**: {team_emoji}")
+            await ctx.send(embed=embed, delete_after=120)
+        else:
+            embed.clear_fields()
+            embed.add_field(name=_('**Add Account Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
+            confirmation = await channel.send(embed=embed, delete_after=60)
+
+    @profile.command(name="remove")
+    async def profile_remove(self, ctx):
+        embed = discord.Embed(colour=ctx.author.colour)
+        embed.set_thumbnail(url=ctx.author.avatar_url)
+        error = ""
+        user_accounts = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).get('accounts', {})
+        account_names = list(user_accounts.keys())
+        lowercase_names = [x.lower() for x in account_names]
+        while True:
+            async with ctx.typing():
+                embed.add_field(name=f"**Remove Alternate Account**", value=f"Meowth! I'll help you Remove an alternate account to your profile. What is the **account name** you'd like to remove from the choices below? Reply with **cancel** to stop anytime.\n\n{(', ').join(account_names)}", inline=False)
+                value_wait = await ctx.send(embed=embed)
+                def check(reply):
+                    if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.author:
+                        return True
+                    else:
+                        return False
+                try:
+                    value_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                except asyncio.TimeoutError:
+                    value_msg = None
+                await utils.safe_delete(value_wait)
+                if not value_msg:
+                    error = _("took too long to respond")
+                    break
+                else:
+                    await utils.safe_delete(value_msg)
+                if value_msg.clean_content.lower() == "cancel":
+                    error = _("cancelled the report")
+                    break
+                elif value_msg.clean_content.lower().strip() not in lowercase_names:
+                    error = f"entered an invalid account"
+                    break
+                else:
+                    delete_account = lowercase_names.index(value_msg.clean_content.lower().strip())
+                    delete_account = account_names[delete_account]
+                    del user_accounts[delete_account]
+                    embed.clear_fields()
+                    break
+        if not error:
+            embed.clear_fields()
+            embed.add_field(name=f"**Successfully Removed Account**", value=f"Removed **{delete_account}** from your profile.")
+            await ctx.send(embed=embed, delete_after=120)
+        else:
+            embed.clear_fields()
+            embed.add_field(name=_('**Add Account Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
+            confirmation = await channel.send(embed=embed, delete_after=60)
+
+    @profile.command(name="edit")
+    async def profile_edit(self, ctx):
+        """Displays options for editing profile"""
+        embed = discord.Embed(title=f"Profile Commands", colour=ctx.author.colour)
+        embed.set_thumbnail(url=ctx.author.avatar_url)
+        embed.add_field(name=f"{ctx.prefix}trainercode [code]", value=f"Set trainer code of your main account to [code].", inline=False)
+        embed.add_field(name=f"{ctx.prefix}trainercode [reset]", value=f"Remove trainer code.", inline=False)
+        embed.add_field(name=f"{ctx.prefix}ign [name]", value=f"Set in-game name of your main account to [name].", inline=False)
+        embed.add_field(name=f"{ctx.prefix}ign [reset]", value=f"Remove in-game name from profile.", inline=False)
+        embed.add_field(name=f"{ctx.prefix}silph [silphid]", value=f"Set silph ID of your main account to [silphid]", inline=False)
+        embed.add_field(name=f"{ctx.prefix}silph [reset]", value=f"Remove Silph ID from profile", inline=False)
+        embed.add_field(name=f"{ctx.prefix}pokebattler [pokebattlerid]", value=f"Set PokeBattler ID of your main account to [pokebattlerid]", inline=False)
+        embed.add_field(name=f"{ctx.prefix}pokebattler [reset]", value=f"Removes PokeBattler ID from profile.", inline=False)
+        embed.add_field(name=f"{ctx.prefix}profile add", value=f"Add an alternate account to your profile.", inline=False)
+        embed.add_field(name=f"{ctx.prefix}profile remove", value=f"Remove alternate account from your profile.", inline=False)
+        await ctx.send(embed=embed)
 
     @commands.group(case_insensitive=True, invoke_without_command=True)
     async def leaderboard(self, ctx, type="total", range="1"):
@@ -503,7 +687,7 @@ class Trainers(commands.Cog):
             else:
                 return
         elif author.get('pokebattlerid'):
-            return await ctx.channel.send(f"{ctx.author.display_name}\'s PokeBattler ID is: **{author.get('pokebattlerid')}**")
+            return await ctx.channel.send(f"{ctx.author.display_name}\'s PokeBattler ID is:", embed=discord.Embed(description=f"{author.get('pokebattlerid')}"))
         elif not pbid or not pbid.isdigit():
             return await ctx.error(f"Please enter your PokeBattler ID. Try again when ready.")
         self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['pokebattlerid'] = int(pbid)
@@ -525,21 +709,39 @@ class Trainers(commands.Cog):
                 pass
             return
         elif author.get('trainercode') and trainercode:
-            question = await ctx.channel.send(f"Your trainer code is already set to **{author.get('trainercode')}**. Do you want to change it to **{trainercode}**?")
-            try:
-                timeout = False
-                res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
-            except TypeError:
-                timeout = True
-            await utils.safe_delete(question)
-            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
-                return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is: **{author.get('trainercode')}**")
-            elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
-                pass
+            if [x for x in trainercode if x.isdigit()]:
+                if len(trainercode.replace(" ", "")) != 12:
+                    return await ctx.channel.send(f"You entered an invalid trainer code. Trainer codes contain 12 digits.", delete_after=10)
+                question = await ctx.channel.send(f"Your trainer code is already set to **{author.get('trainercode')}**. Do you want to change it to **{trainercode}**?")
+                try:
+                    timeout = False
+                    res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
+                except TypeError:
+                    timeout = True
+                await utils.safe_delete(question)
+                if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
+                    return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is: **{author.get('trainercode')}**")
+                elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
+                    pass
+                else:
+                    return
             else:
-                return
+                for trainer in ctx.bot.guild_dict[ctx.guild.id]['trainers']:
+                    search_dict = {}
+                    user = ctx.guild.get_member(trainer)
+                    if not user:
+                        continue
+                    user_code = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('trainercode', "").replace(" ", "").lower()
+                    if user_code:
+                        search_dict[user.name.lower()] = {"name":user.name, "code":user_code, "member":user.name}
+                    for account in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {}):
+                        user_code = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('trainercode')
+                        if user_code:
+                            search_dict[account.lower()] = {"name":account, "code":user_code, "member":user.name}
+                    if trainercode.lower() in search_dict:
+                        return await ctx.channel.send(f"{search_dict[trainercode.lower()]['name']}{' (@'+search_dict[trainercode.lower()]['member']+')' if search_dict[trainercode.lower()]['member'] != search_dict[trainercode.lower()]['name'] else ''}'s trainer code is:", embed=discord.Embed(description=f"{search_dict[trainercode.lower()]['code']}"))
         elif author.get('trainercode'):
-            return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is: **{author.get('trainercode')}**")
+            return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is:", embed=discord.Embed(description=f"{author.get('trainercode')}"))
         elif not trainercode:
             return await ctx.error(f"Please enter your trainer code. Try again when ready.")
         trainercode = trainercode.replace(" ", "")
@@ -576,7 +778,7 @@ class Trainers(commands.Cog):
             else:
                 return
         elif author.get('ign'):
-            return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name(s) are: **{author.get('ign')}**")
+            return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name(s) are:", embed=discord.Embed(description=f"{author.get('ign')}"))
         elif not ign:
             return await ctx.error(f"Please enter your in-game name. Try again when ready.")
         self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign'] = ign[:300]
