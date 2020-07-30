@@ -332,7 +332,7 @@ class Tutorial(commands.Cog):
         try:
             report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
 
-            msg_text = f"This server utilizes the **{ctx.prefix}want** command to help members receive push notifications about Pokemon and other things they want! I keep your list saved and then send you a DM for wild spawns, nest spawns, and research reports. For raid bosses I will @mention you. Please make sure you have DMs enabled in order to receive alerts!"
+            msg_text = f"This server utilizes the **{ctx.prefix}want** command to help members receive push notifications about Pokemon and other things they want! I keep your list saved and then send you a DM for wild spawns, nest spawns, and research reports. Please make sure you have DMs enabled in order to receive alerts!"
             msg_text += f"\n\nTry the want command by sending **{ctx.prefix}want** and following the prompts. You can use Pokemon and then Unown in this example."
             msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(),description=msg_text).set_author(name="Want Tutorial", icon_url=ctx.bot.user.avatar_url))
 
@@ -945,7 +945,7 @@ class Tutorial(commands.Cog):
             report_channels = config.setdefault('tutorial', {}).setdefault('report_channels', {})
             trade_msg = False
 
-            msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}trade** command to list your pokemon up for trade. You can also use forms of pokemon such as `alolan vulpix`, `unown y`, or `shiny absol`.\n\nTry out the trade command by sending **{ctx.prefix}trade** and following the prompts. You can use Unown, ask, and N for this example.").set_author(name="Trade Tutorial", icon_url=ctx.bot.user.avatar_url))
+            msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}trade** command to list your pokemon up for trade. You can also use forms of pokemon such as `alolan vulpix`, `unown y`, or `shiny absol`.\n\nTry out the trade command by sending **{ctx.prefix}trade** and following the prompts. You can use Unown, open, and N for this example.").set_author(name="Trade Tutorial", icon_url=ctx.bot.user.avatar_url))
 
             report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
 

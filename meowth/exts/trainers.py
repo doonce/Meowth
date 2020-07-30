@@ -288,7 +288,7 @@ class Trainers(commands.Cog):
             field_value.append(f"**Team**: Set with {ctx.prefix}team")
         if field_value:
             embed.add_field(name=f"Game Account", value=f"{bulletpoint}{(' | ').join(field_value)}")
-        user_accounts = self.bot.guild_dict[ctx.guild.id]['trainers'][member.id].get('accounts')
+        user_accounts = self.bot.guild_dict[ctx.guild.id]['trainers'].get(member.id, {}).get('accounts')
         if user_accounts:
             field_value = ""
             for account in user_accounts:
@@ -365,6 +365,13 @@ class Trainers(commands.Cog):
             "team":None
         }
         error = ""
+        search_dict = {}
+        for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
+            search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('ign')] = trainer
+            search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('trainercode')] = trainer
+            for account in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {}):
+                search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('ign').lower()] = trainer
+                search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('trainercode')] = trainer
         user_accounts = self.bot.guild_dict[ctx.guild.id]['trainers'].setdefault(ctx.author.id, {}).get('accounts', {})
         if len(user_accounts) == 5:
             embed.add_field(name=f"**Add Account Error**", value=f"Meowth! You are only allowed five alternate accounts. To add another account, remove one first with **{ctx.prefix}profile remove**")
@@ -391,6 +398,10 @@ class Trainers(commands.Cog):
                 if value_msg.clean_content.lower() == "cancel":
                     error = _("cancelled the report")
                     break
+                elif value_msg.clean_content.lower() in search_dict:
+                    dupe_account = ctx.guild.get_member(search_dict[value_msg.clean_content.lower()])
+                    error = f"that account name is already claimed by {dupe_account.mention}. Contact a moderator if there is a dispute**"
+                    break
                 else:
                     new_account['ign'] = value_msg.clean_content
                     embed.clear_fields()
@@ -411,6 +422,10 @@ class Trainers(commands.Cog):
                     break
                 elif not [x for x in value_msg.clean_content.lower() if x.isdigit()] or len(value_msg.clean_content.lower().replace(" ", '')) != 12:
                     error = f"entered an invalid trainer code"
+                    break
+                elif value_msg.clean_content.lower().replace(" ", '') in search_dict:
+                    dupe_account = ctx.guild.get_member(search_dict[value_msg.clean_content.lower()])
+                    error = f"that trainer code is already claimed by {dupe_account.mention}. Contact a moderator if there is a dispute**"
                     break
                 else:
                     new_account['trainercode'] = value_msg.clean_content.replace(' ', '')
@@ -447,7 +462,7 @@ class Trainers(commands.Cog):
         else:
             embed.clear_fields()
             embed.add_field(name=_('**Add Account Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
-            confirmation = await channel.send(embed=embed, delete_after=60)
+            confirmation = await ctx.send(embed=embed, delete_after=60)
 
     @profile.command(name="remove")
     async def profile_remove(self, ctx):
@@ -495,6 +510,75 @@ class Trainers(commands.Cog):
         else:
             embed.clear_fields()
             embed.add_field(name=_('**Add Account Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
+            confirmation = await channel.send(embed=embed, delete_after=60)
+
+    @checks.is_mod()
+    @profile.command(name="reset")
+    async def profile_reset(self, ctx, member=""):
+        embed = discord.Embed(colour=ctx.author.colour)
+        embed.set_thumbnail(url=ctx.author.avatar_url)
+        error = ""
+        converter = commands.MemberConverter()
+        msg = ""
+        if member:
+            try:
+                member = await converter.convert(ctx, member)
+            except:
+                return await ctx.send(f"I couldn't find that member. Try again with a @mention or a case-sensitive username.", delete_after=10)
+        else:
+            while True:
+                async with ctx.typing():
+                    embed.add_field(name=f"**Reset Trainer Profile**", value=f"Meowth! I'll help you reset a trainer profile. What is the **account name** or **@mention** of the user profile you'd like to reset? This will remove all in-game names and trainercodes set to this member. Reply with **cancel** to stop anytime.", inline=False)
+                    value_wait = await ctx.send(embed=embed)
+                    def check(reply):
+                        if reply.author is not ctx.guild.me and reply.channel.id == ctx.channel.id and reply.author == ctx.author:
+                            return True
+                        else:
+                            return False
+                    try:
+                        value_msg = await self.bot.wait_for('message', timeout=60, check=check)
+                    except asyncio.TimeoutError:
+                        value_msg = None
+                    await utils.safe_delete(value_wait)
+                    if not value_msg:
+                        error = _("took too long to respond")
+                        break
+                    else:
+                        await utils.safe_delete(value_msg)
+                    if value_msg.clean_content.lower() == "cancel":
+                        error = _("cancelled the report")
+                        break
+                    else:
+                        try:
+                            member = await converter.convert(ctx, value_msg.content)
+                            break
+                        except Exception as e:
+                            print(e)
+                            return await ctx.send(f"I couldn't find that member. Try again with an @mention or a case-sensitive username.", delete_after=10)
+        if member:
+            question = await ctx.channel.send(f"Are you sure you'd like to reset the in-game names and trainercodes for @{member.display_name}?")
+            try:
+                timeout = False
+                res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
+            except TypeError:
+                timeout = True
+            await utils.safe_delete(question)
+            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
+                return
+            elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
+                pass
+            else:
+                return
+            self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['ign'] = ''
+            self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['trainercode'] = ''
+            self.bot.guild_dict[ctx.guild.id]['trainers'][member.id]['accounts'] = {}
+        if not error:
+            embed.clear_fields()
+            embed.add_field(name=f"**Successfully Reset Profile**", value=f"Removed the in-game names and trainercodes of **{member.mention}**.")
+            await ctx.send(embed=embed, delete_after=120)
+        else:
+            embed.clear_fields()
+            embed.add_field(name=_('**Profile Reset Cancelled**'), value=f"Meowth! Your edit has been cancelled because you **{error}**! Retry when you're ready.", inline=False)
             confirmation = await channel.send(embed=embed, delete_after=60)
 
     @profile.command(name="edit")
@@ -701,8 +785,13 @@ class Trainers(commands.Cog):
         To clear your setting, use !trainercode clear."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
         author = trainers.get(ctx.author.id, {})
+        search_dict = {}
+        for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
+            search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('trainercode', '').replace(' ', '').lower()] = trainer
+            for account in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {}):
+                search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('trainercode').replace(' ', '').lower()] = trainer
         if author.get('trainercode') and (trainercode.lower() == "clear" or trainercode.lower() == "reset"):
-            await ctx.send(_('Your trainer code has been cleared!'), delete_after=10)
+            await ctx.send(_('Your trainer code has been cleared!'), delete_after=30)
             try:
                 del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode']
             except:
@@ -711,7 +800,7 @@ class Trainers(commands.Cog):
         elif author.get('trainercode') and trainercode:
             if [x for x in trainercode if x.isdigit()]:
                 if len(trainercode.replace(" ", "")) != 12:
-                    return await ctx.channel.send(f"You entered an invalid trainer code. Trainer codes contain 12 digits.", delete_after=10)
+                    return await ctx.channel.send(f"You entered an invalid trainer code. Trainer codes contain 12 digits.", delete_after=30)
                 question = await ctx.channel.send(f"Your trainer code is already set to **{author.get('trainercode')}**. Do you want to change it to **{trainercode}**?")
                 try:
                     timeout = False
@@ -740,14 +829,19 @@ class Trainers(commands.Cog):
                             search_dict[account.lower()] = {"name":account, "code":user_code, "member":user.name}
                     if trainercode.lower() in search_dict:
                         return await ctx.channel.send(f"{search_dict[trainercode.lower()]['name']}{' (@'+search_dict[trainercode.lower()]['member']+')' if search_dict[trainercode.lower()]['member'] != search_dict[trainercode.lower()]['name'] else ''}'s trainer code is:", embed=discord.Embed(description=f"{search_dict[trainercode.lower()]['code']}"))
-                return await ctx.send(f"I couldn't find that account", delete_after=15)
+                return await ctx.send(f"I couldn't find that account", delete_after=30)
         elif author.get('trainercode'):
             return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is:", embed=discord.Embed(description=f"{author.get('trainercode')}"))
         elif not trainercode:
             return await ctx.error(f"Please enter your trainer code. Try again when ready.")
         trainercode = trainercode.replace(" ", "")
+        if trainercode.lower() in search_dict.keys():
+            dupe_account = ctx.guild.get_member(search_dict[trainercode.lower()])
+            error_embed = discord.Embed(description=f"That trainer code is already claimed by {dupe_account.mention}. Contact a moderator if there is a dispute.")
+            error_embed.set_author(name=f"Trainer Code Error", icon_url="https://i.imgur.com/juhq2uJ.png")
+            return await ctx.send(embed=error_embed)
         self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode'] = trainercode[:50]
-        await ctx.send(f"{ctx.author.mention}, your trainer code has been set to **{trainercode}**!", delete_after=10)
+        await ctx.send(f"{ctx.author.mention}, your trainer code has been set to **{trainercode}**!", delete_after=30)
         await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
     @commands.command()
@@ -757,15 +851,20 @@ class Trainers(commands.Cog):
         To clear your setting, use !ign clear."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
         author = trainers.get(ctx.author.id, {})
+        search_dict = {}
+        for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
+            search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('ign', '').lower()] = trainer
+            for account in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {}):
+                search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('ign', '').lower()] = trainer
         if author.get('ign') and (ign.lower() == "clear" or ign.lower() == "reset"):
-            await ctx.send(_('Your in-game name(s) have been cleared!'), delete_after=10)
+            await ctx.send(_('Your in-game name(s) have been cleared!'), delete_after=30)
             try:
                 del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign']
             except:
                 pass
             return
         elif author.get('ign') and ign:
-            question = await ctx.channel.send(f"Your in-game name(s) are already set to **{author.get('ign')}**. Do you want to change it to **{ign}**?")
+            question = await ctx.channel.send(f"Your in-game name is already set to **{author.get('ign')}**. Do you want to change it to **{ign}**?")
             try:
                 timeout = False
                 res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
@@ -773,7 +872,7 @@ class Trainers(commands.Cog):
                 timeout = True
             await utils.safe_delete(question)
             if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
-                return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name(s) are: **{author.get('ign')}**")
+                return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name is: **{author.get('ign')}**")
             elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
                 pass
             else:
@@ -782,8 +881,13 @@ class Trainers(commands.Cog):
             return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name(s) are:", embed=discord.Embed(description=f"{author.get('ign')}"))
         elif not ign:
             return await ctx.error(f"Please enter your in-game name. Try again when ready.")
+        if ign.lower() in search_dict.keys():
+            dupe_account = ctx.guild.get_member(search_dict[ign.lower()])
+            error_embed = discord.Embed(description=f"That account name is already claimed by {dupe_account.mention}. Contact a moderator if there is a dispute.")
+            error_embed.set_author(name=f"Account Name Error", icon_url="https://i.imgur.com/juhq2uJ.png")
+            return await ctx.send(embed=error_embed)
         self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign'] = ign[:300]
-        await ctx.send(f"{ctx.author.mention}, your in-game name(s) have been set to **{ign}**!", delete_after=10)
+        await ctx.send(f"{ctx.author.mention}, your in-game name has been set to **{ign}**!", delete_after=30)
         await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
 def setup(bot):

@@ -607,42 +607,42 @@ class Wild(commands.Cog):
                     if user_custom[custom].get('size') and user_custom[custom]['size'] != size.lower():
                         continue
                     if user_custom[custom].get('min_iv', None) != None:
-                        iv_check = int(iv_percent) if iv_percent != None and iv_percent != ''  else None
+                        iv_check = int(iv_percent) if str(iv_percent).isdigit() else None
                         if iv_check == None:
                             continue
                         iv_range = range(user_custom[custom].get('min_iv'), user_custom[custom].get('max_iv')+1)
                         if iv_check not in iv_range:
                             continue
                     if user_custom[custom].get('min_atk', None) != None:
-                        iv_check = int(iv_attack) if iv_attack != None and iv_attack != ''  else None
+                        iv_check = int(iv_attack) if str(iv_attack).isdigit() else None
                         if iv_check == None:
                             continue
                         iv_range = range(user_custom[custom].get('min_atk'), user_custom[custom].get('max_atk')+1)
                         if iv_check not in iv_range:
                             continue
                     if user_custom[custom].get('min_def', None) != None:
-                        iv_check = int(iv_defense) if iv_defense != None and iv_defense != ''  else None
+                        iv_check = int(iv_defense) if str(iv_defense).isdigit() else None
                         if iv_check == None:
                             continue
                         iv_range = range(user_custom[custom].get('min_def'), user_custom[custom].get('max_def')+1)
                         if iv_check not in iv_range:
                             continue
                     if user_custom[custom].get('min_sta', None) != None:
-                        iv_check = int(iv_stamina) if iv_stamina != None and iv_stamina != ''  else None
+                        iv_check = int(iv_stamina) if str(iv_stamina).isdigit() else None
                         if iv_check == None:
                             continue
                         iv_range = range(user_custom[custom].get('min_sta'), user_custom[custom].get('max_sta')+1)
                         if iv_check not in iv_range:
                             continue
                     if user_custom[custom].get('min_cp', None) != None:
-                        cp_check = int(wild_cp) if wild_cp != None and wild_cp != ''  else None
+                        cp_check = int(wild_cp) if str(wild_cp).isdigit() else None
                         if cp_check == None:
                             continue
                         cp_range = range(user_custom[custom].get('min_cp'), user_custom[custom].get('max_cp')+1)
                         if cp_check not in cp_range:
                             continue
                     if user_custom[custom].get('min_level', None) != None:
-                        level_check = int(wild_level) if wild_level != None and wild_level != ''  else None
+                        level_check = int(wild_level) if str(wild_level).isdigit() else None
                         if level_check == None:
                             continue
                         level_range = range(user_custom[custom].get('min_level'), user_custom[custom].get('max_level')+1)

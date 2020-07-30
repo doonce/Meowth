@@ -185,7 +185,7 @@ class Listing(commands.Cog):
                     if " 0 waiting at the" not in await self._waiting(ctx, tag, team):
                         listmsg += ('\n' + bulletpoint) + (await self._waiting(ctx, tag, team))
                     if " 0 remoting in" not in await self._remote(ctx, tag, team):
-                        listmsg += ('\n' + bulletpoint) + (await self._remote(ctx, tag, team))    
+                        listmsg += ('\n' + bulletpoint) + (await self._remote(ctx, tag, team))
                     if " 0 in the lobby!" not in await self._lobbylist(ctx, tag, team):
                         listmsg += ('\n' + bulletpoint) + (await self._lobbylist(ctx, tag, team))
                     if (len(listmsg.splitlines()) <= 1):
@@ -519,22 +519,16 @@ class Listing(commands.Cog):
             user = ctx.guild.get_member(trainer)
             if not trainer_dict[trainer].get('remote'):
                 continue
-            trainercode = trainer_dict[trainer]['trainercode']
+            invite_dict = trainer_dict[trainer]['invite_dict']
             if (trainer_dict[trainer]['status']['maybe']) and user and team == False:
                 ctx_maybecount += trainer_dict[trainer]['status']['maybe']
-                if trainer_dict[trainer]['status']['maybe'] == 1:
-                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+'** code: **'+trainercode+')'}**")
-                    maybe_list.append(f"{user.mention}{' ('+remote_emoji+'** code: **'+trainercode+')'}")
-                else:
-                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['status']['maybe']}{'** code: **'+remote_emoji+' '+trainercode})**")
-                    maybe_list.append(f"{user.mention} **({trainer_dict[trainer]['status']['maybe']}{'** code: **'+remote_emoji+' '+trainercode})**")
+                for code in invite_dict:
+                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+'**'}{' name: '+invite_dict[code]+' | ' if user.display_name != invite_dict[code] else ''}{'code: '+code+')'}")
+                    maybe_list.append(f"**{user.mention}{' ('+remote_emoji+'**'}{' name: '+invite_dict[code]+' | ' if user.display_name != invite_dict[code] else ''}{'code: '+code+')'}")
             elif (trainer_dict[trainer]['status']['maybe']) and user and team and trainer_dict[trainer]['party'][team]:
-                if trainer_dict[trainer]['status']['maybe'] == 1:
-                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+'** code: **'+trainercode+')'}**")
-                    maybe_list.append(f"{user.mention}{' ('+remote_emoji+'** code: **'+trainercode+')'}")
-                else:
-                    name_list.append(f"**{user.display_name} ({trainer_dict[trainer]['party'][team]}{' '+remote_emoji+'** code: **'+trainercode})**")
-                    maybe_list.append(f"{user.mention} **({trainer_dict[trainer]['party'][team]}{' '+remote_emoji+'** code: **'+trainercode})**")
+                for code in invite_dict:
+                    name_list.append(f"**{user.display_name}{' ('+remote_emoji+'**'}{' name: '+invite_dict[code]+' | ' if user.display_name != invite_dict[code] else ''}{'code: '+code+')'}")
+                    maybe_list.append(f"**{user.mention}{' ('+remote_emoji+'**'}{' name: '+invite_dict[code]+' | ' if user.display_name != invite_dict[code] else ''}{'code: '+code+')'}")
                 ctx_maybecount += trainer_dict[trainer]['party'][team]
                 if raid_dict.get('lobby', {"team":"all"})['team'] == team or raid_dict.get('lobby', {"team":"all"})['team'] == "all":
                     ctx_maybecount -= trainer_dict[trainer]['status']['lobby']
