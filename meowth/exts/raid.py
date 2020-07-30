@@ -5859,15 +5859,15 @@ class Raid(commands.Cog):
             trainercode = ctx.author.display_name
             if ign:
                 trainercode = ign
-        if not account_dict:
-            return await ctx.send(f"{ctx.author.mention}, I need a trainercode! You can include it in your RSVP or set it using {ctx.prefix}trainercode", delete_after=10)
         trainercode_split = trainercode.split(',')
         trainercode_split = [x.strip() for x in trainercode_split]
         for code in trainercode_split:
-            if code.lower() in list(account_dict.keys()):
+            if code and code.lower() in list(account_dict.keys()) and account_dict[code]['code']:
                 trainer_dict[account_dict[code.lower()]['code']] = account_dict[code.lower()]['name']
-            else:
+            elif [x for x in code if x.isdigit()]:
                 trainer_dict[code] = ctx.author.display_name
+        if not trainer_dict:
+            return await ctx.send(f"{ctx.author.mention}, I need a trainercode! You can include it in your RSVP or set it using {ctx.prefix}trainercode", delete_after=10)
         await self._rsvp(ctx, "invite", trainer_dict)
 
     @commands.command()
