@@ -718,7 +718,7 @@ class Utilities(commands.Cog):
         self.bot = bot
         self.dm_cleanup.start()
         self.auto_timezone.start()
-        self.version = "v20.7.30.0"
+        self.version = "v20.8.2.0"
 
     def cog_unload(self):
         self.dm_cleanup.cancel()

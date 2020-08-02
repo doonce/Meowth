@@ -5847,14 +5847,15 @@ class Raid(commands.Cog):
         Works only in raid channels. Included trainercode or saved trainercode in profile required."""
         account_dict = {}
         trainer_dict = {}
-        user_accounts = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[ctx.author.id].get('accounts', {})
+        user_accounts = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(ctx.author.id, {}).get('accounts', {})
+        user_code =  self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(ctx.author.id, {}).get('trainercode', "").replace(" ", "").lower()
+        ign =  self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).get(ctx.author.id, {}).get('ign', "")
+        account_dict[ctx.author.display_name.lower()] = {"code":user_code, "name":ctx.author.display_name}
+        if ign:
+            del account_dict[ctx.author.display_name.lower()]
+            account_dict[ign] = {"code":user_code, "name":ign}
         for account in user_accounts:
             account_dict[account.lower()] = {"code":user_accounts[account]['trainercode'], "name":account}
-        account_dict[ctx.author.display_name.lower()] = {"code":self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[ctx.author.id].get('trainercode', "").replace(" ", "").lower(), "name":ctx.author.display_name}
-        ign =  self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[ctx.author.id].get('ign', "")
-        if ign:
-            account_dict[ign] = {"code":self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[ctx.author.id].get('trainercode', "").replace(" ", "").lower(), "name":ign}
-            del account_dict[ctx.author.display_name.lower()]
         if not trainercode:
             trainercode = ctx.author.display_name
             if ign:
@@ -5862,12 +5863,20 @@ class Raid(commands.Cog):
         trainercode_split = trainercode.split(',')
         trainercode_split = [x.strip() for x in trainercode_split]
         for code in trainercode_split:
-            if code and code.lower() in list(account_dict.keys()) and account_dict[code]['code']:
+            if code and code.lower() in list(account_dict.keys()) and account_dict.get(code, {}).get('code', ''):
                 trainer_dict[account_dict[code.lower()]['code']] = account_dict[code.lower()]['name']
-            elif [x for x in code if x.isdigit()]:
+            elif [x for x in code if x.isdigit()] and len(code.replace(" ", "")) == 12:
                 trainer_dict[code] = ctx.author.display_name
+        if account_dict and not trainer_dict:
+            if user_code:
+                trainer_dict[user_code] = ctx.author.display_name
+                if ign:
+                    trainer_dict[user_code] = ign
+        if len(account_dict) == 1 and not trainer_dict:
+            for account in user_accounts:
+                trainer_dict[user_accounts[account]['trainercode']] = account
         if not trainer_dict:
-            return await ctx.send(f"{ctx.author.mention}, I need a trainercode! You can include it in your RSVP or set it using {ctx.prefix}trainercode", delete_after=10)
+            return await ctx.send(f"{ctx.author.mention}, I need a trainercode! You can include it in your RSVP, set your main account's using **{ctx.prefix}trainercode <trainercode>**, or include names of your other saved accounts.", delete_after=10)
         await self._rsvp(ctx, "invite", trainer_dict)
 
     @commands.command()

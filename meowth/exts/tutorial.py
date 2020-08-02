@@ -650,6 +650,12 @@ class Tutorial(commands.Cog):
         # acknowledge and direct member back to tutorial channel
         await raid_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Great! Now return to {tutorial_channel.mention} to continue the tutorial. This channel will be deleted in ten seconds."))
 
+        try:
+            raid_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(raid_ctx.author.id, {}).setdefault('reports', {}).setdefault('raid', 0)
+            ctx.bot.guild_dict[ctx.guild.id]['trainers'][raid_ctx.author.id]['reports']['raid'] = raid_reports - 1
+        except KeyError:
+            pass
+
         await tutorial_channel.send(f"Hey {ctx.author.mention}, once I'm done cleaning up the raid channel, the tutorial will continue here!")
 
         await asyncio.sleep(10)
@@ -769,6 +775,12 @@ class Tutorial(commands.Cog):
             # acknowledge and wait a second before continuing
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Great job!"))
 
+            try:
+                lure_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(lure_ctx.author.id, {}).setdefault('reports', {}).setdefault('lure', 0)
+                ctx.bot.guild_dict[ctx.guild.id]['trainers'][wild_ctx.author.id]['reports']['lure'] = lure_reports - 1
+            except KeyError:
+                pass
+
             await asyncio.sleep(1)
 
             for report in ctx.bot.guild_dict[ctx.guild.id]['lure_dict']:
@@ -830,6 +842,12 @@ class Tutorial(commands.Cog):
 
             # acknowledge and wait a second before continuing
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Great job!"))
+
+            try:
+                invasion_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(invasion_ctx.author.id, {}).setdefault('reports', {}).setdefault('invasion', 0)
+                ctx.bot.guild_dict[ctx.guild.id]['trainers'][invasion_ctx.author.id]['reports']['invasion'] = invasion_reports - 1
+            except KeyError:
+                pass
 
             await asyncio.sleep(1)
 
@@ -1070,10 +1088,17 @@ class Tutorial(commands.Cog):
             msg = await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"This server utilizes the **{ctx.prefix}nest** command to keep track of nesting pokemon.\n\nTry the nest command by sending **{ctx.prefix}nest** and following the prompts. You can use Pikachu and Hershey Park in this example.").set_author(name="Nest Tutorial", icon_url=ctx.bot.user.avatar_url))
 
             report_channels[ctx.tutorial_channel.id] = {"report_message":msg.id, "completed":False}
-            await self.wait_for_cmd(ctx.tutorial_channel, ctx.author, 'nest')
+            nest_ctx = await self.wait_for_cmd(ctx.tutorial_channel, ctx.author, 'nest')
 
             # acknowledge and wait a second before continuing
             await ctx.tutorial_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=f"Great job!"))
+
+            try:
+                nest_reports = ctx.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}).setdefault(nest_ctx.author.id, {}).setdefault('reports', {}).setdefault('nest', 0)
+                ctx.bot.guild_dict[ctx.guild.id]['trainers'][nest_ctx.author.id]['reports']['nest'] = nest_reports - 1
+            except KeyError:
+                pass
+
             await asyncio.sleep(1)
 
         # if no response for 5 minutes, close tutorial

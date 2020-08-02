@@ -784,7 +784,7 @@ class Trainers(commands.Cog):
 
         To clear your setting, use !trainercode clear."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
-        author = trainers.get(ctx.author.id, {})
+        author = trainers.setdefault(ctx.author.id, {})
         search_dict = {}
         for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
             search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('trainercode', '').replace(' ', '').lower()] = trainer
@@ -837,9 +837,14 @@ class Trainers(commands.Cog):
         trainercode = trainercode.replace(" ", "")
         if trainercode.lower() in search_dict.keys():
             dupe_account = ctx.guild.get_member(search_dict[trainercode.lower()])
-            error_embed = discord.Embed(description=f"That trainer code is already claimed by {dupe_account.mention}. Contact a moderator if there is a dispute.")
+            if dupe_account != ctx.author:
+                error_embed = discord.Embed(description=f"That trainer code is already claimed by {dupe_account.mention}. Contact a moderator if there is a dispute.")
+            else:
+                error_embed = discord.Embed(description=f"Your trainer code is already set to **{trainercode}**. Clear it with **{ctx.prefix}trainercode clear**")
             error_embed.set_author(name=f"Trainer Code Error", icon_url="https://i.imgur.com/juhq2uJ.png")
             return await ctx.send(embed=error_embed)
+        if len(trainercode.replace(" ", "")) != 12:
+            return await ctx.channel.send(f"You entered an invalid trainer code. Trainer codes contain 12 digits.", delete_after=30)
         self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode'] = trainercode[:50]
         await ctx.send(f"{ctx.author.mention}, your trainer code has been set to **{trainercode}**!", delete_after=30)
         await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
@@ -850,14 +855,14 @@ class Trainers(commands.Cog):
 
         To clear your setting, use !ign clear."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
-        author = trainers.get(ctx.author.id, {})
+        author = trainers.setdefault(ctx.author.id, {})
         search_dict = {}
         for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
             search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('ign', '').lower()] = trainer
             for account in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {}):
                 search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('ign', '').lower()] = trainer
         if author.get('ign') and (ign.lower() == "clear" or ign.lower() == "reset"):
-            await ctx.send(_('Your in-game name(s) have been cleared!'), delete_after=30)
+            await ctx.send(_('Your in-game name has been cleared!'), delete_after=30)
             try:
                 del self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign']
             except:
@@ -883,7 +888,10 @@ class Trainers(commands.Cog):
             return await ctx.error(f"Please enter your in-game name. Try again when ready.")
         if ign.lower() in search_dict.keys():
             dupe_account = ctx.guild.get_member(search_dict[ign.lower()])
-            error_embed = discord.Embed(description=f"That account name is already claimed by {dupe_account.mention}. Contact a moderator if there is a dispute.")
+            if dupe_account != ctx.author:
+                error_embed = discord.Embed(description=f"That account name is already claimed by {dupe_account.mention}. Contact a moderator if there is a dispute.")
+            else:
+                error_embed = discord.Embed(description=f"Your account name is already set to **{ign}**. Clear it with **{ctx.prefix}ign clear**.")
             error_embed.set_author(name=f"Account Name Error", icon_url="https://i.imgur.com/juhq2uJ.png")
             return await ctx.send(embed=error_embed)
         self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign'] = ign[:300]

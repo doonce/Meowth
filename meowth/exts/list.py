@@ -517,7 +517,7 @@ class Listing(commands.Cog):
         remote_emoji = self.bot.custom_emoji.get('remote_raid', u'\U0001f4e1')
         for trainer in trainer_dict.keys():
             user = ctx.guild.get_member(trainer)
-            if not trainer_dict[trainer].get('remote'):
+            if not trainer_dict[trainer].get('remote') or not trainer_dict[trainer].get('invite_dict'):
                 continue
             invite_dict = trainer_dict[trainer]['invite_dict']
             if (trainer_dict[trainer]['status']['maybe']) and user and team == False:
@@ -1139,9 +1139,9 @@ class Listing(commands.Cog):
                 wantmsg += f"**Raid Eggs:** (raids)\n{', '.join(user_eggs)}\n\n"
         if wantmsg:
             if any(list(user_mute.values())):
-                listmsg = f"Meowth! {ctx.author.display_name}, your **{(', ').join([x for x in user_mute if user_mute[x]])}** notifications are muted, so you will not receive those notifications from your current **!want** list below.\n\nUse {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!"
+                listmsg = f"Meowth! {ctx.author.display_name}, your **{(', ').join([x for x in user_mute if user_mute[x]])}** notifications are muted, so you will not receive those notifications from your current **!want** list below.\n\nEveryone can use {want_emoji} to add a new alert, {unwant_emoji} to remove an alert, {settings_emoji} to edit your alert settings, {list_emoji} to list your alerts!"
             else:
-                listmsg = f"Meowth! {ctx.author.display_name}, you will receive notifications for your current **!want** list below.\n\nUse {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!"
+                listmsg = f"Meowth! {ctx.author.display_name}, you will receive notifications for your current **!want** list below.\n\nEveryone can use {want_emoji} to add a new alert, {unwant_emoji} to remove an alert, {settings_emoji} to edit your alert settings, {list_emoji} to list your alerts!"
             paginator = commands.Paginator(prefix="", suffix="")
             for line in wantmsg.splitlines():
                 if len(line) < 1900:
@@ -1160,7 +1160,7 @@ class Listing(commands.Cog):
                         paginator.add_line((', ').join(new_list).rstrip().replace('`', '\u200b`'))
             return listmsg, paginator.pages
         else:
-            listmsg = f"Meowth! {ctx.author.display_name}, you don\'t have any wants! use **!want** to add some.\n\nUse {want_emoji} to add new, {unwant_emoji} to remove, {settings_emoji} to edit settings, {list_emoji} to list wants!"
+            listmsg = f"Meowth! {ctx.author.display_name}, you don\'t have any wants! use **!want** to add some.\n\nEveryone can use {want_emoji} to add a new alert, {unwant_emoji} to remove an alert, {settings_emoji} to edit your alert settings, {list_emoji} to list your alerts!"
         return listmsg, None
 
     @_list.command()
