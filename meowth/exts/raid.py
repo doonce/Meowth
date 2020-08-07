@@ -5853,7 +5853,7 @@ class Raid(commands.Cog):
         account_dict[ctx.author.display_name.lower()] = {"code":user_code, "name":ctx.author.display_name}
         if ign:
             del account_dict[ctx.author.display_name.lower()]
-            account_dict[ign] = {"code":user_code, "name":ign}
+            account_dict[ign.lower()] = {"code":user_code, "name":ign}
         for account in user_accounts:
             account_dict[account.lower()] = {"code":user_accounts[account]['trainercode'], "name":account}
         if not trainercode:

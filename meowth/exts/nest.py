@@ -70,6 +70,11 @@ class Nest(commands.Cog):
                 for channel in list(nest_dict.keys()):
                     report_channel = self.bot.get_channel(channel)
                     if not report_channel:
+                        try:
+                            report_channel = await self.bot.fetch_channel(channel)
+                        except:
+                            report_channel = None
+                    if not report_channel:
                         del self.bot.guild_dict[guild.id]['nest_dict'][channel]
                         logger.info(f"Deleted Nest Channel {report_channel}")
                         continue

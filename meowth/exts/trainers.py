@@ -778,8 +778,8 @@ class Trainers(commands.Cog):
         await ctx.send(f"{ctx.author.mention}, your Pokebattler ID has been set to **{pbid}**!", delete_after=10)
         await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
-    @commands.command()
-    async def trainercode(self, ctx, *, trainercode: str = ""):
+    @commands.group(case_insensitive=True, invoke_without_command=True)
+    async def trainercode(self, ctx, *, trainercode: commands.clean_content(fix_channel_mentions=True)=""):
         """Links a server member to a Pokemon Go Trainer Code.
 
         To clear your setting, use !trainercode clear."""
@@ -797,68 +797,104 @@ class Trainers(commands.Cog):
             except:
                 pass
             return
-        elif author.get('trainercode') and trainercode:
-            if [x for x in trainercode if x.isdigit()]:
-                if len(trainercode.replace(" ", "")) != 12:
-                    return await ctx.channel.send(f"You entered an invalid trainer code. Trainer codes contain 12 digits.", delete_after=30)
-                question = await ctx.channel.send(f"Your trainer code is already set to **{author.get('trainercode')}**. Do you want to change it to **{trainercode}**?")
-                try:
-                    timeout = False
-                    res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
-                except TypeError:
-                    timeout = True
-                await utils.safe_delete(question)
-                if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
-                    return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is: **{author.get('trainercode')}**")
-                elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
-                    pass
+        elif trainercode:
+            trainercode_split = trainercode.split(',')
+            trainercode_split = [x.strip().replace(" ", "").replace("@", "").lower() for x in trainercode_split]
+            if len(trainercode_split) == 1 and len([x for x in trainercode_split[0] if x.isdigit()]) == 12:
+                trainercode = trainercode_split[0].replace(" ", "")
+                if trainercode.lower() in search_dict.keys():
+                    dupe_account = ctx.guild.get_member(search_dict[trainercode.lower()])
+                    if dupe_account != ctx.author:
+                        error_embed = discord.Embed(description=f"That trainer code is already claimed by {dupe_account.mention}. Contact a moderator if there is a dispute.")
+                    elif trainercode == author.get('trainercode'):
+                        error_embed = discord.Embed(description=f"Your trainer code is already set to **{trainercode}**. Clear it with **{ctx.prefix}trainercode clear**")
+                    else:
+                        error_embed = discord.Embed(description=f"Your have an account with this trainer code (**{trainercode}**). Clear it with **{ctx.prefix}profile remove**")
+                    error_embed.set_author(name=f"Trainer Code Error", icon_url="https://i.imgur.com/juhq2uJ.png")
+                    return await ctx.send(embed=error_embed, delete_after=30)
+                if author.get('trainercode'):
+                    question = await ctx.channel.send(f"Your trainer code is already set to **{author.get('trainercode')}**. Do you want to change it to **{''.join([x for x in trainercode if x.isdigit()])}**?")
+                    try:
+                        timeout = False
+                        res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
+                    except TypeError:
+                        timeout = True
+                    await utils.safe_delete(question)
+                    if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
+                        return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is:", embed=discord.Embed(description=f"{author.get('trainercode')}"))
+                    elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
+                        self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode'] = ''.join([x for x in trainercode if x.isdigit()])
+                        await ctx.send(f"{ctx.author.mention}, your trainer code has been set to **{''.join([x for x in trainercode if x.isdigit()])}**!", delete_after=30)
+                        return await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
+                    else:
+                        return
                 else:
-                    return
+                    self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode'] = ''.join([x for x in trainercode if x.isdigit()])
+                    await ctx.send(f"{ctx.author.mention}, your trainer code has been set to **{''.join([x for x in trainercode if x.isdigit()])}**!", delete_after=30)
+                    return await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
             else:
+                search_dict = {}
+                account_list = []
+                code_list = []
                 for trainer in ctx.bot.guild_dict[ctx.guild.id]['trainers']:
-                    search_dict = {}
                     user = ctx.guild.get_member(trainer)
                     if not user:
                         continue
                     user_code = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('trainercode', "").replace(" ", "").lower()
+                    user_ign = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('ign', "")
                     if user_code:
-                        search_dict[user.name.lower()] = {"name":user.name, "code":user_code, "member":user.name}
+                        search_dict[user.name.lower()] = {"name":user.name, "code":user_code, "member":user, "member_name":user.name}
+                    if user_ign:
+                        search_dict[user_ign.lower()] = {"name":user_ign, "code":user_code, "member":user, "member_name":user.name}
                     for account in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {}):
                         user_code = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('trainercode')
                         if user_code:
-                            search_dict[account.lower()] = {"name":account, "code":user_code, "member":user.name}
-                    if trainercode.lower() in search_dict:
-                        return await ctx.channel.send(f"{search_dict[trainercode.lower()]['name']}{' (@'+search_dict[trainercode.lower()]['member']+')' if search_dict[trainercode.lower()]['member'] != search_dict[trainercode.lower()]['name'] else ''}'s trainer code is:", embed=discord.Embed(description=f"{search_dict[trainercode.lower()]['code']}"))
-                return await ctx.send(f"I couldn't find that account", delete_after=30)
+                            search_dict[account.lower()] = {"name":account, "code":user_code, "member":user, "member_name":user.name}
+                for account in trainercode_split:
+                    if account in account_list:
+                        continue
+                    if account.lower() in search_dict:
+                        account_list.append(search_dict[account.lower()]['name'])
+                        code_list.append(search_dict[account.lower()]['code'])
+                if account_list:
+                    return await ctx.channel.send(f"The trainer code{'s' if len(account_list) > 1 else ''} for **{', '.join(account_list)}** {'are' if len(account_list) > 1 else 'is'}:", embed=discord.Embed(description=f"{', '.join(code_list)}"))
+                else:
+                    return await ctx.send(f"I couldn't find any matched accounts.", delete_after=30)
         elif author.get('trainercode'):
             return await ctx.channel.send(f"{ctx.author.display_name}\'s trainer code is:", embed=discord.Embed(description=f"{author.get('trainercode')}"))
         elif not trainercode:
             return await ctx.error(f"Please enter your trainer code. Try again when ready.")
-        trainercode = trainercode.replace(" ", "")
-        if trainercode.lower() in search_dict.keys():
-            dupe_account = ctx.guild.get_member(search_dict[trainercode.lower()])
-            if dupe_account != ctx.author:
-                error_embed = discord.Embed(description=f"That trainer code is already claimed by {dupe_account.mention}. Contact a moderator if there is a dispute.")
-            else:
-                error_embed = discord.Embed(description=f"Your trainer code is already set to **{trainercode}**. Clear it with **{ctx.prefix}trainercode clear**")
-            error_embed.set_author(name=f"Trainer Code Error", icon_url="https://i.imgur.com/juhq2uJ.png")
-            return await ctx.send(embed=error_embed)
-        if len(trainercode.replace(" ", "")) != 12:
-            return await ctx.channel.send(f"You entered an invalid trainer code. Trainer codes contain 12 digits.", delete_after=30)
-        self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['trainercode'] = trainercode[:50]
-        await ctx.send(f"{ctx.author.mention}, your trainer code has been set to **{trainercode}**!", delete_after=30)
-        await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
 
-    @commands.command()
-    async def ign(self, ctx, *, ign: str = ""):
-        """Links a server member to a comma separated list of Pokemon Go in-game name(s).
+    @trainercode.command(name="invite", aliases=["invites"])
+    @checks.rsvpchannel()
+    async def ign_invites(self, ctx):
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+        raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id])
+        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
+        remote_emoji = self.bot.custom_emoji.get('remote_raid', u'\U0001f4e1')
+        invite_list = []
+        for trainer in trainer_dict.keys():
+            user = ctx.guild.get_member(trainer)
+            if not trainer_dict[trainer].get('remote') or not trainer_dict[trainer].get('invite_dict') or not user:
+                continue
+            invite_dict = trainer_dict[trainer]['invite_dict']
+            for code in invite_dict.keys():
+                invite_list.append(code)
+        return await ctx.send(f"The following trainercode{'s' if len(invite_list) > 1 else ''} need{'s' if len(invite_list) == 1 else ''} invited:", embed=discord.Embed(description=f"{', '.join(invite_list)}"))
+
+    @commands.group(case_insensitive=True, invoke_without_command=True)
+    async def ign(self, ctx, *, ign: commands.clean_content(fix_channel_mentions=True)=""):
+        """Links a server member to a Pokemon Go Trainer In-game Name.
 
         To clear your setting, use !ign clear."""
         trainers = self.bot.guild_dict[ctx.guild.id].get('trainers', {})
         author = trainers.setdefault(ctx.author.id, {})
         search_dict = {}
         for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
-            search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('ign', '').lower()] = trainer
+            user_ign = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('ign', '').lower()
+            if user_ign:
+                search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('ign', '').lower()] = trainer
             for account in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {}):
                 search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('ign', '').lower()] = trainer
         if author.get('ign') and (ign.lower() == "clear" or ign.lower() == "reset"):
@@ -868,35 +904,79 @@ class Trainers(commands.Cog):
             except:
                 pass
             return
-        elif author.get('ign') and ign:
-            question = await ctx.channel.send(f"Your in-game name is already set to **{author.get('ign')}**. Do you want to change it to **{ign}**?")
-            try:
-                timeout = False
-                res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
-            except TypeError:
-                timeout = True
-            await utils.safe_delete(question)
-            if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
-                return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name is: **{author.get('ign')}**")
-            elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
-                pass
+        elif ign:
+            ign_split = ign.split(',')
+            ign_split = [x.strip().replace(" ", "").replace("@", "") for x in ign_split]
+            ign = ign_split[0]
+            if len(ign_split) == 1 and ign.lower() not in search_dict.keys():
+                if author.get('ign'):
+                    question = await ctx.channel.send(f"Nobody has set that in-game name yet. Your in-game name is already set to **{author.get('ign')}**. Do you want to change it to **{ign}**?")
+                else:
+                    question = await ctx.channel.send(f"Nobody has set that in-game name yet. Do you want to set your in-game name to **{ign}**?")
+                try:
+                    timeout = False
+                    res, reactuser = await utils.ask(self.bot, question, ctx.message.author.id)
+                except TypeError:
+                    timeout = True
+                await utils.safe_delete(question)
+                if timeout or res.emoji == self.bot.custom_emoji.get('answer_no', u'\U0000274e'):
+                    return
+                elif res.emoji == self.bot.custom_emoji.get('answer_yes', u'\U00002705'):
+                    self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign'] = ign[:50]
+                    await ctx.send(f"{ctx.author.mention}, your in-game name has been set to **{ign}**!", delete_after=30)
+                    return await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
+                else:
+                    return
             else:
-                return
+                search_dict = {}
+                account_list = []
+                code_list = []
+                for trainer in ctx.bot.guild_dict[ctx.guild.id]['trainers']:
+                    user = ctx.guild.get_member(trainer)
+                    if not user:
+                        continue
+                    user_code = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('trainercode', "").replace(" ", "").lower()
+                    user_ign = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('ign', "")
+                    if user_code:
+                        search_dict[user.name.lower()] = {"name":user.name, "code":user_code, "member":user, "member_name":user.name}
+                    if user_ign:
+                        search_dict[user_ign.lower()] = {"name":user_ign, "code":user_code, "member":user, "member_name":user.name}
+                    for account in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {}):
+                        user_code = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('trainercode')
+                        if user_code:
+                            search_dict[account.lower()] = {"name":account, "code":user_code, "member":user, "member_name":user.name}
+                for account in ign_split:
+                    if account in account_list:
+                        continue
+                    if account.lower() in search_dict:
+                        account_list.append(search_dict[account.lower()]['member'].display_name)
+                        code_list.append(search_dict[account.lower()]['name'])
+                if account_list:
+                    return await ctx.channel.send(f"The in-game name{'s' if len(account_list) > 1 else ''} for **{', '.join(account_list)}** {'are' if len(account_list) > 1 else 'is'}:", embed=discord.Embed(description=f"{', '.join(code_list)}"))
+                else:
+                    return await ctx.send(f"I couldn't find any matched accounts.", delete_after=30)
         elif author.get('ign'):
-            return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name(s) are:", embed=discord.Embed(description=f"{author.get('ign')}"))
+            return await ctx.channel.send(f"{ctx.author.display_name}\'s in-game name is:", embed=discord.Embed(description=f"{author.get('ign')}"))
         elif not ign:
             return await ctx.error(f"Please enter your in-game name. Try again when ready.")
-        if ign.lower() in search_dict.keys():
-            dupe_account = ctx.guild.get_member(search_dict[ign.lower()])
-            if dupe_account != ctx.author:
-                error_embed = discord.Embed(description=f"That account name is already claimed by {dupe_account.mention}. Contact a moderator if there is a dispute.")
-            else:
-                error_embed = discord.Embed(description=f"Your account name is already set to **{ign}**. Clear it with **{ctx.prefix}ign clear**.")
-            error_embed.set_author(name=f"Account Name Error", icon_url="https://i.imgur.com/juhq2uJ.png")
-            return await ctx.send(embed=error_embed)
-        self.bot.guild_dict[ctx.guild.id]['trainers'][ctx.author.id]['ign'] = ign[:300]
-        await ctx.send(f"{ctx.author.mention}, your in-game name has been set to **{ign}**!", delete_after=30)
-        await utils.add_reaction(ctx.message, self.bot.custom_emoji.get('command_done', u'\U00002611'))
+
+    @ign.command(name="invite", aliases=["invites"])
+    @checks.rsvpchannel()
+    async def ign_invites(self, ctx):
+        report_dict = await utils.get_report_dict(self.bot, ctx.channel)
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
+        raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id])
+        trainer_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['trainer_dict'])
+        remote_emoji = self.bot.custom_emoji.get('remote_raid', u'\U0001f4e1')
+        invite_list = []
+        for trainer in trainer_dict.keys():
+            user = ctx.guild.get_member(trainer)
+            if not trainer_dict[trainer].get('remote') or not trainer_dict[trainer].get('invite_dict') or not user:
+                continue
+            invite_dict = trainer_dict[trainer]['invite_dict']
+            for code in invite_dict.keys():
+                invite_list.append(invite_dict[code])
+        return await ctx.send(f"The following in-game name{'s' if len(invite_list) > 1 else ''} need{'s' if len(invite_list) == 1 else ''} invited:", embed=discord.Embed(description=f"{', '.join(invite_list)}"))
 
 def setup(bot):
     bot.add_cog(Trainers(bot))
