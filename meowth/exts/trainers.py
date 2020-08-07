@@ -867,7 +867,7 @@ class Trainers(commands.Cog):
 
     @trainercode.command(name="invite", aliases=["invites"])
     @checks.rsvpchannel()
-    async def ign_invites(self, ctx):
+    async def trainercode_invites(self, ctx):
         report_dict = await utils.get_report_dict(self.bot, ctx.channel)
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[ctx.channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
         raid_dict = copy.deepcopy(self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id])

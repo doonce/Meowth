@@ -5863,7 +5863,7 @@ class Raid(commands.Cog):
         trainercode_split = trainercode.split(',')
         trainercode_split = [x.strip() for x in trainercode_split]
         for code in trainercode_split:
-            if code and code.lower() in list(account_dict.keys()) and account_dict.get(code, {}).get('code', ''):
+            if code and code.lower() in list(account_dict.keys()) and account_dict.get(code.lower(), {}).get('code', ''):
                 trainer_dict[account_dict[code.lower()]['code']] = account_dict[code.lower()]['name']
             elif [x for x in code if x.isdigit()] and len(code.replace(" ", "")) == 12:
                 trainer_dict[code] = ctx.author.display_name
