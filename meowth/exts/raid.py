@@ -866,7 +866,7 @@ class Raid(commands.Cog):
                     user = ctx.guild.get_member(trainer)
                     raiddmmsg = await user.send(content=content, embed=embed)
                     dm_dict[user.id] = raiddmmsg.id
-                except discord.errors.Forbidden:
+                except:
                     pass
                 if embed:
                     embed.description = embed.description.replace(f"\n**Subscription:** {(', ').join(send_raid)}", "")

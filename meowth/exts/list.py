@@ -1905,6 +1905,57 @@ class Listing(commands.Cog):
             for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['egg_list']):
                 if not ctx.guild.get_channel(channel):
                     del self.bot.guild_dict[ctx.guild.id]['list_dict']['egg_list'][channel]
+                    
+    @_list.command(aliases=['trainer'], hidden=True)
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    async def trainers(self, ctx):
+        """List guild trainers
+
+        Usage: !list trainers"""
+        list_dict = self.bot.guild_dict[ctx.guild.id].setdefault('list_dict', {}).setdefault('trainer_list', {}).setdefault(ctx.channel.id, [])
+        delete_list = []
+        async with ctx.typing():
+            for msg in list_dict:
+                try:
+                    msg = await ctx.channel.fetch_message(msg)
+                    delete_list.append(msg)
+                except:
+                    pass
+            list_messages = []
+            trainer_dict = {}
+            trainer_list = []
+            await utils.safe_bulk_delete(ctx.channel, delete_list)
+            list_embed = discord.Embed(discription="", colour=ctx.guild.me.colour)
+            list_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/emoji/unicode_spiralnotepad.png?cache=1")
+            for trainer in list(self.bot.guild_dict[ctx.guild.id]['trainers'].keys()):
+                user = ctx.guild.get_member(trainer)
+                if not user:
+                    continue
+                trainer_name = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('ign')
+                trainer_code = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('trainercode')
+                trainer_accounts = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})
+                if trainer_name and trainer_code:
+                    trainer_list.append(f"@{user.display_name} - **Name**: {trainer_name} | **Code**: {trainer_code}")
+                for account in trainer_accounts:
+                    trainer_list.append(f"@{user.display_name} - **Name**: {trainer_accounts[account]['ign']} | **Code**: {trainer_accounts[account]['trainercode']}")
+            sorted_list = sorted(trainer_list, key=str.lower)
+            paginator = commands.Paginator(prefix="", suffix="")
+            for line in sorted_list:
+                paginator.add_line(line.rstrip().replace('`', '\u200b`'))
+            if paginator.pages:
+                index = 0
+                for p in paginator.pages:
+                    list_embed.description = p
+                    if index == 0:
+                        listmsg = await ctx.channel.send(f"Here are the current trainers!", embed=list_embed)
+                    else:
+                        listmsg = await ctx.channel.send(embed=list_embed)
+                    list_messages.append(listmsg.id)
+                    index += 1
+            self.bot.guild_dict[ctx.guild.id]['list_dict']['egg_list'][ctx.channel.id] = list_messages
+            for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['trainer_list']):
+                if not ctx.guild.get_channel(channel):
+                    del self.bot.guild_dict[ctx.guild.id]['list_dict']['trainer_list'][channel]
 
     @_list.command(aliases=['lure'])
     @commands.cooldown(1, 5, commands.BucketType.channel)
