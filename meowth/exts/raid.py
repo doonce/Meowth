@@ -866,7 +866,7 @@ class Raid(commands.Cog):
                     user = ctx.guild.get_member(trainer)
                     raiddmmsg = await user.send(content=content, embed=embed)
                     dm_dict[user.id] = raiddmmsg.id
-                except:
+                except discord.errors.Forbidden:
                     pass
                 if embed:
                     embed.description = embed.description.replace(f"\n**Subscription:** {(', ').join(send_raid)}", "")
@@ -6099,6 +6099,7 @@ class Raid(commands.Cog):
             party_info = (' ').join(party_list)
             if not pkmn_match:
                 for index, item in enumerate(pkmn_split):
+                    multiple_bosses = []
                     pkmn_match = await pkmn_class.Pokemon.async_get_pokemon(self.bot, item)
                     if pkmn_match:
                         if str(pkmn_match).lower() in boss_list:
@@ -6106,12 +6107,13 @@ class Raid(commands.Cog):
                         elif pkmn_match.id in self.bot.raid_dict[str(egg_level)]:
                             for boss in self.bot.raid_dict[str(egg_level)]:
                                 if isinstance(boss, pkmn_class.Pokemon) and boss.id == pkmn_match.id:
-                                    pkmn_split[index] = str(boss).lower()
-                                    break
+                                    multiple_bosses.append(str(boss).lower())
+                                    pkmn_split[index] = ""
                         else:
                             pkmn_split[index] = ""
                     else:
                         pkmn_split[index] = ""
+                pkmn_split = [*pkmn_split, *multiple_bosses]
             pkmn_split = [x for x in pkmn_split if x]
             if pkmn_match and self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['type'] == 'egg':
                 entered_interest = []
