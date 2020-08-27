@@ -416,7 +416,6 @@ class Pokemon():
             form_str = "_00"
         if self.mega:
             mega_str = "_mega"
-        print(f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{gender_str}{form_str}{mega_str}{shiny_str}.png?cache=2")
         return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{gender_str}{form_str}{mega_str}{shiny_str}.png?cache=2")
 
     @property
