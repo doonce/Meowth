@@ -80,7 +80,7 @@ class Pokemon():
                  'base_attack', 'base_defense', 'charge_moves', 'quick_moves',
                  'height', 'weight', 'evolves', 'evolve_candy', 'buddy_distance',
                  'research_cp', 'raid_cp', 'boost_raid_cp', 'max_cp', 'weather',
-                 'shadow', 'iv', 'cp', 'level')
+                 'shadow', 'iv', 'cp', 'level', 'mega')
 
     def __init__(self, bot, pkmn, guild=None, **attribs):
         self.bot = bot
@@ -106,6 +106,7 @@ class Pokemon():
         self.gender = self.is_gender(attribs)
         self.shadow = self.is_shadow(attribs)
         self.shiny = self.is_shiny(attribs)
+        self.mega = self.is_mega(attribs)
         self.legendary = bot.pkmn_info[self.name.lower()].get('legendary', False)
         self.mythical = bot.pkmn_info[self.name.lower()].get('mythical', False)
         self.types = self._get_type()
@@ -138,6 +139,7 @@ class Pokemon():
         shadow = ""
         shiny = ""
         gender = ""
+        mega = ""
         if self.size:
             size = f"{self.size}"
         if self.region == "alolan":
@@ -152,7 +154,9 @@ class Pokemon():
             shiny = f"Shiny"
         if self.gender:
             gender = str(self.gender).title()
-        modifier_list = [gender, shiny, shadow, region, size, name, form]
+        if self.mega:
+            mega = f"Mega"
+        modifier_list = [gender, shiny, shadow, region, size, mega, name, form]
         pkmn_str = (' ').join([x for x in modifier_list if x])
         return pkmn_str
 
@@ -285,6 +289,21 @@ class Pokemon():
         return False
 
     @property
+    def mega_available(self):
+        """:class:`list` : Pokemon mega available"""
+        pkmn_name = str(self.name).lower()
+        for form in self.bot.pkmn_info[pkmn_name]['forms']:
+            if self.bot.pkmn_info[pkmn_name]['forms'][form].get('mega', False):
+                return True
+        return False
+
+    def is_mega(self, attributes):
+        mega = dict(attributes).get('mega', False)
+        if mega and self.mega_available:
+            return True
+        return False
+
+    @property
     def shadow_available(self):
         """:class:`bool` : Pokemon shadow available"""
         pkmn_name = str(self.name).lower()
@@ -359,6 +378,7 @@ class Pokemon():
         region_str = ""
         shiny_str = ""
         shadow_str = ""
+        mega_str = ""
         region_list = ["alolan", "galarian"]
         form_list = [x for x in list(self.bot.pkmn_info[self.name.lower()]['forms'].keys()) if x not in region_list]
         if self.region:
@@ -381,7 +401,7 @@ class Pokemon():
             region_str = "_61"
         elif self.region == "galarian":
             region_str = "_31"
-        if self.form:
+        if self.form or self.mega:
             form_index = form_list.index(pkmn_form)
             form_str = f"{region_str}_{str(form_index).zfill(2)}"
         elif self.region:
@@ -394,7 +414,10 @@ class Pokemon():
             shadow_str = f"_{self.shadow}"
         if not self.gender and not self.form and not self.region:
             form_str = "_00"
-        return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{gender_str}{form_str}{shiny_str}.png?cache=2")
+        if self.mega:
+            mega_str = "_mega"
+        print(f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{gender_str}{form_str}{mega_str}{shiny_str}.png?cache=2")
+        return (f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/pkmn_icons/pokemon_icon_{pkmn_no}{gender_str}{form_str}{mega_str}{shiny_str}.png?cache=2")
 
     @property
     def game_name(self):
@@ -641,6 +664,7 @@ class Pokemon():
     def query_pokemon(bot, argument):
         argument = str(argument)
         shiny = re.search(r'\bshiny\b', argument, re.IGNORECASE)
+        mega = re.search(r'\bmega\b', argument, re.IGNORECASE)
         alolan = re.search(r'\balola\b|\balolan\b', argument, re.IGNORECASE)
         galarian = re.search(r'\bgalar\b|\bgalarian\b', argument, re.IGNORECASE)
         male = re.search(r'\b(?<!fe)male\b', argument, re.IGNORECASE)
@@ -657,6 +681,12 @@ class Pokemon():
             shiny = True
         else:
             shiny = False
+        if mega:
+            match_list.append(mega.group(0))
+            argument = re.sub(mega.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
+            mega = True
+        else:
+            mega = False
         if shadow:
             match_list.append(shadow.group(0))
             argument = re.sub(shadow.group(0), '', argument, count=0, flags=re.IGNORECASE).strip()
@@ -715,7 +745,7 @@ class Pokemon():
             else:
                 form = None
 
-        return {"argument":argument, "match_list":match_list, "shiny":shiny, "gender":gender, "size":size, "form":form, "region":region, "shadow":shadow}
+        return {"argument":argument, "match_list":match_list, "shiny":shiny, "gender":gender, "size":size, "form":form, "region":region, "shadow":shadow, "mega":mega}
 
     @classmethod
     async def convert(self, ctx, argument):
@@ -771,7 +801,7 @@ class Pokemon():
         result = False
         if match:
             if score >= 80:
-                result = self(ctx.bot, str(match), ctx.guild, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
+                result = self(ctx.bot, str(match), ctx.guild, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'], mega=query['mega'])
             else:
                 result = {
                     'suggested' : str(match),
@@ -808,9 +838,9 @@ class Pokemon():
         if not match:
             return None
         if entered_argument.isdigit() and allow_digits:
-            pokemon = self(bot, str(match), None, shiny=False, form=None, region=None, gender=None, size=None, shadow=None)
+            pokemon = self(bot, str(match), None, shiny=False, form=None, region=None, gender=None, size=None, shadow=None, mega=None)
         else:
-            pokemon = self(bot, str(match), None, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
+            pokemon = self(bot, str(match), None, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'], mega=query['mega'])
         return pokemon
 
     @classmethod
@@ -838,9 +868,9 @@ class Pokemon():
         if not match:
             return None
         if entered_argument.isdigit() and allow_digits:
-            pokemon = self(bot, str(match), None, shiny=False, form=None, region=None, gender=None, size=None, shadow=None)
+            pokemon = self(bot, str(match), None, shiny=False, form=None, region=None, gender=None, size=None, shadow=None, mega=None)
         else:
-            pokemon = self(bot, str(match), None, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
+            pokemon = self(bot, str(match), None, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'], mega=query['mega'])
         return pokemon
 
     @classmethod
@@ -894,9 +924,9 @@ class Pokemon():
         if not pokemon:
             return None, None
         if entered_argument.isdigit() and allow_digits:
-            pokemon = self(ctx.bot, str(pokemon), None, shiny=False, form=None, region=None, gender=None, size=None, shadow=None)
+            pokemon = self(ctx.bot, str(pokemon), None, shiny=False, form=None, region=None, gender=None, size=None, shadow=None, mega=None)
         else:
-            pokemon = self(ctx.bot, str(pokemon), None, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'])
+            pokemon = self(ctx.bot, str(pokemon), None, shiny=query['shiny'], form=query['form'], region=query['region'], gender=query['gender'], size=query['size'], shadow=query['shadow'], mega=query['mega'])
         return pokemon, match_list
 
 class Pokedex(commands.Cog):
@@ -1554,6 +1584,7 @@ class Pokedex(commands.Cog):
         for form in forms:
             form_str = ""
             form_key = ""
+            mega_str = ""
             if self.bot.pkmn_info[pokemon.name.lower()]['forms'][str(form).lower()].get('shiny', False):
                 if "S = Shiny Available" not in key_list:
                     key_list.append("S = Shiny Available")
@@ -1566,13 +1597,15 @@ class Pokedex(commands.Cog):
                 if "R = Team Rocket Shadow" not in key_list:
                     key_list.append("R = Team Rocket Shadow")
                 form_key += "R"
+            if self.bot.pkmn_info[pokemon.name.lower()]['forms'][str(form).lower()].get('mega', False):
+                mega_str = "Mega "
             if "S" in form_key or "G" in form_key or "R" in form_key:
                 form_key = f"**({form_key})**"
             if form == "None" and "Normal" in forms:
                 continue
             elif form == "None":
                 form = "Normal"
-            form_str = f"{form} {form_key}"
+            form_str = f"{mega_str}{form} {form_key}"
             form_list.append(form_str.strip())
         shiny_str = ""
         if pokemon.shiny_available:

@@ -98,7 +98,8 @@
         },
         "shadow": true,
         "evolution": "[ Bulbasaur ] \u2192 [ Ivysaur ] \u2192 [ Venusaur ]",
-        "size": false
+        "size": false,
+        "mega": true
       },
       "clone": {
         "type": [
@@ -208,7 +209,8 @@
           "evolution"
         ],
         "shadow": true,
-        "evolution": "[ Charmander ] \u2192 [ Charmeleon ] \u2192 [ Charizard ]"
+        "evolution": "[ Charmander ] \u2192 [ Charmeleon ] \u2192 [ Charizard ]",
+        "mega": true
       },
       "clone": {
         "type": [
@@ -219,6 +221,28 @@
         "shiny": [],
         "shadow": true,
         "evolution": "[ Charmander ] \u2192 [ Charmeleon ] \u2192 [ Charizard ]"
+      },
+      "x": {
+        "type": [
+          "Fire",
+          "Flying"
+        ],
+        "pokedex": "Charizard flies around the sky in search of powerful opponents. It breathes fire of such great heat that it melts anything. However, it never turns its fiery breath on any opponent weaker than itself.",
+        "shiny": [],
+        "shadow": true,
+        "evolution": "[ Charmander ] \u2192 [ Charmeleon ] \u2192 [ Charizard ]",
+        "mega": true
+      },
+      "y": {
+        "type": [
+          "Fire",
+          "Flying"
+        ],
+        "pokedex": "Charizard flies around the sky in search of powerful opponents. It breathes fire of such great heat that it melts anything. However, it never turns its fiery breath on any opponent weaker than itself.",
+        "shiny": [],
+        "shadow": true,
+        "evolution": "[ Charmander ] \u2192 [ Charmeleon ] \u2192 [ Charizard ]",
+        "mega": true
       }
     }
   },
@@ -318,7 +342,8 @@
           "evolution"
         ],
         "shadow": true,
-        "evolution": "[ Squirtle ] \u2192 [ Wartortle ] \u2192 [ Blastoise ]"
+        "evolution": "[ Squirtle ] \u2192 [ Wartortle ] \u2192 [ Blastoise ]",
+        "mega": true
       },
       "sunglasses": {
         "type": [
@@ -417,7 +442,13 @@
           "Poison"
         ],
         "pokedex": "Weedle has an extremely acute sense of smell. It is capable of distinguishing its favorite kinds of leaves from those it dislikes just by sniffing with its big red proboscis (nose).",
-        "shiny": [],
+        "shiny": [
+          "hatch",
+          "raid",
+          "league",
+          "wild",
+          "research"
+        ],
         "size": false,
         "shadow": true,
         "evolution": "[ Weedle ] \u2192 [ Kakuna ] \u2192 [ Beedrill ]",
@@ -434,7 +465,9 @@
           "Poison"
         ],
         "pokedex": "Kakuna remains virtually immobile as it clings to a tree. However, on the inside, it is extremely busy as it prepares for its coming evolution. This is evident from how hot the shell becomes to the touch.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "size": false,
         "shadow": true,
         "evolution": "[ Weedle ] \u2192 [ Kakuna ] \u2192 [ Beedrill ]"
@@ -450,10 +483,13 @@
           "Poison"
         ],
         "pokedex": "Beedrill is extremely territorial. No one should ever approach its nest\u2014this is for their own safety. If angered, they will attack in a furious swarm.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "size": false,
         "shadow": true,
-        "evolution": "[ Weedle ] \u2192 [ Kakuna ] \u2192 [ Beedrill ]"
+        "evolution": "[ Weedle ] \u2192 [ Kakuna ] \u2192 [ Beedrill ]",
+        "mega": true
       }
     }
   },
@@ -504,25 +540,8 @@
         "shiny": [
           "evolution"
         ],
-        "gender": {
-          "male": {
-            "type": [
-              "Normal",
-              "Flying"
-            ],
-            "pokedex": "This Pokemon has a dazzling plumage of beautifully glossy feathers. Many Trainers are captivated by the striking beauty of the feathers on its head, compelling them to choose Pidgeot as their Pokemon.",
-            "evolution": "[ Pidgey ] \u2192 [ Pidgeotto ] \u2192 [ Pidgeot ]"
-          },
-          "female": {
-            "type": [
-              "Normal",
-              "Flying"
-            ],
-            "pokedex": "This Pokemon has a dazzling plumage of beautifully glossy feathers. Many Trainers are captivated by the striking beauty of the feathers on its head, compelling them to choose Pidgeot as their Pokemon.",
-            "evolution": "[ Pidgey ] \u2192 [ Pidgeotto ] \u2192 [ Pidgeot ]"
-          }
-        },
-        "evolution": "[ Pidgey ] \u2192 [ Pidgeotto ] \u2192 [ Pidgeot ]"
+        "evolution": "[ Pidgey ] \u2192 [ Pidgeotto ] \u2192 [ Pidgeot ]",
+        "mega": true
       }
     }
   },
@@ -1593,9 +1612,16 @@
         ],
         "pokedex": "On every night of a full moon, groups of this Pokemon come out to play. When dawn arrives, the tired Clefairy return to their quiet mountain retreats and go to sleep nestled up against each other.",
         "shiny": [
+          "hatch",
+          "raid",
+          "league",
+          "wild",
+          "research",
           "evolution"
         ],
-        "evolution": "[ Cleffa ] \u2192 [ Clefairy ] \u2192 [ Clefable ]"
+        "evolution": "[ Cleffa ] \u2192 [ Clefairy ] \u2192 [ Clefable ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -1678,9 +1704,15 @@
         ],
         "pokedex": "Jigglypuff's vocal cords can freely adjust the wavelength of its voice. This Pokemon uses this ability to sing at precisely the right wavelength to make its foes most drowsy.",
         "shiny": [
-          "evolution"
+          "league",
+          "raid",
+          "wild",
+          "hatch",
+          "research"
         ],
-        "evolution": "[ Igglybuff ] \u2192 [ Jigglypuff ] \u2192 [ Wigglytuff ]"
+        "evolution": "[ Igglybuff ] \u2192 [ Jigglypuff ] \u2192 [ Wigglytuff ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -2375,7 +2407,13 @@
           "Poison"
         ],
         "pokedex": "Bellsprout's thin and flexible body lets it bend and sway to avoid any attack, however strong it may be. From its mouth, this Pokemon spits a corrosive fluid that melts even iron.",
-        "shiny": [],
+        "shiny": [
+          "league",
+          "raid",
+          "hatch",
+          "wild",
+          "research"
+        ],
         "size": false,
         "shadow": true,
         "evolution": "[ Bellsprout ] \u2192 [ Weepinbell ] \u2192 [ Victreebel ]"
@@ -2391,7 +2429,9 @@
           "Poison"
         ],
         "pokedex": "Weepinbell has a large hook on its rear end. At night, the Pokemon hooks on to a tree branch and goes to sleep. If it moves around in its sleep, it may wake up to find itself on the ground.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "size": false,
         "shadow": true,
         "evolution": "[ Bellsprout ] \u2192 [ Weepinbell ] \u2192 [ Victreebel ]"
@@ -2407,7 +2447,9 @@
           "Poison"
         ],
         "pokedex": "Victreebel has a long vine that extends from its head. This vine is waved and flicked about as if it were an animal to attract prey. When an unsuspecting prey draws near, this Pokemon swallows it whole.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "size": false,
         "shadow": true,
         "evolution": "[ Bellsprout ] \u2192 [ Weepinbell ] \u2192 [ Victreebel ]"
@@ -3051,7 +3093,9 @@
           "Electric"
         ],
         "pokedex": "Voltorb was first sighted at a company that manufactures Poke Balls. The link between that sighting and the fact that this Pokemon looks very similar to a Poke Ball remains a mystery.",
-        "shiny": [],
+        "shiny": [
+          "wild"
+        ],
         "evolution": "[ Voltorb ] \u2192 [ Electrode ]",
         "size": false,
         "shadow": false
@@ -3066,7 +3110,9 @@
           "Electric"
         ],
         "pokedex": "Electrode eats electricity in the atmosphere. On days when lightning strikes, you can see this Pokemon exploding all over the place from eating too much electricity.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "evolution": "[ Voltorb ] \u2192 [ Electrode ]"
       }
     }
@@ -3364,8 +3410,16 @@
           "Grass"
         ],
         "pokedex": "Tangela's vines snap off easily if they are grabbed. This happens without pain, allowing it to make a quick getaway. The lost vines are replaced by newly grown vines the very next day.",
-        "shiny": [],
-        "evolution": "[ Tangela ] \u2192 [ Tangrowth ]"
+        "shiny": [
+          "league",
+          "raid",
+          "wild",
+          "hatch",
+          "research"
+        ],
+        "evolution": "[ Tangela ] \u2192 [ Tangrowth ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -5264,8 +5318,16 @@
           "Psychic"
         ],
         "pokedex": "This Pokemon is shaped like ancient writing. It is a mystery as to which came first, the ancient writings or the various Unown. Research into this topic is ongoing but nothing is known.",
-        "shiny": [],
-        "evolution": "[ Unown ]"
+        "shiny": [
+          "league",
+          "raid",
+          "wild",
+          "hatch",
+          "research"
+        ],
+        "evolution": "[ Unown ]",
+        "size": false,
+        "shadow": false
       },
       "a": {
         "type": [
@@ -5742,8 +5804,16 @@
           "Poison"
         ],
         "pokedex": "Qwilfish sucks in water, inflating itself. This Pokemon uses the pressure of the water it swallowed to shoot toxic quills all at once from all over its body. It finds swimming somewhat challenging.",
-        "shiny": [],
-        "evolution": "[ Qwilfish ]"
+        "shiny": [
+          "league",
+          "raid",
+          "wild",
+          "hatch",
+          "research"
+        ],
+        "evolution": "[ Qwilfish ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -8397,8 +8467,12 @@
           "Normal"
         ],
         "pokedex": "Zangoose usually stays on all fours, but when angered, it gets up on its hind legs and extends its claws. This Pokemon shares a bitter rivalry with Seviper that dates back over generations.",
-        "shiny": [],
-        "evolution": "[ Zangoose ]"
+        "shiny": [
+          "wild"
+        ],
+        "evolution": "[ Zangoose ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -11365,7 +11439,9 @@
           "Grass"
         ],
         "pokedex": "Its vines grow so profusely that, in the warm season, you can't even see its eyes.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "gender": {
           "male": {
             "type": [
@@ -12545,8 +12621,15 @@
           "Rock"
         ],
         "pokedex": "They were discovered a hundred years ago in an earthquake fissure. Inside each one is an energy core.",
-        "shiny": [],
-        "evolution": "[ Roggenrola ] \u2192 [ Boldore ] \u2192 [ Gigalith ]"
+        "shiny": [
+          "wild",
+          "research",
+          "hatch",
+          "raid"
+        ],
+        "evolution": "[ Roggenrola ] \u2192 [ Boldore ] \u2192 [ Gigalith ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -12558,7 +12641,9 @@
           "Rock"
         ],
         "pokedex": "When it is healthy, its core sticks out. Always facing the same way, it swiftly moves front to back and left to right.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "evolution": "[ Roggenrola ] \u2192 [ Boldore ] \u2192 [ Gigalith ]"
       }
     }
@@ -12571,7 +12656,9 @@
           "Rock"
         ],
         "pokedex": "Compressing the energy from its internal core lets it fire off an attack capable of blowing away a mountain.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "evolution": "[ Roggenrola ] \u2192 [ Boldore ] \u2192 [ Gigalith ]"
       }
     }
@@ -12585,8 +12672,16 @@
           "Flying"
         ],
         "pokedex": "The heart-shaped mark left on a body after a Woobat has been attached to it is said to bring good fortune.",
-        "shiny": [],
-        "evolution": "[ Woobat ] \u2192 [ Swoobat ]"
+        "shiny": [
+          "league",
+          "raid",
+          "wild",
+          "hatch",
+          "research"
+        ],
+        "evolution": "[ Woobat ] \u2192 [ Swoobat ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -12599,7 +12694,9 @@
           "Flying"
         ],
         "pokedex": "Anyone who comes into contact with the ultrasonic waves emitted by a courting male experiences a positive mood shift.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "evolution": "[ Woobat ] \u2192 [ Swoobat ]"
       }
     }
@@ -13072,8 +13169,16 @@
           "Rock"
         ],
         "pokedex": "Competing for territory, Crustle fight viciously. The one whose boulder is broken is the loser of the battle.",
-        "shiny": [],
-        "evolution": "[ Dwebble ] \u2192 [ Crustle ]"
+        "shiny": [
+          "hatch",
+          "research",
+          "wild",
+          "raid",
+          "league"
+        ],
+        "evolution": "[ Dwebble ] \u2192 [ Crustle ]",
+        "size": false,
+        "shadow": false
       }
     }
   },
@@ -13086,7 +13191,9 @@
           "Rock"
         ],
         "pokedex": "Proud of its sturdy skull, it suddenly headbutts everything, but its weight makes it unstable, too.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "evolution": "[ Dwebble ] \u2192 [ Crustle ]"
       }
     }
@@ -14016,14 +14123,8 @@
           "Ground",
           "Electric"
         ],
-        "pokedex": "Thanks to bacteria that lived in the mud flats with it, this Pokémon developed the organs it uses to generate electricity.",
-        "shiny": [
-          "raid",
-          "wild",
-          "league",
-          "hatch",
-          "research"
-        ],
+        "pokedex": "Living in mud with a high iron content has given it a strong steel body.",
+        "shiny": [],
         "evolution": "[ Stunfisk ]",
         "size": false,
         "shadow": false
@@ -14215,9 +14316,16 @@
           "Fire"
         ],
         "pokedex": "It draws in air through its tail, transforms it into fire, and uses it like a tongue. It melts Durant and eats them.",
-        "shiny": [],
+        "shiny": [
+          "league",
+          "raid",
+          "wild",
+          "hatch",
+          "research"
+        ],
         "size": false,
-        "evolution": "[ Heatmor ]"
+        "evolution": "[ Heatmor ]",
+        "shadow": false
       }
     }
   },
@@ -14230,9 +14338,16 @@
           "Steel"
         ],
         "pokedex": "They attack in groups, covering themselves in steel armor to protect themselves from Heatmor.",
-        "shiny": [],
+        "shiny": [
+          "league",
+          "raid",
+          "wild",
+          "hatch",
+          "research"
+        ],
         "size": false,
-        "evolution": "[ Durant ]"
+        "evolution": "[ Durant ]",
+        "shadow": false
       }
     }
   },
@@ -14245,9 +14360,16 @@
           "Dragon"
         ],
         "pokedex": "Lacking sight, it's unaware of its surroundings, so it bumps into things and eats anything that moves.",
-        "shiny": [],
+        "shiny": [
+          "raid",
+          "research",
+          "league",
+          "wild",
+          "hatch"
+        ],
         "size": false,
-        "evolution": "[ Deino ] \u2192 [ Zweilous ] \u2192 [ Hydreigon ]"
+        "evolution": "[ Deino ] \u2192 [ Zweilous ] \u2192 [ Hydreigon ]",
+        "shadow": false
       }
     }
   },
@@ -14260,7 +14382,9 @@
           "Dragon"
         ],
         "pokedex": "After it has eaten up all the food in its territory, it moves to another area. Its two heads do not get along.",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "size": false,
         "evolution": "[ Deino ] \u2192 [ Zweilous ] \u2192 [ Hydreigon ]"
       }
@@ -14275,7 +14399,9 @@
           "Dragon"
         ],
         "pokedex": "It responds to movement by attacking. This scary, three-headed Pokemon devours everything in its path!",
-        "shiny": [],
+        "shiny": [
+          "evolution"
+        ],
         "size": false,
         "evolution": "[ Deino ] \u2192 [ Zweilous ] \u2192 [ Hydreigon ]"
       }
