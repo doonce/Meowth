@@ -924,10 +924,12 @@ class Listing(commands.Cog):
             if self.bot.raid_info.get('last_edit', False):
                 last_edit = datetime.datetime.utcfromtimestamp(self.bot.raid_info['last_edit']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                 raid_embed.set_footer(text=f"Last Update: {last_edit.strftime('%B %d at %I:%M %p')}")
-            if level.isdigit() and any([level == "1", level == "2", level == "3", level == "4", level == "5", level.lower() == "ex"]):
+            if level.isdigit() or any([level == "1", level == "2", level == "3", level == "4", level == "5", level.lower() == "ex"]):
                 level_list = [level.upper()]
+            elif level.lower() == "mega":
+                level_list = ["Mega"]
             if not level:
-                level_list = ["1", "2", "3", "4", "5", "EX"]
+                level_list = ["1", "2", "3", "4", "5", "Mega", "EX"]
             for raid_level in level_list:
                 pokemon_list = []
                 overwrite_list = []
@@ -940,7 +942,14 @@ class Listing(commands.Cog):
                 for overwrite in self.bot.raid_info['raid_eggs'][raid_level].get('overwrites', {}):
                     replace_with = self.bot.raid_info['raid_eggs'][raid_level]['overwrites'][overwrite]['replace_with'] or "None"
                     replace_until = datetime.datetime.utcfromtimestamp(self.bot.raid_info['raid_eggs'][raid_level]['overwrites'][overwrite]['replace_until']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
-                    overwrite_list.append(f"Replacing **{overwrite}** with **{replace_with}** until {replace_until.strftime('%B %d at %I:%M %p')}")
+                    if overwrite == replace_with:
+                        overwrite_list.append(f"Adding **{overwrite}** until {replace_until.strftime('%B %d at %I:%M %p')}")
+                    elif replace_with == "None"
+                        overwrite_list.append(f"Removing **{overwrite}** until {replace_until.strftime('%B %d at %I:%M %p')}")
+                    else:
+                        overwrite_list.append(f"Replacing **{overwrite}** with **{replace_with}** until {replace_until.strftime('%B %d at %I:%M %p')}")
+                if not pokemon_list:
+                    continue
                 raid_embed.add_field(name=f"Level {raid_level} Boss List", value=f"{(', ').join(pokemon_list)}\n\n{'**Overwrites**: ' if overwrite_list else ''}{(', ').join(overwrite_list) if overwrite_list else ''}", inline=False)
             msg = await ctx.channel.send(embed=raid_embed)
             list_messages.append(msg.id)
@@ -1905,7 +1914,7 @@ class Listing(commands.Cog):
             for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['egg_list']):
                 if not ctx.guild.get_channel(channel):
                     del self.bot.guild_dict[ctx.guild.id]['list_dict']['egg_list'][channel]
-                    
+
     @_list.command(aliases=['trainer'], hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def trainers(self, ctx):

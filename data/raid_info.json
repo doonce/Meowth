@@ -1,92 +1,85 @@
 {
   "raid_eggs": {
     "1": {
-      "egg": "normal", 
-      "egg_img": "1.png", 
+      "egg": "normal",
+      "egg_img": "1.png",
       "pokemon": [
-        "Sandshrew", 
-        "Magikarp", 
-        "Wailmer", 
-        "Shinx", 
-        "Oshawott", 
-        "Timburr", 
-        "Klink"
-      ], 
-      "hatchtime": 60, 
+        "Sandshrew",
+        "Kingler",
+        "Marowak",
+        "Gligar",
+        "Wailmer",
+        "Prinplup",
+        "Shinx",
+        "Oshawott",
+        "Timburr"
+      ],
+      "hatchtime": 60,
       "raidtime": 45
-    }, 
+    },
     "2": {
-      "egg": "normal", 
-      "egg_img": "2.png", 
-      "pokemon": [
-        "Kingler", 
-        "Marowak", 
-        "Gligar", 
-        "Breloom", 
-        "Mawile", 
-        "Prinplup"
-      ], 
-      "hatchtime": 60, 
+      "egg": "normal",
+      "egg_img": "2.png",
+      "pokemon": [],
+      "hatchtime": 60,
       "raidtime": 45
-    }, 
+    },
     "3": {
-      "egg": "rare", 
-      "egg_img": "3.png", 
+      "egg": "rare",
+      "egg_img": "3.png",
       "pokemon": [
-        "Alolan Raichu", 
-        "Machamp", 
-        "Onix", 
-        "Vaporeon", 
-        "Donphan", 
+        "Alolan Raichu",
+        "Machamp",
+        "Onix",
+        "Alolan Marowak",
+        "Rhydon",
+        "Vaporeon",
+        "Donphan",
         "Claydol"
-      ], 
-      "hatchtime": 60, 
-      "raidtime": 45, 
+      ],
+      "hatchtime": 60,
+      "raidtime": 45,
       "overwrites": {}
-    }, 
+    },
     "4": {
-      "egg": "rare", 
-      "egg_img": "4.png", 
-      "pokemon": [
-        "Golem", 
-        "Alolan Marowak", 
-        "Galarian Weezing", 
-        "Rhydon", 
-        "Tyranitar", 
-        "Excadrill"
-      ], 
-      "hatchtime": 60, 
-      "raidtime": 45
-    }, 
+      "egg": "rare",
+      "egg_img": "4.png",
+      "pokemon": [],
+      "hatchtime": 60,
+      "raidtime": 45,
+      "overwrites": {}
+    },
     "5": {
-      "egg": "legendary", 
-      "egg_img": "5.png", 
+      "egg": "legendary",
+      "egg_img": "5.png",
       "pokemon": [
-        "Latias", 
-        "Latios", 
         "Heatran"
-      ], 
-      "hatchtime": 60, 
-      "raidtime": 45, 
-      "overwrites": {
-        "Latios": {
-          "replace_with": null, 
-          "replace_until": 1579896000.0
-        }, 
-        "Latias": {
-          "replace_with": null, 
-          "replace_until": 1579896000.0
-        }
-      }
-    }, 
+      ],
+      "hatchtime": 60,
+      "raidtime": 45,
+      "overwrites": {}
+    },
+    "Mega": {
+      "egg": "mega",
+      "egg_img": "mega.png",
+      "pokemon": [
+        "Mega Venusaur",
+        "Mega Charizard X",
+        "Mega Charizard Y",
+        "Mega Blastoise"
+      ],
+      "hatchtime": 60,
+      "raidtime": 45
+    },
     "EX": {
-      "egg": "EX", 
-      "egg_img": "EX.png", 
+      "egg": "EX",
+      "egg_img": "EX.png",
       "pokemon": [
         "Regigigas"
-      ], 
-      "hatchtime": 14, 
+      ],
+      "hatchtime": 14,
       "raidtime": 45
     }
-  }
+  },
+  "last_edit": 1598554100.0775661
 }
