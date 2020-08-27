@@ -944,7 +944,7 @@ class Listing(commands.Cog):
                     replace_until = datetime.datetime.utcfromtimestamp(self.bot.raid_info['raid_eggs'][raid_level]['overwrites'][overwrite]['replace_until']) + datetime.timedelta(hours=self.bot.guild_dict[ctx.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
                     if overwrite == replace_with:
                         overwrite_list.append(f"Adding **{overwrite}** until {replace_until.strftime('%B %d at %I:%M %p')}")
-                    elif replace_with == "None"
+                    elif replace_with == "None":
                         overwrite_list.append(f"Removing **{overwrite}** until {replace_until.strftime('%B %d at %I:%M %p')}")
                     else:
                         overwrite_list.append(f"Replacing **{overwrite}** with **{replace_with}** until {replace_until.strftime('%B %d at %I:%M %p')}")
