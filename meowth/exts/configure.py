@@ -428,7 +428,7 @@ class Configure(commands.Cog):
                 elif categories.content.lower() == 'level' and categories.content.lower() in reply_options:
                     config_dict_temp[type]['categories'] = 'level'
                     while True:
-                        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Pokemon Go currently has five levels of raids. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5 \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `level 1-3, level 1-3, level 1-3, level 4, 1231231241561337813`")).set_author(name=_('{type} Reporting Categories').format(type=type.title()), icon_url=self.bot.user.avatar_url))
+                        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_("Pokemon Go currently has five levels of raids. Please provide the names of the categories you would like each level of raid to appear in. Use the following order: 1, 2, 3, 4, 5, mega \n\nYou do not need to use different categories for each level, but they do need to be pre-existing categories. Separate each category name with a comma. Response can be either category name or ID.\n\nExample: `level 1-3, level 1-3, level 1-3, level 4, 1231231241561337813, Mega Raids`")).set_author(name=_('{type} Reporting Categories').format(type=type.title()), icon_url=self.bot.user.avatar_url))
                         channels = ""
                         if config_dict_temp[type]['category_dict']:
                             channels = {k:ctx.bot.get_channel(v) for k,v in config_dict_temp[type]['category_dict'].items()}
@@ -466,11 +466,11 @@ class Configure(commands.Cog):
                             else:
                                 levelcat_errors.append(item)
                         levelcat_list = levelcat_ids
-                        if len(levelcat_list) == 5:
+                        if len(levelcat_list) == 6:
                             catdiff = set(levelcat_list) - set(guild_catlist)
                             if (not catdiff) and (not levelcat_errors):
-                                level_list = ["1", '2', '3', '4', '5']
-                                for i in range(5):
+                                level_list = ["1", '2', '3', '4', '5', 'Mega']
+                                for i in range(6):
                                     category_dict[level_list[i]] = levelcat_list[i]
                                 break
                             else:

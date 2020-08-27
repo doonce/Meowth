@@ -951,6 +951,12 @@ class Trainers(commands.Cog):
                     if account.lower() in search_dict:
                         account_list.append(search_dict[account.lower()]['member'].display_name)
                         code_list.append(search_dict[account.lower()]['name'])
+                        continue
+                    for x in search_dict:
+                        if account.lower() == search_dict[x.lower()]['member_name'].lower() or account.lower() == search_dict[x.lower()]['member'].display_name.lower():
+                            account_list.append(search_dict[x.lower()]['member'].display_name)
+                            code_list.append(search_dict[x.lower()]['name'])
+                            break
                 if account_list:
                     return await ctx.channel.send(f"The in-game name{'s' if len(account_list) > 1 else ''} for **{', '.join(account_list)}** {'are' if len(account_list) > 1 else 'is'}:", embed=discord.Embed(description=f"{', '.join(code_list)}"))
                 else:

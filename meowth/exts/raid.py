@@ -1070,6 +1070,8 @@ class Raid(commands.Cog):
             return None
         egg_level = str(egg_level)
         egg_info = ctx.bot.raid_info['raid_eggs'].get(egg_level, {"pokemon":[pokemon]})
+        if egg_level.lower() == "mega":
+            egg_info = ctx.bot.raid_info['raid_eggs'].get("Mega", {"pokemon":[pokemon]})
         boss_list = []
         for boss in self.bot.raid_dict.get(str(egg_level), []):
             if isinstance(boss, pkmn_class.Pokemon):
@@ -1094,6 +1096,7 @@ class Raid(commands.Cog):
                 pokemon.weather = "foggy"
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{egg_level}.png?cache=1" if embed_type == "egg" else pokemon.img_url
         raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/ui/tx_raid_coin_exclusive.png?cache=1" if egg_level == "EX" else raid_img_url
+        raid_img_url = f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/mega.png?cache=1" if egg_level == "Mega" else raid_img_url
         report_dict = await utils.get_report_dict(ctx.bot, ctx.channel)
         if report_dict:
             report_message = self.bot.guild_dict[ctx.guild.id][report_dict][ctx.channel.id]['report_message']
@@ -1900,7 +1903,7 @@ class Raid(commands.Cog):
         report_dict = await utils.get_report_dict(ctx.bot, ctx.channel)
         if (not channel) or (channel.id not in self.bot.guild_dict[guild.id][report_dict]) or ('raidchannel' not in str(report_dict)):
             return await channel.send(_('The channel you entered is not a raid channel.'), delete_after=10)
-        if checks.check_exraidchannel(ctx) and newraid.isdigit():
+        if checks.check_exraidchannel(ctx) and (newraid.isdigit() or newraid.lower() == "mega"):
             return await ctx.send('EX raids cannot be changed into regular raids. Please report separately.', delete_after=10)
         elif checks.check_exraidchannel(ctx) and newraid:
             egg_level = utils.get_level(self.bot, newraid)
@@ -2080,10 +2083,10 @@ class Raid(commands.Cog):
                             return True
                         else:
                             return False
-                    if pokemon_or_level and any([pokemon_or_level == "ex", pokemon_or_level == "meetup", pokemon_or_level == "train", pokemon_or_level.lower() in self.bot.pkmn_list, pokemon_or_level.isdigit()]):
+                    if pokemon_or_level and any([pokemon_or_level == "ex", pokemon_or_level == "mega", pokemon_or_level == "meetup", pokemon_or_level == "train", pokemon_or_level.lower() in self.bot.pkmn_list, pokemon_or_level.isdigit()]):
                         pass
                     else:
-                        raid_embed.add_field(name=_('**New Raid Report**'), value=_("Meowth! I'll help you report a raid!\n\nFirst, I'll need to know what **pokemon or level** the raid is. Reply with the name of a **pokemon**, an **egg level** number 1-5, or EX. You can reply with **cancel** to stop anytime.\n\nIf you meant to report a **meetup** or **train** reply with **meetup** or **train**."), inline=False)
+                        raid_embed.add_field(name=_('**New Raid Report**'), value=_("Meowth! I'll help you report a raid!\n\nFirst, I'll need to know what **pokemon or level** the raid is. Reply with the name of a **pokemon**, an **egg level** number 1-5, mega or EX. You can reply with **cancel** to stop anytime.\n\nIf you meant to report a **meetup** or **train** reply with **meetup** or **train**."), inline=False)
                         mon_or_lvl_wait = await channel.send(embed=raid_embed)
                         try:
                             mon_or_lvl_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -2110,8 +2113,8 @@ class Raid(commands.Cog):
                         break
                     else:
                         pokemon = None
-                        if pokemon_or_level.isdigit():
-                            raid_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{pokemon_or_level}.png?cache=1")
+                        if pokemon_or_level.isdigit() or pokemon_or_level.lower() == "mega":
+                            raid_embed.set_thumbnail(url=f"https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/eggs/{pokemon_or_level.lower()}.png?cache=1")
                         else:
                             pokemon, __ = await pkmn_class.Pokemon.ask_pokemon(ctx, pokemon_or_level)
                             if not pokemon or not pokemon.is_raid:
@@ -2152,7 +2155,7 @@ class Raid(commands.Cog):
                         if not location:
                             return
                     raid_embed.clear_fields()
-                    raid_embed.add_field(name=_('**New Raid Report**'), value=f"Fantastic! Now, reply with the **minutes remaining** before the **{'level '+pokemon_or_level if str(pokemon_or_level).isdigit() else str(pokemon_or_level).title()}** raid {'hatches' if str(pokemon_or_level).isdigit() else 'ends'} at **{location}**. You can reply with **cancel** to stop anytime.", inline=False)
+                    raid_embed.add_field(name=_('**New Raid Report**'), value=f"Fantastic! Now, reply with the **minutes remaining** before the **{'level '+pokemon_or_level if str(pokemon_or_level).isdigit() else str(pokemon_or_level).title()}** raid {'hatches' if str(pokemon_or_level).isdigit() or pokemon_or_level.lower() =='mega' else 'ends'} at **{location}**. You can reply with **cancel** to stop anytime.", inline=False)
                     expire_wait = await channel.send(embed=raid_embed)
                     try:
                         expire_msg = await self.bot.wait_for('message', timeout=60, check=check)
@@ -2172,7 +2175,7 @@ class Raid(commands.Cog):
                     break
         if not error:
             content = f"{pokemon_or_level} {location} {raidexp}"
-            if str(pokemon_or_level).isdigit():
+            if str(pokemon_or_level).isdigit() or pokemon_or_level.lower() == "mega":
                 new_channel = await self._raidegg(ctx, content)
             else:
                 new_channel = await self._raid(ctx, content)
@@ -2382,9 +2385,12 @@ class Raid(commands.Cog):
         if raidegg_split[0].isdigit():
             egg_level = int(raidegg_split[0])
             del raidegg_split[0]
+        elif raidegg_split[0].lower() == "mega":
+            egg_level = "Mega"
+            del raidegg_split[0]
         else:
             return await ctx.invoke(self.bot.get_command('raid'))
-        if (egg_level > 5) or (egg_level < 1):
+        if str(egg_level).isdigit() and (egg_level > 5 or egg_level < 1):
             return await ctx.channel.send(_('Meowth! Raid egg levels are only from 1-5!'), delete_after=10)
         if raidegg_split[(- 1)].isdigit():
             raidexp = int(raidegg_split[(- 1)])
@@ -2739,6 +2745,8 @@ class Raid(commands.Cog):
             return
         if (egg_level.isdigit() and int(egg_level) > 0) or egg_level == 'EX':
             raid_expire = eggdetails['exp'] + 60 * self.bot.raid_info['raid_eggs'][str(egg_level)]['raidtime']
+        elif egg_level.lower() == "mega":
+            raid_expire = eggdetails['exp'] + 60 * self.bot.raid_info['raid_eggs']['Mega']['raidtime']
         else:
             raid_expire = eggdetails['exp']
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=self.bot.guild_dict[raid_channel.guild.id]['configure_dict'].get('settings', {}).get('offset', 0))
@@ -2756,7 +2764,7 @@ class Raid(commands.Cog):
         for field in oldembed.fields:
             if _('list') in field.name.lower():
                 raid_embed.add_field(name=field.name, value=field.value, inline=field.inline)
-        if egg_level.isdigit():
+        if egg_level.isdigit() or egg_level.lower() == "mega":
             hatchtype = 'raid'
             raidreportcontent = f"Meowth! The egg has hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate in {raid_channel.mention}\n\nUse {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, {cancel_reaction} to cancel, {report_emoji} to report new, or {list_emoji} to list all raids!"
             raidmsg = f"Meowth! The egg reported by {author.mention} in {report_channel.mention} hatched into a {str(pokemon)} raid! Details: {eggdetails['address']}. Coordinate here!\n\nClick the {help_reaction} to get help on commands, {maybe_reaction} if interested, {omw_reaction} if coming, {here_reaction} if there, or {cancel_reaction} to cancel!\n\nThis channel will be deleted five minutes after the timer expires."
