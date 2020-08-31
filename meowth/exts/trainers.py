@@ -945,7 +945,6 @@ class Trainers(commands.Cog):
                     if account in account_list:
                         continue
                     if account.lower() in search_dict:
-                        print(search_dict[account.lower()])
                         account_list.append(search_dict[account.lower()]['member'].display_name)
                         code_list.append(search_dict[account.lower()]['name'])
                         continue
