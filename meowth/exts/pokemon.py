@@ -971,7 +971,7 @@ class Pokedex(commands.Cog):
         bot.ditto_list = list(set(ditto_list))
         bot.mega_list = list(set(mega_list))
         async with aiohttp.ClientSession() as sess:
-            async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/GAME_MASTER.json") as resp:
+            async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/V2_GAME_MASTER.json") as resp:
                 data = await resp.json(content_type=None)
                 bot.gamemaster = data
 
@@ -989,7 +989,7 @@ class Pokedex(commands.Cog):
                     break
                 data = {}
                 async with aiohttp.ClientSession() as sess:
-                    async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/GAME_MASTER.json") as resp:
+                    async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/V2_GAME_MASTER.json") as resp:
                         data = await resp.json(content_type=None)
                         self.bot.gamemaster = data
                 move_info = {}

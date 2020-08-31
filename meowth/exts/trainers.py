@@ -893,10 +893,21 @@ class Trainers(commands.Cog):
         search_dict = {}
         for trainer in self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {}):
             user_ign = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('ign', '').lower()
+            user_accounts = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})
+            user_code = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('trainercode', "").replace(" ", "").lower()
+            if user_ign or user_accounts or user_code:
+                user = ctx.guild.get_member(trainer)
+                if not user:
+                    continue
+            if user_code:
+                search_dict[user.name.lower()] = {"name":user.name, "code":user_code, "member":user, "member_name":user.name}
             if user_ign:
-                search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('ign', '').lower()] = trainer
+                search_dict[user_ign.lower()] = {"name":user_ign, "code":user_code, "member":user, "member_name":user.name}
+                search_dict[user.name.lower()] = {"name":user_ign, "code":user_code, "member":user, "member_name":user.name}
             for account in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {}):
-                search_dict[self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('ign', '').lower()] = trainer
+                user_code = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('trainercode')
+                if user_code:
+                    search_dict[account.lower()] = {"name":account, "code":user_code, "member":user, "member_name":user.name}
         if author.get('ign') and (ign.lower() == "clear" or ign.lower() == "reset"):
             await ctx.send(_('Your in-game name has been cleared!'), delete_after=30)
             try:
@@ -908,7 +919,7 @@ class Trainers(commands.Cog):
             ign_split = ign.split(',')
             ign_split = [x.strip().replace(" ", "").replace("@", "") for x in ign_split]
             ign = ign_split[0]
-            if len(ign_split) == 1 and ign.lower() not in search_dict.keys():
+            if len(ign_split) == 1 and ign.lower() not in search_dict.keys() and ign.lower() not in [search_dict[x]['member_name'].lower() for x in search_dict]:
                 if author.get('ign'):
                     question = await ctx.channel.send(f"Nobody has set that in-game name yet. Your in-game name is already set to **{author.get('ign')}**. Do you want to change it to **{ign}**?")
                 else:
@@ -928,27 +939,13 @@ class Trainers(commands.Cog):
                 else:
                     return
             else:
-                search_dict = {}
                 account_list = []
                 code_list = []
-                for trainer in ctx.bot.guild_dict[ctx.guild.id]['trainers']:
-                    user = ctx.guild.get_member(trainer)
-                    if not user:
-                        continue
-                    user_code = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('trainercode', "").replace(" ", "").lower()
-                    user_ign = self.bot.guild_dict[ctx.guild.id].setdefault('trainers', {})[trainer].get('ign', "")
-                    if user_code:
-                        search_dict[user.name.lower()] = {"name":user.name, "code":user_code, "member":user, "member_name":user.name}
-                    if user_ign:
-                        search_dict[user_ign.lower()] = {"name":user_ign, "code":user_code, "member":user, "member_name":user.name}
-                    for account in self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {}):
-                        user_code = self.bot.guild_dict[ctx.guild.id]['trainers'][trainer].get('accounts', {})[account].get('trainercode')
-                        if user_code:
-                            search_dict[account.lower()] = {"name":account, "code":user_code, "member":user, "member_name":user.name}
                 for account in ign_split:
                     if account in account_list:
                         continue
                     if account.lower() in search_dict:
+                        print(search_dict[account.lower()])
                         account_list.append(search_dict[account.lower()]['member'].display_name)
                         code_list.append(search_dict[account.lower()]['name'])
                         continue

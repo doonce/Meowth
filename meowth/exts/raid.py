@@ -2014,7 +2014,7 @@ class Raid(commands.Cog):
         Usage: !setstatus <user> <status> [count]
         User can be a mention or ID number. Status can be maybeinterested/i, coming/c, here/h, lobby, or cancel/x
         Only usable by admins."""
-        valid_status_list = ['interested', 'i', 'maybe', 'coming', 'c', 'here', 'h', 'cancel', 'x', 'lobby']
+        valid_status_list = ['interested', 'i', 'maybe', 'coming', 'c', 'here', 'h', 'cancel', 'x', 'lobby', 'invite', 'remote']
         report_dict = await utils.get_report_dict(self.bot, ctx.channel)
         lobby = self.bot.guild_dict[ctx.channel.guild.id][report_dict][ctx.channel.id].get('lobby', False)
         if status.lower() == "lobby" and not lobby:
@@ -2227,6 +2227,8 @@ class Raid(commands.Cog):
                 weather = None
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, ' '.join(raid_split))
         if not pokemon:
+            if raid_split[0].lower() == "mega":
+                return await self._raidegg(ctx, content)
             return await ctx.invoke(self.bot.get_command('raid'))
         elif pokemon.id not in self.bot.raid_list:
             await utils.safe_delete(ctx.message)
