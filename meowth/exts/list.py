@@ -1961,7 +1961,7 @@ class Listing(commands.Cog):
                         listmsg = await ctx.channel.send(embed=list_embed)
                     list_messages.append(listmsg.id)
                     index += 1
-            self.bot.guild_dict[ctx.guild.id]['list_dict']['egg_list'][ctx.channel.id] = list_messages
+            self.bot.guild_dict[ctx.guild.id]['list_dict']['trainer_list'][ctx.channel.id] = list_messages
             for channel in copy.deepcopy(self.bot.guild_dict[ctx.guild.id]['list_dict']['trainer_list']):
                 if not ctx.guild.get_channel(channel):
                     del self.bot.guild_dict[ctx.guild.id]['list_dict']['trainer_list'][channel]

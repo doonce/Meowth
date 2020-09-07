@@ -2236,7 +2236,7 @@ class Raid(commands.Cog):
         matched_boss = False
         level = utils.get_level(self.bot, str(pokemon))
         for boss in self.bot.raid_dict[str(level)]:
-            if isinstance(boss, pkmn_class.Pokemon) and str(boss) == str(pokemon):
+            if isinstance(boss, pkmn_class.Pokemon) and (str(boss) == str(pokemon) or str(boss).replace('Mega ', '') == str(pokemon).replace('Mega ', '')):
                 pokemon = copy.copy(boss)
                 matched_boss = True
                 break
@@ -2703,7 +2703,7 @@ class Raid(commands.Cog):
         for boss in self.bot.raid_dict[str(egg_level)]:
             if isinstance(boss, pkmn_class.Pokemon):
                 boss_list.append(boss.name.lower())
-                if str(boss) == str(pokemon):
+                if str(boss) == str(pokemon) or str(boss).replace('Mega ', '') == str(pokemon).replace('Mega ', ''):
                     pokemon = copy.copy(boss)
                     matched_boss = True
                     break
@@ -5233,7 +5233,10 @@ class Raid(commands.Cog):
                 return await ctx.channel.send(_("Meowth! You're missing some details! Be sure to enter a pokemon! Usage: **!counters <pkmn> [weather] [user ID]**"), delete_after=10)
         level = utils.get_level(self.bot, str(pkmn))
         redirect_url = ""
-        url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.game_name.upper()}{'_FORM' if pkmn.form or pkmn.region else ''}/levels/RAID_LEVEL_{level}/attackers/"
+        if pkmn.mega:
+            url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.name.upper()}_MEGA{'_'+pkmn.form.upper() if pkmn.form else ''}/levels/RAID_LEVEL_MEGA/attackers/"
+        else:
+            url = f"https://fight.pokebattler.com/raids/defenders/{pkmn.game_name.upper()}{'_FORM' if pkmn.form or pkmn.region else ''}/levels/RAID_LEVEL_{level}/attackers/"
         if user:
             url += "users/{user}/".format(user=user)
             userstr = _("user #{user}'s").format(user=user)
@@ -5379,7 +5382,10 @@ class Raid(commands.Cog):
         else:
             index = weather_list.index(weather)
         weather = match_list[index]
-        url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.game_name.upper()}{'_FORM' if pokemon.form or pokemon.region else ''}/levels/RAID_LEVEL_{level}/attackers/"
+        if pokemon.mega:
+            url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.name.upper()}_MEGA{'_'+pokemon.form.upper() if pokemon.form else ''}/levels/RAID_LEVEL_MEGA/attackers/"
+        else:
+            url = f"https://fight.pokebattler.com/raids/defenders/{pokemon.game_name.upper()}{'_FORM' if pokemon.form or pokemon.region else ''}/levels/RAID_LEVEL_{level}/attackers/"
         url += "levels/30/"
         url += "strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=OVERALL&"
         url += "weatherCondition={weather}&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE".format(weather=weather)

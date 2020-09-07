@@ -581,6 +581,7 @@ async def get_item(search_term):
     revive = re.search(r'(?i)revive', search_term)
     maxrevive = re.search(r'(?i)max revive', search_term)
     fasttm = re.search(r'(?i)fast tm', search_term)
+    elite = re.search(r'(?i) elite', search_term)
     chargetm = re.search(r'(?i)charged? tm', search_term)
     starpiece = re.search(r'(?i)star piece', search_term)
     sinnoh_stone = re.search(r'(?i)sinnoh stone', search_term)
@@ -595,7 +596,7 @@ async def get_item(search_term):
     team_medalion = re.search(r'(?i)rocket radar', search_term)
     egg_incubator = re.search(r'(?i)incubator', search_term)
     super_incubator = re.search(r'(?i)super.*incubator', search_term)
-    poffin = re.search(r'(?i)poffin', search_term)
+    megaenergy = re.search(r'(?i)mega.*energy', search_term)
     if dust:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/stardust_painted.png?cache=1", "stardust"
     elif candy:
@@ -628,6 +629,10 @@ async def get_item(search_term):
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0201.png?cache=1", "revive"
     elif revive and maxrevive:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0202.png?cache=1", "max revive"
+    elif elite and fastsm:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/GO_Elite_Fast_TM", "elite fast tm"
+    elif elite and chargetm:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/GO_Elite_Charged_TM", "elite charged tm"
     elif fasttm:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_1201.png?cache=1", "fast tm"
     elif chargetm:
@@ -668,6 +673,8 @@ async def get_item(search_term):
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/EggIncubatorSuper_Empty.png?cache=1", "super incubator"
     elif poffin:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0704.png?cache=1", "poffin"
+    elif megaenergy:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/mega_energy.png", "mega energy"
     else:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/MysteryItem.png?cache=1", None
 
@@ -718,7 +725,7 @@ class Utilities(commands.Cog):
         self.bot = bot
         self.dm_cleanup.start()
         self.auto_timezone.start()
-        self.version = "v20.8.31.0"
+        self.version = "v20.9.7.0"
 
     def cog_unload(self):
         self.dm_cleanup.cancel()

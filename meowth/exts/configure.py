@@ -1245,7 +1245,7 @@ class Configure(commands.Cog):
             await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Raid Cog is not loaded. Counters cannot be configured.")))
             ctx.config_dict_temp = config_dict_temp
             return ctx
-        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want to generate an automatic counters list in newly created raid channels using PokeBattler?\nIf enabled, I will post a message containing the best counters for the raid boss in new raid channels. Users will still be able to use **!counters** to generate this list.\n\nRespond with: **N** to disable, or enable with a comma separated list of boss levels that you would like me to generate counters for. Example:`3, 4, 5, EX`')).set_author(name=_('Automatic Counters Configuration'), icon_url=self.bot.user.avatar_url))
+        await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=_('Do you want to generate an automatic counters list in newly created raid channels using PokeBattler?\nIf enabled, I will post a message containing the best counters for the raid boss in new raid channels. Users will still be able to use **!counters** to generate this list.\n\nRespond with: **N** to disable, or enable with a comma separated list of boss levels that you would like me to generate counters for. Example:`3, 4, 5, EX, mega`')).set_author(name=_('Automatic Counters Configuration'), icon_url=self.bot.user.avatar_url))
         await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.lighter_grey(), description=f"Enabled: {config_dict_temp['counters'].get('enabled', False)}\nLevels: {config_dict_temp['counters'].get('auto_levels', [])}").set_author(name=_("Current Counters Setting"), icon_url=self.bot.user.avatar_url), delete_after=300)
         while True:
             try:
@@ -1272,13 +1272,15 @@ class Configure(commands.Cog):
                         counterlevels.append(str(level))
                     elif level == "ex":
                         counterlevels.append("EX")
+                    elif level == "mega":
+                        counterlevels.append("Mega")
                 if len(counterlevels) > 0:
                     config_dict_temp['counters']['enabled'] = True
                     config_dict_temp['counters']['auto_levels'] = counterlevels
                     await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.green(), description=_('Automatic Counter Levels set to: {levels}').format(levels=', '.join((str(x) for x in config_dict_temp['counters']['auto_levels'])))))
                     break
                 else:
-                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Please enter at least one level from 1 to EX separated by comma. Ex: `4, 5, EX` or **N** to turn off automatic counters.")))
+                    await ctx.configure_channel.send(embed=discord.Embed(colour=discord.Colour.orange(), description=_("Please enter at least one level from 1 to EX separated by comma. Ex: `4, 5, EX, mega` or **N** to turn off automatic counters.")))
                     continue
         ctx.config_dict_temp = config_dict_temp
         return ctx

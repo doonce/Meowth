@@ -971,7 +971,8 @@ class Pokedex(commands.Cog):
         bot.ditto_list = list(set(ditto_list))
         bot.mega_list = list(set(mega_list))
         async with aiohttp.ClientSession() as sess:
-            async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/V2_GAME_MASTER.json") as resp:
+            # async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/V2_GAME_MASTER.json") as resp:
+            async with sess.get("https://raw.githubusercontent.com/ZeChrales/PogoAssets/master/gamemaster/gamemaster.json") as resp:
                 data = await resp.json(content_type=None)
                 bot.gamemaster = data
 
@@ -989,7 +990,8 @@ class Pokedex(commands.Cog):
                     break
                 data = {}
                 async with aiohttp.ClientSession() as sess:
-                    async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/V2_GAME_MASTER.json") as resp:
+                    # async with sess.get("https://raw.githubusercontent.com/pokemongo-dev-contrib/pokemongo-game-master/master/versions/latest/V2_GAME_MASTER.json") as resp:
+                    async with sess.get("https://raw.githubusercontent.com/ZeChrales/PogoAssets/master/gamemaster/gamemaster.json") as resp:
                         data = await resp.json(content_type=None)
                         self.bot.gamemaster = data
                 move_info = {}
@@ -1264,8 +1266,9 @@ class Pokedex(commands.Cog):
                     else:
                         pkmn_evo = self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['evolution']
                     pkmn_ditto = self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form].get('ditto', False)
+                    pkmn_mega = self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form].get('mega', False)
                     pkmn_embed.clear_fields()
-                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist in my records. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **shiny** to set shiny availability, **gender** to toggle gender differences, or **size** to toggle size relevance, **shadow** to toggle shadow, **ditto** to toggle Ditto disguise. Others include **type**, **pokedex**, and **evolution**. You can reply with **cancel** to stop anytime.\n\n**Current {str(pokemon)} Settings**\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}\n{'Ditto Disguise: '+pkmn_ditto if pkmn_ditto else ''}", inline=False)
+                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist in my records. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **shiny** to set shiny availability, **gender** to toggle gender differences, or **size** to toggle size relevance, **shadow** to toggle shadow, **ditto** to toggle Ditto disguise, **mega** to toggle Mega Evolution. Others include **type**, **pokedex**, and **evolution**. You can reply with **cancel** to stop anytime.\n\n**Current {str(pokemon)} Settings**\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}\n{'Ditto Disguise: '+pkmn_ditto if pkmn_ditto else ''}\n{'Mega Evolution: '+pkmn_mega if pkmn_mega else ''}", inline=False)
                     pkmn_embed.set_thumbnail(url=pokemon.img_url)
                     attr_type_wait = await channel.send(embed=pkmn_embed)
                     try:
@@ -1306,6 +1309,9 @@ class Pokedex(commands.Cog):
                         break
                     elif attr_type_msg.clean_content.lower() == "ditto":
                         pkmn_ditto = not pkmn_ditto
+                        break
+                    elif attr_type_msg.clean_content.lower() == "mega":
+                        pkmn_mega = not pkmn_mega
                         break
                     elif attr_type_msg.clean_content.lower() == "shiny":
                         pkmn_embed.clear_fields()
@@ -1461,11 +1467,18 @@ class Pokedex(commands.Cog):
                     del pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['ditto']
                 except:
                     pass
+            if pkmn_mega:
+                pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['mega'] = pkmn_mega
+            else:
+                try:
+                    del pkmn_info[pokemon.name.lower()]['forms'][pkmn_form]['mega']
+                except:
+                    pass
             with open(self.bot.pkmn_info_path, 'w', encoding="utf8") as fd:
                 json.dump(pkmn_info, fd, indent=2, separators=(', ', ': '))
             await self.generate_lists(self.bot)
             pkmn_embed.clear_fields()
-            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}\n{'Ditto Disguise: '+pkmn_ditto if pkmn_ditto else ''}", inline=False)
+            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}\n{'Ditto Disguise: '+pkmn_ditto if pkmn_ditto else ''}\n{'Mega Evolution: '+pkmn_mega if pkmn_mega else ''}", inline=False)
             confirmation = await channel.send(embed=pkmn_embed)
             await utils.safe_delete(message)
 
