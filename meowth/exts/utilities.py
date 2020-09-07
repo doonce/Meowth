@@ -561,6 +561,7 @@ async def get_object(ctx, snowflake, return_type="object"):
 async def get_item(search_term):
     """Given search_term, returns thumbnail_url, item"""
     dust = re.search(r'(?i)dust', search_term)
+    mega = re.search(r'(?i)mega', search_term)
     candy = re.search(r'(?i)candy|(?i)candies', search_term)
     pinap = re.search(r'(?i)pinap', search_term)
     silverpinap = re.search(r'(?i)silver pinap', search_term)
@@ -596,11 +597,13 @@ async def get_item(search_term):
     team_medalion = re.search(r'(?i)rocket radar', search_term)
     egg_incubator = re.search(r'(?i)incubator', search_term)
     super_incubator = re.search(r'(?i)super.*incubator', search_term)
-    megaenergy = re.search(r'(?i)mega.*energy', search_term)
+    poffin = re.search(r'(?i)poffin', search_term)
     if dust:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/stardust_painted.png?cache=1", "stardust"
-    elif candy:
+    elif candy and not mega:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_1301.png?cache=1", "rare candy"
+    elif candy and mega:
+        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/mega-candy.png?cache=1", "mega candy"
     elif pinap and not silverpinap:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0705.png?cache=1", "pinap berry"
     elif pinap and silverpinap:
@@ -673,8 +676,6 @@ async def get_item(search_term):
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/EggIncubatorSuper_Empty.png?cache=1", "super incubator"
     elif poffin:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/Item_0704.png?cache=1", "poffin"
-    elif megaenergy:
-        return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/mega_energy.png", "mega energy"
     else:
         return "https://raw.githubusercontent.com/doonce/Meowth/Rewrite/images/item/MysteryItem.png?cache=1", None
 

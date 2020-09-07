@@ -387,6 +387,8 @@ class Research(commands.Cog):
                             item_number = ""
                         for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "group7", "group8", "group9", "<h3>", "</p>", ">", "unconfirmed", "pokemon", "shinyAvailable",]:
                             line = line.replace(replacement, "").replace("_", " ").strip()
+                        for replacement in ["<img class=\"tr mega \" src=\"https://assets.thesilphroad.com/img//icons/96x96/3", "<img class=\"tr mega \" src=\"https://assets.thesilphroad.com/img//icons/96x96/6", "<img class=\"tr mega \" src=\"https://assets.thesilphroad.com/img//icons/96x96/9", "<img class=\"tr mega candy\" src=\"https://assets.thesilphroad.com/img/icons/", "tr mega", "\n"]:
+                            line = line.replace(replacement, "").replace("_", " ").strip()
                         tsr_quests.append((line.strip(), item_number))
                 for index, item in enumerate(tsr_quests):
                     item_number = item[1]
@@ -453,7 +455,7 @@ class Research(commands.Cog):
                                 item = f"{item} {berry_emoji}"
                             elif "dust" in item_name:
                                 item = f"{item} {dust_emoji}"
-                            elif "candy" in item_name:
+                            elif "candy" in item_name and "rare" in item_name:
                                 item = f"{item} {candy_emoji}"
                             elif "potion" in item_name:
                                 item = f"{item} {potion_emoji}"
@@ -501,7 +503,9 @@ class Research(commands.Cog):
                         item_number = parse_list[index+1].replace('</span>', '').replace('</div>', '').replace('>', '').strip() + " "
                     except:
                         item_number = ""
-                    for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "group7", "group8", "group9", "<h3>", "</p>", ">", "unconfirmed", "pokemon", "shinyAvailable",]:
+                    for replacement in ["</h3", "class=\"taskText\">", "class=\"task-reward", "<img src=\"https://assets.thesilphroad.com/img/pokemon/icons/96x96/", ".png", "<br>", "\">", "class=\"task-group", "group1", "group2", "group3", "group4", "group5", "group6", "group7", "group8", "group9", "eventTasks", "<h3>", "</p>", ">", "unconfirmed", "pokemon", "shinyAvailable"]:
+                        line = line.replace(replacement, "").replace("_", " ").strip()
+                    for replacement in ["<img class=\"tr mega \" src=\"https://assets.thesilphroad.com/img//icons/96x96/3", "<img class=\"tr mega \" src=\"https://assets.thesilphroad.com/img//icons/96x96/6", "<img class=\"tr mega \" src=\"https://assets.thesilphroad.com/img//icons/96x96/9", "<img class=\"tr mega candy\" src=\"https://assets.thesilphroad.com/img/icons/", "tr mega", "\n"]:
                         line = line.replace(replacement, "").replace("_", " ").strip()
                     tsr_quests.append((line.strip(), item_number))
             for index, item in enumerate(tsr_quests):
@@ -569,7 +573,7 @@ class Research(commands.Cog):
                             item = f"{item} {berry_emoji}"
                         elif "dust" in item_name:
                             item = f"{item} {dust_emoji}"
-                        elif "candy" in item_name:
+                        elif "candy" in item_name and "rare" in item_name:
                             item = f"{item} {candy_emoji}"
                         elif "potion" in item_name:
                             item = f"{item} {potion_emoji}"
