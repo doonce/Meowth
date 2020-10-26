@@ -917,7 +917,7 @@ class Trainers(commands.Cog):
             return
         elif ign:
             ign_split = ign.split(',')
-            ign_split = [x.strip().replace(" ", "").replace("@", "") for x in ign_split]
+            ign_split = [x.strip().replace("@", "") for x in ign_split]
             ign = ign_split[0]
             if len(ign_split) == 1 and ign.lower() not in search_dict.keys() and ign.lower() not in [search_dict[x]['member_name'].lower() for x in search_dict]:
                 if author.get('ign'):

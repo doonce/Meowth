@@ -437,8 +437,8 @@ class Pokemon():
             form = "alola"
         if self.shadow:
             form = self.shadow
-        if form and form not in excluded_forms:
-            search_term = f"{name}_{str(form).strip()}".lower()
+        if self.form and self.form not in excluded_forms:
+            search_term = f"{name}_{str(self.form).strip()}".lower()
         return search_term
 
     @property
@@ -1268,7 +1268,7 @@ class Pokedex(commands.Cog):
                     pkmn_ditto = self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form].get('ditto', False)
                     pkmn_mega = self.bot.pkmn_info[pokemon.name.lower()]['forms'][pkmn_form].get('mega', False)
                     pkmn_embed.clear_fields()
-                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist in my records. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **shiny** to set shiny availability, **gender** to toggle gender differences, or **size** to toggle size relevance, **shadow** to toggle shadow, **ditto** to toggle Ditto disguise, **mega** to toggle Mega Evolution. Others include **type**, **pokedex**, and **evolution**. You can reply with **cancel** to stop anytime.\n\n**Current {str(pokemon)} Settings**\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}\n{'Ditto Disguise: '+pkmn_ditto if pkmn_ditto else ''}\n{'Mega Evolution: '+pkmn_mega if pkmn_mega else ''}", inline=False)
+                    pkmn_embed.add_field(name=_('**Edit Pokemon Information**'), value=f"You are now editing **{str(pokemon)}**, if this doesn't seem correct, that form may not exist in my records. Please ask **{owner.name}** to make changes.{form_str}\n\nOtherwise, I'll need to know what **attribute** of the **{str(pokemon)}** you'd like to edit. Reply with **shiny** to set shiny availability, **gender** to toggle gender differences, or **size** to toggle size relevance, **shadow** to toggle shadow, **ditto** to toggle Ditto disguise, **mega** to toggle Mega Evolution. Others include **type**, **pokedex**, and **evolution**. You can reply with **cancel** to stop anytime.\n\n**Current {str(pokemon)} Settings**\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}\n{'Ditto Disguise: True' if pkmn_ditto else ''}\n{'Mega Evolution: True' if pkmn_mega else ''}", inline=False)
                     pkmn_embed.set_thumbnail(url=pokemon.img_url)
                     attr_type_wait = await channel.send(embed=pkmn_embed)
                     try:
@@ -1478,7 +1478,7 @@ class Pokedex(commands.Cog):
                 json.dump(pkmn_info, fd, indent=2, separators=(', ', ': '))
             await self.generate_lists(self.bot)
             pkmn_embed.clear_fields()
-            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}\n{'Ditto Disguise: '+pkmn_ditto if pkmn_ditto else ''}\n{'Mega Evolution: '+pkmn_mega if pkmn_mega else ''}", inline=False)
+            pkmn_embed.add_field(name=_('**Pokemon Edit Completed**'), value=f"Meowth! Your edit completed successfully.\n\n**Current {str(pokemon)} Settings**:\nShiny available: {pkmn_shiny}\nGender Differences: {'True' if pkmn_gender else 'False'}\nSize Relevant: {pkmn_size}\nShadow Available: {pkmn_shadow}\n{'Ditto Disguise: True' if pkmn_ditto else ''}\n{'Mega Evolution: True' if pkmn_mega else ''}", inline=False)
             confirmation = await channel.send(embed=pkmn_embed)
             await utils.safe_delete(message)
 

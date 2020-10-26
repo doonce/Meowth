@@ -772,6 +772,17 @@ class Raid(commands.Cog):
                         del self.bot.guild_dict[guild.id]['list_dict']['raid'][c]
                     except KeyError:
                         pass
+                for config_type in self.bot.guild_dict[guild.id]['configure_dict']:
+                    try:
+                        if not self.bot.guild_dict[guild.id]['configure_dict'][config_type].get('overflow_list', []):
+                            continue
+                        for category_id in self.bot.guild_dict[guild.id]['configure_dict'][config_type]['overflow_list']:
+                            category = guild.get_channel(category_id)
+                            if category and len(category.channels) == 0:
+                                await category.delete()
+                            self.bot.guild_dict[guild.id]['configure_dict'][config_type]['overflow_list'] = [x for x in self.bot.guild_dict[guild.id]['configure_dict'][config_type]['overflow_list'] if guild.get_channel(x)]
+                    except Exception as e:
+                        pass
             except Exception as e:
                 print(traceback.format_exc())
         # save server_dict changes after cleanup
@@ -957,7 +968,9 @@ class Raid(commands.Cog):
             else:
                 channel_name = f"{channel_emoji}{channel_level}-egg-{channel_address.lower()}"
         elif type == "raid" or type == "exraid":
-            channel_name = f"{channel_emoji}{channel_boss.name.lower()}-{channel_boss.region.lower()+'-' if channel_boss and channel_boss.region else ''}-{channel_boss.form.lower()+'-' if channel_boss and channel_boss.form else ''}-{channel_address.lower()}"
+            raid_channel = await self.create_raid_channel(ctx, f"{pokemon.name.lower()}{'-mega' if pokemon.mega else ''}{'-'+pokemon.region.lower() if pokemon.region else ''}{'-'+pokemon.form.lower() if pokemon.form else ''}", raid_details, "raid")
+            channel_name = f"{channel_emoji}{channel_boss.name.lower()}{'-mega' if channel_boss and channel_boss.mega else ''}{'-'+channel_boss.region.lower() if channel_boss and channel_boss.region else ''}{'-'+channel_boss.form.lower() if channel_boss and channel_boss.form else ''}{'-'+channel_address.lower()}"
+            # channel_name = f"{channel_emoji}{channel_boss.name.lower()}-{channel_boss.region.lower()+'-' if channel_boss and channel_boss.region else ''}-{channel_boss.form.lower()+'-' if channel_boss and channel_boss.form else ''}-{channel_address.lower()}"
         else:
             channel_name = f"{channel_emoji}{type}-{channel_address.lower()}"
         return channel_name
@@ -2226,9 +2239,11 @@ class Raid(commands.Cog):
             else:
                 weather = None
         pokemon, match_list = await pkmn_class.Pokemon.ask_pokemon(ctx, ' '.join(raid_split))
-        if not pokemon:
-            if raid_split[0].lower() == "mega":
-                return await self._raidegg(ctx, content)
+        if raid_split[0].lower() == "mega" and not pokemon:
+            return await self._raidegg(ctx, content)
+        if raid_split[0].lower() == "mega" and pokemon and not pokemon.mega_available:
+            return await self._raidegg(ctx, content)
+        elif not pokemon:
             return await ctx.invoke(self.bot.get_command('raid'))
         elif pokemon.id not in self.bot.raid_list:
             await utils.safe_delete(ctx.message)
@@ -2269,7 +2284,7 @@ class Raid(commands.Cog):
                 raid_coordinates = gym_url.split('query=')[1]
         if not raid_details:
             return await utils.safe_delete(ctx.message)
-        raid_channel = await self.create_raid_channel(ctx, f"{pokemon.name.lower()}{'-'+pokemon.region.lower() if pokemon.region else ''}{'-'+pokemon.form.lower() if pokemon.form else ''}", raid_details, "raid")
+        raid_channel = await self.create_raid_channel(ctx, f"{pokemon.name.lower()}{'-mega' if pokemon.mega else ''}{'-'+pokemon.region.lower() if pokemon.region else ''}{'-'+pokemon.form.lower() if pokemon.form else ''}", raid_details, "raid")
         if not raid_channel:
             return
         if not weather and raid_coordinates:
@@ -3519,6 +3534,8 @@ class Raid(commands.Cog):
                     gym_search = str(channel_or_gym)
                     for raid_channel in self.bot.guild_dict[ctx.guild.id]['raidchannel_dict']:
                         raid_channel = self.bot.get_channel(raid_channel)
+                        if not raid_channel:
+                            continue
                         raid_address = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['address']
                         raid_type = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['type']
                         raid_level = self.bot.guild_dict[ctx.guild.id]['raidchannel_dict'][raid_channel.id]['egg_level']
