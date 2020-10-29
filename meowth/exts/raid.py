@@ -968,7 +968,6 @@ class Raid(commands.Cog):
             else:
                 channel_name = f"{channel_emoji}{channel_level}-egg-{channel_address.lower()}"
         elif type == "raid" or type == "exraid":
-            raid_channel = await self.create_raid_channel(ctx, f"{pokemon.name.lower()}{'-mega' if pokemon.mega else ''}{'-'+pokemon.region.lower() if pokemon.region else ''}{'-'+pokemon.form.lower() if pokemon.form else ''}", raid_details, "raid")
             channel_name = f"{channel_emoji}{channel_boss.name.lower()}{'-mega' if channel_boss and channel_boss.mega else ''}{'-'+channel_boss.region.lower() if channel_boss and channel_boss.region else ''}{'-'+channel_boss.form.lower() if channel_boss and channel_boss.form else ''}{'-'+channel_address.lower()}"
             # channel_name = f"{channel_emoji}{channel_boss.name.lower()}-{channel_boss.region.lower()+'-' if channel_boss and channel_boss.region else ''}-{channel_boss.form.lower()+'-' if channel_boss and channel_boss.form else ''}-{channel_address.lower()}"
         else:
